@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -25,25 +26,25 @@ class MathematicalReasoningTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(MathematicalReasoningTask::class.java)
         val MathematicalReasoning = TaskType(
-            "MathematicalReasoning",
-            "Reasoning",
-            MathematicalReasoningTask::class.java,
-            MathematicalReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Solve mathematical problems through step-by-step logical reasoning with verifiable steps",
-            """
-                Uses path search to solve mathematical problems through rigorous step-by-step reasoning.
-                <ul>
-                    <li>Breaks down complex problems into verifiable atomic steps</li>
-                    <li>Each step includes justification and verification</li>
-                    <li>Explores multiple solution paths when needed</li>
-                    <li>Backtracks when encountering dead ends</li>
-                    <li>Provides detailed proof trail with MathJax notation</li>
-                    <li>Supports algebra, calculus, number theory, and more</li>
-                    <li>Validates intermediate results for correctness</li>
-                    <li>Generates human-readable mathematical proofs</li>
-                </ul>
-            """,
+          name = "MathematicalReasoning",
+          category = "Reasoning",
+          taskClass = MathematicalReasoningTask::class.java,
+          executionConfigClass = MathematicalReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Solve mathematical problems through step-by-step logical reasoning with verifiable steps",
+          tooltipHtml = """
+                          Uses path search to solve mathematical problems through rigorous step-by-step reasoning.
+                          <ul>
+                              <li>Breaks down complex problems into verifiable atomic steps</li>
+                              <li>Each step includes justification and verification</li>
+                              <li>Explores multiple solution paths when needed</li>
+                              <li>Backtracks when encountering dead ends</li>
+                              <li>Provides detailed proof trail with MathJax notation</li>
+                              <li>Supports algebra, calculus, number theory, and more</li>
+                              <li>Validates intermediate results for correctness</li>
+                              <li>Generates human-readable mathematical proofs</li>
+                          </ul>
+                      """,
         )
     }
 
@@ -190,7 +191,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = transcript(task)
+        val transcript = task.transcript()
         try {
             val startTime = System.currentTimeMillis()
             log.info("Starting MathematicalReasoningTask with problem: ${executionConfig?.problem_statement?.take(100)}")
@@ -198,7 +199,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
             // Validate configuration
             executionConfig?.validate()?.let { errorMessage ->
                 log.error("Configuration validation failed: $errorMessage")
-                task.complete("VALIDATION ERROR: $errorMessage")
+                task.safeComplete("VALIDATION ERROR: $errorMessage", log)
                 task.error(ValidatedObject.ValidationError(errorMessage, executionConfig))
                 transcript?.close()
                 resultFn("VALIDATION ERROR: $errorMessage")
@@ -435,14 +436,14 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
                 "Unable to find a complete solution after exploring $pathsExplored paths. See the Solution tab for partial progress."
             }
 
-            task.complete("Mathematical reasoning complete in ${totalTime / 1000}s")
+            task.safeComplete("Mathematical reasoning complete in ${totalTime / 1000}s", log)
             resultFn(resultMessage)
 
         } catch (e: Exception) {
             log.error("Error during MathematicalReasoningTask execution", e)
             transcript?.close()
             task.error(e)
-            task.complete("Failed with error: ${e.message}")
+            task.safeComplete("Failed with error: ${e.message}", log)
             resultFn("ERROR: ${e.message}")
         }
     }

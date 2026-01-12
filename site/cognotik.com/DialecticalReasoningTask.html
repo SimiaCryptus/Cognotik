@@ -1,171 +1,395 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dialectical Reasoning Task - Cognotik</title>
-    <!-- Fonts -->
+    <title>Cognotik | DialecticalReasoningTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
-        
-        /* Page-specific overrides and animations */
-        .hero-split { display: flex; align-items: center; max-width: var(--container-max-width); margin: 0 auto; text-align: left; }
-        .hero-content { flex: 1; padding-right: 2rem; }
-        .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
-        
-        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-color); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(139, 92, 246, 0.2); }
-        .visual-node::before { content: ''; position: absolute; inset: -20px; border: 1px solid var(--accent-secondary); border-radius: 50%; animation: spin 10s linear infinite; }
-        
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
 
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
 
-        
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
 
-        .sim-output-content { padding: 2rem; font-family: var(--font-family-mono); color: var(--text-muted); overflow-y: auto; height: 100%; }
-        
-        @media (max-width: 768px) { .hero-split { flex-direction: column; text-align: center; } .hero-content { padding-right: 0; margin-bottom: 3rem; } }
+        .page-header {
+            margin-bottom: 3rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Mock UI Styling */
+        .mock-ui-tabs {
+            display: flex;
+            background: #0d1117;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0 0.5rem;
+        }
+        .mock-tab {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            border-bottom: 2px solid transparent;
+        }
+        .mock-tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        .mock-content {
+            padding: 1rem;
+            font-size: 0.85rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-pane.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+        .req { color: #f85149; margin-left: 4px; }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="dialectical"></cognotik-header>
-    <header class="hero">
-        <div class="hero-split">
-            <div class="hero-content">
-            <h1>Dialectical Reasoning</h1>
-                <p class="subtitle">Resolve contradictions and find higher truths through a structured thesis-antithesis-synthesis process.</p>
-                <a href="#demo" class="cta-button">Try the Simulator</a>
-            </div>
-            <div class="hero-visual">
-                <div class="visual-node"></div>
-            </div>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > DialecticalReasoningTask</div>
+        <h1>DialecticalReasoningTask</h1>
+        <p class="pitch">
+            Resolve contradictions and architectural tensions through iterative thesis-antithesis-synthesis. 
+            Moves beyond binary choices to find higher-level conceptual integration.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Side-Effect: Safe</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
         </div>
     </header>
 
-    <section id="features" class="features">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <i>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                    </i>
-                    <h3>Deep Analysis</h3>
-                    <p>Thoroughly examines both thesis and antithesis positions to understand core claims and underlying logic.</p>
-                </div>
-                <div class="feature-card">
-                    <i>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
-                    </i>
-                    <h3>Synthesis Generation</h3>
-                    <p>Creates a higher-level synthesis that transcends opposition while preserving valuable aspects of both sides.</p>
-                </div>
-                <div class="feature-card">
-                    <i>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    </i>
-                    <h3>Iterative Process</h3>
-                    <p>Iterates through multiple levels of synthesis (1-5) to reach progressively deeper insights.</p>
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>ExecutionConfig.json</span>
+                <span>JSON</span>
+            </div>
+            <pre><code>{
+  "thesis": "Strict microservices for scale",
+  "antithesis": "Monolithic simplicity",
+  "context": "E-commerce Platform Migration",
+  "synthesis_levels": 3,
+  "preserve_strengths": true
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>Session UI (TabbedDisplay)</span>
+                <span>Rendered</span>
+            </div>
+            <div class="mock-ui-tabs">
+                <div class="mock-tab">Overview</div>
+                <div class="mock-tab">Thesis</div>
+                <div class="mock-tab">Antithesis</div>
+                <div class="mock-tab active">Synthesis L3</div>
+            </div>
+            <div class="mock-content">
+                <h4 style="margin-top:0; color: var(--accent-primary);">Synthesis Level 3: Macro-Service Mesh</h4>
+                <p style="font-size: 0.8rem; color: var(--text-dim);">
+                    The final synthesis transcends the scale/simplicity trade-off by proposing a 
+                    "Cell-Based Architecture" where logical monoliths are deployed as isolated 
+                    scaling units...
+                </p>
+                <ul style="font-size: 0.8rem; padding-left: 1.2rem;">
+                    <li>Preserves: Local development speed</li>
+                    <li>Preserves: Independent deployment</li>
+                    <li>Resolves: Distributed transaction overhead</li>
+                </ul>
+                <div style="border-top: 1px solid var(--border-subtle); padding-top: 0.5rem; font-size: 0.7rem; color: #4ade80;">
+                    ✔ Final Integration Complete (14.2s)
                 </div>
             </div>
+        </div>
     </section>
 
-    <section id="demo" class="simulator">
-            <h2>Interactive Simulator</h2>
-            <div class="simulator-container">
-                <div class="sim-controls">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Configuration</h3>
-                    <div class="control-group">
-                        <label>Thesis</label>
-                        <textarea id="thesis" placeholder="Enter the initial position...">Remote work increases productivity and employee satisfaction.</textarea>
-                    </div>
-                    <div class="control-group">
-                        <label>Antithesis</label>
-                        <textarea id="antithesis" placeholder="Enter the opposing position...">In-office work fosters collaboration and company culture.</textarea>
-                    </div>
-                    <div class="control-group">
-                        <label>Context</label>
-                        <input type="text" id="context" value="Modern tech company post-pandemic">
-                    </div>
-                    <button class="run-button" onclick="runSimulation()">Run Analysis</button>
-                </div>
-                <div class="sim-output">
-                    <div id="output-logs" class="sim-output-content">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the dialectic and click "Run" to see the synthesis.
-                        </div>
-                    </div>
-                </div>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>thesis</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The primary position or claim to be analyzed. Max 5000 chars.</td>
+                </tr>
+                <tr>
+                    <td><code>antithesis</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The opposing position or contradiction. Max 5000 chars.</td>
+                </tr>
+                <tr>
+                    <td><code>context</code></td>
+                    <td>String</td>
+                    <td>Domain or background info to ground the analysis.</td>
+                </tr>
+                <tr>
+                    <td><code>synthesis_levels</code></td>
+                    <td>Int</td>
+                    <td>Iterations of synthesis (1-5). Default: <code>3</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>preserve_strengths</code></td>
+                    <td>Boolean</td>
+                    <td>If true, ensures synthesis keeps valid points from both sides.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Glob patterns for source files to include as primary context.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Additional files for background context.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Lifecycle</h3>
+            <ol style="color: var(--text-main); max-width: 800px;">
+                <li><strong>Initialization:</strong> Validates that thesis and antithesis are distinct and within length limits.</li>
+                <li><strong>Thesis/Antithesis Analysis:</strong> Independent agents analyze the core claims, strengths, and blind spots of each position.</li>
+                <li><strong>Contradiction Mapping:</strong> Identifies the root causes of the tension and areas of hidden overlap.</li>
+                <li><strong>Iterative Synthesis:</strong>
+                    <ul>
+                        <li>Level 1: Finds a perspective that integrates both insights.</li>
+                        <li>Level 2+: Treats the previous synthesis as a new thesis to find even deeper abstractions.</li>
+                    </ul>
+                </li>
+                <li><strong>Final Integration:</strong> Produces a comprehensive report with practical implications and actionable recommendations.</li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Kotlin Boilerplate</h3>
+            <div class="panel">
+                <pre><code>val task = DialecticalReasoningTask(
+    orchestrationConfig,
+    DialecticalReasoningTaskExecutionConfigData(
+        thesis = "Use NoSQL for horizontal write scaling",
+        antithesis = "Use SQL for ACID compliance and complex joins",
+        synthesis_levels = 2
+    )
+)</code></pre>
             </div>
-    </section>
 
-    <section id="use-cases" class="features">
-            <h2>When to Use</h2>
-            <div class="mode-grid">
-                <div class="mode-card">
-                    <div class="mode-title">Architectural Debates</div>
-                    <p>Resolve conflicts between different technical approaches (e.g., Monolith vs. Microservices).</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Requirement Conflicts</div>
-                    <p>Find solutions that satisfy competing stakeholder requirements.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Design Philosophy</div>
-                    <p>Explore tensions between design principles like flexibility vs. simplicity.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Strategic Planning</div>
-                    <p>Synthesize opposing strategic directions into a cohesive plan.</p>
-                </div>
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM orchestrator:</p>
+            <div class="panel" style="background: #000;">
+                <pre style="color: #8b949e;">DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesis
+  ** Specify thesis and antithesis statements representing opposing positions
+  ** Provide context to ground the dialectical analysis
+  ** Configure synthesis_levels (1-5) to iterate toward higher understanding
+  ** Set preserve_strengths=true to maintain valuable aspects of both sides
+  ** Related files can provide additional context</pre>
             </div>
+        </div>
     </section>
 
-    <script>
-        function runSimulation() {
-            const thesis = document.getElementById('thesis').value;
-            const antithesis = document.getElementById('antithesis').value;
-            const logsEl = document.getElementById('output-logs');
-            
-            logsEl.innerHTML = '';
-            const steps = [
-                `[INFO] Analyzing Thesis: "${thesis.substring(0, 30)}..."`,
-                `[INFO] Analyzing Antithesis: "${antithesis.substring(0, 30)}..."`,
-                `[INFO] Exploring contradictions and tensions...`,
-                `[INFO] Generating Synthesis Level 1...`,
-                `[INFO] Generating Synthesis Level 2...`,
-                `[SUCCESS] Final Integration Complete.`
-            ];
-            
-            let i = 0;
-            const interval = setInterval(() => {
-                if (i < steps.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
-                    line.style.marginBottom = '4px';
-                    if (steps[i].includes('SUCCESS')) line.style.color = '#4ade80';
-                    else line.style.color = '#a78bfa';
-                    logsEl.appendChild(line);
-                    i++;
-                } else {
-                    clearInterval(interval);
-                    const result = document.createElement('div');
-                    result.innerHTML = `
-                        <br><strong>Synthesis Result:</strong><br>
-                        A hybrid model that mandates specific "collaboration days" for in-office presence while allowing flexible remote work for deep focus tasks effectively bridges the gap. This approach preserves the autonomy and productivity of remote work while ensuring the social cohesion and spontaneous innovation of physical presence.
-                    `;
-                    result.style.color = '#e2e8f0';
-                    result.style.marginTop = '1rem';
-                    result.style.padding = '1rem';
-                    result.style.border = '1px solid rgba(255,255,255,0.1)';
-                    result.style.borderRadius = '8px';
-                    logsEl.appendChild(result);
-                }
-            }, 800);
-        }
-    </script>
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

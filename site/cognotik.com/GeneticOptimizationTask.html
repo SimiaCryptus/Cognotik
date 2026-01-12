@@ -1,1313 +1,391 @@
-<!-- 
-  File: webui/src/main/resources/static/genetic_optimization_task.html
-  Description: Product page and documentation for the GeneticOptimizationTask agent tool.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Genetic Optimization Task | Cognotik</title>
+    <title>Cognotik | GeneticOptimizationTask - Industrial Text Evolution</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --secondary: #10b981;
-            --accent: #8b5cf6;
-            --bg-color: #f8fafc;
-            --surface: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --code-bg: #1e293b;
-            --code-text: #e2e8f0;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-color: #0f172a;
-                --surface: #1e293b;
-                --text-main: #f1f5f9;
-                --text-muted: #94a3b8;
-                --border: #334155;
-            }
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            --bg-app: #0d1117;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
+            background-color: var(--bg-app);
             color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
             line-height: 1.6;
         }
 
-        /* Layout */
-        .container {
-            max-width: 1200px;
+        .task-container {
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 2rem;
         }
 
-        header {
-            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-            color: white;
-            padding: 4rem 0;
+        .page-header {
             margin-bottom: 3rem;
-            position: relative;
-            overflow: hidden;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
         }
 
-        header::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 25%),
-                              radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 25%);
-            pointer-events: none;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            text-align: center;
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
         }
 
         h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            font-weight: 800;
-            letter-spacing: -0.025em;
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            letter-spacing: -0.02em;
         }
 
-        .tagline {
-            font-size: 1.25rem;
-            opacity: 0.9;
-            max-width: 600px;
-            margin: 0 auto;
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
         }
 
-        /* Sections */
-        section {
-            margin-bottom: 4rem;
-        }
-
-        h2 {
-            font-size: 2rem;
-            margin-bottom: 1.5rem;
-            color: var(--text-main);
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 0.5rem;
-        }
-
-        h3 {
-            font-size: 1.25rem;
-            margin-bottom: 1rem;
-            color: var(--primary);
-        }
-
-        /* Cards */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 2rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        .icon-box {
-            width: 48px;
-            height: 48px;
-            background: var(--primary);
-            border-radius: 8px;
+        .badges {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1rem;
-            color: white;
-        }
-
-        /* Process Flow */
-        .process-step {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 1.5rem;
-        }
-
-        .step-number {
-            background: var(--accent);
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            margin-right: 1rem;
-            flex-shrink: 0;
-        }
-
-        /* Configuration Table */
-        .config-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--surface);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .config-table th, .config-table td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .config-table th {
-            background: var(--bg-color);
-            font-weight: 600;
+            gap: 0.5rem;
+            margin-top: 1rem;
         }
 
         .badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
             border-radius: 4px;
             font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--border);
-            color: var(--text-muted);
+            font-family: var(--font-mono);
         }
 
-        .badge-req { background: #fee2e2; color: #991b1b; }
-        .badge-opt { background: #dcfce7; color: #166534; }
-
-        /* Interactive Demo */
-        .demo-container {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 2rem;
+        .reality-check-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
         }
 
-        .demo-controls {
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 400px;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
         }
 
-        .input-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
         }
 
-        .input-group input, .input-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background: var(--bg-color);
-            color: var(--text-main);
-            font-family: inherit;
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow: auto;
+            flex-grow: 1;
         }
 
-        button.btn-primary {
-            background: var(--primary);
-            color: white;
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
             border: none;
             padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            font-weight: 600;
+            color: var(--text-dim);
             cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        button.btn-primary:hover {
-            background: var(--primary-dark);
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .demo-visuals {
-            background: var(--bg-color);
-            border-radius: 8px;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-        }
-
-        canvas {
-            width: 100%;
-            height: 200px;
-            margin-bottom: 1rem;
-        }
-
-        .log-window {
-            flex-grow: 1;
-            background: var(--code-bg);
-            color: var(--code-text);
-            font-family: monospace;
-            padding: 1rem;
-            border-radius: 6px;
-            height: 200px;
-            overflow-y: auto;
-            font-size: 0.85rem;
-        }
-
-        .log-entry { margin-bottom: 0.5rem; border-bottom: 1px solid #334155; padding-bottom: 0.25rem; }
-        .log-gen { color: var(--accent); font-weight: bold; }
-        .log-score { color: var(--secondary); }
-
-        @media (max-width: 768px) {
-            .demo-container { grid-template-columns: 1fr; }
-            h1 { font-size: 2rem; }
-        }
-    </style>
-
-    <style>
-        /* =========================================
-           1. Variables & Reset
-           ========================================= */
-        :root {
-            /* Color Palette */
-            --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --primary-light: #60a5fa;
-            --secondary: #10b981;
-            --accent: #8b5cf6;
-        
-            /* Backgrounds & Surfaces */
-            --bg-color: #f8fafc;
-            --surface: #ffffff;
-            --surface-hover: #f1f5f9;
-        
-            /* Typography */
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --text-light: #94a3b8;
-        
-            /* Borders & UI */
-            --border: #e2e8f0;
-            --radius-sm: 6px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-        
-            /* Code/Terminal */
-            --code-bg: #0f172a;
-            --code-text: #e2e8f0;
-        }
-        
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-color: #0f172a;
-                --surface: #1e293b;
-                --surface-hover: #334155;
-                --text-main: #f1f5f9;
-                --text-muted: #cbd5e1;
-                --border: #334155;
-                --code-bg: #020617;
-            }
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        
-        /* =========================================
-           2. Layout & Typography
-           ========================================= */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            width: 100%;
-        }
-        
-        h1, h2, h3, h4, h5, h6 {
-            line-height: 1.2;
-            color: var(--text-main);
-        }
-        
-        h1 {
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            font-weight: 800;
-            letter-spacing: -0.025em;
-            margin-bottom: 1rem;
-        }
-        
-        h2 {
-            font-size: 2rem;
-            margin-bottom: 2rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid var(--border);
-            position: relative;
-        }
-        
-        h2::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 60px;
-            height: 2px;
-            background-color: var(--primary);
-        }
-        
-        h3 {
-            font-size: 1.25rem;
+            border-bottom: 2px solid transparent;
             font-weight: 600;
-            margin-bottom: 0.75rem;
+            transition: all 0.2s;
         }
-        
-        p {
-            margin-bottom: 1rem;
-            color: var(--text-muted);
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
         }
-        
-        section {
-            margin-bottom: 5rem;
-        }
-        
-        /* =========================================
-           3. Header / Hero Section
-           ========================================= */
-        header {
-            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-            color: white;
-            padding: 5rem 0;
-            margin-bottom: 4rem;
-            position: relative;
-            overflow: hidden;
-            box-shadow: var(--shadow-md);
-        }
-        
-        /* Decorative background pattern */
-        header::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: 
-                radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 40%),
-                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 40%);
-            pointer-events: none;
-        }
-        
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        .hero-content h1 {
-            color: white;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .tagline {
-            font-size: 1.25rem;
-            opacity: 0.95;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 400;
-        }
-        
-        /* =========================================
-           4. Cards & Grid System
-           ========================================= */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-        
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 2rem;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--primary-light);
-        }
-        
-        .icon-box {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: var(--radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            color: white;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .card h3 {
-            color: var(--text-main);
-        }
-        
-        /* =========================================
-           5. Configuration Table
-           ========================================= */
-        .table-wrapper {
-            overflow-x: auto;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-        }
-        
-        .config-table {
+
+        .docs-table {
             width: 100%;
             border-collapse: collapse;
-            background: var(--surface);
-            min-width: 600px; /* Ensure readable on mobile scroll */
+            margin-top: 1rem;
         }
-        
-        .config-table th, 
-        .config-table td {
-            padding: 1rem 1.5rem;
+
+        .docs-table th, .docs-table td {
             text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .config-table th {
-            background: var(--bg-color);
-            font-weight: 600;
-            color: var(--text-main);
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.05em;
-        }
-        
-        .config-table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .config-table tr:hover td {
-            background-color: var(--surface-hover);
-        }
-        
-        .config-table code {
-            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-            background: var(--bg-color);
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: var(--primary);
-            border: 1px solid var(--border);
-        }
-        
-        /* Badges */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.25rem 0.6rem;
-            border-radius: 999px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        
-        .badge-req {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-        
-        .badge-opt {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-        
-        /* =========================================
-           6. Interactive Simulator
-           ========================================= */
-        .demo-container {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 2rem;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2.5rem;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        /* Controls Side */
-        .demo-controls {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-        
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        .input-group label {
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--text-main);
-        }
-        
-        .input-group input[type="text"],
-        .input-group textarea {
-            width: 100%;
             padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            background: var(--bg-color);
-            color: var(--text-main);
-            font-family: inherit;
-            font-size: 0.95rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            border-bottom: 1px solid var(--border-subtle);
         }
-        
-        .input-group input[type="text"]:focus,
-        .input-group textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
-        
-        .input-group textarea {
-            resize: vertical;
-            min-height: 100px;
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.05);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            font-size: 0.9em;
         }
-        
-        /* Range Slider Styling */
-        .input-group input[type="range"] {
-            width: 100%;
-            height: 6px;
-            background: var(--border);
-            border-radius: 5px;
-            outline: none;
-            -webkit-appearance: none;
-        }
-        
-        .input-group input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: var(--primary);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        
-        .input-group input[type="range"]::-webkit-slider-thumb:hover {
-            background: var(--primary-dark);
-        }
-        
-        /* Buttons */
-        button.btn-primary {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: var(--radius-sm);
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
-            margin-top: auto;
-        }
-        
-        button.btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 8px rgba(37, 99, 235, 0.3);
-        }
-        
-        button.btn-primary:active {
-            transform: translateY(0);
-        }
-        
-        button:disabled {
-            background: var(--text-muted);
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        /* Visuals Side */
-        .demo-visuals {
-            background: var(--bg-color);
-            border-radius: var(--radius-md);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid var(--border);
-        }
-        
-        canvas {
-            width: 100%;
-            height: 220px;
-            margin-bottom: 1.5rem;
-            background: var(--surface);
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-        }
-        
-        .log-window {
-            flex-grow: 1;
-            background: var(--code-bg);
-            color: var(--code-text);
-            font-family: 'Menlo', 'Monaco', monospace;
-            padding: 1rem;
-            border-radius: var(--radius-sm);
-            height: 250px;
-            overflow-y: auto;
-            font-size: 0.85rem;
-            border: 1px solid var(--border);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        /* Custom Scrollbar for Log Window */
-        .log-window::-webkit-scrollbar {
-            width: 8px;
-        }
-        .log-window::-webkit-scrollbar-track {
-            background: var(--code-bg);
-        }
-        .log-window::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 4px;
-        }
-        
-        .log-entry {
-            margin-bottom: 0.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 0.25rem;
-            line-height: 1.4;
-        }
-        
-        .log-gen { color: var(--accent); font-weight: bold; }
-        .log-score { color: var(--secondary); font-weight: bold; }
-        
-        /* =========================================
-           7. Footer
-           ========================================= */
-        footer {
-            margin-top: auto;
-            background: var(--bg-color);
-        }
-        
-        footer p {
-            font-size: 0.9rem;
-        }
-        
-        /* =========================================
-           8. Responsive Design
-           ========================================= */
-        @media (max-width: 900px) {
-            .demo-container {
-                grid-template-columns: 1fr;
-                gap: 2rem;
-            }
-        
-            .demo-visuals {
-                order: -1; /* Show visuals first on mobile when running? Optional. Keeping default order for now. */
-            }
-        }
-        
-        @media (max-width: 600px) {
-            header {
-                padding: 3rem 0;
-            }
-        
-            h1 {
-                font-size: 2.25rem;
-            }
-        
-            .grid {
-                grid-template-columns: 1fr;
-            }
-        
-            .card {
-                padding: 1.5rem;
-            }
-        
-            .demo-container {
-                padding: 1.25rem;
-            }
-        
-            .config-table th, 
-            .config-table td {
-                padding: 0.75rem;
-            }
+
+        .req { color: #f85149; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+            .panel { height: auto; min-height: 300px; }
         }
     </style>
-<!-- Generated Images:
-     - genetic-text-dna-hero.png: A futuristic, high-tech 3D illustration of a DNA double helix structure floating in a deep blue void. The strands of the DNA are constructed from glowing lines of code, binary digits, and floating text paragraphs, symbolizing the fusion of biology and language processing. The lighting features neon cyan (#2563eb) and violet (#8b5cf6) accents against a dark navy background (#0f172a), creating a sleek, scientific aesthetic suitable for a hero banner.
-     - evolutionary-cycle-diagram.png: A clean, modern isometric diagram on a white background illustrating the genetic algorithm cycle for text. It shows a circular flow: 1. A cluster of document icons representing a 'Population'. 2. A funnel or filter representing 'Selection' where only the best pass through. 3. Two documents merging beams of light to form a new one, representing 'Crossover'. 4. A lightning bolt icon striking a document, representing 'Mutation'. The color palette uses the brand's primary blue, emerald green for successful outputs, and purple for transformation effects.
-     - fitness-landscape-visualization.png: An abstract data visualization representing a 'fitness landscape'. It depicts a 3D wireframe terrain grid in dark blue tones. The terrain has valleys and peaks. Glowing green data nodes are scattered across the terrain, with a concentration of nodes climbing towards the highest peak, symbolizing the optimization process finding the best solution. The style is cybernetic and mathematical, with a glowing grid effect, suitable for the 'Simulation' or 'Configuration' section background.
--->
 </head>
 <body>
 
-<cognotik-header current-page="genetic_optimization"></cognotik-header>
-<header>
-    <div class="container hero-content">
-        <h1>Genetic Optimization Task</h1>
-        <p class="tagline">Iteratively evolve and perfect text using biological principles of mutation, crossover, and natural selection.</p>
-        <img src="assets/images/genetic-text-dna-hero.png" alt="3D DNA double helix constructed from glowing code and text" style="max-width: 80%; height: auto; margin-top: 2.5rem; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);">
-    </div>
-</header>
+<cognotik-header current-page="tasks"></cognotik-header>
 
-<main class="container">
+<main class="task-container">
 
-    <!-- Overview Section -->
-    <section id="overview">
-        <h2>How It Works</h2>
-        <p style="margin-bottom: 2rem; font-size: 1.1rem;">
-            The Genetic Optimization Task treats text generation as an evolutionary process. Instead of asking an AI to "fix" a document once, it creates a population of variants, evaluates them against specific criteria, and breeds the best performers to create superior offspring over multiple generations.
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > GeneticOptimizationTask</div>
+        <h1>GeneticOptimizationTask</h1>
+        <p class="pitch">
+            Iteratively evolve and perfect text through genetic algorithms. Uses mutation, crossover, and fitness-based selection to refine prompts, documentation, or messaging.
         </p>
-        
-        <img src="assets/images/evolutionary-cycle-diagram.png" alt="Diagram showing the cycle of Population, Selection, Crossover, and Mutation" style="display: block; max-width: 800px; width: 100%; margin: 0 auto 3rem auto; border-radius: 8px;">
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Iterative Evolution</span>
+            <span class="badge">Multi-Generation</span>
+        </div>
+    </header>
 
-        <div class="grid">
-            <div class="card">
-                <div class="icon-box">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94"/></svg>
-                </div>
-                <h3>Mutation</h3>
-                <p>Applies strategies like <em>rephrase</em>, <em>simplify</em>, <em>elaborate</em>, and <em>restructure</em> to introduce diversity into the text population.</p>
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>GeneticOptimizationConfig.json</span>
+                <span>JSON</span>
             </div>
-            <div class="card">
-                <div class="icon-box">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l-5 5L4 4"/></svg>
-                </div>
-                <h3>Crossover</h3>
-                <p>Combines the strongest traits of two high-performing parent texts to create a child variant that inherits the best of both worlds.</p>
+            <pre><code class="language-json">{
+  "initial_text": [
+    "The product is good for developers."
+  ],
+  "optimization_goal": "Professional and persuasive",
+  "num_generations": 5,
+  "population_size": 6,
+  "mutation_strategies": [
+    "rephrase", 
+    "simplify",
+    "elaborate",
+    "emphasize"
+  ]
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>Evolution Analysis UI</span>
+                <span>Markdown Render</span>
             </div>
-            <div class="card">
-                <div class="icon-box">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div class="mock-ui-content" style="background: #0d1117;">
+                <div style="border-left: 4px solid #58a6ff; padding-left: 1rem; margin-bottom: 1rem;">
+                    <h4 style="margin:0">Generation 5: Best Variant</h4>
+                    <p style="font-size: 0.8rem; color: var(--text-dim);">Score: 94.5/100 (+22.1 improvement)</p>
                 </div>
-                <h3>Evaluation</h3>
-                <p>Each variant is scored (0-100) against weighted criteria (e.g., Clarity 40%, Impact 60%). Only the fittest survive to the next generation.</p>
+                <div style="background: #161b22; padding: 1rem; border-radius: 4px; font-style: italic; border: 1px solid var(--border-subtle);">
+                    "Cognotik empowers engineering teams to automate complex reasoning workflows with industrial-grade precision and iterative refinement."
+                </div>
+                <table style="width:100%; font-size: 0.75rem; margin-top: 1rem; border-top: 1px solid var(--border-subtle);">
+                    <tr>
+                        <td style="padding: 4px 0;">Clarity</td>
+                        <td style="text-align: right;">92/100</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 4px 0;">Impact</td>
+                        <td style="text-align: right;">96/100</td>
+                    </tr>
+                </table>
             </div>
         </div>
     </section>
 
-    <!-- Configuration Section -->
-    <section id="configuration">
-        <h2>Configuration Parameters</h2>
-        <p>Customize the evolutionary process using the <code>GeneticOptimizationTaskExecutionConfigData</code> object.</p>
-        <br>
-        <table class="config-table">
-            <thead>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process & Logic</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
                 <tr>
-                    <th>Parameter</th>
+                    <th>Field</th>
                     <th>Type</th>
                     <th>Default</th>
                     <th>Description</th>
                 </tr>
-            </thead>
-            <tbody>
+                </thead>
+                <tbody>
                 <tr>
-                    <td><code>initial_text</code> <span class="badge badge-req">Required</span></td>
+                    <td><code>initial_text</code> <span class="req">*</span></td>
                     <td>List&lt;String&gt;</td>
                     <td>-</td>
-                    <td>The seed text(s) to begin evolution. Multiple seeds create a diverse initial population.</td>
+                    <td>The initial text(s) to optimize (seeds for the algorithm).</td>
                 </tr>
                 <tr>
-                    <td><code>optimization_goal</code> <span class="badge badge-req">Required</span></td>
+                    <td><code>optimization_goal</code> <span class="req">*</span></td>
                     <td>String</td>
                     <td>-</td>
-                    <td>The specific objective (e.g., "Make it persuasive and concise").</td>
+                    <td>The criteria for success (e.g., 'technical accuracy').</td>
+                </tr>
+                <tr>
+                    <td><code>evaluation_weights</code></td>
+                    <td>Map&lt;String, Double&gt;</td>
+                    <td>Clarity: 0.35, Conciseness: 0.25...</td>
+                    <td>Weights for different scoring criteria.</td>
+                </tr>
+                <tr>
+                    <td><code>constraints</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>[]</td>
+                    <td>Additional context or constraints for optimization.</td>
                 </tr>
                 <tr>
                     <td><code>num_generations</code></td>
                     <td>Int</td>
                     <td>5</td>
-                    <td>How many evolutionary cycles to run.</td>
+                    <td>Number of evolution cycles to perform.</td>
                 </tr>
                 <tr>
                     <td><code>population_size</code></td>
                     <td>Int</td>
                     <td>6</td>
-                    <td>Number of variants to generate per generation.</td>
+                    <td>Number of variants maintained per generation.</td>
                 </tr>
                 <tr>
                     <td><code>selection_size</code></td>
                     <td>Int</td>
                     <td>2</td>
-                    <td>Number of top performers to keep for the next generation.</td>
+                    <td>Number of top candidates kept for the next generation.</td>
                 </tr>
                 <tr>
                     <td><code>mutation_strategies</code></td>
                     <td>List&lt;String&gt;</td>
-                    <td>["rephrase", "simplify", "elaborate"]</td>
-                    <td>Allowed strategies for mutation.</td>
+                    <td>rephrase, simplify, elaborate</td>
+                    <td>Strategies used to generate variations.</td>
                 </tr>
                 <tr>
-                    <td><code>evaluation_weights</code></td>
-                    <td>Map&lt;String, Double&gt;</td>
-                    <td>Clarity, Conciseness, Impact</td>
-                    <td>Custom criteria weights (must sum to 1.0).</td>
+                    <td><code>enable_crossover</code></td>
+                    <td>Boolean</td>
+                    <td>true</td>
+                    <td>Combine traits from multiple top-performing candidates.</td>
                 </tr>
-            </tbody>
-        </table>
-    </section>
+                </tbody>
+            </table>
+        </div>
 
-    <!-- Interactive Simulator -->
-    <section id="simulator">
-        <h2>Evolution Simulator</h2>
-        <p>Visualize how the algorithm optimizes text over time. (Simulation Mode)</p>
-        <br>
-        <img src="assets/images/fitness-landscape-visualization.png" alt="3D wireframe terrain representing a fitness landscape with optimization nodes" style="width: 100%; height: 250px; object-fit: cover; border-radius: 12px; margin-bottom: 2rem; opacity: 0.9; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        
-        <div class="demo-container">
-            <div class="demo-controls">
-                <div class="input-group">
-                    <label>Initial Text (Seed)</label>
-                    <textarea id="seedText" rows="4">The product is good. It helps you write better. You should buy it because it uses AI.</textarea>
-                </div>
-                <div class="input-group">
-                    <label>Optimization Goal</label>
-                    <input type="text" id="optGoal" value="Make it exciting, professional, and persuasive">
-                </div>
-                <div class="input-group">
-                    <label>Generations</label>
-                    <input type="range" id="genCount" min="3" max="10" value="5" oninput="document.getElementById('genVal').innerText = this.value">
-                    <span id="genVal">5</span>
-                </div>
-                <button class="btn-primary" id="startBtn" onclick="runSimulation()">Start Evolution</button>
-            </div>
-            
-            <div class="demo-visuals">
-                <canvas id="fitnessChart"></canvas>
-                <div class="log-window" id="logWindow">
-                    <div class="log-entry">System ready. Enter text and click Start.</div>
-                </div>
-            </div>
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <h3>Evolutionary Lifecycle</h3>
+            <ol style="color: var(--text-dim); padding-left: 1.2rem;">
+                <li><strong style="color: var(--text-main)">Initialization:</strong> Seed texts are evaluated against the goal to establish baseline fitness scores.</li>
+                <li><strong style="color: var(--text-main)">Selection:</strong> The top <code>selection_size</code> variants are promoted to the next generation as survivors.</li>
+                <li><strong style="color: var(--text-main)">Mutation:</strong> New variants are generated from survivors using strategies like <em>rephrase</em>, <em>simplify</em>, or <em>elaborate</em>.</li>
+                <li><strong style="color: var(--text-main)">Crossover:</strong> If enabled, traits from the top survivors are merged into hybrid variants to combine successful characteristics.</li>
+                <li><strong style="color: var(--text-main)">Diversity Check:</strong> Variants are scored for diversity using GZIP-based compressibility (NCD) to ensure the population explores a wide solution space.</li>
+                <li><strong style="color: var(--text-main)">Evaluation:</strong> A <code>ParsedAgent</code> scores each variant across weighted criteria (Clarity, Impact, etc.) to determine fitness.</li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3>Kotlin Boilerplate</h3>
+            <pre><code class="language-kotlin">val task = GeneticOptimizationTask(
+    orchestrationConfig = config,
+    planTask = GeneticOptimizationTaskExecutionConfigData(
+        initial_text = listOf("Draft text..."),
+        optimization_goal = "Professional and persuasive",
+        mutation_strategies = listOf("rephrase", "emphasize"),
+        num_generations = 3
+    )
+)</code></pre>
+            <h3>Prompt Segment</h3>
+            <p style="font-size: 0.85rem; color: var(--text-dim);">The following logic is injected into the orchestrator's context:</p>
+            <pre><code class="language-text">GeneticOptimization - Iteratively evolve and perfect text through genetic algorithms
+  - Specify the FULL text(s) items to optimize
+  - Define the optimization goal (e.g., clarity, persuasiveness)
+  - Configure number of generations (default: 5)
+  - Set population size and selection size
+  - Choose mutation strategies (rephrase, simplify, elaborate, restructure)
+  - Enable/disable crossover for combining traits
+  - Define evaluation criteria and weights</code></pre>
         </div>
     </section>
-
-    <!-- Use Cases -->
-    <section id="use-cases">
-        <h2>Common Use Cases</h2>
-        <div class="grid">
-            <div class="card">
-                <h3>Prompt Engineering</h3>
-                <p>Refine system prompts for LLMs. Evolve instructions until the model produces the exact desired output format and tone.</p>
-            </div>
-            <div class="card">
-                <h3>Marketing Copy</h3>
-                <p>Generate high-impact headlines and ad copy. Optimize for specific emotional triggers or brand voice constraints.</p>
-            </div>
-            <div class="card">
-                <h3>Technical Documentation</h3>
-                <p>Take a rough developer brain-dump and evolve it into clear, concise, and user-friendly documentation.</p>
-            </div>
-            <div class="card">
-                <h3>Email Campaigns</h3>
-                <p>Perfect subject lines and body text to maximize open rates and click-through rates based on persuasive psychology.</p>
-            </div>
-        </div>
-    </section>
-
 </main>
 
-<footer>
-    <div class="container" style="text-align: center; padding: 2rem 0; color: var(--text-muted); border-top: 1px solid var(--border);">
-        <p>&copy; 2024 Cognotik. All rights reserved.</p>
-    </div>
-</footer>
-
 <script>
-    // Simulation Logic
-    const canvas = document.getElementById('fitnessChart');
-    const ctx = canvas.getContext('2d');
-    const logWindow = document.getElementById('logWindow');
-    const startBtn = document.getElementById('startBtn');
-
-    // High DPI Canvas setup
-    function resizeCanvas() {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        ctx.scale(dpr, dpr);
-        canvas.style.width = `${rect.width}px`;
-        canvas.style.height = `${rect.height}px`;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    function log(msg, type = 'info') {
-        const div = document.createElement('div');
-        div.className = 'log-entry';
-        if (type === 'gen') div.innerHTML = `<span class="log-gen">${msg}</span>`;
-        else if (type === 'score') div.innerHTML = `<span class="log-score">${msg}</span>`;
-        else div.innerText = msg;
-        logWindow.appendChild(div);
-        logWindow.scrollTop = logWindow.scrollHeight;
-    }
-
-    function drawChart(dataPoints) {
-        const width = canvas.getBoundingClientRect().width;
-        const height = canvas.getBoundingClientRect().height;
-        const padding = 30;
-        
-        ctx.clearRect(0, 0, width, height);
-        
-        // Draw Axes
-        ctx.strokeStyle = '#64748b';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(padding, padding);
-        ctx.lineTo(padding, height - padding);
-        ctx.lineTo(width - padding, height - padding);
-        ctx.stroke();
-
-        if (dataPoints.length < 2) return;
-
-        // Draw Line
-        ctx.strokeStyle = '#2563eb';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        
-        const xStep = (width - 2 * padding) / (dataPoints.length - 1);
-        const maxScore = 100;
-        const minScore = 0; // Scale 0-100
-
-        dataPoints.forEach((point, index) => {
-            const x = padding + (index * xStep);
-            const y = (height - padding) - ((point / maxScore) * (height - 2 * padding));
-            if (index === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-
-        // Draw Points
-        ctx.fillStyle = '#10b981';
-        dataPoints.forEach((point, index) => {
-            const x = padding + (index * xStep);
-            const y = (height - padding) - ((point / maxScore) * (height - 2 * padding));
-            ctx.beginPath();
-            ctx.arc(x, y, 4, 0, Math.PI * 2);
-            ctx.fill();
-        });
-    }
-
-    async function runSimulation() {
-        startBtn.disabled = true;
-        logWindow.innerHTML = '';
-        const generations = parseInt(document.getElementById('genCount').value);
-        const scores = [];
-        
-        log(`Initializing population with seed text...`);
-        
-        // Simulated starting score (random between 40-60)
-        let currentBest = 40 + Math.random() * 20;
-        scores.push(currentBest);
-        drawChart(scores);
-        log(`Initial Evaluation: Best Score ${currentBest.toFixed(1)}/100`, 'score');
-
-        for (let i = 1; i <= generations; i++) {
-            await new Promise(r => setTimeout(r, 800)); // Delay for effect
-            
-            log(`Generation ${i} started...`, 'gen');
-            
-            // Simulate processing steps
-            const strategies = ['Rephrase', 'Elaborate', 'Simplify', 'Crossover'];
-            const strategy = strategies[Math.floor(Math.random() * strategies.length)];
-            
-            log(`> Applying ${strategy} strategy...`);
-            log(`> Evaluating 6 variants...`);
-
-            // Simulate improvement (mostly positive, occasional dip/plateau)
-            const improvement = (Math.random() * 15) - 2; 
-            currentBest = Math.min(99.9, currentBest + improvement);
-            if(currentBest < scores[i-1]) currentBest = scores[i-1]; // Elitism: keep best
-
-            scores.push(currentBest);
-            drawChart(scores);
-            log(`Generation ${i} Best: ${currentBest.toFixed(1)}/100`, 'score');
-        }
-
-        log(`Optimization Complete. Final Score: ${currentBest.toFixed(1)}`, 'gen');
-        startBtn.disabled = false;
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.target.classList.add('active');
     }
 </script>
 
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- DOM Elements ---
-            const canvas = document.getElementById('fitnessChart');
-            const ctx = canvas.getContext('2d');
-            const logWindow = document.getElementById('logWindow');
-            const startBtn = document.getElementById('startBtn');
-            const genCountInput = document.getElementById('genCount');
-            const genValDisplay = document.getElementById('genVal');
-            const seedTextInput = document.getElementById('seedText');
-        
-            // --- Event Listeners ---
-        
-            // Update the generation count display when the slider moves
-            genCountInput.addEventListener('input', (e) => {
-                genValDisplay.innerText = e.target.value;
-            });
-        
-            // Handle window resize to keep the canvas sharp and responsive
-            window.addEventListener('resize', resizeCanvas);
-        
-            // Trigger the simulation when the start button is clicked
-            startBtn.addEventListener('click', runSimulation);
-        
-            // --- Canvas & Visualization Logic ---
-        
-            /**
-             * Resizes the canvas to handle High DPI displays (Retina) and responsive layouts.
-             * Ensures the drawing buffer matches the physical pixels.
-             */
-            function resizeCanvas() {
-                const dpr = window.devicePixelRatio || 1;
-                const rect = canvas.getBoundingClientRect();
-        
-                // Set the actual bitmap size to the CSS size * pixel ratio
-                canvas.width = rect.width * dpr;
-                canvas.height = rect.height * dpr;
-        
-                // Scale the context so drawing operations use CSS units
-                ctx.scale(dpr, dpr);
-        
-                // Enforce CSS style width/height
-                canvas.style.width = `${rect.width}px`;
-                canvas.style.height = `${rect.height}px`;
-            }
-        
-            /**
-             * Draws the fitness score line chart on the canvas.
-             * @param {number[]} dataPoints - Array of score values (0-100).
-             */
-            function drawChart(dataPoints) {
-                const width = canvas.getBoundingClientRect().width;
-                const height = canvas.getBoundingClientRect().height;
-                const padding = 30;
-        
-                // Clear previous frame
-                ctx.clearRect(0, 0, width, height);
-        
-                // Draw Axes
-                ctx.strokeStyle = '#64748b'; // Matches --text-muted
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                // Y-axis
-                ctx.moveTo(padding, padding);
-                ctx.lineTo(padding, height - padding);
-                // X-axis
-                ctx.lineTo(width - padding, height - padding);
-                ctx.stroke();
-        
-                if (dataPoints.length < 1) return;
-        
-                const maxScore = 100;
-        
-                // Helper functions to map data to canvas coordinates
-                const getX = (index) => {
-                    if (dataPoints.length === 1) return padding;
-                    const xStep = (width - 2 * padding) / (dataPoints.length - 1);
-                    return padding + (index * xStep);
-                };
-        
-                const getY = (score) => {
-                    return (height - padding) - ((score / maxScore) * (height - 2 * padding));
-                };
-        
-                // Draw Line Graph
-                if (dataPoints.length > 1) {
-                    ctx.strokeStyle = '#2563eb'; // Matches --primary
-                    ctx.lineWidth = 3;
-                    ctx.lineJoin = 'round';
-                    ctx.beginPath();
-            
-                    dataPoints.forEach((point, index) => {
-                        const x = getX(index);
-                        const y = getY(point);
-                        if (index === 0) ctx.moveTo(x, y);
-                        else ctx.lineTo(x, y);
-                    });
-                    ctx.stroke();
-                }
-        
-                // Draw Data Points (Dots)
-                ctx.fillStyle = '#10b981'; // Matches --secondary
-                dataPoints.forEach((point, index) => {
-                    const x = getX(index);
-                    const y = getY(point);
-            
-                    ctx.beginPath();
-                    ctx.arc(x, y, 4, 0, Math.PI * 2);
-                    ctx.fill();
-            
-                    // Add a small white border for contrast
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                });
-            }
-        
-            // --- Logging Logic ---
-        
-            /**
-             * Appends a formatted message to the log window.
-             * @param {string} msg - The message text.
-             * @param {string} type - 'info', 'gen', or 'score' for styling.
-             */
-            function log(msg, type = 'info') {
-                const div = document.createElement('div');
-                div.className = 'log-entry';
-        
-                // Apply specific styling based on message type
-                if (type === 'gen') {
-                    div.innerHTML = `<span class="log-gen">${msg}</span>`;
-                } else if (type === 'score') {
-                    div.innerHTML = `<span class="log-score">${msg}</span>`;
-                } else {
-                    div.innerText = msg;
-                }
-        
-                logWindow.appendChild(div);
-                // Auto-scroll to the bottom
-                logWindow.scrollTop = logWindow.scrollHeight;
-            }
-        
-            // --- Simulation Logic ---
-        
-            /**
-             * Runs the genetic optimization simulation.
-             * Simulates the asynchronous nature of the backend task.
-             */
-            async function runSimulation() {
-                // 1. Reset UI state
-                startBtn.disabled = true;
-                startBtn.textContent = "Optimizing...";
-                logWindow.innerHTML = '';
-        
-                // 2. Get Configuration
-                const generations = parseInt(genCountInput.value, 10);
-                const seedText = seedTextInput.value.substring(0, 20) + (seedTextInput.value.length > 20 ? "..." : "");
-                const scores = [];
-        
-                log(`Initializing population with seed: "${seedText}"`);
-        
-                // 3. Initial Evaluation (Simulated)
-                // Start with a random baseline score (40-60)
-                let currentBest = 40 + Math.random() * 20;
-                scores.push(currentBest);
-        
-                // Initial render
-                resizeCanvas(); 
-                drawChart(scores);
-                log(`Initial Evaluation: Best Score ${currentBest.toFixed(1)}/100`, 'score');
-        
-                // 4. Evolution Loop
-                for (let i = 1; i <= generations; i++) {
-                    // Artificial delay to visualize the process
-                    await new Promise(resolve => setTimeout(resolve, 800));
-            
-                    log(`Generation ${i} started...`, 'gen');
-            
-                    // Simulate random mutation strategies
-                    const strategies = ['Rephrase', 'Elaborate', 'Simplify', 'Crossover', 'Tone Shift'];
-                    const strategy = strategies[Math.floor(Math.random() * strategies.length)];
-            
-                    log(`> Applying strategy: ${strategy}`);
-                    log(`> Mutating and evaluating variants...`);
-        
-                    // Simulate score calculation
-                    // Generally improves, but includes randomness.
-                    const potentialImprovement = (Math.random() * 15) - 2; // Range: -2 to +13
-                    let newScore = currentBest + potentialImprovement;
-            
-                    // Clamp score to max 100
-                    if (newScore > 99.9) newScore = 99.9;
-            
-                    // Elitism: The best score never drops in the "Best of Gen" graph
-                    if (newScore < currentBest) {
-                        log(`> No improvement found this generation.`);
-                    } else {
-                        currentBest = newScore;
-                    }
-        
-                    scores.push(currentBest);
-                    drawChart(scores);
-                    log(`Generation ${i} Best: ${currentBest.toFixed(1)}/100`, 'score');
-                }
-        
-                // 5. Finalize
-                log(`Optimization Complete. Final Score: ${currentBest.toFixed(1)}`, 'gen');
-                startBtn.disabled = false;
-                startBtn.textContent = "Start Evolution";
-            }
-        
-            // Initialize canvas size on page load
-            resizeCanvas();
-        });
-    </script>
 </body>
 </html>

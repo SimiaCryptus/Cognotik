@@ -1,327 +1,386 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temporal Reasoning - Cognotik</title>
-    <meta name="description" content="Analyze how systems evolve over time and predict future states using temporal reasoning.">
+    <title>Cognotik | TemporalReasoningTask - Timeline Analysis</title>
 
-    <!-- Load Shared Styles -->
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
-
-    <!-- Load Component Script -->
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
 
-        .hero-visual {
-            background: radial-gradient(circle at center, var(--background-color) 0%, #000 100%);
-            position: relative;
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0.5rem 0;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin: 3rem 0;
+            align-items: start;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
             overflow: hidden;
+            height: 100%;
+        }
+
+        .panel-header {
+            background: #090c10;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
             display: flex;
             align-items: center;
-            justify-content: center;
-            border-radius: var(--border-radius);
-            min-height: 300px;
+            gap: 0.5rem;
         }
 
-        /* Abstract Timeline Animation */
-        .timeline-stream {
-            position: absolute;
-            width: 200%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent-secondary), transparent);
-            animation: flow 3s linear infinite;
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
         }
 
-        @keyframes flow {
-            0% { transform: translateX(-50%); }
-            100% { transform: translateX(0%); }
+        .flow-arrow {
+            align-self: center;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
         }
 
+        /* Mock UI */
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
 
+        .mock-tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 10px;
+        }
 
+        .mock-tab {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-subtle);
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            color: var(--text-dim);
+        }
 
+        .mock-tab.active {
+            color: var(--accent-primary);
+            background: #1f242c;
+        }
 
+        /* Tabs System */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
 
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
 
-        .split-hero {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-            max-width: var(--container-max-width);
-            margin: 0 auto;
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th, .docs-table td {
             text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
         }
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .req { color: #f85149; }
 
         @media (max-width: 768px) {
-            .split-hero {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
         }
     </style>
 </head>
 <body>
-    <!--
-      Hero Image Prompt:
-      Abstract 3D visualization of a glowing timeline flowing through dark space.
-      Nodes of light represent events, connected by data streams.
-      Branching paths extend into the future representing predictions.
-      Cyberpunk aesthetic, deep blue and cyan neon colors.
-    -->
 
-    <cognotik-header current-page="temporal-reasoning"></cognotik-header>
+<cognotik-header current-page="tasks"></cognotik-header>
 
-    <main>
-        <!-- Hero Section -->
-        <section class="hero">
-            <div class="split-hero">
-                <div class="hero-content">
-                    <h1>Temporal Reasoning</h1>
-                    <p class="subtitle">Analyze how systems evolve over time, identify patterns, and predict future states through advanced timeline analysis.</p>
-                    <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">Try the Simulator</button>
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > TemporalReasoningTask</div>
+        <h1>TemporalReasoningTask</h1>
+        <p class="pitch">
+            Analyze system evolution, identify recurring patterns, and predict future states using multi-dimensional timeline analysis and Mermaid visualization.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+            <span class="badge">Output: Multi-Tab UI</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> ExecutionConfig.json</div>
+            <pre><code class="language-json">{
+  "subject": "Database Performance Degradation",
+  "time_range": "2023-Q3 to 2024-Q1",
+  "granularity": "monthly",
+  "related_files": ["logs/db-metrics-*.log"],
+  "analyze_rate_of_change": true,
+  "predict_future": true,
+  "prediction_horizon": "3 months"
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> SessionTask UI</div>
+            <div class="mock-ui-content">
+                <div class="mock-tabs">
+                    <div class="mock-tab">Overview</div>
+                    <div class="mock-tab">Timeline</div>
+                    <div class="mock-tab active">Visualization</div>
+                    <div class="mock-tab">Predictions</div>
+                    <div class="mock-tab">Visualization</div>
                 </div>
-                <div class="hero-visual">
-                    <div class="timeline-stream" style="top: 30%; opacity: 0.3;"></div>
-                    <div class="timeline-stream" style="top: 50%;"></div>
-                    <div class="timeline-stream" style="top: 70%; opacity: 0.3;"></div>
-                    <!-- Placeholder for 3D illustration -->
-                    <div style="z-index: 1; color: var(--accent-secondary); font-size: 4rem;">⏳</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Features Grid -->
-        <section class="features">
-            <div class="features-grid">
-            <div class="feature-card">
-                <i>📅</i>
-                <h3>Timeline Construction</h3>
-                <p>Automatically construct chronological timelines of significant events from logs and file history.</p>
-            </div>
-            <div class="feature-card">
-                <i>🔄</i>
-                <h3>Pattern Recognition</h3>
-                <p>Identify recurring patterns, cycles, and seasonal trends in system behavior.</p>
-            </div>
-            <div class="feature-card">
-                <i>🔮</i>
-                <h3>Future Prediction</h3>
-                <p>Extrapolate historical trends to predict future states and potential risks.</p>
-            </div>
-            <div class="feature-card">
-                <i>📈</i>
-                <h3>Rate of Change</h3>
-                <p>Analyze the velocity and acceleration of system evolution to detect instability.</p>
-            </div>
-            <div class="feature-card">
-                <i>⚡</i>
-                <h3>Transition Points</h3>
-                <p>Pinpoint critical inflection points and phase transitions in the system's lifecycle.</p>
-            </div>
-            <div class="feature-card">
-                <i>📊</i>
-                <h3>Visualization</h3>
-                <p>Generate Mermaid diagrams to visualize the timeline and key events.</p>
-            </div>
-            </div>
-        </section>
-
-        <!-- Simulator -->
-        <section id="simulator" class="simulator">
-            <h2>Interactive Simulator</h2>
-            <div class="simulator-container">
-                <!-- Inputs -->
-                <div class="sim-controls">
-                    <h3>Configuration</h3>
-                    <form id="sim-form">
-                        <div class="control-group">
-                            <label>Subject</label>
-                            <input type="text" id="subject" value="Payment Service" placeholder="e.g. System X">
-                        </div>
-                        <div class="control-group">
-                            <label>Time Range</label>
-                            <input type="text" id="time_range" value="2023-01-01 to 2023-12-31">
-                        </div>
-                        <div class="control-group">
-                            <label>Granularity</label>
-                            <select id="granularity">
-                                <option value="daily">Daily</option>
-                                <option value="weekly" selected>Weekly</option>
-                                <option value="monthly">Monthly</option>
-                                <option value="quarterly">Quarterly</option>
-                            </select>
-                        </div>
-                        <div class="control-group">
-                            <label>Input Files (Pattern)</label>
-                            <input type="text" id="input_files" value="**/*.log">
-                        </div>
-                        <div class="control-group">
-                            <label>Critical Events (Optional)</label>
-                            <input type="text" id="critical_events" placeholder="e.g. Black Friday, Migration">
-                        </div>
-
-                        <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem;">
-                            <div>
-                                <input type="checkbox" id="identify_patterns" checked>
-                                <label for="identify_patterns" style="display:inline; text-transform:none; color:inherit; margin-left: 0.5rem;">Identify Patterns</label>
-                            </div>
-                            <div>
-                                <input type="checkbox" id="predict_future" checked>
-                                <label for="predict_future" style="display:inline; text-transform:none; color:inherit; margin-left: 0.5rem;">Predict Future</label>
-                            </div>
-                        </div>
-
-                        <div class="control-group" id="horizon-group">
-                            <label>Prediction Horizon</label>
-                            <input type="text" id="prediction_horizon" value="3 months">
-                        </div>
-
-                        <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem;">
-                            <div>
-                                <input type="checkbox" id="analyze_rate_of_change" checked>
-                                <label for="analyze_rate_of_change" style="display:inline; text-transform:none; color:inherit; margin-left: 0.5rem;">Analyze Rate of Change</label>
-                            </div>
-                            <div>
-                                <input type="checkbox" id="identify_transitions" checked>
-                                <label for="identify_transitions" style="display:inline; text-transform:none; color:inherit; margin-left: 0.5rem;">Identify Transitions</label>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="run-button" style="margin-top: auto;">Run Analysis</button>
-                    </form>
-                </div>
-
-                <!-- Outputs -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <button class="tab active" onclick="switchTab('overview')">Overview</button>
-                        <button class="tab" onclick="switchTab('timeline')">Timeline</button>
-                        <button class="tab" onclick="switchTab('viz')">Visualization</button>
-                        <button class="tab" onclick="switchTab('json')">JSON</button>
-                    </div>
-                    <div id="output-display" class="tab-content active">
-                        <div class="placeholder-text" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #64748b;">
-                            Configure and run analysis to see results...
+                <div style="font-family: var(--font-mono); font-size: 0.75rem;">
+                    <div style="color: #58a6ff; margin-bottom: 0.5rem;">## Timeline Visualization</div>
+                    <div style="background: #0d1117; border: 1px solid #30363d; padding: 10px; border-radius: 4px;">
+                        <div style="color: #8b949e; font-style: italic;">[Mermaid.js Timeline]</div>
+                        <div style="margin-top: 5px; border-left: 2px solid #58a6ff; padding-left: 10px;">
+                            <span style="color: #c9d1d9;">2023-10: Index Bloat Detected</span><br>
+                            <span style="color: #c9d1d9;">2023-12: Write Latency Spike</span><br>
+                            <span style="color: #4ade80;">2024-01: Optimization Patch</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Use Cases -->
-        <section class="features" style="margin-top: 4rem; margin-bottom: 4rem;">
-            <h2>When to Use</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <h3>Technical Debt Analysis</h3>
-                    <p>Track how code complexity and debt have accumulated over time to justify refactoring efforts.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>System Evolution</h3>
-                    <p>Understand how architecture has drifted from original designs through incremental changes.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Performance Degradation</h3>
-                    <p>Correlate performance metrics with deployment events to find the root cause of slow degradation.</p>
-                </div>
-            </div>
-        </section>
-    </main>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
 
-    <script>
-        // Tab Switching
-        let currentData = null;
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>subject</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The subject or system to analyze over time.</td>
+                </tr>
+                <tr>
+                    <td><code>time_range</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>Period to examine (e.g., '2023-01-01 to 2024-01-01').</td>
+                </tr>
+                <tr>
+                    <td><code>granularity</code></td>
+                    <td>String</td>
+                    <td>daily, weekly, monthly, quarterly, yearly. Default: <code>weekly</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Specific files or patterns (e.g. **/*.kt) to use as input.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Glob patterns for logs, metrics, or history files containing temporal data.</td>
+                </tr>
+                <tr>
+                    <td><code>identify_patterns</code></td>
+                    <td>Boolean</td>
+                    <td>Find cycles, seasonal trends, or recurring events. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>predict_future</code></td>
+                    <td>Boolean</td>
+                    <td>Extrapolate trends to predict future states. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>prediction_horizon</code></td>
+                    <td>String</td>
+                    <td>How far to predict (e.g., '3 months'). Default: <code>3 months</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>analyze_rate_of_change</code></td>
+                    <td>Boolean</td>
+                    <td>Analyze velocity and acceleration of trends. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>identify_transitions</code></td>
+                    <td>Boolean</td>
+                    <td>Identify critical inflection points. Default: <code>true</code>.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <h3>Task Lifecycle</h3>
+            <ol>
+                <li><strong>Data Gathering:</strong> Scans <code>input_files</code> and <code>related_files</code> using glob patterns to build a temporal context window.</li>
+                <li><strong>Timeline Construction:</strong> LLM identifies significant events, timestamps, and metrics from the gathered data.</li>
+                <li><strong>Multi-Dimensional Analysis:</strong> (Parallelized via Tabbed UI)
+                    <ul>
+                        <li><strong>Patterns:</strong> Identifies recurring cycles and seasonal trends.</li>
+                        <li><strong>Rate of Change:</strong> Calculates velocity and acceleration of system evolution.</li>
+                        <li><strong>Transitions:</strong> Pinpoints critical inflection points and triggers.</li>
+                        <li><strong>Predictions:</strong> Extrapolates trends based on historical patterns.</li>
+                    </ul>
+                </li>
+                <li><strong>Visualization:</strong> Generates a <code>mermaid</code> timeline diagram for visual representation.</li>
+            </ol>
+        </div>
 
-            if (!currentData) return;
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3>Kotlin Boilerplate</h3>
+            <pre><code class="language-kotlin">val task = TemporalReasoningTask(
+    orchestrationConfig = config,
+    planTask = TemporalReasoningTaskExecutionConfigData(
+        subject = "System Resource Usage",
+        time_range = "2023-01-01 to 2023-12-31",
+        granularity = "weekly",
+        related_files = listOf("metrics/cpu-*.csv", "metrics/mem-*.csv"),
+        analyze_rate_of_change = true
+    )
+)</code></pre>
+            <h3>Prompt Segment</h3>
+            <pre><code class="language-text">TemporalReasoning - Analyze system evolution and predict future states.
+- subject: The system or topic to analyze.
+- time_range: Period to examine.
+- granularity: daily, weekly, monthly, quarterly, yearly.
+- identify_patterns: (Boolean) Find cycles/trends.
+- predict_future: (Boolean) Extrapolate trends.</code></pre>
+- analyze_rate_of_change: (Boolean) Velocity analysis.
+- identify_transitions: (Boolean) Find inflection points.</code></pre>
+        </div>
+    </section>
+</main>
 
-            const display = document.getElementById('output-display');
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-            if (tabId === 'overview') {
-                display.innerHTML = renderOverview(currentData);
-            } else if (tabId === 'timeline') {
-                display.innerHTML = renderTimeline(currentData.timeline_events);
-            } else if (tabId === 'viz') {
-                display.innerHTML = `<div style="color: var(--accent-secondary)">\n${currentData.visualization}\n</div>`;
-            } else if (tabId === 'json') {
-                display.textContent = JSON.stringify(currentData, null, 2);
-            }
-        }
-
-        // Mock Data Generation
-        document.getElementById('sim-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const display = document.getElementById('output-display');
-            display.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%">🔄 Analyzing temporal data...</div>';
-
-            const subject = document.getElementById('subject').value;
-            const predict = document.getElementById('predict_future').checked;
-            const patterns = document.getElementById('identify_patterns').checked;
-
-            setTimeout(() => {
-                currentData = generateMockData(subject, predict, patterns);
-                switchTab('overview');
-                // Reset active tab visual
-                document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-                document.querySelector('.tab').classList.add('active');
-            }, 1500);
-        });
-
-        function generateMockData(subject, predict, patterns) {
-            return {
-                subject: subject,
-                timeline_events: [
-                    { date: "2023-02-15", type: "Deployment", description: "Initial release of v1.0", significance: "High" },
-                    { date: "2023-04-10", type: "Incident", description: "Database latency spike detected", significance: "Medium" },
-                    { date: "2023-06-20", type: "Feature", description: "Added multi-region support", significance: "High" },
-                    { date: "2023-09-05", type: "Refactor", description: "Migration to async processing", significance: "Medium" }
-                ],
-                patterns: patterns ? [
-                    { type: "Recurring", description: "Traffic spikes every Monday morning", confidence: "High" },
-                    { type: "Trend", description: "Steady increase in memory usage (5% per month)", confidence: "Medium" }
-                ] : [],
-                predictions: predict ? [
-                    "Memory limit likely to be reached by 2024-01-15",
-                    "Transaction volume expected to double in Q4"
-                ] : [],
-                visualization: "```mermaid\ntimeline\n    title History of " + subject + "\n    2023-02-15 : v1.0 Release\n    2023-04-10 : Latency Incident\n    2023-06-20 : Multi-region\n    2023-09-05 : Async Migration\n```"
-            };
-        }
-
-        function renderOverview(data) {
-            let html = `<h3>Analysis Summary for ${data.subject}</h3>`;
-            html += `<p><strong>Events Analyzed:</strong> ${data.timeline_events.length}</p>`;
-
-            if (data.patterns.length > 0) {
-                html += `<p><strong>Patterns Found:</strong> ${data.patterns.length}</p>`;
-                html += `<ul>${data.patterns.map(p => `<li>${p.description}</li>`).join('')}</ul>`;
-            }
-
-            if (data.predictions.length > 0) {
-                html += `<p><strong>Future Predictions:</strong></p>`;
-                html += `<ul>${data.predictions.map(p => `<li>${p}</li>`).join('')}</ul>`;
-            }
-
-            return html;
-        }
-
-        function renderTimeline(events) {
-            return events.map(e =>
-                `[${e.date}] ${e.type.toUpperCase()}\n${e.description}\nSignificance: ${e.significance}\n---`
-            ).join('\n\n');
-        }
-
-        // Toggle Horizon visibility
-        document.getElementById('predict_future').addEventListener('change', (e) => {
-            document.getElementById('horizon-group').style.display = e.target.checked ? 'block' : 'none';
-        });
-    </script>
 </body>
 </html>

@@ -3,15 +3,15 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
-import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
-import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -23,12 +23,11 @@ class FileModificationTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: FileModificationTaskExecutionConfigData?
 ) : AbstractFileTask<FileModificationTaskExecutionConfigData>(orchestrationConfig, planTask) {
+
     class FileModificationTaskExecutionConfigData(
         files: List<String>? = null,
         related_files: List<String>? = null,
         extractContent: Boolean = false,
-        @Description("Specific modifications to be made to the files")
-        val modifications: Any? = null,
         @Description("Whether to include git diff with HEAD")
         val includeGitDiff: Boolean = false,
         task_description: String? = null,
@@ -73,21 +72,170 @@ FileModification - Modify existing files or create new files
         orchestrationConfig: OrchestrationConfig
     ) {
         val defaultFile = getDefaultFile()
-        val typeConfig = typeConfig ?: throw RuntimeException()
+        val typeConfig = typeConfig ?: throw RuntimeException("TypeConfig is missing")
         val chatInterface =
             (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
                 ?: defaultSmart).getChildClient(task)
+
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
-        // Initialize transcript for this task
         val transcript = task.transcript()
+        val tabs = TabbedDisplay(task)
+
         try {
             transcript?.write("# File Modification Task Transcript\n\n".toByteArray())
-            Retryable(task, process = { task : SessionTask ->
+
+            Retryable(task, process = { task: SessionTask ->
                 completionNotes.clear()
+
+                // 1. Prepare Context
+                val dependencyContext = agent.executionState?.tasksByDescription?.filter {
+                    executionConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskExecutionConfigData
+                }?.entries?.joinToString("\n\n") {
+                    (it.value as FileModificationTaskExecutionConfigData).files?.joinToString("\n") { path ->
+                        val file = root.resolve(path).toFile()
+                        if (file.exists()) {
+                            val relativePath = root.relativize(file.toPath())
+                            "## $relativePath\n\n${(codeFiles[file.toPath()] ?: file.readText()).let { content -> "${TRIPLE_TILDE}\n${content}\n${TRIPLE_TILDE}" }}"
+                        } else {
+                            "File not found: $path"
+                        }
+                    } ?: ""
+                } ?: ""
+
+                val fileContext = getInputFileWithDiff()
+                val taskDesc = executionConfig?.task_description ?: ""
+
+                // 2. Log Context to Transcript & UI Tabs
+                transcript?.write("""
+## Context Data
+<details>
+<summary>Input Files & Dependencies</summary>
+
+### Dependencies
+${dependencyContext.ifBlank { "None" }}
+
+### File Context
+${fileContext.ifBlank { "None" }}
+
+### Task Description
+$taskDesc
+</details>
+
+                """.toByteArray())
+                val contextTab = tabs.newTask("Context")
+                contextTab.add("""
+                    # Task Context
+                    ${taskDesc.renderMarkdown()}
+                """.trimIndent().renderMarkdown())
+                contextTab.complete()
+
                 val chatAgent = ChatAgent(
                     name = "FileModification",
-                    prompt = """
+                    prompt = getSystemPrompt(), // Extracted for readability
+                    model = chatInterface,
+                    temperature = this.orchestrationConfig.temperature,
+                )
+
+                val mainTask = tabs.newTask("Proposed Changes")
+                mainTask.add("Generating modifications...".renderMarkdown())
+
+                // 3. Execute AI
+                val codeResult = chatAgent.answer(
+                    (messages + listOf(
+                        dependencyContext,
+                        fileContext,
+                        taskDesc,
+                    )).filter { it.isNotBlank() }
+                )
+
+                // 4. Log Response to Transcript (Best Practice: Use <details>)
+                transcript?.write("""
+## AI Response
+<details>
+<summary>Raw Output</summary>
+
+$codeResult
+</details>
+
+                """.toByteArray())
+
+                val autoFix = orchestrationConfig.autoFix
+
+                // 5. Render and Instrument
+                val markdown = renderMarkdown(codeResult, ui = mainTask.ui) {
+                    AddApplyFileDiffLinks.instrumentFileDiffs(
+                        task.ui,
+                        root = agent.root,
+                        response = it,
+                        handle = { newCodeMap ->
+                            newCodeMap.forEach<Path, String> { (path, _) ->
+                                val note = "<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated"
+                                completionNotes += note
+                                // Log individual file updates to transcript
+                                transcript?.write("- $note\n".toByteArray())
+                            }
+                        },
+                        shouldAutoApply = { autoFix },
+                        model = chatInterface,
+                        defaultFile = defaultFile,
+                        processor = orchestrationConfig.processor
+                    )
+                }
+
+                if (autoFix) {
+                    transcript?.write("\n**Auto-applying changes...**\n".toByteArray())
+                    mainTask.complete(markdown)
+                    semaphore.release()
+                } else {
+                    mainTask.add(markdown)
+                    // Best Practice: Use acceptButtonFooter for manual review
+                    mainTask.complete(acceptButtonFooter(mainTask.ui) {
+                        task.complete()
+                        semaphore.release()
+                    })
+                }
+                transcript?.flush()
+            }.async(task.ui))
+
+            semaphore.acquire()
+
+            // 6. Finalize
+            val summary = if (completionNotes.isNotEmpty()) {
+                "### Modifications Applied\n" + completionNotes.joinToString("\n") { "* $it" }
+            } else {
+                "No modifications were applied."
+            }
+
+            transcript?.write("\n## Completion\n$summary\n".toByteArray())
+            resultFn(summary)
+
+        } catch (e: Throwable) {
+            // Best Practice: Triple Log Rule
+            task.error(e) // 1. UI
+            log.error("Error in FileModificationTask", e) // 2. Log
+
+            // 3. Transcript
+            transcript?.write("""
+
+## Error
+<details>
+<summary>Stack Trace</summary>
+
+```
+${e.stackTraceToString()}
+```
+</details>
+            """.toByteArray())
+
+            throw e
+        } finally {
+            transcript?.close()
+        }
+    }
+
+    private fun getSystemPrompt(): String {
+        return """
         Generate precise code modifications and new files based on requirements:
         For modifying existing files:
         - Write efficient, readable, and maintainable code changes
@@ -95,20 +243,20 @@ FileModification - Modify existing files or create new files
         - Follow project coding standards and patterns
         - Consider dependencies and potential side effects
         - Provide clear context and rationale for changes
-        
+
         For creating new files:
         - Choose appropriate file locations and names
         - Structure code according to project conventions
         - Include necessary imports and dependencies
         - Add comprehensive documentation
         - Ensure no duplication of existing functionality
-        
+
         Provide a clear summary explaining:
         - What changes were made and why
         - Any important implementation details
         - Potential impacts on other code
         - Required follow-up actions
-        
+
         Response format:
         For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
         For new files: Use ${TRIPLE_TILDE} code blocks with a header specifying the new file path.
@@ -116,104 +264,28 @@ FileModification - Modify existing files or create new files
         Include 2 lines of context before and after every change in diffs.
         Separate code blocks with a single blank line.
         For new files, specify the language for syntax highlighting after the opening triple backticks.
-        
+
         Example:
-        
+
         Here are the modifications:
-        
+
         ### src/utils/existingFile.js
         ${TRIPLE_TILDE}diff
-        
+
         function existingFunction() {
         return 'old result';
         return 'new result';
         }
         ${TRIPLE_TILDE}
-        
+
         ### src/utils/newFile.js
         ${TRIPLE_TILDE}js
-        
+
         function newFunction() {
          return 'new functionality';
         }
         ${TRIPLE_TILDE}
-        """.trimIndent(),
-                    model = chatInterface,
-                    temperature = this.orchestrationConfig.temperature,
-                )
-                val codeResult = chatAgent.answer(
-                    (messages + listOf(
-                        agent.executionState?.tasksByDescription?.filter {
-                            executionConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskExecutionConfigData
-                        }?.entries?.joinToString("\n\n") {
-                            (it.value as FileModificationTaskExecutionConfigData).files?.joinToString("\n") {
-                                val file = root.resolve(it).toFile()
-                                if (file.exists()) {
-                                    val relativePath = root.relativize(file.toPath())
-                                    "## $relativePath\n\n${(codeFiles[file.toPath()] ?: file.readText()).let { "${TRIPLE_TILDE}\n${it}\n${TRIPLE_TILDE}" }}"
-                                } else {
-                                    "File not found: $it"
-                                }
-                            } ?: ""
-                        } ?: "",
-                        getInputFileWithDiff(),
-                        executionConfig?.task_description ?: "",
-                    )).filter { it.isNotBlank() }
-                )
-                // Write to transcript
-                transcript?.write("\n## AI Response\n\n".toByteArray())
-                transcript?.write(codeResult.toByteArray())
-                transcript?.write("\n\n".toByteArray())
-
-                val footer = if (orchestrationConfig.autoFix) {
-                    "\n\n## Auto-applied changes"
-                } else {
-                    acceptButtonFooter(task.ui) {
-                        task.complete()
-                        semaphore.release()
-                    }
-                }
-
-                val markdown = renderMarkdown(codeResult, ui = task.ui) {
-                    AddApplyFileDiffLinks.instrumentFileDiffs(
-                        task.ui,
-                        root = agent.root,
-                        response = it,
-                        handle = { newCodeMap ->
-                            newCodeMap.forEach<Path, String> { (path, _) ->
-                                completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
-                            }
-                        },
-                        shouldAutoApply = { orchestrationConfig.autoFix },
-                        model = chatInterface,
-                        defaultFile = defaultFile,
-                        processor = orchestrationConfig.processor
-                    ) + footer
-                }
-
-                if (orchestrationConfig.autoFix) {
-                    // Log auto-applied changes to transcript
-                    transcript?.write("## Auto-Applied Changes\n\n".toByteArray())
-                    transcript?.write(completionNotes.joinToString<String>("\n").toByteArray())
-                    task.complete(markdown)
-                    semaphore.release()
-                } else {
-                    task.complete(markdown)
-                }
-                transcript?.flush()
-            }.async(task.ui))
-
-            semaphore.acquire()
-            // Write final completion notes to transcript
-            transcript?.write("\n## Completion Notes\n\n".toByteArray())
-            transcript?.write(completionNotes.joinToString("\n").toByteArray())
-            resultFn(completionNotes.joinToString("\n"))
-        } catch (e: Throwable) {
-            log.warn("Error", e)
-            task.error(e)
-        } finally {
-            transcript?.close()
-        }
+        """.trimIndent()
     }
 
     fun getDefaultFile() =
@@ -233,25 +305,25 @@ FileModification - Modify existing files or create new files
         private val log = LoggerFactory.getLogger(FileModificationTask::class.java)
 
         val FileModification = TaskType(
-            "FileModification",
-            "File",
-            FileModificationTask::class.java,
-            FileModificationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Create new files or modify existing code with AI-powered assistance",
-            """
-                      Creates or modifies source files with AI assistance while maintaining code quality.
-                      <ul>
-                        <li>Shows proposed changes in diff format for easy review</li>
-                        <li>Supports both automated application and manual approval modes</li>
-                        <li>Maintains project coding standards and style consistency</li>
-                        <li>Handles complex multi-file operations and refactoring</li>
-                        <li>Provides clear documentation of all changes with rationale</li>
-                        <li>Implements proper error handling and edge cases</li>
-                        <li>Updates imports and dependencies automatically</li>
-                        <li>Preserves existing code formatting and structure</li>
-                      </ul>
-                    """,
+          name = "FileModification",
+          category = "File",
+          taskClass = FileModificationTask::class.java,
+          executionConfigClass = FileModificationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Create new files or modify existing code with AI-powered assistance",
+          tooltipHtml = """
+                                Creates or modifies source files with AI assistance while maintaining code quality.
+                                <ul>
+                                  <li>Shows proposed changes in diff format for easy review</li>
+                                  <li>Supports both automated application and manual approval modes</li>
+                                  <li>Maintains project coding standards and style consistency</li>
+                                  <li>Handles complex multi-file operations and refactoring</li>
+                                  <li>Provides clear documentation of all changes with rationale</li>
+                                  <li>Implements proper error handling and edge cases</li>
+                                  <li>Updates imports and dependencies automatically</li>
+                                  <li>Preserves existing code formatting and structure</li>
+                                </ul>
+                              """,
         )
 
         fun String.getGitDiff(): String? {
@@ -273,4 +345,3 @@ FileModification - Modify existing files or create new files
         }
     }
 }
-

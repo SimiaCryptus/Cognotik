@@ -1,0 +1,8 @@
+{
+  "filename" : "hello.py",
+  "originalCode" : "def main():\n    print(\"Hello from CouncilMode\")\n\nif __name__ == \"__main__\":\n    main()",
+  "diff" : "def main():\n    print(\"Hello from CouncilMode\")\n\nif __name__ == \"__main__\":\n    main()",
+  "newCode" : "def main():\n    print(\"Hello from CouncilMode\")\n\nif __name__ == \"__main__\":\n    main()",
+  "isValid" : true,
+  "errors" : ""
+}

@@ -4,7 +4,6 @@ import cognotik.actions.BaseAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -65,7 +64,10 @@ class SmartChatAction : BaseAction() {
                     showMenubar = false
                 )
 
-                val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                ).server.uri.resolve("/#$session")
                 ApplicationManager.getApplication().executeOnPooledThread {
                     try {
                         BaseAction.log.info("Opening browser to $uri")

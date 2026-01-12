@@ -9,6 +9,8 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.toApiList
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.SecureString
+import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -23,8 +25,8 @@ class ApiKeyServlet : HttpServlet() {
 
     data class ApiKeyRecord(
         val owner: String,
-        val apiKey: String,
-        val mappedKey: String,
+        val apiKey: SecureString,
+        val mappedKey: SecureString,
         val budget: Double,
         val comment: String,
         val welcomeMessage: String = "Welcome to our service!"
@@ -43,7 +45,7 @@ class ApiKeyServlet : HttpServlet() {
 
         when (action.lowercase(Locale.ROOT)) {
             "edit" -> {
-                val record = apiKeyRecords.find { it.apiKey == apiKey && it.owner == user.email }
+                val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey && it.owner == user.email }
                 if (record != null) {
                     serveEditPage(req, resp, record)
                 } else {
@@ -53,7 +55,7 @@ class ApiKeyServlet : HttpServlet() {
 
             "delete" -> {
 
-                val record = apiKeyRecords.find { it.apiKey == apiKey && it.owner == user.email }
+                val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey && it.owner == user.email }
                 if (record != null) {
                     apiKeyRecords.remove(record)
                     saveRecords()
@@ -69,17 +71,17 @@ class ApiKeyServlet : HttpServlet() {
                     req,
                     resp,
                     ApiKeyRecord(
-                        user.email,
-                        UUID.randomUUID().toString(),
-                        userSettings.apis.firstOrNull { it.provider == APIProvider.valueOf(provider) }?.key ?: "",
-                        0.0,
-                        ""
+                      owner = user.email,
+                      apiKey = UUID.randomUUID().toString().encrypt,
+                      mappedKey = userSettings.apis.firstOrNull { it.provider == APIProvider.valueOf(provider) }?.key ?: "".encrypt,
+                      budget = 0.0,
+                      comment = ""
                     )
                 )
             }
 
             "invite" -> {
-                val record = apiKeyRecords.find { it.apiKey == apiKey /*&& it.owner != user.email*/ }
+                val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey /*&& it.owner != user.email*/ }
                 if (record == null) {
                     throw IllegalArgumentException("API Key record not found, or you do not have permission to access it, or you are the owner.")
                 }
@@ -103,7 +105,7 @@ class ApiKeyServlet : HttpServlet() {
 
         val welcomeMessage = req.getParameter("welcomeMessage")
         val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
-        val record = apiKeyRecords.find { it.apiKey == apiKey }
+        val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey }
 
         if (action == "acceptInvite") {
             if (apiKey.isNullOrEmpty()) {
@@ -130,7 +132,7 @@ class ApiKeyServlet : HttpServlet() {
             apiKeyRecords.remove(record)
             apiKeyRecords.add(
                 record.copy(
-                    mappedKey = mappedKey ?: record.mappedKey,
+                    mappedKey = mappedKey.encrypt ?: record.mappedKey,
                     budget = budget,
                     comment = comment ?: ""
                 )
@@ -141,8 +143,8 @@ class ApiKeyServlet : HttpServlet() {
 
             val newRecord = ApiKeyRecord(
                 owner = user?.email ?: "",
-                apiKey = apiKey,
-                mappedKey = mappedKey ?: "",
+                apiKey = apiKey.encrypt,
+                mappedKey = mappedKey.encrypt,
                 budget = budget,
                 comment = comment ?: "",
                 welcomeMessage = welcomeMessage ?: "Welcome to our service!"
@@ -301,7 +303,7 @@ class ApiKeyServlet : HttpServlet() {
        <div class="invite-link">
            <h2>Invite Link</h2>
            <p>Share this link to invite others to use this API Key:</p>
-           <a href="?action=invite&apiKey=${URLEncoder.encode(record.apiKey, "UTF-8")}">Invite Link</a>
+           <a href="?action=invite&apiKey=${URLEncoder.encode(record.apiKey.decrypt, "UTF-8")}">Invite Link</a>
        </div>
       </body>
       </html>

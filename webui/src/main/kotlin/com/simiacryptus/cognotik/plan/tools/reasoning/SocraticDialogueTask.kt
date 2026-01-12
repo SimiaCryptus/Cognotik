@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
@@ -71,8 +71,6 @@ class SocraticDialogueTask(
   ** Creates a dialogue between questioner and responder agents
   ** Explores definitions, assumptions, implications, and contradictions
   ** Produces a structured dialogue transcript with insights
-  Available files:
-  ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
   ** Specify the initial question or hypothesis to explore
   ** Configure maximum dialogue depth (default: 5 exchanges)
   ** Enable/disable assumption challenging
@@ -587,45 +585,26 @@ Provide a structured synthesis.
         return Pair(link, markdownTranscript)
     }
 
-    private fun getAvailableFiles(
-        path: Path,
-        treatDocumentsAsText: Boolean = false,
-    ): List<String> {
-        return try {
-            listOf(
-                FileSelectionUtils.filteredWalkAsciiTree(
-                    path.toFile(),
-                    20,
-                    treatDocumentsAsText = treatDocumentsAsText
-                )
-            )
-        } catch (e: Exception) {
-            log.error("Error listing available files", e)
-            listOf("Error listing files: ${e.message}")
-        }
-    }
-
-
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SocraticDialogueTask::class.java)
         val SocraticDialogue = TaskType(
-            "SocraticDialogue",
-            "Reasoning",
-            SocraticDialogueTask::class.java,
-            SocraticDialogueTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Explore ideas through Socratic questioning",
-            """
-              Uses Socratic questioning methodology to deeply explore ideas.
-              <ul>
-                <li>Creates dialogue between questioner and responder agents</li>
-                <li>Challenges assumptions and definitions</li>
-                <li>Explores implications and consequences</li>
-                <li>Identifies contradictions and tensions</li>
-                <li>Configurable dialogue depth and constraints</li>
-                <li>Generates synthesis of insights discovered</li>
-              </ul>
-            """,
+          name = "SocraticDialogue",
+          category = "Reasoning",
+          taskClass = SocraticDialogueTask::class.java,
+          executionConfigClass = SocraticDialogueTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Explore ideas through Socratic questioning",
+          tooltipHtml = """
+                        Uses Socratic questioning methodology to deeply explore ideas.
+                        <ul>
+                          <li>Creates dialogue between questioner and responder agents</li>
+                          <li>Challenges assumptions and definitions</li>
+                          <li>Explores implications and consequences</li>
+                          <li>Identifies contradictions and tensions</li>
+                          <li>Configurable dialogue depth and constraints</li>
+                          <li>Generates synthesis of insights discovered</li>
+                        </ul>
+                      """,
         )
     }
 }

@@ -70,6 +70,19 @@ class BrainstormingTask(
             return null
         }
     }
+    data class BrainstormingSummary(
+        val overview: String = "",
+        val top_option_index: Int = 1,
+        val selection_reasoning: String = "",
+        val next_steps: String = ""
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (overview.isBlank()) return "Summary overview cannot be blank"
+            if (selection_reasoning.isBlank()) return "Selection reasoning cannot be blank"
+            return null
+        }
+    }
+
 
 
     class BrainstormingTaskExecutionConfigData(
@@ -176,10 +189,9 @@ Brainstorming - Generate and analyze multiple solution options
 
             // Overview tab
             val overviewTask = tabs.newTask("Overview")
+            overviewTask.header("Brainstorming: $problemStatement")
 
             val overviewContent = buildString {
-                appendLine("# Brainstorming Session")
-                appendLine()
                 appendLine("**Problem Statement:** $problemStatement")
                 appendLine()
                 appendLine("**Target Options:** $targetCount")
@@ -208,12 +220,11 @@ Brainstorming - Generate and analyze multiple solution options
                 appendLine()
                 appendLine("---")
                 appendLine()
-                appendLine("## Progress")
-                appendLine()
-                appendLine("*Generating options...*")
             }
             overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent, ui = ui))
+            val progressStatus = overviewTask.add(MarkdownUtil.renderMarkdown("🔄 *Generating options...*", ui = ui))
             task.update()
+
             // Get input file content
             val inputFileContent = getInputFileCode()
             if (inputFileContent.isNotBlank()) {
@@ -315,16 +326,8 @@ Brainstorming - Generate and analyze multiple solution options
             task.update()
 
             // Update overview
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
-          |
-          |✅ Generated ${options.size} options
-          |
-          |*Analyzing each option...*
-          """.trimMargin(), ui = ui
-                )
-            )
+            progressStatus?.setLength(0)
+            progressStatus?.append(MarkdownUtil.renderMarkdown("✅ Generated ${options.size} options\n\n🔄 *Analyzing each option...*", ui = ui))
             task.update()
 
             // Step 2: Analyze each option independently
@@ -422,14 +425,8 @@ Brainstorming - Generate and analyze multiple solution options
                 task.update()
 
                 // Update overview
-                overviewTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
-            |
-            |✅ Analyzed option $optionNumber: ${option.title}
-            """.trimMargin(), ui = ui
-                    )
-                )
+                progressStatus?.setLength(0)
+                progressStatus?.append(MarkdownUtil.renderMarkdown("✅ Generated ${options.size} options\n✅ Analyzed $optionNumber/${options.size} options\n\n🔄 *Analyzing next option...*", ui = ui))
                 task.update()
             }
 
@@ -442,6 +439,8 @@ Brainstorming - Generate and analyze multiple solution options
                     ui = ui
                 )
             )
+            progressStatus?.setLength(0)
+            progressStatus?.append(MarkdownUtil.renderMarkdown("✅ Generated ${options.size} options\n✅ Analyzed all ${options.size} options\n\n🔄 *Synthesizing findings...*", ui = ui))
             task.update()
 
             val summaryPrompt = buildSummaryPrompt(
@@ -450,13 +449,33 @@ Brainstorming - Generate and analyze multiple solution options
                 analyses
             )
 
-            val summaryAgent = ChatAgent(
+            val summaryAgent = ParsedAgent(
+                resultClass = BrainstormingSummary::class.java,
                 prompt = summaryPrompt,
                 model = defaultChatter,
-                temperature = 0.4
+                temperature = 0.4,
+                parsingChatter = parsingChatter
             )
 
-            val summary = summaryAgent.answer(listOf(summaryPrompt))
+            val summaryResult = summaryAgent.answer(listOf(summaryPrompt)).obj
+            
+            // Resolve top option safely
+            val topOptionIndex = (summaryResult.top_option_index - 1).coerceIn(0, options.indices.last)
+            val topOption = options[topOptionIndex]
+
+            // Construct display string
+            val summaryDisplay = buildString {
+                appendLine("## 🏆 Top Recommendation: ${topOption.title}")
+                appendLine()
+                appendLine(summaryResult.selection_reasoning)
+                appendLine()
+                appendLine("### Overview")
+                appendLine(summaryResult.overview)
+                appendLine()
+                appendLine("### Next Steps")
+                appendLine(summaryResult.next_steps)
+            }
+
             summaryStatus?.setLength(0)
 
             summaryTask.add(
@@ -466,7 +485,7 @@ Brainstorming - Generate and analyze multiple solution options
                         appendLine()
                         appendLine("✅ Analysis complete")
                         appendLine()
-                        appendLine(summary)
+                        appendLine(summaryDisplay)
                     }, ui = ui
                 )
             )
@@ -479,7 +498,7 @@ Brainstorming - Generate and analyze multiple solution options
                 problemStatement,
                 options,
                 analyses,
-                summary,
+                summaryDisplay,
                 totalTime
             )
             val (resultsLink, resultsFile) = task.createFile("brainstorming_results.md")
@@ -508,9 +527,14 @@ Brainstorming - Generate and analyze multiple solution options
                 appendLine()
                 appendLine("✅ Generated and analyzed ${options.size} options in ${totalTime / 1000}s")
                 appendLine()
-                appendLine("## Summary")
+                appendLine("## 🏆 Top Recommendation: ${topOption.title}")
                 appendLine()
-                appendLine(summary.truncateForDisplay())
+                appendLine(topOption.description)
+                appendLine()
+                appendLine("> ${summaryResult.selection_reasoning}")
+                appendLine()
+                appendLine("## Summary")
+                appendLine(summaryResult.overview.truncateForDisplay())
                 appendLine()
                 appendLine("---")
                 appendLine()
@@ -537,7 +561,8 @@ Brainstorming - Generate and analyze multiple solution options
                 appendLine()
                 appendLine()
                 options.forEachIndexed { index, option ->
-                    appendLine("### ${index + 1}. ${option.title}")
+                    val prefix = if (index == topOptionIndex) "🏆 " else ""
+                    appendLine("### $prefix${index + 1}. ${option.title}")
                     appendLine()
                 }
                 appendLine()
@@ -549,24 +574,17 @@ Brainstorming - Generate and analyze multiple solution options
             log.info("BrainstormingTask completed: total_time=${totalTime}ms, options=${options.size}, output_size=${finalOutput.length} chars")
 
             // Update overview with completion
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
-          |
-          |---
-          |
-          |## ✅ Brainstorming Complete
-          |
-          |**Total Time:** ${totalTime / 1000.0}s
-          |
-          |**Options Generated:** ${options.size}
-          |
-          |**Options Analyzed:** ${analyses.size}
-          |
-          |**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
-          """.trimMargin(), ui = ui
-                )
-            )
+            progressStatus?.setLength(0)
+            progressStatus?.append(MarkdownUtil.renderMarkdown("""
+                |---
+                |## ✅ Brainstorming Complete
+                |
+                |### 🏆 Winner: ${topOption.title}
+                |${summaryResult.selection_reasoning.truncateForDisplay(300)}
+                |
+                |**Total Time:** ${totalTime / 1000.0}s | **Options:** ${options.size}
+            """.trimMargin(), ui = ui))
+            overviewTask.complete()
             task.update()
 
             task.safeComplete("Generated and analyzed ${options.size} options in ${totalTime / 1000}s", log)
@@ -749,25 +767,16 @@ $problemStatement
 $optionsWithAnalysis
 
 ## Your Task:
-Provide a comprehensive summary that includes:
+Evaluate all options and select the single best recommendation.
 
-1. **Overview**: Brief recap of the brainstorming session
-2. **Comparative Analysis**: 
-   - Which options are most feasible?
-   - Which have the highest potential impact?
-   - Which have the lowest risk?
-3. **Top Recommendations**: 
-   - Identify the top 2-3 options
-   - Explain why these are recommended
-   - Suggest an implementation order if applicable
-4. **Hybrid Approaches**: 
-   - Can any options be combined?
-   - Are there synergies between options?
-5. **Next Steps**: 
-   - What should be done to move forward?
-   - What additional information is needed?
+## Output Format:
+Provide a JSON object with the following fields:
+- `top_option_index`: The integer index (1-based) of the single best option.
+- `selection_reasoning`: Why was this option chosen as the winner? (Compare against runners-up).
+- `overview`: A brief executive summary of the session findings and general trends.
+- `next_steps`: Concrete actions to take to implement the top recommendation.
 
-Provide a well-structured, actionable summary now.
+Select the best option and summarize the findings now.
         """.trimIndent()
     }
 
@@ -897,24 +906,24 @@ Provide a well-structured, actionable summary now.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(BrainstormingTask::class.java)
         val Brainstorming = TaskType(
-            "Brainstorming",
-            "Reasoning",
-            BrainstormingTask::class.java,
-            BrainstormingTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate and analyze multiple solution options",
-            """
-              Systematically generates diverse options and analyzes each independently.
-              <ul>
-                <li>Generates multiple solution options for a given problem</li>
-                <li>Analyzes each option independently (pros, cons, feasibility, impact, risks)</li>
-                <li>Provides comparative summary with recommendations</li>
-                <li>Supports creative and conventional approaches</li>
-                <li>Configurable analysis depth and option count</li>
-                <li>Identifies hybrid approaches and synergies</li>
-                <li>Useful for decision making, strategic planning, and problem solving</li>
-              </ul>
-            """,
+          name = "Brainstorming",
+          category = "Reasoning",
+          taskClass = BrainstormingTask::class.java,
+          executionConfigClass = BrainstormingTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate and analyze multiple solution options",
+          tooltipHtml = """
+                        Systematically generates diverse options and analyzes each independently.
+                        <ul>
+                          <li>Generates multiple solution options for a given problem</li>
+                          <li>Analyzes each option independently (pros, cons, feasibility, impact, risks)</li>
+                          <li>Provides comparative summary with recommendations</li>
+                          <li>Supports creative and conventional approaches</li>
+                          <li>Configurable analysis depth and option count</li>
+                          <li>Identifies hybrid approaches and synergies</li>
+                          <li>Useful for decision making, strategic planning, and problem solving</li>
+                        </ul>
+                      """,
         )
     }
 }

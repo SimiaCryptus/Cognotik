@@ -217,8 +217,6 @@ class InteractiveStoryTask(
   ** Optimize for replay value with different experiences
   ** Track consequences across choices for coherent storytelling
   ** Produces complete interactive narrative with decision tree
-  Available files:
-  ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         """.trimIndent()
     }
 
@@ -324,8 +322,8 @@ class InteractiveStoryTask(
         overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent))
         task.update()
 
-        val resultBuilder = StringBuilder()
-        resultBuilder.append("# Interactive Story: $premise\n\n")
+            val storyBuilder = StringBuilder()
+            storyBuilder.append("# Interactive Story: $premise\n\n")
 
         try {
             // Gather context from input files and messages
@@ -660,13 +658,12 @@ Make it immersive and compelling. The reader should feel invested immediately.
             )
             task.update()
 
-            resultBuilder.append("## ${structure.title}\n\n")
-            resultBuilder.append(openingSegment.content)
-            resultBuilder.append("\n\n---\n\n")
+            storyBuilder.append("## ${structure.title}\n\n")
+            storyBuilder.append(openingSegment.content)
+            storyBuilder.append("\n\n---\n\n")
 
             overviewTask.add(MarkdownUtil.renderMarkdown("✅ Phase 2 Complete: Opening written (${openingSegment.word_count} words)\n"))
             overviewTask.add(MarkdownUtil.renderMarkdown("\n### Phase 3: Decision Points\n*Writing branching narrative segments...*\n"))
-            task.update()
 
             // Phase 3: Write each decision point
             transcriptWriter.apply {
@@ -809,14 +806,14 @@ Make the reader feel the weight of their choice. Each option should feel viable 
                 )
                 task.update()
 
-                resultBuilder.append("## ${decisionPoint.id}\n\n")
-                resultBuilder.append(segment.content)
-                resultBuilder.append("\n\n")
-                resultBuilder.append("### ${decisionPoint.decision_prompt}\n\n")
+                storyBuilder.append("## ${decisionPoint.id}\n\n")
+                storyBuilder.append(segment.content)
+                storyBuilder.append("\n\n")
+                storyBuilder.append("### ${decisionPoint.decision_prompt}\n\n")
                 decisionPoint.choices.forEachIndexed { choiceIndex, choice ->
-                    resultBuilder.append("${choiceIndex + 1}. ${choice.text}\n")
+                    storyBuilder.append("${choiceIndex + 1}. ${choice.text}\n")
                 }
-                resultBuilder.append("\n---\n\n")
+                storyBuilder.append("\n---\n\n")
 
                 overviewTask.add(MarkdownUtil.renderMarkdown("✅ (${segment.word_count} words)\n"))
                 task.update()
@@ -931,9 +928,9 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 )
                 task.update()
 
-                resultBuilder.append("## ${ending.id}: ${ending.ending_type}\n\n")
-                resultBuilder.append(endingSegment.content)
-                resultBuilder.append("\n\n**THE END**\n\n---\n\n")
+                storyBuilder.append("## ${ending.id}: ${ending.ending_type}\n\n")
+                storyBuilder.append(endingSegment.content)
+                storyBuilder.append("\n\n**THE END**\n\n---\n\n")
 
                 overviewTask.add(MarkdownUtil.renderMarkdown("✅ (${endingSegment.word_count} words)\n"))
                 task.update()
@@ -1101,7 +1098,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 "Interactive story generation complete: $cumulativeWordCount words, ${structure.decision_points.size} decisions, ${structure.endings.size} endings in ${totalTime / 1000}s",
                 log
             )
-            resultFn(buildFinalResultWithLinks(task, finalResult, storyMap, cumulativeWordCount, structure, totalTime))
+            resultFn(buildFinalResultWithLinks(task, finalResult, storyBuilder.toString(), cumulativeWordCount, structure, totalTime))
 
         } catch (e: Exception) {
             log.error("Error during interactive story generation", e)
@@ -1129,10 +1126,10 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 appendLine()
                 appendLine("**Error:** ${e.message}")
                 appendLine()
-                if (resultBuilder.isNotEmpty()) {
+                if (storyBuilder.isNotEmpty()) {
                     appendLine("## Partial Results")
                     appendLine()
-                    appendLine(resultBuilder.toString())
+                    appendLine(storyBuilder.toString())
                 }
             }
             resultFn(errorOutput)
@@ -1233,46 +1230,28 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
     companion object {
         private val log: Logger = LoggerFactory.getLogger(InteractiveStoryTask::class.java)
         val InteractiveStory = TaskType(
-            "InteractiveStory",
-            "Writing",
-            InteractiveStoryTask::class.java,
-            InteractiveStoryTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Create choose-your-own-adventure narratives with branching paths",
-            """
-              Generates complete interactive stories with meaningful choices and multiple endings.
-              <ul>
-                <li>Creates detailed story structure with decision tree</li>
-                <li>Writes opening segment that hooks the reader</li>
-                <li>Develops branching narrative segments for each decision point</li>
-                <li>Generates multiple distinct endings based on player choices</li>
-                <li>Tracks state variables (health, reputation, inventory, etc.)</li>
-                <li>Ensures all paths lead to meaningful endings (no dead ends)</li>
-                <li>Optimizes for replay value with significantly different experiences</li>
-                <li>Tracks consequences across choices for coherent storytelling</li>
-                <li>Produces complete playable interactive story map</li>
-                <li>Ideal for interactive fiction, training scenarios, educational content, and games</li>
-              </ul>
-            """,
+          name = "InteractiveStory",
+          category = "Writing",
+          taskClass = InteractiveStoryTask::class.java,
+          executionConfigClass = InteractiveStoryTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Create choose-your-own-adventure narratives with branching paths",
+          tooltipHtml = """
+                        Generates complete interactive stories with meaningful choices and multiple endings.
+                        <ul>
+                          <li>Creates detailed story structure with decision tree</li>
+                          <li>Writes opening segment that hooks the reader</li>
+                          <li>Develops branching narrative segments for each decision point</li>
+                          <li>Generates multiple distinct endings based on player choices</li>
+                          <li>Tracks state variables (health, reputation, inventory, etc.)</li>
+                          <li>Ensures all paths lead to meaningful endings (no dead ends)</li>
+                          <li>Optimizes for replay value with significantly different experiences</li>
+                          <li>Tracks consequences across choices for coherent storytelling</li>
+                          <li>Produces complete playable interactive story map</li>
+                          <li>Ideal for interactive fiction, training scenarios, educational content, and games</li>
+                        </ul>
+                      """,
         )
-
-        fun getAvailableFiles(
-            path: Path,
-            treatDocumentsAsText: Boolean = false,
-        ): List<String> {
-            return try {
-                listOf(
-                    FileSelectionUtils.filteredWalkAsciiTree(
-                        path.toFile(),
-                        20,
-                        treatDocumentsAsText = treatDocumentsAsText
-                    )
-                )
-            } catch (e: Exception) {
-                log.error("Error listing available files", e)
-                listOf("Error listing files: ${e.message}")
-            }
-        }
 
         private val textExtensions = setOf(
             "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",

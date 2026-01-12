@@ -13,36 +13,49 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveSchemaStrategy
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.awt.*
 import java.awt.image.BufferedImage
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.concurrent.CountDownLatch
+import kotlin.random.Random
 
 open class PlanHarness(
     val prompt: String,
     val cognitiveSettings: CognitiveModeConfig,
-    val modelInstanceFn: (ApiChatModel) -> ChatInterface = { model ->
+    val modelInstanceFn: (ApiChatModel, Session) -> ChatInterface = { model, session ->
         val api = model.findApi()
         val model =
             model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
         model.instance(
             key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
             base = api.baseUrl,
+            onUsage = { model, usage ->
+                ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
+                    session = session,
+                    defaultUser,
+                    model,
+                    usage
+                )
+            },
         )
     },
-    val port: Int = 8082,
+    val port: Int = Random.nextInt(1024, 65535),
     val serverless: Boolean = true,
     val openBrowser: Boolean = false,
     val timeoutMinutes: Long = 30,
     val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
-    val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
-    val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
+    var smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
+//    val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
+    val imageModel: ChatModel = GeminiModels.GeminiFlash_25_Image_Generation,
+    val workspace: File? = null,
 ) {
-    val workspace = createTempDirectory()
-    private val harness = UnifiedHarness(
+
+    private val harness = object : UnifiedHarness(
         port = port,
         openBrowser = openBrowser,
         serverless = serverless,
@@ -50,23 +63,31 @@ open class PlanHarness(
         fastModel = fastModel,
         smartModel = smartModel,
         imageModel = imageModel
-    )
+    ) {
+        override fun createTempDirectory(prefix: String) = createWorkspace()
+    }
 
     fun run() {
-        harness.start()
         try {
-            harness.runPlan(
-                prompt = prompt,
-                cognitiveSettings = cognitiveSettings,
-                timeoutMinutes = timeoutMinutes,
-                autoFix = !openBrowser,
-                workspace = workspace,
-                config = { session: Session, finalWorkspace: File ->
-                    newConfig(session, finalWorkspace)
-                }
-            )
-        } finally {
-            harness.stop()
+            harness.start()
+            try {
+                harness.runPlan(
+                    prompt = prompt,
+                    cognitiveSettings = cognitiveSettings,
+                    timeoutMinutes = timeoutMinutes,
+                    autoFix = !openBrowser,
+                    workspace = workspace,
+                    config = { session: Session, finalWorkspace: File ->
+                        OrchestrationConfig.instanceFn = instanceFn(session)
+                        newConfig(session, finalWorkspace)
+                    }
+                )
+            } finally {
+                harness.stop()
+            }
+        } catch (e: Exception){
+            fix(e)
+            throw RuntimeException(e)
         }
     }
 
@@ -75,7 +96,7 @@ open class PlanHarness(
         finalWorkspace: File
     ): OrchestrationConfig = OrchestrationConfig(
         sessionId = session.sessionId,
-        workingDir = finalWorkspace.absolutePath,
+        workingDir = workspace?.absolutePath ?: finalWorkspace.absolutePath,
         defaultFastModel = fastModel.asApiChatModel(),
         defaultSmartModel = smartModel.asApiChatModel(),
         defaultImageModel = imageModel.asApiChatModel(),
@@ -83,25 +104,19 @@ open class PlanHarness(
         cognitiveSettings = cognitiveSettings,
     )
 
-    private fun createTempDirectory(): File {
-        val time = SimpleDateFormat("yyyyMMdd_HHmmss").format(System.currentTimeMillis())
-        return File(".").resolve("workspaces/${cognitiveSettings.type!!.name}/test-$time").apply {
+    open fun createWorkspace(): File = File(".").resolve("workspaces/${cognitiveSettings.type!!.name}/test-${now()}")
+        .apply {
             mkdirs()
             log.debug("Created temp directory: ${this.absolutePath}")
-        }
     }
 
     companion object {
+        fun configurePlatform(session: Session) {
+            OrchestrationConfig.instanceFn = instanceFn(session)
+            configurePlatform()
+        }
+
         fun configurePlatform() {
-            OrchestrationConfig.instanceFn = { model ->
-                val api = model.findApi()
-                val model =
-                    model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
-                model.instance(
-                    key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
-                    base = api.baseUrl,
-                )
-            }
             initDynamicEnums()
             ApplicationServices.authenticationManager = object : AuthenticationInterface {
                 override fun getUser(accessToken: String?) = defaultUser
@@ -115,6 +130,25 @@ open class PlanHarness(
                     operationType: AuthorizationInterface.OperationType
                 ): Boolean = true
             }
+        }
+
+        fun instanceFn(session: Session): (ApiChatModel) -> ChatInterface = { model ->
+            val api = model.findApi()
+            val model =
+                model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
+            model.instance(
+                key = api?.key
+                    ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
+                base = api.baseUrl,
+                onUsage = { model, usage ->
+                    ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
+                        session = session,
+                        defaultUser,
+                        model,
+                        usage
+                    )
+                },
+            )
         }
 
         fun initDynamicEnums() {
@@ -166,5 +200,9 @@ open class PlanHarness(
         }
 
         private val log = LoggerFactory.getLogger(PlanHarness::class.java)
+        fun now(): String? = SimpleDateFormat("yyyyMMdd_HHmmss").format(System.currentTimeMillis())
+        var fix : (Exception) -> Unit = { e ->
+            log.error("Error during task execution", e)
+        }
     }
 }

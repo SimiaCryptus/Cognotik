@@ -17,6 +17,8 @@ import com.simiacryptus.cognotik.models.ToolData
 import com.simiacryptus.cognotik.models.ToolProvider.Companion.discoverAllToolsFromPath
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
+import com.simiacryptus.cognotik.util.SecureString
+import com.simiacryptus.cognotik.util.encrypt
 
 /**
  * Interface for managing user-specific settings and configurations.
@@ -76,7 +78,7 @@ data class UserSettings(
         get() = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
             val provider = APIProvider.values().find { apiData.provider == it }
                 ?: return@flatMap emptyList<Pair<String, ChatModel>>()
-            provider.getChatModels(apiData.key ?: "", apiData.baseUrl).map { model -> model.modelName to model }
+            provider.getChatModels(apiData.key ?: "".encrypt, apiData.baseUrl).map { model -> model.modelName to model }
         }.toMap()
 
 }
@@ -207,7 +209,7 @@ class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
  */
 data class ApiData(
     val name: String? = null,
-    val key: String? = null,
+    val key: SecureString? = null,
     val baseUrl: String = "",
     val provider: APIProvider? = null,
 ) {
@@ -240,7 +242,7 @@ fun ChatModel.asApiChatModel(
     provider = this.provider.let { provider ->
         ApiData(
             name = provider?.name,
-            key = key ?: this.provider?.defaultKey(),
+            key = (key?.let { SecureString(it) } ?: this.provider?.defaultKey()),
             baseUrl = provider?.base!!,
             provider = provider
         )
@@ -275,7 +277,7 @@ fun toApiList(
     apiKeys: Map<APIProvider, String>, apiBase: Map<APIProvider, String>
 ): MutableList<ApiData> = apiKeys.map {
     ApiData(
-        key = it.value, baseUrl = apiBase[it.key] ?: it.key.base, provider = it.key
+        key = SecureString(it.value), baseUrl = apiBase[it.key] ?: it.key.base, provider = it.key
     ).validate()
 }.toMutableList()
 

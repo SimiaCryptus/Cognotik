@@ -12,10 +12,9 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vfs.VirtualFile
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.Session
@@ -113,7 +112,10 @@ class ReplicateCommitAction : BaseAction() {
             ApplicationManager.getApplication().executeOnPooledThread {
                 Thread.sleep(500)
                 try {
-                    val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                    val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                        AppSettingsState.instance.listeningEndpoint,
+                        AppSettingsState.instance.listeningPort
+                    ).server.uri.resolve("/#$session")
                     log.info("Opening browser to $uri")
                     browse(uri)
                 } catch (e: Throwable) {

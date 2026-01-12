@@ -6,16 +6,18 @@ import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.SecureString
+import com.simiacryptus.cognotik.util.encrypt
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class OpenAIEmbeddingClient(
-    apiKey: String = "",
+    apiKey: SecureString = "".encrypt,
     apiBase: String = "https://api.openai.com/v1",
     workPool: ExecutorService = Executors.newCachedThreadPool(),
-    logLevel: Level = Level.INFO,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(
         Executors.newScheduledThreadPool(
@@ -38,6 +40,7 @@ class OpenAIEmbeddingClient(
     ) {
         request.addHeader("Content-Type", "application/json")
         request.addHeader("Accept", "application/json")
+        val apiKey = this.apiKey.decrypt
         if (apiKey.isNotBlank()) {
             request.addHeader("Authorization", "Bearer $apiKey")
         } else {
@@ -80,7 +83,7 @@ class OpenAIEmbeddingClient(
 
                 // Update usage with cost calculation
                 if (response.usage != null) {
-                    onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
+                    onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
                 }
 
                 response
@@ -90,7 +93,8 @@ class OpenAIEmbeddingClient(
 
     private fun validateEmbeddingRequest(request: ModelSchema.EmbeddingRequest, model: EmbeddingModel) {
         require(request.input.toString().isNotBlank()) { "Embedding request input cannot be blank" }
-        require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
+        require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
+        val apiKey = this.apiKey.decrypt
         require(apiKey.isNotBlank()) { "OpenAI API key is required" }
     }
 }

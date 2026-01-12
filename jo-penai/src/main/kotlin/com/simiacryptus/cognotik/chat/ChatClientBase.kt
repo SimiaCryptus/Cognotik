@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.toJson
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.classic.methods.HttpPost
@@ -24,10 +25,10 @@ import java.util.concurrent.ExecutorService
 
 abstract class SingleProviderChatClient(
     protected val provider: APIProvider,
-    val apiKey: String,
+    val apiKey: SecureString,
     val apiBase: String = provider.base,
     workPool: ExecutorService,
-    logLevel: Level = Level.INFO,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     scheduledPool: ListeningScheduledExecutorService,
 ) : ChatClientBase(
@@ -40,7 +41,7 @@ abstract class SingleProviderChatClient(
         client.execute(HttpGet(url).let {
             provider.authorize(
                 request = it,
-                key = apiKey,
+                key = apiKey.decrypt,
                 apiBase = apiBase
             )
             it
@@ -160,7 +161,7 @@ abstract class ChatClientBase(
         logStreams: MutableList<BufferedOutputStream>
     ) {
         log(
-            Level.INFO,
+            Level.DEBUG,
             "Usage recorded for session: %s, user: %s, model: %s, tokens: %s".format(session, user, model, tokens),
             logStreams
         )
@@ -170,7 +171,7 @@ abstract class ChatClientBase(
             if (budget!!.toDouble() <= 0.0) {
                 log(Level.WARN, "Budget exhausted for session: $session, user: $user", logStreams)
             } else {
-                log(Level.INFO, "Remaining budget for session: $session, user: $user is $budget", logStreams)
+                log(Level.DEBUG, "Remaining budget for session: $session, user: $user is $budget", logStreams)
             }
         }
         super.onUsage(model, tokens, logStreams)

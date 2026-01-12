@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
@@ -1299,27 +1299,27 @@ Make suggestions:
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TutorialGenerationTask::class.java)
         val TutorialGeneration = TaskType(
-            "TutorialGeneration",
-            "Writing",
-            TutorialGenerationTask::class.java,
-            TutorialGenerationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Create complete, step-by-step tutorials for processes and projects",
-            """
-              Generates comprehensive tutorials with clear, actionable steps.
-              <ul>
-                <li>Creates detailed outline with prerequisites and learning objectives</li>
-                <li>Breaks process into logical, numbered steps</li>
-                <li>Generates exact commands and code examples</li>
-                <li>Includes expected outcomes and validation steps</li>
-                <li>Adds screenshot placeholders for visual guidance</li>
-                <li>Provides troubleshooting section for common issues</li>
-                <li>Suggests next steps for continued learning</li>
-                <li>Configurable verbosity and skill level</li>
-                <li>Platform-specific instructions and requirements</li>
-                <li>Ideal for how-to guides, educational content, and project-based learning</li>
-              </ul>
-            """,
+          name = "TutorialGeneration",
+          category = "Writing",
+          taskClass = TutorialGenerationTask::class.java,
+          executionConfigClass = TutorialGenerationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Create complete, step-by-step tutorials for processes and projects",
+          tooltipHtml = """
+                        Generates comprehensive tutorials with clear, actionable steps.
+                        <ul>
+                          <li>Creates detailed outline with prerequisites and learning objectives</li>
+                          <li>Breaks process into logical, numbered steps</li>
+                          <li>Generates exact commands and code examples</li>
+                          <li>Includes expected outcomes and validation steps</li>
+                          <li>Adds screenshot placeholders for visual guidance</li>
+                          <li>Provides troubleshooting section for common issues</li>
+                          <li>Suggests next steps for continued learning</li>
+                          <li>Configurable verbosity and skill level</li>
+                          <li>Platform-specific instructions and requirements</li>
+                          <li>Ideal for how-to guides, educational content, and project-based learning</li>
+                        </ul>
+                      """,
         )
     }
 }

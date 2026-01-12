@@ -1,0 +1,8 @@
+{
+  "filename" : "hello.py",
+  "originalCode" : "print(\"Hello from CouncilMode\")",
+  "diff" : "The system is now synchronized. The Council remains active.",
+  "newCode" : "print(\"Hello from CouncilMode\")",
+  "isValid" : true,
+  "errors" : ""
+}

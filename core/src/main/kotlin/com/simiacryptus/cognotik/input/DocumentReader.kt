@@ -15,6 +15,7 @@ interface PaginatedDocumentReader : DocumentReader {
 }
 
 interface RenderableDocumentReader : DocumentReader {
+    fun getPageCount(): Int
     fun renderImage(pageIndex: Int, dpi: Float): BufferedImage
 }
 

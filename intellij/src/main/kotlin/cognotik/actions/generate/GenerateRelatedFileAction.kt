@@ -127,7 +127,7 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
                     path = root.relativize(selectedFile.toPath()).toString(),
                     code = IOUtils.toString(FileInputStream(selectedFile), "UTF-8")
                 ),
-                directive = config?.settings?.directive ?: "",
+                directive = config.settings.directive,
                 progress = progress,
                 model = AppSettingsState.instance.smartChatClient
             )
@@ -146,7 +146,7 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
             progress.fraction = 0.8
             outputPath.parent.toFile().mkdirs()
             FileUtils.write(outputPath.toFile(), analogue.code, "UTF-8")
-            open(config?.project!!, outputPath)
+            open(config.project!!, outputPath)
             return arrayOf(outputPath.toFile())
         } catch (e: Exception) {
             log.error("Failed to generate related file", e)
@@ -169,7 +169,7 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
             Paths should be relative to the project root and should not exist.
             Output the file path using the a line with the format "File: <path>".
             Output the file code directly after the header line with no additional decoration.
-            """.trimIndent().toContentList(), null
+            """.trimIndent().toContentList(),
                     ),
                     ChatMessage(
                         Role.user, ("""
@@ -180,26 +180,26 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
                               ```
                               """.trimIndent() + baseFile.code + """
                               ```
-                              """.trimIndent()).toContentList(), null
+                              """.trimIndent()).toContentList(),
                     )
                 )
             ).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException(
                 "No response from API"
             )
         var outputPath = baseFile.path
-        val header = response?.split("\n")?.first()
-        var body = response?.split("\n")?.drop(1)?.joinToString("\n")?.trim()
-        if (body?.contains("```") == true) {
+        val header = response.split("\n").first()
+        var body = response.split("\n").drop(1).joinToString("\n").trim()
+        if (body.contains("```")) {
             body = body.split("```.*".toRegex()).drop(1).firstOrNull()?.trim() ?: body
         }
         val pathPattern = "File(?:name)?: ['\"]?([^'\"]+)['\"]?".toRegex()
-        val matcher = pathPattern.find(header ?: "")
+        val matcher = pathPattern.find(header)
         if (matcher != null) {
             outputPath = matcher.groupValues[1].trim()
         }
         ProjectFile(
             path = outputPath,
-            code = body ?: ""
+            code = body
         )
     } catch (e: Exception) {
         throw e

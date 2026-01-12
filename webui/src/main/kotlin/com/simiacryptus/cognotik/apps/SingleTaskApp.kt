@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -90,7 +91,7 @@ abstract class SingleTaskApp(
     ) {
         try {
             val orchestrationConfig = settings?.apply {
-                absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
+                if(null == DataStorage.sessionPaths[session]) absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
             val task = ui.newTask(true)

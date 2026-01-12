@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
@@ -111,9 +111,11 @@ open class IterativeGraphGenerationTask<T : IterativeGraphGenerationTask.Iterati
     override fun promptSegment(): String {
         return """
 IterativeGraphGeneration - Build knowledge graphs incrementally
-  ** Specify goal_prompt and context
-  ** Define schema (node_types, edge_types)
-  ** Iteratively observes graph state and adds nodes/edges
+  * goal_prompt: The goal or question the graph should answer/represent.
+  * context_data: Input text to analyze.
+  * input_files: Input files to analyze.
+  * node_types/edge_types: Allowed labels for nodes and edges.
+  * Use this to extract entities and relationships for complex knowledge management and visualization.
         """.trimIndent()
     }
 
@@ -389,13 +391,23 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
     companion object {
         private val log = LoggerFactory.getLogger(IterativeGraphGenerationTask::class.java)
         val IterativeGraphGeneration = TaskType(
-            "IterativeGraphGeneration",
-            "Writing",
-            IterativeGraphGenerationTask::class.java,
-            IterativeGraphGenerationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Iteratively build a knowledge graph",
-            "Constructs a knowledge graph by iteratively analyzing context and adding nodes/edges.",
+          name = "IterativeGraphGeneration",
+          category = "Writing",
+          taskClass = IterativeGraphGenerationTask::class.java,
+          executionConfigClass = IterativeGraphGenerationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Extract structured knowledge from unstructured data by iteratively building an entity-relationship graph.",
+          tooltipHtml = """
+                      Constructs a knowledge graph by iteratively analyzing context and adding nodes/edges.
+                      <ul>
+                        <li>Processes large contexts by chunking and iterative refinement</li>
+                        <li>Supports custom schemas for nodes and edges</li>
+                        <li>Visualizes progress using Mermaid diagrams</li>
+                        <li>Allows merging nodes to resolve entities</li>
+                        <li>Exports the final graph as GraphSON JSON</li>
+                        <li>Ideal for mapping complex domains, research analysis, and knowledge extraction</li>
+                      </ul>
+                      """.trimIndent(),
         )
     }
 }

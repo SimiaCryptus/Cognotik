@@ -7,15 +7,14 @@ import com.simiacryptus.cognotik.util.TaskHarness
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.PDPageContentStream
-import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.awt.Color
 import java.awt.Font
 import java.awt.image.BufferedImage
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 object OCRTaskTest {
@@ -25,20 +24,37 @@ object OCRTaskTest {
     fun setup() {
         PlanHarness.configurePlatform()
     }
-    //@Test
+
+   //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
         val harness = TaskHarness(
             taskType = OCRTask.OCR,
             executionConfig = OCRTaskExecutionConfigData(
                 files = listOf("test_document.pdf"),
-                task_description = "Convert the PDF to markdown"
+                task_description = "Convert the PDF to markdown",
+                extract_figures = true,
+                extract_metadata = true,
+                extract_text = true,
             ),
             timeoutMinutes = 10,
             typeConfig = TaskTypeConfig(OCRTask.OCR.name),
         )
 
-        val pdfPath = harness.workspace.resolve("test_document.pdf")
+        val pdfPath = harness.dataDir.resolve("test_document.pdf")
+         //writeTestPDF(pdfPath)
+         File("/home/andrew/Downloads/US486986.pdf").copyTo(pdfPath, overwrite = true)
+
+         harness.run()
+
+        val outputPath = harness.dataDir.resolve("test_document.md")
+        assertTrue(outputPath.exists(), "Output markdown file should exist")
+
+        val content = outputPath.readText()
+        assertTrue(content.isNotBlank(), "Output content should not be blank")
+    }
+
+    private fun writeTestPDF(pdfPath: File) {
         val doc = PDDocument()
         try {
             // Page 1
@@ -77,17 +93,9 @@ object OCRTaskTest {
         } finally {
             doc.close()
         }
-
-        harness.run()
-
-        val outputPath = harness.workspace.resolve("test_document.md")
-        assertTrue(outputPath.exists(), "Output markdown file should exist")
-
-        val content = outputPath.readText()
-        assertTrue(content.isNotBlank(), "Output content should not be blank")
     }
 
-    //@Test
+    //@org.junit.jupiter.api.Test
     @Timeout(30, unit = TimeUnit.MINUTES)
     fun test_convert() {
         TaskHarness(

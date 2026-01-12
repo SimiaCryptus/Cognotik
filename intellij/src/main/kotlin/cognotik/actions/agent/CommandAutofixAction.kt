@@ -15,7 +15,6 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.bind
 import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.CmdPatchApp
 import com.simiacryptus.cognotik.apps.PatchApp
 import com.simiacryptus.cognotik.config.AppSettingsState
@@ -139,7 +138,10 @@ class CommandAutofixAction : BaseAction() {
                 Thread {
                     Thread.sleep(500)
                     try {
-                        val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                        val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                            AppSettingsState.instance.listeningEndpoint,
+                            AppSettingsState.instance.listeningPort
+                        ).server.uri.resolve("/#$session")
                         BaseAction.log.info("Opening browser to $uri")
                         browse(uri)
                     } catch (e: Throwable) {

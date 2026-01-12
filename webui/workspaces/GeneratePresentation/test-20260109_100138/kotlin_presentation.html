@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Kotlin for Backend" name="description">
+    <title>Kotlin for Backend</title>
+    <link href="https://cdnjs.cloudflare.com" rel="preconnect">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/black.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/monokai.min.css" rel="stylesheet">
+    <link href="presentation.css" rel="stylesheet">
+</head>
+<body>
+<div aria-label="Presentation controls" id="controlsContainer" role="toolbar">
+    <button aria-label="Toggle autoplay" aria-pressed="false" id="autoplayButton">Autoplay: Off</button>
+    <label class="sr-only" for="voiceSelect">Select voice</label>
+    <select aria-label="Voice selection" id="voiceSelect"></select>
+</div>
+<div class="reveal">
+    <div class="slides">
+<section>
+    <h1>Kotlin for Backend</h1>
+<section data-background-gradient="linear-gradient(to bottom, #000428, #004e92)">
+    <h1>Kotlin for Backend</h1>
+    <p class="highlight">The Modern Evolution of JVM Development</p>
+    <p style="font-size: 0.8em; margin-top: 2em;">🚀 From Java to Kotlin: A Developer's Guide</p>
+</section>
+    <aside class="notes">
+        Welcome everyone. Today we are exploring why Kotlin has become the preferred choice for modern backend development on the JVM. We'll look at how it addresses long-standing Java pain points while maintaining perfect compatibility.
+    </aside>
+</section>
+
+<section>
+    <h1>The "Billion Dollar Mistake" Fixed</h1>
+<section data-auto-animate>
+    <h2>The "Billion Dollar Mistake" Fixed</h2>
+    <h3 class="highlight">Null Safety</h3>
+    <ul>
+        <li class="fragment">Types are <strong>non-nullable</strong> by default</li>
+        <li class="fragment">Safe call operator: <code>user?.address?.city</code></li>
+        <li class="fragment">Elvis operator: <code>val name = input ?: "Guest"</code></li>
+        <li class="fragment">Smart casts eliminate redundant checks</li>
+    </ul>
+</section>
+    <aside class="notes">
+        Kotlin's type system distinguishes between nullable and non-nullable references. This moves NullPointerExceptions from runtime to compile-time, significantly increasing the stability of backend services.
+    </aside>
+</section>
+
+<section>
+    <h1>Modern Syntax & Productivity</h1>
+<section data-auto-animate>
+    <h2>Modern Syntax & Productivity</h2>
+    <div class="columns">
+        <div class="column">
+            <p class="highlight">Data Classes</p>
+            <pre><code class="language-kotlin">data class User(
+    val id: Long, 
+    val name: String
+)</code></pre>
+            <p style="font-size: 0.6em;">Generates equals, hashCode, toString, and copy() automatically.</p>
+        </div>
+        <div class="column">
+            <ul style="font-size: 0.9em;">
+                <li class="fragment">Type Inference (<code>val</code> vs <code>var</code>)</li>
+                <li class="fragment">Extension Functions</li>
+                <li class="fragment">String Templates</li>
+                <li class="fragment">Default & Named Arguments</li>
+            </ul>
+        </div>
+    </div>
+</section>
+    <aside class="notes">
+        Kotlin drastically reduces boilerplate. A single line 'data class' replaces dozens of lines of Java POJO code. Extension functions allow us to extend library classes without inheritance, leading to cleaner utility code.
+    </aside>
+</section>
+
+<section>
+    <h1>Coroutines: Concurrency Simplified</h1>
+<section>
+    <h2>Coroutines: Concurrency Simplified</h2>
+    <p>Scaling without the complexity of Threads or Reactive Streams.</p>
+    <ul>
+        <li class="fragment"><strong>Lightweight:</strong> Run millions of coroutines on a few threads.</li>
+        <li class="fragment"><strong>Sequential Code:</strong> Write asynchronous logic that looks synchronous.</li>
+        <li class="fragment"><strong>Structured Concurrency:</strong> Automatic cleanup and error propagation.</li>
+    </ul>
+    <div class="fragment">
+        <pre><code class="language-kotlin">suspend fun fetchUser() = coroutineScope {
+    val data = async { api.getData() }
+    val db = async { repo.getProfile() }
+    User(data.await(), db.await())
+}</code></pre>
+    </div>
+</section>
+    <aside class="notes">
+        Coroutines are a game-changer for backend performance. Unlike Java's traditional thread-per-request model, coroutines allow for high-concurrency I/O operations without the "callback hell" or the steep learning curve of Project Reactor.
+    </aside>
+</section>
+
+<section>
+    <h1>Seamless Java Interoperability</h1>
+<section>
+    <h2>Seamless Java Interoperability</h2>
+    <div class="columns">
+        <div class="column">
+            <h3>🤝 100% Compatible</h3>
+            <p>Call Java from Kotlin and Kotlin from Java without wrappers.</p>
+        </div>
+        <div class="column">
+            <ul>
+                <li class="fragment">Mixed-language codebases</li>
+                <li class="fragment">Use existing Maven/Gradle plugins</li>
+                <li class="fragment">Zero-overhead integration</li>
+            </ul>
+        </div>
+    </div>
+    <p class="fragment highlight" style="text-align: center; margin-top: 1em;">Keep your Spring, Hibernate, and Jackson libraries!</p>
+</section>
+    <aside class="notes">
+        The biggest fear for Java developers is losing their ecosystem. Kotlin is designed for 100% interoperability. You can migrate one class at a time, and your existing Spring Boot or Jakarta EE infrastructure will work perfectly.
+    </aside>
+</section>
+
+<section>
+    <h1>Functional & Object-Oriented</h1>
+<section>
+    <h2>Functional & Object-Oriented</h2>
+    <p>The best of both worlds for robust domain modeling.</p>
+    <ul>
+        <li class="fragment"><strong>Immutability:</strong> Encouraged by default with <code>val</code> and read-only collections.</li>
+        <li class="fragment"><strong>Sealed Classes:</strong> Powerful algebraic data types for domain states.</li>
+        <li class="fragment"><strong>Higher-Order Functions:</strong> Clean DSLs for configuration and testing.</li>
+    </ul>
+</section>
+    <aside class="notes">
+        Kotlin doesn't force you into one paradigm. It provides powerful functional tools like map, filter, and fold, while maintaining a strong Object-Oriented foundation that Java developers are comfortable with.
+    </aside>
+</section>
+
+<section>
+    <h1>The Backend Ecosystem</h1>
+<section>
+    <h2>The Backend Ecosystem</h2>
+    <div class="columns">
+        <div class="column">
+            <h3 class="highlight">Spring Boot</h3>
+            <p>First-class support since 5.0. Dedicated Kotlin APIs and documentation.</p>
+        </div>
+        <div class="column">
+            <h3 class="highlight">Ktor</h3>
+            <p>JetBrains' lightweight, asynchronous framework built from the ground up for Kotlin.</p>
+        </div>
+    </div>
+    <p class="fragment" style="text-align: center;">Also supported by: <strong>Micronaut, Quarkus, and Vert.x</strong></p>
+</section>
+    <aside class="notes">
+        Kotlin isn't just for Android. Spring Boot has officially recommended Kotlin for years. If you want something even lighter, Ktor provides a pure Kotlin experience that is incredibly fast and modular.
+    </aside>
+</section>
+
+<section>
+    <h1>Ready to Switch?</h1>
+<section data-background-color="#1a1a2e">
+    <h2>Ready to Switch?</h2>
+    <ol>
+        <li class="fragment">Start with <strong>Unit Tests</strong> in Kotlin.</li>
+        <li class="fragment">Convert small <strong>Utility Classes</strong>.</li>
+        <li class="fragment">Use the <strong>J2K Converter</strong> in IntelliJ IDEA.</li>
+    </ol>
+    <div class="fragment" style="margin-top: 2em; text-align: center;">
+        <h3 class="highlight">Better Code. Happier Developers.</h3>
+        <p>kotlinlang.org</p>
+    </div>
+</section>
+    <aside class="notes">
+        The transition doesn't have to be a "big bang" migration. Start by writing your tests in Kotlin, then move to data objects. The IntelliJ converter is a great way to see how your Java code looks in Kotlin instantly.
+    </aside>
+</section>
+
+
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/notes/notes.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/markdown/markdown.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/zoom/zoom.min.js"></script>
+<script src="presentation.js"></script>
+<script src="reveal_init.js"></script>
+</body>
+</html>

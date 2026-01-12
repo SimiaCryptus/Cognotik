@@ -40,9 +40,9 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
 
     open class RunCodeTaskExecutionConfigData(
         @Description("The task or goal to be accomplished")
-        val goal: String? = null,
+        var goal: String? = null,
         @Description("The relative file path of the working directory")
-        val workingDir: String? = null,
+        var workingDir: String? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -88,7 +88,6 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
             codeRuntime = CodeRuntimes.getRuntime(
                 runtimeType = runtime,
                 params = mapOf(
-                    "env" to (orchestrationConfig.env ?: emptyMap()),
                     "workingDir" to (
                             orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
                                 ?: orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
@@ -112,13 +111,30 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
             ) {
                 val formText = StringBuilder()
                 transcript?.write(
-                    "## Code Request\n```${
-                        runtime.name.lowercase().replace("runtime", "")
-                    }\n${request.messages}\n```\n\n".toByteArray()
+                    """
+                    ## Code Execution
+                    <details><summary>Request Messages</summary>
+                    
+                    ```${runtime.name.lowercase().replace("runtime", "")}
+                    ${request.messages}
+                    ```
+                    </details>
+                    
+                    <details><summary>Execution Result</summary>
+                    
+                    **Result Value:**
+                    ```
+                    ${response.result.resultValue}
+                    ```
+                    
+                    **Output:**
+                    ```
+                    ${response.result.resultOutput}
+                    ```
+                    </details>
+                    
+                    """.trimIndent().toByteArray()
                 )
-                transcript?.write("## Execution Result\n".toByteArray())
-                transcript?.write("**Result Value:**\n```\n${response.result.resultValue}\n```\n\n".toByteArray())
-                transcript?.write("**Output:**\n```\n${response.result.resultOutput}\n```\n\n".toByteArray())
                 val markdown = """
                     ### Code
                     $TRIPLE_TILDE${runtime.name.lowercase().replace("runtime", "")}
@@ -211,8 +227,8 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
             semaphore.acquire()
         } catch (e: Throwable) {
             task.error(e)
-            transcript?.write("## Error\n```\n${e.message}\n${e.stackTraceToString()}\n```\n\n".toByteArray())
-            log.warn("Error", e)
+            transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n\n".toByteArray())
+            log.error("Error in RunCodeTask", e)
         } finally {
             transcript?.write("\n## Task Completed\n".toByteArray())
             transcript?.flush()
@@ -227,24 +243,23 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
     companion object {
         private val log = LoggerFactory.getLogger(RunCodeTask::class.java)
         val RunCode = TaskType(
-            "RunCode",
-            "Execution & Automation",
-            RunCodeTask::class.java,
-            RunCodeTaskExecutionConfigData::class.java,
-            RunCodeTaskTypeConfig::class.java,
-            "Execute code snippets with oversight",
-            """
-          Executes code snippets in an interactive environment.
-          <ul>
-            <li>User-approved code execution</li>
-            <li>Working directory configuration</li>
-            <li>Output capture and formatting</li>
-            <li>Error handling and reporting</li>
-            <li>Interactive result review</li>
-          </ul>
-        """,
+          name = "RunCode",
+          category = "Execution",
+          taskClass = RunCodeTask::class.java,
+          executionConfigClass = RunCodeTaskExecutionConfigData::class.java,
+          taskSettingsClass = RunCodeTaskTypeConfig::class.java,
+          description = "Execute code snippets with oversight",
+          tooltipHtml = """
+                    Executes code snippets in an interactive environment.
+                    <ul>
+                      <li>User-approved code execution</li>
+                      <li>Working directory configuration</li>
+                      <li>Output capture and formatting</li>
+                      <li>Error handling and reporting</li>
+                      <li>Interactive result review</li>
+                    </ul>
+                  """,
         )
 
     }
 }
-

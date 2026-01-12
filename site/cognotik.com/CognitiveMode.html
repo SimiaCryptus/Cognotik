@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik | CognitiveMode</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <!-- Mermaid for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+
+    <style>
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1.5rem;
+            margin: 2rem 0;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .code-panel pre {
+            margin: 0;
+            padding: 1rem;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        .ui-panel .mock-browser {
+            padding: 1.5rem;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--accent-primary);
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        @media (max-width: 992px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="core-cognitive-modes"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Core > Cognitive Modes</div>
+        <h1>CognitiveMode</h1>
+        <p class="pitch">
+            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the agent's problem-solving persona.
+        </p>
+        <div class="badges">
+            <span class="badge">Core Architecture</span>
+            <span class="badge">Stateful</span>
+            <span class="badge">Strategy Engine</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input: The Configuration -->
+        <div class="panel code-panel">
+            <div class="panel-header">
+                <span class="icon">⚙️</span> OrchestrationConfig.json
+            </div>
+            <pre><code class="language-json">{
+  "mode": "AdaptivePlanningMode",
+  "schema_strategy": "ScientificMethod",
+  "auto_fix": true,
+  "model_config": {
+    "smart": "gpt-4-turbo",
+    "fast": "gpt-3.5-turbo"
+  }
+}</code></pre>
+        </div>
+
+        <!-- Arrow Connector -->
+        <div class="flow-arrow">→</div>
+
+        <!-- Output: The Transcript & State -->
+        <div class="panel ui-panel">
+            <div class="panel-header">
+                <span class="icon">🧠</span> Live Transcript
+            </div>
+            <div class="mock-browser">
+                <div class="markdown-body">
+                    <h3 style="margin-top:0">State: Hypothesis Testing</h3>
+                    <div class="mermaid">
+                        graph TD
+                        A[Analyze Error] --> B{Hypothesis?}
+                        B -->|Network| C[Check DNS]
+                        B -->|Code| D[Run Linter]
+                        C --> E[Refute Hypothesis]
+                        E --> A
+                    </div>
+                    <p><strong>Thinking:</strong> Network checks passed. Switching strategy to Code Analysis.</p>
+                    <p style="color: var(--accent-primary)"><em>Executing: RunCodeTask...</em></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TECHNICAL DETAILS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('modes')">Built-in Modes</button>
+            <button onclick="switchTab('strategies')">Schema Strategies</button>
+            <button onclick="switchTab('impl')">Implementation</button>
+        </nav>
+
+        <!-- TAB: Built-in Modes -->
+        <div id="tab-modes" class="tab-pane active">
+            <h3>Architectural Patterns</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Mode Name</th>
+                    <th>Architecture</th>
+                    <th>Best Use Case</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><strong>WaterfallMode</strong></td>
+                    <td><code>Plan -> Review -> Execute</code></td>
+                    <td>Well-defined problems where the user must approve the entire roadmap.</td>
+                </tr>
+                <tr>
+                    <td><strong>ConversationalMode</strong></td>
+                    <td><code>Listen -> Act -> Reply</code></td>
+                    <td>Interactive debugging or simple "Chat with Code" workflows.</td>
+                </tr>
+                <tr>
+                    <td><strong>AdaptivePlanningMode</strong></td>
+                    <td><code>Loop(Think -> Act -> Reflect)</code></td>
+                    <td>Complex, ambiguous goals requiring research and self-correction.</td>
+                </tr>
+                <tr>
+                    <td><strong>HierarchicalPlanningMode</strong></td>
+                    <td><code>Tree(Decompose -> Delegate)</code></td>
+                    <td>Massive projects requiring sub-goal decomposition.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: Strategies -->
+        <div id="tab-strategies" class="tab-pane" style="display:none;">
+            <h3>Cognitive Schema Strategies</h3>
+            <p>Strategies define the "Persona" and internal state structure, separating control flow from reasoning style.</p>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Strategy</th>
+                    <th>Internal State</th>
+                    <th>Reasoning Style</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><strong>Project Manager</strong></td>
+                    <td><code>ReasoningState</code></td>
+                    <td>Generalist. Tracks short-term vs. long-term goals.</td>
+                </tr>
+                <tr>
+                    <td><strong>Scientific Method</strong></td>
+                    <td><code>ScientificState</code></td>
+                    <td>Debugger. Formulates hypotheses and attempts to falsify theories.</td>
+                </tr>
+                <tr>
+                    <td><strong>Agile Developer</strong></td>
+                    <td><code>AgileState</code></td>
+                    <td>Coder. Follows TDD loop: Test Failing -> Implementing -> Refactoring.</td>
+                </tr>
+                <tr>
+                    <td><strong>Critical Auditor</strong></td>
+                    <td><code>AuditState</code></td>
+                    <td>Security. Adversarial mindset designed to find flaws.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: Implementation -->
+        <div id="tab-impl" class="tab-pane" style="display:none;">
+            <h3>Implementation Skeleton</h3>
+            <p>To create a custom mode, extend <code>CognitiveMode</code> and implement the <code>handleUserMessage</code> loop.</p>
+            <pre><code class="language-kotlin">class MyCustomMode(
+    config: OrchestrationConfig,
+    session: Session,
+    user: User
+) : CognitiveMode&lt;MyConfig&gt;(config, session, user) {
+
+    override fun handleUserMessage(userMessage: String, task: SessionTask) {
+        // 1. Initialize Strategy (The "Brain")
+        val strategy = CognitiveSchemaStrategy.ScientificMethod
+        var state = strategy.initialize(userMessage, orchestrationConfig.smartModel)
+
+        // 2. Execution Loop
+        while (!state.isComplete()) {
+            val guidance = strategy.getTaskSelectionGuidance(state)
+            
+            // Select & Execute Task
+            val tool = enabledTasks.first { it.canHandle(guidance) }
+            val result = tool.execute(task, guidance)
+
+            // Update State (Reflection)
+            state = strategy.update(state, result)
+
+            // Observability: Write to transcript
+            task.transcript()?.write("## Step Complete: ${state.currentPhase}\n".toByteArray())
+        }
+    }
+}</code></pre>
+        </div>
+    </section>
+
+    <!-- 4. INTEGRATION GUIDE -->
+    <section class="integration-guide" style="margin-top: 3rem;">
+        <h2>Integration Guide</h2>
+        
+        <h3>Configuration</h3>
+        <p>Reference your mode in the <code>OrchestrationConfig</code>.</p>
+        <pre><code class="language-kotlin">val config = OrchestrationConfig(
+    mode = CognitiveModeType.AdaptivePlanningMode,
+    overrides = mapOf("schema_strategy" to "AgileDeveloper"),
+    autoFix = true
+)</code></pre>
+
+        <h3>Observability Standards</h3>
+        <ul>
+            <li><strong>Mermaid Diagrams:</strong> Visualize the state machine in the transcript for user transparency.</li>
+            <li><strong>Collapsed Details:</strong> Use <code>&lt;details&gt;</code> tags for raw JSON state dumps to keep transcripts readable.</li>
+            <li><strong>Graceful Degradation:</strong> Catch LLM hallucinations and attempt to simplify prompts before failure.</li>
+        </ul>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

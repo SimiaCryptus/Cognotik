@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik | JobMatchingStrategy</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.05);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            color: var(--accent-primary);
+        }
+
+        .req { color: #f87171; margin-left: 4px; }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="job-matching"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Analysis > Crawler > JobMatchingStrategy</div>
+        <h1>JobMatchingStrategy</h1>
+        <p class="pitch">
+            Automated recruitment intelligence agent. Analyzes job postings against candidate profiles to calculate multi-dimensional compatibility scores (Skills, Location, Salary, Work Arrangement) and generate tailored application assets.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Analysis</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+            <span class="badge">Output: Markdown Reports</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚙️ JobMatchingConfig.json</span>
+            </div>
+            <pre><code>{
+  "user_experience": "10y Kotlin, AI/ML...",
+  "target_roles": ["Staff AI Engineer"],
+  "required_skills": ["Kotlin", "LLM", "Vector DBs"],
+  "preferred_locations": ["Remote", "NYC"],
+  "min_match_score": 0.75,
+  "min_salary": 185000,
+  "salary_currency": "USD",
+  "work_arrangement_preference": "remote",
+  "max_days_in_office": 0,
+  "willing_to_relocate": false,
+  "target_matches": 5
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️ Session Transcript Output</span>
+            </div>
+            <div class="mock-ui-content">
+                <div style="border-left: 4px solid #4ade80; padding-left: 1rem; margin-bottom: 1rem;">
+                    <strong style="color: #4ade80;">✅ GOOD MATCH FOUND (Score: 88%)</strong><br>
+                    <span style="font-size: 0.8rem; color: var(--text-dim);">Found at tech-careers.com/jobs/102</span>
+                </div>
+                <div style="background: #000; padding: 0.8rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.8rem;">
+                    - <strong>Position:</strong> Staff AI Engineer<br>
+                    - <strong>Company:</strong> Neural Systems Inc.<br>
+                    - <strong>Location:</strong> Remote<br>
+                    - <strong>Salary:</strong> USD 190,000 - 230,000<br>
+                    <br>
+                    <span style="color: var(--text-dim);">Compatibility Scores:</span><br>
+                    - Skills: 92%<br>
+                    - Location: 100%<br>
+                    - Salary: 100%<br>
+                    - Work Arrangement: 100%
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process & Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Configuration Parameters (JobMatchingConfig)</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>user_experience</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>Full resume text or detailed experience summary used for matching.</td>
+                </tr>
+                <tr>
+                    <td><code>target_roles</code><span class="req">*</span></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>List of job titles or keywords to filter for.</td>
+                </tr>
+                <tr>
+                    <td><code>required_skills</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Specific technical or soft skills that must be present in the JD.</td>
+                </tr>
+                <tr>
+                    <td><code>min_match_score</code></td>
+                    <td>Double</td>
+                    <td>Threshold (0.0-1.0) for considering a job a "Good Match". Default: <code>0.6</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>preferred_locations</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Cities, states, or 'Remote'. Used for location scoring.</td>
+                </tr>
+                <tr>
+                    <td><code>acceptable_locations</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Secondary locations that are acceptable but not preferred.</td>
+                </tr>
+                <tr>
+                    <td><code>min_salary</code></td>
+                    <td>Int</td>
+                    <td>Minimum annual salary expectation in <code>salary_currency</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>salary_currency</code></td>
+                    <td>String</td>
+                    <td>ISO currency code. Default: <code>USD</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>work_arrangement_preference</code></td>
+                    <td>String</td>
+                    <td>One of: <code>remote</code>, <code>hybrid</code>, <code>onsite</code>, <code>flexible</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>max_days_in_office</code></td>
+                    <td>Int</td>
+                    <td>Maximum acceptable days in office per week for hybrid roles.</td>
+                </tr>
+                <tr>
+                    <td><code>travel_willingness</code></td>
+                    <td>String</td>
+                    <td>'none', 'occasional', or 'frequent'.</td>
+                </tr>
+                <tr>
+                    <td><code>willing_to_relocate</code></td>
+                    <td>Boolean</td>
+                    <td>Whether the candidate is open to moving for the role.</td>
+                </tr>
+                <tr>
+                    <td><code>target_matches</code></td>
+                    <td>Int</td>
+                    <td>Crawler terminates after finding N matches above <code>min_match_score</code>.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Execution Lifecycle</h3>
+            <ol style="color: var(--text-dim); line-height: 2;">
+                <li><strong style="color: var(--text-main);">Detection:</strong> Uses a fast-pass LLM check to identify if a page is a job posting (confidence > 0.7).</li>
+                <li><strong style="color: var(--text-main);">Multi-Dimensional Analysis:</strong> Extracts structured data including salary ranges, travel requirements, and relocation assistance.</li>
+                <li><strong style="color: var(--text-main);">Scoring Engine:</strong> Calculates weighted scores for Skills, Location, Salary, and Work Arrangement compatibility.</li>
+                <li><strong style="color: var(--text-main);">Asset Generation:</strong> Drafts a tailored 200-300 word cover letter and application strategy notes.</li>
+                <li><strong style="color: var(--text-main);">Persistence:</strong> Saves detailed Markdown reports to <code>websearch/job_matches/</code> with timestamps and company metadata.</li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Kotlin Implementation</h3>
+            <pre><code>// Registering the strategy in a Crawler Task
+val task = CrawlerAgentTask(
+    params = CrawlerParams(
+        baseUrl = "https://linkedin.com/jobs/search",
+        strategy = JobMatchingStrategy(),
+        content_queries = JobMatchingConfig(
+            user_experience = myResumeText,
+            target_roles = listOf("Staff AI Engineer"),
+            required_skills = listOf("Kotlin", "OpenAI"),
+            preferred_locations = listOf("Remote"),
+            min_salary = 200000,
+            work_arrangement_preference = "remote",
+            min_match_score = 0.8
+        )
+    )
+)</code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

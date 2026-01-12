@@ -15,6 +15,7 @@ open class ParsedImageAgent<T : Any>(
     name: String? = resultClass?.simpleName,
     model: ChatInterface,
     temperature: Double = 0.3,
+    val deserializerRetries: Int = 2,
     val validation: Boolean = true,
     open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "aicoder.actions"
@@ -37,11 +38,11 @@ open class ParsedImageAgent<T : Any>(
         ModelSchema.ChatMessage(
             role = ModelSchema.Role.system,
             content = """
-                $prompt
-                
-                Response should be in JSON format:
-                ${describer.describe(resultClass!!)}
-            """.trimIndent().toContentList()
+$prompt
+
+Response should be in JSON format:
+${describer.describe(resultClass!!)}
+            """.toContentList()
         ),
         ModelSchema.ChatMessage(
             role = ModelSchema.Role.user,
@@ -58,10 +59,27 @@ open class ParsedImageAgent<T : Any>(
 
     private inner class ParsedResponseImpl(vararg messages: ModelSchema.ChatMessage) :
         ParsedResponse<T>(resultClass!!) {
-        override val text =
-            response(*messages).choices.firstOrNull()?.message?.content
-                ?: throw RuntimeException("No response")
-        private val _obj: T by lazy { JsonUtil.fromJson(unwrap(text), resultClass!!) }
+        private val t : Pair<String, T> by lazy {
+            var lastException: Exception? = null
+            var resultText: String? = null
+            var resultObj: T? = null
+            for (i in 0..deserializerRetries) {
+                try {
+                    val responseContent = response(*messages).choices.firstOrNull()?.message?.content
+                        ?: throw RuntimeException("No response")
+                    resultText = responseContent
+                    resultObj = JsonUtil.fromJson<T>(unwrap(responseContent), resultClass!!)
+                    break
+                } catch (e: Exception) {
+                    lastException = e
+                    log.info("Failed to parse response", e)
+                }
+            }
+            if (resultObj == null) throw lastException!!
+            Pair(resultText!!, resultObj)
+        }
+        override val text: String get() = t.first
+        override val obj: T get() = t.second
 
         private fun unwrap(text: String): String {
             val trimmed = text.trim()
@@ -74,7 +92,6 @@ open class ParsedImageAgent<T : Any>(
             }
         }
 
-        override val obj get() = _obj
     }
 
     override fun respond(input: List<ImageAndText>, vararg messages: ModelSchema.ChatMessage): ParsedResponse<T> =
@@ -92,6 +109,7 @@ open class ParsedImageAgent<T : Any>(
         name = name,
         model = model,
         temperature = temperature,
+        deserializerRetries = deserializerRetries,
         validation = validation,
         describer = describer,
     )

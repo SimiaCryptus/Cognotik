@@ -1,506 +1,442 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report Generation Task - Cognotik</title>
-    <!-- Fonts -->
+    <title>Cognotik | ReportGenerationTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
-        ul { list-style: none; }
-        /* Utilities */
-        .container {
-            max-width: var(--container-max-width);
-            margin: 0 auto;
-            padding: 0 2rem;
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
         }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
-            color: #fff;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
-        }
-        /* Hero */
-        .hero {
-            padding: 8rem 2rem 4rem;
-            display: flex;
-            align-items: center;
-            min-height: 80vh;
-            position: relative;
-            background: none;
-            text-align: left;
-        }
-        .hero-content {
-            flex: 1;
-            padding-right: 2rem;
-        }
-        .hero h1 {
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(to right, #fff, var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            margin-bottom: 2rem;
-            max-width: 600px;
-        }
-        .hero-visual {
-            flex: 1;
-            height: 400px;
-            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-        /* Abstract Visual Placeholder */
-        .visual-node {
-            width: 200px;
-            height: 200px;
-            border: 2px solid var(--accent-secondary);
-            border-radius: 12px;
-            position: absolute;
-            animation: pulse 4s infinite;
-            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .visual-node::before {
-            content: '';
-            position: absolute;
-            width: 80%;
-            height: 2px;
-            background: var(--accent-color);
-            top: 30%;
-            left: 10%;
-        }
-        .visual-node::after {
-            content: '';
-            position: absolute;
-            width: 60%;
-            height: 2px;
-            background: var(--accent-color);
-            top: 50%;
-            left: 10%;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
-        }
-        /* Features */
-        .features {
-            padding: 4rem 0;
-            max-width: none;
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
             margin: 0;
-            background: rgba(255,255,255,0.02);
+            line-height: 1.6;
         }
-        .features-grid {
-            margin-top: 2rem;
-        }
-        .feature-card {
-            background: var(--surface-color);
-            transition: 0.3s;
-        }
-        .feature-card:hover {
-            border-color: var(--accent-secondary);
-            transform: translateY(-5px);
-        }
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(6, 182, 212, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--accent-secondary);
-        }
-        /* Simulator */
-        .sim-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            background: var(--surface-color);
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.05);
-            min-height: 600px;
-        }
-        .sim-panel {
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 2rem;
+        }
+
+        /* Header Styling */
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 450px;
             display: flex;
             flex-direction: column;
         }
-        .sim-left {
-            border-right: 1px solid rgba(255,255,255,0.05);
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-        .form-control {
-            width: 100%;
-            background: var(--background-color);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-color);
-            padding: 0.75rem;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 0.9rem;
-        }
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-secondary);
-        }
-        textarea.form-control {
-            resize: vertical;
-            min-height: 100px;
-        }
-        .sim-right {
-            background: #0b1120;
-        }
-        .tabs {
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
             display: flex;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 1rem;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .tab {
-            padding: 0.75rem 1.5rem;
-            cursor: pointer;
-            color: var(--text-muted);
-            border-bottom: 2px solid transparent;
-        }
-        .tab.active {
-            color: var(--accent-secondary);
-            border-bottom-color: var(--accent-secondary);
-        }
-        .output-area {
-            flex: 1;
-            font-family: monospace;
-            font-size: 0.9rem;
-            color: #d1d5db;
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
             overflow-y: auto;
-            white-space: pre-wrap;
+            flex-grow: 1;
+            background: #0d1117;
         }
-        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
-        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-color); }
-        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
-        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
-        /* Use Cases */
-        .use-cases {
-            padding: 4rem 0;
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 2rem;
         }
-        .use-case-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
+
+        /* Mock UI Styling */
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            flex-grow: 1;
         }
-        .use-case-item {
-            background: rgba(255,255,255,0.03);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border-left: 4px solid var(--accent-color);
+
+        .mock-tabs {
+            display: flex;
+            gap: 2px;
+            background: #0d1117;
+            padding: 0.5rem 0.5rem 0 0.5rem;
+            border-bottom: 1px solid var(--border-subtle);
         }
-        @media (max-width: 768px) {
-            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
-            .hero-content { padding-right: 0; margin-bottom: 3rem; }
-            .sim-container { grid-template-columns: 1fr; }
-            .sim-left { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        .mock-tab {
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            color: var(--text-dim);
+        }
+
+        .mock-tab.active {
+            background: var(--bg-app);
+            color: var(--accent-primary);
+        }
+
+        /* Tabs System */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* Docs Table */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; margin-left: 4px; }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
         }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="report-generation"></cognotik-header>
-    <!-- Hero -->
-    <header class="hero container">
-        <div class="hero-content">
-            <h1>Report Generation Task</h1>
-            <p>Generate comprehensive business reports with data analysis, risk assessments, actionable recommendations, and iterative refinement.</p>
-            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
-        </div>
-        <div class="hero-visual">
-            <div class="visual-node">
-                <div style="font-size: 3rem; color: var(--accent-secondary);">📊</div>
-            </div>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Writing > ReportGenerationTask</div>
+        <h1>ReportGenerationTask</h1>
+        <p class="pitch">
+            An industrial-grade multi-phase engine for generating comprehensive business reports. Analyzes raw data, structures narratives, assesses risks, and provides actionable strategic recommendations.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">Multi-Phase Execution</span>
         </div>
     </header>
-    <!-- Features -->
-    <section id="features" class="features">
-        <div class="container">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                    </div>
-                    <h3>Data-Driven Analysis</h3>
-                    <p>Analyzes metrics and trends to provide evidence-based insights and trend analysis.</p>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> ExecutionConfig.json</div>
+            <pre><code class="language-json">
+{
+  "report_topic": "Q3 Cloud Infrastructure Costs",
+  "report_type": "performance_analysis",
+  "target_audience": "executives",
+  "key_metrics": [
+    "Total Spend",
+    "Idle Instance Ratio",
+    "Reserved Instance Coverage"
+  ],
+  "data_points": {
+    "total_spend": "$450,000",
+    "prev_period": "$380,000",
+    "idle_ratio": "22%"
+  },
+  "include_risk_assessment": true,
+  "target_word_count": 1500
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI Output</div>
+            <div class="mock-tabs">
+                <div class="mock-tab active">Overview</div>
+                <div class="mock-tab">Data Analysis</div>
+                <div class="mock-tab">Outline</div>
+                <div class="mock-tab">Recommendations</div>
+            </div>
+            <div class="mock-ui-content">
+                <h3 style="margin-top:0"># Report Generation</h3>
+                <p><strong>Topic:</strong> Q3 Cloud Infrastructure Costs</p>
+                
+                <div style="border-left: 2px solid var(--accent-primary); padding-left: 1rem; margin: 1rem 0;">
+                    <div style="font-size: 0.8rem; color: var(--text-dim);">PHASE 1: DATA ANALYSIS</div>
+                    <div style="color: #4ade80;">✅ Complete: 3 metrics analyzed</div>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    </div>
-                    <h3>Structured Reporting</h3>
-                    <p>Creates professional reports with executive summaries, detailed sections, and visualizations.</p>
+
+                <div style="border-left: 2px solid var(--accent-primary); padding-left: 1rem; margin: 1rem 0;">
+                    <div style="font-size: 0.8rem; color: var(--text-dim);">PHASE 2: REPORT STRUCTURE</div>
+                    <div style="color: #4ade80;">✅ Complete: Outline created (5 sections)</div>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    </div>
-                    <h3>Strategic Insight</h3>
-                    <p>Includes risk assessments, comparative analysis, and prioritized recommendations based on findings.</p>
+
+                <div style="border-left: 2px solid #30363d; padding-left: 1rem; margin: 1rem 0;">
+                    <div style="font-size: 0.8rem; color: var(--text-dim);">PHASE 3: CONTENT GENERATION</div>
+                    <div>⏳ Writing Section 3: Cost Optimization Patterns...</div>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </div>
-                    <h3>Iterative Refinement</h3>
-                    <p>Performs automated revision passes to improve clarity, tone, and flow before final delivery.</p>
+
+                <div style="margin-top: 2rem; padding: 0.5rem; background: #0d1117; border: 1px solid var(--border-subtle); text-align: center; font-size: 0.8rem;">
+                    <span style="color: var(--text-dim)">Generating: 850 / 1500 words</span>
                 </div>
             </div>
         </div>
     </section>
-    <!-- Simulator -->
-    <section id="demo" class="simulator">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="sim-container">
-                <!-- Inputs -->
-                <div class="sim-panel sim-left">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
-                    <div style="overflow-y: auto; padding-right: 10px; flex: 1;">
-                        <div class="form-group">
-                            <label>Report Topic</label>
-                            <input type="text" id="report_topic" class="form-control" value="Q3 Marketing Performance">
-                        </div>
-                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div>
-                                <label>Report Type</label>
-                                <select id="report_type" class="form-control">
-                                    <option value="status_update">Status Update</option>
-                                    <option value="quarterly_review" selected>Quarterly Review</option>
-                                    <option value="incident_report">Incident Report</option>
-                                    <option value="performance_analysis">Performance Analysis</option>
-                                    <option value="market_research">Market Research</option>
-                                    <option value="post_mortem">Post Mortem</option>
-                                    <option value="financial_report">Financial Report</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Tone</label>
-                                <select id="tone" class="form-control">
-                                    <option value="professional" selected>Professional</option>
-                                    <option value="formal">Formal</option>
-                                    <option value="analytical">Analytical</option>
-                                    <option value="conversational">Conversational</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div>
-                                <label>Target Audience</label>
-                                <input type="text" id="target_audience" class="form-control" value="Executive Team">
-                            </div>
-                            <div>
-                                <label>Time Period</label>
-                                <input type="text" id="time_period" class="form-control" value="Q3 2024">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Key Metrics (Comma separated)</label>
-                            <textarea id="key_metrics" class="form-control" style="min-height: 60px;">Conversion Rate, Customer Acquisition Cost, ROI, Traffic Growth</textarea>
-                        </div>
-                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div>
-                                <label>Word Count</label>
-                                <input type="number" id="target_word_count" class="form-control" value="1500">
-                            </div>
-                            <div>
-                                <label>Revisions</label>
-                                <input type="number" id="revision_passes" class="form-control" value="1" min="0" max="5">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Inclusions</label>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
-                                <label style="display: flex; align-items: center; margin: 0;"><input type="checkbox" id="inc_trend" checked style="margin-right: 8px;"> Trend Analysis</label>
-                                <label style="display: flex; align-items: center; margin: 0;"><input type="checkbox" id="inc_risk" checked style="margin-right: 8px;"> Risk Assessment</label>
-                                <label style="display: flex; align-items: center; margin: 0;"><input type="checkbox" id="inc_recs" checked style="margin-right: 8px;"> Recommendations</label>
-                                <label style="display: flex; align-items: center; margin: 0;"><input type="checkbox" id="inc_comp" checked style="margin-right: 8px;"> Comparative Analysis</label>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: 1rem;">Generate Report</button>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>report_topic</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The subject or topic of the report.</td>
+                </tr>
+                <tr>
+                    <td><code>report_type</code></td>
+                    <td>String</td>
+                    <td>Type of report (e.g., <code>status_update</code>, <code>quarterly_review</code>, <code>incident_report</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>target_audience</code></td>
+                    <td>String</td>
+                    <td>Target audience (e.g., <code>executives</code>, <code>stakeholders</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>key_metrics</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Specific KPIs to include in the analysis.</td>
+                </tr>
+                <tr>
+                    <td><code>data_points</code></td>
+                    <td>Map&lt;String, Any&gt;</td>
+                    <td>Raw statistics or data points to analyze.</td>
+                </tr>
+                <tr>
+                    <td><code>include_risk_assessment</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to include a dedicated risk and mitigation section. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>target_word_count</code></td>
+                    <td>Int</td>
+                    <td>Target length for the complete report. Default: <code>2000</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>revision_passes</code></td>
+                    <td>Int</td>
+                    <td>Number of LLM editing passes (0-5). Default: <code>1</code>.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <h3>The 7-Phase Generation Lifecycle</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                <div class="panel" style="height: auto; padding: 1rem;">
+                    <h4 style="color: var(--accent-primary); margin-top: 0;">1. Data Analysis</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Analyzes provided metrics and data points, determining trends (increasing/decreasing) and significance levels.</p>
                 </div>
-                <!-- Outputs -->
-                <div class="sim-panel sim-right">
-                    <div class="tabs">
-                        <div class="tab active" onclick="switchTab('report')">Report</div>
-                        <div class="tab" onclick="switchTab('logs')">Logs</div>
-                    </div>
-                    <div id="output-report" class="output-area markdown-preview">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the report and click "Generate" to see the output.
-                        </div>
-                    </div>
-                    <div id="output-logs" class="output-area" style="display: none; font-family: 'Courier New', monospace; font-size: 0.8rem;">
-                    </div>
+                <div class="panel" style="height: auto; padding: 1rem;">
+                    <h4 style="color: var(--accent-primary); margin-top: 0;">2. Outline Creation</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Structures the report into logical sections based on the topic and audience requirements.</p>
+                </div>
+                <div class="panel" style="height: auto; padding: 1rem;">
+                    <h4 style="color: var(--accent-primary); margin-top: 0;">3. Content Generation</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Iteratively writes each section, maintaining context from previous chapters to ensure narrative flow.</p>
+                </div>
+                <div class="panel" style="height: auto; padding: 1rem;">
+                    <h4 style="color: var(--accent-primary); margin-top: 0;">4. Strategic Recommendations</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Synthesizes findings into prioritized, actionable steps with rationale and impact estimates.</p>
+                </div>
+                <div class="panel" style="height: auto; padding: 1rem;">
+                    <h4 style="color: var(--accent-primary); margin-top: 0;">5. Risk Assessment</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Identifies operational, financial, or technical risks and proposes mitigation strategies.</p>
+                </div>
+                <div class="panel" style="height: auto; padding: 1rem;">
+                    <h4 style="color: var(--accent-primary); margin-top: 0;">6. Revision & Polish</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Performs editorial passes to ensure tone consistency and professional formatting.</p>
                 </div>
             </div>
         </div>
-    </section>
-    <!-- Use Cases -->
-    <section id="use-cases" class="use-cases">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="use-case-list">
-                <div class="use-case-item">
-                    <h4>Business Reporting</h4>
-                    <p>Create quarterly reviews, status updates, and performance analyses for stakeholders.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Project Summaries</h4>
-                    <p>Generate post-mortem reports and project completion summaries with key learnings.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Market Research</h4>
-                    <p>Compile market analysis reports with trend data and competitive insights.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Incident Analysis</h4>
-                    <p>Document technical incidents with root cause analysis and prevention strategies.</p>
-                </div>
-            </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3>Kotlin Boilerplate</h3>
+            <pre><code class="language-kotlin">
+val reportTask = ReportGenerationTask(
+    orchestrationConfig = config,
+    planTask = ReportGenerationTask.ReportGenerationTaskExecutionConfigData(
+        report_topic = "Annual Security Audit",
+        report_type = "incident_report",
+        target_audience = "board_of_directors",
+        include_risk_assessment = true,
+        revision_passes = 2,
+        input_files = listOf("docs/security/*.md", "logs/audit_summary.json")
+    )
+)
+            </code></pre>
+            
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM context when this task is active:</p>
+            <pre><code class="language-text">
+ReportGeneration - Generate comprehensive business reports with data analysis and recommendations
+  ** Specify the report topic and type (status update, quarterly review, incident report, etc.)
+  ** Define target audience and time period
+  ** Provide key metrics, KPIs, and data points to analyze
+  ** Enable trend analysis, visualizations, and comparative analysis
+  ** Include executive summary/dashboard for quick insights
+  ** Generate actionable recommendations based on findings
+  ** Assess risks and challenges
+  ** Produces complete, professional report with clear structure
+            </code></pre>
         </div>
     </section>
-    <script>
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById('output-report').style.display = tabName === 'report' ? 'block' : 'none';
-            document.getElementById('output-logs').style.display = tabName === 'logs' ? 'block' : 'none';
-        }
-        function runSimulation() {
-            const topic = document.getElementById('report_topic').value;
-            const type = document.getElementById('report_type').value;
-            const tone = document.getElementById('tone').value;
-            const audience = document.getElementById('target_audience').value;
-            const period = document.getElementById('time_period').value;
-            const metrics = document.getElementById('key_metrics').value.split(',');
-            const revisions = parseInt(document.getElementById('revision_passes').value);
-            const includeRisk = document.getElementById('inc_risk').checked;
-            const includeRecs = document.getElementById('inc_recs').checked;
+</main>
 
-            const reportEl = document.getElementById('output-report');
-            const logsEl = document.getElementById('output-logs');
-            
-            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
-            logsEl.innerHTML = '';
-            
-            const logs = [
-                `[INFO] Starting ReportGenerationTask for topic: '${topic}'`,
-                `[INFO] Phase 1: Analyzing data and metrics (${metrics.length} items)...`,
-                `[INFO] Analyzed ${metrics.length} metrics.`,
-                `[INFO] Phase 2: Creating report outline...`,
-                `[INFO] Created outline with 5 sections.`,
-                `[INFO] Phase 3: Generating report sections...`,
-                `[INFO] Generating section 1/5: Executive Summary`,
-                `[INFO] Generating section 2/5: Performance Analysis`,
-                `[INFO] Generating section 3/5: Trend Review`,
-                `[INFO] Generating section 4/5: Comparative Analysis`,
-                `[INFO] Generating section 5/5: Conclusion`,
-            ];
-            if (includeRecs) {
-                logs.push(`[INFO] Phase 4: Generating recommendations...`);
-                logs.push(`[INFO] Generated 3 prioritized recommendations.`);
-            }
-            if (includeRisk) {
-                logs.push(`[INFO] Phase 5: Generating risk assessment...`);
-                logs.push(`[INFO] Identified 3 key risks.`);
-            }
-            if (revisions > 0) {
-                logs.push(`[INFO] Phase 6: Performing ${revisions} revision pass(es)...`);
-                logs.push(`[INFO] Revision pass 1 complete.`);
-            }
-            logs.push(`[INFO] Phase 7: Assembling final report...`);
-            logs.push(`[SUCCESS] Report generation complete.`);
-            
-            let logIndex = 0;
-            const logInterval = setInterval(() => {
-                if (logIndex < logs.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
-                    line.style.marginBottom = '4px';
-                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
-                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
-                    logsEl.appendChild(line);
-                    logsEl.scrollTop = logsEl.scrollHeight;
-                    logIndex++;
-                } else {
-                    clearInterval(logInterval);
-                    renderReport(topic, type, audience, metrics, period, tone, includeRisk, includeRecs);
-                }
-            }, 300);
-        }
-        function renderReport(topic, type, audience, metrics, period, tone, includeRisk, includeRecs) {
-            const reportEl = document.getElementById('output-report');
-            const markdown = `
-<h1>${topic}</h1>
-<p><strong>Type:</strong> ${type.replace('_', ' ').toUpperCase()}<br>
-<strong>Period:</strong> ${period}<br>
-<strong>Prepared for:</strong> ${audience}<br>
-<strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-<h2>Executive Summary</h2>
-<p>This report provides a comprehensive analysis of ${topic} for ${period}. Key performance indicators show positive trends in customer acquisition, though retention metrics require attention. Overall, the strategic initiatives implemented have yielded a 15% increase in ROI.</p>
-
-<h2>Key Metrics Analysis</h2>
-<ul>
-    ${metrics.map(m => `<li><strong>${m.trim()}:</strong> 🔵 Notable. Showing steady improvement. Current value exceeds target by 5%.</li>`).join('')}
-</ul>
-
-<h2>Trend Analysis</h2>
-<p>Comparing current performance to the previous period, we observe:</p>
-<ul>
-    <li><strong>Upward Trend:</strong> Traffic growth has accelerated by 20% month-over-month.</li>
-    <li><strong>Stable:</strong> Conversion rates remain consistent at 3.5%.</li>
-</ul>
-${includeRecs ? `
-
-<h2>Recommendations</h2>
-<h3>🔴 Optimize Ad Spend</h3>
-<p><strong>Priority:</strong> High | <strong>Timeline:</strong> Immediate</p>
-<p>Reallocate budget to high-performing channels identified in the analysis to maximize ROI.</p>
-<h3>🟡 Enhance Onboarding</h3>
-<p><strong>Priority:</strong> Medium | <strong>Timeline:</strong> Q4 2024</p>
-<p>Address the drop-off in user activation by simplifying the signup flow.</p>
-` : ''}
-${includeRisk ? `
-<h2>Risk Assessment</h2>
-<h3>🟡 Significant - Market Volatility</h3>
-<p><strong>Likelihood:</strong> Medium | <strong>Impact:</strong> High</p>
-<p>Moderate risk due to changing competitor landscape. <strong>Mitigation:</strong> Diversify marketing channels and lock in long-term contracts.</p>
-` : ''}
-            `;
-            reportEl.innerHTML = markdown;
-        }
-    </script>
 </body>
 </html>

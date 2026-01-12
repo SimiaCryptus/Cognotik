@@ -1,342 +1,374 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Business Proposal Task - Cognotik</title>
-    <!-- Fonts -->
+    <title>Cognotik | BusinessProposalTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
-        /* Page Specific Overrides */
-        .container {
-            max-width: var(--container-max-width);
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .bento-container {
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 0 2rem;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
         }
-        
-        /* Hero */
-        .hero {
-            /* Override main.css hero alignment for this specific layout */
-            text-align: left;
-            min-height: 80vh;
+
+        /* Header Styles */
+        .task-header {
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 1.5rem;
+        }
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+        }
+        .badges {
             display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
             align-items: center;
         }
-        .hero-layout {
-            display: flex;
-            align-items: center;
-            width: 100%;
-        }
-        .hero-content {
-            flex: 1;
-            padding-right: 2rem;
-        }
-        .hero-visual {
-            flex: 1;
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
             height: 400px;
-            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
             display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            flex-direction: column;
         }
-        .visual-node {
-            width: 200px;
-            height: 200px;
-            border: 2px solid var(--accent-secondary);
-            border-radius: 50%;
-            position: absolute;
-            animation: pulse 4s infinite;
-            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
             display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-color);
+            justify-content: space-between;
         }
-        .visual-node::before {
-            content: '💼';
-            font-size: 4rem;
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow: auto;
+            flex-grow: 1;
+            background: #0d1117;
         }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
         }
-        
-        /* Feature Icons */
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(6, 182, 212, 0.1);
-            border-radius: 12px;
+
+        /* Mock UI Styles */
+        .mock-browser {
+            padding: 1rem;
+            background: #fff;
+            color: #333;
+            height: 100%;
+            overflow-y: auto;
+            font-size: 0.9rem;
+        }
+        .mock-tabs {
             display: flex;
-            align-items: center;
-            justify-content: center;
+            gap: 2px;
+            background: #f0f0f0;
+            padding: 5px 5px 0 5px;
+            border-bottom: 1px solid #ccc;
+        }
+        .mock-tab {
+            padding: 5px 10px;
+            background: #ddd;
+            font-size: 0.7rem;
+            border-radius: 3px 3px 0 0;
+        }
+        .mock-tab.active { background: #fff; font-weight: bold; }
+
+        /* Tabs System */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
             margin-bottom: 1.5rem;
-            color: var(--accent-secondary);
         }
-        
-        /* Markdown Preview */
-        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
-        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-color); }
-        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
-        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
-        
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+        .req { color: #f85149; font-weight: bold; }
+
         @media (max-width: 768px) {
-            .hero-layout { flex-direction: column; text-align: center; }
-            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
         }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="business-proposal"></cognotik-header>
-    <!-- Hero -->
-    <header class="hero">
-        <div class="container hero-layout">
-            <div class="hero-content">
-                <h1>Business Proposal Task</h1>
-                <p class="subtitle" style="text-align: left; margin: 0 0 2rem 0;">Generate comprehensive business proposals with ROI analysis, risk assessment, and strategic planning.</p>
-                <a href="#demo" class="cta-button">Try the Simulator</a>
-            </div>
-            <div class="hero-visual">
-                <div class="visual-node"></div>
-            </div>
-        </div>
-    </header>
-    <!-- Features -->
-    <section id="features" class="features">
-        <div class="container">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                    </div>
-                    <h3>Financial Projections</h3>
-                    <p>Generates detailed ROI analysis, budget breakdowns, and financial forecasts.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </div>
-                    <h3>Stakeholder Analysis</h3>
-                    <p>Identifies key decision-makers and tailors the proposal to their interests.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    </div>
-                    <h3>Risk Management</h3>
-                    <p>Identifies potential risks and proposes effective mitigation strategies.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2 6.3-6.4 2.1 2-6.3z"/></svg>
-                    </div>
-                    <h3>Competitive Analysis</h3>
-                    <p>Evaluates alternatives and highlights your proposal's competitive advantages.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    </div>
-                    <h3>Timeline Planning</h3>
-                    <p>Creates realistic project schedules with phases, milestones, and dependencies.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    </div>
-                    <h3>Comprehensive Writing</h3>
-                    <p>Drafts full executive summaries, detailed sections, and persuasive conclusions.</p>
-                </div>
-            </div>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="bento-container">
+
+    <!-- Section A: Header -->
+    <section class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Writing > BusinessProposalTask</div>
+        <h1>BusinessProposalTask</h1>
+        <p class="pitch">
+            Generates comprehensive, multi-phase business proposals including stakeholder analysis, ROI projections, risk assessments, and competitive positioning.
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">High Token Usage</span>
+            <span class="badge">GPT-4 Preferred</span>
         </div>
     </section>
-    <!-- Simulator -->
-    <section id="demo" class="simulator">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="simulator-container">
-                <!-- Inputs -->
-                <div class="sim-controls">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
-                    <div class="control-group">
-                        <label>Proposal Title</label>
-                        <input type="text" id="proposal_title" value="Cloud Migration Strategy">
-                    </div>
-                    <div class="control-group">
-                        <label>Proposal Type</label>
-                        <select id="proposal_type" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-color); border-radius: 4px;">
-                            <option value="project">Project Proposal</option>
-                            <option value="investment">Investment Pitch</option>
-                            <option value="grant">Grant Application</option>
-                            <option value="partnership">Partnership Agreement</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label>Objective</label>
-                        <input type="text" id="objective" value="Migrate legacy systems to AWS to reduce costs.">
-                    </div>
-                    <div class="control-group">
-                        <label>Budget Range</label>
-                        <input type="text" id="budget_range" value="$100k - $150k">
-                    </div>
-                    <div class="control-group">
-                        <label>Timeline</label>
-                        <input type="text" id="timeline" value="6 months">
-                    </div>
-                    <div class="control-group">
-                        <label>Tone</label>
-                        <select id="tone" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-color); border-radius: 4px;">
-                            <option value="professional">Professional</option>
-                            <option value="persuasive">Persuasive</option>
-                            <option value="formal">Formal</option>
-                            <option value="collaborative">Collaborative</option>
-                        </select>
-                    </div>
-                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Generate Proposal</button>
+
+    <!-- Section B: Reality Check -->
+    <section class="reality-check-grid">
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚙️ TaskConfig.json</span>
+            </div>
+            <pre><code class="language-json">{
+  "task_type": "BusinessProposal",
+  "proposal_title": "Project Phoenix: Cloud Migration",
+  "proposal_type": "project",
+  "objective": "Migrate legacy infrastructure to AWS",
+  "budget_range": "$500k - $1M",
+  "include_roi_analysis": true,
+  "include_risk_assessment": true,
+  "target_word_count": 2500
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️ Session UI Output</span>
+            </div>
+            <div class="mock-browser">
+                <div class="mock-tabs">
+                    <div class="mock-tab active">Overview</div>
+                    <div class="mock-tab">Stakeholder Analysis</div>
+                    <div class="mock-tab">ROI Analysis</div>
+                    <div class="mock-tab">Complete Proposal</div>
                 </div>
-                <!-- Outputs -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <div class="tab active" onclick="switchTab('proposal')">Proposal</div>
-                        <div class="tab" onclick="switchTab('logs')">Logs</div>
-                    </div>
-                    <div id="output-proposal" class="tab-content active markdown-preview">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the proposal and click "Generate" to see the output.
-                        </div>
-                    </div>
-                    <div id="output-logs" class="tab-content" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                <div style="padding: 10px;">
+                    <h3 style="margin-top:0">Business Proposal: Project Phoenix</h3>
+                    <p><strong>Status:</strong> ✅ Generation Complete</p>
+                    <ul style="font-size: 0.8rem; padding-left: 20px;">
+                        <li>Phase 1: Strategic Analysis ✅</li>
+                        <li>Phase 2: ROI Analysis ✅</li>
+                        <li>Phase 3: Risk Assessment ✅</li>
+                        <li>Phase 7: Content Generation ✅</li>
+                    </ul>
+                    <div style="background: #f6f8fa; padding: 10px; border-radius: 4px; font-size: 0.75rem; border: 1px solid #ddd;">
+                        <strong>Statistics:</strong><br>
+                        Total Word Count: 2,642<br>
+                        Generation Time: 142.5s
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <!-- Use Cases -->
-    <section id="use-cases" class="modes-section" style="padding: 4rem 0;">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="mode-grid">
-                <div class="mode-card">
-                    <div class="mode-title">Project Proposals</div>
-                    <p>Pitch new internal projects or initiatives to management.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Sales Proposals</div>
-                    <p>Create compelling offers for potential clients and customers.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Grant Applications</div>
-                    <p>Draft detailed funding requests for research or non-profit work.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Partnership Agreements</div>
-                    <p>Outline the terms and benefits of strategic business partnerships.</p>
-                </div>
-            </div>
+
+    <!-- Section C: Tabbed Interface -->
+    <section class="task-details">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- Tab 1: Documentation -->
+        <div id="tab-docs" class="tab-content active">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>proposal_title</code> <span class="req">*</span></td>
+                        <td>String</td>
+                        <td>The title or name of the proposal.</td>
+                    </tr>
+                    <tr>
+                        <td><code>objective</code> <span class="req">*</span></td>
+                        <td>String</td>
+                        <td>The primary objective or goal of the proposal.</td>
+                    </tr>
+                    <tr>
+                        <td><code>proposal_type</code></td>
+                        <td>String</td>
+                        <td>Type (e.g., 'project', 'investment', 'grant'). Default: <code>project</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>budget_range</code></td>
+                        <td>String</td>
+                        <td>Financial scope (e.g., '$50,000-$100,000').</td>
+                    </tr>
+                    <tr>
+                        <td><code>include_roi_analysis</code></td>
+                        <td>Boolean</td>
+                        <td>Include detailed ROI and financial projections. Default: <code>true</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>target_word_count</code></td>
+                        <td>Int</td>
+                        <td>Target word count for the complete proposal. Default: <code>3000</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>revision_passes</code></td>
+                        <td>Int</td>
+                        <td>Number of revision passes (0-5). Default: <code>1</code>.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab 2: Process -->
+        <div id="tab-process" class="tab-content">
+            <h3>Task Process Lifecycle</h3>
+            <ol style="color: var(--text-main); font-size: 0.95rem;">
+                <li><strong>Strategic Analysis:</strong> Identifies 3-5 key stakeholders, their interests, and influence levels.</li>
+                <li><strong>ROI Analysis:</strong> (Optional) Calculates financial projections, cost breakdowns, and payback periods.</li>
+                <li><strong>Risk Assessment:</strong> (Optional) Identifies technical, financial, and operational risks with mitigation strategies.</li>
+                <li><strong>Competitive Analysis:</strong> (Optional) Compares alternatives and defines competitive advantages.</li>
+                <li><strong>Timeline & Milestones:</strong> (Optional) Maps project phases and critical path items.</li>
+                <li><strong>Outline Generation:</strong> Creates a structured 6-8 section outline tailored to the proposal type.</li>
+                <li><strong>Content Generation:</strong> Iteratively writes each section, incorporating previous analysis data.</li>
+                <li><strong>Revision:</strong> Performs automated editing passes to improve tone, flow, and persuasiveness.</li>
+            </ol>
+        </div>
+
+        <!-- Tab 3: Integration -->
+        <div id="tab-integration" class="tab-content">
+            <h3>Kotlin Implementation</h3>
+            <pre><code class="language-kotlin">// Adding BusinessProposalTask to an OrchestrationConfig
+val plan = OrchestrationConfig(
+    tasks = mutableListOf(
+        BusinessProposalTask.BusinessProposalTaskExecutionConfigData(
+            proposal_title = "AI Implementation Strategy",
+            objective = "Deploy LLM-based customer support",
+            proposal_type = "investment",
+            include_roi_analysis = true,
+            target_word_count = 4000
+        )
+    )
+)</code></pre>
         </div>
     </section>
-    <script>
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            if (tabName === 'proposal') {
-                document.getElementById('output-proposal').classList.add('active');
-            } else {
-                document.getElementById('output-logs').classList.add('active');
-            }
-        }
-        function runSimulation() {
-            const title = document.getElementById('proposal_title').value;
-            const objective = document.getElementById('objective').value;
-            const type = document.getElementById('proposal_type').value;
-            const budget = document.getElementById('budget_range').value;
-            const timeline = document.getElementById('timeline').value;
-            const reportEl = document.getElementById('output-proposal');
-            const logsEl = document.getElementById('output-logs');
-            
-            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
-            logsEl.innerHTML = '';
-            
-            const logs = [
-                `[INFO] Initializing BusinessProposalTask...`,
-                `[INFO] Config: Title="${title}", Type=${type}`,
-                `[INFO] Phase 1: Analyzing stakeholders and decision makers...`,
-                `[INFO] Phase 2: Calculating ROI and financial projections...`,
-                `[INFO] Phase 3: Assessing risks and mitigation strategies...`,
-                `[INFO] Phase 4: Analyzing competitive landscape...`,
-                `[INFO] Phase 5: Creating project timeline and milestones...`,
-                `[INFO] Phase 6: Generating proposal outline...`,
-                `[INFO] Phase 7: Writing content sections...`,
-                `[INFO] Phase 8: Drafting conclusion and next steps...`,
-                `[SUCCESS] Proposal generation complete.`
-            ];
-            
-            let logIndex = 0;
-            const logInterval = setInterval(() => {
-                if (logIndex < logs.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
-                    line.style.marginBottom = '4px';
-                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
-                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
-                    logsEl.appendChild(line);
-                    logsEl.scrollTop = logsEl.scrollHeight;
-                    logIndex++;
-                } else {
-                    clearInterval(logInterval);
-                    renderProposal(title, objective, budget, timeline);
-                }
-            }, 400);
-        }
-        function renderProposal(title, objective, budget, timeline) {
-            const reportEl = document.getElementById('output-proposal');
-            const markdown = `
-<h1>${title}</h1>
+</main>
 
-<h2>Executive Summary</h2>
-<p>This proposal outlines a strategic plan to ${objective.toLowerCase()}. By leveraging cloud infrastructure, we project a 30% reduction in operational costs within the first year.</p>
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.target.classList.add('active');
+    }
+</script>
 
-<h2>Financial Projections</h2>
-<ul>
-    <li><strong>Total Investment:</strong> ${budget}</li>
-    <li><strong>Year 1 Savings:</strong> $200,000</li>
-    <li><strong>ROI:</strong> 133%</li>
-    <li><strong>Payback Period:</strong> 9 months</li>
-</ul>
-
-<h2>Risk Assessment</h2>
-<ul>
-    <li><strong>Data Migration Loss:</strong> Low probability. Mitigation: Full backups and phased migration.</li>
-    <li><strong>Downtime:</strong> Moderate probability. Mitigation: Scheduled maintenance windows and failover systems.</li>
-</ul>
-<h2>Competitive Analysis</h2>
-<ul>
-    <li><strong>Status Quo:</strong> High maintenance costs and security vulnerabilities.</li>
-    <li><strong>Competitor X:</strong> Lower initial cost but lacks scalability.</li>
-    <li><strong>Our Advantage:</strong> Seamless integration with existing workflows and 24/7 support.</li>
-</ul>
-
-
-<h2>Timeline</h2>
-<ul>
-    <li><strong>Phase 1:</strong> Planning & Assessment (Month 1)</li>
-    <li><strong>Phase 2:</strong> Pilot Migration (Month 2-3)</li>
-    <li><strong>Phase 3:</strong> Full Cutover (Month 4)</li>
-    <li><strong>Total Duration:</strong> ${timeline}</li>
-</ul>
-<h2>Conclusion</h2>
-<p>We are ready to begin immediately. This initiative represents a critical step towards modernization, offering significant ROI and operational resilience.</p>
-            `;
-            reportEl.innerHTML = markdown;
-        }
-    </script>
 </body>
 </html>

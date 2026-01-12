@@ -16,7 +16,7 @@ object AutoFixTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         TaskHarness(
@@ -25,9 +25,9 @@ object AutoFixTaskTest {
                 task_type = AutoFixTask.AutoFix.name
             ),
             executionConfig = AutoFixTaskExecutionConfigData(
-                commands = listOf(
+                commands = mutableListOf(
                     CommandWithWorkingDir(
-                        command = listOf("git", "status"),
+                        command = mutableListOf("git", "status"),
                         workingDir = "."
                     )
                 ),

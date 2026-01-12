@@ -49,16 +49,23 @@ class ReadDocumentsTask(
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
-    ), ValidatedObject
+    ), ValidatedObject {
+        override fun validate(): String? {
+            if (inquiry_questions.isNullOrEmpty() && inquiry_goal.isNullOrBlank()) return "Either inquiry_questions or inquiry_goal must be provided"
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     override fun promptSegment() = (if (!orchestrationConfig.autoFix) """
   ReadDocuments - Directly answer questions or provide insights using the LLM.
-    * Specify the questions and the goal of the inquiry.
-    * List input files (supports glob patterns) to be examined when answering the questions.
+    * inquiry_questions: Specific questions to address.
+    * inquiry_goal: The goal of the inquiry.
+    * input_files: File patterns (e.g. **/*.kt) to use as input.
   """ else """
   ReadDocuments - Directly answer questions or provide a report using the LLM. Reading files is optional and can be included if relevant to the inquiry.
-    * Specify the questions and the goal of the inquiry.
-    * List input files (supports glob patterns) to be examined when answering the questions.
+    * inquiry_questions: Specific questions to address.
+    * inquiry_goal: The goal of the inquiry.
+    * input_files: Optional file patterns to examine.
   """)
 
     override fun run(
@@ -68,8 +75,16 @@ class ReadDocumentsTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+        val tabs = TabbedDisplay(task)
+        val analysisTask = tabs.newTask("Analysis")
+        val filesTask = tabs.newTask("Files")
+
         val transcript = task.transcript("transcript")
         val fileContext = getInputFileCode()
+        filesTask.header("Files Read", level = 3)
+        filesTask.add(MarkdownUtil.renderMarkdown(fileContext, ui = filesTask.ui))
+        filesTask.complete()
+
 
         val toInput = { it: String ->
             messages + listOf(
@@ -89,12 +104,12 @@ class ReadDocumentsTask(
                 Provide a comprehensive overview, including key concepts, relevant technologies, best practices, and any potential challenges or considerations.
                 Ensure the information is accurate, up-to-date, and well-organized to facilitate easy understanding.
                 """.trimIndent(),
-            model = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
-                ?: defaultSmart).getChildClient(task),
+            model = (typeConfig.model?.let { this.orchestrationConfig.instance(it) }
+                ?: defaultSmart).getChildClient(analysisTask),
             temperature = this.orchestrationConfig.temperature,
         )
         val inquiryResult = Discussable(
-            task = task,
+            task = analysisTask,
             heading = "Read Documents",
             userMessage = {
                 "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
@@ -106,7 +121,7 @@ class ReadDocumentsTask(
                 transcript?.write("# Analysis Request\n\n${input.joinToString("\n\n")}\n\n".toByteArray())
                 insightActor.answer(input)
             },
-            outputFn = { MarkdownUtil.renderMarkdown(it, ui = task.ui) },
+            outputFn = { MarkdownUtil.renderMarkdown(it, ui = analysisTask.ui) },
             reviseResponse = { history ->
                 val contextMessages = (messages + listOf(fileContext))
                     .filter { it.isNotBlank() }
@@ -114,6 +129,7 @@ class ReadDocumentsTask(
                 insightActor.answer((contextMessages + history).map { it.first }.toList())
             }
         ).call()
+        analysisTask.complete()
         transcript?.close()
         resultFn(inquiryResult!!)
     }
@@ -154,24 +170,24 @@ class ReadDocumentsTask(
     companion object {
         private val log = LoggerFactory.getLogger(ReadDocumentsTask::class.java)
         val ReadDocuments = TaskType(
-            "ReadDocuments",
-            "File",
-            ReadDocumentsTask::class.java,
-            ReadDocumentsTaskExecutionConfigData::class.java,
-            ReadDocumentsTaskTypeConfig::class.java,
-            "Directly answer questions or provide insights using the LLM, optionally referencing files.",
-            """
-            Provides direct answers and insights using the LLM, optionally referencing project files.
-            <ul>
-              <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>
-              <li>Reading files is optional; the task can operate with or without file input</li>
-              <li>User feedback and iterative refinement are supported but not required</li>
-              <li>Generates comprehensive markdown reports, explanations, and recommendations</li>
-              <li>Can answer detailed questions about code, design, or project context</li>
-              <li>Supports both one-shot and interactive discussion modes</li>
-              <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
-            </ul>
-            """,
+          name = "ReadDocuments",
+          category = "File",
+          taskClass = ReadDocumentsTask::class.java,
+          executionConfigClass = ReadDocumentsTaskExecutionConfigData::class.java,
+          taskSettingsClass = ReadDocumentsTaskTypeConfig::class.java,
+          description = "Deeply analyze project files and provide comprehensive technical insights or answers to specific questions.",
+          tooltipHtml = """
+                      Analyzes project files and provides detailed technical insights using the LLM.
+                      <ul>
+                        <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>
+                        <li>Reading files is optional; the task can operate with or without file input</li>
+                        <li>User feedback and iterative refinement are supported but not required</li>
+                        <li>Generates comprehensive markdown reports, explanations, and recommendations</li>
+                        <li>Can answer detailed questions about code, design, or project context</li>
+                        <li>Supports both one-shot and interactive discussion modes</li>
+                        <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
+                      </ul>
+                      """,
         )
 
         fun getAvailableFiles(

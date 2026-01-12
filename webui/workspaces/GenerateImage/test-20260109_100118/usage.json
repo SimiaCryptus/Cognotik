@@ -1,0 +1,8 @@
+{
+  "gemini-3-pro-image-preview" : {
+    "prompt_tokens" : 53,
+    "completion_tokens" : 1229,
+    "total_tokens" : 1282,
+    "cost" : 0.007453500000000001
+  }
+}

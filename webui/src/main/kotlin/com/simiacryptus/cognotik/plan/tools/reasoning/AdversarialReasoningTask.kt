@@ -1,7 +1,8 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
@@ -36,6 +37,10 @@ class AdversarialReasoningTask(
         val exploit_steps: List<String> = emptyList(),
         val mitigation_strategies: List<String> = emptyList()
     ) : ValidatedObject {
+        override fun toString(): String = """
+            ### ${severity.uppercase()}: $category
+            $description
+        """.trimIndent()
         override fun validate(): String? {
             if (category.isBlank()) return "VulnerabilityReport: category cannot be blank"
             if (severity.isBlank()) return "VulnerabilityReport: severity cannot be blank"
@@ -46,6 +51,9 @@ class AdversarialReasoningTask(
             return ValidatedObject.validateFields(this)
         }
     }
+    data class VulnerabilityList(
+        val vulnerabilities: List<VulnerabilityReport> = emptyList()
+    ) : ValidatedObject { override fun validate() = vulnerabilities.mapNotNull { it.validate() }.firstOrNull() }
 
     class AdversarialReasoningTaskExecutionConfigData(
         @Description("The target system, design, or argument to analyze for weaknesses")
@@ -277,8 +285,8 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                 val adversarialAgent = createAdversarialAgent(
                     vector = vector,
                     adversaryCapability = adversaryCapability,
-                    generateExploits = generateExploits,
-                    api = api
+                   generateExploits = generateExploits,
+                    api = api,
                 )
 
                 val analysisPrompt = buildAnalysisPrompt(
@@ -297,28 +305,23 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                 task.update()
 
                 // Perform analysis
-                val analysisResult = adversarialAgent.answer(listOf(analysisPrompt))
+                val analysisResult = adversarialAgent.answer(listOf(analysisPrompt)).obj
+                val parsedVulnerabilities = analysisResult.vulnerabilities
+                
                 transcriptStream?.let {
                     it.write("### Analysis Results\n\n".toByteArray())
-                    it.write("$analysisResult\n\n".toByteArray())
+                    it.write(parsedVulnerabilities.joinToString("\n\n").toByteArray())
                     it.flush()
                 }
 
 
                 vectorTask.header("Analysis Results", 2)
-                vectorTask.add(analysisResult.renderMarkdown)
+                vectorTask.add(parsedVulnerabilities.joinToString("\n\n").renderMarkdown)
                 task.update()
 
-                // Parse structured vulnerabilities if possible
-                val parsedVulnerabilities = parseVulnerabilities(analysisResult, vector)
                 allVulnerabilities.addAll(parsedVulnerabilities)
 
-                // Extract edge cases and failure modes
-                val edgeCases = extractEdgeCases(analysisResult)
-                allEdgeCases.addAll(edgeCases)
 
-                val failureModes = extractFailureModes(analysisResult)
-                allFailureModes.addAll(failureModes)
 
                 val vectorTime = System.currentTimeMillis() - vectorStartTime
                 vectorAnalysisTimes[vector] = vectorTime
@@ -688,8 +691,8 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         vector: String,
         adversaryCapability: String,
         generateExploits: Boolean,
-        api: com.simiacryptus.cognotik.chat.model.ChatInterface
-    ): ChatAgent {
+        api: com.simiacryptus.cognotik.chat.model.ChatInterface,
+    ): ParsedAgent<VulnerabilityList> {
         val capabilityDescription = when (adversaryCapability.lowercase()) {
             "basic" -> "You have basic technical skills and use common tools and techniques."
             "intermediate" -> "You have solid technical skills, understand common vulnerabilities, and can chain exploits."
@@ -704,7 +707,8 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             "\n\nDescribe vulnerabilities conceptually without providing detailed exploit code or step-by-step instructions."
         }
 
-        return ChatAgent(
+        return ParsedAgent(
+            resultClass = VulnerabilityList::class.java,
             prompt = """
 You are a red team security analyst performing adversarial reasoning on a system.
 Your focus is on the '$vector' attack vector.
@@ -719,11 +723,11 @@ Your goal is to:
 5. Consider both technical and non-technical attack surfaces
 
 Be thorough, creative, and adversarial in your thinking.
-Consider unconventional attack paths and second-order effects.$exploitWarning
 
-Provide structured analysis with clear severity ratings (critical, high, medium, low).
+Consider unconventional attack paths and second-order effects.$exploitWarning
             """.trimIndent(),
             model = api,
+            parsingChatter = api,
             temperature = 0.8 // Higher temperature for creative adversarial thinking
         )
     }
@@ -792,24 +796,12 @@ Consider both immediate fixes and long-term architectural improvements.
 
             appendLine("## Analysis Requirements")
             appendLine()
-            appendLine("Identify up to $maxVulnerabilities vulnerabilities in the '$vector' category.")
-            appendLine()
-            appendLine("For each vulnerability, use the following format:")
-            appendLine("### [Vulnerability Name]")
-            appendLine("* **Category**: [Specific vulnerability classification]")
-            appendLine("* **Severity**: [Critical/High/Medium/Low]")
-            appendLine("* **Description**: [Clear explanation of the weakness]")
-            appendLine("* **Attack Scenario**: [How an attacker would exploit this]")
-            appendLine("* **Potential Impact**: [What damage could be done]")
+            appendLine("Identify up to $maxVulnerabilities vulnerabilities in the '$vector' category and return them as a structured list.")
 
             if (generateExploits) {
                 appendLine("* **Exploit Steps**: [Detailed technical steps to exploit]")
             }
 
-            appendLine()
-            appendLine("Also identify:")
-            appendLine("- **Edge Cases**: Unusual inputs or conditions that could cause problems")
-            appendLine("- **Failure Modes**: Ways the system could fail or behave unexpectedly")
             appendLine()
             appendLine("Think creatively and adversarially. Consider:")
             appendLine("- What assumptions does the system make?")
@@ -866,172 +858,33 @@ Consider both immediate fixes and long-term architectural improvements.
         }
     }
 
-    private fun parseVulnerabilities(analysisResult: String, vector: String): List<VulnerabilityReport> {
-        val vulnerabilities = mutableListOf<VulnerabilityReport>()
 
-        val lines = analysisResult.lines()
         
-        var currentCategory = ""
-        var currentSeverity = ""
-        var currentDescription = StringBuilder()
-        var currentScenario = StringBuilder()
-        var currentImpact = StringBuilder()
         
-        var isParsingVuln = false
-        var currentSection = "" // description, scenario, impact
 
-        fun saveCurrent() {
-            if (isParsingVuln) {
-                if (currentCategory.isNotBlank() || currentDescription.isNotEmpty()) {
-                    vulnerabilities.add(
-                        VulnerabilityReport(
-                            category = currentCategory.ifBlank { "Uncategorized ($vector)" },
-                            severity = currentSeverity.ifBlank { "medium" },
-                            description = currentDescription.toString().trim(),
-                            attack_scenario = currentScenario.toString().trim(),
-                            potential_impact = currentImpact.toString().trim()
-                        )
-                    )
-                }
-            }
-            currentCategory = ""
-            currentSeverity = ""
-            currentDescription = StringBuilder()
-            currentScenario = StringBuilder()
-            currentImpact = StringBuilder()
-            isParsingVuln = false
-            currentSection = ""
-        }
 
-        // Regex to detect headers like "### 1. SQL Injection" or "#### Vulnerability 1: XSS"
-        val headerRegex = Regex("^(#{3,})\\s*(?:\\d+\\.|Vulnerability\\s*\\d+:?)?\\s*(.*)", RegexOption.IGNORE_CASE)
         
-        // Regex for fields
-        val fieldRegex = Regex("^\\s*[\\*\\-]*\\s*\\*\\*([a-zA-Z\\s/]+)\\*\\*\\s*[:\\-](.*)", RegexOption.IGNORE_CASE)
-
-        lines.forEach { line ->
-            val trimmed = line.trim()
-            if (trimmed.isBlank()) return@forEach
 
 
 
 
 
-            val headerMatch = headerRegex.find(line)
-            if (headerMatch != null) {
-                val headerTitle = headerMatch.groupValues[2].trim()
-                // Skip non-vulnerability headers
-                if (headerTitle.contains("Analysis Results", ignoreCase = true) || 
-                    headerTitle.contains("Edge Cases", ignoreCase = true) ||
-                    headerTitle.contains("Failure Modes", ignoreCase = true)) {
-                    saveCurrent()
-                    return@forEach
-                }
 
-                saveCurrent()
-                isParsingVuln = true
-                currentCategory = headerTitle
-                return@forEach
-            }
 
-            if (!isParsingVuln) return@forEach
 
-            val fieldMatch = fieldRegex.find(line)
-            if (fieldMatch != null) {
-                val key = fieldMatch.groupValues[1].lowercase()
-                val value = fieldMatch.groupValues[2].trim()
 
-                when {
-                    key.contains("category") || key.contains("type") -> {
-                        currentCategory = value
-                        currentSection = ""
-                    }
-                    key.contains("severity") -> {
-                        val severityMatch = Regex("(critical|high|medium|low)", RegexOption.IGNORE_CASE).find(value)
-                        currentSeverity = severityMatch?.value?.lowercase() ?: value.lowercase()
-                        currentSection = ""
-                    }
-                    key.contains("description") -> {
-                        currentDescription.append(value)
-                        currentSection = "description"
-                    }
-                    key.contains("attack") || key.contains("scenario") -> {
-                        currentScenario.append(value)
-                        currentSection = "scenario"
-                    }
-                    key.contains("impact") -> {
-                        currentImpact.append(value)
-                        currentSection = "impact"
-                    }
-                    else -> currentSection = ""
-                }
-            } else {
-                // Continuation of previous section
-                if (currentSection == "description") currentDescription.append(" ").append(trimmed)
-                if (currentSection == "scenario") currentScenario.append(" ").append(trimmed)
-                if (currentSection == "impact") currentImpact.append(" ").append(trimmed)
-            }
-        }
-        saveCurrent()
 
-        return vulnerabilities
-    }
 
-    private fun extractEdgeCases(analysisResult: String): List<String> {
-        val edgeCases = mutableListOf<String>()
-        val lines = analysisResult.lines()
-        var inEdgeCaseSection = false
 
-        lines.forEach { line ->
-            val trimmed = line.trim()
-            when {
-                trimmed.matches(Regex(".*edge\\s*case.*", RegexOption.IGNORE_CASE)) -> {
-                    inEdgeCaseSection = true
-                }
 
-                trimmed.matches(Regex(".*failure\\s*mode.*", RegexOption.IGNORE_CASE)) -> {
-                    inEdgeCaseSection = false
-                }
 
-                inEdgeCaseSection && (trimmed.startsWith("-") || trimmed.startsWith("*") || trimmed.matches(Regex("^\\d+\\."))) -> {
-                    val cleaned = trimmed.removePrefix("-").removePrefix("*").replace(Regex("^\\d+\\."), "").trim()
-                    if (cleaned.length > 10) {
-                        edgeCases.add(cleaned)
-                    }
-                }
-            }
-        }
 
-        return edgeCases
-    }
 
-    private fun extractFailureModes(analysisResult: String): List<String> {
-        val failureModes = mutableListOf<String>()
-        val lines = analysisResult.lines()
-        var inFailureSection = false
 
-        lines.forEach { line ->
-            val trimmed = line.trim()
-            when {
-                trimmed.matches(Regex(".*failure\\s*mode.*", RegexOption.IGNORE_CASE)) -> {
-                    inFailureSection = true
-                }
 
-                trimmed.startsWith("#") && inFailureSection -> {
-                    inFailureSection = false
-                }
 
-                inFailureSection && (trimmed.startsWith("-") || trimmed.startsWith("*") || trimmed.matches(Regex("^\\d+\\."))) -> {
-                    val cleaned = trimmed.removePrefix("-").removePrefix("*").replace(Regex("^\\d+\\."), "").trim()
-                    if (cleaned.length > 10) {
-                        failureModes.add(cleaned)
-                    }
-                }
-            }
-        }
 
-        return failureModes
-    }
+
 
     private fun generateExecutiveSummary(
         targetSystem: String,
@@ -1136,25 +989,25 @@ Consider both immediate fixes and long-term architectural improvements.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AdversarialReasoningTask::class.java)
         val AdversarialReasoning = TaskType(
-            "AdversarialReasoning",
-            "Reasoning",
-            AdversarialReasoningTask::class.java,
-            AdversarialReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Red team analysis to identify vulnerabilities and weaknesses",
-            """
-              Performs adversarial reasoning and red team analysis on systems, designs, or arguments.
-              <ul>
-                <li>Identifies security vulnerabilities and attack vectors</li>
-                <li>Challenges assumptions aggressively</li>
-                <li>Finds edge cases and failure modes</li>
-                <li>Simulates adversarial scenarios at different capability levels</li>
-                <li>Stress tests logical arguments and system designs</li>
-                <li>Generates detailed vulnerability reports with severity ratings</li>
-                <li>Optionally provides exploit scenarios and mitigation strategies</li>
-                <li>Supports multiple attack vectors: security, performance, logic, business, privacy, compliance</li>
-              </ul>
-            """,
+          name = "AdversarialReasoning",
+          category = "Reasoning",
+          taskClass = AdversarialReasoningTask::class.java,
+          executionConfigClass = AdversarialReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Red team analysis to identify vulnerabilities and weaknesses",
+          tooltipHtml = """
+                        Performs adversarial reasoning and red team analysis on systems, designs, or arguments.
+                        <ul>
+                          <li>Identifies security vulnerabilities and attack vectors</li>
+                          <li>Challenges assumptions aggressively</li>
+                          <li>Finds edge cases and failure modes</li>
+                          <li>Simulates adversarial scenarios at different capability levels</li>
+                          <li>Stress tests logical arguments and system designs</li>
+                          <li>Generates detailed vulnerability reports with severity ratings</li>
+                          <li>Optionally provides exploit scenarios and mitigation strategies</li>
+                          <li>Supports multiple attack vectors: security, performance, logic, business, privacy, compliance</li>
+                        </ul>
+                      """,
         )
     }
 }

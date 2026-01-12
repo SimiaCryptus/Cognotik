@@ -7,10 +7,10 @@ import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.util.concurrent.Semaphore
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -147,6 +147,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)
+        val semaphore = Semaphore(0)
         // Create transcript file
         val transcript = task.transcript()
         transcript?.let { stream ->
@@ -291,10 +292,13 @@ Consider both the strength of evidence and its reliability.
             var stepTime = System.currentTimeMillis() - stepStartTime
             log.debug("Bayesian update completed in ${stepTime}ms: ${updateResult.length} characters")
             // Write to transcript
-            transcript?.write("\n## Bayesian Update\n\n".toByteArray())
-            transcript?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
-            transcript?.write(updateResult.toByteArray())
-            transcript?.write("\n\n".toByteArray())
+            transcript?.write("""
+                ## Bayesian Update
+                <details>
+                <summary>Analysis Details (${stepTime / 1000.0}s)</summary>
+                $updateResult
+                </details>
+            """.trimIndent().toByteArray())
 
 
 
@@ -349,13 +353,16 @@ Consider both the strength of evidence and its reliability.
                 stepStartTime = System.currentTimeMillis()
 
                 val evResult = bayesianAgent.answer(listOf(evPrompt))
-                stepTime = System.currentTimeMillis() - stepStartTime
+               var stepTime = System.currentTimeMillis() - stepStartTime
                 log.debug("Expected value analysis completed in ${stepTime}ms: ${evResult.length} characters")
                 // Write to transcript
-                transcript?.write("\n## Expected Value Analysis\n\n".toByteArray())
-                transcript?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
-                transcript?.write(evResult.toByteArray())
-                transcript?.write("\n\n".toByteArray())
+                transcript?.write("""
+                    ## Expected Value Analysis
+                    <details>
+                    <summary>Analysis Details (${stepTime / 1000.0}s)</summary>
+                    $evResult
+                    </details>
+                """.trimIndent().toByteArray())
 
 
 
@@ -407,13 +414,16 @@ Consider both the strength of evidence and its reliability.
                 stepStartTime = System.currentTimeMillis()
 
                 val uncertaintyResult = bayesianAgent.answer(listOf(uncertaintyPrompt))
-                stepTime = System.currentTimeMillis() - stepStartTime
+               var stepTime = System.currentTimeMillis() - stepStartTime
                 log.debug("Uncertainty analysis completed in ${stepTime}ms: ${uncertaintyResult.length} characters")
                 // Write to transcript
-                transcript?.write("\n## Key Uncertainties\n\n".toByteArray())
-                transcript?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
-                transcript?.write(uncertaintyResult.toByteArray())
-                transcript?.write("\n\n".toByteArray())
+                transcript?.write("""
+                    ## Key Uncertainties
+                    <details>
+                    <summary>Analysis Details (${stepTime / 1000.0}s)</summary>
+                    $uncertaintyResult
+                    </details>
+                """.trimIndent().toByteArray())
 
 
 
@@ -465,13 +475,16 @@ Consider both the strength of evidence and its reliability.
                 stepStartTime = System.currentTimeMillis()
 
                 val experimentResult = bayesianAgent.answer(listOf(experimentPrompt))
-                stepTime = System.currentTimeMillis() - stepStartTime
+               var stepTime = System.currentTimeMillis() - stepStartTime
                 log.debug("Experiment suggestions completed in ${stepTime}ms: ${experimentResult.length} characters")
                 // Write to transcript
-                transcript?.write("\n## Suggested Experiments\n\n".toByteArray())
-                transcript?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
-                transcript?.write(experimentResult.toByteArray())
-                transcript?.write("\n\n".toByteArray())
+                transcript?.write("""
+                    ## Suggested Experiments
+                    <details>
+                    <summary>Analysis Details (${stepTime / 1000.0}s)</summary>
+                    $experimentResult
+                    </details>
+                """.trimIndent().toByteArray())
 
 
 
@@ -537,12 +550,16 @@ Consider both the strength of evidence and its reliability.
                 }, ui = ui)
             )
             overviewTask.complete()
+            // Best Practice: Use acceptButtonFooter for manual review
+            task.add(acceptButtonFooter(task.ui) {
+                semaphore.release()
+            })
+            semaphore.acquire()
+
 
             val finalResult = resultBuilder.toString()
-            task.safeComplete(
-                "Completed Bayesian analysis of ${hypotheses.size} hypotheses in ${totalTime / 1000.0}s",
-                log
-            )
+            task.complete()
+            log.info("Completed Bayesian analysis of ${hypotheses.size} hypotheses in ${totalTime / 1000.0}s")
             resultFn(finalResult)
             transcript?.close()
 
@@ -620,8 +637,9 @@ Consider both the strength of evidence and its reliability.
         try {
             val inputFileContent = getInputFileCode(agent)
             if (inputFileContent.isNotBlank()) {
-                stream.write("\n## Input Files\n\n".toByteArray(StandardCharsets.UTF_8))
+                stream.write("\n## Input Files\n<details>\n<summary>File Contents</summary>\n\n".toByteArray(StandardCharsets.UTF_8))
                 stream.write(inputFileContent.toByteArray(StandardCharsets.UTF_8))
+                stream.write("\n</details>\n".toByteArray(StandardCharsets.UTF_8))
                 stream.write("\n\n".toByteArray(StandardCharsets.UTF_8))
                 stream.flush()
             }
@@ -816,23 +834,23 @@ Generate the experiment recommendations now:
     companion object {
       private val log = LoggerFactory.getLogger(ProbabilisticReasoningTask::class.java)
         val ProbabilisticReasoning = TaskType(
-            "ProbabilisticReasoning",
-            "Reasoning",
-            ProbabilisticReasoningTask::class.java,
-            ProbabilisticReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Reason under uncertainty using Bayesian analysis",
-            """
-              Performs probabilistic reasoning and Bayesian analysis under uncertainty.
-              <ul>
-                <li>Assigns and updates probabilities using Bayes' theorem</li>
-                <li>Calculates expected values and quantifies risks</li>
-                <li>Identifies key uncertainties and information gaps</li>
-                <li>Suggests experiments to reduce uncertainty</li>
-                <li>Provides confidence intervals and sensitivity analysis</li>
-                <li>Useful for risk assessment, diagnostic reasoning, and decision making</li>
-              </ul>
-            """,
+          name = "ProbabilisticReasoning",
+          category = "Reasoning",
+          taskClass = ProbabilisticReasoningTask::class.java,
+          executionConfigClass = ProbabilisticReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Reason under uncertainty using Bayesian analysis",
+          tooltipHtml = """
+                        Performs probabilistic reasoning and Bayesian analysis under uncertainty.
+                        <ul>
+                          <li>Assigns and updates probabilities using Bayes' theorem</li>
+                          <li>Calculates expected values and quantifies risks</li>
+                          <li>Identifies key uncertainties and information gaps</li>
+                          <li>Suggests experiments to reduce uncertainty</li>
+                          <li>Provides confidence intervals and sensitivity analysis</li>
+                          <li>Useful for risk assessment, diagnostic reasoning, and decision making</li>
+                        </ul>
+                      """,
         )
     }
 }

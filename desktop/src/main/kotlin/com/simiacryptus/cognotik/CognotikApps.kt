@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.def
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
+import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
@@ -387,7 +388,7 @@ fun ApiChatModel.instance(
 ) = model?.instance(
     key = when (provider?.key) {
         null -> null
-        "NONE" -> null
+        "NONE".encrypt -> null
         else -> provider?.key
     } ?: ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user).apis.let {
         it.firstOrNull { it.provider == this.provider }?.key
@@ -402,7 +403,9 @@ fun ApiChatModel.instance(
     onUsage = { model, usage ->
         ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
             session,
-            user, model, usage
+            user,
+            model,
+            usage
         )
     }
 )

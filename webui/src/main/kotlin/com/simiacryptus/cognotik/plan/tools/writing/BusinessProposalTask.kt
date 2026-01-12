@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
@@ -1647,26 +1647,26 @@ Provide the complete revised proposal.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(BusinessProposalTask::class.java)
         val BusinessProposal = TaskType(
-            "BusinessProposal",
-            "Writing",
-            BusinessProposalTask::class.java,
-            BusinessProposalTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate comprehensive business proposals with ROI analysis and risk assessment",
-            """
-              Generates complete, professional business proposals for various purposes.
-              <ul>
-                <li>Performs stakeholder analysis to understand decision-makers</li>
-                <li>Creates detailed ROI analysis with financial projections</li>
-                <li>Conducts risk assessment with mitigation strategies</li>
-                <li>Analyzes competitive alternatives and positioning</li>
-                <li>Develops timeline with milestones and dependencies</li>
-                <li>Writes compelling executive summary and sections</li>
-                <li>Includes optional revision passes for quality</li>
-                <li>Supports multiple proposal types (project, investment, grant, partnership, RFP)</li>
-                <li>Ideal for project proposals, funding requests, vendor responses, and business plans</li>
-              </ul>
-            """,
+          name = "BusinessProposal",
+          category = "Writing",
+          taskClass = BusinessProposalTask::class.java,
+          executionConfigClass = BusinessProposalTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate comprehensive business proposals with ROI analysis and risk assessment",
+          tooltipHtml = """
+                        Generates complete, professional business proposals for various purposes.
+                        <ul>
+                          <li>Performs stakeholder analysis to understand decision-makers</li>
+                          <li>Creates detailed ROI analysis with financial projections</li>
+                          <li>Conducts risk assessment with mitigation strategies</li>
+                          <li>Analyzes competitive alternatives and positioning</li>
+                          <li>Develops timeline with milestones and dependencies</li>
+                          <li>Writes compelling executive summary and sections</li>
+                          <li>Includes optional revision passes for quality</li>
+                          <li>Supports multiple proposal types (project, investment, grant, partnership, RFP)</li>
+                          <li>Ideal for project proposals, funding requests, vendor responses, and business plans</li>
+                        </ul>
+                      """,
         )
     }
 }

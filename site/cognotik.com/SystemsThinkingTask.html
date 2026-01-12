@@ -1,480 +1,357 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Systems Thinking Task - Cognotik</title>
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <!-- Fonts -->
+    <title>Cognotik | SystemsThinkingTask</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Component Script -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        /* Toggle Switch */
-
-        .toggle-group {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding: 0.75rem;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 0.5rem;
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
         }
 
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
         }
 
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #334155;
-            transition: .4s;
-            border-radius: 24px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider {
-            background-color: var(--accent-primary);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(20px);
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-        /* Mermaid Diagram */
-
-        .mermaid-mock {
-            background: #0f172a;
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 2rem;
-            border-radius: 0.5rem;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .task-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0.5rem 0;
+        }
+
+        .pitch {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            max-width: 800px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .badge {
+            background: var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
             align-items: center;
-            min-height: 300px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Lucide Icons Support for main.css */
-        .feature-card svg {
-            width: 48px;
-            height: 48px;
-            color: var(--accent-secondary);
-            margin-bottom: 1rem;
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Override monospace for overview tab if desired */
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            overflow: auto;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        .mock-browser {
+            padding: 1rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
         .tab-content {
-            font-family: var(--font-family-sans);
+            padding: 1.5rem 0;
         }
 
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
 
+        .docs-table th {
+            text-align: left;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.75rem;
+        }
 
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        .req { color: #f85149; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
     </style>
 </head>
 <body>
 
-    <cognotik-header current-page="systems-thinking"></cognotik-header>
+<cognotik-header current-page="tasks"></cognotik-header>
 
-    <main>
-        <!-- Hero Section -->
-        <section class="hero">
-            <h1>Systems Thinking Task</h1>
-            <p class="subtitle">
-                Analyze complex systems through feedback loops, delays, and emergent behavior.
-                Identify high-leverage intervention points to optimize performance and mitigate unintended consequences.
-            </p>
-            <a href="#simulator" class="cta-button">Try the Simulator</a>
-        </section>
+<main class="bento-container">
+    <!-- 1. Header Area -->
+    <section class="task-header">
+        <div class="breadcrumbs" style="color: var(--text-dim); font-size: 0.8rem;">Home > Tasks > Reasoning > SystemsThinkingTask</div>
+        <h1>SystemsThinkingTask</h1>
+        <p class="pitch">
+            Analyze complex systems through feedback loops, delays, and emergent behavior to identify high-leverage intervention points.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">High Context</span>
+        </div>
+    </section>
 
-        <!-- Features Grid -->
-        <section class="features">
-            <h2>Key Concepts</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <i data-lucide="refresh-cw"></i>
-                    <h3>Feedback Loops</h3>
-                    <p>Identify reinforcing and balancing loops that drive system behavior and stability.</p>
+    <!-- 2. Reality Check (Visual Proof) -->
+    <section class="reality-check-grid">
+        <div class="panel">
+            <div class="panel-header">⚙️ SystemsThinkingConfig.json</div>
+            <pre><code class="language-json">
+{
+  "system_description": "Technical debt in a legacy monolith",
+  "identify_feedback_loops": true,
+  "simulate_interventions": [
+    "Implement automated testing",
+    "Modularize core services"
+  ],
+  "time_horizon": "12 months"
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow" style="text-align: center; color: var(--text-dim); font-size: 1.5rem;">→</div>
+
+        <div class="panel">
+            <div class="panel-header">👁️ Analysis UI (Feedback Loops)</div>
+            <div class="mock-browser">
+                <div style="border-left: 3px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1rem;">
+                    <h4 style="margin: 0;">R1: The Debt Spiral</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Reinforcing loop where pressure to deliver leads to shortcuts, increasing complexity and slowing future delivery.</p>
                 </div>
-                <div class="feature-card">
-                    <i data-lucide="clock"></i>
-                    <h3>Delays & Accumulations</h3>
-                    <p>Map time lags and stocks to understand oscillations and system inertia.</p>
-                </div>
-                <div class="feature-card">
-                    <i data-lucide="target"></i>
-                    <h3>Leverage Points</h3>
-                    <p>Find the most effective places to intervene based on Meadows' hierarchy.</p>
-                </div>
-                <div class="feature-card">
-                    <i data-lucide="layers"></i>
-                    <h3>System Archetypes</h3>
-                    <p>Recognize common patterns like "Limits to Growth" or "Shifting the Burden".</p>
-                </div>
-                <div class="feature-card">
-                    <i data-lucide="activity"></i>
-                    <h3>Emergent Behavior</h3>
-                    <p>Predict unintended consequences and system-level patterns arising from component interactions.</p>
-                </div>
-                <div class="feature-card">
-                    <i data-lucide="play-circle"></i>
-                    <h3>Intervention Simulation</h3>
-                    <p>Simulate specific changes over time to forecast immediate and long-term effects.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Interactive Simulator -->
-        <section id="simulator" class="simulator">
-            <div class="simulator-container">
-                <!-- Left: Configuration -->
-                <div class="sim-controls">
-                    <h2><i data-lucide="settings"></i> Configuration</h2>
-                        <form id="configForm">
-                            <div class="control-group">
-                                <label>System Description</label>
-                                <textarea id="systemDesc">Software Engineering Team Burnout: High feature demand leads to overtime, which increases fatigue and error rates, leading to more rework and even less time for new features.</textarea>
-                            </div>
-                            <div class="control-group">
-                                <label>Input Files (Glob patterns)</label>
-                                <textarea id="inputFiles" placeholder="src/**/*.kt" style="min-height: 50px;"></textarea>
-                            </div>
-                            <div class="control-group">
-                                <label>Related Files (Context)</label>
-                                <textarea id="relatedFiles" placeholder="docs/*.md" style="min-height: 50px;"></textarea>
-                            </div>
-                            <div class="control-group">
-                                <label>Focus Areas (One per line)</label>
-                                <textarea id="focusAreas" placeholder="QA Process&#10;Onboarding" style="min-height: 60px;"></textarea>
-                            </div>
-                            <div class="control-group">
-                                <label>Specific Questions (One per line)</label>
-                                <textarea id="analysisQuestions" placeholder="How does technical debt affect velocity?" style="min-height: 60px;"></textarea>
-                            </div>
-
-
-                            <div class="control-group">
-                                <label>Time Horizon</label>
-                                <select id="timeHorizon">
-                                    <option value="3 months">3 Months</option>
-                                    <option value="6 months" selected>6 Months</option>
-                                    <option value="1 year">1 Year</option>
-                                    <option value="5 years">5 Years</option>
-                                </select>
-                            </div>
-
-                            <div class="control-group">
-                                <label>Analysis Components</label>
-
-                                <div class="toggle-group">
-                                    <span>Identify Feedback Loops</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="checkLoops" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-
-                                <div class="toggle-group">
-                                    <span>Map Delays</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="checkDelays" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-
-                                <div class="toggle-group">
-                                    <span>Find Leverage Points</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="checkLeverage" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-
-                                <div class="toggle-group">
-                                    <span>Identify Archetypes</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="checkArchetypes" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-
-                                <div class="toggle-group">
-                                    <span>Emergent Behavior</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="checkEmergent" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="control-group">
-                                <label>Simulate Interventions (One per line)</label>
-                                <textarea id="interventions" style="min-height: 80px;">Implement mandatory cooldown weeks
-Hire more QA engineers</textarea>
-                            </div>
-                        </form>
-                </div>
-
-                <!-- Right: Output -->
-                <div class="sim-output">
-                        <div class="tabs">
-                            <button class="tab active" onclick="switchTab('overview')">Overview</button>
-                            <button class="tab" onclick="switchTab('diagram')">Diagram</button>
-                            <button class="tab" onclick="switchTab('simulation')">Simulation</button>
-                        </div>
-                    <div id="outputContainer">
-                        <!-- Content injected via JS -->
-                    </div>
+                <div style="background: #000; padding: 1rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.75rem;">
+                    graph TD<br>
+                    A[Delivery Pressure] --+--> B[Shortcuts]<br>
+                    B --+--> C[Technical Debt]<br>
+                    C --+--> D[Complexity]<br>
+                    D --+--> E[Delivery Time]<br>
+                    E --+--> A
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Use Cases -->
-        <section class="modes-section" style="padding: 4rem 2rem; max-width: 1200px; margin: 0 auto;">
-            <h2>When to Use</h2>
-            <div class="mode-grid">
-                <div class="mode-card">
-                    <div class="mode-title">Organizational Dynamics</div>
-                    <p>Understand why adding more people to a late project makes it later (Brooks' Law).</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Technical Debt</div>
-                    <p>Analyze the vicious cycle of quick fixes leading to system instability and slower velocity.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Strategic Planning</div>
-                    <p>Forecast long-term market responses to pricing changes or new product launches.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Performance Optimization</div>
-                    <p>Identify bottlenecks in CI/CD pipelines or distributed system architectures.</p>
-                </div>
+    <!-- 3. Tabbed Details -->
+    <section class="task-details">
+        <div class="tabs-nav">
+            <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
+            <button onclick="switchTab(event, 'process')">Config & Process</button>
+            <button onclick="switchTab(event, 'integration')">Integration</button>
+        </div>
+
+        <div id="tab-docs" class="tab-pane">
+            <div class="tab-content">
+                <h3>Configuration Parameters</h3>
+                <table class="docs-table">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>system_description</code> <span class="req">*</span></td>
+                            <td>String</td>
+                            <td>Detailed description of the system to analyze.</td>
+                        </tr>
+                        <tr>
+                            <td><code>identify_feedback_loops</code></td>
+                            <td>Boolean</td>
+                            <td>Identify reinforcing and balancing loops. Default: <code>true</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>input_files</code></td>
+                            <td>List&lt;String&gt;</td>
+                            <td>File patterns (e.g. **/*.kt) to use as input context.</td>
+                        </tr>
+                        <tr>
+                            <td><code>map_delays</code></td>
+                            <td>Boolean</td>
+                            <td>Map time lags and accumulations. Default: <code>true</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>find_leverage_points</code></td>
+                            <td>Boolean</td>
+                            <td>Identify high-impact intervention points. Default: <code>true</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>simulate_interventions</code></td>
+                            <td>List&lt;String&gt;</td>
+                            <td>Specific scenarios to simulate over the time horizon.</td>
+                        </tr>
+                        <tr>
+                            <td><code>time_horizon</code></td>
+                            <td>String</td>
+                            <td>Analysis window (e.g., "6 months"). Default: <code>"6 months"</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>identify_archetypes</code></td>
+                            <td>Boolean</td>
+                            <td>Identify system archetypes (e.g., "Limits to Growth"). Default: <code>true</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>analyze_emergent_behavior</code></td>
+                            <td>Boolean</td>
+                            <td>Analyze system-level patterns and unintended consequences. Default: <code>true</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>focus_areas</code></td>
+                            <td>List&lt;String&gt;</td>
+                            <td>Subsystems to prioritize in the analysis.</td>
+                        </tr>
+                        <tr>
+                            <td><code>analysis_questions</code></td>
+                            <td>List&lt;String&gt;</td>
+                            <td>Specific questions to answer about the system.</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-        </section>
-    </main>
+        </div>
 
-    <script>
-        // Initialize Icons
-        lucide.createIcons();
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <div class="tab-content">
+                <h3>Task Process Lifecycle</h3>
+                <ol style="line-height: 1.6; color: var(--text-main);">
+                    <li><strong>Context Gathering:</strong> Aggregates data from <code>input_files</code>, <code>related_files</code>, and prior task results.</li>
+                    <li><strong>Structure Analysis:</strong> Identifies key components, stocks (accumulations), and flows.</li>
+                    <li><strong>Feedback Loops:</strong> Identifies reinforcing (R) and balancing (B) loops with causal chains.</li>
+                    <li><strong>Delays & Accumulations:</strong> Maps time lags and stock depletion/accumulation.</li>
+                    <li><strong>Archetype Identification:</strong> Recognizes patterns like "Shifting the Burden" or "Fixes that Fail".</li>
+                    <li><strong>Emergent Behavior:</strong> Predicts system-level patterns and tipping points.</li>
+                    <li><strong>Leverage Identification:</strong> Ranks intervention points using Meadows' hierarchy.</li>
+                    <li><strong>Intervention Simulation:</strong> Projects impact of scenarios over the <code>time_horizon</code>.</li>
+                    <li><strong>Synthesis:</strong> Generates actionable recommendations and a prioritized roadmap.</li>
+                </ol>
+            </div>
+        </div>
 
-        // Simulator Logic
-        const form = document.getElementById('configForm');
-        const outputContainer = document.getElementById('outputContainer');
-        let currentTab = 'overview';
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <div class="tab-content">
+                <h3>Kotlin Boilerplate</h3>
+                <pre style="background: var(--bg-panel); border-radius: 6px;"><code class="language-kotlin">
+val systemsTask = SystemsThinkingTask(
+    orchestrationConfig = config,
+    planTask = SystemsThinkingTaskExecutionConfigData(
+        system_description = "Microservices communication overhead",
+        identify_archetypes = true,
+        simulate_interventions = listOf("Introduce Service Mesh")
+    )
+)
+                </code></pre>
+                <h3>Prompt Segment</h3>
+                <p style="font-size: 0.85rem; color: var(--text-dim);">The following logic is injected into the LLM context:</p>
+                <pre style="background: var(--bg-panel); border-radius: 6px; font-size: 0.75rem;">
+SystemsThinking - Analyze complex systems through feedback loops and dynamics
+** Specify the system to analyze
+** Identify feedback loops (reinforcing and balancing)
+** Map delays and accumulations
+** Find leverage points for intervention
+** Simulate potential interventions
+** Identify system archetypes
+** Analyze emergent behavior and unintended consequences
+                </pre>
+            </div>
+        </div>
+    </section>
+</main>
 
-        function switchTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('.tab').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('onclick').includes(tab));
-            });
-            renderOutput();
-        }
+<script>
+    function switchTab(event, tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-        function renderOutput() {
-            const systemDesc = document.getElementById('systemDesc').value;
-            const inputFiles = document.getElementById('inputFiles').value;
-            const relatedFiles = document.getElementById('relatedFiles').value;
-            const focusAreas = document.getElementById('focusAreas').value.split('\n').filter(i => i.trim());
-            const analysisQuestions = document.getElementById('analysisQuestions').value.split('\n').filter(i => i.trim());
-            const timeHorizon = document.getElementById('timeHorizon').value;
-            const hasLoops = document.getElementById('checkLoops').checked;
-            const hasDelays = document.getElementById('checkDelays').checked;
-            const hasLeverage = document.getElementById('checkLeverage').checked;
-            const hasArchetypes = document.getElementById('checkArchetypes').checked;
-            const hasEmergent = document.getElementById('checkEmergent').checked;
-            const interventions = document.getElementById('interventions').value.split('\n').filter(i => i.trim());
-
-            let content = '';
-
-            if (currentTab === 'overview') {
-                content = `
-                    <div class="tab-content active">
-                        <h1>Systems Analysis Report</h1>
-                        <p><strong>System:</strong> ${systemDesc.substring(0, 60)}...</p>
-                        <p><strong>Time Horizon:</strong> ${timeHorizon}</p>
-                        ${focusAreas.length > 0 ? `
-                        <p><strong>Focus Areas:</strong></p>
-                        <ul>${focusAreas.map(f => `<li>${f}</li>`).join('')}</ul>
-                        ` : ''}
-                        ${analysisQuestions.length > 0 ? `
-                        <p><strong>Analysis Questions:</strong></p>
-                        <ul>${analysisQuestions.map(q => `<li>${q}</li>`).join('')}</ul>
-                        ` : ''}
-                        ${(inputFiles || relatedFiles) ? `<p><em>Context loaded from specified files.</em></p>` : ''}
-
-
-                        ${hasArchetypes ? `
-                        <h2>Detected Archetype: "Fixes that Fail"</h2>
-                        <p>The system exhibits the "Fixes that Fail" archetype. Short-term solutions (Overtime) alleviate the symptom (Feature Backlog) but create unintended consequences (Fatigue, Errors) that eventually worsen the original problem.</p>
-                        ` : ''}
-
-                        ${hasLoops ? `
-                        <h2>Key Feedback Loops</h2>
-                        <ul>
-                            <li><strong>R1 (Vicious Cycle):</strong> Overtime &rarr; Fatigue &rarr; Error Rate &rarr; Rework &rarr; Backlog &rarr; Overtime.</li>
-                            <li><strong>B1 (Balancing):</strong> Feature Demand &rarr; Development &rarr; Features Released &rarr; Demand Satisfied.</li>
-                        </ul>
-                        ` : ''}
-
-                        ${hasDelays ? `
-                        <h2>Delays</h2>
-                        <p>There is a significant delay between <em>Increased Overtime</em> and the visible spike in <em>Error Rate</em> (approx. 2-3 weeks). This delay masks the negative impact of crunch time.</p>
-                        ` : ''}
-
-                        ${hasEmergent ? `
-                        <h2>Emergent Behavior</h2>
-                        <p>The system is likely to reach a tipping point where error correction consumes 100% of capacity, leading to zero feature velocity despite maximum effort.</p>
-                        ` : ''}
-
-                        ${hasLeverage ? `
-                        <h2>High-Leverage Points</h2>
-                        <ol>
-                            <li><strong>Rules (High):</strong> Change incentives to reward code quality over raw feature count.</li>
-                            <li><strong>Information Flows (Medium):</strong> Make "Rework Time" visible on sprint dashboards immediately.</li>
-                        </ol>
-                        ` : ''}
-                    </div>
-                `;
-            } else if (currentTab === 'diagram') {
-                content = `
-                    <div class="tab-content active">
-                        <div class="mermaid-mock">
-                            <svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                                <defs>
-                                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-                                        <path d="M0,0 L0,6 L9,3 z" fill="#06b6d4" />
-                                    </marker>
-                                </defs>
-                                <!-- Nodes -->
-                                <circle cx="200" cy="50" r="30" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
-                                <text x="200" y="55" text-anchor="middle" fill="white" font-size="10">Backlog</text>
-
-                                <circle cx="350" cy="150" r="30" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
-                                <text x="350" y="155" text-anchor="middle" fill="white" font-size="10">Overtime</text>
-
-                                <circle cx="200" cy="250" r="30" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
-                                <text x="200" y="255" text-anchor="middle" fill="white" font-size="10">Fatigue</text>
-
-                                <circle cx="50" cy="150" r="30" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
-                                <text x="50" y="155" text-anchor="middle" fill="white" font-size="10">Errors</text>
-
-                                <!-- Edges -->
-                                <path d="M230,50 Q350,50 350,120" fill="none" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrow)"/>
-                                <path d="M350,180 Q350,250 230,250" fill="none" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrow)"/>
-                                <path d="M170,250 Q50,250 50,180" fill="none" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrow)"/>
-                                <path d="M50,120 Q50,50 170,50" fill="none" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrow)"/>
-
-                                <!-- Loop Label -->
-                                <text x="200" y="150" text-anchor="middle" fill="#8b5cf6" font-weight="bold" font-size="14">R1</text>
-                            </svg>
-                        </div>
-                        <p style="text-align: center; margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
-                            Visual representation of the reinforcing feedback loop (R1) driving burnout.
-                        </p>
-                    </div>
-                `;
-            } else if (currentTab === 'simulation') {
-                if (interventions.length === 0) {
-                    content = `<div class="tab-content active"><p style="color: var(--text-muted); padding: 2rem; text-align: center;">No interventions specified. Add interventions in the configuration panel to see simulation results.</p></div>`;
-                } else {
-                    content = `
-                        <div class="tab-content active">
-                            <h2>Intervention Simulation (${timeHorizon})</h2>
-                            ${interventions.map((inv, idx) => `
-                                <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                                    <h3 style="margin-top:0; color: var(--accent-primary);">Scenario ${idx + 1}: ${inv}</h3>
-                                    <ul>
-                                        <li><strong>Immediate Effect (1 mo):</strong> Velocity drops slightly as team adjusts to new process/hiring.</li>
-                                        <li><strong>Medium Term (3 mo):</strong> Error rates stabilize. Morale improves.</li>
-                                        <li><strong>Long Term (${timeHorizon}):</strong> Sustainable velocity achieved. Rework reduced by 40%.</li>
-                                        <li><strong>Risk:</strong> Management may perceive initial velocity drop as failure.</li>
-                                    </ul>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                }
-            }
-
-            outputContainer.innerHTML = content;
-        }
-
-        // Event Listeners
-        form.addEventListener('input', renderOutput);
-
-        // Initial Render
-        renderOutput();
-    </script>
 </body>
 </html>

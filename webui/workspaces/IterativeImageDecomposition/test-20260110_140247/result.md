@@ -1,0 +1,28 @@
+Completed iterative analysis of test.pdf. Found 76 regions. See analysis_result.json for structure.
+
+Summary:
+This image is a three-page historical document representing **United States Patent No. 486,986**, granted to **Max G. Schinke** on **November 29, 1892**, for an invention titled "**Submerged Pipe**."
+
+### Page 1: Technical Drawings
+The first page contains detailed technical illustrations of the invention:
+*   **Header:** Displays the inventor's name, the title "Submerged Pipe," the patent number, and the date.
+*   **Figure 1:** A cross-sectional view of the flexible pipe joint shown at an angle. It illustrates how a central flexible, bellows-like component (**C**) connects two rigid pipe sections (**A** and **B**) within a protective spherical housing (**D**, **E**).
+*   **Figure 2:** A cross-sectional view of the same joint in a straight configuration. It provides a detailed look at internal components, including the chamber, flexible diaphragm (**F**), outer casing (**G**), and the fastening mechanism (**e, f, g**).
+*   **Figure 3:** A schematic diagram showing the practical application of the invention. It depicts a pipe being laid across a body of water, demonstrating how the flexible joints allow the pipeline to follow the uneven terrain of the submerged surface.
+*   **Signatures:** The bottom of the page features the handwritten signatures of witnesses (**Geo W. Young** and **N. E. Oliphant**) and the inventor (**Max G. Schinke**) along with his attorney (**H. G. Underwood**).
+
+### Page 2: Specification (Part 1)
+This page contains the formal written description of the invention:
+*   **Header:** Identifies the document as being from the **United States Patent Office**.
+*   **Introductory Text:** States that Max G. Schinke of Milwaukee, Wisconsin, has invented "certain new and useful Improvements in Submerged Pipes."
+*   **Object of the Invention:** Explains that the primary goal is to allow flexible, water-tight pipe joints to be assembled above water and then lowered into position, eliminating the need for divers to perform difficult underwater adjustments and caulking.
+*   **Detailed Description:** Begins a technical breakdown of the components shown in the drawings, describing the interaction between the non-flexible iron pipe sections, the intermediate flexible lead section, and the protective spherical casings.
+
+### Page 3: Specification (Part 2) and Claims
+The final page concludes the written description and lists the legal claims:
+*   **Process Description:** Describes the method of lifting a submerged pipe section above water to add new lengths using the flexible joint.
+*   **Distinction from Prior Art:** The inventor emphasizes that his flexible pipe section is cast or rolled without joints and that the protective casing is unique because it is devoid of pivots.
+*   **Claims:** Two formal claims define the scope of the patent:
+    1.  The combination of non-flexible and flexible pipe sections with clamping rings and caulking material.
+    2.  The addition of a guiding and protective casing that encloses the flexible joint.
+*   **Testimony:** A formal closing statement signed by the inventor and witnessed by **N. E. Oliphant** and **John E. Wiles**.

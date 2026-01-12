@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.social
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -1319,27 +1319,27 @@ Be specific and reference the data provided.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(LLMExperimentTask::class.java)
         val LLMExperiment = TaskType(
-            "LLMExperiment",
-            "Social",
-            LLMExperimentTask::class.java,
-            LLMExperimentTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Conduct controlled experiments on LLM behavior",
-            """
-              Conducts rigorous experiments to characterize LLM behaviors and biases.
-              <ul>
-                <li>Experimentally-controlled prompts with variable substitution</li>
-                <li>Multiple temperature settings for comparison</li>
-                <li>Configurable repetitions for statistical validity</li>
-                <li>Custom metrics tracking (length, sentiment, patterns)</li>
-                <li>Statistical analysis including t-tests and variance</li>
-                <li>Response diversity and consistency measurement</li>
-<li>Automated insight generation from results</li>
-                <li>Comprehensive experiment reports with visualizations</li>
-                <li>Concurrent execution for faster experiment completion</li>
-              </ul>
-              <p><strong>Use cases:</strong> Bias studies, cognitive studies, logical performance analysis, consistency testing</p>
-            """,
+          name = "LLMExperiment",
+          category = "Social",
+          taskClass = LLMExperimentTask::class.java,
+          executionConfigClass = LLMExperimentTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Conduct controlled experiments on LLM behavior",
+          tooltipHtml = """
+                        Conducts rigorous experiments to characterize LLM behaviors and biases.
+                        <ul>
+                          <li>Experimentally-controlled prompts with variable substitution</li>
+                          <li>Multiple temperature settings for comparison</li>
+                          <li>Configurable repetitions for statistical validity</li>
+                          <li>Custom metrics tracking (length, sentiment, patterns)</li>
+                          <li>Statistical analysis including t-tests and variance</li>
+                          <li>Response diversity and consistency measurement</li>
+          <li>Automated insight generation from results</li>
+                          <li>Comprehensive experiment reports with visualizations</li>
+                          <li>Concurrent execution for faster experiment completion</li>
+                        </ul>
+                        <p><strong>Use cases:</strong> Bias studies, cognitive studies, logical performance analysis, consistency testing</p>
+                      """,
         )
 
         fun compressedStringBits(str: String): Int {

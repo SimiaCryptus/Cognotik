@@ -17,7 +17,7 @@ object DataIngestTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
         val harness = TaskHarness(
@@ -35,7 +35,7 @@ object DataIngestTaskTest {
         )
 
         // Create a sample log file for the task to ingest
-        harness.workspace.resolve("sample.log").toFile().writeText(
+        harness.dataDir.resolve("sample.log").toFile().writeText(
             """
             2023-10-27 10:00:01 INFO  Main - Application starting
             2023-10-27 10:00:02 DEBUG Config - Loading properties from disk

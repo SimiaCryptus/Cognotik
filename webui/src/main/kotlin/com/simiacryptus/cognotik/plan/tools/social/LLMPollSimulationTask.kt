@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.social
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -1337,27 +1337,27 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
     companion object {
         private val log: Logger = LoggerFactory.getLogger(LLMPollSimulationTask::class.java)
         val LLMPollSimulation = TaskType(
-            "LLMPollSimulation",
-            "Social",
-            LLMPollSimulationTask::class.java,
-            LLMPollSimulationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Simulate polls and surveys with AI personas",
-            """
-              Simulates polls and surveys using LLMs to model diverse respondent personas.
-              <ul>
-                <li>Define survey questions with multiple types (choice, Likert, open-ended)</li>
-                <li>Create respondent profiles with demographics and characteristics</li>
-                <li>Generate realistic survey responses from simulated personas</li>
-                <li>Analyze results with descriptive statistics and frequency distributions</li>
-                <li>Cross-tabulation analysis by demographic dimensions</li>
-                <li>Sentiment analysis for open-ended responses</li>
-                <li>Bias detection (central tendency, primacy/recency effects)</li>
-                <li>Automated insights and recommendations</li>
-                <li>Comprehensive reports with visualizations</li>
-              </ul>
-              <p><strong>Use cases:</strong> Survey instrument testing, response pattern exploration, demographic analysis, bias detection</p>
-            """,
+          name = "LLMPollSimulation",
+          category = "Social",
+          taskClass = LLMPollSimulationTask::class.java,
+          executionConfigClass = LLMPollSimulationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Simulate polls and surveys with AI personas",
+          tooltipHtml = """
+                        Simulates polls and surveys using LLMs to model diverse respondent personas.
+                        <ul>
+                          <li>Define survey questions with multiple types (choice, Likert, open-ended)</li>
+                          <li>Create respondent profiles with demographics and characteristics</li>
+                          <li>Generate realistic survey responses from simulated personas</li>
+                          <li>Analyze results with descriptive statistics and frequency distributions</li>
+                          <li>Cross-tabulation analysis by demographic dimensions</li>
+                          <li>Sentiment analysis for open-ended responses</li>
+                          <li>Bias detection (central tendency, primacy/recency effects)</li>
+                          <li>Automated insights and recommendations</li>
+                          <li>Comprehensive reports with visualizations</li>
+                        </ul>
+                        <p><strong>Use cases:</strong> Survey instrument testing, response pattern exploration, demographic analysis, bias detection</p>
+                      """,
         )
     }
 }

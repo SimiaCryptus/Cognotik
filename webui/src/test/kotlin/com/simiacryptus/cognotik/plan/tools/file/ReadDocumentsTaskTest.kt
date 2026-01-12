@@ -16,7 +16,7 @@ object ReadDocumentsTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         TaskHarness(
@@ -32,7 +32,7 @@ object ReadDocumentsTaskTest {
             ),
             timeoutMinutes = 10,
         ).apply {
-            workspace.resolve("Calculator.kt").toFile().writeText(
+            dataDir.resolve("Calculator.kt").toFile().writeText(
                 """
                     class Calculator {
                         fun add(a: Int, b: Int): Int = a + b

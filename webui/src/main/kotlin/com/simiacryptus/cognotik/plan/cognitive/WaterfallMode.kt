@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
@@ -21,6 +21,8 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
+import java.text.SimpleDateFormat
+import java.util.Date
 import kotlin.io.path.Path
 
 /**
@@ -46,7 +48,7 @@ open class WaterfallMode(
 
     override fun initialize(task : SessionTask) {
         log.debug("Initializing PlanAheadMode")
-        transcriptStream = transcript(task)
+        transcriptStream = task.transcript()
     }
 
     override fun contextData(): List<String> = emptyList()
@@ -70,7 +72,8 @@ open class WaterfallMode(
                     ?: task.ui.dataStorage?.getSessionDir(
                         user,
                         session
-                    )?.toPath() ?: File(".").toPath()
+                    )?.toPath() ?: File(".").toPath(),
+                transcriptStream = transcriptStream
             )
 
 
@@ -79,7 +82,7 @@ open class WaterfallMode(
             } else {
                 val describer = TaskContextYamlDescriber(orchestrationConfig)
                 Tasks.initDescriber(orchestrationConfig, describer)
-                val p = initialPlan(
+                val plan = initialPlan(
                     codeFiles = coordinator.codeFiles,
                     files = coordinator.files,
                     root = coordinator.root,
@@ -90,20 +93,19 @@ open class WaterfallMode(
                     describer = describer
                 )
                 transcriptStream?.let { stream ->
-                    stream.write("\n## Generated Plan\n\n${p.planText}\n\n".toByteArray())
+                    stream.write("\n## Generated Plan\n\n${plan.planText}\n\n".toByteArray())
+                    stream.write("\n### Plan Diagram\n\n```mermaid\n${buildMermaidGraph((filterPlan { plan.plan } ?: emptyMap()).toMap(), false)}\n```\n\n".toByteArray())
                     stream.flush()
                 }
                 // Save plan to file for PrePlanned mode
                 try {
-                    val planFile = coordinator.root.resolve("plan.json").toFile()
-                    JsonUtil.toJson(p).let { json ->
-                        planFile.writeText(json)
-                        task.add("Plan saved to [${planFile.name}](${task.linkTo("plan.json")})".renderMarkdown())
-                    }
+                    val planFile = coordinator.root.resolve(".logs/plan_${now()}.json").toFile()
+                    planFile.writeText(JsonUtil.toJson(plan))
+                    task.add("Plan saved to [${planFile.name}](${task.linkTo("plan.json")})".renderMarkdown())
                 } catch (e: Exception) {
                     log.warn("Failed to save plan json", e)
                 }
-                p
+                plan
             }
             task.header("Executing Plan")
 
@@ -320,5 +322,6 @@ $availableFiles
 
     companion object {
         val inputCnt = 1
+        fun now(): String = SimpleDateFormat("yyyyMMdd_HHmmss_SSS").format(Date())
     }
 }

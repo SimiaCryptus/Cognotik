@@ -6,16 +6,19 @@ import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.SecureString
+import com.simiacryptus.cognotik.util.encrypt
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+
 class OllamaEmbeddingClient(
-    apiKey: String = "",
+    apiKey: SecureString = "".encrypt,
     apiBase: String = "http://localhost:11434",
     workPool: ExecutorService = Executors.newCachedThreadPool(),
-    logLevel: Level = Level.INFO,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(
         Executors.newScheduledThreadPool(
@@ -39,6 +42,7 @@ class OllamaEmbeddingClient(
         request.addHeader("Content-Type", "application/json")
         request.addHeader("Accept", "application/json")
         // Ollama typically doesn't require authorization for local instances
+        val apiKey = this.apiKey.decrypt
         if (apiKey.isNotBlank()) {
             request.addHeader("Authorization", "Bearer $apiKey")
         }
@@ -90,7 +94,7 @@ class OllamaEmbeddingClient(
                 )
 
                 if (response.usage != null) {
-                    onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
+                    onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
                 }
 
                 response
@@ -100,7 +104,7 @@ class OllamaEmbeddingClient(
 
     private fun validateEmbeddingRequest(request: ModelSchema.EmbeddingRequest, model: EmbeddingModel) {
         require(request.input.toString().isNotBlank()) { "Embedding request input cannot be blank" }
-        require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
+        require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
     }
 
     private fun estimateTokens(text: String): Int {

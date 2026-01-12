@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik | GenerateSpriteSheetTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 1rem 0;
+            font-weight: 600;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow: auto;
+            flex-grow: 1;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Mock UI Styles */
+        .mock-ui-content {
+            padding: 1rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .sprite-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+            margin-top: 1rem;
+        }
+
+        .sprite-thumb {
+            aspect-ratio: 1;
+            background: #21262d;
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+        }
+
+        .sprite-thumb img {
+            max-width: 100%;
+            max-height: 100%;
+            image-rendering: pixelated;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-weight: 400;
+            font-size: 0.9rem;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(110, 118, 129, 0.2);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        .req { color: #f85149; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
+            .panel { height: auto; min-height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="GenerateSpriteSheetTask"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Tasks / Writing / Asset Generation</div>
+        <h1>GenerateSpriteSheetTask</h1>
+        <p class="pitch">
+            Automated game asset generation: creates sprite sheets and corresponding JSON metadata using AI-driven image generation and computer vision analysis.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Output: PNG + JSON</span>
+            <span class="badge">Vision-Enabled</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚙️</span> GenerateSpriteSheetTaskExecutionConfigData
+            </div>
+            <pre><code class="language-json">
+{
+  "files": ["assets/hero_walk.png"],
+  "metadata_file": "assets/hero_walk.json",
+  "task_description": "A pixel art warrior walking animation, 4 frames, side view, 16-bit style"
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️</span> Session UI Output
+            </div>
+            <div class="mock-ui-content">
+                <div style="font-weight: 600; margin-bottom: 0.5rem;">Step 3: Sprites Extracted</div>
+                <div class="sprite-gallery">
+                    <div class="sprite-thumb"><img src="assets/images/demo/sprite_1.png" alt="walk_1"></div>
+                    <div class="sprite-thumb"><img src="assets/images/demo/sprite_2.png" alt="walk_2"></div>
+                    <div class="sprite-thumb"><img src="assets/images/demo/sprite_3.png" alt="walk_3"></div>
+                    <div class="sprite-thumb"><img src="assets/images/demo/sprite_4.png" alt="walk_4"></div>
+                </div>
+                <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-dim);">
+                    <div style="color: #4ade80;">✔ Generated assets/hero_walk.png</div>
+                    <div style="color: #4ade80;">✔ Generated assets/hero_walk.json</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>files</code> <span class="req">*</span></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>The sprite sheet image file to be created. Must end with <code>.png</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>metadata_file</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The JSON metadata file to be created. Must end with <code>.json</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>task_description</code></td>
+                    <td>String</td>
+                    <td>Detailed description of the sprites to generate (e.g., style, frame count, perspective).</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin-top: 2rem;">Output Metadata Schema</h3>
+            <p>The generated JSON file follows this structure:</p>
+            <pre><code class="language-json">
+{
+  "sprites": [
+    { "name": "walk_0", "x": 0, "y": 0, "width": 32, "height": 32 },
+    ...
+  ],
+  "description": "General description of the sheet content"
+}
+            </code></pre>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Execution Flow</h3>
+            <ol style="padding-left: 1.2rem;">
+                <li><strong>Image Generation:</strong> Uses <code>ImageProcessingAgent</code> to create a sprite sheet on a solid Magenta (<code>#FF00FF</code>) background to ensure clean separation.</li>
+                <li><strong>Transparency Processing:</strong> A custom "Soft Keying" algorithm removes the magenta background, applying Euclidean distance-based alpha blending for anti-aliased edges.</li>
+                <li><strong>Vision Analysis:</strong> The <code>ParsedImageAgent</code> analyzes the generated image to identify distinct sprite boundaries and assign descriptive names.</li>
+                <li><strong>Asset Export:</strong>
+                    <ul>
+                        <li>Saves the master <code>.png</code> sheet.</li>
+                        <li>Saves the <code>.json</code> coordinate metadata.</li>
+                        <li>Extracts and saves individual sprite files into a sub-directory.</li>
+                        <li>Generates a debug image with red bounding boxes for verification.</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Orchestration Setup</h3>
+            <p>Add this task to your <code>OrchestrationConfig</code> to enable automated asset creation:</p>
+            <pre><code class="language-kotlin">
+val config = OrchestrationConfig(
+    tasks = listOf(
+        GenerateSpriteSheetTask.GenerateSpriteSheet
+    )
+)
+            </code></pre>
+
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p>This text is injected into the LLM context to describe the tool's capabilities:</p>
+            <pre><code class="language-text">
+GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadata
+  * Generates an image containing multiple sprites based on a description
+  * Automatically identifies sprite locations (x, y, width, height)
+  * Outputs both a .png image and a .json metadata file
+            </code></pre>
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

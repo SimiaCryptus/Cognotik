@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -31,25 +31,25 @@ class GeneticOptimizationTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GeneticOptimizationTask::class.java)
         val GeneticOptimization = TaskType(
-            "GeneticOptimization",
-            "Reasoning",
-            GeneticOptimizationTask::class.java,
-            GeneticOptimizationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Iteratively evolve and perfect text through genetic algorithms",
-            """
-              Uses genetic algorithms to optimize text through iterative evolution.
-              <ul>
-                <li>Generates variations using configurable mutation strategies</li>
-                <li>Evaluates variants against optimization criteria</li>
-                <li>Selects top performers for next generation</li>
-                <li>Applies crossover to combine successful traits</li>
-                <li>Tracks fitness progression across generations</li>
-                <li>Provides detailed analysis of evolution</li>
-                <li>Supports custom evaluation criteria and weights</li>
-                <li>Useful for perfecting prompts, copy, documentation, and messaging</li>
-              </ul>
-            """,
+          name = "GeneticOptimization",
+          category = "Reasoning",
+          taskClass = GeneticOptimizationTask::class.java,
+          executionConfigClass = GeneticOptimizationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Iteratively evolve and perfect text through genetic algorithms",
+          tooltipHtml = """
+                        Uses genetic algorithms to optimize text through iterative evolution.
+                        <ul>
+                          <li>Generates variations using configurable mutation strategies</li>
+                          <li>Evaluates variants against optimization criteria</li>
+                          <li>Selects top performers for next generation</li>
+                          <li>Applies crossover to combine successful traits</li>
+                          <li>Tracks fitness progression across generations</li>
+                          <li>Provides detailed analysis of evolution</li>
+                          <li>Supports custom evaluation criteria and weights</li>
+                          <li>Useful for perfecting prompts, copy, documentation, and messaging</li>
+                        </ul>
+                      """,
         )
         private const val TT = """```"""
         fun compressedStringBits(str: String): Int {
@@ -168,25 +168,13 @@ class GeneticOptimizationTask(
     override fun promptSegment(): String {
         return """
 GeneticOptimization - Iteratively evolve and perfect text through genetic algorithms
-  ** Specify the FULL text(s) items to optimize
-  ** Define the optimization goal (e.g., clarity, persuasiveness, technical accuracy)
-  ** Configure number of generations (default: 5)
-  ** Set population size and selection size
-  ** Choose mutation strategies (rephrase, simplify, elaborate, restructure)
-  ** Enable/disable crossover for combining traits
-  ** Define evaluation criteria and weights
-  ** The task will:
-     - Generate variations using mutation strategies
-     - Evaluate each variant against optimization criteria
-     - Select top performers for next generation
-     - Apply crossover to combine successful traits
-     - Track evolution across generations
-     - Provide detailed fitness analysis
-  ** Useful for:
-     - Perfecting prompts and instructions
-     - Refining marketing copy
-     - Optimizing technical documentation
-     - Improving clarity and impact of messaging
+  - Specify the FULL text(s) items to optimize
+  - Define the optimization goal (e.g., clarity, persuasiveness)
+  - Configure number of generations (default: 5)
+  - Set population size and selection size
+  - Choose mutation strategies (rephrase, simplify, elaborate, restructure)
+  - Enable/disable crossover for combining traits
+  - Define evaluation criteria and weights
         """.trimIndent()
     }
 
@@ -197,7 +185,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = transcript(task)
+        val transcript = task.transcript()
         try {
             val startTime = System.currentTimeMillis()
             messages.joinToString("\n\n")

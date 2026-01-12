@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
@@ -229,16 +229,15 @@ class EmailCampaignTask(
 
     override fun promptSegment(): String {
         return """
-EmailCampaign - Generate complete email sequences for marketing, sales, or outreach
-  ** Specify the campaign goal and subject matter
-  ** Define target audience and campaign type
-  ** Set number of emails and send intervals
-  ** Configure brand voice and primary CTA
-  ** Enable A/B test variants for subject lines
-  ** Include personalization tokens and preview text
-  ** Control body length and formatting options
-  ** Performs strategy planning, outlining, and email generation
-  ** Produces complete, ready-to-use email sequence
+EmailCampaign - Generate multi-email marketing or outreach sequences.
+- campaign_goal: Primary objective.
+- subject_matter: Product or topic.
+- target_audience: Who is receiving the emails.
+- campaign_type: welcome_series, nurture, sales, etc.
+- num_emails: Length of sequence (1-10).
+- brand_voice: professional, friendly, etc.
+- primary_cta: Main action desired.
+- related_files: Brand guidelines or context.
         """.trimIndent()
     }
 
@@ -251,7 +250,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
     ) {
         val startTime = System.currentTimeMillis()
         log.info("Starting EmailCampaignTask for goal: '${executionConfig?.campaign_goal}'")
-        val transcript = transcript(task)
+        val transcript = task.transcript()
 
 
         // Validate configuration
@@ -1100,27 +1099,27 @@ Provide the complete revised email body only.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(EmailCampaignTask::class.java)
         val EmailCampaign = TaskType(
-            "EmailCampaign",
-            "Writing",
-            EmailCampaignTask::class.java,
-            EmailCampaignTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate complete email sequences for marketing, sales, or outreach",
-            """
-              Generates complete, ready-to-use email campaigns with strategic planning.
-              <ul>
-                <li>Develops comprehensive campaign strategy and messaging</li>
-                <li>Creates detailed outline for each email in the sequence</li>
-                <li>Generates A/B test variants for subject lines</li>
-                <li>Writes complete email bodies with CTAs</li>
-                <li>Includes personalization tokens and preview text</li>
-                <li>Supports multiple campaign types (welcome, nurture, sales, etc.)</li>
-                <li>Configurable brand voice, tone, and length</li>
-                <li>Optional revision passes for quality improvement</li>
-                <li>Provides implementation notes and best practices</li>
-                <li>Ideal for marketing automation, sales outreach, and customer engagement</li>
-              </ul>
-            """,
+          name = "EmailCampaign",
+          category = "Writing",
+          taskClass = EmailCampaignTask::class.java,
+          executionConfigClass = EmailCampaignTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate complete email sequences for marketing, sales, or outreach",
+          tooltipHtml = """
+                        Generates complete, ready-to-use email campaigns with strategic planning.
+                        <ul>
+                          <li>Develops comprehensive campaign strategy and messaging</li>
+                          <li>Creates detailed outline for each email in the sequence</li>
+                          <li>Generates A/B test variants for subject lines</li>
+                          <li>Writes complete email bodies with CTAs</li>
+                          <li>Includes personalization tokens and preview text</li>
+                          <li>Supports multiple campaign types (welcome, nurture, sales, etc.)</li>
+                          <li>Configurable brand voice, tone, and length</li>
+                          <li>Optional revision passes for quality improvement</li>
+                          <li>Provides implementation notes and best practices</li>
+                          <li>Ideal for marketing automation, sales outreach, and customer engagement</li>
+                        </ul>
+                      """,
         )
     }
 }

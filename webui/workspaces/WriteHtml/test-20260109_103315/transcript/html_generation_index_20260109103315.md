@@ -1,0 +1,1758 @@
+# HTML Generation Transcript
+
+## Creating HTML File: `index.html`
+
+### Step 1: Generating HTML Structure
+
+**Prompt:**
+```
+You are an expert web developer tasked with creating a complete, self-contained HTML file.
+
+## Requirements:
+Create a simple landing page for a coffee shop with a menu and contact section.
+
+## Context from Related Files:
+
+
+## Previous Task Results:
+
+
+## Instructions:
+1. Create a complete HTML5 document structure with proper semantic elements
+2. Include appropriate meta tags (viewport, charset, etc.)
+3. Add class names to elements that will need styling or JavaScript interaction
+4. Use descriptive, semantic class names (e.g., "nav-menu", "hero-section", "card-container")
+5. Include placeholder comments for where CSS and JavaScript will be added
+6. Do NOT include any CSS or JavaScript yet - just the HTML structure with classes
+7. Add comments to explain the purpose of major sections
+
+## Output Format:
+Provide the HTML structure within a code block:
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- CSS will be added here -->
+</head>
+<body>
+    <!-- HTML structure with classes -->
+</body>
+<!-- JavaScript will be added here -->
+</html>
+```
+```
+
+**Response:**
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bean & Brew | Artisanal Coffee House</title>
+    <!-- CSS will be added here -->
+</head>
+<body>
+
+    <!-- Main Navigation -->
+    <header class="site-header">
+        <nav class="nav-container">
+            <div class="logo-container">
+                <a href="#" class="logo-text">Bean & Brew</a>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="#home" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="#menu" class="nav-link">Menu</a></li>
+                <li class="nav-item"><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+            <button class="mobile-toggle" aria-label="Toggle Menu">
+                <span class="hamburger"></span>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="home" class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">Wake Up to Perfection</h1>
+                <p class="hero-subtitle">Hand-roasted beans, expertly brewed, served with a smile.</p>
+                <a href="#menu" class="cta-button">View Our Menu</a>
+            </div>
+        </section>
+
+        <!-- Menu Section -->
+        <section id="menu" class="menu-section">
+            <div class="section-header">
+                <h2 class="section-title">Our Menu</h2>
+                <p class="section-description">Freshly brewed coffee and handmade treats.</p>
+            </div>
+
+            <div class="menu-container">
+                <!-- Coffee Category -->
+                <div class="menu-category">
+                    <h3 class="category-title">Coffee Classics</h3>
+                    <div class="menu-grid">
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Espresso</h4>
+                                <p class="item-description">Rich, bold, and concentrated.</p>
+                            </div>
+                            <span class="item-price">$3.50</span>
+                        </article>
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Cappuccino</h4>
+                                <p class="item-description">Equal parts espresso, steamed milk, and foam.</p>
+                            </div>
+                            <span class="item-price">$4.50</span>
+                        </article>
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Caramel Macchiato</h4>
+                                <p class="item-description">Freshly steamed milk with vanilla-flavored syrup marked with espresso.</p>
+                            </div>
+                            <span class="item-price">$5.25</span>
+                        </article>
+                    </div>
+                </div>
+
+                <!-- Pastries Category -->
+                <div class="menu-category">
+                    <h3 class="category-title">Fresh Pastries</h3>
+                    <div class="menu-grid">
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Butter Croissant</h4>
+                                <p class="item-description">Flaky, golden-brown, and buttery.</p>
+                            </div>
+                            <span class="item-price">$3.75</span>
+                        </article>
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Blueberry Muffin</h4>
+                                <p class="item-description">Bursting with fresh berries and a sugar crumble.</p>
+                            </div>
+                            <span class="item-price">$4.00</span>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="contact-section">
+            <div class="section-header">
+                <h2 class="section-title">Visit Us</h2>
+                <p class="section-description">We'd love to hear from you or see you in person.</p>
+            </div>
+
+            <div class="contact-container">
+                <div class="contact-info">
+                    <div class="info-block">
+                        <h4 class="info-label">Location</h4>
+                        <p class="info-text">123 Coffee Lane, Brewtown, BT 56789</p>
+                    </div>
+                    <div class="info-block">
+                        <h4 class="info-label">Hours</h4>
+                        <p class="info-text">Mon - Fri: 7am - 7pm</p>
+                        <p class="info-text">Sat - Sun: 8am - 8pm</p>
+                    </div>
+                    <div class="info-block">
+                        <h4 class="info-label">Phone</h4>
+                        <p class="info-text">(555) 123-4567</p>
+                    </div>
+                </div>
+
+                <form class="contact-form">
+                    <div class="form-group">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" id="name" name="name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" name="email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea id="message" name="message" class="form-textarea" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-button">Send Message</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <p class="copyright">&copy; 2023 Bean & Brew Coffee House. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#" class="social-link">Instagram</a>
+                <a href="#" class="social-link">Facebook</a>
+                <a href="#" class="social-link">Twitter</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+<!-- JavaScript will be added here -->
+</html>
+```
+
+### Step 2: Generating JavaScript
+
+**Prompt:**
+```
+Based on the following HTML structure, generate the JavaScript code needed for interactivity.
+
+## HTML Structure:
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bean & Brew | Artisanal Coffee House</title>
+    <!-- CSS will be added here -->
+</head>
+<body>
+
+    <!-- Main Navigation -->
+    <header class="site-header">
+        <nav class="nav-container">
+            <div class="logo-container">
+                <a href="#" class="logo-text">Bean & Brew</a>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="#home" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="#menu" class="nav-link">Menu</a></li>
+                <li class="nav-item"><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+            <button class="mobile-toggle" aria-label="Toggle Menu">
+                <span class="hamburger"></span>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="home" class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">Wake Up to Perfection</h1>
+                <p class="hero-subtitle">Hand-roasted beans, expertly brewed, served with a smile.</p>
+                <a href="#menu" class="cta-button">View Our Menu</a>
+            </div>
+        </section>
+
+        <!-- Menu Section -->
+        <section id="menu" class="menu-section">
+            <div class="section-header">
+                <h2 class="section-title">Our Menu</h2>
+                <p class="section-description">Freshly brewed coffee and handmade treats.</p>
+            </div>
+
+            <div class="menu-container">
+                <!-- Coffee Category -->
+                <div class="menu-category">
+                    <h3 class="category-title">Coffee Classics</h3>
+                    <div class="menu-grid">
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Espresso</h4>
+                                <p class="item-description">Rich, bold, and concentrated.</p>
+                            </div>
+                            <span class="item-price">$3.50</span>
+                        </article>
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Cappuccino</h4>
+                                <p class="item-description">Equal parts espresso, steamed milk, and foam.</p>
+                            </div>
+                            <span class="item-price">$4.50</span>
+                        </article>
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Caramel Macchiato</h4>
+                                <p class="item-description">Freshly steamed milk with vanilla-flavored syrup marked with espresso.</p>
+                            </div>
+                            <span class="item-price">$5.25</span>
+                        </article>
+                    </div>
+                </div>
+
+                <!-- Pastries Category -->
+                <div class="menu-category">
+                    <h3 class="category-title">Fresh Pastries</h3>
+                    <div class="menu-grid">
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Butter Croissant</h4>
+                                <p class="item-description">Flaky, golden-brown, and buttery.</p>
+                            </div>
+                            <span class="item-price">$3.75</span>
+                        </article>
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Blueberry Muffin</h4>
+                                <p class="item-description">Bursting with fresh berries and a sugar crumble.</p>
+                            </div>
+                            <span class="item-price">$4.00</span>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="contact-section">
+            <div class="section-header">
+                <h2 class="section-title">Visit Us</h2>
+                <p class="section-description">We'd love to hear from you or see you in person.</p>
+            </div>
+
+            <div class="contact-container">
+                <div class="contact-info">
+                    <div class="info-block">
+                        <h4 class="info-label">Location</h4>
+                        <p class="info-text">123 Coffee Lane, Brewtown, BT 56789</p>
+                    </div>
+                    <div class="info-block">
+                        <h4 class="info-label">Hours</h4>
+                        <p class="info-text">Mon - Fri: 7am - 7pm</p>
+                        <p class="info-text">Sat - Sun: 8am - 8pm</p>
+                    </div>
+                    <div class="info-block">
+                        <h4 class="info-label">Phone</h4>
+                        <p class="info-text">(555) 123-4567</p>
+                    </div>
+                </div>
+
+                <form class="contact-form">
+                    <div class="form-group">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" id="name" name="name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" name="email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea id="message" name="message" class="form-textarea" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-button">Send Message</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <p class="copyright">&copy; 2023 Bean & Brew Coffee House. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#" class="social-link">Instagram</a>
+                <a href="#" class="social-link">Facebook</a>
+                <a href="#" class="social-link">Twitter</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+<!-- JavaScript will be added here -->
+</html>
+```
+
+## Requirements:
+Create a simple landing page for a coffee shop with a menu and contact section.
+
+## Instructions:
+1. Generate JavaScript that adds interactivity to the HTML elements
+2. Use modern JavaScript (ES6+) features
+3. Add event listeners for user interactions
+4. Include any necessary DOM manipulation
+5. Add comments to explain the functionality
+6. Ensure the code is efficient and follows best practices
+
+## Output Format:
+Provide only the JavaScript code within a code block:
+```javascript
+// JavaScript code here
+```
+```
+
+**Response:**
+```javascript
+/**
+ * Bean & Brew - Interactive Functionality
+ * Handles mobile navigation, smooth scrolling, header effects, and form submission.
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Elements ---
+    const header = document.querySelector('.site-header');
+    const mobileToggle = document.querySelector('.mobile-toggle');
+    const navMenu = document.querySelector('.nav-menu');
+    const navLinks = document.querySelectorAll('.nav-link, .cta-button');
+    const contactForm = document.querySelector('.contact-form');
+
+    /**
+     * Mobile Menu Toggle
+     * Toggles the visibility of the navigation menu on mobile devices.
+     */
+    const toggleMobileMenu = () => {
+        const isExpanded = mobileToggle.getAttribute('aria-expanded') === 'true';
+        mobileToggle.setAttribute('aria-expanded', !isExpanded);
+        navMenu.classList.toggle('nav-menu--active');
+        mobileToggle.classList.toggle('mobile-toggle--active');
+    };
+
+    mobileToggle.addEventListener('click', toggleMobileMenu);
+
+    /**
+     * Smooth Scroll & Auto-Close Menu
+     * Closes the mobile menu when a link is clicked and ensures smooth navigation.
+     */
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            // Close menu if open
+            if (navMenu.classList.contains('nav-menu--active')) {
+                toggleMobileMenu();
+            }
+
+            // Smooth scroll logic (if not handled by CSS)
+            const targetId = link.getAttribute('href');
+            if (targetId.startsWith('#')) {
+                e.preventDefault();
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    const headerOffset = header.offsetHeight;
+                    const elementPosition = targetElement.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+        });
+    });
+
+    /**
+     * Header Scroll Effect
+     * Adds a class to the header when the user scrolls down to change styling (e.g., background color).
+     */
+    const handleHeaderScroll = () => {
+        if (window.scrollY > 50) {
+            header.classList.add('site-header--scrolled');
+        } else {
+            header.classList.remove('site-header--scrolled');
+        }
+    };
+
+    window.addEventListener('scroll', handleHeaderScroll);
+
+    /**
+     * Contact Form Submission
+     * Handles the form submission, prevents page reload, and provides user feedback.
+     */
+    if (contactForm) {
+        contactForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // Collect form data
+            const formData = new FormData(contactForm);
+            const data = Object.fromEntries(formData.entries());
+
+            // Simulate an API call/Formspree/etc.
+            const submitButton = contactForm.querySelector('.submit-button');
+            const originalText = submitButton.textContent;
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'Sending...';
+
+            // Mocking a delay for the "sending" process
+            setTimeout(() => {
+                console.log('Form Data Received:', data);
+                
+                // Success Feedback
+                alert(`Thank you, ${data.name}! Your message has been sent successfully.`);
+                
+                // Reset form
+                contactForm.reset();
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            }, 1500);
+        });
+    }
+
+    /**
+     * Intersection Observer for Active Links
+     * Highlights the current section in the navigation as the user scrolls.
+     */
+    const sections = document.querySelectorAll('section[id]');
+    const observerOptions = {
+        root: null,
+        threshold: 0.6, // Trigger when 60% of the section is visible
+    };
+
+    const observerCallback = (entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                navLinks.forEach(link => {
+                    link.classList.remove('nav-link--active');
+                    if (link.getAttribute('href') === `#${entry.target.id}`) {
+                        link.classList.add('nav-link--active');
+                    }
+                });
+            }
+        });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    sections.forEach(section => observer.observe(section));
+});
+```
+
+### Step 3: Generating CSS
+
+**Prompt:**
+```
+Based on the following HTML structure, generate the CSS styling.
+
+## HTML Structure:
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bean & Brew | Artisanal Coffee House</title>
+    <!-- CSS will be added here -->
+</head>
+<body>
+
+    <!-- Main Navigation -->
+    <header class="site-header">
+        <nav class="nav-container">
+            <div class="logo-container">
+                <a href="#" class="logo-text">Bean & Brew</a>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="#home" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="#menu" class="nav-link">Menu</a></li>
+                <li class="nav-item"><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+            <button class="mobile-toggle" aria-label="Toggle Menu">
+                <span class="hamburger"></span>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="home" class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">Wake Up to Perfection</h1>
+                <p class="hero-subtitle">Hand-roasted beans, expertly brewed, served with a smile.</p>
+                <a href="#menu" class="cta-button">View Our Menu</a>
+            </div>
+        </section>
+
+        <!-- Menu Section -->
+        <section id="menu" class="menu-section">
+            <div class="section-header">
+                <h2 class="section-title">Our Menu</h2>
+                <p class="section-description">Freshly brewed coffee and handmade treats.</p>
+            </div>
+
+            <div class="menu-container">
+                <!-- Coffee Category -->
+                <div class="menu-category">
+                    <h3 class="category-title">Coffee Classics</h3>
+                    <div class="menu-grid">
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Espresso</h4>
+                                <p class="item-description">Rich, bold, and concentrated.</p>
+                            </div>
+                            <span class="item-price">$3.50</span>
+                        </article>
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Cappuccino</h4>
+                                <p class="item-description">Equal parts espresso, steamed milk, and foam.</p>
+                            </div>
+                            <span class="item-price">$4.50</span>
+                        </article>
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Caramel Macchiato</h4>
+                                <p class="item-description">Freshly steamed milk with vanilla-flavored syrup marked with espresso.</p>
+                            </div>
+                            <span class="item-price">$5.25</span>
+                        </article>
+                    </div>
+                </div>
+
+                <!-- Pastries Category -->
+                <div class="menu-category">
+                    <h3 class="category-title">Fresh Pastries</h3>
+                    <div class="menu-grid">
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Butter Croissant</h4>
+                                <p class="item-description">Flaky, golden-brown, and buttery.</p>
+                            </div>
+                            <span class="item-price">$3.75</span>
+                        </article>
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Blueberry Muffin</h4>
+                                <p class="item-description">Bursting with fresh berries and a sugar crumble.</p>
+                            </div>
+                            <span class="item-price">$4.00</span>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="contact-section">
+            <div class="section-header">
+                <h2 class="section-title">Visit Us</h2>
+                <p class="section-description">We'd love to hear from you or see you in person.</p>
+            </div>
+
+            <div class="contact-container">
+                <div class="contact-info">
+                    <div class="info-block">
+                        <h4 class="info-label">Location</h4>
+                        <p class="info-text">123 Coffee Lane, Brewtown, BT 56789</p>
+                    </div>
+                    <div class="info-block">
+                        <h4 class="info-label">Hours</h4>
+                        <p class="info-text">Mon - Fri: 7am - 7pm</p>
+                        <p class="info-text">Sat - Sun: 8am - 8pm</p>
+                    </div>
+                    <div class="info-block">
+                        <h4 class="info-label">Phone</h4>
+                        <p class="info-text">(555) 123-4567</p>
+                    </div>
+                </div>
+
+                <form class="contact-form">
+                    <div class="form-group">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" id="name" name="name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" name="email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea id="message" name="message" class="form-textarea" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-button">Send Message</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <p class="copyright">&copy; 2023 Bean & Brew Coffee House. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#" class="social-link">Instagram</a>
+                <a href="#" class="social-link">Facebook</a>
+                <a href="#" class="social-link">Twitter</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+<!-- JavaScript will be added here -->
+</html>
+```
+
+## Requirements:
+Create a simple landing page for a coffee shop with a menu and contact section.
+
+## Instructions:
+1. Generate CSS that styles all the HTML elements
+2. Create a visually appealing, modern design
+3. Ensure responsive design (mobile-first approach)
+4. Use CSS Grid and/or Flexbox for layouts
+5. Include hover effects and transitions where appropriate
+6. Use a consistent color scheme and typography
+7. Add comments to organize the CSS sections
+8. Follow CSS best practices and naming conventions
+
+## Output Format:
+Provide only the CSS code within a code block:
+```css
+/* CSS code here */
+```
+```
+
+**Response:**
+```css
+/* 
+    Bean & Brew - Artisanal Coffee House
+    Custom CSS Stylesheet
+*/
+
+/* --- Root Variables --- */
+:root {
+    --primary-color: #3d2b1f;    /* Deep Coffee Brown */
+    --secondary-color: #c48d5f;  /* Warm Copper/Gold */
+    --accent-color: #fdfaf5;     /* Creamy Beige */
+    --text-main: #2d2d2d;        /* Charcoal */
+    --text-light: #666666;       /* Muted Gray */
+    --white: #ffffff;
+    --transition: all 0.3s ease;
+    --max-width: 1200px;
+    --border-radius: 8px;
+}
+
+/* --- Reset & Base Styles --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text-main);
+    background-color: var(--white);
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Georgia', serif;
+    color: var(--primary-color);
+    line-height: 1.2;
+}
+
+ul {
+    list-style: none;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    transition: var(--transition);
+}
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+/* --- Header & Navigation --- */
+.site-header {
+    background-color: var(--white);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo-text {
+    font-family: 'Georgia', serif;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    letter-spacing: 1px;
+}
+
+.nav-menu {
+    display: flex;
+    gap: 2rem;
+}
+
+.nav-link {
+    font-weight: 500;
+    color: var(--text-main);
+    font-size: 0.95rem;
+}
+
+.nav-link:hover {
+    color: var(--secondary-color);
+}
+
+.mobile-toggle {
+    display: none; /* Hidden on desktop */
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+/* --- Hero Section --- */
+.hero-section {
+    height: 100vh;
+    background: linear-gradient(rgba(61, 43, 31, 0.7), rgba(61, 43, 31, 0.7)), 
+                url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=2000') center/cover no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--white);
+    padding: 0 1rem;
+}
+
+.hero-title {
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    color: var(--white);
+    margin-bottom: 1rem;
+}
+
+.hero-subtitle {
+    font-size: clamp(1.1rem, 3vw, 1.5rem);
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+}
+
+.cta-button {
+    display: inline-block;
+    background-color: var(--secondary-color);
+    color: var(--white);
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.cta-button:hover {
+    background-color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* --- Section Headers --- */
+.menu-section, .contact-section {
+    padding: 100px 2rem;
+    max-width: var(--max-width);
+    margin: 0 auto;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.section-title {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    position: relative;
+    display: inline-block;
+}
+
+.section-title::after {
+    content: '';
+    width: 60px;
+    height: 3px;
+    background: var(--secondary-color);
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.section-description {
+    color: var(--text-light);
+    font-size: 1.1rem;
+}
+
+/* --- Menu Section --- */
+.menu-container {
+    display: grid;
+    gap: 4rem;
+}
+
+.category-title {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.menu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.menu-item:hover {
+    background-color: var(--accent-color);
+}
+
+.item-name {
+    font-size: 1.2rem;
+    margin-bottom: 0.25rem;
+}
+
+.item-description {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    padding-right: 1rem;
+}
+
+.item-price {
+    font-weight: bold;
+    color: var(--secondary-color);
+    font-size: 1.1rem;
+}
+
+/* --- Contact Section --- */
+.contact-container {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 4rem;
+    background-color: var(--accent-color);
+    padding: 3rem;
+    border-radius: var(--border-radius);
+}
+
+.info-block {
+    margin-bottom: 2rem;
+}
+
+.info-label {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--secondary-color);
+}
+
+.info-text {
+    color: var(--text-main);
+}
+
+/* Form Styling */
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.form-input, .form-textarea {
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+.form-input:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 2px rgba(196, 141, 95, 0.2);
+}
+
+.submit-button {
+    background-color: var(--primary-color);
+    color: var(--white);
+    padding: 1rem;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.submit-button:hover {
+    background-color: var(--secondary-color);
+}
+
+/* --- Footer --- */
+.site-footer {
+    background-color: var(--primary-color);
+    color: var(--white);
+    padding: 4rem 2rem 2rem;
+}
+
+.footer-content {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+}
+
+.social-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.social-link:hover {
+    color: var(--secondary-color);
+}
+
+.copyright {
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+/* --- Responsive Design --- */
+
+/* Tablet & Small Desktop */
+@media (max-width: 992px) {
+    .contact-container {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+}
+
+/* Mobile Devices */
+@media (max-width: 768px) {
+    .nav-menu {
+        display: none; /* In a real app, JS would toggle this */
+    }
+
+    .mobile-toggle {
+        display: block;
+    }
+
+    .hamburger, .hamburger::before, .hamburger::after {
+        content: '';
+        display: block;
+        width: 25px;
+        height: 3px;
+        background: var(--primary-color);
+        position: relative;
+        transition: var(--transition);
+    }
+
+    .hamburger::before { top: -8px; }
+    .hamburger::after { bottom: -11px; }
+
+    .hero-section {
+        height: 80vh;
+    }
+
+    .menu-section, .contact-section {
+        padding: 60px 1.5rem;
+    }
+
+    .contact-container {
+        padding: 2rem 1.5rem;
+    }
+}
+```
+
+### Step 4: Final HTML Output
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bean & Brew | Artisanal Coffee House</title>
+    <!-- CSS will be added here -->
+
+    <style>
+        /* 
+            Bean & Brew - Artisanal Coffee House
+            Custom CSS Stylesheet
+        */
+        
+        /* --- Root Variables --- */
+        :root {
+            --primary-color: #3d2b1f;    /* Deep Coffee Brown */
+            --secondary-color: #c48d5f;  /* Warm Copper/Gold */
+            --accent-color: #fdfaf5;     /* Creamy Beige */
+            --text-main: #2d2d2d;        /* Charcoal */
+            --text-light: #666666;       /* Muted Gray */
+            --white: #ffffff;
+            --transition: all 0.3s ease;
+            --max-width: 1200px;
+            --border-radius: 8px;
+        }
+        
+        /* --- Reset & Base Styles --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-main);
+            background-color: var(--white);
+        }
+        
+        h1, h2, h3, h4 {
+            font-family: 'Georgia', serif;
+            color: var(--primary-color);
+            line-height: 1.2;
+        }
+        
+        ul {
+            list-style: none;
+        }
+        
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition);
+        }
+        
+        img {
+            max-width: 100%;
+            display: block;
+        }
+        
+        /* --- Header & Navigation --- */
+        .site-header {
+            background-color: var(--white);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .nav-container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo-text {
+            font-family: 'Georgia', serif;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            letter-spacing: 1px;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+        
+        .nav-link:hover {
+            color: var(--secondary-color);
+        }
+        
+        .mobile-toggle {
+            display: none; /* Hidden on desktop */
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        /* --- Hero Section --- */
+        .hero-section {
+            height: 100vh;
+            background: linear-gradient(rgba(61, 43, 31, 0.7), rgba(61, 43, 31, 0.7)), 
+                        url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=2000') center/cover no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--white);
+            padding: 0 1rem;
+        }
+        
+        .hero-title {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            color: var(--white);
+            margin-bottom: 1rem;
+        }
+        
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 3vw, 1.5rem);
+            margin-bottom: 2.5rem;
+            font-weight: 300;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .cta-button:hover {
+            background-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        /* --- Section Headers --- */
+        .menu-section, .contact-section {
+            padding: 100px 2rem;
+            max-width: var(--max-width);
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-title::after {
+            content: '';
+            width: 60px;
+            height: 3px;
+            background: var(--secondary-color);
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .section-description {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+        
+        /* --- Menu Section --- */
+        .menu-container {
+            display: grid;
+            gap: 4rem;
+        }
+        
+        .category-title {
+            font-size: 1.8rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+        
+        .menu-item:hover {
+            background-color: var(--accent-color);
+        }
+        
+        .item-name {
+            font-size: 1.2rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .item-description {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            padding-right: 1rem;
+        }
+        
+        .item-price {
+            font-weight: bold;
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+        }
+        
+        /* --- Contact Section --- */
+        .contact-container {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 4rem;
+            background-color: var(--accent-color);
+            padding: 3rem;
+            border-radius: var(--border-radius);
+        }
+        
+        .info-block {
+            margin-bottom: 2rem;
+        }
+        
+        .info-label {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--secondary-color);
+        }
+        
+        .info-text {
+            color: var(--text-main);
+        }
+        
+        /* Form Styling */
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .form-input, .form-textarea {
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 2px rgba(196, 141, 95, 0.2);
+        }
+        
+        .submit-button {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 1rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .submit-button:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        /* --- Footer --- */
+        .site-footer {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 4rem 2rem 2rem;
+        }
+        
+        .footer-content {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .social-link:hover {
+            color: var(--secondary-color);
+        }
+        
+        .copyright {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        /* --- Responsive Design --- */
+        
+        /* Tablet & Small Desktop */
+        @media (max-width: 992px) {
+            .contact-container {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+            }
+        }
+        
+        /* Mobile Devices */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none; /* In a real app, JS would toggle this */
+            }
+        
+            .mobile-toggle {
+                display: block;
+            }
+        
+            .hamburger, .hamburger::before, .hamburger::after {
+                content: '';
+                display: block;
+                width: 25px;
+                height: 3px;
+                background: var(--primary-color);
+                position: relative;
+                transition: var(--transition);
+            }
+        
+            .hamburger::before { top: -8px; }
+            .hamburger::after { bottom: -11px; }
+        
+            .hero-section {
+                height: 80vh;
+            }
+        
+            .menu-section, .contact-section {
+                padding: 60px 1.5rem;
+            }
+        
+            .contact-container {
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Navigation -->
+    <header class="site-header">
+        <nav class="nav-container">
+            <div class="logo-container">
+                <a href="#" class="logo-text">Bean & Brew</a>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="#home" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="#menu" class="nav-link">Menu</a></li>
+                <li class="nav-item"><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+            <button class="mobile-toggle" aria-label="Toggle Menu">
+                <span class="hamburger"></span>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="home" class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">Wake Up to Perfection</h1>
+                <p class="hero-subtitle">Hand-roasted beans, expertly brewed, served with a smile.</p>
+                <a href="#menu" class="cta-button">View Our Menu</a>
+            </div>
+        </section>
+
+        <!-- Menu Section -->
+        <section id="menu" class="menu-section">
+            <div class="section-header">
+                <h2 class="section-title">Our Menu</h2>
+                <p class="section-description">Freshly brewed coffee and handmade treats.</p>
+            </div>
+
+            <div class="menu-container">
+                <!-- Coffee Category -->
+                <div class="menu-category">
+                    <h3 class="category-title">Coffee Classics</h3>
+                    <div class="menu-grid">
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Espresso</h4>
+                                <p class="item-description">Rich, bold, and concentrated.</p>
+                            </div>
+                            <span class="item-price">$3.50</span>
+                        </article>
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Cappuccino</h4>
+                                <p class="item-description">Equal parts espresso, steamed milk, and foam.</p>
+                            </div>
+                            <span class="item-price">$4.50</span>
+                        </article>
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Caramel Macchiato</h4>
+                                <p class="item-description">Freshly steamed milk with vanilla-flavored syrup marked with espresso.</p>
+                            </div>
+                            <span class="item-price">$5.25</span>
+                        </article>
+                    </div>
+                </div>
+
+                <!-- Pastries Category -->
+                <div class="menu-category">
+                    <h3 class="category-title">Fresh Pastries</h3>
+                    <div class="menu-grid">
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Butter Croissant</h4>
+                                <p class="item-description">Flaky, golden-brown, and buttery.</p>
+                            </div>
+                            <span class="item-price">$3.75</span>
+                        </article>
+                        <article class="menu-item">
+                            <div class="item-info">
+                                <h4 class="item-name">Blueberry Muffin</h4>
+                                <p class="item-description">Bursting with fresh berries and a sugar crumble.</p>
+                            </div>
+                            <span class="item-price">$4.00</span>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="contact-section">
+            <div class="section-header">
+                <h2 class="section-title">Visit Us</h2>
+                <p class="section-description">We'd love to hear from you or see you in person.</p>
+            </div>
+
+            <div class="contact-container">
+                <div class="contact-info">
+                    <div class="info-block">
+                        <h4 class="info-label">Location</h4>
+                        <p class="info-text">123 Coffee Lane, Brewtown, BT 56789</p>
+                    </div>
+                    <div class="info-block">
+                        <h4 class="info-label">Hours</h4>
+                        <p class="info-text">Mon - Fri: 7am - 7pm</p>
+                        <p class="info-text">Sat - Sun: 8am - 8pm</p>
+                    </div>
+                    <div class="info-block">
+                        <h4 class="info-label">Phone</h4>
+                        <p class="info-text">(555) 123-4567</p>
+                    </div>
+                </div>
+
+                <form class="contact-form">
+                    <div class="form-group">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" id="name" name="name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" name="email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea id="message" name="message" class="form-textarea" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-button">Send Message</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <p class="copyright">&copy; 2023 Bean & Brew Coffee House. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#" class="social-link">Instagram</a>
+                <a href="#" class="social-link">Facebook</a>
+                <a href="#" class="social-link">Twitter</a>
+            </div>
+        </div>
+    </footer>
+
+
+    <script>
+        /**
+         * Bean & Brew - Interactive Functionality
+         * Handles mobile navigation, smooth scrolling, header effects, and form submission.
+         */
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Elements ---
+            const header = document.querySelector('.site-header');
+            const mobileToggle = document.querySelector('.mobile-toggle');
+            const navMenu = document.querySelector('.nav-menu');
+            const navLinks = document.querySelectorAll('.nav-link, .cta-button');
+            const contactForm = document.querySelector('.contact-form');
+        
+            /**
+             * Mobile Menu Toggle
+             * Toggles the visibility of the navigation menu on mobile devices.
+             */
+            const toggleMobileMenu = () => {
+                const isExpanded = mobileToggle.getAttribute('aria-expanded') === 'true';
+                mobileToggle.setAttribute('aria-expanded', !isExpanded);
+                navMenu.classList.toggle('nav-menu--active');
+                mobileToggle.classList.toggle('mobile-toggle--active');
+            };
+        
+            mobileToggle.addEventListener('click', toggleMobileMenu);
+        
+            /**
+             * Smooth Scroll & Auto-Close Menu
+             * Closes the mobile menu when a link is clicked and ensures smooth navigation.
+             */
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Close menu if open
+                    if (navMenu.classList.contains('nav-menu--active')) {
+                        toggleMobileMenu();
+                    }
+        
+                    // Smooth scroll logic (if not handled by CSS)
+                    const targetId = link.getAttribute('href');
+                    if (targetId.startsWith('#')) {
+                        e.preventDefault();
+                        const targetElement = document.querySelector(targetId);
+                        if (targetElement) {
+                            const headerOffset = header.offsetHeight;
+                            const elementPosition = targetElement.getBoundingClientRect().top;
+                            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        
+                            window.scrollTo({
+                                top: offsetPosition,
+                                behavior: 'smooth'
+                            });
+                        }
+                    }
+                });
+            });
+        
+            /**
+             * Header Scroll Effect
+             * Adds a class to the header when the user scrolls down to change styling (e.g., background color).
+             */
+            const handleHeaderScroll = () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('site-header--scrolled');
+                } else {
+                    header.classList.remove('site-header--scrolled');
+                }
+            };
+        
+            window.addEventListener('scroll', handleHeaderScroll);
+        
+            /**
+             * Contact Form Submission
+             * Handles the form submission, prevents page reload, and provides user feedback.
+             */
+            if (contactForm) {
+                contactForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+        
+                    // Collect form data
+                    const formData = new FormData(contactForm);
+                    const data = Object.fromEntries(formData.entries());
+        
+                    // Simulate an API call/Formspree/etc.
+                    const submitButton = contactForm.querySelector('.submit-button');
+                    const originalText = submitButton.textContent;
+            
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Sending...';
+        
+                    // Mocking a delay for the "sending" process
+                    setTimeout(() => {
+                        console.log('Form Data Received:', data);
+                
+                        // Success Feedback
+                        alert(`Thank you, ${data.name}! Your message has been sent successfully.`);
+                
+                        // Reset form
+                        contactForm.reset();
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalText;
+                    }, 1500);
+                });
+            }
+        
+            /**
+             * Intersection Observer for Active Links
+             * Highlights the current section in the navigation as the user scrolls.
+             */
+            const sections = document.querySelectorAll('section[id]');
+            const observerOptions = {
+                root: null,
+                threshold: 0.6, // Trigger when 60% of the section is visible
+            };
+        
+            const observerCallback = (entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('nav-link--active');
+                            if (link.getAttribute('href') === `#${entry.target.id}`) {
+                                link.classList.add('nav-link--active');
+                            }
+                        });
+                    }
+                });
+            };
+        
+            const observer = new IntersectionObserver(observerCallback, observerOptions);
+            sections.forEach(section => observer.observe(section));
+        });
+    </script>
+</body>
+<!-- JavaScript will be added here -->
+</html>
+```
+
+**Result:** Successfully wrote index.html (auto-applied)

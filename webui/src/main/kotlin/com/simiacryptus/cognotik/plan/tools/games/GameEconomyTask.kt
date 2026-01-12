@@ -25,26 +25,26 @@ class GameEconomyTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GameEconomyTask::class.java)
         val GameEconomy = TaskType(
-            "GameEconomy",
-            "Games",
-            GameEconomyTask::class.java,
-            GameEconomyTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Design complete game economic systems with progression and monetization",
-            """
-              Designs comprehensive game economy systems with balanced progression.
-              <ul>
-                <li>Creates multi-resource economic systems with generation and consumption</li>
-                <li>Designs progression curves with experience and level systems</li>
-                <li>Builds skill trees and talent systems</li>
-                <li>Creates loot tables with balanced drop rates</li>
-                <li>Designs monetization strategies without pay-to-win</li>
-                <li>Implements engagement hooks (daily rewards, seasonal content, battle passes)</li>
-                <li>Forecasts economy health and player progression</li>
-                <li>Provides balance recommendations and adjustment strategies</li>
-                <li>Useful for game design, economy balancing, and monetization planning</li>
-              </ul>
-            """,
+          name = "GameEconomy",
+          category = "Games",
+          taskClass = GameEconomyTask::class.java,
+          executionConfigClass = GameEconomyTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Design complete game economic systems with progression and monetization",
+          tooltipHtml = """
+                        Designs comprehensive game economy systems with balanced progression.
+                        <ul>
+                          <li>Creates multi-resource economic systems with generation and consumption</li>
+                          <li>Designs progression curves with experience and level systems</li>
+                          <li>Builds skill trees and talent systems</li>
+                          <li>Creates loot tables with balanced drop rates</li>
+                          <li>Designs monetization strategies without pay-to-win</li>
+                          <li>Implements engagement hooks (daily rewards, seasonal content, battle passes)</li>
+                          <li>Forecasts economy health and player progression</li>
+                          <li>Provides balance recommendations and adjustment strategies</li>
+                          <li>Useful for game design, economy balancing, and monetization planning</li>
+                        </ul>
+                      """,
         )
     }
 
@@ -262,7 +262,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
 
         val ui = task.ui
         val api = defaultSmart ?: return
-        val transcript = transcript(task)
+        val transcript = task.transcript()
 
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)

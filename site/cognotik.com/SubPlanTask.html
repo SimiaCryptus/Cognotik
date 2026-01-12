@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik | SubPlanTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header Styling */
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .panel-content {
+            padding: 1rem;
+            flex-grow: 1;
+            overflow: auto;
+        }
+
+        pre {
+            margin: 0;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Mock UI Tabs */
+        .mock-tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+        }
+        .mock-tab {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border-bottom: 2px solid transparent;
+            color: var(--text-dim);
+        }
+        .mock-tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* Real Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        .docs-table th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+        .docs-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+        .req { color: #f85149; margin-left: 4px; }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Execution > SubPlanTask</div>
+        <h1>SubPlanTask</h1>
+        <p class="pitch">
+            Recursive planning and execution engine. Decomposes complex objectives into manageable sub-tasks using configurable cognitive strategies and isolated execution contexts.
+        </p>
+        <div class="badges">
+            <span class="badge">Recursive</span>
+            <span class="badge">Context-Aware</span>
+            <span class="badge">Multi-Model Support</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>ExecutionConfig.json</span>
+                <span>JSON</span>
+            </div>
+            <div class="panel-content">
+                <pre><code class="language-json">{
+  "planning_goal": "Audit the security of the auth module and fix vulnerabilities.",
+  "context": [
+    "User reported slow login times",
+    "Recent dependency update in build.gradle"
+  ]
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>Session UI (TabbedDisplay)</span>
+                <span>Live Render</span>
+            </div>
+            <div class="panel-content">
+                <div class="mock-tabs">
+                    <div class="mock-tab">Planning</div>
+                    <div class="mock-tab">Execution</div>
+                    <div class="mock-tab active">Summary</div>
+                </div>
+                <div style="font-size: 0.9rem;">
+                    <h4 style="margin-top: 0; color: var(--accent-primary);"># Sub-Planning Summary</h4>
+                    <p><strong>Goal:</strong> Audit the security of the auth module...</p>
+                    <hr style="border: 0; border-top: 1px solid var(--border-subtle);">
+                    <ul style="padding-left: 1.2rem;">
+                        <li>Identified 3 outdated dependencies.</li>
+                        <li>Applied patches to <code>SecurityConfig.kt</code>.</li>
+                        <li>Verified login latency reduction.</li>
+                    </ul>
+                    <div style="color: var(--text-dim); font-size: 0.8rem; margin-top: 1rem;">
+                        <details>
+                            <summary>Full Results (4 items)</summary>
+                        </details>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('config')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Runtime Parameters (ExecutionConfig)</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>planning_goal</code> <span class="req">*</span></td>
+                    <td><code>String</code></td>
+                    <td>The high-level objective for the sub-planner to decompose and execute.</td>
+                </tr>
+                <tr>
+                    <td><code>context</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Supplemental information, logs, or constraints provided to the sub-planner.</td>
+                </tr>
+                <tr>
+                    <td><code>task_description</code></td>
+                    <td><code>String</code></td>
+                    <td>Alternative to <code>planning_goal</code>; used if the goal is not explicitly provided.</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3>Task Capabilities</h3>
+            <p>The <code>SubPlanTask</code> is unique because it acts as a container. It inherits the capabilities of the <code>TaskOrchestrator</code> but can be restricted to specific sub-tasks via its Type Configuration.</p>
+        </div>
+
+        <!-- TAB: CONFIG -->
+        <div id="tab-config" class="tab-pane" style="display:none;">
+            <h3>Type Configuration (Static Settings)</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>cognitiveSettings</code></td>
+                    <td><code>CognitiveModeConfig</code></td>
+                    <td>Overrides the global cognitive strategy for this sub-plan (e.g., <code>Adaptive</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>taskSettings</code></td>
+                    <td><code>Map&lt;String, TaskTypeConfig&gt;</code></td>
+                    <td>Defines the specific task types allowed to be spawned within this sub-plan.</td>
+                </tr>
+                <tr>
+                    <td><code>purpose</code></td>
+                    <td><code>String</code></td>
+                    <td>Internal documentation for why this specific sub-plan configuration exists.</td>
+                </tr>
+                <tr>
+                    <td><code>summaryPrompt</code></td>
+                    <td><code>String</code></td>
+                    <td>The template used by the LLM to aggregate results into the final summary.</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3>Lifecycle Process</h3>
+            <ol style="color: var(--text-dim);">
+                <li><strong style="color: var(--text-main);">Initialization:</strong> Validates the goal and prepares the recursive environment with inherited or overridden settings.</li>
+                <li><strong style="color: var(--text-main);">Planning:</strong> The selected Cognitive Mode analyzes the goal and generates a sequence of sub-tasks.</li>
+                <li><strong style="color: var(--text-main);">Execution:</strong> Sub-tasks are executed within an isolated session context, reporting results back to the parent orchestrator.</li>
+                <li><strong style="color: var(--text-main);">Aggregation:</strong> Results are collected and processed by the <code>summaryPrompt</code> to generate a final synthesis.</li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3>Kotlin Boilerplate</h3>
+            <div class="panel">
+                <div class="panel-header">OrchestrationConfig.kt</div>
+                <div class="panel-content">
+                    <pre><code class="language-kotlin">val subPlanConfig = SubPlanTask.SubPlanTaskTypeConfig(
+    purpose = "Specialized UI Refactoring",
+    cognitiveSettings = CognitiveModeType.Adaptive.newSettings(),
+    taskSettings = mutableMapOf(
+        "FileModification" to FileModificationTask.TypeConfig(),
+        "WebSearch" to WebSearchTask.TypeConfig()
+    )
+)
+
+// Register in your orchestration config
+orchestrationConfig.taskSettings[SubPlanTask.SubPlan.name] = subPlanConfig</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

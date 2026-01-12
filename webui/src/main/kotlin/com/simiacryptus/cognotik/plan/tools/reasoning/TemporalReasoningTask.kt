@@ -98,21 +98,15 @@ class TemporalReasoningTask(
 
     override fun promptSegment(): String {
         return """
-TemporalReasoning - Analyze how systems evolve over time and predict future states
-  ** Specify the subject or system to analyze
-  ** Define the time range to examine
-  ** Set granularity (daily, weekly, monthly, quarterly, yearly)
-  ** Optionally identify temporal patterns and cycles
-  ** Optionally predict future states based on trends
-  ** Optionally analyze rate of change and acceleration
-  ** Optionally identify critical transition points
-  ** Provide related files with temporal data (logs, metrics)
-  ** Useful for:
-     - Technical debt accumulation analysis
-     - System evolution and architecture drift
-     - Performance degradation over time
-     - Bug introduction timeline analysis
-     - Feature adoption and usage patterns
+TemporalReasoning - Analyze system evolution and predict future states.
+- subject: The system or topic to analyze.
+- time_range: Period to examine (e.g., '2023-01-01 to 2024-01-01').
+- granularity: daily, weekly, monthly, quarterly, yearly.
+- related_files: Logs, metrics, or history files.
+- identify_patterns: (Boolean) Find cycles/trends.
+- predict_future: (Boolean) Extrapolate trends.
+- analyze_rate_of_change: (Boolean) Velocity analysis.
+- identify_transitions: (Boolean) Find inflection points.
         """.trimIndent()
     }
 
@@ -788,23 +782,23 @@ Generate the Mermaid timeline diagram now:
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TemporalReasoningTask::class.java)
         val TemporalReasoning = TaskType(
-            "TemporalReasoning",
-            "Reasoning",
-            TemporalReasoningTask::class.java,
-            TemporalReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Analyze how systems evolve over time and predict future states",
-            """
-              Performs temporal reasoning and timeline analysis to understand system evolution.
-              <ul>
-                <li>Constructs chronological timelines of events and changes</li>
-                <li>Identifies temporal patterns, cycles, and trends</li>
-                <li>Analyzes rate of change and acceleration</li>
-                <li>Identifies critical transition points and inflection points</li>
-                <li>Predicts future states based on historical trends</li>
-                <li>Useful for technical debt analysis, performance degradation, and system evolution</li>
-              </ul>
-            """,
+          name = "TemporalReasoning",
+          category = "Reasoning",
+          taskClass = TemporalReasoningTask::class.java,
+          executionConfigClass = TemporalReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Analyze how systems evolve over time and predict future states",
+          tooltipHtml = """
+                        Performs temporal reasoning and timeline analysis to understand system evolution.
+                        <ul>
+                          <li>Constructs chronological timelines of events and changes</li>
+                          <li>Identifies temporal patterns, cycles, and trends</li>
+                          <li>Analyzes rate of change and acceleration</li>
+                          <li>Identifies critical transition points and inflection points</li>
+                          <li>Predicts future states based on historical trends</li>
+                          <li>Useful for technical debt analysis, performance degradation, and system evolution</li>
+                        </ul>
+                      """,
         )
     }
 }

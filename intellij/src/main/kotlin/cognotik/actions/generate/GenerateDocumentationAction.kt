@@ -275,7 +275,7 @@ class GenerateDocumentationAction : FileContextAction<GenerateDocumentationActio
                 ModelSchema.ChatMessage(
                     ModelSchema.Role.system, """
                         You will combine natural language instructions with a user provided code example to document code.
-                        """.trimIndent().toContentList(), null
+                        """.trimIndent().toContentList(),
                 ),
                 ModelSchema.ChatMessage(
                     ModelSchema.Role.user,

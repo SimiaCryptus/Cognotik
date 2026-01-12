@@ -1,73 +1,338 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lateral Thinking - Cognotik</title>
+    <title>Cognotik | LateralThinkingTask - Industrial Reasoning</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .task-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0.5rem 0;
+        }
+
+        .breadcrumbs {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .reality-check {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: #090c10;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow: auto;
+            flex-grow: 1;
+        }
+
+        .ui-panel-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.05);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; }
+
+        @media (max-width: 768px) {
+            .reality-check { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
 </head>
 <body>
-    <cognotik-header current-page="lateral-thinking"></cognotik-header>
-    <header class="hero">
-        <h1>Lateral Thinking</h1>
-        <p class="subtitle">Break conventional thinking patterns to find innovative solutions. Apply techniques like reversal, random stimulus, and provocation.</p>
-        <a href="#demo" class="cta-button">Try the Simulator</a>
-    </header>
-    <section class="features">
-        <div class="features-grid">
-            <div class="feature-card">
-                <h3>Technique Application</h3>
-                <p>Systematically applies lateral thinking methods (Reversal, Exaggeration, Escape) to generate ideas.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Breakthrough Insights</h3>
-                <p>Identifies novel perspectives and hidden assumptions that block creative problem-solving.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Synthesis</h3>
-                <p>Combines unconventional ideas into practical, innovative approaches with feasibility assessments.</p>
-            </div>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="bento-container">
+
+    <!-- 1. HEADER -->
+    <section class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > LateralThinkingTask</div>
+        <h1>LateralThinkingTask</h1>
+        <p class="pitch">
+            Break conventional thinking patterns to find innovative solutions using structured techniques like reversal, random stimulus, and provocation.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">GPT-4 Preferred</span>
         </div>
     </section>
-    <section id="demo" class="simulator">
-        <h2>Interactive Simulator</h2>
-        <div class="simulator-container">
-            <div class="sim-controls">
-                <div class="control-group">
-                    <label>Problem</label>
-                    <textarea rows="3">How to reduce waiting times in a hospital emergency room?</textarea>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check">
+        <!-- Input -->
+        <div class="panel code-panel">
+            <div class="panel-header">⚙️ LateralThinkingConfig.json</div>
+            <pre><code class="language-json">
+{
+  "problem": "How to reduce churn in a SaaS platform?",
+  "techniques": [
+    "reversal",
+    "random_stimulus",
+    "escape"
+  ],
+  "num_alternatives": 3,
+  "evaluate_feasibility": true
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel ui-panel">
+            <div class="panel-header">👁️ Session UI: Summary Tab</div>
+            <div class="ui-panel-content">
+                <div style="border-left: 4px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1rem;">
+                    <h4 style="margin: 0;">Idea: The "Anti-Subscription"</h4>
+                    <small style="color: var(--text-dim);">Technique: Reversal | Novelty: 85% | Feasibility: 60%</small>
                 </div>
-                <div class="control-group">
-                    <label>Techniques</label>
-                    <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-                        <label><input type="checkbox" checked> Reversal</label>
-                        <label><input type="checkbox" checked> Random Stimulus</label>
-                        <label><input type="checkbox" checked> Exaggeration</label>
-                    </div>
-                </div>
-                <button class="run-button">Generate Ideas</button>
-            </div>
-            <div class="sim-output">
-                <div class="tab-content active" style="white-space: pre-wrap;">
-# Lateral Thinking Results
-
-## Technique: Reversal
-**Provocation:** Make patients wait *longer*.
-**Idea:** If waiting is inevitable, make it productive. Perform triage and initial testing *during* the wait or transport.
-**Breakthrough:** Shift medical process to the waiting period.
-
-## Technique: Random Stimulus
-**Stimulus:** "Hotel"
-**Idea:** Treat patients like guests. Give them pagers/apps so they can wait elsewhere comfortably.
-**Breakthrough:** Decouple "waiting" from "waiting room".
-
-## Recommended Approach
-Implement a "Mobile Triage" system where initial diagnostics happen before arrival or in the lobby, and allow patients to wait remotely for non-critical issues.
+                <p style="font-size: 0.85rem;">Instead of trying to keep users, we make it incredibly easy to leave and reward them for returning later. This removes the "commitment anxiety" during signup.</p>
+                <div style="background: #000; padding: 0.5rem; border-radius: 4px; font-size: 0.8rem;">
+                    <span style="color: #4ade80;">✔ Synthesized 12 insights</span><br>
+                    <span style="color: #4ade80;">✔ Feasibility evaluation complete</span>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- 3. TABS -->
+    <section class="task-details">
+        <div class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </div>
+
+        <div class="tab-content">
+            <!-- TAB: DOCS -->
+            <div id="tab-docs" class="tab-pane">
+                <h3>Execution Configuration</h3>
+                <table class="docs-table">
+                    <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td><code>problem</code> <span class="req">*</span></td>
+                        <td>String</td>
+                        <td>The challenge to approach with lateral thinking.</td>
+                    </tr>
+                    <tr>
+                        <td><code>techniques</code></td>
+                        <td>List&lt;String&gt;</td>
+                        <td>reversal, random_stimulus, challenge_assumptions, exaggeration, escape, metaphor, provocation.</td>
+                    </tr>
+                    <tr>
+                        <td><code>num_alternatives</code></td>
+                        <td>Int</td>
+                        <td>Ideas per technique (1-10, default: 5).</td>
+                    </tr>
+                    <tr>
+                        <td><code>evaluate_feasibility</code></td>
+                        <td>Boolean</td>
+                        <td>Whether to perform a secondary evaluation pass.</td>
+                    </tr>
+                    <tr>
+                        <td><code>domain_context</code></td>
+                        <td>String</td>
+                        <td>Optional domain or context to constrain the thinking.</td>
+                    </tr>
+                    <tr>
+                        <td><code>constraints</code></td>
+                        <td>List&lt;String&gt;</td>
+                        <td>Additional constraints or requirements to consider.</td>
+                    </tr>
+                    <tr>
+                        <td><code>input_files</code></td>
+                        <td>List&lt;String&gt;</td>
+                        <td>Glob patterns for context (e.g. <code>**/*.kt</code>).</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB: PROCESS -->
+            <div id="tab-process" class="tab-pane" style="display:none;">
+                <h3>Task Lifecycle</h3>
+                <ol style="font-size: 0.95rem; color: var(--text-main);">
+                    <li><strong>Context Gathering:</strong> Reads specified <code>input_files</code> and prior execution state to ground the problem.</li>
+                    <li><strong>Technique Application:</strong> Iterates through selected techniques, generating <code>LateralIdea</code> objects with novelty and feasibility scores.</li>
+                    <li><strong>Synthesis:</strong> A specialized agent analyzes patterns across all techniques to find breakthrough "Recommended Approaches".</li>
+                    <li><strong>Feasibility Pass:</strong> (Optional) Ranks ideas by practical implementation complexity and resource requirements.</li>
+                </ol>
+            </div>
+
+            <!-- TAB: INTEGRATION -->
+            <div id="tab-integration" class="tab-pane" style="display:none;">
+                <h3>Kotlin Boilerplate</h3>
+                <pre><code class="language-kotlin">
+val task = LateralThinkingTask(
+    orchestrationConfig = config,
+    planTask = LateralThinkingTaskExecutionConfigData(
+        problem = "Optimize database query latency",
+        techniques = listOf("exaggeration", "metaphor"),
+        num_alternatives = 5
+    )
+)
+orchestrator.run(task)
+                </code></pre>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

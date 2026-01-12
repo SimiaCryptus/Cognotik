@@ -64,6 +64,8 @@ open class HierarchicalPlanningMode(
         log.debug("Initializing GoalOrientedMode")
         goalTree.clear()
         taskMap.clear()
+        goalTasks.clear()
+        taskTasks.clear()
         goalIdCounter.set(1)
         taskIdCounter.set(1)
         stopRequested.set(false)
@@ -92,7 +94,7 @@ open class HierarchicalPlanningMode(
     private fun startGoalOrientedSession(userMessage: String, task: SessionTask) {
         task.echo(MarkdownUtil.renderMarkdown("User: $userMessage"))
         // Initialize transcript
-        transcriptStream = task.newLogStream("Transcript")
+        transcriptStream = task.transcript()
         logToSession("# Goal-Oriented Planning Session Transcript\n")
         logToSession("**User Request:** $userMessage\n")
         logToSession("**Started:** ${java.time.LocalDateTime.now()}\n\n")
@@ -554,13 +556,13 @@ open class HierarchicalPlanningMode(
                 orchestrationConfig = orchestrationConfig,
             )
             logToSession("Waiting for task completion for Task ID ${t.id}...")
-            val acquired = semaphore.tryAcquire(5, TimeUnit.MINUTES)
+            val acquired = semaphore.tryAcquire(20, TimeUnit.MINUTES)
             if (!acquired) {
-                logToSession("Task ID ${t.id} timed out after 5 minutes")
+                logToSession("Task ID ${t.id} timed out after 20 minutes")
                 logToSession("**Result:** TIMEOUT")
                 t.status = TaskStatus.FAILED
                 t.result = "Task execution timed out"
-                task.add(MarkdownUtil.renderMarkdown("Task execution timed out after 5 minutes"))
+                task.add(MarkdownUtil.renderMarkdown("Task execution timed out after 20 minutes"))
             }
             logToSession("Task ID ${t.id} complete")
             val result = t.result
@@ -653,7 +655,11 @@ open class HierarchicalPlanningMode(
                         }
                         waitCount++
                         log.info("Waiting for Task ID ${taskInstance.id} (${taskInstance.description}) to complete. Currently ${processor.getActiveTaskCount()} active tasks. Wait cycle: $waitCount")
-                        Thread.sleep(5000) // Check more frequently - every 5 seconds instead of 60
+                        // Wait for 5 seconds, but check stopRequested every 100ms
+                        for (i in 0 until 50) {
+                            if (stopRequested.get()) break
+                            Thread.sleep(100)
+                        }
                     }
                     if (future.isDone && taskInstance.status != TaskStatus.FAILED) {
                         taskInstance.status = TaskStatus.COMPLETED
@@ -982,18 +988,13 @@ open class HierarchicalPlanningMode(
                 GoalStatus.SKIPPED -> "⏭️ Skipped"
                 null -> "❓ Unknown"
             }
-            val depsString =
-                (if (goal.dependencies?.isEmpty() == true) "none" else goal.dependencies?.joinToString(", ") { "Goal ${it}" }).let {
-                    when (it) {
-                        "" -> ""
-                        else -> "Deps: $it"
-                    }
-                }
+            val depsString = if (goal.dependencies.isNullOrEmpty()) "" else "Deps: " + goal.dependencies.joinToString(", ") { "Goal $it" }
+
             nodeSb.append("- " + ("""$statusEmoji **${goal.description ?: "N/A"} (ID: ${goal.id})**""").let {
                 goalTasks[goal.id]?.ui?.linkToSession(
                     it
                 ) ?: it
-            } + "   " + depsString)
+            } + (if (depsString.isNotEmpty()) "   $depsString" else ""))
             nodeSb.append("\n")
             goal.tasks?.mapNotNull { taskMap[it.id] }?.forEach { t ->
                 val taskStatusEmoji = when (t.status) {
@@ -1241,10 +1242,7 @@ open class HierarchicalPlanningMode(
         val tasks: List<Task> = emptyList()
     )
 
-    private fun getStateFile(task : SessionTask): File {
-        val dir = task.ui.dataStorage?.getSessionDir(user, session) ?: File(".")
-        return File(dir, "planning_state.json")
-    }
+    private fun getStateFile(task : SessionTask) = File(task.ui.dataStorage.getSessionDir(user, session), "planning_state.json")
 
     private fun saveState(task : SessionTask) {
         try {

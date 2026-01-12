@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.File
+import java.util.concurrent.Semaphore
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -178,8 +179,6 @@ class ScriptwritingTask(
         return """
  Scriptwriting - Generate complete scripts for videos, podcasts, and presentations
   ** Optionally, list input files (supports glob patterns) to be examined when generating the script
-  ** Available files:
-  ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
   ** Specify the topic and script type (video, podcast, presentation, etc.)
   ** Set target duration and audience
   ** Configure tone and pacing
@@ -203,7 +202,7 @@ class ScriptwritingTask(
     ) {
         val startTime = System.currentTimeMillis()
         log.info("Starting ScriptwritingTask for topic: '${executionConfig?.topic}'")
-        val markdownTranscript = transcript(task)
+        val markdownTranscript = task.transcript()
 
 
         // Validate configuration
@@ -230,6 +229,7 @@ class ScriptwritingTask(
         val api = defaultSmart ?: return
 
         val tabs = TabbedDisplay(task)
+        val semaphore = Semaphore(0)
 
         // Overview tab
         val overviewTask = tabs.newTask("Overview")
@@ -268,13 +268,11 @@ class ScriptwritingTask(
             appendLine("*Analyzing topic and creating script structure...*")
         }
         markdownTranscript?.write(overviewContent2.toByteArray())
-        markdownTranscript?.write(overviewContent2.toByteArray())
-        markdownTranscript?.write("\n".toByteArray())
         overviewTask.add(overviewContent2.renderMarkdown)
         task.update()
 
         val resultBuilder = StringBuilder()
-        markdownTranscript?.write("# Research Context\n\n".toByteArray())
+        markdownTranscript?.write("# Research Context\n<details>\n<summary>Context Details</summary>\n\n".toByteArray())
         markdownTranscript?.write("Context loaded from prior tasks and related files.\n\n".toByteArray())
         resultBuilder.append("# Script: $topic\n\n")
 
@@ -303,11 +301,10 @@ class ScriptwritingTask(
                 )
                 task.update()
             }
-            markdownTranscript?.write("# Research Context\n\n".toByteArray())
+            markdownTranscript?.write("\n</details>\n".toByteArray())
 
             // Phase 1: Create outline
             log.info("Phase 1: Creating script outline")
-            markdownTranscript?.write("# Script Outline\n\n".toByteArray())
             val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
@@ -318,8 +315,7 @@ class ScriptwritingTask(
                     appendLine()
                 }.renderMarkdown
             )
-            markdownTranscript?.write("# Script Outline\n\n".toByteArray())
-            markdownTranscript?.write("Creating structured outline...\n\n".toByteArray())
+            markdownTranscript?.write("# Script Outline\n<details>\n<summary>Outline Details</summary>\n\n".toByteArray())
             task.update()
 
             val targetDurationSeconds = executionConfig.target_duration_minutes * 60
@@ -428,8 +424,7 @@ Ensure the outline:
             }
             outlineTask.add(outlineContent.renderMarkdown)
             markdownTranscript?.write(outlineContent.toByteArray())
-            markdownTranscript?.write(outlineContent.toByteArray())
-            markdownTranscript?.write("\n".toByteArray())
+            markdownTranscript?.write("\n</details>\n".toByteArray())
             task.update()
 
             overviewTask.add("✅ Phase 1 Complete: Outline created (${outline.sections.size} sections)\n".renderMarkdown)
@@ -530,7 +525,6 @@ Ensure the dialogue sounds natural when spoken aloud.
                         appendLine("**Status:** ✅ Complete")
                     }.renderMarkdown
                 )
-                markdownTranscript?.write("# Opening Hook\n\n".toByteArray())
                 markdownTranscript?.write("# Opening Hook\n\n".toByteArray())
                 markdownTranscript?.write(hookSegment.dialogue.toByteArray())
                 markdownTranscript?.write("\n\n".toByteArray())
@@ -673,7 +667,6 @@ Aim for approximately ${sectionOutline.estimated_duration_seconds} seconds of co
                     }.renderMarkdown
                 )
                 markdownTranscript?.write("## Section ${sectionOutline.section_number}: ${sectionOutline.title}\n\n".toByteArray())
-                markdownTranscript?.write("## Section ${sectionOutline.section_number}: ${sectionOutline.title}\n\n".toByteArray())
                 markdownTranscript?.write(sectionSegment.dialogue.toByteArray())
                 markdownTranscript?.write("\n\n".toByteArray())
                 task.update()
@@ -775,7 +768,6 @@ Target duration: 15-20 seconds.
                     appendLine("**Status:** ✅ Complete")
                 }.renderMarkdown
             )
-            markdownTranscript?.write("# Closing\n\n".toByteArray())
             markdownTranscript?.write("# Closing\n\n".toByteArray())
             markdownTranscript?.write(closingSegment.dialogue.toByteArray())
             markdownTranscript?.write("\n\n".toByteArray())
@@ -927,7 +919,6 @@ Provide the complete revised script with all formatting intact.
 
             finalTask.add(finalScript.renderMarkdown)
             markdownTranscript?.write("\n---\n\n# Complete Script\n\n".toByteArray())
-            markdownTranscript?.write("\n---\n\n# Complete Script\n\n".toByteArray())
             markdownTranscript?.write(finalScript.toByteArray())
             markdownTranscript?.write("\n".toByteArray())
             task.update()
@@ -989,7 +980,6 @@ Provide the complete revised script with all formatting intact.
 
                 productionNotesTask.add(productionNotes.renderMarkdown)
                 markdownTranscript?.write("\n---\n\n".toByteArray())
-                markdownTranscript?.write("\n---\n\n".toByteArray())
                 markdownTranscript?.write(productionNotes.toByteArray())
                 markdownTranscript?.write("\n".toByteArray())
                 task.update()
@@ -1024,7 +1014,6 @@ Provide the complete revised script with all formatting intact.
                 }.renderMarkdown
             )
             markdownTranscript?.write("\n---\n\n## Generation Complete\n\n".toByteArray())
-            markdownTranscript?.write("\n---\n\n## Generation Complete\n\n".toByteArray())
             markdownTranscript?.write("Script generation completed successfully.\n".toByteArray())
             task.update()
 
@@ -1049,13 +1038,16 @@ Provide the complete revised script with all formatting intact.
             }
 
             log.info("ScriptwritingTask completed: duration=${cumulativeDuration}s, words=$cumulativeWordCount, segments=${scriptSegments.size}, time=${totalTime}ms")
-            markdownTranscript?.close()
-            markdownTranscript?.close()
 
-            task.safeComplete(
-                "Script generation complete: ${formatTiming(cumulativeDuration)} in ${totalTime / 1000}s",
-                log
-            )
+
+            // Best Practice: Use acceptButtonFooter for manual review
+            task.add(acceptButtonFooter(task.ui) {
+                semaphore.release()
+            })
+            semaphore.acquire()
+
+            task.complete()
+            log.info("Script generation complete: ${formatTiming(cumulativeDuration)} in ${totalTime / 1000}s")
             resultFn(finalResult)
 
         } catch (e: Exception) {
@@ -1148,23 +1140,6 @@ Provide the complete revised script with all formatting intact.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ScriptwritingTask::class.java)
-        fun getAvailableFiles(
-            path: Path,
-            treatDocumentsAsText: Boolean = false,
-        ): List<String> {
-            return try {
-                listOf(
-                    FileSelectionUtils.filteredWalkAsciiTree(
-                        path.toFile(),
-                        20,
-                        treatDocumentsAsText = treatDocumentsAsText
-                    )
-                )
-            } catch (e: Exception) {
-                log.error("Error listing available files", e)
-                listOf("Error listing files: ${e.message}")
-            }
-        }
 
         fun extractDocumentContent(file: File) = try {
             file.readText()
@@ -1173,28 +1148,28 @@ Provide the complete revised script with all formatting intact.
         }
 
         val Scriptwriting = TaskType(
-            "Scriptwriting",
-            "Writing",
-            ScriptwritingTask::class.java,
-            ScriptwritingTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate complete scripts for videos, podcasts, and presentations",
-            """
-              Generates production-ready scripts with dialogue, timing, and production notes.
-              <ul>
-                <li>Creates detailed script outline with sections and timing</li>
-                <li>Writes natural, conversational dialogue for spoken delivery</li>
-                <li>Includes visual directions and scene descriptions</li>
-                <li>Suggests B-roll and supporting visuals</li>
-                <li>Marks key points for emphasis or graphics</li>
-                <li>Provides timing markers and duration estimates</li>
-                <li>Includes production notes and speaker guidance</li>
-                <li>Supports multiple script types (video, podcast, presentation, commercial)</li>
-                <li>Configurable tone, pacing, and audience targeting</li>
-                <li>Optional revision passes for quality improvement</li>
-                <li>Ideal for video production, podcasts, presentations, training videos</li>
-              </ul>
-            """,
+          name = "Scriptwriting",
+          category = "Writing",
+          taskClass = ScriptwritingTask::class.java,
+          executionConfigClass = ScriptwritingTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate complete scripts for videos, podcasts, and presentations",
+          tooltipHtml = """
+                        Generates production-ready scripts with dialogue, timing, and production notes.
+                        <ul>
+                          <li>Creates detailed script outline with sections and timing</li>
+                          <li>Writes natural, conversational dialogue for spoken delivery</li>
+                          <li>Includes visual directions and scene descriptions</li>
+                          <li>Suggests B-roll and supporting visuals</li>
+                          <li>Marks key points for emphasis or graphics</li>
+                          <li>Provides timing markers and duration estimates</li>
+                          <li>Includes production notes and speaker guidance</li>
+                          <li>Supports multiple script types (video, podcast, presentation, commercial)</li>
+                          <li>Configurable tone, pacing, and audience targeting</li>
+                          <li>Optional revision passes for quality improvement</li>
+                          <li>Ideal for video production, podcasts, presentations, training videos</li>
+                        </ul>
+                      """,
         )
     }
 }

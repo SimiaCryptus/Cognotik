@@ -28,22 +28,22 @@ class EthicalReasoningTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(EthicalReasoningTask::class.java)
         val EthicalReasoning = TaskType(
-            "EthicalReasoning",
-            "Reasoning",
-            EthicalReasoningTask::class.java,
-            EthicalReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Analyze a dilemma through multiple ethical frameworks to guide decision-making.",
-            """
-              Provides a structured analysis of a complex ethical problem or decision.
-              <ul>
-                <li>Evaluates a dilemma from the perspectives of several established ethical frameworks (e.g., Utilitarianism, Deontology, Virtue Ethics).</li>
-                <li>For each framework, it assesses the situation, applies the framework's core principles, and determines a recommended course of action.</li>
-                <li>Synthesizes these findings to provide a comprehensive recommendation, highlighting points of convergence, divergence, and the ethical trade-offs involved.</li>
-                <li>Useful for AI safety, product development, policy making, and corporate governance.</li>
-                <li>Generates a downloadable transcript in markdown, HTML, and PDF formats.</li>
-              </ul>
-            """,
+          name = "EthicalReasoning",
+          category = "Reasoning",
+          taskClass = EthicalReasoningTask::class.java,
+          executionConfigClass = EthicalReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Analyze a dilemma through multiple ethical frameworks to guide decision-making.",
+          tooltipHtml = """
+                        Provides a structured analysis of a complex ethical problem or decision.
+                        <ul>
+                          <li>Evaluates a dilemma from the perspectives of several established ethical frameworks (e.g., Utilitarianism, Deontology, Virtue Ethics).</li>
+                          <li>For each framework, it assesses the situation, applies the framework's core principles, and determines a recommended course of action.</li>
+                          <li>Synthesizes these findings to provide a comprehensive recommendation, highlighting points of convergence, divergence, and the ethical trade-offs involved.</li>
+                          <li>Useful for AI safety, product development, policy making, and corporate governance.</li>
+                          <li>Generates a downloadable transcript in markdown, HTML, and PDF formats.</li>
+                        </ul>
+                      """,
         )
     }
 

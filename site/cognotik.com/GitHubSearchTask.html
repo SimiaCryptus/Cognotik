@@ -1,182 +1,370 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Search - Cognotik</title>
+    <title>Cognotik | GitHubSearchTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
-        
-        /* Local overrides */
-        .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 2rem; }
-        
-        /* Hero Section Overrides */
-        .hero { 
-            padding: 8rem 2rem 4rem; 
-            display: flex; 
-            align-items: center; 
-            min-height: 80vh; 
-            text-align: left; 
-            background: none; /* Override main.css gradient */
-            max-width: var(--container-max-width);
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .task-container {
+            max-width: 1200px;
             margin: 0 auto;
+            padding: 2rem;
         }
-        .hero-content { flex: 1; padding-right: 2rem; }
-        .hero h1 { 
-            font-size: 3.5rem; 
-            line-height: 1.1; 
-            margin-bottom: 1.5rem; 
-            background: linear-gradient(to right, #fff, var(--accent-color)); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
+
+        .page-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 1.5rem;
         }
-        .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
-        .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
-        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-color); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(139, 92, 246, 0.2); }
-        
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
 
-        /* Feature Icons */
-        .feature-card svg { width: 48px; height: 48px; color: var(--accent-secondary); margin-bottom: 1rem; }
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
 
-        /* Simulator Overrides */
-        .sim-output { padding: 2rem; overflow-y: auto; font-family: var(--font-family-mono); }
-        
-        .use-cases { padding: 4rem 0; }
-        .use-case-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-        .use-case-item { background: var(--surface-color); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent-secondary); }
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
 
-        @media (max-width: 768px) { .hero { flex-direction: column; text-align: center; padding-top: 6rem; } }
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .search-result-item {
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.75rem 0;
+        }
+
+        .search-result-item:last-child { border-bottom: none; }
+
+        .result-title { color: var(--accent-primary); font-weight: 600; text-decoration: none; }
+        .result-meta { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.25rem; }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            color: var(--accent-primary);
+        }
+
+        .req { color: #f85149; font-weight: bold; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
+        }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="github"></cognotik-header>
-    <header class="hero">
-        <div class="hero-content">
-            <h1>GitHub Search</h1>
-            <p>Perform advanced searches across GitHub repositories, code, issues, and users to find exactly what you need.</p>
-            <a href="#demo" class="btn">Try the Simulator</a>
-        </div>
-        <div class="hero-visual">
-            <div class="visual-node"></div>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Online > GitHubSearchTask</div>
+        <h1>GitHubSearchTask</h1>
+        <p class="pitch">
+            Comprehensive search across GitHub's repositories, code, commits, issues, topics, and users with structured markdown reporting.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Online</span>
+            <span class="badge">Side-Effect: Safe</span>
+            <span class="badge">Auth: GitHub Token Required</span>
         </div>
     </header>
 
-    <section id="features" class="features">
-        <div class="features-grid">
-            <div class="feature-card">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <h3>Deep Search</h3>
-                <p>Access repositories, code snippets, commits, and issues directly from the interface.</p>
-            </div>
-            <div class="feature-card">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/></svg>
-                <h3>Advanced Filtering</h3>
-                <p>Filter results by language, stars, update date, and other metadata for precision.</p>
-            </div>
-            <div class="feature-card">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                <h3>Contextual Results</h3>
-                <p>Results are formatted with relevant details like descriptions, stars, and links for easy integration.</p>
-            </div>
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> GitHubSearchTaskExecutionConfigData</div>
+            <pre><code>{
+  "search_query": "topic:kotlin-multiplatform",
+  "search_type": "repositories",
+  "per_page": 5,
+  "sort": "stars",
+  "order": "desc"
+}</code></pre>
         </div>
-    </section>
 
-    <section id="demo" class="simulator">
-        <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-        <div class="simulator-container">
-            <div class="sim-controls">
-                <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
-                <div class="control-group">
-                    <label>Search Query</label>
-                    <input type="text" id="query" value="machine learning language:python stars:>1000">
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI Output</div>
+            <div class="mock-ui-content">
+                <div style="font-weight: bold; margin-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                    GitHub Search Results
                 </div>
-                <div class="control-group">
-                    <label>Search Type</label>
-                    <select id="type">
-                        <option value="repositories">Repositories</option>
-                        <option value="code">Code</option>
-                        <option value="issues">Issues</option>
-                        <option value="users">Users</option>
-                    </select>
+                <div class="search-result-item">
+                    <div class="result-title">JetBrains/kotlin-multiplatform-samples</div>
+                    <div style="font-size: 0.8rem; margin-top: 2px;">Samples for Kotlin Multiplatform Mobile...</div>
+                    <div class="result-meta">Stars: 4.2k | Forks: 850</div>
                 </div>
-                <button class="run-button" onclick="runSimulation()" style="margin-top: 1rem;">Search</button>
-            </div>
-            <div class="sim-output" id="output-logs">
-                <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                    Enter a query and click "Search" to see results.
+                <div class="search-result-item">
+                    <div class="result-title">touchlab/KaMPKit</div>
+                    <div style="font-size: 0.8rem; margin-top: 2px;">KaMP Kit is a collection of code and tools...</div>
+                    <div class="result-meta">Stars: 2.1k | Forks: 320</div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="use-cases" class="use-cases">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="use-case-list">
-                <div class="use-case-item">
-                    <h4>Library Discovery</h4>
-                    <p>Find open-source libraries and tools that match specific requirements.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Code Examples</h4>
-                    <p>Search for code snippets to understand how to implement specific features.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Issue Tracking</h4>
-                    <p>Find existing issues or solutions for bugs you encounter.</p>
-                </div>
-            </div>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>search_query</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>-</td>
+                    <td>The search query to use for GitHub search. Supports advanced qualifiers.</td>
+                </tr>
+                <tr>
+                    <td><code>search_type</code></td>
+                    <td>String</td>
+                    <td><code>"repositories"</code></td>
+                    <td>Type of search: <code>code</code>, <code>commits</code>, <code>issues</code>, <code>repositories</code>, <code>topics</code>, <code>users</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>per_page</code></td>
+                    <td>Int</td>
+                    <td><code>30</code></td>
+                    <td>Number of results to return (1-100).</td>
+                </tr>
+                <tr>
+                    <td><code>sort</code></td>
+                    <td>String?</td>
+                    <td><code>null</code></td>
+                    <td>Sort order (e.g., <code>stars</code>, <code>forks</code>, <code>updated</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>order</code></td>
+                    <td>String?</td>
+                    <td><code>null</code></td>
+                    <td>Sort direction: <code>asc</code> or <code>desc</code>.</td>
+                </tr>
+                </tbody>
+            </table>
         </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Lifecycle</h3>
+            <ol style="padding-left: 1.2rem; color: var(--text-dim);">
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Validation:</strong> Checks if <code>search_query</code> is present and <code>search_type</code> is valid.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Authentication:</strong> Retrieves the GitHub API token from the user's encrypted settings.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Execution:</strong> Performs a GET request to <code>api.github.com/search/{type}</code> with encoded parameters.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Reporting:</strong> Generates a detailed Markdown transcript and renders a summary in the Session UI.
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Prompt Segment</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">This text is injected into the LLM context to describe the tool's capabilities:</p>
+            <pre style="background: #000; border-radius: 4px;"><code>GitHubSearch - Search GitHub for code, commits, issues, repositories, topics, or users
+    * Specify the search query
+    * Specify the type of search (code, commits, issues, repositories, topics, users)
+    * Specify the number of results to return (max 100)
+    * Optionally specify sort order (e.g. stars, forks, updated)
+    * Optionally specify sort direction (asc or desc)</code></pre>
+
+            <h3 style="margin-top: 2rem;">Kotlin Boilerplate</h3>
+            <pre style="background: #000; border-radius: 4px;"><code>val task = GitHubSearchTask(
+    orchestrationConfig = config,
+    planTask = GitHubSearchTask.GitHubSearchTaskExecutionConfigData(
+        search_query = "org:simiacryptus",
+        search_type = "repositories"
+    )
+)</code></pre>
+        </div>
+
     </section>
 
-    <script>
-        function runSimulation() {
-            const query = document.getElementById('query').value;
-            const type = document.getElementById('type').value;
-            const logsEl = document.getElementById('output-logs');
-            
-            logsEl.innerHTML = '';
-            const steps = [
-                `[INFO] Connecting to GitHub API...`,
-                `[INFO] Searching ${type} for: "${query}"...`,
-                `[INFO] Filtering results...`,
-                `[SUCCESS] Found 30 results.`
-            ];
-            
-            let i = 0;
-            const interval = setInterval(() => {
-                if (i < steps.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
-                    line.style.marginBottom = '4px';
-                    if (steps[i].includes('SUCCESS')) line.style.color = '#4ade80';
-                    else line.style.color = '#a78bfa';
-                    logsEl.appendChild(line);
-                    i++;
-                } else {
-                    clearInterval(interval);
-                    const result = document.createElement('div');
-                    result.innerHTML = `
-                        <br><strong>Top Result:</strong><br>
-                        <h3>tensorflow/tensorflow</h3>
-                        <p>An Open Source Machine Learning Framework for Everyone.</p>
-                        <p>⭐ 180k | 🍴 89k | Python</p>
-                    `;
-                    result.style.color = '#e2e8f0';
-                    result.style.marginTop = '1rem';
-                    result.style.padding = '1rem';
-                    result.style.border = '1px solid rgba(255,255,255,0.1)';
-                    result.style.borderRadius = '8px';
-                    logsEl.appendChild(result);
-                }
-            }, 600);
-        }
-    </script>
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

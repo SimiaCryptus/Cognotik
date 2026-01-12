@@ -40,7 +40,7 @@ class GoogleSearch : SeedMethodFactory {
                 user ?: UserSettingsManager.defaultUser
             )
             val key = userSettings
-                .apis.firstOrNull { it.provider == APIProvider.Google }?.key?.trim()
+                .apis.firstOrNull { it.provider == APIProvider.Google }?.key?.decrypt?.trim()
                 ?: throw IllegalStateException("Google API token is required but not configured")
             val engineId = userSettings.apiBase[APIProvider.Google]?.trim()
                 ?: throw IllegalStateException("Search engine ID is required but not configured")
@@ -118,7 +118,7 @@ class GoogleSearch : SeedMethodFactory {
             return user?.let {
                 val userSettings =
                     ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it)
-                userSettings.apis.any { api -> api.provider == APIProvider.Google && api.key?.isNotBlank() == true } &&
+                userSettings.apis.any { api -> api.provider == APIProvider.Google && api.key?.decrypt?.isNotBlank() == true } &&
                         userSettings.apiBase[APIProvider.Google]?.isNotBlank() == true
             } ?: false
         }

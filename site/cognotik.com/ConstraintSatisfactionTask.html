@@ -1,257 +1,403 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Constraint Satisfaction - Cognotik</title>
+    <title>Cognotik | ConstraintSatisfactionTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&family=Space+Grotesk:wght@300;500&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
+        :root {
+            --bg-app: #0f1115;       /* Very dark grey, almost black */
+            --bg-panel: #161b22;     /* Slightly lighter for cards */
+            --bg-header: #090c10;    /* Darkest for headers */
+            --border-subtle: #30363d; /* Borders for definition */
+            --accent-primary: #58a6ff; /* VS Code Blue */
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
 
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
 
-
-
-
-        .visual-placeholder {
-            width: 100%;
-            max-width: 800px;
-            height: 400px;
+        .bento-container {
+            max-width: 1200px;
             margin: 0 auto;
-            background: linear-gradient(45deg, var(--surface-color), var(--background-color));
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
+            padding: 2rem;
+        }
+
+        .task-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0.5rem 0;
+            letter-spacing: -1px;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+            font-weight: 300;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 450px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: var(--bg-header);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
             display: flex;
             align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
+            gap: 0.5rem;
         }
 
-        /* Abstract geometric shape for visual */
-        .visual-shape {
-            width: 150px;
-            height: 150px;
-            border: 2px solid var(--accent-color);
-            transform: rotate(45deg);
-            box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
-            position: relative;
-        }
-        .visual-shape::before {
-            content: '';
-            position: absolute;
-            inset: -20px;
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            transform: rotate(-45deg);
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow: auto;
+            flex-grow: 1;
+            background: #0d1117;
         }
 
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
 
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
 
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
 
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
 
-
-
-
-
-        /* Ensure number input matches other inputs from main.css */
-        input[type="number"] {
-            display: block;
+        .docs-table {
             width: 100%;
-            padding: var(--spacing-sm) var(--spacing-md);
-            font-family: inherit;
-            font-size: 1rem;
-            line-height: 1.5;
-            color: var(--text-color);
-            background-color: var(--surface-color);
-            background-clip: padding-box;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        }
-
-        input[type="number"]:focus {
-            border-color: var(--accent-color);
-            outline: 0;
-            box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
-        }
-
-
-
-        .output-terminal {
-            font-family: var(--font-family-mono);
-            white-space: pre-wrap;
-            color: var(--text-color);
-            line-height: 1.5;
-            padding: 2rem;
-            height: 100%;
-            overflow-y: auto;
-        }
-
-        .output-header {
-            color: var(--accent-color);
-            font-weight: bold;
+            border-collapse: collapse;
+            font-size: 0.9rem;
             margin-top: 1rem;
-            margin-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.25rem;
         }
 
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; margin-left: 4px; }
+
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            flex-grow: 1;
+            background: var(--bg-app);
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        
+        .code-block {
+            background: #0d1117;
+            border: 1px solid var(--border-subtle);
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #e6edf3;
+        }
+
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="constraint-satisfaction"></cognotik-header>
 
-    <main>
-        <section class="hero">
-            <h1>Constraint Satisfaction</h1>
-            <p class="subtitle">Solve complex problems with multiple competing constraints. Define hard rules that must be met and soft goals to optimize, using advanced search strategies to find the best possible trade-offs.</p>
+<cognotik-header current-page="tasks"></cognotik-header>
 
-            <div class="visual-placeholder">
-                <div class="visual-shape"></div>
-            </div>
+<main class="bento-container">
 
-            <div style="margin-top: 2rem;">
-                <button class="cta-button" onclick="document.querySelector('.simulator').scrollIntoView({behavior: 'smooth'})">Try the Simulator</button>
-            </div>
-        </section>
+    <!-- 1. HEADER -->
+    <header class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > ConstraintSatisfactionTask</div>
+        <h1>ConstraintSatisfactionTask</h1>
+        <p class="pitch">
+            Solves constraint satisfaction problems with hard and soft constraints using systematic search strategies, providing detailed reasoning and trade-off analysis.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+            <span class="badge">Side-Effect Safe</span>
+        </div>
+    </header>
 
-        <section class="features">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <h3>Hard Constraints</h3>
-                    <p>Define non-negotiable requirements that must be satisfied in any valid solution.</p>
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">⚙️ TaskConfig.json</div>
+            <pre><code class="language-json">{
+  "problem_description": "Allocate 5 microservices across 3 regions.",
+  "hard_constraints": [
+    "Region A must have at least 2 services",
+    "Total latency < 100ms"
+  ],
+  "soft_constraints": {
+    "Cost Optimization": 0.8,
+    "High Availability": 0.6
+  },
+  "search_strategy": "backtracking",
+  "max_iterations": 50
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">👁️ User UI (Final Solution)</div>
+            <div class="mock-ui-content">
+                <div style="border-left: 4px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1rem;">
+                    <h3 style="margin-top: 0;">Solution Overview</h3>
+                    <p>Optimal allocation found using backtracking. Region A hosts Service 1 & 2. Region B hosts Service 3 & 4. Region C hosts Service 5.</p>
                 </div>
-                <div class="feature-card">
-                    <h3>Soft Optimization</h3>
-                    <p>Balance competing objectives using weighted priorities (0.0 - 1.0) to find the optimal compromise.</p>
+                <div style="background: #0d1117; padding: 0.75rem; border-radius: 4px;">
+                    <div style="color: #4ade80; font-weight: bold; margin-bottom: 0.5rem;">✔ Hard Constraints Satisfied</div>
+                    <div style="font-size: 0.8rem; color: var(--text-dim);">
+                        - Region A Count: 2 (Target >= 2)<br>
+                        - Latency: 84ms (Target < 100ms)
+                    </div>
                 </div>
-                <div class="feature-card">
-                    <h3>Multi-Strategy Search</h3>
-                    <p>Choose between Backtracking (systematic), Forward (greedy), or Local (hill-climbing) search algorithms.</p>
-                </div>
-            </div>
-        </section>
-
-        <section class="simulator">
-            <h2 style="text-align: center; margin-bottom: 2rem;">Interactive Simulator</h2>
-            <div class="simulator-container">
-                <div class="sim-controls">
-                    <div class="control-group">
-                        <label>Problem Description</label>
-                        <textarea id="problem" rows="3">Schedule a project team meeting.</textarea>
-                    </div>
-                    <div class="control-group">
-                        <label>Hard Constraints (One per line)</label>
-                        <textarea id="hardConstraints" rows="3">All team leads must attend
-Room must have a projector
-Must be within working hours (9-5)</textarea>
-                    </div>
-                    <div class="control-group">
-                        <label>Soft Constraints (Format: Description : Weight 0.0-1.0)</label>
-                        <textarea id="softConstraints" rows="3">Prefer morning slot : 0.8
-Avoid Friday afternoon : 0.6
-Minimize gap between other meetings : 0.4</textarea>
-                    </div>
-                    <div class="control-group">
-                        <label>Search Strategy</label>
-                        <select id="strategy">
-                            <option value="backtracking">Backtracking (Systematic)</option>
-                            <option value="forward">Forward (Greedy)</option>
-                            <option value="local">Local (Hill Climbing)</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label>Max Iterations</label>
-                        <input type="number" id="iterations" value="100">
-                    </div>
-                    <button class="run-button" onclick="runSimulation()">Solve Constraints</button>
-                </div>
-
-                <div class="sim-output">
-                    <div id="output" class="output-terminal">
-                        <span style="color: var(--text-muted)">// Output will appear here...</span>
+                <div style="margin-top: 1rem;">
+                    <strong>Soft Constraint Scores:</strong>
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem;">
+                        Cost Optimization: 0.92 / 1.0<br>
+                        High Availability: 0.75 / 1.0
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section class="features">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <h3>Architectural Decisions</h3>
-                    <p>Balance performance, maintainability, and cost trade-offs in system design.</p>
+    <!-- 3. TABS -->
+    <section class="task-details">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>problem_description</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The problem requiring constraint satisfaction.</td>
+                </tr>
+                <tr>
+                    <td><code>hard_constraints</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Constraints that must be satisfied (cannot be violated).</td>
+                </tr>
+                <tr>
+                    <td><code>soft_constraints</code></td>
+                    <td>Map&lt;String, Double&gt;</td>
+                    <td>Constraints to optimize with weights (0.0-1.0).</td>
+                </tr>
+                <tr>
+                    <td><code>search_strategy</code></td>
+                    <td>String</td>
+                    <td>'backtracking' (systematic), 'forward' (greedy), or 'local' (hill-climbing). Default: <code>backtracking</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>max_iterations</code></td>
+                    <td>Int</td>
+                    <td>Maximum search iterations before returning best solution. Default: <code>100</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Additional files for context.</td>
+                </tr>
+                </tbody>
+            </table>
+            <div style="margin-top: 2rem; color: var(--text-dim); font-size: 0.85rem;">
+                <p><strong>Token Usage:</strong> Medium. Consumption scales with the number of constraints and the size of input files provided for context.</p>
+            </div>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
+                <div>
+                    <h4>1. Initialization & Validation</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-dim);">
+                        The task validates that <code>problem_description</code> is present, <code>search_strategy</code> is valid, and all <code>soft_constraints</code> weights are between 0.0 and 1.0.
+                    </p>
                 </div>
-                <div class="feature-card">
-                    <h3>Resource Allocation</h3>
-                    <p>Optimize schedule and resource usage across competing projects and priorities.</p>
+                <div>
+                    <h4>2. Context Gathering</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-dim);">
+                        Collects results from prior tasks and reads content from specified <code>input_files</code> to build a comprehensive problem context.
+                    </p>
                 </div>
-                <div class="feature-card">
-                    <h3>Configuration Tuning</h3>
-                    <p>Find optimal system parameters that satisfy stability requirements while maximizing throughput.</p>
+                <div>
+                    <h4>3. Execution</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-dim);">
+                        Uses a <code>ChatAgent</code> with a specialized CSP prompt to analyze decision variables, formulate the CSP, and apply the chosen search strategy.
+                    </p>
+                </div>
+                <div>
+                    <h4>4. Error Handling</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-dim);">
+                        If validation fails or the LLM fails to generate a solution, the task captures the error in the transcript and provides a detailed error message in the UI.
+                    </p>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
 
-    <script>
-        function runSimulation() {
-            const output = document.getElementById('output');
-            const problem = document.getElementById('problem').value;
-            const hard = document.getElementById('hardConstraints').value.split('\n').filter(l => l.trim());
-            const soft = document.getElementById('softConstraints').value.split('\n').filter(l => l.trim());
-            const strategy = document.getElementById('strategy').value;
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h4>Kotlin Boilerplate</h4>
+            <pre class="code-block"><code>val task = ConstraintSatisfactionTask(
+    orchestrationConfig = config,
+    planTask = ConstraintSatisfactionTaskExecutionConfigData(
+        problem_description = "Optimize resource allocation",
+        hard_constraints = listOf("Budget < 1000"),
+        search_strategy = "backtracking"
+    )
+)</code></pre>
 
-            output.innerHTML = '<span style="color: var(--accent-color)">Running ' + strategy + ' search...</span>';
+            <h4 style="margin-top: 2rem;">Prompt Segment</h4>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following text is injected into the LLM context:</p>
+            <pre class="code-block"><code>ConstraintSatisfaction - Solve problems with multiple competing constraints
+  ** problem_description: The problem requiring constraint satisfaction
+  ** input_files: List of files or glob patterns to use as input
+  ** hard_constraints: List of constraints that must be satisfied
+  ** soft_constraints: Map of constraints to optimize with weights (0.0-1.0)
+  ** search_strategy: 'backtracking', 'forward', or 'local'
+  ** max_iterations: Maximum search iterations</code></pre>
+        </div>
+    </section>
 
-            setTimeout(() => {
-                let result = '';
+</main>
 
-                // Header
-                result += `<div class="output-header">### Solution Overview</div>`;
-                result += `<div>Optimal solution found for: "${problem.substring(0, 30)}..."</div>`;
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-                // Hard Constraints
-                result += `<div class="output-header">### Hard Constraint Satisfaction</div>`;
-                hard.forEach(c => {
-                    result += `<div style="color: #4ade80">✓ ${c}</div>`;
-                });
+        document.getElementById('tab-' + tabId).classList.add('active');
+        if (event) event.target.classList.add('active');
+    }
+</script>
 
-                // Soft Constraints
-                result += `<div class="output-header">### Soft Constraint Optimization</div>`;
-                let totalScore = 0;
-                let totalWeight = 0;
-
-                soft.forEach(c => {
-                    const parts = c.split(':');
-                    const desc = parts[0].trim();
-                    const weight = parts.length > 1 ? parseFloat(parts[1]) : 0.5;
-
-                    // Mock logic: Randomly satisfy or partially satisfy
-                    const satisfied = Math.random() > 0.2;
-                    const score = satisfied ? weight : weight * 0.5;
-
-                    totalScore += score;
-                    totalWeight += weight;
-
-                    result += `<div>${satisfied ? '✓' : '⚠'} ${desc} (Weight: ${weight}) - Score: ${score.toFixed(2)}</div>`;
-                });
-
-                // Overall
-                const finalScore = totalWeight > 0 ? (totalScore / totalWeight * 100).toFixed(1) : 100;
-                result += `<div class="output-header">### Overall Score</div>`;
-                result += `<div style="font-size: 1.2em; font-weight: bold; color: var(--accent-color)">${finalScore}% Satisfaction</div>`;
-
-                // Reasoning
-                result += `<div class="output-header">### Reasoning</div>`;
-                result += `<div>The ${strategy} strategy identified a solution that satisfies all ${hard.length} hard constraints. `;
-                if (soft.length > 0) {
-                    result += `Trade-offs were made to prioritize higher-weighted soft constraints.`;
-                }
-                result += `</div>`;
-
-                output.innerHTML = result;
-            }, 800);
-        }
-    </script>
 </body>
 </html>

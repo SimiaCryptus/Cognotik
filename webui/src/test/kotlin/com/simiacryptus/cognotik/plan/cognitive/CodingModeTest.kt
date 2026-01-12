@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CodingMode.CodingModeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.platform.Session
 import org.junit.jupiter.api.BeforeAll
@@ -16,7 +17,7 @@ object CodingModeTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+    //@org.junit.jupiter.api.Test
     fun test() {
         object : PlanHarness(
             prompt = "Create a simple python script that prints 'Hello from CodingMode'",

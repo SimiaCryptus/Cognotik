@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -251,8 +252,8 @@ $tableRows
             """.trimIndent(), ui = task.ui
             )
 
-            task.complete("Generated sprite sheet with ${metadata.sprites.size} sprites")
-            resultFn("Generated sprite sheet: $imageFile and $metadataFile")
+            task.safeComplete("Generated sprite sheet with ${metadata.sprites.size} sprites", log)
+            resultFn("Generated sprite sheet: $imageFile and $metadataFile. Found ${metadata.sprites.size} sprites.")
 
         } catch (e: Exception) {
             log.error("Error generating sprite sheet", e)
@@ -309,20 +310,20 @@ $tableRows
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GenerateSpriteSheetTask::class.java)
         val GenerateSpriteSheet = TaskType(
-            "GenerateSpriteSheet",
-            "Writing",
-            GenerateSpriteSheetTask::class.java,
-            GenerateSpriteSheetTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate a sprite sheet and associated JSON metadata",
-            """
-              Creates game assets by generating a sprite sheet image and extracting coordinate data.
-              <ul>
-                <li>Generates visual sprite sheet using AI image models</li>
-                <li>Analyzes the generated image to find sprite bounding boxes</li>
-                <li>Exports standard JSON metadata for game engine integration</li>
-              </ul>
-            """,
+          name = "GenerateSpriteSheet",
+          category = "Writing",
+          taskClass = GenerateSpriteSheetTask::class.java,
+          executionConfigClass = GenerateSpriteSheetTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate a sprite sheet and associated JSON metadata",
+          tooltipHtml = """
+                        Creates game assets by generating a sprite sheet image and extracting coordinate data.
+                        <ul>
+                          <li>Generates visual sprite sheet using AI image models</li>
+                          <li>Analyzes the generated image to find sprite bounding boxes</li>
+                          <li>Exports standard JSON metadata for game engine integration</li>
+                        </ul>
+                      """,
         )
     }
 }

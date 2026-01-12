@@ -6,59 +6,97 @@ import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import java.io.File
 import java.text.SimpleDateFormat
+import kotlin.random.Random
 
 open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val taskType: TaskType<T, U>,
     val typeConfig: U,
     val executionConfig: T,
-    val modelInstanceFn: (ApiChatModel) -> ChatInterface = { model ->
+    val modelInstanceFn: (ApiChatModel, Session) -> ChatInterface = { model,session ->
         val api = model.findApi()
         val model =
             model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
         model.instance(
             key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
             base = api.baseUrl,
+            onUsage = { model, usage ->
+                ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
+                    session,
+                    UserSettingsManager.defaultUser,
+                    model,
+                    usage
+                )
+            },
         )
     },
-    val port: Int = 8082,
+    val port: Int = Random.nextInt(1024, 65535),
     val serverless: Boolean = true,
     val openBrowser: Boolean = false,
     val timeoutMinutes: Long = 30,
     val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
-    val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
+//    val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
+    val imageModel: ChatModel = GeminiModels.GeminiFlash_25_Image_Generation,
+    val workspace: File? = null,
+    val temperature: Double = 0.0,
 ) {
-    val workspace = createTempDirectory()
-    private val harness = UnifiedHarness(
+    val dataDir: File by lazy { createWorkspace() }
+    open fun <T : TaskExecutionConfig, U : TaskTypeConfig> initSettings(
+        session: Session,
+        workspace: File?,
+        autoFix: Boolean,
+        taskType: TaskType<T, U>,
+        typeConfig: U,
+        harness: UnifiedHarness
+    ) = harness.initSettings(
+        session = session,
+        workspace = workspace,
+        autoFix = autoFix,
+        taskType = taskType,
+        typeConfig = typeConfig,
+    )
+    private val harness = object : UnifiedHarness(
         port = port,
         openBrowser = openBrowser,
         serverless = serverless,
         modelInstanceFn = modelInstanceFn,
         fastModel = fastModel,
         smartModel = smartModel,
-        imageModel = imageModel
-    )
+        imageModel = imageModel,
+        temperature = temperature,
+    ) {
+        override fun createTempDirectory(prefix: String) = dataDir
+    }
 
     fun run() {
-        harness.start()
         try {
-            harness.runTask(
-                taskType = taskType,
-                typeConfig = typeConfig,
-                executionConfig = executionConfig,
-                timeoutMinutes = timeoutMinutes,
-                autoFix = !openBrowser,
-                workspace = workspace
-            )
-        } finally {
-            harness.stop()
+            harness.start()
+            try {
+                harness.runTask(
+                    taskType = taskType,
+                    typeConfig = typeConfig,
+                    executionConfig = executionConfig,
+                    timeoutMinutes = timeoutMinutes,
+                    autoFix = !openBrowser,
+                    workspace = workspace,
+                    initSettings = { initSettings(it, workspace, !openBrowser, taskType, typeConfig, harness) }
+                )
+            } finally {
+                harness.stop()
+            }
+        } catch (e: Exception) {
+            fix(e)
+            throw RuntimeException(e)
         }
     }
 
-    private fun createTempDirectory(): File {
+    open fun createWorkspace(): File {
         val name = this.taskType.name
         val time = SimpleDateFormat("yyyyMMdd_HHmmss").format(System.currentTimeMillis())
         return File(".").resolve("workspaces/$name/test-$time").apply {
@@ -69,5 +107,8 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
     companion object {
         private val log = LoggerFactory.getLogger(TaskHarness::class.java)
+        var fix : (Exception) -> Unit = { e ->
+            log.error("Error during task execution", e)
+        }
     }
 }

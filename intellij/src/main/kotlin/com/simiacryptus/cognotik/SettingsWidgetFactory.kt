@@ -22,7 +22,7 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.BrowseUtil
 import com.simiacryptus.cognotik.util.SessionProxyServer
-import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import icons.MyIcons
 import java.awt.*
 import java.awt.datatransfer.StringSelection
@@ -233,13 +233,19 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             stopButton.isEnabled = CognotikAppServer.isRunning()
 
             startButton.addActionListener {
-                CognotikAppServer.getServer()
+                CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                )
                 startButton.isEnabled = false
                 stopButton.isEnabled = true
                 updateSessionsList()
             }
             stopButton.addActionListener {
-                CognotikAppServer.getServer().server.stop()
+                CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                ).server.stop()
                 startButton.isEnabled = true
                 stopButton.isEnabled = false
                 updateSessionsList()

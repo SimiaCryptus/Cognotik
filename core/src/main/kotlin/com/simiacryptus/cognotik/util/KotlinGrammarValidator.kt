@@ -26,7 +26,7 @@ class KotlinGrammarValidator : GrammarValidator {
                     )
                 )
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             log.error("Error validating Kotlin grammar", e)
             return listOf(
                 GrammarValidator.ValidationError(

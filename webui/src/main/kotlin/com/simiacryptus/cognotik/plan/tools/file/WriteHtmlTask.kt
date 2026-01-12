@@ -5,8 +5,10 @@ import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -14,6 +16,8 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import javax.imageio.ImageIO
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class WriteHtmlTask(
     orchestrationConfig: OrchestrationConfig,
@@ -118,15 +122,19 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
             return
         }
 
-        val newTask = task.newTask()
-        val transcriptStream = newTask.transcript("html_generation_${htmlFile.substringBeforeLast(".")}")
+        val tabs = TabbedDisplay(task)
+        val overviewTask = tabs.newTask("Overview")
+        val transcriptStream = task.transcript("html_generation_${htmlFile.substringBeforeLast(".")}")
         val transcriptWriter = transcriptStream?.bufferedWriter()
 
         val toInput = { it: String -> listOf(it) }
         val ui = task.ui
         val api = defaultSmart.getChildClient(task)
 
-        newTask.header("Creating HTML File: $htmlFile", level = 2)
+        overviewTask.header("Creating HTML File: $htmlFile", level = 2)
+        overviewTask.add(MarkdownUtil.renderMarkdown("""
+            **Status:** 🔄 Initializing generation process...
+        """.trimIndent(), ui = ui))
 
         val contextFiles = getInputFileCode()
         transcriptWriter?.write("# HTML Generation Transcript\n\n")
@@ -182,7 +190,8 @@ Provide the HTML structure within a code block:
             model = api,
         )
 
-        newTask.header("Step 1: Generating HTML Structure", level = 3)
+        val htmlTask = tabs.newTask("HTML Structure")
+        htmlTask.header("Step 1: Generating HTML Structure", level = 3)
         transcriptWriter?.write("### Step 1: Generating HTML Structure\n\n")
         transcriptWriter?.write("**Prompt:**\n```\n$htmlPrompt\n```\n\n")
 
@@ -196,10 +205,13 @@ Provide the HTML structure within a code block:
             resultFn("ERROR: Failed to generate HTML structure")
             return
         }
+        htmlTask.add(MarkdownUtil.renderMarkdown("```html\n$htmlStructure\n```", ui = ui))
+
         // Step 1.5: Generate images if enabled
         val generatedImages = mutableListOf<Pair<String, String>>() // filename to description
         if (executionConfig?.generate_images == true && executionConfig.image_count > 0 && imageDir != null) {
-            newTask.header("Step 1.5: Generating Images", level = 3)
+            val imageTask = tabs.newTask("Images")
+            imageTask.header("Step 1.5: Generating Images", level = 3)
             transcriptWriter?.write("### Step 1.5: Generating Images\n\n")
             val imagePrompt = """
 Based on the following HTML page description and structure, identify ${executionConfig.image_count} key images that should be generated.
@@ -231,7 +243,7 @@ DESCRIPTION: another detailed description
             imageSpecs.take(executionConfig.image_count).forEach { (filename, description) ->
                 val filename = filename
                 try {
-                    newTask.add("Generating image: <b>$filename</b>...", additionalClasses = "text-info")
+                    imageTask.add("Generating image: <b>$filename</b>...", additionalClasses = "text-info")
                     val imageAgent = ImageProcessingAgent(
                         prompt = "Create a high-quality image for a web page based on the description",
                         model = imageChat,
@@ -255,8 +267,8 @@ Output format: PNG image
                     generatedImages.add(filename to description)
                     val imageLink = task.linkTo(filename)
                     val markdown = "✅ Generated: [$filename]($imageLink)"
-                    newTask.add(MarkdownUtil.renderMarkdown(markdown, ui = ui))
-                    newTask.image(image!!)
+                    imageTask.add(MarkdownUtil.renderMarkdown(markdown, ui = ui))
+                    imageTask.image(image!!)
 
                     transcriptWriter?.write("**Generated Image:** $filename\n")
                     transcriptWriter?.write("**Description:** $description\n")
@@ -264,7 +276,7 @@ Output format: PNG image
                     log.debug("Generated image: $filename")
                 } catch (e: Exception) {
                     log.error("Failed to generate image: $filename", e)
-                    newTask.error(e)
+                    imageTask.error(e)
                     transcriptWriter?.write("**Error generating $filename:** ${e.message}\n\n")
                 }
             }
@@ -297,13 +309,15 @@ Provide only the JavaScript code within a code block:
 ```
         """.trimIndent()
 
-        newTask.header("Step 2: Generating JavaScript", level = 3)
+        val jsTask = tabs.newTask("JavaScript")
+        jsTask.header("Step 2: Generating JavaScript", level = 3)
         transcriptWriter?.write("### Step 2: Generating JavaScript\n\n")
         transcriptWriter?.write("**Prompt:**\n```\n$jsPrompt\n```\n\n")
 
         val jsResponse = chatAgent.answer(toInput(jsPrompt))
         transcriptWriter?.write("**Response:**\n$jsResponse\n\n")
         val jsCode = extractCodeFromResponse(jsResponse, "javascript", "js")
+        jsTask.add(MarkdownUtil.renderMarkdown("```javascript\n$jsCode\n```", ui = ui))
 
         // Step 3: Generate CSS
         val cssPrompt = """
@@ -334,7 +348,8 @@ Provide only the CSS code within a code block:
 ```
         """.trimIndent()
 
-        newTask.header("Step 3: Generating CSS", level = 3)
+        val cssTask = tabs.newTask("CSS")
+        cssTask.header("Step 3: Generating CSS", level = 3)
 
         transcriptWriter?.write("### Step 3: Generating CSS\n\n")
         transcriptWriter?.write("**Prompt:**\n```\n$cssPrompt\n```\n\n")
@@ -342,10 +357,11 @@ Provide only the CSS code within a code block:
         val cssResponse = chatAgent.answer(toInput(cssPrompt))
         transcriptWriter?.write("**Response:**\n$cssResponse\n\n")
         val cssCode = extractCodeFromResponse(cssResponse, "css")
+        cssTask.add(MarkdownUtil.renderMarkdown("```css\n$cssCode\n```", ui = ui))
 
         // Step 4: Combine everything into a complete HTML file
         val htmlWithImages =
-            insertImageReferences(htmlStructure, generatedImages, chatAgent, toInput, transcriptWriter, newTask, ui)
+            insertImageReferences(htmlStructure, generatedImages, chatAgent, toInput, transcriptWriter, htmlTask, ui)
         val completeHtml = combineHtmlComponents(htmlWithImages, cssCode, jsCode, generatedImages)
 
         if (completeHtml.isEmpty()) {
@@ -364,8 +380,20 @@ Provide only the CSS code within a code block:
         outputPath.toFile().writeText(completeHtml)
         transcriptWriter?.write("**Result:** Successfully wrote $htmlFile (auto-applied)\n")
         transcriptWriter?.close()
-        newTask.complete("Successfully wrote $htmlFile")
-        resultFn("Successfully wrote $htmlFile")
+
+        val finalSummary = """
+            # HTML Generation Complete
+            - **File:** [$htmlFile](${task.linkTo(htmlFile)})
+            - **Images:** ${generatedImages.size} generated
+            - **Components:** HTML5, CSS3 (embedded), JavaScript (embedded)
+            - **Timestamp:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
+            
+            The file has been successfully written to the workspace.
+        """.trimIndent()
+        
+        overviewTask.add(MarkdownUtil.renderMarkdown(finalSummary, ui = ui))
+        task.safeComplete("Successfully wrote $htmlFile", log)
+        resultFn(finalSummary)
     }
 
     private fun extractCodeFromResponse(response: String, vararg languages: String): String {
@@ -539,25 +567,25 @@ Provide the complete updated HTML structure within a code block:
     companion object {
         private val log: Logger = LoggerFactory.getLogger(WriteHtmlTask::class.java)
         val WriteHtml = TaskType(
-            "WriteHtml",
-            "Writing",
-            WriteHtmlTask::class.java,
-            WriteHtmlTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Create complete HTML files with embedded CSS and JavaScript",
-            """
-              Creates standalone HTML files with embedded CSS and JavaScript.
-              <ul>
-                <li>Generates complete, self-contained HTML documents</li>
-                <li>Embeds CSS styles within &lt;style&gt; tags</li>
-                <li>Embeds JavaScript within &lt;script&gt; tags</li>
-                <li>Supports modern HTML5 features</li>
-                <li>Can generate images using AI image models</li>
-                <li>Automatically creates image directory and references</li>
-                <li>Interactive approval or auto-apply mode</li>
-                <li>Proper HTML structure and formatting</li>
-              </ul>
-            """,
+          name = "WriteHtml",
+          category = "Writing",
+          taskClass = WriteHtmlTask::class.java,
+          executionConfigClass = WriteHtmlTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Create complete HTML files with embedded CSS and JavaScript",
+          tooltipHtml = """
+                        Creates standalone HTML files with embedded CSS and JavaScript.
+                        <ul>
+                          <li>Generates complete, self-contained HTML documents</li>
+                          <li>Embeds CSS styles within &lt;style&gt; tags</li>
+                          <li>Embeds JavaScript within &lt;script&gt; tags</li>
+                          <li>Supports modern HTML5 features</li>
+                          <li>Can generate images using AI image models</li>
+                          <li>Automatically creates image directory and references</li>
+                          <li>Interactive approval or auto-apply mode</li>
+                          <li>Proper HTML structure and formatting</li>
+                        </ul>
+                      """,
         )
     }
 }

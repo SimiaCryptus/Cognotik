@@ -40,12 +40,7 @@ class OrchestrationConfig(
     }.mapKeys { it.key.name }.toMutableMap(),
     var cognitiveSettings: CognitiveModeConfig? = null,
     var autoFix: Boolean = false,
-    val env: Map<String, String>? = mapOf(),
     val workingDir: String? = ".",
-    val language: String? = if (isWindows) "powershell" else "bash",
-    var maxTaskHistoryChars: Int = 10000,
-    var maxTasksPerIteration: Int = 1,
-    var maxIterations: Int = 10,
 ) {
     val cognitiveMode: CognitiveModeType<*>? get() = cognitiveSettings?.type
 
@@ -113,12 +108,7 @@ class OrchestrationConfig(
         taskSettings: MutableMap<String, TaskTypeConfig> = this.taskSettings,
         cognitiveSettings: CognitiveModeConfig? = this.cognitiveSettings,
         autoFix: Boolean = this.autoFix,
-        env: Map<String, String>? = this.env,
         workingDir: String? = this.workingDir,
-        language: String? = this.language,
-        maxTaskHistoryChars: Int = this.maxTaskHistoryChars,
-        maxTasksPerIteration: Int = this.maxTasksPerIteration,
-        maxIterations: Int = this.maxIterations,
         sessionId: String = this.sessionId,
     ): OrchestrationConfig = OrchestrationConfig(
         defaultSmartModel = model,
@@ -130,12 +120,7 @@ class OrchestrationConfig(
         taskSettings = taskSettings,
         cognitiveSettings = cognitiveSettings,
         autoFix = autoFix,
-        env = env,
         workingDir = workingDir,
-        language = language,
-        maxTaskHistoryChars = maxTaskHistoryChars,
-        maxTasksPerIteration = maxTasksPerIteration,
-        maxIterations = maxIterations,
         sessionId = sessionId
     )
 
@@ -149,9 +134,9 @@ class OrchestrationConfig(
         var exampleInstance = TaskBreakdownResult(
             tasksByID = mapOf(
                 "1" to AutoFixTaskExecutionConfigData(
-                    task_description = "Task 1", task_dependencies = listOf(), commands = listOf(
+                    task_description = "Task 1", task_dependencies = listOf(), commands = mutableListOf(
                         AutoFixTask.CommandWithWorkingDir(
-                            command = listOf("echo", "Hello, World!"), workingDir = "."
+                            command = mutableListOf("echo", "Hello, World!"), workingDir = "."
                         )
                     )
                 ), "2" to FileModificationTaskExecutionConfigData(
@@ -175,17 +160,17 @@ class OrchestrationConfig(
             resultClass = TaskBreakdownResult::class.java,
             exampleInstance = exampleInstance,
             prompt = """
-                                          Given a user request, identify and list smaller, actionable tasks that can be directly implemented in code.
-                                          (Do not repeat or ask for the JSON content since the platform already handles reading the software graph.)
-                                          For each task:
-                                          * Provide input/output file names if applicable
-                                          * Describe any execution dependencies and the order in which tasks should be run
-                                          * Write a brief description of the task and its role
-                                          * Mention any important interface or integration details
-                                          The available task types are:
-                                          """.trimIndent() + "\n  " + taskDescriptions + """
-                                          (Remember: the JSON file content is already loaded by the platform.)
-                                          """.trimIndent(),
+              Given a user request, identify and list smaller, actionable tasks that can be directly implemented in code.
+              (Do not repeat or ask for the JSON content since the platform already handles reading the software graph.)
+              For each task:
+              * Provide input/output file names if applicable
+              * Describe any execution dependencies and the order in which tasks should be run
+              * Write a brief description of the task and its role
+              * Mention any important interface or integration details
+              The available task types are:
+              """.trimIndent() + "\n  " + taskDescriptions + """
+              (Remember: the JSON file content is already loaded by the platform.)
+              """.trimIndent(),
             model = model,
             parsingChatter = parsingModel,
             temperature = temperature,

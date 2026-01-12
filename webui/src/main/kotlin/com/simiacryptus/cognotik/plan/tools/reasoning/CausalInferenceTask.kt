@@ -1,10 +1,12 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
@@ -77,6 +79,22 @@ CausalInference - Identify causal relationships and root causes
      - Distinguishing correlation from causation
         """.trimIndent()
     }
+    data class CausalAnalysisResult(
+        val summary: String = "",
+        val causes: List<CausalFactor> = emptyList(),
+        val root_causes: List<String> = emptyList(),
+        val causal_chain: String = "",
+        val confounders: List<String>? = null,
+        val recommendations: List<String> = emptyList()
+    )
+    data class CausalFactor(
+        val name: String = "",
+        val mechanism: String = "",
+        val evidence: String = "",
+        val strength: String = "", // strong/moderate/weak
+        val confidence: String = ""
+    )
+
 
     override fun run(
         agent: TaskOrchestrator,
@@ -114,7 +132,7 @@ CausalInference - Identify causal relationships and root causes
 
         val toInput = { it: String -> listOf(it) }
         val ui = task.ui
-        val api = defaultSmart ?: run {
+        val api = defaultSmart?.getChildClient(task) ?: run {
             log.error("No default chatter available")
             markdownTranscript?.write("# Error\n\nNo API available\n".toByteArray())
             markdownTranscript?.close()
@@ -122,6 +140,7 @@ CausalInference - Identify causal relationships and root causes
             resultFn(formatResultMessage(task, transcript, "ERROR: No API available"))
             return
         }
+        val fastApi = defaultFast?.getChildClient(task) ?: api
         try {
             // Create tabbed display for organized output
             val tabs = TabbedDisplay(task)
@@ -223,13 +242,15 @@ CausalInference - Identify causal relationships and root causes
             )
             log.debug("Initializing ChatAgent with model: ${api.javaClass.simpleName}")
 
-            val chatAgent = ChatAgent(
+            val analysisAgent = ParsedAgent(
+                resultClass = CausalAnalysisResult::class.java,
                 prompt = prompt,
                 model = api,
+                parsingChatter = fastApi
             )
             // Analysis tab
             val analysisTask = tabs.newTask("Causal Analysis")
-            val analysisBuffer = analysisTask.add(
+            analysisTask.add(
                 MarkdownUtil.renderMarkdown(
                     "## Causal Analysis\n\n🔄 Performing causal inference...",
                     ui = ui
@@ -238,26 +259,71 @@ CausalInference - Identify causal relationships and root causes
             log.debug("Requesting causal analysis from LLM")
 
 
-            var answer: String? = chatAgent.answer(toInput(prompt))
+            val analysisResult = analysisAgent.answer(toInput(prompt)).obj
+
             // Write analysis to transcript
             markdownTranscript?.write(
                 """
         |## Causal Analysis Results
         |
-        |$answer
+        |### Summary
+        |${analysisResult.summary}
+        |
+        |### Identified Causes
+        |${analysisResult.causes.joinToString("\n") { "- **${it.name}** (${it.strength}): ${it.mechanism}" }}
+        |
+        |### Root Causes
+        |${analysisResult.root_causes.joinToString("\n") { "- $it" }}
+        |
+        |### Causal Chain
+        |${analysisResult.causal_chain}
+        |
+        |${
+                    if (analysisResult.confounders != null) {
+                        "### Confounding Factors\n${analysisResult.confounders.joinToString("\n") { "- $it" }}\n"
+                    } else ""
+                }
+        |
+        |### Recommendations
+        |${analysisResult.recommendations.joinToString("\n") { "- $it" }}
         |
         |---
         |
         """.trimMargin().toByteArray()
             )
 
-            analysisBuffer?.setLength(0)
-            analysisBuffer?.append(
+            analysisTask.add(
                 MarkdownUtil.renderMarkdown(
-                    "## Causal Analysis Results\n\n✅ Analysis complete\n\n$answer",
+                    """
+                    |## Causal Analysis Results
+                    |
+                    |✅ Analysis complete
+                    |
+                    |### Summary
+                    |${analysisResult.summary}
+                    |
+                    |### Identified Causes
+                    |${analysisResult.causes.joinToString("\n") { "* **${it.name}** (${it.strength} strength, ${it.confidence} confidence)\n  * *Mechanism:* ${it.mechanism}\n  * *Evidence:* ${it.evidence}" }}
+                    |
+                    |### Root Causes
+                    |${analysisResult.root_causes.joinToString("\n") { "* $it" }}
+                    |
+                    |### Causal Chain
+                    |${analysisResult.causal_chain}
+                    |
+                    |${
+                        if (analysisResult.confounders != null) {
+                            "### Confounding Factors\n${analysisResult.confounders.joinToString("\n") { "* $it" }}\n"
+                        } else ""
+                    }
+                    |
+                    |### Recommendations
+                    |${analysisResult.recommendations.joinToString("\n") { "* $it" }}
+                    """.trimMargin(),
                     ui = ui
                 )
             )
+            analysisTask.complete()
             task.update()
 
             // Update overview status
@@ -282,7 +348,11 @@ CausalInference - Identify causal relationships and root causes
                 )
 
                 val graphPrompt = """
-Based on the causal analysis above, create a Mermaid diagram showing the causal relationships.
+Based on the following causal analysis, create a Mermaid diagram showing the causal relationships.
+
+Analysis:
+${analysisResult.toJson()}
+
 Use the following format:
 - Use `graph TD` for top-down flow
 - Show direct causal links with `-->` 
@@ -293,9 +363,14 @@ Use the following format:
 Generate the Mermaid diagram now:
             """.trimIndent()
                 log.debug("Requesting causal graph from LLM")
+                val chatAgent = ChatAgent(
+                    prompt = graphPrompt,
+                    model = api,
+                )
 
                 var graphResult: String? = chatAgent.answer(toInput(graphPrompt))
                 val mermaidCode = extractMermaidCode(graphResult ?: "")
+                graphTask.complete()
                 // Write graph to transcript
                 markdownTranscript?.write(
                     """
@@ -567,23 +642,23 @@ Generate the causal analysis now:
     companion object {
         private val log: Logger = LoggerFactory.getLogger(CausalInferenceTask::class.java)
         val CausalInference = TaskType(
-            "CausalInference",
-            "Reasoning",
-            CausalInferenceTask::class.java,
-            CausalInferenceTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Identify causal relationships and root causes",
-            """
-              Performs causal inference analysis to identify true causal relationships.
-              <ul>
-                <li>Distinguishes causation from correlation</li>
-                <li>Identifies root causes vs intermediate factors</li>
-                <li>Builds causal graphs showing relationships</li>
-                <li>Identifies confounding variables</li>
-                <li>Provides evidence-based causal reasoning</li>
-                <li>Useful for debugging and root cause analysis</li>
-              </ul>
-            """,
+          name = "CausalInference",
+          category = "Reasoning",
+          taskClass = CausalInferenceTask::class.java,
+          executionConfigClass = CausalInferenceTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Identify causal relationships and root causes",
+          tooltipHtml = """
+                        Performs causal inference analysis to identify true causal relationships.
+                        <ul>
+                          <li>Distinguishes causation from correlation</li>
+                          <li>Identifies root causes vs intermediate factors</li>
+                          <li>Builds causal graphs showing relationships</li>
+                          <li>Identifies confounding variables</li>
+                          <li>Provides evidence-based causal reasoning</li>
+                          <li>Useful for debugging and root cause analysis</li>
+                        </ul>
+                      """,
         )
     }
 }

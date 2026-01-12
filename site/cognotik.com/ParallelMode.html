@@ -1,98 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parallel Mode - Cognotik</title>
-    <link rel="stylesheet" href="assets/styles/main.css">
+    <title>Cognotik | ParallelMode</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .mock-tabs {
+            display: flex;
+            gap: 2px;
+            background: var(--border-subtle);
+            padding: 4px 4px 0 4px;
+            font-size: 0.75rem;
+        }
+        .mock-tab {
+            background: var(--bg-panel);
+            padding: 4px 12px;
+            border-radius: 4px 4px 0 0;
+            color: var(--text-dim);
+        }
+        .mock-tab.active {
+            background: var(--bg-app);
+            color: var(--text-bright);
+        }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
 </head>
 <body>
-    <!-- Header Component -->
-    <cognotik-header current-page="taskplanning"></cognotik-header>
 
-    <main>
-        <!-- Hero -->
-        <section class="hero">
-            <h1>Parallel Mode</h1>
-            <p class="subtitle">
-                <strong>The Factory.</strong> Scale your cognitive workflows by executing tasks concurrently across multiple inputs.
-                Ideal for batch processing, codebase refactoring, and parameter sweeps.
-            </p>
-        </section>
+<cognotik-header current-page="parallel-mode"></cognotik-header>
 
-        <!-- Features -->
-        <section class="features">
-            <h2>Key Capabilities</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <i data-lucide="list-checks"></i>
-                    <h3>Interactive Planning</h3>
-                    <p>Review and revise the execution plan, including variable expansions and task combinations, before processing begins.</p>
-                </div>
-                <div class="feature-card">
-                    <i data-lucide="cpu"></i>
-                    <h3>Concurrency Control</h3>
-                    <p>Manage resource usage with a fixed concurrency processor to maximize throughput without overloading the system.</p>
-                </div>
-                <div class="feature-card">
-                    <i data-lucide="regex"></i>
-                    <h3>Dynamic Expansion</h3>
-                    <p>Automatically expand file patterns (globs) into lists of target files for processing.</p>
-                </div>
+<main class="task-container">
+
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Core > Cognitive Modes</div>
+        <h1>ParallelMode</h1>
+        <p class="pitch">
+            High-throughput orchestration that expands variables into task combinations and executes them concurrently.
+        </p>
+        <div class="badges">
+            <span class="badge">Core Architecture</span>
+            <span class="badge">Concurrent</span>
+            <span class="badge">Batch Engine</span>
+        </div>
+    </header>
+
+    <section class="reality-check-grid">
+        <!-- Input: ParallelPlan -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="icon">⚙️</span> ParallelPlan.json
             </div>
-        </section>
-
-        <!-- How It Works -->
-        <section class="modes-section" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
-            <h2>How It Works</h2>
-            <div class="mode-grid" style="grid-template-columns: 1fr;">
-                <div class="mode-card">
-                    <div class="mode-title">1. Intent Analysis & Planning</div>
-                    <p>The system parses your request into a <strong>ParallelPlan</strong>. It identifies variables (lists or file globs) and a template. An interactive review step allows you to verify the expanded file lists and generated task combinations before execution.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">2. Expansion & Combination</div>
-                    <p>Variables are expanded (e.g., globs like <code>src/*.kt</code> are resolved to file paths). The system then generates task combinations:</p>
-                    <ul style="margin-top: 1rem; margin-left: 1.5rem; color: var(--text-secondary);">
-                        <li><strong>CrossJoin:</strong> Executes the template for every possible combination of variables.</li>
-                        <li><strong>Zip:</strong> Pairs variables by index (1st item with 1st item, etc.).</li>
-                    </ul>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">3. Concurrent Execution</div>
-                    <p>A <code>FixedConcurrencyProcessor</code> executes tasks in parallel. Each thread runs an isolated session where the template is rendered and dynamically routed to the appropriate agent (e.g., Coding, Shell). A <strong>Tabbed Display</strong> organizes these streams, allowing real-time monitoring of individual task outputs.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Example -->
-        <section class="code-section" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
-            <h2>Example Configuration</h2>
             <pre><code class="language-json">
 {
   "variables": {
-    "file": ["src/User.kt", "src/Session.kt"],
-    "aspect": ["Security", "Performance"]
+    "file": "src/**/*.kt",
+    "action": ["Review", "Document"]
   },
-  "template": "Review {{file}} focusing on {{aspect}} issues.",
+  "template": "Perform {{action}} on {{file}}",
   "concurrency": 4,
-  "mode": "CrossJoin",
+  "mode": "CrossJoin"
 }
             </code></pre>
-            <p style="margin-top: 1rem; color: var(--text-secondary);">
-                This configuration generates 4 tasks (2 files × 2 aspects) running in parallel, managed via a tabbed interface.
-            </p>
-        </section>
-    </main>
+        </div>
 
-    <script>
-        lucide.createIcons();
-    </script>
+        <div class="flow-arrow">→</div>
+
+        <!-- Output: Tabbed Execution -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="icon">🚀</span> Tabbed Execution UI
+            </div>
+            <div class="mock-ui-content">
+                <div style="padding: 0.5rem; font-size: 0.85rem; border-bottom: 1px solid var(--border-subtle);">
+                    <strong>Running 12 tasks</strong> (Concurrency: 4)
+                </div>
+                <div class="mock-tabs">
+                    <div class="mock-tab active">Main.kt,Review</div>
+                    <div class="mock-tab">Util.kt,Review</div>
+                    <div class="mock-tab">Main.kt,Doc...</div>
+                    <div class="mock-tab">+9 more</div>
+                </div>
+                <div style="padding: 1rem; background: var(--bg-app); min-height: 100px;">
+                    <div style="color: var(--accent-primary); font-family: var(--font-mono); font-size: 0.8rem;">
+                        [Task: Main.kt,Review] Executing CodingTask...
+                    </div>
+                    <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-dim);">
+                        Analyzing src/Main.kt for architectural patterns...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('strategies')">Combination Strategies</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>ParallelPlan Parameters</h3>
+            <p>The <code>ParallelMode</code> uses an LLM-driven parser to extract these parameters from user prompts.</p>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>variables</code></td>
+                    <td>Map&lt;String, Any&gt;</td>
+                    <td>Keys are template placeholders. Values can be lists or <strong>Glob patterns</strong> (e.g., <code>*.kt</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>template</code></td>
+                    <td>String</td>
+                    <td>The task request string using <code>{{variable}}</code> syntax.</td>
+                </tr>
+                <tr>
+                    <td><code>concurrency</code></td>
+                    <td>Int</td>
+                    <td>Maximum number of simultaneous tasks. Defaults to 4.</td>
+                </tr>
+                <tr>
+                    <td><code>mode</code></td>
+                    <td>Enum</td>
+                    <td>Determines how variables are combined: <code>CrossJoin</code> or <code>Zip</code>.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: STRATEGIES -->
+        <div id="tab-strategies" class="tab-pane" style="display:none;">
+            <h3>Combination Modes</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Mode</th>
+                    <th>Logic</th>
+                    <th>Example Result</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><strong>CrossJoin</strong></td>
+                    <td>Cartesian product of all variable values.</td>
+                    <td>2 files × 2 actions = 4 tasks.</td>
+                </tr>
+                <tr>
+                    <td><strong>Zip</strong></td>
+                    <td>Pairs items by index. Stops at the shortest list.</td>
+                    <td>File A with Action 1, File B with Action 2.</td>
+                </tr>
+                </tbody>
+            </table>
+            <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-dim);">
+                <em>Note: Glob patterns are automatically expanded into lists before combination logic is applied.</em>
+            </p>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3>Configuration</h3>
+            <p>Set the default behavior in your <code>OrchestrationConfig</code>.</p>
+            <pre><code class="language-kotlin">
+val config = OrchestrationConfig(
+    mode = CognitiveMode.Parallel,
+    // Optional: Override defaults
+    overrides = mapOf(
+        "defaultConcurrency" to 8,
+        "defaultMode" to "Zip"
+    )
+)
+            </code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

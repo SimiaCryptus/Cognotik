@@ -26,7 +26,7 @@ class FunctorialMappingTask(
             taskClass = FunctorialMappingTask::class.java,
             executionConfigClass = FunctorialMappingTaskExecutionConfigData::class.java,
             taskSettingsClass = TaskTypeConfig::class.java,
-            description = "Translate problems from one category to another to solve them using different tools",
+            description = "Solve complex problems by abstracting them into Category Theory and mapping them to domains with superior tools.",
             tooltipHtml = """
                           This task implements the logic of Category Theory. It treats domains as "Categories" (collections of objects and arrows/morphisms).
                           The goal is to construct a "Functor"—a bridge that allows you to transport a difficult problem from Domain A to Domain B, solve it there, and transport the solution back.
@@ -71,16 +71,11 @@ class FunctorialMappingTask(
     override fun promptSegment(): String {
         return """
 FunctorialMapping - Translate problems from one category to another
-  ** Specify the problem_statement in the source domain
-  ** Define source_category_definition (Objects + Morphisms)
-  ** Define target_category_definition (Objects + Morphisms)
-  ** Optionally specify functor_properties (default: covariant)
-  ** The task will:
-     - Formalize domains as Categories
-     - Construct a Functor mapping
-     - Transport the problem to the target domain
-     - Solve it using target domain tools
-     - Map the solution back
+  * problem_statement: The specific problem in the Source Category.
+  * source_category_definition: The rules/objects of the current domain.
+  * target_category_definition: The rules/objects of the destination domain.
+  * functor_properties: Constraints on the mapping (e.g., 'covariant').
+  * Use this for high-level reasoning, cross-domain analogies, and mathematical problem solving.
         """.trimIndent()
     }
 

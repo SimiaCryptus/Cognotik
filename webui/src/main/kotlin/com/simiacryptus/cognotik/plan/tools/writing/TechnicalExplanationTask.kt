@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
@@ -938,21 +938,13 @@ Provide the complete revised explanation.
             overviewTask.update()
 
             // Concise summary for resultFn
-            val finalResult = buildString {
-                appendLine("# Technical Explanation Summary: ${outline.title}")
-                appendLine()
-                appendLine("A complete technical explanation of **$topic** was generated in **${totalTime / 1000.0}s**.")
-                appendLine()
-                appendLine("**Target Audience:** ${executionConfig.target_audience}")
-                appendLine()
-                appendLine("**Coverage:**")
-                appendLine("- ${sections.size} main sections")
-                appendLine("- $wordCount words")
-                appendLine("- $codeExampleCount code examples")
-                appendLine("- ${outline.analogies.size} analogies")
-                appendLine()
-                appendLine("> The full explanation is available in the Complete Explanation tab for detailed review.")
-            }
+            val finalResult = """
+                |# Technical Explanation: ${outline.title}
+                |
+                |Generated a $wordCount-word explanation for a **${executionConfig.target_audience}** audience.
+                |The explanation covers ${sections.size} key concepts with $codeExampleCount code examples and ${outline.analogies.size} analogies.
+                |
+                |*Full content is available in the task UI.*""".trimMargin()
 
             log.info("TechnicalExplanationTask completed: sections=${sections.size}, words=$wordCount, time=${totalTime}ms")
             markdownTranscript?.close()
@@ -1059,28 +1051,28 @@ Provide the complete revised explanation.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TechnicalExplanationTask::class.java)
         val TechnicalExplanation = TaskType(
-            "TechnicalExplanation",
-            "Writing",
-            TechnicalExplanationTask::class.java,
-            TechnicalExplanationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Break down complex technical subjects into clear, digestible explanations",
-            """
-              Generates clear, audience-appropriate explanations of complex technical topics.
-              <ul>
-                <li>Creates structured outline with key concepts and terminology</li>
-                <li>Adjusts language and depth for target audience (layperson to expert)</li>
-                <li>Generates relatable analogies and metaphors</li>
-                <li>Includes code examples with detailed explanations</li>
-                <li>Defines essential terminology in context</li>
-                <li>Provides visual descriptions and diagrams</li>
-                <li>Includes practical examples and use cases</li>
-                <li>Compares with related concepts for clarity</li>
-                <li>Supports multiple formats (markdown, Q&A, step-by-step, tutorial)</li>
-                <li>Optional revision passes for clarity improvement</li>
-                <li>Ideal for documentation, onboarding, education, and knowledge sharing</li>
-              </ul>
-            """,
+          name = "TechnicalExplanation",
+          category = "Writing",
+          taskClass = TechnicalExplanationTask::class.java,
+          executionConfigClass = TechnicalExplanationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Break down complex technical subjects into clear, digestible explanations",
+          tooltipHtml = """
+                        Generates clear, audience-appropriate explanations of complex technical topics.
+                        <ul>
+                          <li>Creates structured outline with key concepts and terminology</li>
+                          <li>Adjusts language and depth for target audience (layperson to expert)</li>
+                          <li>Generates relatable analogies and metaphors</li>
+                          <li>Includes code examples with detailed explanations</li>
+                          <li>Defines essential terminology in context</li>
+                          <li>Provides visual descriptions and diagrams</li>
+                          <li>Includes practical examples and use cases</li>
+                          <li>Compares with related concepts for clarity</li>
+                          <li>Supports multiple formats (markdown, Q&A, step-by-step, tutorial)</li>
+                          <li>Optional revision passes for clarity improvement</li>
+                          <li>Ideal for documentation, onboarding, education, and knowledge sharing</li>
+                        </ul>
+                      """,
         )
     }
 }

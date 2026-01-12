@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Find the Differences</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f0f0f0; }
+        .container { display: flex; justify-content: center; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
+        .image-wrapper { position: relative; display: inline-block; }
+        img { max-width: 45vw; border: 2px solid #333; box-shadow: 0 4px 8px rgba(0,0,0,0.2); cursor: crosshair; }
+        .marker {
+            position: absolute;
+            border: 3px solid #ff0000;
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 5px rgba(255,0,0,0.8);
+            animation: pop 0.3s ease-out;
+        }
+        @keyframes pop {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        #status { font-size: 1.5em; margin: 20px; font-weight: bold; color: #333; }
+        .success { color: green !important; }
+        button { font-size: 1.2em; padding: 10px 20px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+<h1>Find the Differences</h1>
+<div id="controls">
+    <button onclick="newGame()">New Game</button>
+</div>
+<div id="status">Found <span id="found">0</span> / <span id="total">0</span> differences</div>
+
+<div class="container">
+    <div class="image-wrapper" id="wrapper1">
+        <img id="img1" src="" onclick="handleClick(event, this)">
+    </div>
+    <div class="image-wrapper" id="wrapper2">
+        <img id="img2" src="" onclick="handleClick(event, this)">
+    </div>
+</div>
+
+<script>
+    const gameData = /*GAME_DATA*/;
+    let currentDifferences = [];
+    const foundSet = new Set();
+
+    function newGame() {
+        foundSet.clear();
+        document.getElementById('status').innerHTML = 'Found <span id="found">0</span> / <span id="total">...</span> differences';
+        document.getElementById('status').classList.remove('success');
+
+        // Remove existing markers
+        document.querySelectorAll('.marker').forEach(e => e.remove());
+
+        const base = gameData.find(d => d.type === 'base');
+        const variations = gameData.filter(d => d.type === 'variation');
+
+        if(!base || variations.length === 0) {
+            alert("Game data incomplete");
+            return;
+        }
+
+        const variation = variations[Math.floor(Math.random() * variations.length)];
+
+        document.getElementById('img1').src = base.image;
+        document.getElementById('img2').src = variation.image;
+
+        fetch(variation.json)
+            .then(response => response.json())
+            .then(data => {
+                currentDifferences = data.changes_applied;
+                document.getElementById('total').innerText = currentDifferences.length;
+            });
+    }
+
+    function handleClick(e, img) {
+        if(!currentDifferences) return;
+
+        const rect = img.getBoundingClientRect();
+        const scaleX = img.naturalWidth / rect.width;
+        const scaleY = img.naturalHeight / rect.height;
+
+        const x = e.offsetX * scaleX;
+        const y = e.offsetY * scaleY;
+
+        let foundNew = false;
+        currentDifferences.forEach((diff, index) => {
+            if (foundSet.has(index)) return;
+
+            const [dx, dy, dw, dh] = diff.bounds;
+            if (x >= dx && x <= dx + dw && y >= dy && y <= dy + dh) {
+                foundSet.add(index);
+                markDifference(diff.bounds);
+                foundNew = true;
+            }
+        });
+
+        if (foundNew) {
+            updateStatus();
+            if (foundSet.size === currentDifferences.length) {
+                document.getElementById('status').classList.add('success');
+                document.getElementById('status').innerText = "You found all differences!";
+                setTimeout(() => alert("Congratulations! You found all differences!"), 100);
+            }
+        }
+    }
+
+    function markDifference(bounds) {
+        const [x, y, w, h] = bounds;
+
+        ['wrapper1', 'wrapper2'].forEach(id => {
+            const wrapper = document.getElementById(id);
+            const img = wrapper.querySelector('img');
+
+            const nw = img.naturalWidth;
+            const nh = img.naturalHeight;
+
+            if (nw > 0 && nh > 0) {
+                const div = document.createElement('div');
+                div.className = 'marker';
+                div.style.left = (x / nw * 100) + '%';
+                div.style.top = (y / nh * 100) + '%';
+                div.style.width = (w / nw * 100) + '%';
+                div.style.height = (h / nh * 100) + '%';
+                wrapper.appendChild(div);
+            }
+        });
+    }
+
+    function updateStatus() {
+        document.getElementById('found').innerText = foundSet.size;
+    }
+
+    window.onload = newGame;
+</script>
+</body>
+</html>

@@ -6,8 +6,8 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
-import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.models.AIModel
@@ -28,53 +28,23 @@ import java.awt.Font
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.*
 
-class PlanConfigDialog(
+open class PlanConfigDialog(
     val project: Project?,
     val settings: OrchestrationConfig,
+    private val appSettingsState: AppSettingsState? = null,
+    private val availableModels: List<ChatModel>? = null,
 ) : DialogWrapper(project) {
-
-    private val maxTaskHistoryCharsField = JBTextField(settings.maxTaskHistoryChars.toString()).apply {
-        toolTipText = "Maximum characters to retain in task history ($MIN_TASK_HISTORY-$MAX_TASK_HISTORY)"
-        inputVerifier = object : InputVerifier() {
-            override fun verify(input: JComponent): Boolean {
-                val text = (input as? JTextField)?.text ?: return false
-                return text.toIntOrNull()?.let { it in MIN_TASK_HISTORY..MAX_TASK_HISTORY } ?: false
-            }
-        }
-    }
-
-    private val maxTasksPerIterationField = JBTextField(settings.maxTasksPerIteration.toString()).apply {
-        toolTipText = "Maximum number of tasks to execute per iteration ($MIN_TASKS_PER_ITER-$MAX_TASKS_PER_ITER)"
-        inputVerifier = object : InputVerifier() {
-            override fun verify(input: JComponent): Boolean {
-                val text = (input as? JTextField)?.text ?: return false
-                return text.toIntOrNull()?.let { it in MIN_TASKS_PER_ITER..MAX_TASKS_PER_ITER } ?: false
-            }
-        }
-    }
-
-    private val maxIterationsField = JBTextField(settings.maxIterations.toString()).apply {
-        toolTipText = "Maximum number of planning iterations ($MIN_ITERATIONS-$MAX_ITERATIONS)"
-        inputVerifier = object : InputVerifier() {
-            override fun verify(input: JComponent): Boolean {
-                val text = (input as? JTextField)?.text ?: return false
-                return text.toIntOrNull()?.let { it in MIN_ITERATIONS..MAX_ITERATIONS } ?: false
-            }
-        }
-    }
 
     private val autoPlanPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         add(JLabel("Max Task History Chars:"))
-        add(maxTaskHistoryCharsField)
         add(Box.createVerticalStrut(5))
         add(JLabel("Max Tasks Per Iteration:"))
-        add(maxTasksPerIterationField)
         add(Box.createVerticalStrut(5))
-        add(JLabel("Max Iterations:"))
-        add(maxIterationsField)
         isVisible = false
     }
 
@@ -85,23 +55,24 @@ class PlanConfigDialog(
         selectedIndex = 0
         toolTipText = "Select the cognitive strategy for task execution"
     }
+    private val appSettings get() = appSettingsState ?: AppSettingsState.instance
 
     private val modelCache = mutableMapOf<String, ChatModel?>()
-    private val visibleModelsCache by lazy { getVisibleModels() }
+    private val visibleModelsCache: List<ChatModel> by lazy { availableModels ?: getVisibleModels() }
     private val cognitiveConfigCache = mutableMapOf<CognitiveModeType<*>, CognitiveModeConfig>()
 
     private val globalModelCombo =
         ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
             maximumSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
             selectedItem =
-                settings.defaultSmartModel?.model?.modelName ?: AppSettingsState.instance.smartModel?.model?.modelName
+                settings.defaultSmartModel?.model?.modelName ?: appSettings.smartModel?.model?.modelName
             toolTipText = "Default AI model for all tasks"
         }
     private val parsingModelCombo =
         ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
             maximumSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
             selectedItem =
-                settings.defaultFastModel?.model?.modelName ?: AppSettingsState.instance.smartModel?.model?.modelName
+                settings.defaultFastModel?.model?.modelName ?: appSettings.smartModel?.model?.modelName
             toolTipText = "AI model for parsing and understanding tasks"
         }
     private val imageChatModelCombo =
@@ -109,7 +80,7 @@ class PlanConfigDialog(
             maximumSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
             selectedItem =
                 settings.defaultImageModel?.model?.modelName
-                    ?: AppSettingsState.instance.imageChatModel?.model?.modelName
+                    ?: appSettings.imageChatModel?.model?.modelName
             toolTipText = "Multimodal AI model for image-related tasks"
         }
 
@@ -126,7 +97,7 @@ class PlanConfigDialog(
 
     private val savedConfigsCombo = ComboBox<String>().apply {
         preferredSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
-        AppSettingsState.instance.savedPlanConfigs?.keys?.sorted()?.forEach { addItem(it) }
+        appSettings.savedPlanConfigs?.keys?.sorted()?.forEach { addItem(it) }
     }
 
     // Task configuration list
@@ -149,8 +120,8 @@ class PlanConfigDialog(
         }
 
 // Double-click to edit task configuration
-        taskConfigList.addMouseListener(object : java.awt.event.MouseAdapter() {
-            override fun mouseClicked(e: java.awt.event.MouseEvent) {
+        taskConfigList.addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
                 if (e.clickCount == 2) {
                     val selected = taskConfigList.selectedValue
                     if (selected != null) {
@@ -283,7 +254,6 @@ class PlanConfigDialog(
                 updateSettings()?.copy(
                     shellCmd = listOf(),
                     workingDir = null,
-                    language = null,
                 )
             )
             val clipboard = Toolkit.getDefaultToolkit().systemClipboard
@@ -358,43 +328,10 @@ class PlanConfigDialog(
         else -> true
     }
 
-    private fun validateNumericField(
-        field: JTextField, fieldName: String, min: Int = 1, max: Int = Int.MAX_VALUE
-    ): Int? {
-        return try {
-            val value = field.text.toInt()
-            when {
-                value < min -> {
-                    Messages.showWarningDialog(
-                        "$fieldName must be at least $min", "Invalid Value"
-                    )
-                    field.requestFocusInWindow()
-                    null
-                }
-
-                value > max -> {
-                    Messages.showWarningDialog(
-                        "$fieldName must be at most $max", "Invalid Value"
-                    )
-                    field.requestFocusInWindow()
-                    null
-                }
-
-                else -> value
-            }
-        } catch (_: NumberFormatException) {
-            Messages.showWarningDialog(
-                "$fieldName must be a valid number", "Invalid Value"
-            )
-            field.requestFocusInWindow()
-            null
-        }
-    }
-
-    private fun getVisibleModels() =
+    private fun getVisibleModels(): List<ChatModel> =
         ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
             apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
-                model.provider == apiData.provider && model.modelName?.isNotBlank() == true && isVisible(model)
+                model.provider == apiData.provider && model.modelName.isNotBlank() && isVisible(model)
             } ?: listOf()
         }.distinctBy { it.modelName }.sortedBy { "${it.provider?.name} - ${it.modelName}" }
 
@@ -407,7 +344,7 @@ class PlanConfigDialog(
             return
         }
 
-        if (AppSettingsState.instance.savedPlanConfigs?.containsKey(configName ?: "") == true) {
+        if (appSettings.savedPlanConfigs?.containsKey(configName ?: "") == true) {
             val confirmResult = JOptionPane.showConfirmDialog(
                 null,
                 "Configuration '$configName' already exists. Overwrite?",
@@ -420,9 +357,9 @@ class PlanConfigDialog(
         }
 
         try {
-            val configs = AppSettingsState.instance.savedPlanConfigs ?: mutableMapOf()
+            val configs = appSettings.savedPlanConfigs ?: mutableMapOf()
             configs[configName!!] = toJson(updateSettings())
-            AppSettingsState.instance.savedPlanConfigs = configs
+            appSettings.savedPlanConfigs = configs
         } catch (e: Exception) {
             log.error("Failed to save configuration", e)
             Messages.showErrorDialog(
@@ -435,7 +372,7 @@ class PlanConfigDialog(
     }
 
     private fun loadConfig(configName: String) {
-        val config = AppSettingsState.instance.savedPlanConfigs?.get(configName)
+        val config = appSettings.savedPlanConfigs?.get(configName)
             ?.let<String, OrchestrationConfig?> { fromJson(it, OrchestrationConfig::class.java) } ?: return
         if (taskConfigListModel.size() > 0) {
             val confirmResult = JOptionPane.showConfirmDialog(
@@ -465,9 +402,6 @@ class PlanConfigDialog(
             // Copy all settings from loaded config
             settings.temperature = config.temperature.coerceIn(0.0, 1.0)
             settings.autoFix = config.autoFix
-            settings.maxTaskHistoryChars = config.maxTaskHistoryChars
-            settings.maxTasksPerIteration = config.maxTasksPerIteration
-            settings.maxIterations = config.maxIterations
             settings.defaultSmartModel = config.defaultSmartModel
             settings.defaultFastModel = config.defaultFastModel
             settings.defaultImageModel = config.defaultImageModel
@@ -482,9 +416,6 @@ class PlanConfigDialog(
             temperatureSlider.value = (settings.temperature * TEMPERATURE_SCALE).toInt()
             temperatureLabel.text = TEMPERATURE_LABEL.format(settings.temperature)
             autoFixCheckbox.isSelected = settings.autoFix
-            maxTaskHistoryCharsField.text = settings.maxTaskHistoryChars.toString()
-            maxTasksPerIterationField.text = settings.maxTasksPerIteration.toString()
-            maxIterationsField.text = settings.maxIterations.toString()
 
             // Update cognitive mode and visibility
             val cognitiveModeName = config.cognitiveMode?.name ?: "Chat"
@@ -531,7 +462,7 @@ class PlanConfigDialog(
     }
 
 
-    override fun createCenterPanel(): JComponent = JBScrollPane(com.intellij.ui.dsl.builder.panel {
+    override fun createCenterPanel(): JComponent = JBScrollPane(panel {
         group {
             row("Saved Configs:") {
                 cell(savedConfigsCombo).align(Align.FILL)
@@ -556,9 +487,9 @@ class PlanConfigDialog(
                             null, "Delete configuration '$selected'?", "Confirm Delete", JOptionPane.YES_NO_OPTION
                         )
                         if (confirmResult == Messages.YES) {
-                            val configs = AppSettingsState.instance.savedPlanConfigs ?: mutableMapOf()
+                            val configs = appSettings.savedPlanConfigs ?: mutableMapOf()
                             configs.remove(selected)
-                            AppSettingsState.instance.savedPlanConfigs = configs
+                            appSettings.savedPlanConfigs = configs
                             savedConfigsCombo.removeItem(selected)
                         }
                     } else {
@@ -656,9 +587,9 @@ class PlanConfigDialog(
     override fun doOKAction() {
         updateSettings() ?: return
         try {
-            val configs = AppSettingsState.instance.savedPlanConfigs ?: mutableMapOf()
+            val configs = appSettings.savedPlanConfigs ?: mutableMapOf()
             configs["Last"] = toJson(settings)
-            AppSettingsState.instance.savedPlanConfigs = configs
+            appSettings.savedPlanConfigs = configs
         } catch (e: Exception) {
             log.warn("Failed to save 'Last' configuration", e)
         }
@@ -667,23 +598,8 @@ class PlanConfigDialog(
 
     fun updateSettings(): OrchestrationConfig? {
         // Validate numeric fields
-        val maxTaskHistory =
-            validateNumericField(maxTaskHistoryCharsField, "Max Task History Chars", MIN_TASK_HISTORY, MAX_TASK_HISTORY)
-                ?: return null
-        val maxTasksPerIter =
-            validateNumericField(
-                maxTasksPerIterationField,
-                "Max Tasks Per Iteration",
-                MIN_TASKS_PER_ITER,
-                MAX_TASKS_PER_ITER
-            ) ?: return null
-        val maxIters = validateNumericField(maxIterationsField, "Max Iterations", 1, 1000) ?: return null
-        validateNumericField(maxIterationsField, "Max Iterations", MIN_ITERATIONS, MAX_ITERATIONS) ?: return null
 
         settings.autoFix = autoFixCheckbox.isSelected
-        settings.maxTaskHistoryChars = maxTaskHistory
-        settings.maxTasksPerIteration = maxTasksPerIter
-        settings.maxIterations = maxIters
         // Apply model selections
         val selectedGlobalModel = globalModelCombo.selectedItem as? String
         if (selectedGlobalModel != null) {
@@ -723,12 +639,6 @@ class PlanConfigDialog(
         private const val TEMPERATURE_SCALE = 100.0
         private const val TEMPERATURE_LABEL = "%.2f"
         private const val FONT_SIZE_ENABLED = 14f
-        private const val MIN_TASK_HISTORY = 100
-        private const val MAX_TASK_HISTORY = 1000000
-        private const val MIN_TASKS_PER_ITER = 1
-        private const val MAX_TASKS_PER_ITER = 100
-        private const val MIN_ITERATIONS = 1
-        private const val MAX_ITERATIONS = 1000
 
         // Validation patterns
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_ -]+$")

@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.apps.renderMarkdown
+
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.Session
@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager.Companion.randomID
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
-import java.io.File
 import java.util.*
 import java.util.function.Consumer
 
@@ -104,11 +103,13 @@ open class SessionTask(
         @Description("The html tag to wrap the message in (default: div)")
         tag: String = "div",
         @Description("Additional css class(es) to apply to the message")
-        additionalClasses: String = ""
+        additionalClasses: String = "",
+        @Description("Whether to render the message as markdown (default: false)")
+        markdown: Boolean = false
     ) = append(
         """<$tag class="${
             (additionalClasses.split(" ").toSet() + setOf("response-message")).joinToString(" ")
-        }">$message</$tag>""", showSpinner
+        }">${if (markdown) message.renderMarkdown() else message}</$tag>""", showSpinner
     )
 
     @Description("Adds a hideable message to the task output.")
@@ -120,7 +121,9 @@ open class SessionTask(
         @Description("The html tag to wrap the message in (default: div)")
         tag: String = "div",
         @Description("Additional css class(es) to apply to the message")
-        additionalClasses: String = ""
+        additionalClasses: String = "",
+        @Description("Whether to render the message as markdown (default: false)")
+        markdown: Boolean = false
     ): StringBuilder? {
         var windowBuffer: StringBuilder? = null
         val closeButton = """<span class="close">${
@@ -136,7 +139,7 @@ open class SessionTask(
         windowBuffer = append(
             """<$tag class="${
                 (additionalClasses.split(" ").toSet() + setOf("response-message", "hideable-message")).joinToString(" ")
-            }">$closeButton$message</$tag>""",
+            }">$closeButton${if (markdown) message.renderMarkdown() else message}</$tag>""",
             showSpinner
         )
         return windowBuffer
@@ -150,7 +153,7 @@ open class SessionTask(
         showSpinner: Boolean = false,
         @Description("The html tag to wrap the message in (default: div)")
         tag: String = "div"
-    ) = add(message, showSpinner, tag, "user-message")
+    ) = add(message, showSpinner, tag, "user-message", markdown = true)
 
     @Description("Adds a header to the task output.")
     fun header(
@@ -173,7 +176,8 @@ open class SessionTask(
             level == 6 -> "h6"
             else -> "div"
         },
-        additionalClasses = additionalClasses.split(" ").toSet().plus("response-header").joinToString(" ")
+        additionalClasses = additionalClasses.split(" ").toSet().plus("response-header").joinToString(" "),
+        markdown = true
     )
 
     @Description("Adds an expandable/collapsible section to the task output.")
@@ -187,22 +191,10 @@ open class SessionTask(
         @Description("The html tag for the main container (default: div)")
         tag: String = "div",
         @Description("Additional css class(es) to apply to the main container")
-        additionalClasses: String = ""
-    ): StringBuilder? {
-        val combinedClasses =
-            (additionalClasses.split(" ").toSet() + setOf("expandable-guide")).filter { it.isNotBlank() }
-                .joinToString(" ")
-        val html = """
-            <$tag class="$combinedClasses">
-              <div class="expandable-header">
-                <strong>$title</strong>
-                <span class="expand-icon">▼</span>
-              </div>
-              <div class="expandable-content">$content</div>
-            </$tag>
-        """.trimIndent()
-        return append(html, showSpinner)
-    }
+        additionalClasses: String = "",
+        @Description("Whether to render the content as markdown (default: true)")
+        markdown: Boolean = true
+    ) = renderExpandable(title, content, showSpinner, tag, additionalClasses, false, markdown)
 
     @Description("Adds an expandable/collapsible section to the task output.")
     fun expanded(
@@ -215,18 +207,31 @@ open class SessionTask(
         @Description("The html tag for the main container (default: div)")
         tag: String = "div",
         @Description("Additional css class(es) to apply to the main container")
-        additionalClasses: String = ""
+        additionalClasses: String = "",
+        @Description("Whether to render the content as markdown (default: true)")
+        markdown: Boolean = true
+    ) = renderExpandable(title, content, showSpinner, tag, additionalClasses, true, markdown)
+
+    private fun renderExpandable(
+        title: String,
+        content: String,
+        showSpinner: Boolean,
+        tag: String,
+        additionalClasses: String,
+        isExpanded: Boolean,
+        markdown: Boolean
     ): StringBuilder? {
         val combinedClasses =
             (additionalClasses.split(" ").toSet() + setOf("expandable-guide")).filter { it.isNotBlank() }
                 .joinToString(" ")
+        val renderedContent = if (markdown) content.renderMarkdown() else content
         val html = """
             <$tag class="$combinedClasses">
               <div class="expandable-header">
                 <strong>$title</strong>
                 <span class="expand-icon">▼</span>
               </div>
-              <div class="expandable-content expanded">$content</div>
+              <div class="expandable-content${if (isExpanded) " expanded" else ""}">${renderedContent}</div>
             </$tag>
         """.trimIndent()
         return append(html, showSpinner)
@@ -270,7 +275,7 @@ Stack Trace:
 
             else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n"
 
-        }.renderMarkdown(), showSpinner, tag, "error"
+        }, showSpinner, tag, "error", markdown = true
     )
 
     @Description("Displays a final message in the task output. This will hide the spinner.")
@@ -281,10 +286,12 @@ Stack Trace:
         tag: String = "div",
         @Description("Additional css class(es) to apply to the message")
         additionalClasses: String = ""
-    ) = append(
-        if (message.isNotBlank()) """<$tag class="${
-            (additionalClasses.split(" ").toSet() + setOf("response-message", "completion-message")).joinToString(" ")
-        }">$message</$tag>""" else "", false
+    ) = add(
+        message = message,
+        showSpinner = false,
+        tag = tag,
+        additionalClasses = (additionalClasses.split(" ").toSet() + setOf("completion-message")).joinToString(" "),
+        markdown = true
     )
 
     @Description("Displays an image to the task output.")

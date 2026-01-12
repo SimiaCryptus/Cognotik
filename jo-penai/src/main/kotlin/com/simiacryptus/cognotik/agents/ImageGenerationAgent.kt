@@ -54,7 +54,7 @@ open class ImageGenerationAgent(
         val first = data.first()
         return when {
             first.url != null -> ImageIO.read(URL(first.url))
-            first.b64_json != null -> ImageIO.read(first.b64_json.decodeBase64()?.toByteArray()?.inputStream())
+            first.b64_json != null -> ImageIO.read(first.b64_json?.decodeBase64()?.toByteArray()?.inputStream())
             else -> throw RuntimeException("No image data returned")
         }
     }

@@ -98,17 +98,17 @@ TableCompilation - Generate structured tables with AI-computed cell values
             resultFn("VALIDATION ERROR: $errorMessage")
             return
         }
+        renderTaskHeader(task)
 
         val rows = executionConfig?.rows ?: emptyList()
         val columns = executionConfig?.columns ?: emptyList()
         val cellQuery = executionConfig?.cell_query ?: ""
         val partitionSize = typeConfig?.partition_size ?: 2
 
-        val ui = task.ui
         val api = defaultSmart.getChildClient(task)
 
-        task.header("Table Compilation")
-        task.add("Generating ${rows.size}x${columns.size} table with partition size $partitionSize")
+        task.add("Generating **${rows.size}x${columns.size}** table using partition size **$partitionSize**.")
+        task.add("Query Template: `$cellQuery`")
 
         // Initialize the results table
         val cellResults = Array(rows.size) { Array(columns.size) { "" } }
@@ -307,22 +307,22 @@ Keep responses concise (typically 1-3 sentences or a few words/numbers as approp
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TableCompilationTask::class.java)
         val TableCompilation = TaskType(
-            "TableCompilation",
-            "Reasoning",
-            TableCompilationTask::class.java,
-            TableCompilationTaskExecutionConfigData::class.java,
-            TableCompilationTaskTypeConfig::class.java,
-            "Generate structured tables with AI-computed cell values",
-            """
-              Generates tables by computing each cell value using AI.
-              <ul>
-                <li>Define rows and columns as headers</li>
-                <li>Provide a query template with {row} and {column} placeholders</li>
-                <li>Cells are computed in configurable partitions for efficiency</li>
-                <li>Supports markdown, HTML, and CSV output formats</li>
-                <li>Useful for comparison matrices, analysis tables, decision matrices</li>
-              </ul>
-            """,
+          name = "TableCompilation",
+          category = "Reasoning",
+          taskClass = TableCompilationTask::class.java,
+          executionConfigClass = TableCompilationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TableCompilationTaskTypeConfig::class.java,
+          description = "Generate structured tables with AI-computed cell values",
+          tooltipHtml = """
+                        Generates tables by computing each cell value using AI.
+                        <ul>
+                          <li>Define rows and columns as headers</li>
+                          <li>Provide a query template with {row} and {column} placeholders</li>
+                          <li>Cells are computed in configurable partitions for efficiency</li>
+                          <li>Supports markdown, HTML, and CSV output formats</li>
+                          <li>Useful for comparison matrices, analysis tables, decision matrices</li>
+                        </ul>
+                      """,
         )
     }
 }

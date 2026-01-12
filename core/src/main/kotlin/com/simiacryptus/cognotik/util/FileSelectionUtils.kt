@@ -424,8 +424,11 @@ object FileSelectionUtils {
                     .find {
                         val normalizedPath = it.toString().replace("\\", "/")
                         val normalizedTarget = returnValue.replace("\\", "/")
-                        normalizedPath.endsWith(normalizedTarget) ||
-                                it.name.equals(targetFileName, ignoreCase = true)
+                        if (normalizedTarget.contains("/")) {
+                            normalizedPath.endsWith(normalizedTarget)
+                        } else {
+                            it.name.equals(targetFileName, ignoreCase = true)
+                        }
                     }
                 if (foundFile != null) {
                     returnValue = foundFile.toString().relativizeFrom(root)

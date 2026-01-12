@@ -8,7 +8,9 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.vcs.annotate.FileAnnotation
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.*
@@ -81,6 +83,20 @@ class SymbolExtractionAction : BaseAction() {
                     }
                     indicator.fraction = index.toDouble() / totalFiles
                     indicator.text = "Processing ${virtualFile.name} ($index/$totalFiles)"
+                    val fileId = virtualFile.path
+                    val lastModified = virtualFile.timeStamp
+                    val storedModified = service.getLastModified(fileId)
+                    if (storedModified != null && storedModified == lastModified) {
+                        return@forEachIndexed
+                    }
+                    var fileAnnotation: FileAnnotation? = null
+                    try {
+                        val vcs = ProjectLevelVcsManager.getInstance(project).getVcsFor(virtualFile)
+                        fileAnnotation = vcs?.annotationProvider?.annotate(virtualFile)
+                    } catch (e: Exception) {
+                        if (verbose) log.warn("Error getting VCS annotation for ${virtualFile.path}", e)
+                    }
+
 
                     ReadAction.run<Throwable> {
                         if (virtualFile.isValid) {
@@ -88,12 +104,6 @@ class SymbolExtractionAction : BaseAction() {
                             if (psiFile != null) {
                                 if(verbose) log.debug("Analyzing file: ${virtualFile.path}")
                                 
-                                val fileId = virtualFile.path
-                                val lastModified = virtualFile.timeStamp
-                                val storedModified = service.getLastModified(fileId)
-                                if (storedModified != null && storedModified == lastModified) {
-                                    return@run
-                                }
 
                                 service.addFile(fileId, virtualFile.name, lastModified)
                                 service.clearOutgoingReferences(fileId)
@@ -109,6 +119,7 @@ class SymbolExtractionAction : BaseAction() {
                                                 var startOffset: Int? = null
                                                 var endOffset: Int? = null
                                                 var line: Int? = null
+                                                var symbolLastModified: Long? = null
                                                 val range = element.textRange
                                                 if (range != null) {
                                                     startOffset = range.startOffset
@@ -116,6 +127,13 @@ class SymbolExtractionAction : BaseAction() {
                                                     val document = PsiDocumentManager.getInstance(project).getDocument(psiFile)
                                                     if (document != null) {
                                                         line = document.getLineNumber(range.startOffset) + 1
+                                                        if (fileAnnotation != null) {
+                                                            try {
+                                                                symbolLastModified = fileAnnotation?.getLineDate(line!! - 1)?.time
+                                                            } catch (e: Exception) {
+                                                                // ignore
+                                                            }
+                                                        }
                                                     }
                                                 }
                                                 var visibility: String? = null
@@ -137,7 +155,7 @@ class SymbolExtractionAction : BaseAction() {
 //                                                    }
 //                                                }
 
-                                                service.addSymbol(nodeId, elementName, fileId, startOffset, endOffset, line, visibility, modifiersStr, annotationsStr)
+                                                service.addSymbol(nodeId, elementName, fileId, startOffset, endOffset, line, visibility, modifiersStr, annotationsStr, symbolLastModified)
                                                 foundSymbolIds.add(nodeId)
                                                 scopeStack.push(nodeId)
                                                 pushed = true

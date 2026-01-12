@@ -1,0 +1,8 @@
+{
+  "filename" : "hello_council.py",
+  "originalCode" : "print('Hello from CouncilMode')",
+  "diff" : "print(\"Hello from CouncilMode\")",
+  "newCode" : "print('Hello from CouncilMode')",
+  "isValid" : true,
+  "errors" : ""
+}

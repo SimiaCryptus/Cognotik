@@ -16,7 +16,7 @@ object IllustrateDocumentTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         val harness = TaskHarness(
@@ -35,7 +35,7 @@ object IllustrateDocumentTaskTest {
         )
 
         // Create a sample document to illustrate
-        harness.workspace.resolve("test_document.md").toFile().writeText(
+        harness.dataDir.resolve("test_document.md").toFile().writeText(
             """
             # System Architecture Overview
             

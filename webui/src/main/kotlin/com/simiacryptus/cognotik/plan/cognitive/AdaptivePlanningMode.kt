@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
@@ -70,7 +70,7 @@ open class AdaptivePlanningMode(
     private fun startAutoPlanChat(task : SessionTask, userMessage: String) {
         log.debug("Starting auto plan chat with initial message: $userMessage")
         task.echo(renderMarkdown(userMessage))
-        transcriptStream = transcript(task)
+        transcriptStream = task.transcript()
 
         val continueLoop = true
         val tabbedDisplay = TabbedDisplay(task)

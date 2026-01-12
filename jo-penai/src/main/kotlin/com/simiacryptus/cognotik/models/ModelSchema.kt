@@ -24,19 +24,19 @@ interface ModelSchema {
     }
 
     data class ApiError(
-        val message: String? = null,
-        val type: String? = null,
-        val param: String? = null,
-        val code: Double? = null,
+        var message: String? = null,
+        var type: String? = null,
+        var param: String? = null,
+        var code: Double? = null,
     )
 
     data class LogProbs(
-        val tokens: List<CharSequence> = ArrayList(),
-        val token_logprobs: DoubleArray = DoubleArray(0),
-        val top_logprobs: List<ObjectNode> = ArrayList(),
-        val text_offset: IntArray = IntArray(0),
+        var tokens: List<CharSequence> = ArrayList(),
+        var token_logprobs: DoubleArray = DoubleArray(0),
+        var top_logprobs: List<ObjectNode> = ArrayList(),
+        var text_offset: IntArray = IntArray(0),
     ) {
-        private val log = LoggerFactory.getLogger(LogProbs::class.java)
+        private var log = LoggerFactory.getLogger(LogProbs::class.java)
         override fun equals(other: Any?): Boolean {
             log.info("Comparing LogProbs objects")
             if (this === other) return true
@@ -60,65 +60,26 @@ interface ModelSchema {
     }
 
     data class Usage(
-        val prompt_tokens: Long = 0,
-        val completion_tokens: Long = 0,
-        val total_tokens: Long = prompt_tokens + completion_tokens,
-        val cost: Double? = null
+        var prompt_tokens: Long = 0,
+        var completion_tokens: Long = 0,
+        var total_tokens: Long = prompt_tokens + completion_tokens,
+        var cost: Double? = null
     )
-
-    data class Engine(
-        val id: String? = null,
-        val ready: Boolean = false,
-        val owner: String? = null,
-        val `object`: String? = null,
-        val created: Int? = null,
-        val permissions: String? = null,
-        val replicas: Int? = null,
-        val max_replicas: Int? = null,
-    )
-
-    data class CompletionRequest(
-        val prompt: String = "",
-        val suffix: String? = null,
-        val temperature: Double = 0.0,
-        val max_tokens: Int = 1000,
-        val stop: List<CharSequence>? = null,
-        val logprobs: Int? = null,
-        val echo: Boolean = false,
-    )
-
-    data class CompletionResponse(
-        val id: String? = null,
-        val `object`: String? = null,
-        val created: Int = 0,
-        val model: String? = null,
-        val choices: List<CompletionChoice> = ArrayList(),
-        val error: ApiError? = null,
-        val usage: Usage? = null,
-    ) {
-        val firstChoice: Optional<CharSequence>
-            get() = choices.first().text?.trim()?.let { Optional.of(it) } ?: Optional.empty()
-    }
-
-    data class CompletionChoice(
-        val text: String? = null, val index: Int = 0, val logprobs: LogProbs? = null, val finish_reason: String? = null
-    )
-
 
     data class TranscriptionPacket(
-        val id: Int? = 0,
-        val seek: Int? = 0,
-        val start: Double? = 0.0,
-        val end: Double? = 0.0,
-        val text: String? = "",
-        val tokens: IntArray? = null,
-        val temperature: Double? = 0.0,
-        val avg_logprob: Double? = 0.0,
-        val compression_ratio: Double? = 0.0,
-        val no_speech_prob: Double? = 0.0,
-        val transient: Boolean? = false
+        var id: Int? = 0,
+        var seek: Int? = 0,
+        var start: Double? = 0.0,
+        var end: Double? = 0.0,
+        var text: String? = "",
+        var tokens: IntArray? = null,
+        var temperature: Double? = 0.0,
+        var avg_logprob: Double? = 0.0,
+        var compression_ratio: Double? = 0.0,
+        var no_speech_prob: Double? = 0.0,
+        var transient: Boolean? = false
     ) {
-        private val log = LoggerFactory.getLogger(TranscriptionPacket::class.java)
+        private var log = LoggerFactory.getLogger(TranscriptionPacket::class.java)
         override fun equals(other: Any?) = when {
             this === other -> true
             javaClass != other?.javaClass -> false
@@ -165,73 +126,73 @@ interface ModelSchema {
     }
 
     data class TranscriptionResult(
-        val task: String? = "",
-        val language: String? = "",
-        val duration: Double = 0.0,
-        val segments: List<TranscriptionPacket> = listOf(),
-        val text: String? = ""
+        var task: String? = "",
+        var language: String? = "",
+        var duration: Double = 0.0,
+        var segments: List<TranscriptionPacket> = listOf(),
+        var text: String? = ""
     )
 
     data class ChatRequest(
-        val messages: List<ChatMessage> = listOf(),
-        val model: String? = null,
-        val temperature: Double = 0.0,
-        val max_tokens: Int? = null,
-        val stop: List<CharSequence>? = listOf(),
-        val function_call: String? = null,
-        val response_format: Map<String, Any>? = null,
-        val n: Int? = null,
-        val functions: List<RequestFunction>? = null,
-        val store: Boolean? = null,
-        val metadata: Map<String, Any?>? = null,
-        val modalities: List<String>? = null,
-        val audio: Map<String, String>? = null,
+        var messages: List<ChatMessage> = listOf(),
+        var model: String? = null,
+        var temperature: Double = 0.0,
+        var max_tokens: Int? = null,
+        var stop: List<CharSequence>? = listOf(),
+        var function_call: String? = null,
+        var response_format: Map<String, Any>? = null,
+        var n: Int? = null,
+        var functions: List<RequestFunction>? = null,
+        var store: Boolean? = null,
+        var metadata: Map<String, Any?>? = null,
+        var modalities: List<String>? = null,
+        var audio: Map<String, String>? = null,
         var reasoning_effort: String? = null,
     )
 
     data class GroqChatRequest(
-        val messages: List<GroqChatMessage> = listOf(),
-        val model: String? = null,
-        val temperature: Double = 0.0,
-        val max_tokens: Int? = null,
-        val stop: List<CharSequence>? = listOf(),
-        val function_call: String? = null,
-        val n: Int? = null,
-        val functions: List<RequestFunction>? = null,
+        var messages: List<GroqChatMessage> = listOf(),
+        var model: String? = null,
+        var temperature: Double = 0.0,
+        var max_tokens: Int? = null,
+        var stop: List<CharSequence>? = listOf(),
+        var function_call: String? = null,
+        var n: Int? = null,
+        var functions: List<RequestFunction>? = null,
     )
 
     data class RequestFunction(
-        val name: String = "",
-        val description: String = "",
-        val parameters: Map<String, String> = mapOf(),
+        var name: String = "",
+        var description: String = "",
+        var parameters: Map<String, String> = mapOf(),
     )
 
     data class ChatResponse(
-        val id: String? = null,
-        val `object`: String? = null,
-        val created: Long = 0,
-        val model: String? = null,
-        val choices: List<ChatChoice> = listOf(),
-        val error: ApiError? = null,
-        val usage: Usage? = null,
+        var id: String? = null,
+        var `object`: String? = null,
+        var created: Long = 0,
+        var model: String? = null,
+        var choices: List<ChatChoice> = listOf(),
+        var error: ApiError? = null,
+        var usage: Usage? = null,
     )
 
     data class ChatChoice(
-        val message: ChatMessageResponse? = null,
-        val index: Int = 0,
-        val finish_reason: String? = null,
+        var message: ChatMessageResponse? = null,
+        var index: Int = 0,
+        var finish_reason: String? = null,
     )
 
     data class ContentPart(
-        val text: String? = null,
+        var text: String? = null,
         var image_url: String? = null,
-        var input_audio: AudioInput? = null
+        //var input_audio: AudioInput? = null
     ) {
         var image_data: ByteArray?
             @JsonIgnore
             get() {
                 return if (image_url != null && image_url!!.startsWith("data:image/")) {
-                    val parts = image_url!!.split(",")
+                    var parts = image_url!!.split(",")
                     Base64.getDecoder().decode(parts[1])
                 } else {
                     null
@@ -240,7 +201,7 @@ interface ModelSchema {
             @JsonIgnore
             set(value) {
                 if (value != null) {
-                    val base64Data = Base64.getEncoder().encodeToString(value)
+                    var base64Data = Base64.getEncoder().encodeToString(value)
                     image_url = "data:image/jpeg;base64,$base64Data"
                 } else {
                     image_url = null
@@ -249,7 +210,7 @@ interface ModelSchema {
         var image: BufferedImage?
             @JsonIgnore
             get() {
-                val data = image_data
+                var data = image_data
                 return if (data != null) {
                     ImageIO.read(data.inputStream())
                 } else {
@@ -259,30 +220,30 @@ interface ModelSchema {
             @JsonIgnore
             set(value) {
                 if (value != null) {
-                    val output = ByteArrayOutputStream()
+                    var output = ByteArrayOutputStream()
                     ImageIO.write(value, "jpg", output)
-                    val base64Data = Base64.getEncoder().encodeToString(output.toByteArray())
+                    var base64Data = Base64.getEncoder().encodeToString(output.toByteArray())
                     image_url = "data:image/jpeg;base64,$base64Data"
                 } else {
                     image_url = null
                 }
             }
-        var audio_data: ByteArray?
-            @JsonIgnore
-            get() {
-                return input_audio?.audioBytes
-            }
-            @JsonIgnore
-            set(value) {
-                input_audio = if (value != null) {
-                    AudioInput(Base64.getEncoder().encodeToString(value), input_audio?.format ?: "mp3")
-                } else {
-                    null
-                }
-            }
+//        var audio_data: ByteArray?
+//            @JsonIgnore
+//            get() {
+//                return input_audio?.audioBytes
+//            }
+//            @JsonIgnore
+//            set(value) {
+//                input_audio = if (value != null) {
+//                    AudioInput(Base64.getEncoder().encodeToString(value), input_audio?.format ?: "mp3")
+//                } else {
+//                    null
+//                }
+//            }
 
         companion object {
-            private val log = LoggerFactory.getLogger(ContentPart::class.java)
+            private var log = LoggerFactory.getLogger(ContentPart::class.java)
             fun text(content: String): ContentPart {
                 log.info("Creating text ContentPart")
                 return ContentPart(text = content)
@@ -298,20 +259,20 @@ interface ModelSchema {
                 return ContentPart(image_url = "data:image/png;base64," + toBase64(img, "png"))
             }
 
-            fun audio(data: String, format: String): ContentPart {
-                log.info("Creating audio ContentPart")
-                return ContentPart(input_audio = AudioInput(data, format))
-            }
-
-            fun audio(data: ByteArray, format: String): ContentPart {
-                log.info("Creating audio ContentPart")
-                return ContentPart(input_audio = AudioInput(Base64.getEncoder().encodeToString(data), format))
-            }
+//            fun audio(data: String, format: String): ContentPart {
+//                log.info("Creating audio ContentPart")
+//                return ContentPart(input_audio = AudioInput(data, format))
+//            }
+//
+//            fun audio(data: ByteArray, format: String): ContentPart {
+//                log.info("Creating audio ContentPart")
+//                return ContentPart(input_audio = AudioInput(Base64.getEncoder().encodeToString(data), format))
+//            }
 
 
             fun toBase64(image: BufferedImage, fmt: String): String {
                 log.info("Converting image to Base64")
-                val output = ByteArrayOutputStream()
+                var output = ByteArrayOutputStream()
                 ImageIO.write(image, fmt, output)
                 return Base64.getEncoder().encodeToString(output.toByteArray())
             }
@@ -319,15 +280,15 @@ interface ModelSchema {
     }
 
     data class ChatMessage(
-        val role: Role? = null,
-        val content: List<ContentPart>? = null,
-        val function_call: FunctionCall? = null,
+        var role: Role? = null,
+        var content: List<ContentPart>? = null,
+        //var function_call: FunctionCall? = null,
     )
 
     data class ChatMessageResponse(
-        val role: Role? = null,
-        val content: String? = null,
-        val function_call: FunctionCall? = null,
+        var role: Role? = null,
+        var content: String? = null,
+        var function_call: FunctionCall? = null,
         var image_url: String? = null,
         var image_mime_type: String? = null,
     ) {
@@ -335,8 +296,8 @@ interface ModelSchema {
             @JsonIgnore
             get() {
                 return if (image_url != null && image_url!!.startsWith("data:image/")) {
-                    val parts = image_url!!.split(",")
-                    val data = Base64.getDecoder().decode(parts[1])
+                    var parts = image_url!!.split(",")
+                    var data = Base64.getDecoder().decode(parts[1])
                     ImageIO.read(data.inputStream())
                 } else {
                     null
@@ -345,9 +306,9 @@ interface ModelSchema {
             @JsonIgnore
             set(value) {
                 if (value != null) {
-                    val output = ByteArrayOutputStream()
+                    var output = ByteArrayOutputStream()
                     ImageIO.write(value, "jpg", output)
-                    val base64Data = Base64.getEncoder().encodeToString(output.toByteArray())
+                    var base64Data = Base64.getEncoder().encodeToString(output.toByteArray())
                     image_url = "data:image/jpeg;base64,$base64Data"
                 } else {
                     image_url = null
@@ -357,7 +318,7 @@ interface ModelSchema {
             @JsonIgnore
             get() {
                 return if (image_url != null && image_url!!.startsWith("data:image/")) {
-                    val parts = image_url!!.split(",")
+                    var parts = image_url!!.split(",")
                     Base64.getDecoder().decode(parts[1])
                 } else {
                     null
@@ -366,7 +327,7 @@ interface ModelSchema {
             @JsonIgnore
             set(value) {
                 if (value != null) {
-                    val base64Data = Base64.getEncoder().encodeToString(value)
+                    var base64Data = Base64.getEncoder().encodeToString(value)
                     image_url = "data:image/jpeg;base64,$base64Data"
                 } else {
                     image_url = null
@@ -379,30 +340,30 @@ interface ModelSchema {
     }
 
     data class FunctionCall(
-        val name: String? = null,
-        val arguments: String? = null,
+        var name: String? = null,
+        var arguments: String? = null,
     )
 
     data class GroqChatMessage(
-        val role: Role? = null,
-        val content: String? = null,
-        val function_call: FunctionCall? = null,
+        var role: Role? = null,
+        var content: String? = null,
+        var function_call: FunctionCall? = null,
     )
 
 
     data class EmbeddingResponse(
-        val `object`: String? = null,
-        val data: List<EmbeddingData> = listOf(),
-        val model: String? = null,
-        val usage: Usage? = null,
+        var `object`: String? = null,
+        var data: List<EmbeddingData> = listOf(),
+        var model: String? = null,
+        var usage: Usage? = null,
     )
 
     data class EmbeddingData(
-        val `object`: String? = null,
-        val embedding: DoubleArray? = null,
-        val index: Int? = null
+        var `object`: String? = null,
+        var embedding: DoubleArray? = null,
+        var index: Int? = null
     ) {
-        private val log = LoggerFactory.getLogger(EmbeddingData::class.java)
+        private var log = LoggerFactory.getLogger(EmbeddingData::class.java)
         override fun equals(other: Any?): Boolean {
             log.info("Comparing EmbeddingData objects")
             when {
@@ -437,29 +398,29 @@ interface ModelSchema {
     }
 
     data class EmbeddingRequest(
-        val model: String? = null,
-        val input: String? = null,
+        var model: String? = null,
+        var input: String? = null,
     )
 
     data class ImageGenerationRequest(
-        val prompt: String,
-        val model: String? = null,
-        val n: Int? = null,
-        val quality: String? = null,
-        val response_format: String? = null,
-        val size: String? = null,
-        val style: String? = null,
-        val user: String? = null
+        var prompt: String,
+        var model: String? = null,
+        var n: Int? = null,
+        var quality: String? = null,
+        var response_format: String? = null,
+        var size: String? = null,
+        var style: String? = null,
+        var user: String? = null
     )
 
     data class ImageObject(
-        val url: String? = null,
-        val b64_json: String? = null
+        var url: String? = null,
+        var b64_json: String? = null
     )
 
     data class ImageGenerationResponse(
-        val created: Long,
-        val data: List<ImageObject>
+        var created: Long,
+        var data: List<ImageObject>
     )
 
 }

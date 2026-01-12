@@ -1,1 +1,0 @@
-Counterfactual analysis completed in 52s. Results: The team decided to use a monolithic architecture for the new e-commerce platform to speed up initial development. with 2 counterfactual scenarios analyzed.

@@ -1,316 +1,501 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scriptwriting Task - Cognotik</title>
-    <!-- Fonts -->
+    <title>Cognotik | Task Name</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
-        /* Utilities */
-        .container {
-            max-width: var(--container-max-width);
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
-            color: #fff;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
-        }
-        /* Hero */
-        .hero {
-            padding: 8rem 0 4rem;
-            display: flex;
-            align-items: center;
-            min-height: 80vh;
-            position: relative;
-            text-align: left;
-            background: none;
-        }
-        .hero-content {
-            flex: 1;
-            padding-right: 2rem;
-        }
-        .hero h1 {
-            font-size: 3.5rem;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(to right, #fff, var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            margin-bottom: 2rem;
-            max-width: 600px;
-        }
-        .hero-visual {
-            flex: 1;
-            height: 400px;
-            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-        /* Abstract Visual Placeholder */
-        .visual-node {
-            width: 200px;
-            height: 200px;
-            border: 2px solid var(--accent-secondary);
-            border-radius: 50%;
-            position: absolute;
-            animation: pulse 4s infinite;
-            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .visual-node::before {
-            content: '🎬';
-            font-size: 4rem;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
-        }
-        /* Features */
-        .features {
-            padding: 4rem 0;
-            background: rgba(255,255,255,0.02);
-            max-width: none;
-        }
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(6, 182, 212, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--accent-secondary);
-            margin-left: auto;
-            margin-right: auto;
-        }
-        /* Simulator */
-        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
-        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-secondary); }
-        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
-        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
-        /* Use Cases */
-        .use-cases {
-            padding: 4rem 0;
-        }
-        .use-case-list {
+        /* Page-Specific Overrides */
+        .reality-check-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: 1fr 40px 1fr; /* Code -> Arrow -> UI */
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
         }
-        .use-case-item {
-            background: var(--surface-color);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border-left: 4px solid var(--accent-color);
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
         }
+
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Tab System */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* Mobile Stack */
         @media (max-width: 768px) {
-            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
-            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+            .reality-check-grid {
+                grid-template-columns: 1fr;
+            }
+            .flow-arrow { transform: rotate(90deg); }
         }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="scriptwriting"></cognotik-header>
-    <!-- Hero -->
-    <header class="hero container">
-        <div class="hero-content">
-            <h1>Scriptwriting Task</h1>
-            <p>Generate production-ready scripts for videos, podcasts, and presentations with dialogue and direction.</p>
-            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
-        </div>
-        <div class="hero-visual">
-            <div class="visual-node"></div>
+
+<cognotik-header current-page="task-id"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Tasks / File Operations</div>
+        <h1>FileModificationTask</h1>
+        <p class="pitch">
+            Safe, patch-based file editing with built-in syntax validation and rollback capabilities.
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect: Destructive</span>
+            <span class="badge">Auto-Fix Supported</span>
         </div>
     </header>
-    <!-- Features -->
-    <section id="features" class="features">
-        <div class="container">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                    </div>
-                    <h3>Production Ready</h3>
-                    <p>Includes visual directions, timing markers, and speaker notes for seamless production.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    </div>
-                    <h3>Natural Dialogue</h3>
-                    <p>Writes conversational scripts tailored to the medium, ensuring natural spoken delivery.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                    </div>
-                    <h3>Structured Flow</h3>
-                    <p>Organizes content into logical segments with engaging hooks and strong calls-to-action.</p>
+
+    <!-- 2. REALITY CHECK (The "Anti-Vaporware" Section) -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">Input Configuration</div>
+            <pre><code class="language-json">
+{
+  "target_file": "src/main/App.kt",
+  "instructions": "Add a logging statement to the main loop",
+  "context_lines": 5
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">Session UI Output</div>
+            <div class="mock-ui-content" style="padding: 1rem;">
+                <div style="color: #4ade80; margin-bottom: 0.5rem;">✔ File Updated Successfully</div>
+                <div style="background: #000; padding: 0.5rem; font-family: monospace; font-size: 0.8rem;">
+                    <span style="color: grey">12</span>   while(running) {<br>
+                    <span style="color: green">13 +     logger.info("Heartbeat")</span><br>
+                    <span style="color: grey">14</span>     processNext()<br>
                 </div>
             </div>
         </div>
     </section>
-    <!-- Simulator -->
-    <section id="demo" class="simulator">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="simulator-container">
-                <!-- Inputs -->
-                <div class="sim-controls">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
-                    <div class="control-group">
-                        <label>Topic</label>
-                        <input type="text" id="topic" value="Introduction to Quantum Computing">
-                    </div>
-                    <div class="control-group">
-                        <label>Script Type</label>
-                        <select id="script_type">
-                            <option value="video">Video (YouTube)</option>
-                            <option value="podcast">Podcast</option>
-                            <option value="presentation">Presentation</option>
-                            <option value="commercial">Commercial</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label>Target Duration (minutes)</label>
-                        <input type="number" id="duration" value="5">
-                    </div>
-                    <button class="run-button" onclick="runSimulation()" style="margin-top: 2rem;">Generate Script</button>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('preview')">Live Preview</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>target_file</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>Relative path to the file. Must exist in workspace.</td>
+                </tr>
+                <tr>
+                    <td><code>instructions</code></td>
+                    <td>String</td>
+                    <td>Natural language description of the edit desired.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PREVIEW (With Presets) -->
+        <div id="tab-preview" class="tab-pane" style="display:none;">
+            <div class="preset-bar">
+                <span>Load Scenario:</span>
+                <button class="btn-small">Fix Syntax Error</button>
+                <button class="btn-small">Add Documentation</button>
+            </div>
+            <!-- Simulator UI goes here -->
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        // Simple vanilla JS tab switcher
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.target.classList.add('active');
+    }
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik | ScriptwritingTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .task-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .pitch {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .panel pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-browser {
+            padding: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.75rem;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        .req { color: #f85149; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="bento-container">
+    <header class="task-header">
+        <div class="breadcrumbs" style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 1rem;">
+            Home > Tasks > Writing > ScriptwritingTask
+        </div>
+        <h1>ScriptwritingTask</h1>
+        <p class="pitch">
+            Generate production-ready scripts for videos, podcasts, and presentations with dialogue, timing, and production notes.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Multi-Phase Execution</span>
+            <span class="badge">Smart Model Preferred</span>
+        </div>
+    </header>
+
+    <section class="reality-check-grid">
+        <div class="panel">
+            <div class="panel-header">⚙️ ScriptwritingTaskExecutionConfigData</div>
+            <pre><code class="language-json">{
+  "topic": "The Future of AI in Coding",
+  "script_type": "video",
+  "target_duration_minutes": 3,
+  "tone": "engaging",
+  "pacing": "dynamic",
+  "revision_passes": 1
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <div class="panel">
+            <div class="panel-header">👁️ Session UI: Complete Script</div>
+            <div class="mock-browser">
+                <div style="border-left: 3px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1rem;">
+                    <div style="font-weight: bold; color: var(--accent-primary);">[00:00]</div>
+                    <div style="font-style: italic; color: var(--text-dim); margin: 0.25rem 0;">*Camera pans across a modern workspace with multiple monitors showing code.*</div>
+                    <div>"Software engineering is at a crossroads. It's not just about the tools we use, but how we think about the very act of creation."</div>
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem; color: #4ade80;">B-Roll: Close-up of AI-generated code snippets.</div>
                 </div>
-                <!-- Outputs -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <div class="tab active" onclick="switchTab('script')">Script</div>
-                        <div class="tab" onclick="switchTab('logs')">Logs</div>
-                    </div>
-                    <div id="output-script" class="tab-content active markdown-preview" style="white-space: pre-wrap;">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the script and click "Generate" to see the output.
-                        </div>
-                    </div>
-                    <div id="output-logs" class="tab-content" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
-                    </div>
+                <div style="border-left: 3px solid var(--border-subtle); padding-left: 1rem; opacity: 0.6;">
+                    <div style="font-weight: bold;">[00:15]</div>
+                    <div>"Enter the era of the AI-augmented developer..."</div>
                 </div>
             </div>
         </div>
     </section>
-    <!-- Use Cases -->
-    <section id="use-cases" class="use-cases">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="use-case-list">
-                <div class="use-case-item">
-                    <h4>Video Production</h4>
-                    <p>Create scripts for YouTube videos, tutorials, and explainer videos.</p>
+
+    <section class="task-details">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <div id="tab-docs" class="tab-pane">
+            <table class="docs-table">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>topic</code> <span class="req">*</span></td>
+                        <td>String</td>
+                        <td>The topic or subject of the script.</td>
+                    </tr>
+                    <tr>
+                        <td><code>script_type</code></td>
+                        <td>String</td>
+                        <td>Type of script (video, podcast, presentation). Default: "video".</td>
+                    </tr>
+                    <tr>
+                        <td><code>target_duration_minutes</code></td>
+                        <td>Int</td>
+                        <td>Target duration (1-180). Default: 5.</td>
+                    </tr>
+                    <tr>
+                        <td><code>tone</code></td>
+                        <td>String</td>
+                        <td>The tone (professional, engaging, etc.). Default: "professional".</td>
+                    </tr>
+                    <tr>
+                        <td><code>pacing</code></td>
+                        <td>String</td>
+                        <td>slow, moderate, fast, dynamic. Default: "moderate".</td>
+                    </tr>
+                    <tr>
+                        <td><code>revision_passes</code></td>
+                        <td>Int</td>
+                        <td>Number of refinement passes (0-5). Default: 1.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h3 style="font-size: 1rem; color: var(--accent-primary);">Lifecycle Phases</h3>
+                    <ul style="font-size: 0.9rem; line-height: 1.6; color: var(--text-dim);">
+                        <li><strong>Phase 1: Research & Outline</strong> - Analyzes topic and context to create a structured outline with sections and timing.</li>
+                        <li><strong>Phase 2: Segment Writing</strong> - Generates detailed dialogue, visual directions, and B-roll suggestions for each section.</li>
+                        <li><strong>Phase 3: Revision</strong> - Refines the full script for flow, rhythm, and tone consistency.</li>
+                        <li><strong>Phase 4: Final Assembly</strong> - Compiles the complete script with production notes and statistics.</li>
+                    </ul>
                 </div>
-                <div class="use-case-item">
-                    <h4>Podcasting</h4>
-                    <p>Draft episode outlines and full scripts for audio content.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Presentations</h4>
-                    <p>Write speaker notes and slide content for keynotes and webinars.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Advertising</h4>
-                    <p>Generate scripts for commercials and promotional videos.</p>
+                <div>
+                    <h3 style="font-size: 1rem; color: var(--accent-primary);">Output Components</h3>
+                    <ul style="font-size: 0.9rem; line-height: 1.6; color: var(--text-dim);">
+                        <li><strong>Complete Script:</strong> Full formatted text with timing markers.</li>
+                        <li><strong>Production Notes:</strong> B-roll requirements, graphics overlays, and speaker guidance.</li>
+                        <li><strong>Statistics:</strong> Duration accuracy, word count, and WPM analysis.</li>
+                    </ul>
                 </div>
             </div>
         </div>
+
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <pre style="background: #000; padding: 1rem; border-radius: 6px; font-size: 0.85rem;"><code class="language-kotlin">// Add to OrchestrationConfig
+tasks.add(ScriptwritingTask.ScriptwritingTaskExecutionConfigData(
+    topic = "Introduction to Cognotik",
+    script_type = "video",
+    target_duration_minutes = 2,
+    tone = "inspiring",
+    include_directions = true,
+    suggest_b_roll = true
+))</code></pre>
+        </div>
     </section>
-    <script>
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            if(tabName === 'script') document.getElementById('output-script').classList.add('active');
-            if(tabName === 'logs') document.getElementById('output-logs').classList.add('active');
-        }
-        function runSimulation() {
-            const topic = document.getElementById('topic').value;
-            const type = document.getElementById('script_type').value;
-            const duration = document.getElementById('duration').value;
-            const reportEl = document.getElementById('output-script');
-            const logsEl = document.getElementById('output-logs');
-            
-            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
-            logsEl.innerHTML = '';
-            
-            const logs = [
-                `[INFO] Initializing ScriptwritingTask...`,
-                `[INFO] Topic: ${topic}`,
-                `[INFO] Creating outline...`,
-                `[INFO] Writing dialogue...`,
-                `[INFO] Adding visual directions...`,
-                `[INFO] Calculating timing...`,
-                `[SUCCESS] Script generation complete.`
-            ];
-            
-            let logIndex = 0;
-            const logInterval = setInterval(() => {
-                if (logIndex < logs.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
-                    line.style.marginBottom = '4px';
-                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
-                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
-                    logsEl.appendChild(line);
-                    logsEl.scrollTop = logsEl.scrollHeight;
-                    logIndex++;
-                } else {
-                    clearInterval(logInterval);
-                    renderScript(topic);
-                }
-            }, 400);
-        }
-        function renderScript(topic) {
-            const reportEl = document.getElementById('output-script');
-            const markdown = `
-<h1>${topic}</h1>
+</main>
 
-<h2>Opening Hook</h2>
-<p><strong>[00:00]</strong><br>
-<em>(Visual: Fast-paced montage of futuristic technology, glowing circuits)</em><br>
-<strong>Host:</strong> Imagine a computer so powerful it could solve problems in seconds that would take today's supercomputers thousands of years. Sounds like science fiction? It's not. It's quantum computing.</p>
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-<h2>Section 1: The Bit vs. The Qubit</h2>
-<p><strong>[00:45]</strong><br>
-<em>(Visual: Split screen showing a classic bit (0 or 1) vs. a glowing, spinning qubit)</em><br>
-<strong>Host:</strong> Traditional computers use bits—think of them like light switches, either on or off. But quantum computers use qubits. Thanks to a property called superposition, a qubit can be both on and off at the same time.</p>
-
-<h2>Section 2: Why It Matters</h2>
-<p><strong>[02:15]</strong><br>
-<em>(Visual: B-roll of medical research labs and complex molecular structures)</em><br>
-<strong>Host:</strong> This allows quantum computers to process massive amounts of data simultaneously. This could revolutionize medicine by simulating molecular interactions to discover new drugs.</p>
-
-<h2>Closing</h2>
-<p><strong>[04:30]</strong><br>
-<em>(Visual: Host speaking directly to camera)</em><br>
-<strong>Host:</strong> We're just scratching the surface of what's possible. If you want to dive deeper into the physics behind this, check out the links in the description. Don't forget to like and subscribe for more tech deep dives!</p>
-            `;
-            reportEl.innerHTML = markdown;
-        }
-    </script>
 </body>
 </html>

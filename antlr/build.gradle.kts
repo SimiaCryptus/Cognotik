@@ -16,6 +16,13 @@ dependencies {
     antlr(libs.antlr.tool)
 }
 
+configurations.all {
+    resolutionStrategy {
+        force(libs.antlr.runtime)
+    }
+}
+
+
 tasks {
     generateGrammarSource {
         maxHeapSize = "64m"

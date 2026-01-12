@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.file.GenerateImageTask.GenerateImageTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.ImageGenerationTask.GenerateImageTaskExecutionConfigData
 import com.simiacryptus.cognotik.util.PlanHarness
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
@@ -15,13 +15,13 @@ object GenerateImageTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         TaskHarness(
-            taskType = GenerateImageTask.GenerateImage,
+            taskType = ImageGenerationTask.GenerateImage,
             typeConfig = TaskTypeConfig(
-                task_type = GenerateImageTask.GenerateImage.name
+                task_type = ImageGenerationTask.GenerateImage.name
             ),
             executionConfig = GenerateImageTaskExecutionConfigData(
                 files = listOf("test_output_image.png"),

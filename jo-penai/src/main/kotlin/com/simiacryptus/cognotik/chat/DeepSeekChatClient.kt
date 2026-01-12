@@ -6,16 +6,17 @@ import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
 class DeepSeekChatClient(
-    apiKey: String,
+    apiKey: SecureString,
     workPool: ExecutorService,
     apiBase: String = "https://api.deepseek.com",
-    logLevel: Level = Level.INFO,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     scheduledPool: ListeningScheduledExecutorService,
 ) : SingleProviderChatClient(
@@ -48,7 +49,7 @@ class DeepSeekChatClient(
         checkError(result)
         val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
         if (response.usage != null && model is ChatModel) {
-            onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
+            onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
         }
         return response
     }

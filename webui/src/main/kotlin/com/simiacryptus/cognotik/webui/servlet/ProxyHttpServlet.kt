@@ -59,7 +59,7 @@ open class ProxyHttpServlet(
         val asyncContext = req.startAsync()
         asyncContext.timeout = 0
         val requestKey = req.getHeaders("Authorization").nextElement().removePrefix("Bearer ")
-        val proxyKey = ApiKeyServlet.apiKeyRecords.find { it.apiKey == requestKey }
+        val proxyKey = ApiKeyServlet.apiKeyRecords.find { it.apiKey.decrypt == requestKey }
         val path = (req.servletPath ?: "").removePrefix("/")
         val proxyRequest = getProxyRequest(req)
         if (null != proxyKey) proxyRequest.addHeader("Authorization", "Bearer " + proxyKey.mappedKey)

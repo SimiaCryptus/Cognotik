@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.simiacryptus.cognotik.plan.tools.file.ImageDecompositionTask
 import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask
 import com.simiacryptus.cognotik.plan.tools.file.*
@@ -20,6 +21,7 @@ import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.run.SymbolsDbCodeTask
 import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
 import com.simiacryptus.cognotik.plan.tools.session.JdbcSessionTask
+import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
 import com.simiacryptus.cognotik.plan.tools.social.*
 import com.simiacryptus.cognotik.plan.tools.writing.*
 import com.simiacryptus.cognotik.util.DynamicEnum
@@ -76,6 +78,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(CounterfactualAnalysisTask.CounterfactualAnalysis)
             registerConstructor(CrawlerAgentTask.CrawlerAgent)
             registerConstructor(DataIngestTask.DataIngest)
+            registerConstructor(DataTableCompilationTask.DataTableCompilation)
             registerConstructor(DecisionTreeTask.DecisionTree)
             registerConstructor(DecompositionSynthesisTask.DecompositionSynthesis)
             registerConstructor(DialecticalReasoningTask.DialecticalReasoning)
@@ -92,14 +95,17 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(GameMechanicsDesignTask.GameMechanicsDesign)
             registerConstructor(GameNarrativeDesignTask.GameNarrativeDesign)
             registerConstructor(GameTheoryTask.GameTheory)
-            registerConstructor(GenerateImageTask.GenerateImage)
+            registerConstructor(ImageGenerationTask.GenerateImage)
             registerConstructor(GeneratePresentationTask.GeneratePresentation)
             registerConstructor(GenerateQRImageTask.GenerateQRImage)
             registerConstructor(GenerateSpriteSheetTask.GenerateSpriteSheet)
             registerConstructor(GeneticOptimizationTask.GeneticOptimization)
             registerConstructor(GitHubSearchTask.GitHubSearch)
             registerConstructor(IllustrateDocumentTask.IllustrateDocument)
+            registerConstructor(ImageDecompositionTask.ImageDecomposition)
+            registerConstructor(TiledImageGenerationTask.TiledImageGeneration)
             registerConstructor(ImageTableTask.ImageTable)
+            registerConstructor(ImageVariationTask.ImageVariation)
             registerConstructor(InteractiveStoryTask.InteractiveStory)
             registerConstructor(IsomorphismDiscoveryTask.IsomorphismDiscovery)
             registerConstructor(IterativeGraphGenerationTask.IterativeGraphGeneration)
@@ -125,6 +131,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(ResearchPaperGenerationTask.ResearchPaperGeneration)
             registerConstructor(RunCodeTask.RunCode)
             registerConstructor(RunToolTask.RunTool)
+            registerConstructor(SegmentedImageGenerationTask.SegmentedImageGeneration)
             registerConstructor(ScriptwritingTask.Scriptwriting)
             registerConstructor(SocraticDialogueTask.SocraticDialogue)
             registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument)
@@ -151,6 +158,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
         ) = getImpl(
             taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
             cfg = planTask)
+
 
         fun <T : TaskExecutionConfig, U : TaskTypeConfig> OrchestrationConfig.getImpl(
             taskType: TaskType<T,U>, cfg: TaskExecutionConfig? = null

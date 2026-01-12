@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.games
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -24,7 +23,6 @@ class GameLevelDesignTask(
     orchestrationConfig,
     planTask
 ) {
-    protected val codeFiles = mutableMapOf<Path, String>()
 
     class GameLevelDesignTaskExecutionConfigData(
         @Description("The name of the level")
@@ -331,8 +329,6 @@ class GameLevelDesignTask(
         return """
  GameLevelDesign - Generate complete game level designs with layout, pacing, and encounters
   ** Optionally, list input files (supports glob patterns) to be examined for context
-  ** Available files:
-  ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
   ** Specify level name and game type (platformer, shooter, puzzle, rpg, etc.)
   ** Set target duration and difficulty tier
   ** Configure player count (single or multiplayer)
@@ -431,7 +427,7 @@ class GameLevelDesignTask(
         try {
             // Gather context
             val priorContext = getPriorCode(agent.executionState)
-            val inputContext = getInputFileCode()
+            val inputContext = getInputFileContent(executionConfig?.input_files, root)
             val combinedContext = (if (inputContext.isNotBlank()) inputContext else "") +
                     (if (priorContext.isNotBlank()) "\n\n## Prior Context\n\n$priorContext" else "")
 
@@ -1434,32 +1430,6 @@ Ensure variants maintain the core level design while adjusting challenge.
         }
     }
 
-    private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
-        .flatMap { pattern: String ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            FileSelectionUtils.filteredWalk(root.toFile()) {
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    matcher.matches(root.relativize(it.toPath())) -> true
-                    it.isDirectory -> true
-                    else -> false
-                }
-            }
-        }.filter { file ->
-            file.isFile && file.exists()
-        }
-        .distinct()
-        .sortedBy { it }
-        .joinToString("\n\n") { relativePath ->
-            val file = root.toFile().resolve(relativePath)
-            try {
-                val content = codeFiles[file.toPath()] ?: file.readText()
-                "# $relativePath\n\n```\n$content\n```"
-            } catch (e: Throwable) {
-                log.warn("Error reading file: $relativePath", e)
-                ""
-            }
-        }
 
     // Additional data classes for player guidance
     data class PlayerGuidance(
@@ -1512,46 +1482,28 @@ Ensure variants maintain the core level design while adjusting challenge.
         private val log: Logger = LoggerFactory.getLogger(GameLevelDesignTask::class.java)
 
         val GameLevelDesign = TaskType(
-            "GameLevelDesign",
-            "Games",
-            GameLevelDesignTask::class.java,
-            GameLevelDesignTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate complete game level designs with layout, pacing, and encounters",
-            """
-              Generates production-ready game level designs with comprehensive documentation.
-              <ul>
-                <li>Creates detailed level layout with zones and connections</li>
-                <li>Designs encounters with appropriate difficulty progression</li>
-                <li>Analyzes and visualizes pacing curves</li>
-                <li>Places collectibles and secret areas strategically</li>
-                <li>Designs player guidance systems (implicit and explicit)</li>
-                <li>Generates difficulty variants for accessibility</li>
-                <li>Includes ASCII/text-based level visualization</li>
-                <li>Supports multiple game types (platformer, shooter, puzzle, RPG)</li>
-                <li>Configurable pacing styles (steady, escalating, varied)</li>
-                <li>Optional boss encounters, puzzles, and secrets</li>
-                <li>Ideal for game development, level design documentation, and prototyping</li>
-              </ul>
-            """,
+          name = "GameLevelDesign",
+          category = "Games",
+          taskClass = GameLevelDesignTask::class.java,
+          executionConfigClass = GameLevelDesignTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate complete game level designs with layout, pacing, and encounters",
+          tooltipHtml = """
+                        Generates production-ready game level designs with comprehensive documentation.
+                        <ul>
+                          <li>Creates detailed level layout with zones and connections</li>
+                          <li>Designs encounters with appropriate difficulty progression</li>
+                          <li>Analyzes and visualizes pacing curves</li>
+                          <li>Places collectibles and secret areas strategically</li>
+                          <li>Designs player guidance systems (implicit and explicit)</li>
+                          <li>Generates difficulty variants for accessibility</li>
+                          <li>Includes ASCII/text-based level visualization</li>
+                          <li>Supports multiple game types (platformer, shooter, puzzle, RPG)</li>
+                          <li>Configurable pacing styles (steady, escalating, varied)</li>
+                          <li>Optional boss encounters, puzzles, and secrets</li>
+                          <li>Ideal for game development, level design documentation, and prototyping</li>
+                        </ul>
+                      """,
         )
-
-        fun getAvailableFiles(
-            path: Path,
-            treatDocumentsAsText: Boolean = false,
-        ): List<String> {
-            return try {
-                listOf(
-                    FileSelectionUtils.filteredWalkAsciiTree(
-                        path.toFile(),
-                        20,
-                        treatDocumentsAsText = treatDocumentsAsText
-                    )
-                )
-            } catch (e: Exception) {
-                log.error("Error listing available files", e)
-                listOf("Error listing files: ${e.message}")
-            }
-        }
     }
 }

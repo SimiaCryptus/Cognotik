@@ -6,14 +6,12 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.UnifiedPlanApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
@@ -50,7 +48,6 @@ open class UnifiedPlanAction(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
                 temperature = AppSettingsState.instance.temperature.coerceIn(0.0, 1.0),
-                env = mapOf(),
                 workingDir = root.absolutePath,
             ),
         )
@@ -73,13 +70,10 @@ open class UnifiedPlanAction(
         progress: ProgressIndicator,
         orchestrationConfig: OrchestrationConfig
     ) {
-        progress.text = "Setting up session..."
         val session = Session.newGlobalID()
-        val root = File(orchestrationConfig.workingDir)
         progress.text = "Processing files..."
         setupChatSession(
             session,
-            root,
             orchestrationConfig.copy(
                 sessionId = session.sessionId
             )
@@ -88,7 +82,10 @@ open class UnifiedPlanAction(
         Thread {
             Thread.sleep(500)
             try {
-                val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                ).server.uri.resolve("/#$session")
                 log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {
@@ -131,10 +128,8 @@ open class UnifiedPlanAction(
 
     private fun setupChatSession(
         session: Session,
-        root: File,
         orchestrationConfig: OrchestrationConfig
     ) {
-        DataStorage.sessionPaths[session] = root
         val app = object : UnifiedPlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",

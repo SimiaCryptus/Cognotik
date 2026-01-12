@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathematical Reasoning - Cognotik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-bg {
+            background: linear-gradient(to bottom right, #eff6ff, #f5f3ff);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-gray-900">Cognotik</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/products" class="text-gray-600 hover:text-gray-900">Products</a>
+                    <a href="/documentation" class="text-gray-600 hover:text-gray-900">Docs</a>
+                    <a href="https://github.com/SimiaCryptus/Cognotik" class="text-gray-600 hover:text-gray-900"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-bg border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div class="lg:grid lg:grid-cols-12 lg:gap-8">
+                <div class="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
+                    <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mb-4">
+                        <i class="fas fa-square-root-alt mr-2"></i> Reasoning Agent
+                    </div>
+                    <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+                        <span class="block">Mathematical</span>
+                        <span class="block gradient-text">Reasoning</span>
+                    </h1>
+                    <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                        Solve mathematical problems through step-by-step logical reasoning with verifiable steps. Generates formal proofs with MathJax notation.
+                    </p>
+                    <div class="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
+                        <a href="#configuration" class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out">
+                            Try it Now
+                        </a>
+                        <a href="#how-it-works" class="mt-3 sm:mt-0 sm:ml-3 inline-flex items-center justify-center px-5 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:text-gray-500 transition duration-150 ease-in-out">
+                            Learn More
+                        </a>
+                    </div>
+                </div>
+                <div class="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
+                    <div class="bg-white rounded-lg shadow-xl overflow-hidden w-full border border-gray-200">
+                        <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center">
+                            <div class="flex space-x-1 mr-4">
+                                <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                            </div>
+                            <span class="text-xs text-gray-500 font-mono">Output Preview</span>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="font-mono text-sm text-gray-600">
+                                <p class="font-bold text-gray-800 mb-2">Goal: Solve for x</p>
+                                <div class="pl-4 border-l-2 border-blue-200">
+                                    <p>$$ 2x^2 + 5x - 3 = 0 $$</p>
+                                    <p class="text-xs text-gray-400 mt-1">Step 1: Factor the quadratic equation</p>
+                                </div>
+                                <div class="pl-4 border-l-2 border-blue-200 mt-2">
+                                    <p>$$ (2x - 1)(x + 3) = 0 $$</p>
+                                    <p class="text-xs text-gray-400 mt-1">Step 2: Apply zero product property</p>
+                                </div>
+                                <div class="pl-4 border-l-2 border-green-400 bg-green-50 mt-2 p-2 rounded">
+                                    <p>$$ x = \frac{1}{2}, x = -3 $$</p>
+                                    <p class="text-xs text-green-600 mt-1"><strong>Solution Found</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div id="how-it-works" class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center">
+                <h2 class="text-base text-blue-600 font-semibold tracking-wide uppercase">Capabilities</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Rigorous Mathematical Proofs
+                </p>
+                <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                    Uses path search to solve mathematical problems through rigorous step-by-step reasoning.
+                </p>
+            </div>
+
+            <div class="mt-10">
+                <dl class="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
+                                <i class="fas fa-project-diagram"></i>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Path Search & Backtracking</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Explores multiple solution paths when needed and backtracks when encountering dead ends to find the optimal solution.
+                        </dd>
+                    </div>
+
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
+                                <i class="fas fa-check-double"></i>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Atomic Verification</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Breaks down complex problems into verifiable atomic steps. Each step includes justification and is validated for correctness.
+                        </dd>
+                    </div>
+
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
+                                <i class="fas fa-superscript"></i>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">MathJax / LaTeX Support</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Generates human-readable mathematical proofs with full LaTeX rendering support for complex notation.
+                        </dd>
+                    </div>
+
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Multi-Domain Support</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Capable of handling problems in algebra, calculus, number theory, geometry, linear algebra, and more.
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Section -->
+    <div id="configuration" class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Task Configuration
+                    </h3>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                        Parameters for the <code>MathematicalReasoning</code> task type.
+                    </p>
+                </div>
+                <div class="border-t border-gray-200">
+                    <dl>
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">problem_statement</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-2">Required</span>
+                                The mathematical problem or theorem to solve/prove.
+                            </dd>
+                        </div>
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">goal</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                The goal or target result (e.g., 'prove equality', 'find x', 'simplify expression').
+                            </dd>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">domain</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                Mathematical domain (e.g., 'algebra', 'calculus', 'number_theory'). Default: <code>general</code>.
+                            </dd>
+                        </div>
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">given_information</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                List of known facts, axioms, or given information.
+                            </dd>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">max_depth</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                Maximum depth of reasoning steps (1-100). Default: <code>20</code>.
+                            </dd>
+                        </div>
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">max_alternatives</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                Maximum number of alternative paths to explore (1-10). Default: <code>3</code>.
+                            </dd>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">detail_level</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                Level of detail in explanations ('brief', 'standard', 'detailed'). Default: <code>standard</code>.
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Example Usage -->
+    <div class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-extrabold text-gray-900 mb-8">Example Usage</h2>
+            <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                <div class="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-700">
+                    <span class="text-gray-400 text-sm font-mono">JSON Configuration</span>
+                    <button class="text-gray-400 hover:text-white"><i class="far fa-copy"></i></button>
+                </div>
+                <div class="p-4 overflow-x-auto">
+<pre class="text-green-400 font-mono text-sm"><code>{
+  "type": "MathematicalReasoning",
+  "data": {
+    "problem_statement": "Prove that for all integers n, if n^2 is even, then n is even.",
+    "goal": "Prove the statement by contrapositive",
+    "domain": "number_theory",
+    "detail_level": "detailed",
+    "max_depth": 15
+  }
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-base text-gray-400">
+                &copy; 2024 Cognotik. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>

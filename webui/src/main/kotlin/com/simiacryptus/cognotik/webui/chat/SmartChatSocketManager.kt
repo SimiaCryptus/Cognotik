@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.chat
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -111,12 +111,12 @@ open class SmartChatSocketManager(
                     choice.message?.image_data?.let {
                         val imageMimeType = choice.message?.image_mime_type ?: "image/png"
                         val (link, file) = task.createFile(
-                            java.util.UUID.randomUUID().toString() + when (imageMimeType) {
-                                "image/png" -> ".png"
-                                "image/jpeg", "image/jpg" -> ".jpg"
-                                "image/gif" -> ".gif"
-                                else -> ".img"
-                            }
+                          java.util.UUID.randomUUID().toString() + when (imageMimeType) {
+                              "image/png" -> ".png"
+                              "image/jpeg", "image/jpg" -> ".jpg"
+                              "image/gif" -> ".gif"
+                              else -> ".img"
+                          }
                         )
                         file?.writeBytes(it)
                         val imageLink =

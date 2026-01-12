@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getDocumentReader
@@ -34,25 +34,25 @@ class LateralThinkingTask(
         private val log: Logger = LoggerFactory.getLogger(LateralThinkingTask::class.java)
 
         val LateralThinking = TaskType(
-            "LateralThinking",
-            "Reasoning",
-            LateralThinkingTask::class.java,
-            LateralThinkingTaskExecutionConfigData::class.java,
-            LateralThinkingTaskTypeConfig::class.java,
-            "Break conventional thinking patterns to find innovative solutions",
-            """
-              Applies lateral thinking techniques to generate unconventional solutions.
-              <ul>
-                <li>Supports multiple techniques: reversal, random stimulus, challenge assumptions, exaggeration, escape, metaphor, provocation</li>
-                <li>Generates multiple alternatives per technique</li>
-                <li>Identifies breakthrough aspects and novel perspectives</li>
-                <li>Evaluates novelty and feasibility of ideas</li>
-                <li>Synthesizes insights across techniques</li>
-                <li>Optionally performs detailed feasibility evaluation</li>
-                <li>Suggests hybrid approaches combining multiple ideas</li>
-                <li>Ideal for innovation, breaking design impasses, and creative problem-solving</li>
-              </ul>
-            """,
+          name = "LateralThinking",
+          category = "Reasoning",
+          taskClass = LateralThinkingTask::class.java,
+          executionConfigClass = LateralThinkingTaskExecutionConfigData::class.java,
+          taskSettingsClass = LateralThinkingTaskTypeConfig::class.java,
+          description = "Break conventional thinking patterns to find innovative solutions",
+          tooltipHtml = """
+                        Applies lateral thinking techniques to generate unconventional solutions.
+                        <ul>
+                          <li>Supports multiple techniques: reversal, random stimulus, challenge assumptions, exaggeration, escape, metaphor, provocation</li>
+                          <li>Generates multiple alternatives per technique</li>
+                          <li>Identifies breakthrough aspects and novel perspectives</li>
+                          <li>Evaluates novelty and feasibility of ideas</li>
+                          <li>Synthesizes insights across techniques</li>
+                          <li>Optionally performs detailed feasibility evaluation</li>
+                          <li>Suggests hybrid approaches combining multiple ideas</li>
+                          <li>Ideal for innovation, breaking design impasses, and creative problem-solving</li>
+                        </ul>
+                      """,
         )
     }
 

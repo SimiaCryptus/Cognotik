@@ -1,0 +1,31 @@
+[ {
+  "id" : "autofix",
+  "label" : "Auto Fix",
+  "url" : "AutoFixTask.html",
+  "description" : "Run a command and automatically fix any issues that arise\n\n\n                    Executes a command and automatically fixes any issues that arise.\n                    <ul>\n                      <li>Specify commands and working directories</li>\n                      <li>Supports multiple commands and directories</li>\n                      <li>Interactive approval mode</li>\n                      <li>Output diff formatting</li>\n                    </ul>\n                  \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/AutoFixTask.kt"
+}, {
+  "id" : "runcode",
+  "label" : "Run Code",
+  "url" : "RunCodeTask.html",
+  "description" : "Execute code snippets with oversight\n\n\n                    Executes code snippets in an interactive environment.\n                    <ul>\n                      <li>User-approved code execution</li>\n                      <li>Working directory configuration</li>\n                      <li>Output capture and formatting</li>\n                      <li>Error handling and reporting</li>\n                      <li>Interactive result review</li>\n                    </ul>\n                  \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/RunCodeTask.kt"
+}, {
+  "id" : "runtool",
+  "label" : "Run Tool",
+  "url" : "RunToolTask.html",
+  "description" : "Execute external tools\n\n\n                    Executes configured external tools.\n                  \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/RunToolTask.kt"
+}, {
+  "id" : "subplan",
+  "label" : "Sub Plan",
+  "url" : "SubPlanTask.html",
+  "description" : "Create and execute sub-plans using recursive planning\n\n\n                       Enables recursive planning and execution with configurable cognitive modes.\n                       <ul>\n                         <li>Create sub-plans with different cognitive strategies</li>\n                         <li>Support for multiple recursion levels</li>\n                         <li>Context propagation to sub-plans</li>\n                         <li>Configurable recursion depth limits</li>\n                         <li>Automatic result aggregation and summarization</li>\n                         <li>Flexible cognitive mode selection per sub-plan</li>\n                         <li>Useful for complex multi-stage problems</li>\n                       </ul>\n                     \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/SubPlanTask.kt"
+}, {
+  "id" : "symbolsdbcodetask",
+  "label" : "Symbols Db Code Task",
+  "url" : "SymbolsDbCodeTask.html",
+  "description" : "Execute code snippets with predefined symbols\n\n\n                      Executes code snippets in an interactive environment with access to a symbol graph.\n                      <ul>\n                        <li>Access to `symbols_db` (SymbolGraphService)</li>\n                        <li>Query code symbols and relationships</li>\n                        <li>User-approved code execution</li>\n                        <li>Interactive result review</li>\n                      </ul>\n                    \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/SymbolsDbCodeTask.kt"
+} ]

@@ -64,22 +64,23 @@ FileSearch - Search for patterns in files and provide results with context
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+        renderTaskHeader(task)
         val searchResults = performSearch()
         val formattedResults = formatSearchResults(searchResults)
         val transcript = task.transcript()
         transcript?.write(formattedResults.toByteArray())
         transcript?.close()
 
-        task.header("Search Results")
         if (searchResults.isEmpty()) {
             task.add("No matches found.")
         } else {
             val totalMatches = searchResults.sumOf { it.matches.size }
             val filesWithMatches = searchResults.distinctBy { it.file }.size
-            task.add("Found $totalMatches match(es) in $filesWithMatches file(s).")
+            val summaryText = "Found $totalMatches match(es) in $filesWithMatches file(s)."
+            task.add(summaryText)
 
             val tabs = TabbedDisplay(task)
-            tabs["All Results"] = MarkdownUtil.renderMarkdown(formattedResults, ui = task.ui)
+            tabs["Summary"] = MarkdownUtil.renderMarkdown("# Search Summary\n\n$summaryText\n\n$formattedResults", ui = task.ui)
 
             val files = searchResults.groupBy { it.file }
             if (files.size <= 20) {
@@ -123,12 +124,11 @@ FileSearch - Search for patterns in files and provide results with context
     )
 
     private fun performSearch(): List<DisplayBlock> {
-        val currentConfig = executionConfig
+        val currentConfig = executionConfig ?: return emptyList()
         if (currentConfig == null) {
             log.warn("FileSearchTask taskConfig is null. Cannot perform search.")
             return emptyList()
         }
-
         val pattern = if (currentConfig.is_regex) {
             Pattern.compile(currentConfig.search_pattern)
         } else {
@@ -357,22 +357,22 @@ FileSearch - Search for patterns in files and provide results with context
         private val log = LoggerFactory.getLogger(FileSearchTask::class.java)
 
         val FileSearch = TaskType(
-            "FileSearch",
-            "File",
-            FileSearchTask::class.java,
-            SearchTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Search project files using patterns with contextual results",
-            """
-                      Performs pattern-based searches across project files with context.
-                      <ul>
-                        <li>Supports both substring and regex search patterns</li>
-                        <li>Shows configurable context lines around matches</li>
-                        <li>Groups results by file with line numbers</li>
-                        <li>Filters for text-based files automatically</li>
-                        <li>Provides organized, readable output format</li>
-                      </ul>
-                    """,
+          name = "FileSearch",
+          category = "File",
+          taskClass = FileSearchTask::class.java,
+          executionConfigClass = SearchTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Search project files using patterns with contextual results",
+          tooltipHtml = """
+                                Performs pattern-based searches across project files with context.
+                                <ul>
+                                  <li>Supports both substring and regex search patterns</li>
+                                  <li>Shows configurable context lines around matches</li>
+                                  <li>Groups results by file with line numbers</li>
+                                  <li>Filters for text-based files automatically</li>
+                                  <li>Provides organized, readable output format</li>
+                                </ul>
+                              """,
         )
     }
 }

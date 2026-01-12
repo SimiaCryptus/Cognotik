@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -358,22 +357,22 @@ class LanguageServerTask(
     companion object {
         private val log = LoggerFactory.getLogger(LanguageServerTask::class.java)
         val LanguageServer = TaskType(
-            "LanguageServer",
-            "File",
-            LanguageServerTask::class.java,
-            LanguageServerTaskExecutionConfigData::class.java,
-            LanguageServerTaskTypeConfig::class.java,
-            "Interact with Language Servers (LSP)",
-            """
-                Provides code intelligence capabilities via the Language Server Protocol.
-                <ul>
-                    <li><b>Definition:</b> Locate where a symbol is defined.</li>
-                    <li><b>References:</b> Find all usages of a symbol.</li>
-                    <li><b>Diagnostics:</b> Check files for syntax errors and warnings.</li>
-                    <li><b>Hover:</b> Get documentation or type information at a specific position.</li>
-                </ul>
-                Requires language servers (e.g., pylsp, typescript-language-server) to be installed in the environment.
-            """.trimIndent(),
+          name = "LanguageServer",
+          category = "File",
+          taskClass = LanguageServerTask::class.java,
+          executionConfigClass = LanguageServerTaskExecutionConfigData::class.java,
+          taskSettingsClass = LanguageServerTaskTypeConfig::class.java,
+          description = "Interact with Language Servers (LSP)",
+          tooltipHtml = """
+                          Provides code intelligence capabilities via the Language Server Protocol.
+                          <ul>
+                              <li><b>Definition:</b> Locate where a symbol is defined.</li>
+                              <li><b>References:</b> Find all usages of a symbol.</li>
+                              <li><b>Diagnostics:</b> Check files for syntax errors and warnings.</li>
+                              <li><b>Hover:</b> Get documentation or type information at a specific position.</li>
+                          </ul>
+                          Requires language servers (e.g., pylsp, typescript-language-server) to be installed in the environment.
+                      """.trimIndent(),
         )
     }
 }

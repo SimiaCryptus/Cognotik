@@ -16,7 +16,7 @@ object PoliticalOptimizationTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+    //@org.junit.jupiter.api.Test
     @Timeout(15, unit = TimeUnit.MINUTES)
     fun test() {
         TaskHarness(

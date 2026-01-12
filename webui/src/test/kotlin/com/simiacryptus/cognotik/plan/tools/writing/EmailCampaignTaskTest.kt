@@ -16,7 +16,7 @@ object EmailCampaignTaskTest {
         PlanHarness.configurePlatform()
     }
 
-   //@Test
+   //@org.junit.jupiter.api.Test
     @Timeout(15, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         val harness = TaskHarness(
@@ -47,7 +47,7 @@ object EmailCampaignTaskTest {
         )
 
         // Seed input data for the task to process
-        val workingDir = harness.workspace
+        val workingDir = harness.dataDir
         workingDir.mkdirs()
         File(workingDir, "brand_guidelines.md").writeText("""
             # Cognotik Brand Guidelines

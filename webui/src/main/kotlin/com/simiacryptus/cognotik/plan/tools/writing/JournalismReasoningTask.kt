@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
@@ -31,26 +31,26 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     companion object {
         private val log: Logger = LoggerFactory.getLogger(JournalismReasoningTask::class.java)
         val JournalismReasoning = TaskType(
-            "JournalismReasoning",
-            "Writing",
-            JournalismReasoningTask::class.java,
-            JournalismReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Investigate stories through journalistic principles and methods",
-            """
-              Analyzes stories using professional journalism standards and practices.
-              <ul>
-                <li>Verifies facts and checks claims against evidence</li>
-                <li>Identifies multiple perspectives and source credibility</li>
-                <li>Analyzes context, background, and broader implications</li>
-                <li>Detects potential biases and conflicts of interest</li>
-                <li>Finds information gaps and unanswered questions</li>
-                <li>Explores alternative story angles and approaches</li>
-                <li>Assesses newsworthiness and public interest</li>
-                <li>Useful for investigative reporting, fact-checking, editorial planning</li>
-                <li>Generates structured journalistic analysis with verified facts</li>
-              </ul>
-            """,
+          name = "JournalismReasoning",
+          category = "Writing",
+          taskClass = JournalismReasoningTask::class.java,
+          executionConfigClass = JournalismReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Investigate stories through journalistic principles and methods",
+          tooltipHtml = """
+                        Analyzes stories using professional journalism standards and practices.
+                        <ul>
+                          <li>Verifies facts and checks claims against evidence</li>
+                          <li>Identifies multiple perspectives and source credibility</li>
+                          <li>Analyzes context, background, and broader implications</li>
+                          <li>Detects potential biases and conflicts of interest</li>
+                          <li>Finds information gaps and unanswered questions</li>
+                          <li>Explores alternative story angles and approaches</li>
+                          <li>Assesses newsworthiness and public interest</li>
+                          <li>Useful for investigative reporting, fact-checking, editorial planning</li>
+                          <li>Generates structured journalistic analysis with verified facts</li>
+                        </ul>
+                      """,
         )
     }
 
@@ -248,7 +248,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
         val startTime = System.currentTimeMillis()
         log.info("Starting JournalismReasoningTask for story: '${executionConfig?.story_topic}'")
         // Initialize detailed output file
-        val transcriptStream = transcript(task)
+        val transcriptStream = task.transcript()
         val transcript = transcriptStream?.bufferedWriter()
         transcript?.let { writer ->
 
@@ -466,12 +466,11 @@ Apply rigorous journalistic standards. Be skeptical but fair.
 
                     resultBuilder.append("## Key Facts\n")
                     factChecks.take(3).forEach { fact ->
-                        resultBuilder.append("\n")
-                        "- ${fact.verification_status.uppercase()}: ${
+                        resultBuilder.append("- ${fact.verification_status.uppercase()}: ${
                             fact.claim.truncateForDisplay(
                                 maxDescriptionLength
                             )
-                        }\n"
+                        }\n")
                     }
                     resultBuilder.append("\n")
 
@@ -573,12 +572,11 @@ Ensure balanced representation of different viewpoints.
 
                     resultBuilder.append("## Key Perspectives\n")
                     perspectives.take(3).forEach { source ->
-                        resultBuilder.append("\n")
-                        "- **${source.source_name}** (${source.role}): ${
+                        resultBuilder.append("- **${source.source_name}** (${source.role}): ${
                             source.perspective.truncateForDisplay(
                                 maxDescriptionLength
                             )
-                        }\n"
+                        }\n")
 
                     }
                     resultBuilder.append("\n")
@@ -879,12 +877,11 @@ Consider angles that:
 
                     resultBuilder.append("## Story Angles\n")
                     angles.sortedByDescending { it.newsworthiness_score }.take(2).forEach { angle ->
-                        resultBuilder.append("\n")
-                        "- **${angle.angle_title}**: ${
+                        resultBuilder.append("- **${angle.angle_title}**: ${
                             angle.focus.truncateForDisplay(
                                 maxDescriptionLength
                             )
-                        }\n"
+                        }\n")
 
                     }
                     resultBuilder.append("\n")

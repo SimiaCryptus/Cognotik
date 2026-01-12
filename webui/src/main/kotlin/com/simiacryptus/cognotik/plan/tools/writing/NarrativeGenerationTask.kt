@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
@@ -226,7 +226,8 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
         }
         log.debug("Configuration validated - Acts: ${genConfig.number_of_acts}, Scenes/Act: ${genConfig.scenes_per_act}, Style: ${genConfig.writing_style}")
 
-        val api = defaultSmart.getChildClient(task)
+        val smartApi = defaultSmart.getChildClient(task)
+        val fastApi = defaultFast.getChildClient(task)
 
         val tabs = TabbedDisplay(task)
         // Get input file context
@@ -312,7 +313,6 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
             val totalScenes = genConfig.number_of_acts * genConfig.scenes_per_act
             val wordsPerScene = genConfig.target_word_count / totalScenes
 
-            val parsingChatter = defaultFast.getChildClient(task)
             // Generate cover image first if enabled (to use as seed for other images)
             var coverImagePath: String? = null
             if (genConfig.generate_cover_image || genConfig.generate_scene_images) {
@@ -396,9 +396,9 @@ Ensure the structure:
 - Builds tension and stakes progressively
 - Matches the ${genConfig.tone} tone and ${genConfig.writing_style} style
           """.trimIndent(),
-                model = api,
+                model = smartApi,
                 temperature = 0.7,
-                parsingChatter = parsingChatter
+                parsingChatter = fastApi
             )
 
             val highLevelOutline = try {
@@ -504,9 +504,9 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
 - Appropriate setting_id from defined settings
 - Characters present from defined characters
           """.trimIndent(),
-                    model = api,
+                    model = smartApi,
                     temperature = 0.7,
-                    parsingChatter = parsingChatter
+                    parsingChatter = fastApi
                 )
                 try {
                     val expandedAct = sceneExpansionAgent.answer(listOf("Expand act into scenes")).obj
@@ -725,9 +725,9 @@ After writing, provide:
 
 Make the writing engaging, immersive, and true to the characters and story.
           """.trimIndent(),
-                    model = api,
+                    model = smartApi,
                     temperature = 0.8,
-                    parsingChatter = parsingChatter
+                    parsingChatter = fastApi
                 )
 
                 var generatedScene = sceneAgent.answer(listOf("Write the scene")).obj
@@ -764,7 +764,7 @@ Maintain:
 
 Provide the revised scene content only.
               """.trimIndent(),
-                            model = api,
+                            model = smartApi,
                             temperature = 0.7
                         )
 
@@ -1290,7 +1290,7 @@ Provide the revised scene content only.
             )
             // Extract key visual elements from scene
             val scenePrompt = buildString {
-                append("Scene: $sceneTitle. ")
+                append("Scene: $sceneTitle. Act $actNumber, Scene $sceneNumber. ")
                 append("Setting: $setting. ")
                 // Take first 500 chars of scene content for context
                 append(sceneContent)
@@ -1382,26 +1382,26 @@ Provide the revised scene content only.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(NarrativeGenerationTask::class.java)
         val NarrativeGeneration = TaskType(
-            "NarrativeGeneration",
-            "Writing",
-            NarrativeGenerationTask::class.java,
-            NarrativeGenerationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate complete narratives from analysis and outlines",
-            """
-              Extends NarrativeReasoning to generate complete, publication-ready narratives.
-              <ul>
-                <li>Performs comprehensive narrative analysis (inherited from NarrativeReasoning)</li>
-                <li>Creates detailed scene-by-scene outline based on analysis</li>
-                <li>Generates each scene iteratively with full context</li>
-                <li>Maintains consistency by feeding previous scenes into each generation</li>
-                <li>Supports configurable structure (acts, scenes, word count)</li>
-                <li>Customizable writing style, POV, tone, and narrative elements</li>
-                <li>Optional revision passes for quality improvement</li>
-                <li>Produces complete, coherent narrative with consistent style and voice</li>
-                <li>Ideal for story generation, scenario planning, user journey narratives</li>
-              </ul>
-            """,
+          name = "NarrativeGeneration",
+          category = "Writing",
+          taskClass = NarrativeGenerationTask::class.java,
+          executionConfigClass = NarrativeGenerationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate complete narratives from analysis and outlines",
+          tooltipHtml = """
+                        Extends NarrativeReasoning to generate complete, publication-ready narratives.
+                        <ul>
+                          <li>Performs comprehensive narrative analysis (inherited from NarrativeReasoning)</li>
+                          <li>Creates detailed scene-by-scene outline based on analysis</li>
+                          <li>Generates each scene iteratively with full context</li>
+                          <li>Maintains consistency by feeding previous scenes into each generation</li>
+                          <li>Supports configurable structure (acts, scenes, word count)</li>
+                          <li>Customizable writing style, POV, tone, and narrative elements</li>
+                          <li>Optional revision passes for quality improvement</li>
+                          <li>Produces complete, coherent narrative with consistent style and voice</li>
+                          <li>Ideal for story generation, scenario planning, user journey narratives</li>
+                        </ul>
+                      """,
         )
     }
 }

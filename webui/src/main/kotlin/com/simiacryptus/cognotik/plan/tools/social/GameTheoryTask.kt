@@ -29,26 +29,26 @@ class GameTheoryTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)
         val GameTheory = TaskType(
-            "GameTheory",
-            "Reasoning",
-            GameTheoryTask::class.java,
-            GameTheoryTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Analyze strategic interactions using game theory",
-            """
-              Performs comprehensive game theory analysis of strategic situations.
-              <ul>
-                <li>Analyzes game structure and player strategies</li>
-                <li>Constructs payoff matrices for strategy combinations</li>
-                <li>Identifies Nash equilibria (pure and mixed strategies)</li>
-                <li>Analyzes dominant and dominated strategies</li>
-                <li>Finds Pareto optimal outcomes</li>
-                <li>Supports repeated game analysis with trigger strategies</li>
-                <li>Provides strategic recommendations for each player</li>
-                <li>Handles cooperative, non-cooperative, zero-sum, and sequential games</li>
-                <li>Useful for competitive analysis, negotiation, and strategic planning</li>
-              </ul>
-            """,
+          name = "GameTheory",
+          category = "Reasoning",
+          taskClass = GameTheoryTask::class.java,
+          executionConfigClass = GameTheoryTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Analyze strategic interactions using game theory",
+          tooltipHtml = """
+                        Performs comprehensive game theory analysis of strategic situations.
+                        <ul>
+                          <li>Analyzes game structure and player strategies</li>
+                          <li>Constructs payoff matrices for strategy combinations</li>
+                          <li>Identifies Nash equilibria (pure and mixed strategies)</li>
+                          <li>Analyzes dominant and dominated strategies</li>
+                          <li>Finds Pareto optimal outcomes</li>
+                          <li>Supports repeated game analysis with trigger strategies</li>
+                          <li>Provides strategic recommendations for each player</li>
+                          <li>Handles cooperative, non-cooperative, zero-sum, and sequential games</li>
+                          <li>Useful for competitive analysis, negotiation, and strategic planning</li>
+                        </ul>
+                      """,
         )
         private val textExtensions = setOf(
             "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs",
@@ -96,31 +96,31 @@ class GameTheoryTask(
 
     class GameTheoryTaskExecutionConfigData(
         @Description("The strategic situation or game to analyze")
-        val game_scenario: String? = null,
+        var game_scenario: String? = null,
         @Description("List of players/agents in the game")
-        val players: List<String>? = null,
+        var players: List<String>? = null,
         @Description("Available strategies for each player (optional, can be inferred)")
-        val player_strategies: Map<String, List<String>>? = null,
+        var player_strategies: Map<String, List<String>>? = null,
         @Description("Type of game: cooperative, non-cooperative, zero-sum, repeated, sequential")
-        val game_type: String? = "non-cooperative",
+        var game_type: String? = "non-cooperative",
         @Description("Whether to construct a payoff matrix")
-        val build_payoff_matrix: Boolean = true,
+        var build_payoff_matrix: Boolean = true,
         @Description("Whether to identify Nash equilibria")
-        val find_nash_equilibria: Boolean = true,
+        var find_nash_equilibria: Boolean = true,
         @Description("Whether to analyze dominant strategies")
-        val analyze_dominant_strategies: Boolean = true,
+        var analyze_dominant_strategies: Boolean = true,
         @Description("Whether to identify Pareto optimal outcomes")
-        val find_pareto_optimal: Boolean = true,
+        var find_pareto_optimal: Boolean = true,
         @Description("Whether to provide strategic recommendations for each player")
-        val provide_recommendations: Boolean = true,
+        var provide_recommendations: Boolean = true,
         @Description("Whether to analyze the game as a repeated game")
-        val repeated_game_analysis: Boolean = false,
+        var repeated_game_analysis: Boolean = false,
         @Description("Number of iterations for repeated game analysis")
-        val iterations: Int = 10,
+        var iterations: Int = 10,
         @Description("Additional context or constraints")
-        val additional_context: String? = null,
+        var additional_context: String? = null,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -137,13 +137,13 @@ class GameTheoryTask(
             if (players.isNullOrEmpty()) {
                 return "players list must not be null or empty"
             }
-            if (players.any { it.isBlank() }) {
+            if (players?.any { it.isBlank() } == true) {
                 return "players list must not contain blank entries"
             }
             if (game_type.isNullOrBlank()) {
                 return "game_type must not be null or blank"
             }
-            if (game_type.isBlank()) {
+            if (game_type?.isBlank() != false) {
                 return "game_type must not be blank"
             }
             if (iterations < 1) {
@@ -207,7 +207,7 @@ GameTheory - Analyze strategic interactions using game theory
 
         val ui = task.ui
         val api = defaultSmart ?: return
-        val transcript = transcript(task)
+        val transcript = task.transcript()
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)
         // Overview tab
@@ -927,7 +927,7 @@ Provide this in a clear, structured format.
             """
             |## Known Strategies:
             |${
-                executionConfig.player_strategies.entries.joinToString("\n") { (player, strategies) ->
+                executionConfig.player_strategies?.entries?.joinToString("\n") { (player, strategies) ->
                     "- **$player**: ${strategies.joinToString(", ")}"
                 }
             }

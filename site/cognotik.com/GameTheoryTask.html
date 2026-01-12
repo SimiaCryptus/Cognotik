@@ -1,973 +1,452 @@
-<!-- 
-IMAGE PROMPT DESCRIPTION:
-Abstract 3D visualization of strategic game theory. Glowing geometric nodes representing agents (players) are connected by tension lines forming a complex network graph. In the background, translucent floating planes display mathematical payoff matrices and probability curves. The lighting is dramatic, using deep slate blues (#0f172a) as the void, with neon purple (#a855f7) and cyan (#06b6d4) highlights indicating optimal paths and equilibrium points. Cinematic, high-tech, data-driven aesthetic.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Theory Analyst | Cognotik</title>
-    <meta name="description" content="Analyze strategic interactions, identify Nash equilibria, and optimize decision-making with Cognotik's Game Theory task.">
-    
-    <!-- Fonts -->
+    <title>Cognotik | GameTheoryTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code, Cinzel for Titles -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
     <style>
-            
-            
-            
-            
-            
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-sans: 'Inter', sans-serif;
+            --font-serif: 'Cinzel', serif;
+        }
 
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            margin: 0;
+            line-height: 1.6;
+        }
 
-
-
-        /* Custom styles for Game Theory Task not covered by main.css */
-        .container {
+        .bento-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-
-
-
-
-
-
-
-        .hero {
-            position: relative;
-            min-height: 80vh;
-            display: flex;
-            align-items: center;
-
-            justify-content: center;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 2;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-
-
-
-
-        .hero-visual {
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 50%;
-            height: 80%;
-            opacity: 0.3;
-            pointer-events: none;
-            z-index: 1;
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        /* Toggle Switch */
-
-        .toggle-group {
+            padding: 2rem;
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
-            margin-top: 1rem;
+            gap: 2rem;
         }
 
-        .toggle-item {
+        /* Section A: Header */
+        .task-header {
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 1.5rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-family: var(--font-serif);
+            font-size: 2.8rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 850px;
+            margin-bottom: 1.2rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .badge {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            text-transform: uppercase;
+        }
+
+        /* Section B: Reality Check */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            font-size: 0.9rem;
+            gap: 0.6rem;
         }
 
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 40px;
-            height: 20px;
-        }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: var(--border-color);
-            transition: .4s;
-            border-radius: 20px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 14px;
-            width: 14px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider { background-color: var(--accent-color); }
-        input:checked + .slider:before { transform: translateX(20px); }
-
-
-
-
-
-
-
-
-
-        /* Output Styling */
-        .log-terminal {
+        pre {
+            margin: 0;
+            padding: 1.2rem;
             font-family: var(--font-mono);
             font-size: 0.85rem;
-            color: #a5b4fc;
+            overflow-x: auto;
+            color: #d1d5db;
+            background: #0d1117;
+            flex-grow: 1;
         }
-        .log-entry { margin-bottom: 0.5rem; border-left: 2px solid transparent; padding-left: 0.5rem; }
-        .log-entry.info { border-color: var(--accent-secondary); }
-        .log-entry.success { border-color: #4ade80; color: #86efac; }
-        .log-entry.error { border-color: #f87171; color: #fca5a5; }
-        /* Payoff Table */
 
-        .payoff-table {
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.8rem;
+        }
+
+        /* Mock UI Styles */
+        .mock-browser {
+            padding: 1.2rem;
+            background: var(--bg-panel);
+            flex-grow: 1;
+        }
+
+        .ui-tab-strip {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+            padding-bottom: 4px;
+        }
+
+        .ui-tab {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            padding: 2px 6px;
+            border: 1px solid transparent;
+            cursor: default;
+        }
+
+        .ui-tab.active {
+            color: var(--accent-primary);
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-app);
+            border-radius: 3px;
+        }
+
+        /* Section C: Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tables */
+        .docs-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 1rem;
-            background: var(--surface-color);
-            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
         }
-        .payoff-table th, .payoff-table td {
-            border: 1px solid var(--border-color);
-            padding: 1rem;
-            text-align: center;
-        }
-        .payoff-table th { background: rgba(255,255,255,0.05); color: var(--accent-secondary); }
-        .payoff-table td { font-family: var(--font-mono); }
-        /* Analysis Block */
-        
-        .analysis-block {
-            background: rgba(255,255,255,0.03);
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 1.5rem;
-            border-left: 3px solid var(--accent-color);
-        }
-        .analysis-block h4 { color: var(--accent-secondary); margin-bottom: 0.5rem; }
 
-        /* Use Cases */
-        .use-cases {
-            padding: 4rem 0;
-            background: var(--background-color);
+        .docs-table th {
+            text-align: left;
+            padding: 0.8rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            text-transform: uppercase;
         }
-        .use-case-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            justify-content: center;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        .use-case-tag {
-            padding: 0.75rem 1.5rem;
-            background: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: 50px;
+
+        .docs-table td {
+            padding: 0.8rem;
+            border-bottom: 1px solid var(--border-subtle);
             font-size: 0.9rem;
-            color: var(--text-muted);
-            transition: 0.3s;
-        }
-        .use-case-tag:hover {
-            border-color: var(--accent-color);
-            color: var(--text-color);
+            vertical-align: top;
         }
 
-        /* Footer */
-        footer {
-            padding: 3rem 0;
-            text-align: center;
-            border-top: 1px solid var(--border-color);
-            color: var(--text-muted);
-            font-size: 0.9rem;
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.15rem 0.3rem;
+            border-radius: 3px;
         }
 
-        /* Feature Icon adjustment */
-        .feature-card svg {
-            color: var(--accent-secondary);
-            margin-bottom: 1rem;
+        .req { color: #f85149; font-weight: bold; margin-left: 4px; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 0.5rem 0; }
         }
     </style>
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-<!-- Generated Images:
-     - game-theory-hero.png: Abstract 3D visualization of strategic game theory. Glowing geometric nodes representing agents (players) are connected by tension lines forming a complex network graph. In the background, translucent floating planes display mathematical payoff matrices and probability curves. The lighting is dramatic, using deep slate blues (#0f172a) as the void, with neon purple (#a855f7) and cyan (#06b6d4) highlights indicating optimal paths and equilibrium points. Cinematic, high-tech, data-driven aesthetic.
-     - decision-tree-visualization.png: A high-tech, isometric 3D representation of a strategic decision tree. A central root node glows in bright cyan, branching out into multiple intricate pathways (strategies) that glow neon purple. The paths terminate in floating glass-like data blocks representing payoffs. The background is a deep dark blue void with faint digital grid lines. The style is clean, futuristic, and glassmorphic, emphasizing logic and flow.
-     - nash-equilibrium-concept.png: An abstract 3D art piece representing a Nash Equilibrium. Two opposing forces, represented by stylized, glowing geometric shapes (one cyan, one purple), are locked in a stable configuration or magnetic orbit around a central point of high-intensity white light. Surrounding them are floating holographic numbers and matrix grids. The composition suggests balance, tension, and mathematical precision. Deep slate background with volumetric lighting.
--->
 </head>
 <body>
 
-    <!-- Header -->
-    <cognotik-header current-page="game_theory"></cognotik-header>
+<main class="bento-container">
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-visual">
-            <img src="assets/images/game-theory-hero.png" alt="Abstract 3D visualization of strategic game theory with glowing nodes and payoff matrices" style="width: 100%; height: 100%; object-fit: cover;">
-        </div>
-        <div class="hero-content">
-            <h1>Game Theory Analyst</h1>
-            <p class="subtitle">
-                Perform comprehensive strategic analysis. Identify Nash equilibria, construct payoff matrices, and derive optimal strategies for complex multi-agent scenarios.
-            </p>
-            <a href="#simulator" class="cta-button">Try the Simulator</a>
-        </div>
-    </section>
-
-    <!-- Features Grid -->
-    <section id="features" class="features">
-        <h2>Capabilities</h2>
-        <div class="features-grid">
-            <!-- Feature 1 -->
-            <div class="feature-card">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                <h3>Nash Equilibria</h3>
-                <p>Identifies pure and mixed strategy equilibria where no player can benefit by unilaterally deviating.</p>
-                <img src="assets/images/nash-equilibrium-concept.png" alt="Abstract 3D art representing Nash Equilibrium balance" style="width: 100%; height: auto; border-radius: 4px; margin-top: 1rem; opacity: 0.9;">
-            </div>
-            <!-- Feature 2 -->
-            <div class="feature-card">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-                <h3>Payoff Matrices</h3>
-                <p>Automatically constructs detailed payoff matrices for all strategy combinations based on scenario descriptions.</p>
-            </div>
-            <!-- Feature 3 -->
-            <div class="feature-card">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                <h3>Strategic Recommendations</h3>
-                <p>Provides actionable advice for each player, including optimal moves, risk assessments, and contingent strategies.</p>
-            </div>
-            <!-- Feature 4 -->
-            <div class="feature-card">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                <h3>Repeated Games</h3>
-                <p>Analyzes long-term dynamics, trigger strategies, and reputation effects in iterated game scenarios.</p>
-            </div>
-            <!-- Feature 5 -->
-            <div class="feature-card">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                <h3>Pareto Optimality</h3>
-                <p>Finds outcomes where resources are allocated most efficiently, highlighting cooperation opportunities.</p>
-            </div>
-            <!-- Feature 6 -->
-            <div class="feature-card">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                <h3>Dominant Strategies</h3>
-                <p>Detects strictly and weakly dominant strategies to simplify complex decision trees.</p>
-            </div>
+    <!-- 1. HEADER AREA -->
+    <section class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > GameTheoryTask</div>
+        <h1>GameTheoryTask</h1>
+        <p class="pitch">
+            Analyze strategic interactions using game theory. Identifies Nash equilibria, dominant strategies, and Pareto optimal outcomes to provide actionable strategic recommendations.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Side-Effect: Safe</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
         </div>
     </section>
 
-    <!-- Simulator Section -->
-    <section id="simulator" class="simulator">
-                
-
-
-
-        <h2>Interactive Simulator</h2>
-        <div class="simulator-container">
-            
-            <!-- Left: Configuration -->
-            <div class="sim-controls">
-                <form id="simForm">
-                    <div class="control-group">
-                        <label for="scenario">Game Scenario</label>
-                        <textarea id="scenario" placeholder="Describe the situation (e.g., Two companies competing for market share...)">Prisoner's Dilemma: Two criminals are arrested. They can either cooperate with each other (stay silent) or defect (betray the other).</textarea>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="players">Players (comma separated)</label>
-                        <input type="text" id="players" value="Prisoner A, Prisoner B">
-                    </div>
-
-                    <div class="control-group">
-                        <label for="gameType">Game Type</label>
-                        <select id="gameType">
-                            <option value="non-cooperative" selected>Non-Cooperative</option>
-                            <option value="cooperative">Cooperative</option>
-                            <option value="zero-sum">Zero-Sum</option>
-                            <option value="sequential">Sequential</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Analysis Options</label>
-                        <div class="toggle-group">
-                            <div class="toggle-item">
-                                <span>Payoff Matrix</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="optMatrix" checked>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-
-
-
-
-
-
-
-                            <div class="toggle-item">
-                                <span>Nash Equilibria</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="optNash" checked>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                            <div class="toggle-item">
-                                <span>Dominant Strategies</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="optDominant" checked>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                            <div class="toggle-item">
-                                <span>Pareto Optimal</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="optPareto" checked>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                            <div class="toggle-item">
-                                <span>Repeated Game</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="optRepeated">
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="control-group" id="iterationsGroup" style="display:none;">
-                        <label for="iterations">Iterations: <span id="iterVal">10</span></label>
-                        <input type="range" id="iterations" min="2" max="100" value="10">
-                    </div>
-
-                    <button type="submit" class="run-button" id="runBtn">Run Analysis</button>
-                </form>
+    <!-- 2. REALITY CHECK (Visual Proof) -->
+    <section class="reality-check-grid">
+        <!-- Input: The Config -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="icon">⚙️</span> GameTheoryConfig.json
             </div>
+            <pre><code class="language-json">{
+  "game_scenario": "Two tech firms deciding on R&D budgets",
+  "players": ["AlphaCorp", "BetaSystems"],
+  "game_type": "non-cooperative",
+  "find_nash_equilibria": true,
+  "provide_recommendations": true
+}</code></pre>
+        </div>
 
-            <!-- Right: Output -->
-            <div class="sim-output">
-                <div class="tabs">
-                    <button class="tab active" data-tab="overview">Overview</button>
-                    <button class="tab" data-tab="matrix">Payoff Matrix</button>
-                    <button class="tab" data-tab="analysis">Analysis</button>
-                    <button class="tab" data-tab="logs">Logs</button>
+        <!-- Arrow Connector -->
+        <div class="flow-arrow">→</div>
+
+        <!-- Output: The UI -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="icon">👁️</span> Session UI Output
+            </div>
+            <div class="mock-browser">
+                <div class="ui-tab-strip">
+                    <div class="ui-tab">Overview</div>
+                    <div class="ui-tab">Game Structure</div>
+                    <div class="ui-tab active">Nash Equilibria</div>
+                    <div class="ui-tab">Summary</div>
                 </div>
-
-                <div id="overview" class="tab-content active">
-                    <div class="analysis-block">
-                        <h4>Ready to Analyze</h4>
-                        <p>Configure the game scenario on the left and click "Run Analysis" to generate insights.</p>
-                    </div>
-                    <img src="assets/images/decision-tree-visualization.png" alt="Isometric 3D representation of a strategic decision tree" style="width: 100%; height: auto; border-radius: 8px; margin-top: 1rem; opacity: 0.9; border: 1px solid rgba(255,255,255,0.1);">
-                </div>
-
-                <div id="matrix" class="tab-content">
-                    <p class="text-muted">Matrix will be generated after analysis.</p>
-                </div>
-
-                <div id="analysis" class="tab-content">
-                    <p class="text-muted">Results will appear here.</p>
-                </div>
-
-                <div id="logs" class="tab-content">
-                    <div class="log-terminal" id="logContainer">
-                        <div class="log-entry">> System initialized. Waiting for input...</div>
+                <div style="color: var(--text-main);">
+                    <h4 style="margin-top: 0; color: var(--accent-primary); font-size: 0.9rem;">Nash Equilibria Analysis</h4>
+                    <p style="font-size: 0.75rem; color: var(--text-dim);">Identified 1 Pure Strategy Equilibrium:</p>
+                    <div style="background: #0d1117; padding: 0.75rem; border-radius: 4px; border-left: 3px solid #4ade80;">
+                        <strong style="font-size: 0.8rem;">(High R&D, High R&D)</strong>
+                        <p style="font-size: 0.7rem; margin: 0.4rem 0 0 0; color: var(--text-dim);">Neither firm can improve their payoff by unilaterally decreasing budget, as the competitor would capture market share.</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Use Cases -->
-    <section id="use-cases" class="use-cases">
-        <h2 style="text-align: center; margin-bottom: 2rem;">When to Use</h2>
-        <div class="use-case-list">
-            <div class="use-case-tag">Competitive Market Analysis</div>
-            <div class="use-case-tag">Salary Negotiations</div>
-            <div class="use-case-tag">Geopolitical Conflict Resolution</div>
-            <div class="use-case-tag">Auction Strategy</div>
-            <div class="use-case-tag">Supply Chain Coordination</div>
-            <div class="use-case-tag">Pricing Wars</div>
-            <div class="use-case-tag">Voting Systems</div>
+    <!-- 3. TABBED DETAILS -->
+    <section class="task-details">
+        <div class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </div>
+
+        <!-- TAB 1: Documentation -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>game_scenario</code><span class="req">*</span></td>
+                    <td><code>String</code></td>
+                    <td>The strategic situation or game to analyze.</td>
+                </tr>
+                <tr>
+                    <td><code>players</code><span class="req">*</span></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>List of players/agents involved in the interaction.</td>
+                </tr>
+                <tr>
+                    <td><code>game_type</code></td>
+                    <td><code>String</code></td>
+                    <td>cooperative, non-cooperative (default), zero-sum, repeated, sequential.</td>
+                </tr>
+                <tr>
+                    <td><code>player_strategies</code></td>
+                    <td><code>Map</code></td>
+                    <td>Optional map of player names to lists of available strategies.</td>
+                </tr>
+                <tr>
+                    <td><code>build_payoff_matrix</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>Whether to construct a detailed payoff matrix. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>find_nash_equilibria</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>Whether to identify Nash equilibria. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>analyze_dominant_strategies</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>Analyze strictly/weakly dominant and dominated strategies. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>find_pareto_optimal</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>Identify outcomes where no player can be better off without hurting another. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>repeated_game_analysis</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>Analyze dynamics over multiple iterations. Default: <code>false</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>iterations</code></td>
+                    <td><code>Int</code></td>
+                    <td>Number of rounds for repeated analysis. Default: <code>10</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Glob patterns for files to use as context (e.g. <code>**/*.kt</code>).</td>
+                </tr>
+                </tbody>
+            </table>
+            <p style="font-size: 0.85rem; color: var(--text-dim);"><strong>Token Usage:</strong> Medium to High (depends on scenario complexity and iterations).</p>
+        </div>
+
+        <!-- TAB 2: Config & Process -->
+        <div id="tab-process" class="tab-pane">
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Task Process Lifecycle</h3>
+            <ol style="color: var(--text-dim); padding-left: 1.2rem; font-size: 0.95rem;">
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Structure Analysis:</strong> 
+                    Identifies game type, strategy spaces, and information symmetry from the scenario and context files.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Payoff Construction:</strong> 
+                    Builds a matrix mapping strategy combinations to qualitative or numerical outcomes for each player.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Equilibrium Discovery:</strong> 
+                    Identifies Nash equilibria (pure/mixed) and checks for Pareto optimality.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Dominance Analysis:</strong> 
+                    Evaluates strictly and weakly dominant strategies to simplify the decision space.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Strategic Synthesis:</strong> 
+                    Generates specific recommendations, risk assessments, and coordination opportunities for each player.
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Structured Summary:</strong> 
+                    Uses a <code>ParsedAgent</code> to extract a machine-readable <code>GameAnalysis</code> object.
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB 3: Integration -->
+        <div id="tab-integration" class="tab-pane">
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Kotlin Implementation</h3>
+            <div class="panel">
+                <div class="panel-header">Orchestration Example</div>
+                <pre><code class="language-kotlin">val task = GameTheoryTask(
+    orchestrationConfig = config,
+    planTask = GameTheoryTask.GameTheoryTaskExecutionConfigData(
+        game_scenario = "Market entry conflict in Southeast Asia",
+        players = listOf("Incumbent", "Challenger"),
+        game_type = "sequential",
+        provide_recommendations = true,
+        input_files = listOf("docs/market_research.md")
+    )
+)</code></pre>
+            </div>
+            <h4 style="font-size: 1rem; margin: 1.5rem 0 0.5rem 0;">Prompt Segment</h4>
+            <pre style="background: #1c2128; border: 1px solid var(--border-subtle); border-radius: 4px;"><code>GameTheory - Analyze strategic interactions using game theory
+  ** Specify the strategic situation or game scenario
+  ** Define players and their available strategies
+  ** Choose game type: cooperative, non-cooperative, zero-sum, repeated, sequential
+  ** Identify Nash equilibria and dominant strategies
+  ** Find Pareto optimal outcomes</code></pre>
         </div>
     </section>
+</main>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Cognotik. All rights reserved.</p>
-        </div>
-    </footer>
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-    <!-- JavaScript -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Tab Switching Logic
-            const tabs = document.querySelectorAll('.tab');
-            const contents = document.querySelectorAll('.tab-content');
-
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    contents.forEach(c => c.classList.remove('active'));
-                    
-                    tab.classList.add('active');
-                    document.getElementById(tab.dataset.tab).classList.add('active');
-                });
-            });
-
-            // Repeated Game Toggle Logic
-            const repeatedToggle = document.getElementById('optRepeated');
-            const iterationsGroup = document.getElementById('iterationsGroup');
-            const iterInput = document.getElementById('iterations');
-            const iterVal = document.getElementById('iterVal');
-
-            repeatedToggle.addEventListener('change', (e) => {
-                iterationsGroup.style.display = e.target.checked ? 'block' : 'none';
-            });
-
-            iterInput.addEventListener('input', (e) => {
-                iterVal.textContent = e.target.value;
-            });
-
-            // Simulation Logic
-            const form = document.getElementById('simForm');
-            const runBtn = document.getElementById('runBtn');
-            const logContainer = document.getElementById('logContainer');
-
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                runSimulation();
-            });
-
-            function addLog(message, type = 'info') {
-                const entry = document.createElement('div');
-                entry.className = `log-entry ${type}`;
-                entry.textContent = `> ${message}`;
-                logContainer.appendChild(entry);
-                logContainer.scrollTop = logContainer.scrollHeight;
-            }
-
-            function runSimulation() {
-                // Disable button
-                runBtn.disabled = true;
-                runBtn.textContent = 'Analyzing...';
-                
-                // Clear previous logs
-                logContainer.innerHTML = '';
-                addLog('Initializing GameTheoryTask...', 'info');
-
-                // Get Inputs
-                const scenario = document.getElementById('scenario').value;
-                const playersStr = document.getElementById('players').value;
-                const players = playersStr.split(',').map(p => p.trim()).filter(p => p);
-                const gameType = document.getElementById('gameType').value;
-                
-                // Mock Process Steps
-                let step = 0;
-                const steps = [
-                    () => addLog(`Parsing scenario: "${scenario.substring(0, 30)}..."`),
-                    () => addLog(`Identified ${players.length} players: ${players.join(', ')}`),
-                    () => addLog(`Analyzing game structure (${gameType})...`),
-                    () => {
-                        if(document.getElementById('optMatrix').checked) addLog('Constructing payoff matrix...', 'success');
-                    },
-                    () => {
-                        if(document.getElementById('optNash').checked) addLog('Calculating Nash Equilibria...', 'success');
-                    },
-                    () => {
-                        if(document.getElementById('optDominant').checked) addLog('Checking for dominant strategies...', 'success');
-                    },
-                    () => addLog('Generating strategic recommendations...', 'info'),
-                    () => {
-                        addLog('Analysis Complete.', 'success');
-                        renderResults(players, scenario, gameType);
-                        runBtn.disabled = false;
-                        runBtn.textContent = 'Run Analysis';
-                        // Switch to overview tab
-                        document.querySelector('[data-tab="overview"]').click();
-                    }
-                ];
-
-                const interval = setInterval(() => {
-                    if (step < steps.length) {
-                        steps[step]();
-                        step++;
-                    } else {
-                        clearInterval(interval);
-                    }
-                }, 600);
-            }
-
-            function renderResults(players, scenario, gameType) {
-                // 1. Render Overview
-                const overviewHTML = `
-                    <div class="analysis-block">
-                        <h4>Analysis Summary</h4>
-                        <p><strong>Scenario:</strong> ${scenario}</p>
-                        <p><strong>Players:</strong> ${players.join(', ')}</p>
-                        <p><strong>Type:</strong> ${gameType.charAt(0).toUpperCase() + gameType.slice(1)}</p>
-                        <p><strong>Status:</strong> ✅ Completed successfully</p>
-                    </div>
-                `;
-                document.getElementById('overview').innerHTML = overviewHTML;
-
-                // 2. Render Mock Payoff Matrix (2x2 or generic)
-                let matrixHTML = '';
-                if (players.length >= 2) {
-                    const p1 = players[0];
-                    const p2 = players[1];
-                    matrixHTML = `
-                        <div class="analysis-block">
-                            <h4>Payoff Matrix (${p1} vs ${p2})</h4>
-                            <table class="payoff-table">
-                                <tr>
-                                    <th>${p1} \\ ${p2}</th>
-                                    <th>Cooperate</th>
-                                    <th>Defect</th>
-                                </tr>
-                                <tr>
-                                    <th>Cooperate</th>
-                                    <td>(3, 3)<br><small>Reward</small></td>
-                                    <td>(0, 5)<br><small>Sucker's Payoff</small></td>
-                                </tr>
-                                <tr>
-                                    <th>Defect</th>
-                                    <td>(5, 0)<br><small>Temptation</small></td>
-                                    <td>(1, 1)<br><small>Punishment</small></td>
-                                </tr>
-                            </table>
-                            <p style="margin-top:1rem; font-size:0.9rem; color:var(--text-muted);">*Values represent utility (Player 1, Player 2).</p>
-                        </div>
-                    `;
-                } else {
-                    matrixHTML = `<p>Need at least 2 players for a matrix.</p>`;
-                }
-                document.getElementById('matrix').innerHTML = matrixHTML;
-
-                // 3. Render Analysis Text
-                const analysisHTML = `
-                    <div class="analysis-block">
-                        <h4>Nash Equilibria</h4>
-                        <p><strong>(Defect, Defect)</strong> is the unique Nash Equilibrium.</p>
-                        <p class="text-muted">Neither player can improve their payoff by unilaterally changing their strategy, assuming the other player keeps theirs unchanged.</p>
-                    </div>
-                    <div class="analysis-block">
-                        <h4>Dominant Strategies</h4>
-                        <p><strong>${players[0]}:</strong> "Defect" is a strictly dominant strategy.</p>
-                        <p><strong>${players[1]}:</strong> "Defect" is a strictly dominant strategy.</p>
-                    </div>
-                    <div class="analysis-block">
-                        <h4>Pareto Optimality</h4>
-                        <p>The outcome <strong>(Cooperate, Cooperate)</strong> is Pareto Optimal, as it provides a better collective utility (6) than the Nash Equilibrium (2), but it is unstable in a non-cooperative single-shot game.</p>
-                    </div>
-                    <div class="analysis-block">
-                        <h4>Recommendations</h4>
-                        <ul>
-                            <li><strong>${players[0]}:</strong> In a single-shot game, you must Defect to avoid the worst-case scenario. In a repeated game, attempt "Tit-for-Tat".</li>
-                            <li><strong>${players[1]}:</strong> Signal willingness to cooperate only if external enforcement mechanisms exist.</li>
-                        </ul>
-                    </div>
-                `;
-                document.getElementById('analysis').innerHTML = analysisHTML;
-            }
-        });
-    </script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Tab Switching Logic ---
-            // Handles switching between Overview, Payoff Matrix, Analysis, and Logs tabs
-            const tabs = document.querySelectorAll('.tab');
-            const contents = document.querySelectorAll('.tab-content');
-        
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    // Remove active class from all tabs and contents
-                    tabs.forEach(t => t.classList.remove('active'));
-                    contents.forEach(c => c.classList.remove('active'));
-            
-                    // Add active class to clicked tab and corresponding content
-                    tab.classList.add('active');
-                    const targetId = tab.dataset.tab;
-                    const targetContent = document.getElementById(targetId);
-                    if (targetContent) {
-                        targetContent.classList.add('active');
-                    }
-                });
-            });
-        
-            // --- Form Interaction Logic ---
-            // Handles dynamic form elements like the Repeated Game toggle and Range Slider
-            const repeatedToggle = document.getElementById('optRepeated');
-            const iterationsGroup = document.getElementById('iterationsGroup');
-            const iterInput = document.getElementById('iterations');
-            const iterVal = document.getElementById('iterVal');
-        
-            // Toggle Iterations slider visibility based on checkbox state
-            if (repeatedToggle && iterationsGroup) {
-                repeatedToggle.addEventListener('change', (e) => {
-                    iterationsGroup.style.display = e.target.checked ? 'block' : 'none';
-                });
-            }
-        
-            // Update range slider value display in real-time
-            if (iterInput && iterVal) {
-                iterInput.addEventListener('input', (e) => {
-                    iterVal.textContent = e.target.value;
-                });
-            }
-        
-            // --- Simulation Logic ---
-            // Handles the execution of the mock simulation
-            const form = document.getElementById('simForm');
-            const runBtn = document.getElementById('runBtn');
-            const logContainer = document.getElementById('logContainer');
-        
-            if (form) {
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    runSimulation();
-                });
-            }
-        
-            // Helper function to append messages to the log terminal
-            function addLog(message, type = 'info') {
-                if (!logContainer) return;
-        
-                const entry = document.createElement('div');
-                entry.className = `log-entry ${type}`;
-                entry.textContent = `> ${message}`;
-                logContainer.appendChild(entry);
-        
-                // Auto-scroll to the bottom of the log container
-                logContainer.scrollTop = logContainer.scrollHeight;
-            }
-        
-            function runSimulation() {
-                // 1. Lock UI to prevent multiple submissions
-                if (runBtn) {
-                    runBtn.disabled = true;
-                    runBtn.textContent = 'Analyzing...';
-                }
-        
-                // 2. Clear previous logs and initialize
-                if (logContainer) logContainer.innerHTML = '';
-                addLog('Initializing GameTheoryTask...', 'info');
-        
-                // 3. Retrieve User Inputs
-                const scenarioInput = document.getElementById('scenario');
-                const playersInput = document.getElementById('players');
-                const gameTypeInput = document.getElementById('gameType');
-        
-                const scenario = scenarioInput ? scenarioInput.value : 'Unknown Scenario';
-                const playersStr = playersInput ? playersInput.value : 'Player A, Player B';
-                // Parse players string into an array
-                const players = playersStr.split(',').map(p => p.trim()).filter(p => p);
-                const gameType = gameTypeInput ? gameTypeInput.value : 'non-cooperative';
-        
-                // Check selected analysis options
-                const optMatrix = document.getElementById('optMatrix')?.checked;
-                const optNash = document.getElementById('optNash')?.checked;
-                const optDominant = document.getElementById('optDominant')?.checked;
-        
-                // 4. Define Simulation Steps (Mocking backend processing delay)
-                // Each step has an action and a delay before the next step
-                const steps = [
-                    { 
-                        action: () => addLog(`Parsing scenario: "${scenario.substring(0, 30)}${scenario.length > 30 ? '...' : ''}"`), 
-                        delay: 600 
-                    },
-                    { 
-                        action: () => addLog(`Identified ${players.length} agents: ${players.join(', ')}`), 
-                        delay: 800 
-                    },
-                    { 
-                        action: () => addLog(`Constructing model for ${gameType} game...`), 
-                        delay: 800 
-                    },
-                    { 
-                        action: () => {
-                            if(optMatrix) addLog('Generating payoff matrices...', 'success');
-                        }, 
-                        delay: 600 
-                    },
-                    { 
-                        action: () => {
-                            if(optNash) addLog('Calculating Nash Equilibria using Lemke-Howson algorithm...', 'success');
-                        }, 
-                        delay: 900 
-                    },
-                    { 
-                        action: () => {
-                            if(optDominant) addLog('Analyzing strict and weak dominance...', 'success');
-                        }, 
-                        delay: 700 
-                    },
-                    { 
-                        action: () => addLog('Synthesizing strategic recommendations...', 'info'), 
-                        delay: 800 
-                    },
-                    { 
-                        action: () => {
-                            addLog('Analysis Complete.', 'success');
-                            renderResults(players, scenario, gameType);
-                    
-                            // Unlock UI
-                            if (runBtn) {
-                                runBtn.disabled = false;
-                                runBtn.textContent = 'Run Analysis';
-                            }
-                    
-                            // Automatically switch to the overview tab to show results
-                            const overviewTab = document.querySelector('[data-tab="overview"]');
-                            if (overviewTab) overviewTab.click();
-                        }, 
-                        delay: 500 
-                    }
-                ];
-        
-                // Recursive function to execute steps with delays
-                function executeStep(index) {
-                    if (index >= steps.length) return;
-            
-                    const currentStep = steps[index];
-                    currentStep.action();
-            
-                    setTimeout(() => {
-                        executeStep(index + 1);
-                    }, currentStep.delay);
-                }
-        
-                // Start execution
-                executeStep(0);
-            }
-        
-            // --- Result Rendering Logic ---
-            // Populates the output tabs with mock data based on inputs
-            function renderResults(players, scenario, gameType) {
-                // 1. Render Overview Tab
-                const overviewEl = document.getElementById('overview');
-                if (overviewEl) {
-                    overviewEl.innerHTML = `
-                        <div class="analysis-block">
-                            <h4>Analysis Summary</h4>
-                            <p><strong>Scenario:</strong> ${scenario}</p>
-                            <p><strong>Players:</strong> ${players.join(', ')}</p>
-                            <p><strong>Type:</strong> ${gameType.charAt(0).toUpperCase() + gameType.slice(1)}</p>
-                            <p><strong>Status:</strong> ✅ Completed successfully</p>
-                            <p style="margin-top: 10px; color: var(--text-muted);">
-                                The system has modeled the interaction dynamics and identified stable states. 
-                                Check the <em>Payoff Matrix</em> and <em>Analysis</em> tabs for details.
-                            </p>
-                        </div>
-                    `;
-                }
-        
-                // 2. Render Mock Payoff Matrix Tab
-                const matrixEl = document.getElementById('matrix');
-                if (matrixEl) {
-                    let matrixHTML = '';
-                    if (players.length >= 2) {
-                        const p1 = players[0];
-                        const p2 = players[1];
-                        // Create a standard Prisoner's Dilemma style matrix for demo purposes
-                        matrixHTML = `
-                            <div class="analysis-block">
-                                <h4>Payoff Matrix (${p1} vs ${p2})</h4>
-                                <table class="payoff-table">
-                                    <tr>
-                                        <th>${p1} \\ ${p2}</th>
-                                        <th>Cooperate</th>
-                                        <th>Defect</th>
-                                    </tr>
-                                    <tr>
-                                        <th>Cooperate</th>
-                                        <td>(3, 3)<br><small>Reward</small></td>
-                                        <td>(0, 5)<br><small>Sucker's Payoff</small></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Defect</th>
-                                        <td>(5, 0)<br><small>Temptation</small></td>
-                                        <td>(1, 1)<br><small>Punishment / Nash Eq.</small></td>
-                                    </tr>
-                                </table>
-                                <p style="margin-top:1rem; font-size:0.9rem; color:var(--text-muted);">
-                                    *Values represent utility indices (Player 1, Player 2). Higher is better.
-                                </p>
-                            </div>
-                        `;
-                    } else {
-                        matrixHTML = `
-                            <div class="analysis-block">
-                                <h4>Insufficient Players</h4>
-                                <p>A payoff matrix requires at least 2 players. You provided: ${players.length}.</p>
-                            </div>
-                        `;
-                    }
-                    matrixEl.innerHTML = matrixHTML;
-                }
-        
-                // 3. Render Analysis Tab
-                const analysisEl = document.getElementById('analysis');
-                if (analysisEl) {
-                    // Dynamic text generation based on inputs
-                    const p1 = players[0] || 'Player 1';
-                    const p2 = players[1] || 'Player 2';
-            
-                    const analysisHTML = `
-                        <div class="analysis-block">
-                            <h4>Nash Equilibria</h4>
-                            <p><strong>(Defect, Defect)</strong> is the unique Nash Equilibrium.</p>
-                            <p class="text-muted">Neither ${p1} nor ${p2} can improve their payoff by unilaterally changing their strategy, assuming the other player keeps theirs unchanged.</p>
-                        </div>
-                        <div class="analysis-block">
-                            <h4>Dominant Strategies</h4>
-                            <p><strong>${p1}:</strong> "Defect" is a strictly dominant strategy.</p>
-                            <p><strong>${p2}:</strong> "Defect" is a strictly dominant strategy.</p>
-                        </div>
-                        <div class="analysis-block">
-                            <h4>Pareto Optimality</h4>
-                            <p>The outcome <strong>(Cooperate, Cooperate)</strong> is Pareto Optimal, as it provides a better collective utility (6) than the Nash Equilibrium (2), but it is unstable in a non-cooperative single-shot game.</p>
-                        </div>
-                        <div class="analysis-block">
-                            <h4>Recommendations</h4>
-                            <ul>
-                                <li><strong>${p1}:</strong> In a single-shot game, you must Defect to avoid the worst-case scenario. In a repeated game, attempt "Tit-for-Tat".</li>
-                                <li><strong>${p2}:</strong> Signal willingness to cooperate only if external enforcement mechanisms exist.</li>
-                            </ul>
-                        </div>
-                    `;
-                    analysisEl.innerHTML = analysisHTML;
-                }
-            }
-        });
-    </script>
 </body>
 </html>

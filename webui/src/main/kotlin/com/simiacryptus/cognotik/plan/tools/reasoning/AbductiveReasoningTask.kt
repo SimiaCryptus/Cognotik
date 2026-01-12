@@ -2,13 +2,14 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -79,13 +80,18 @@ class AbductiveReasoningTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
-    ) : TaskExecutionConfig(
+    ) : ValidatedObject, TaskExecutionConfig(
         task_type = AbductiveReasoning.name,
         task_description = task_description
             ?: "Generate and evaluate explanatory hypotheses for ${observations?.size ?: 0} observations",
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
-    )
+    ) {
+        override fun validate(): String? {
+            if (observations.isNullOrEmpty()) return "Observations must be specified"
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     override fun promptSegment(): String {
         return """
@@ -114,30 +120,35 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         val startTime = System.currentTimeMillis()
         var stepStartTime = System.currentTimeMillis()
         log.info("Starting AbductiveReasoningTask with ${executionConfig?.observations?.size ?: 0} observations")
-        val transcript = transcript(task)
+        val transcript = task.transcript()
         // Combine messages with file input
         val inputContext = (messages + listOf(getInputFileCode())).filter { it.isNotBlank() }
 
 
-        val observations = executionConfig?.observations
-        if (observations.isNullOrEmpty()) {
-            val errorMsg = "CONFIGURATION ERROR: No observations specified"
+        
+        val config = executionConfig ?: return resultFn("No configuration provided")
+        val validationError = config.validate()
+        if (validationError != null) {
+            val errorMsg = "CONFIGURATION ERROR: $validationError"
             log.error(errorMsg)
-            task.safeComplete(errorMsg, log)
+            task.error(ValidatedObject.ValidationError(validationError, config))
             resultFn(errorMsg)
             transcript?.close()
             return
         }
 
         val api = defaultSmart ?: return
+        val observations = config.observations!!
 
         val tabs = TabbedDisplay(task)
 
         // Overview tab
         val overviewTask = tabs.newTask("Overview")
 
-        val maxHypotheses = executionConfig.max_hypotheses.coerceIn(1, 10)
-        val evaluateCriteria = executionConfig.evaluate_criteria ?: listOf(
+        task.header("Abductive Reasoning Analysis", level = 2)
+
+        val maxHypotheses = config.max_hypotheses.coerceIn(1, 10)
+        val evaluateCriteria = config.evaluate_criteria ?: listOf(
             "explanatory_power",
             "simplicity",
             "testability",
@@ -146,6 +157,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         val suggestTests = executionConfig.suggest_tests
         val domainContext = executionConfig.domain_context ?: "general software system"
 
+        
         log.info("Configuration: maxHypotheses=$maxHypotheses, criteria=$evaluateCriteria, suggestTests=$suggestTests")
 
         overviewTask.add(
@@ -182,6 +194,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         try {
             // Observations tab
             val observationsTask = tabs.newTask("Observations")
+            task.header("Step 1: Documenting Observations", level = 3)
             observationsTask.add(
                 buildString {
                     writeToTranscript(transcript, this)
@@ -230,6 +243,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
             // Generate or use existing hypotheses
             val hypothesesTask = tabs.newTask("Hypotheses")
+            task.header("Step 2: Generating Hypotheses", level = 3)
             hypothesesTask.add(
                 buildString {
                     writeToTranscript(transcript, this)
@@ -328,6 +342,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
             // Comparative analysis
             val analysisTask = tabs.newTask("Analysis")
+            task.header("Step 3: Comparative Analysis", level = 3)
             analysisTask.add(
                 buildString {
                     writeToTranscript(transcript, this)
@@ -380,6 +395,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             var testSuggestions: String
             if (suggestTests) {
                 val testsTask = tabs.newTask("Validation Tests")
+                task.header("Step 4: Validation Tests", level = 3)
                 testsTask.add(
                     buildString {
                         writeToTranscript(transcript, this)
@@ -427,6 +443,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             // Best explanation summary
             val bestHypothesis = hypotheses.maxByOrNull { it.overall_score }
             val summaryTask = tabs.newTask("Best Explanation")
+            task.header("Final Inference", level = 3)
             summaryTask.add(
                 buildString {
                     writeToTranscript(transcript, this)
@@ -908,23 +925,23 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbductiveReasoningTask::class.java)
         val AbductiveReasoning = TaskType(
-            "AbductiveReasoning",
-            "Reasoning",
-            AbductiveReasoningTask::class.java,
-            AbductiveReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate and evaluate explanatory hypotheses",
-            """
-              Performs abductive reasoning (inference to best explanation) to generate and evaluate hypotheses.
-              <ul>
-                <li>Generates multiple explanatory hypotheses for observations</li>
-                <li>Evaluates explanatory power, simplicity, testability, and prior probability</li>
-                <li>Applies Occam's Razor to prefer simpler explanations</li>
-                <li>Ranks hypotheses by overall quality</li>
-                <li>Suggests validation tests for top hypotheses</li>
-                <li>Useful for root cause analysis, bug investigation, and scientific reasoning</li>
-              </ul>
-            """,
+          name = "AbductiveReasoning",
+          category = "Reasoning",
+          taskClass = AbductiveReasoningTask::class.java,
+          executionConfigClass = AbductiveReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate and evaluate explanatory hypotheses",
+          tooltipHtml = """
+                        Performs abductive reasoning (inference to best explanation) to generate and evaluate hypotheses.
+                        <ul>
+                          <li>Generates multiple explanatory hypotheses for observations</li>
+                          <li>Evaluates explanatory power, simplicity, testability, and prior probability</li>
+                          <li>Applies Occam's Razor to prefer simpler explanations</li>
+                          <li>Ranks hypotheses by overall quality</li>
+                          <li>Suggests validation tests for top hypotheses</li>
+                          <li>Useful for root cause analysis, bug investigation, and scientific reasoning</li>
+                        </ul>
+                      """,
         )
     }
 }

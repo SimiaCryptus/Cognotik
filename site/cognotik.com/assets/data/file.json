@@ -1,0 +1,73 @@
+[ {
+  "id" : "dataingest",
+  "label" : "Data Ingest",
+  "url" : "DataIngestTask.html",
+  "description" : "Iteratively parse unstructured logs into structured data\n\n\n                        Automates the creation of regex parsers for log files.\n                        <ul>\n                          <li>Samples data to discover patterns using LLM</li>\n                          <li>Iteratively targets residual (unparsed) data</li>\n                          <li>Streams large files to produce JSONL output</li>\n                          <li>Generates an index linking data back to source lines</li>\n                        </ul>\n                      \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/data/DataIngestTask.kt"
+}, {
+  "id" : "discussion",
+  "label" : "Discussion",
+  "url" : "DiscussionTask.html",
+  "description" : "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.\n\n\n                      Provides direct answers and insights using the LLM, optionally referencing project files.\n                      <ul>\n                        <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>\n                        <li>Reading files is optional; the task can operate with or without file input</li>\n                        <li>User feedback and iterative refinement are supported but not required</li>\n                        <li>Generates comprehensive markdown reports, explanations, and recommendations</li>\n                        <li>Can answer detailed questions about code, design, or project context</li>\n                        <li>Supports both one-shot and interactive discussion modes</li>\n                        <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>\n                      </ul>\n                      \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/DiscussionTask.kt"
+}, {
+  "id" : "fileappend",
+  "label" : "File Append",
+  "url" : "FileAppendTask.html",
+  "description" : "Append content to the end of existing files\n\nAllows for precise additions to the end of files without modifying existing content.\n<ul>\n  <li>Ideal for logs, exports, and list updates</li>\n  <li>Supports AI-generated content based on context</li>\n  <li>Provides reviewable previews before applying changes</li>\n  <li>Integrates with project structure and standards</li>\n</ul>\n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/FileAppendTask.kt"
+}, {
+  "id" : "filemodification",
+  "label" : "File Modification",
+  "url" : "FileModificationTask.html",
+  "description" : "Create new files or modify existing code with AI-powered assistance\n\n\n                                Creates or modifies source files with AI assistance while maintaining code quality.\n                                <ul>\n                                  <li>Shows proposed changes in diff format for easy review</li>\n                                  <li>Supports both automated application and manual approval modes</li>\n                                  <li>Maintains project coding standards and style consistency</li>\n                                  <li>Handles complex multi-file operations and refactoring</li>\n                                  <li>Provides clear documentation of all changes with rationale</li>\n                                  <li>Implements proper error handling and edge cases</li>\n                                  <li>Updates imports and dependencies automatically</li>\n                                  <li>Preserves existing code formatting and structure</li>\n                                </ul>\n                              \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/FileModificationTask.kt"
+}, {
+  "id" : "filesearch",
+  "label" : "File Search",
+  "url" : "FileSearchTask.html",
+  "description" : "Search project files using patterns with contextual results\n\n\n                                Performs pattern-based searches across project files with context.\n                                <ul>\n                                  <li>Supports both substring and regex search patterns</li>\n                                  <li>Shows configurable context lines around matches</li>\n                                  <li>Groups results by file with line numbers</li>\n                                  <li>Filters for text-based files automatically</li>\n                                  <li>Provides organized, readable output format</li>\n                                </ul>\n                              \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/FileSearchTask.kt"
+}, {
+  "id" : "imagedecomposition",
+  "label" : "Image Decomposition",
+  "url" : "ImageDecompositionTask.html",
+  "description" : "Recursively analyze an image to find details, text, or specific objects.\n\n\n      Performs a deep-dive analysis of an image by:\n      <ul>\n          <li>Identifying regions of interest based on a query</li>\n          <li>Recursively cropping and re-analyzing those regions</li>\n          <li>Stitching results into a hierarchical dataset</li>\n      </ul>\n      Useful for OCR on complex forms, crowd analysis, or finding small details.\n                  \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/ImageDecompositionTask.kt"
+}, {
+  "id" : "imagetable",
+  "label" : "Image Table",
+  "url" : "ImageTableTask.html",
+  "description" : "Generate a table/grid of AI-generated images\n\n\n                        Creates a grid of images by generating each cell using AI image generation.\n                        <ul>\n                          <li>Define rows and columns as labels for the grid</li>\n                          <li>Provide a prompt template with {row} and {column} placeholders</li>\n                          <li>Optionally specify a base style for consistent aesthetics</li>\n                          <li>Generates individual images and an HTML table view</li>\n                          <li>Useful for style comparisons, product variations, character sheets</li>\n                        </ul>\n                      \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/ImageTableTask.kt"
+}, {
+  "id" : "imagevariation",
+  "label" : "Image Variation",
+  "url" : "ImageVariationTask.html",
+  "description" : "Generates 'Find the Differences' style image variations.\n\n\n            Analyzes an image to find distinct regions, generates specific visual changes for those regions,\n            and creates multiple alternative images by randomly combining these changes.\n            Outputs images and JSON manifests describing the differences.\n            \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/ImageVariationTask.kt"
+}, {
+  "id" : "languageserver",
+  "label" : "Language Server",
+  "url" : "LanguageServerTask.html",
+  "description" : "Interact with Language Servers (LSP)\n\nProvides code intelligence capabilities via the Language Server Protocol.\n<ul>\n    <li><b>Definition:</b> Locate where a symbol is defined.</li>\n    <li><b>References:</b> Find all usages of a symbol.</li>\n    <li><b>Diagnostics:</b> Check files for syntax errors and warnings.</li>\n    <li><b>Hover:</b> Get documentation or type information at a specific position.</li>\n</ul>\nRequires language servers (e.g., pylsp, typescript-language-server) to be installed in the environment.\n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/code/LanguageServerTask.kt"
+}, {
+  "id" : "ocrtask",
+  "label" : "OCRTask",
+  "url" : "OCRTask.html",
+  "description" : "Convert documents (PDF, Images) to Markdown text\n\n\n          Uses Vision models to extract text and formatting from documents.\n          <ul>\n          <li>Supports PDF and Image files</li>\n          <li>Converts to Markdown format</li>\n          <li>Preserves layout and structure where possible</li>\n          <li>Optionally extracts figures and metadata</li>\n          </ul>\n          \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/OCRTask.kt"
+}, {
+  "id" : "pdfform",
+  "label" : "Pdf Form",
+  "url" : "PdfFormTask.html",
+  "description" : "Fills out a specific PDF form template with provided data.\n\n\n                      Fills fields in a pre-configured PDF template.\n                      <ul>\n                        <li><b>Requires:</b> A template PDF file defined in the global Type Config.</li>\n                        <li><b>Output:</b> A new PDF file with the fields populated.</li>\n                        <li>Automatically lists available fields from the template to the Planner.</li>\n                      </ul>\n                      \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/PdfFormTask.kt"
+}, {
+  "id" : "readdocuments",
+  "label" : "Read Documents",
+  "url" : "ReadDocumentsTask.html",
+  "description" : "Deeply analyze project files and provide comprehensive technical insights or answers to specific questions.\n\n\n                      Analyzes project files and provides detailed technical insights using the LLM.\n                      <ul>\n                        <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>\n                        <li>Reading files is optional; the task can operate with or without file input</li>\n                        <li>User feedback and iterative refinement are supported but not required</li>\n                        <li>Generates comprehensive markdown reports, explanations, and recommendations</li>\n                        <li>Can answer detailed questions about code, design, or project context</li>\n                        <li>Supports both one-shot and interactive discussion modes</li>\n                        <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>\n                      </ul>\n                      \n",
+  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/ReadDocumentsTask.kt"
+} ]

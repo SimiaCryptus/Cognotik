@@ -1,0 +1,191 @@
+<!--
+  TEMPLATE: Cognotik Task Product Page (Industrial Theme)
+  USAGE: Copy this file, rename to TaskName.html, and fill in the data.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik | Task Name</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        /* Page-Specific Overrides */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr; /* Code -> Arrow -> UI */
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Tab System */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* Mobile Stack */
+        @media (max-width: 768px) {
+            .reality-check-grid {
+                grid-template-columns: 1fr;
+            }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="task-id"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Tasks / File Operations</div>
+        <h1>FileModificationTask</h1>
+        <p class="pitch">
+            Safe, patch-based file editing with built-in syntax validation and rollback capabilities.
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect: Destructive</span>
+            <span class="badge">Auto-Fix Supported</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK (The "Anti-Vaporware" Section) -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">Input Configuration</div>
+            <pre><code class="language-json">
+{
+  "target_file": "src/main/App.kt",
+  "instructions": "Add a logging statement to the main loop",
+  "context_lines": 5
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">Session UI Output</div>
+            <div class="mock-ui-content" style="padding: 1rem;">
+                <div style="color: #4ade80; margin-bottom: 0.5rem;">✔ File Updated Successfully</div>
+                <div style="background: #000; padding: 0.5rem; font-family: monospace; font-size: 0.8rem;">
+                    <span style="color: grey">12</span>   while(running) {<br>
+                    <span style="color: green">13 +     logger.info("Heartbeat")</span><br>
+                    <span style="color: grey">14</span>     processNext()<br>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('preview')">Live Preview</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>target_file</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>Relative path to the file. Must exist in workspace.</td>
+                </tr>
+                <tr>
+                    <td><code>instructions</code></td>
+                    <td>String</td>
+                    <td>Natural language description of the edit desired.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PREVIEW (With Presets) -->
+        <div id="tab-preview" class="tab-pane" style="display:none;">
+            <div class="preset-bar">
+                <span>Load Scenario:</span>
+                <button class="btn-small">Fix Syntax Error</button>
+                <button class="btn-small">Add Documentation</button>
+            </div>
+            <!-- Simulator UI goes here -->
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        // Simple vanilla JS tab switcher
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.target.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

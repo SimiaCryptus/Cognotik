@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.agents.CodeAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.MethodTypeDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -11,24 +10,27 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.jsonCast
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.reflect.Type
 import java.util.concurrent.Semaphore
-
-class CodingModeConfig(
-    var codeRuntime: CodeRuntimes = CodeRuntimes.GroovyRuntime
-) : CognitiveModeConfig(type = CognitiveModeType.Coding)
+import java.util.concurrent.TimeUnit
 
 open class CodingMode(
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User
-) : CognitiveMode<CodingModeConfig>(orchestrationConfig, session, user) {
+) : CognitiveMode<CodingMode.CodingModeConfig>(orchestrationConfig, session, user) {
+
+    class CodingModeConfig(
+        var codeRuntime: CodeRuntimes = CodeRuntimes.GroovyRuntime
+    ) : CognitiveModeConfig(type = CognitiveModeType.Coding)
 
     protected val history = mutableListOf<Pair<String, ModelSchema.Role>>()
 
@@ -45,23 +47,34 @@ open class CodingMode(
                 result = it
                 onComplete.release()
             }
-            orchestrationConfig.getImpl(taskType as TaskType<T, U>, (executionConfig.jsonCast<Map<String,Any>>()+mapOf(
-                "task_type" to taskType.name
-            )).jsonCast()).run(
-                agent = TaskOrchestrator(
-                    user = user,
-                    session = session,
-                    dataStorage = task.ui.dataStorage,
-                    root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                        ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
-                        ?: File(".").toPath()
-                ),
-                messages = listOf(message),
-                task = task,
-                resultFn = resultFn,
-                orchestrationConfig = orchestrationConfig
-            )
-            onComplete.acquire()
+            try {
+            try {
+                orchestrationConfig.getImpl(taskType as TaskType<T, U>, (executionConfig.jsonCast<Map<String,Any>>()+mapOf(
+                    "task_type" to taskType.name
+                )).jsonCast()).run(
+                    agent = TaskOrchestrator(
+                        user = user,
+                        session = session,
+                        dataStorage = task.ui.dataStorage,
+                        root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
+                            ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
+                            ?: File(".").toPath()
+                    ),
+                    messages = listOf(message),
+                    task = task,
+                    resultFn = resultFn,
+                    orchestrationConfig = orchestrationConfig
+                )
+            } catch (e: Throwable) {
+                result = "Error initiating task: ${e.message}"
+                onComplete.release()
+            }
+                if (!onComplete.tryAcquire(1, TimeUnit.HOURS)) {
+                    throw RuntimeException("Task execution timed out")
+                }
+            } catch (e: Exception) {
+                throw RuntimeException("Failed to execute task", e)
+            }
             return result
         }
     }
@@ -80,17 +93,41 @@ open class CodingMode(
         try {
             transcript?.write("User: $userMessage\n".toByteArray())
             history.add(userMessage to ModelSchema.Role.user)
-            val response = plan(task)
+            val response = if (orchestrationConfig.autoFix) {
+                plan(task)
+            } else {
+                val baseHistory = history.dropLast(1)
+                Discussable(
+                    task = task,
+                    heading = "Code Plan",
+                    userMessage = { userMessage },
+                    initialResponse = { _ -> plan(task) },
+                    outputFn = { result ->
+                        ("```" + config.codeRuntime.name.lowercase()
+                            .replace("runtime", "") + "\n" + result.code + "\n```").renderMarkdown()
+                    },
+                    reviseResponse = { discussionHistory ->
+                        generateCode(task, baseHistory + discussionHistory)
+                    }
+                ).call() ?: throw IllegalStateException("Discussion failed to produce a result")
+            }
             val tabs = TabbedDisplay(task)
             tabs["Code"] = ("```" + config.codeRuntime.name.lowercase().replace("runtime", "") + "\n" + response.code + "\n```").renderMarkdown()
             transcript?.write("Code:\n${response.code}\n".toByteArray())
+            task.resolveUserFile(".logs/code_${now()}.${config.codeRuntime.extension}")?.writeBytes(response.code.toByteArray())
             val executionResult = response.result // execute code
             output(executionResult, tabs, transcript, response)
         } catch (e: Throwable) {
+            log.error("Error during code execution", e)
             task.error(e)
             history.add("Error: ${e.message}" to ModelSchema.Role.system)
             transcript?.write("Error: ${e.message}\n".toByteArray())
         }
+    }
+
+    private fun now(): String {
+        val fmt = java.text.SimpleDateFormat("yyyyMMdd_HHmmss_SSS")
+        return fmt.format(java.util.Date())
     }
 
     open fun output(
@@ -119,27 +156,30 @@ open class CodingMode(
         }
     }
 
-    open fun plan(task: SessionTask) = symbols(task).let { symbols ->
-        CodeAgent(
-            codeRuntime = CodeRuntimes.getRuntime(config.codeRuntime, symbols),
-            model = orchestrationConfig.defaultSmart.getChildClient(task),
-            details = "You are in an interactive coding session. Execute code to answer the user.",
-            temperature = orchestrationConfig.temperature,
-            symbols = symbols,
-            describer = describer,
-        ).respond(
-            CodeAgent.CodeRequest(
-                messages = history
+    open fun plan(task: SessionTask) = generateCode(task, history)
+
+    private fun generateCode(
+        task: SessionTask,
+        messages: List<Pair<String, ModelSchema.Role>>
+    ): CodeAgent.CodeResult {
+        return symbols(task).let { symbols ->
+            CodeAgent(
+                codeRuntime = CodeRuntimes.getRuntime(config.codeRuntime, symbols),
+                model = orchestrationConfig.defaultSmart.getChildClient(task),
+                details = "You are in an interactive coding session. Execute code to answer the user.",
+                temperature = orchestrationConfig.temperature,
+                symbols = symbols,
+                describer = describer,
+            ).respond(
+                CodeAgent.CodeRequest(
+                    messages = messages
+                )
             )
-        )
+        }
 
     }
 
-    open val describer: TypeDescriber
-        get() {
-//        return AbbrevWhitelistTSDescriber("com.simiacryptus")
-            return AbbrevWhitelistYamlDescriber("com.simiacryptus")
-        }
+    open val describer: TypeDescriber = AbbrevWhitelistYamlDescriber("com.simiacryptus")
 
     open fun symbols(task: SessionTask): Map<String, Any> =
         orchestrationConfig.taskSettings.map { (name, taskTypeConfig) ->
@@ -152,9 +192,15 @@ open class CodingMode(
                 }, task)
             )
         }.toMap() + mapOf(
-            "env" to (orchestrationConfig.env ?: emptyMap()),
-            "workingDir" to (orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath } ?: ".")
+            "workingDir" to (orchestrationConfig.absoluteWorkingDir?.let { File(it).absoluteFile } ?: "."),
+            "smartModel" to orchestrationConfig.defaultSmart.getChildClient(task),
+            "fastModel" to orchestrationConfig.defaultFast.getChildClient(task),
+            "task" to task,
         )
 
     override fun contextData(): List<String> = emptyList()
+
+    companion object {
+        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(CodingMode::class.java)
+    }
 }

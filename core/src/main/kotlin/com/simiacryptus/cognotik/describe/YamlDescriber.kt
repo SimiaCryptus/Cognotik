@@ -285,7 +285,7 @@ open class YamlDescriber : TypeDescriber() {
         return if ((isAbbreviated(self) || stackMax <= 0) && typeName.lowercase() !in primitives)
             "type: object\nclass: ${self.typeName}".filterEmptyLines()
         else if (self is Class<*> && (self.isEnum || DynamicEnum::class.java.isAssignableFrom(self))) {
-            ("type: enum\nvalues:\n" + getEnumValues(self).joinToString("\n") { "  - $it" }).filterEmptyLines()
+            ("type: enum\nclass: ${self.typeName}\nvalues:\n" + getEnumValues(self).joinToString("\n") { "  - $it" }).filterEmptyLines()
         } else if (typeName.lowercase() in primitives) {
             "type: ${typeName.lowercase()}"
         } else if (self is ParameterizedType && List::class.java.isAssignableFrom(self.rawType as Class<*>)) {

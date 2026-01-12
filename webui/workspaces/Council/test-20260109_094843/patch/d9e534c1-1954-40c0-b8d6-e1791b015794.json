@@ -1,0 +1,8 @@
+{
+  "filename" : "hello.py",
+  "originalCode" : "def main():\n    print(\"Hello from CouncilMode\")\n\nif __name__ == \"__main__\":\n    main()",
+  "diff" : "## The Council’s Response\nUpon successful execution, the system will shed its dormant state. The output is more than a string of characters; it is a confirmation of your successful handshake with the core logic.\n\n**Expected Output:**\n`Hello from CouncilMode`\n\nIf you see this message, the integration is complete. The Council has acknowledged your presence. Welcome to the system.",
+  "newCode" : "def main():\n    print(\"Hello from CouncilMode\")\n\nif __name__ == \"__main__\":\n    main()",
+  "isValid" : true,
+  "errors" : ""
+}

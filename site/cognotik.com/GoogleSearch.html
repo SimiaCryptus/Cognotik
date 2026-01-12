@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik | GoogleSearch Seed Method</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 1rem 0;
+            letter-spacing: -0.02em;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(255,255,255,0.03);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+            color: #e6edf3;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .search-result-item {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .result-title {
+            color: var(--accent-primary);
+            font-weight: 600;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .result-link {
+            color: #3fb950;
+            font-size: 0.75rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-snippet {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .docs-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.05);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .req { color: #f85149; margin-left: 4px; }
+
+        @media (max-width: 900px) {
+            .reality-check-grid {
+                grid-template-columns: 1fr;
+            }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="google-search"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Tasks / Online / Seed Methods</div>
+        <h1>GoogleSearch</h1>
+        <p class="pitch">
+            High-precision web discovery using the Google Custom Search API. Automatically populates crawler queues with relevant entry points based on targeted search queries.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Seed Strategy</span>
+            <span class="badge">Auth: Google API Key</span>
+            <span class="badge">Side-Effect: Safe</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>CrawlerTaskExecutionConfigData</span>
+                <span>JSON</span>
+            </div>
+            <pre><code>{
+  "search_query": "site:github.com 'cognotik' architecture",
+  "max_seeds": 20
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>SeedItem Discovery</span>
+                <span>UI Render</span>
+            </div>
+            <div class="mock-ui-content">
+                <div class="search-result-item">
+                    <span class="result-title">Cognotik/docs/architecture.md</span>
+                    <span class="result-link">https://github.com/Cognotik/docs/blob/main/architecture.md</span>
+                    <p class="result-snippet">Technical overview of the Cognotik task orchestration engine and bento-grid UI implementation...</p>
+                </div>
+                <div class="search-result-item">
+                    <span class="result-title">Industrial Design System - Cognotik</span>
+                    <span class="result-link">https://github.com/Cognotik/design/wiki/Industrial-Theme</span>
+                    <p class="result-snippet">Standards for utility-first developer interfaces, focusing on density and IDE-native aesthetics...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Execution Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>search_query</code><span class="req">*</span></td>
+                    <td><code>String</code></td>
+                    <td>The search terms used to query Google. Supports advanced operators (site:, filetype:, etc.).</td>
+                </tr>
+                <tr>
+                    <td><code>max_seeds</code></td>
+                    <td><code>Int</code></td>
+                    <td>Maximum number of results to return. Hard-capped at 20 to respect API limits. Default: 20.</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin-top: 2rem;">Required Credentials</h3>
+            <p>This task requires the following configured in <strong>User Settings</strong>:</p>
+            <ul>
+                <li><code>APIProvider.Google</code> Key: A valid API key from the Google Cloud Console.</li>
+                <li><code>Search Engine ID (CX)</code>: The unique identifier for your Custom Search Engine.</li>
+            </ul>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Lifecycle</h3>
+            <ol>
+                <li><strong>Validation:</strong> Ensures <code>search_query</code> is present and non-blank.</li>
+                <li><strong>Authentication:</strong> Retrieves and decrypts the Google API key and Engine ID from <code>UserSettingsManager</code>.</li>
+                <li><strong>Request Construction:</strong> Encodes the query and builds the URI for <code>googleapis.com/customsearch/v1</code>.</li>
+                <li><strong>Execution:</strong> Performs an asynchronous GET request with a 30-second timeout and custom User-Agent.</li>
+                <li><strong>Error Handling:</strong>
+                    <ul>
+                        <li><code>401</code>: Invalid API Key.</li>
+                        <li><code>403</code>: Quota exceeded or access forbidden.</li>
+                        <li><code>429</code>: Rate limit hit.</li>
+                    </ul>
+                </li>
+                <li><strong>Mapping:</strong> Parses JSON response into <code>SeedItem</code> objects, capturing <code>link</code>, <code>title</code>, <code>snippet</code>, and <code>pagemap</code> data.</li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Kotlin Implementation</h3>
+            <p>Add this to your <code>OrchestrationConfig</code> to enable Google-backed discovery:</p>
+            <div class="panel">
+                <pre><code>val searchTask = CrawlerAgentTask(
+    config = CrawlerTaskExecutionConfigData(
+        search_query = "latest transformer research 2024",
+        seed_method = "GoogleSearch"
+    )
+)
+
+// The engine will automatically use GoogleSearch factory
+// to generate the SeedStrategy.</code></pre>
+            </div>
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.target.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

@@ -1,911 +1,395 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Cognotik Comic Book Generation Task - Transform text concepts into structured comic scripts and visual narratives.">
-    <title>Comic Book Generator | Cognotik</title>
+    <title>Cognotik | ComicBookGenerationTask</title>
 
-    <!-- Fonts: Inter for UI, Cinzel for Narrative flair -->
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
-    <!-- Shared Styles -->
     <link rel="stylesheet" href="assets/styles/main.css">
-
-    <!-- Web Component Script -->
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
-            
-            
-            
-            
-
-        
-
-
-        
-        
-
-
-        
-        
-
-
-        
-        
-
-        
-        
-        
-        
-
-        
-
-
-
-        /* Page-specific overrides and additions to main.css */
         :root {
-        
-            --accent-secondary: #fbbf24; /* Gold override */
-            --accent-glow-gold: rgba(251, 191, 36, 0.3);
-        
-        
-        
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
         }
-        
-        /* Layout Utility */
-        .container {
-            max-width: var(--container-max-width);
-            margin: 0 auto;
-            padding: 0 var(--spacing-lg);
-        }
-        .hidden { display: none !important; }
-        
-        /* Hero Section - Extending main.css .hero */
-        .hero {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-            text-align: left;
-            min-height: 80vh;
-            padding-top: calc(var(--header-height) + 4rem);
-        }
-        
-        .hero h1 {
-            font-size: 3.5rem;
-            background: linear-gradient(to right, #fff, var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
 
-        .hero-visual {
-            position: relative;
-            height: 500px;
-            background: radial-gradient(circle at center, var(--surface-color), var(--background-color));
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            overflow: hidden;
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d19a66; /* Monokai-ish */
+        }
+
+        .flow-arrow {
             display: flex;
             align-items: center;
             justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
         }
-        
-        /* Simulator Overrides */
-        .simulator-container {
-            height: 800px; /* Fixed height for this specific tool */
-        }
-        
-        /* Custom Inputs for Simulator */
-        .sim-input, .sim-select {
-            width: 100%;
-            padding: var(--spacing-sm) var(--spacing-md);
-            background-color: var(--background-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            border-radius: var(--border-radius);
-            margin-bottom: 0.5rem;
-        }
-        
-        /* Output Specifics */
-        .log-terminal {
-            font-family: var(--font-family-mono);
-            color: var(--success-color);
-        }
-        
-        .script-view {
-            white-space: pre-wrap;
-            font-family: var(--font-family-serif);
-            line-height: 1.8;
-            color: var(--text-color);
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        /* Range Slider Styling */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: transparent;
-        }
-        
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 16px;
-            width: 16px;
-            border-radius: 50%;
-            background: var(--accent-secondary);
-            cursor: pointer;
-            margin-top: -6px;
-            box-shadow: 0 0 10px var(--accent-glow-gold);
-        }
-        
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 4px;
-            cursor: pointer;
-            background: var(--bg-input);
-            border-radius: 2px;
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        .char-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 1.5rem;
-        }
-        
-        .char-card {
-            background: rgba(255,255,255,0.05);
+
+        /* Mock UI Content */
+        .mock-ui-content {
             padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid var(--border-color);
+            flex-grow: 1;
+            background: #1e1e1e;
         }
-        
-        .char-img-placeholder {
+
+        .comic-mockup {
+            border: 2px solid #000;
+            background: #fff;
+            padding: 10px;
+            color: #000;
+        }
+
+        .comic-row-img {
             width: 100%;
-            height: 150px;
-            background: #000;
-            margin-bottom: 0.5rem;
-            border-radius: 4px;
-        
-        
-        }
-        
-        
-        
-        
-        /* Workflow & Use Cases */
-        .workflow-section, .use-cases-section { padding: 4rem 0; }
-        
-        .use-case-item {
+            height: 120px;
+            background: #ddd;
             display: flex;
             align-items: center;
-            gap: 1.5rem;
-            background: var(--surface-color);
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            border-left: 4px solid var(--accent-color);
-            margin-bottom: 1rem;
-            transition: transform 0.2s;
+            justify-content: center;
+            font-weight: bold;
+            border: 1px solid #999;
+            margin-bottom: 5px;
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        .use-case-item:hover { transform: translateX(10px); }
-        /* Responsive */
-        
+
+        .speech-bubble {
+            background: white;
+            border: 1px solid black;
+            border-radius: 10px;
+            padding: 5px;
+            font-size: 0.7rem;
+            font-family: 'Comic Sans MS', cursive;
+            margin-bottom: 5px;
+            position: relative;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; margin-left: 4px; }
+
         @media (max-width: 768px) {
-        
-        
-        
-        
-            .hero { grid-template-columns: 1fr; text-align: center; padding-top: 6rem; }
-            .simulator-container { grid-template-columns: 1fr; height: auto; }
-            .sim-controls { border-right: none; border-bottom: 1px solid var(--border-color); }
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
         }
     </style>
-<!-- Generated Images:
-     - comic-generator-hero.png: A high-quality, abstract 3D illustration set against a deep slate blue background (#0f172a). The image depicts a stream of glowing binary code and text floating upward and transforming into vibrant, floating comic book panels. The panels show abstract silhouettes of heroes in dynamic poses. The composition is lit with neon purple (#a855f7) and gold (#fbbf24) rim lighting. The style is "Future-Professional," combining clean geometric shapes with artistic fluidity to represent AI-generated storytelling.
-     - character-detective-kai.png: A stylized character reference sheet for a "Cyberpunk Noir" comic. The subject is "Detective Kai," a gritty man in a high-collared trench coat with a glowing cybernetic eye. The art style is high-contrast digital painting with heavy shadows and neon blue highlights. The background is a dark, technical grid pattern (slate grey) to imply a schematic or database view. The image should look like a generated asset for a character consistency profile.
-     - comic-strip-row-noir.png: A horizontal comic book strip consisting of two wide panels, rendered in a dark, atmospheric noir style. Panel 1 (Left): A wide shot of a futuristic Tokyo-style skyline under heavy rain, illuminated by neon signs in purple and cyan. Panel 2 (Right): A cinematic close-up of heavy combat boots stepping into a rain puddle, creating a splash. The images should have a "hand-drawn" ink aesthetic but with digital coloring, fitting the "Western Superhero" or "Noir" art style options.
--->
 </head>
 <body>
 
-    <!-- Navigation Component -->
-    <cognotik-header current-page="comic-book"></cognotik-header>
+<cognotik-header current-page="tasks"></cognotik-header>
 
-    <main>
-        <!-- 
-            IMAGE PROMPT: 
-            A high-quality, abstract 3D illustration representing comic book creation.
-            Visual: Floating, glowing comic book panels assembling themselves in mid-air from digital particles.
-            The panels show abstract silhouettes of heroes. The color palette is deep slate blue with 
-            neon purple and gold outlines, emphasizing the "Writing" and "Creative" nature of the task.
-        -->
-        <section class="hero container">
-            <div class="hero-content">
-                <h1>Comic Book Generator</h1>
-                <p>Transform raw ideas into fully realized graphic narratives. This agent orchestrates scriptwriting, character design, and panel layout visualization in a single workflow.</p>
-                <button class="btn" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
-                    Open Studio
-                </button>
-            </div>
-            <div class="hero-visual">
-                <!-- 3D Illustration -->
-                <img src="assets/images/comic-generator-hero.png" alt="Abstract 3D illustration of glowing comic book panels assembling from digital particles" style="width: 100%; height: 100%; object-fit: cover;">
-            </div>
-        </section>
+<main class="task-container">
 
-        <!-- Features Grid -->
-        <section class="features container">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Writing > ComicBookGenerationTask</div>
+        <h1>ComicBookGenerationTask</h1>
+        <p class="pitch">
+            Generate structured comic book scripts and high-fidelity visual strips with character consistency and multi-page orchestration.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Multi-Modal</span>
+            <span class="badge">DALL-E / Midjourney Integration</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> ExecutionConfig.json</div>
+            <pre><code>
+{
+  "subject": "Cyberpunk Detective in Neo-Tokyo",
+  "target_pages": 5,
+  "art_style": "manga",
+  "style_details": "High contrast, neon accents",
+  "generate_images": true
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI Output</div>
+            <div class="mock-ui-content">
+                <div class="comic-mockup">
+                    <div style="font-weight: bold; border-bottom: 1px solid #000; margin-bottom: 10px;">PAGE 1: THE RAIN FALLS</div>
+                    <div class="comic-row-img">
+                        [NEO-TOKYO STREETSCAPE]
                     </div>
-                    <h3>Structured Scripting</h3>
-                    <p>Automatically generates industry-standard scripts broken down by Page, Row, and Frame with dialogue and visual descriptions.</p>
+                    <div class="speech-bubble">
+                        <strong>Kaito:</strong> "The data is here. Somewhere in the neon haze."
+                    </div>
+                    <div class="comic-row-img" style="height: 80px;">
+                        [CLOSE UP: GLOWING DATA CHIP]
+                    </div>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    </div>
-                    <h3>Character Consistency</h3>
-                    <p>Creates detailed character profiles and reference sheets to ensure visual consistency across the narrative.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                    </div>
-                    <h3>Visual Rendering</h3>
-                    <p>Optional image generation pipeline that renders comic strips row-by-row based on the generated script and art style.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Interactive Simulator -->
-        <section id="simulator" class="simulator container">
-            <div class="simulator-container">
-                <!-- Left: Inputs -->
-                <div class="sim-controls">
-                    <h2>Configuration</h2>
-                    <form id="task-config-form" onsubmit="event.preventDefault(); runSimulation();">
-                        
-                        <div class="control-group">
-                            <label for="subject">Subject / Premise</label>
-                            <textarea id="subject" class="sim-input" rows="4" placeholder="e.g., A detective noir story set in a cyberpunk Tokyo where it never stops raining..."></textarea>
-                        </div>
-
-                        <div class="control-group">
-                            <label for="art_style">Art Style</label>
-                            <select id="art_style" class="sim-select">
-                                <option value="western superhero">Western Superhero</option>
-                                <option value="manga">Manga</option>
-                                <option value="noir">Noir / High Contrast</option>
-                                <option value="cartoon">Cartoon</option>
-                                <option value="watercolor">Watercolor</option>
-                            </select>
-                        </div>
-
-                        <div class="control-group">
-                            <label for="target_pages">Target Pages: <span id="page-val">5</span></label>
-                            <div class="range-wrapper">
-                                <input type="range" id="target_pages" min="1" max="20" value="5" class="sim-input" oninput="document.getElementById('page-val').innerText = this.value">
-                            </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="checkbox-container">
-                                <input type="checkbox" id="generate_images" checked>
-                                Generate Visuals (Slow)
-                            </label>
-                        </div>
-
-                        <button type="submit" class="btn" id="run-btn">Generate Comic</button>
-                    </form>
-                </div>
-
-                <!-- Right: Outputs -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <button class="tab active" onclick="switchTab('overview')">Overview</button>
-                        <button class="tab" onclick="switchTab('script')">Script</button>
-                        <button class="tab" onclick="switchTab('characters')">Characters</button>
-                        <button class="tab" onclick="switchTab('visuals')">Visuals</button>
-                        <button class="tab" onclick="switchTab('logs')">Logs</button>
-                    </div>
-
-                    <div id="tab-overview" class="tab-content active">
-                        <h3>Ready to Create</h3>
-                        <p class="text-muted">Configure the settings on the left and click "Generate Comic" to start the agent.</p>
-                        <div style="margin-top: 2rem; opacity: 0.5; text-align: center;">
-                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
-                        </div>
-                    </div>
-
-                    <div id="tab-script" class="tab-content">
-                        <div class="script-view" id="script-display">
-                            <!-- Script content will be injected here -->
-                            <p class="text-muted">Waiting for generation...</p>
-                        </div>
-                    </div>
-
-                    <div id="tab-characters" class="tab-content">
-                        <div class="char-grid" id="char-display">
-                            <!-- Character cards injected here -->
-                            <p class="text-muted" style="grid-column: 1/-1;">Waiting for script analysis...</p>
-                        </div>
-                    </div>
-
-                    <div id="tab-visuals" class="tab-content">
-                        <div id="visuals-display">
-                            <!-- Images injected here -->
-                            <p class="text-muted">Waiting for character designs...</p>
-                        </div>
-                    </div>
-
-                    <div id="tab-logs" class="tab-content">
-                        <div class="log-terminal" id="log-display">
-                            <span style="color: #64748b;">// System Ready...</span>
-                        </div>
-                    </div>
+                <div style="margin-top: 10px; font-size: 0.75rem; color: #8b949e; font-family: monospace;">
+                    Generated: comic_book.json, 15 images
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Workflow Visualization -->
-        <section class="workflow-section container" style="padding-bottom: 4rem;">
-            <h2 style="margin-bottom: 2rem; font-family: var(--font-display);">Agent Workflow</h2>
-            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-                <div class="feature-card" style="flex: 1; min-width: 200px; text-align: center;">
-                    <strong style="color: var(--accent-secondary);">01. Concept</strong>
-                    <p>Analyzes subject & style</p>
-                </div>
-                <div style="display: flex; align-items: center; color: var(--text-muted);">→</div>
-                <div class="feature-card" style="flex: 1; min-width: 200px; text-align: center;">
-                    <strong style="color: var(--accent-secondary);">02. Scripting</strong>
-                    <p>Generates pages & dialogue</p>
-                </div>
-                <div style="display: flex; align-items: center; color: var(--text-muted);">→</div>
-                <div class="feature-card" style="flex: 1; min-width: 200px; text-align: center;">
-                    <strong style="color: var(--accent-secondary);">03. Character Design</strong>
-                    <p>Creates reference sheets</p>
-                </div>
-                <div style="display: flex; align-items: center; color: var(--text-muted);">→</div>
-                <div class="feature-card" style="flex: 1; min-width: 200px; text-align: center;">
-                    <strong style="color: var(--accent-secondary);">04. Rendering</strong>
-                    <p>Draws panels row-by-row</p>
-                </div>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>subject</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The subject or scenario to develop into a comic book.</td>
+                </tr>
+                <tr>
+                    <td><code>target_pages</code></td>
+                    <td>Int</td>
+                    <td>Target number of pages (Default: 5).</td>
+                </tr>
+                <tr>
+                    <td><code>art_style</code></td>
+                    <td>String</td>
+                    <td>Art style (e.g., 'manga', 'noir', 'cartoon').</td>
+                </tr>
+                <tr>
+                    <td><code>style_details</code></td>
+                    <td>String</td>
+                    <td>Additional visual guidelines or lighting details.</td>
+                </tr>
+                <tr>
+                    <td><code>generate_images</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to generate images for each row (Default: true).</td>
+                </tr>
+                </tbody>
+            </table>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">
+                <strong>Token Usage:</strong> High (Multiple LLM calls for script + Image generation tokens).
+            </p>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Lifecycle</h3>
+            <ol style="color: var(--text-main);">
+                <li><strong>Script Generation:</strong> Uses a smart model to create a <code>ComicScript</code> object containing characters, pages, rows, and frames.</li>
+                <li><strong>Character Profiling:</strong> Extracts visual traits for each character to ensure consistency.</li>
+                <li><strong>Reference Generation:</strong> Generates character sheets to be used as visual context for subsequent panels.</li>
+                <li><strong>Strip Generation:</strong> Iterates through pages and rows, generating composite images for each "strip" using character references and scene descriptions.</li>
+                <li><strong>Finalization:</strong> Packages the script and image links into a <code>comic_book.json</code> workspace file.</li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Kotlin Boilerplate</h3>
+            <div class="panel">
+                <pre><code>
+val task = ComicBookGenerationTask(
+    orchestrationConfig = config,
+    planTask = ComicBookGenerationTaskExecutionConfigData(
+        subject = "A space western about a lonely robot",
+        art_style = "western superhero",
+        target_pages = 3
+    )
+)
+                </code></pre>
             </div>
-        </section>
 
-        <!-- Use Cases -->
-        <section class="use-cases-section container">
-            <h2 style="margin-bottom: 2rem; font-family: var(--font-display);">Use Cases</h2>
-            <div class="use-case-list">
-                <div class="use-case-item">
-                    <div>
-                        <h3>Rapid Storyboarding</h3>
-                        <p>Filmmakers and animators can generate visual storyboards from rough script ideas in minutes rather than days.</p>
-                    </div>
-                </div>
-                <div class="use-case-item">
-                    <div>
-                        <h3>Indie Comic Publishing</h3>
-                        <p>Solo writers can visualize their narratives without needing advanced drawing skills, or use the output as a reference for human artists.</p>
-                    </div>
-                </div>
-                <div class="use-case-item">
-                    <div>
-                        <h3>Educational Material</h3>
-                        <p>Create engaging, visual explanations of complex historical events or scientific processes for students.</p>
-                    </div>
-                </div>
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <div class="panel" style="padding: 1rem; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-dim);">
+                ComicBookGeneration - Generate comic book scripts and visuals<br>
+                - Create a comic book script with page/row/frame structure<br>
+                - Specify subject, target pages, and art style<br>
+                - Generates character profiles and visual descriptions<br>
+                - Can generate images for each row (strip)
             </div>
-        </section>
+        </div>
+    </section>
 
-    </main>
+</main>
 
-    <script>
-        // Tab Switching Logic
-        function switchTab(tabId) {
-            // Remove active class from all buttons
-            document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
-            // Add active class to clicked button
-            event.target.classList.add('active');
-            
-            // Hide all content
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            // Show target content
-            document.getElementById('tab-' + tabId).classList.add('active');
-        }
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-        // Simulation Logic
-        function runSimulation() {
-            const subject = document.getElementById('subject').value || "A generic hero story";
-            const style = document.getElementById('art_style').value;
-            const pages = document.getElementById('target_pages').value;
-            const genImages = document.getElementById('generate_images').checked;
-            
-            const logDisplay = document.getElementById('log-display');
-            const scriptDisplay = document.getElementById('script-display');
-            const charDisplay = document.getElementById('char-display');
-            const visualsDisplay = document.getElementById('visuals-display');
-            const runBtn = document.getElementById('run-btn');
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-            // Reset UI
-            runBtn.disabled = true;
-            runBtn.innerText = "Processing...";
-            logDisplay.innerHTML = `<div style="margin-bottom: 5px;">> Initializing ComicBookGenerationTask...</div>`;
-            scriptDisplay.innerHTML = "";
-            charDisplay.innerHTML = "";
-            visualsDisplay.innerHTML = "";
-            switchTab('logs');
-
-            // Helper for logging
-            const log = (msg) => {
-                logDisplay.innerHTML += `<div style="margin-bottom: 5px;">> ${msg}</div>`;
-                logDisplay.scrollTop = logDisplay.scrollHeight;
-            };
-
-            // Mock Process
-            setTimeout(() => {
-                log(`Subject: "${subject}"`);
-                log(`Style: ${style}, Pages: ${pages}`);
-                
-                // Step 1: Script
-                setTimeout(() => {
-                    log("Generating Script Structure...");
-                    const mockScript = `
-# The Neon Shadow
-*Premise: ${subject}*
-
-## Page 1
-**Row 1**
-- Panel 1: Wide shot of the city skyline. Rain falls heavily.
-  - **Narrator**: "The city never sleeps. It just waits."
-- Panel 2: Close up on DETECTIVE KAI's boots stepping into a puddle.
-  - **Sound**: SPLASH
-
-**Row 2**
-- Panel 3: Kai lights a cigarette under a neon sign.
-  - **Kai**: "Another night, another missing android."
-                    `;
-                    scriptDisplay.innerText = mockScript;
-                    log("✅ Script Generated.");
-                    
-                    // Step 2: Characters
-                    setTimeout(() => {
-                        log("Designing Character Profiles...");
-                        const chars = [
-                            {name: "Detective Kai", desc: "Gritty, trenchcoat, cyber-eye"},
-                            {name: "Unit 734", desc: "Rogue android, glowing blue veins"}
-                        ];
-                        
-                        chars.forEach(c => {
-                            // Logic to insert specific character image for Detective Kai
-                            let imgHtml = `<div class="char-img-placeholder" style="background: linear-gradient(45deg, #333, #444);"></div>`;
-                            if(c.name === "Detective Kai") {
-                                imgHtml = `<img src="assets/images/character-detective-kai.png" alt="Detective Kai Character Sheet" style="width: 100%; height: auto; border-radius: 4px; margin-bottom: 0.5rem;">`;
-                            }
-
-                            charDisplay.innerHTML += `
-                                <div class="char-card">
-                                    ${imgHtml}
-                                    <h4>${c.name}</h4>
-                                    <small>${c.desc}</small>
-                                </div>
-                            `;
-                        });
-                        log(`✅ ${chars.length} Characters Defined.`);
-
-                        // Step 3: Visuals (if enabled)
-                        if(genImages) {
-                            setTimeout(() => {
-                                log("Rendering Page 1, Row 1...");
-                                // Insert generated comic strip image
-                                visualsDisplay.innerHTML += `
-                                    <div style="margin-bottom:1rem;">
-                                        <img src="assets/images/comic-strip-row-noir.png" alt="Noir Comic Strip Row" style="width: 100%; border: 1px solid #333; border-radius: 4px;">
-                                    </div>`;
-                                
-                                setTimeout(() => {
-                                    log("Rendering Page 1, Row 2...");
-                                    visualsDisplay.innerHTML += `<div style="background:#111; padding:1rem; margin-bottom:1rem; border:1px solid #333; text-align:center;">[Generated Image: Detective Kai / Neon Light]</div>`;
-                                    
-                                    finish();
-                                }, 1500);
-                            }, 1500);
-                        } else {
-                            finish();
-                        }
-
-                    }, 1500);
-                }, 1500);
-            }, 500);
-
-            function finish() {
-                log("Task Complete.");
-                runBtn.disabled = false;
-                runBtn.innerText = "Generate Comic";
-                if(genImages) switchTab('visuals');
-                else switchTab('script');
-            }
-        }
-    </script>
-
-    <script>
-        /**
-         * Cognotik Comic Book Generator - Interactive Logic
-         * Handles tab switching, range slider updates, and the mock simulation of the agent workflow.
-         */
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initialize UI elements
-            setupRangeSlider();
-            setupFormSubmission();
-        });
-        
-        /**
-         * Sets up the range slider to update the display value in real-time.
-         */
-        function setupRangeSlider() {
-            const rangeInput = document.getElementById('target_pages');
-            const rangeValueDisplay = document.getElementById('page-val');
-        
-            if (rangeInput && rangeValueDisplay) {
-                rangeInput.addEventListener('input', (e) => {
-                    rangeValueDisplay.textContent = e.target.value;
-                });
-            }
-        }
-        
-        /**
-         * Handles the form submission to prevent default reload and trigger the simulation.
-         */
-        function setupFormSubmission() {
-            const form = document.getElementById('task-config-form');
-            if (form) {
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    runSimulation();
-                });
-            }
-        }
-        
-        /**
-         * Switches the active tab in the output section.
-         * Exposed to window to support inline HTML onclick attributes.
-         * @param {string} tabId - The ID suffix of the tab to show (e.g., 'script', 'logs').
-         */
-        window.switchTab = function(tabId) {
-            // 1. Update Button States
-            const buttons = document.querySelectorAll('.tab');
-            buttons.forEach(btn => {
-                // Check if this button's onclick matches the requested tabId
-                if (btn.getAttribute('onclick').includes(tabId)) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-        
-            // 2. Update Content Visibility
-            const contents = document.querySelectorAll('.tab-content');
-            contents.forEach(content => {
-                content.classList.remove('active');
-            });
-        
-            const targetContent = document.getElementById(`tab-${tabId}`);
-            if (targetContent) {
-                targetContent.classList.add('active');
-            }
-        };
-        
-        /**
-         * Helper function to simulate network/processing delay.
-         * @param {number} ms - Milliseconds to wait.
-         */
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-        
-        /**
-         * Core Simulation Logic
-         * Mocks the backend agent process: Config -> Logs -> Script -> Characters -> Visuals.
-         */
-        async function runSimulation() {
-            // 1. Gather Inputs
-            const subjectInput = document.getElementById('subject');
-            const styleInput = document.getElementById('art_style');
-            const pagesInput = document.getElementById('target_pages');
-            const genImagesInput = document.getElementById('generate_images');
-            const runBtn = document.getElementById('run-btn');
-        
-            // Default values if empty
-            const subject = subjectInput.value.trim() || "A generic hero story in a futuristic city";
-            const style = styleInput.value;
-            const pages = pagesInput.value;
-            const shouldGenImages = genImagesInput.checked;
-        
-            // 2. Prepare UI for Processing
-            runBtn.disabled = true;
-            runBtn.innerHTML = `<span class="spinner"></span> Processing...`; // Assumes CSS spinner or just text
-        
-            // Clear previous outputs
-            document.getElementById('script-display').innerHTML = '<p class="text-muted">Generating script structure...</p>';
-            document.getElementById('char-display').innerHTML = '<p class="text-muted">Waiting for script...</p>';
-            document.getElementById('visuals-display').innerHTML = '<p class="text-muted">Waiting for characters...</p>';
-        
-            // Switch to Logs tab to show progress
-            window.switchTab('logs');
-            const logDisplay = document.getElementById('log-display');
-            logDisplay.innerHTML = '<div style="color: #64748b;">// Starting ComicBookGenerationTask...</div>';
-        
-            // Helper to append logs
-            const log = (msg, type = 'info') => {
-                const color = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#f8fafc');
-                const timestamp = new Date().toLocaleTimeString([], { hour12: false });
-                logDisplay.innerHTML += `<div style="margin-top: 4px;"><span style="color:#555">[${timestamp}]</span> <span style="color:${color}">> ${msg}</span></div>`;
-                logDisplay.scrollTop = logDisplay.scrollHeight;
-            };
-        
-            try {
-                // --- STEP 1: Initialization ---
-                await delay(600);
-                log(`Subject: '${subject}'`);
-                log(`Config: ${pages} pages, Style: '${style}'`);
-        
-                // --- STEP 2: Script Generation ---
-                await delay(1200);
-                log("Generating script structure (Page/Row/Frame)...");
-        
-                // Generate Mock Script based on style
-                const scriptData = generateMockScriptData(subject, style, pages);
-                const scriptHtml = renderScriptToHtml(scriptData);
-                document.getElementById('script-display').innerHTML = scriptHtml;
-        
-                await delay(800);
-                log("✅ Script generation complete.", "success");
-        
-                // --- STEP 3: Character Extraction ---
-                await delay(1000);
-                log("Designing Character Profiles...");
-        
-                const characters = scriptData.characters;
-                const charContainer = document.getElementById('char-display');
-                charContainer.innerHTML = ""; // Clear placeholder
-        
-                characters.forEach(char => {
-                    const charCard = `
-                        <div class="char-card">
-                            <div class="char-img-placeholder" style="background: linear-gradient(135deg, #334155, #1e293b); display:flex; align-items:center; justify-content:center; color:#64748b; font-size:0.8rem;">
-                                [Img: ${char.name}]
-                            </div>
-                            <h4 style="margin-top:0.5rem; color:var(--accent-secondary)">${char.name}</h4>
-                            <small style="color:var(--text-muted)">${char.description}</small>
-                        </div>
-                    `;
-                    charContainer.innerHTML += charCard;
-                    log(`Generated reference for: ${char.name}`);
-                });
-        
-                log(`✅ ${characters.length} Characters Defined.`, "success");
-        
-                // --- STEP 4: Visual Generation (Optional) ---
-                if (shouldGenImages) {
-                    log("Initializing ImageProcessingAgent for row rendering...");
-                    const visualsContainer = document.getElementById('visuals-display');
-                    visualsContainer.innerHTML = ""; // Clear placeholder
-            
-                    // Simulate rendering loop
-                
-                    // We will just render the first page's rows to save time in simulation
-                    const pageToRender = scriptData.pages[0];
-                    
-                    for (const row of pageToRender.rows) {
-                        await delay(1200); // Simulate generation time
-                        log(`Rendering Page ${pageToRender.page_number}, Row ${row.row_number}...`);
-
-                        const imgPlaceholder = `
-                            <div style="margin-bottom: 2rem;">
-                                <h4 style="color: var(--accent-secondary); margin-bottom: 0.5rem;">Page ${pageToRender.page_number}, Row ${row.row_number}</h4>
-                                <div style="background: #020617; border: 1px solid #334155; border-radius: 8px; padding: 1rem; text-align: center;">
-                                    <div style="height: 180px; background: radial-gradient(circle, #1e293b, #0f172a); display: flex; align-items: center; justify-content: center; border-radius: 4px; margin-bottom: 0.5rem;">
-                                        <span style="color: var(--accent-primary); font-family: var(--font-display); font-size: 0.9rem;">
-                                            [Generated Strip: ${row.visual_description.substring(0, 30)}...]
-                                        </span>
-                                    </div>
-                                    <p style="font-size: 0.9rem; color: var(--text-muted);">
-                                        <em>${row.frames.length} Panels rendered.</em>
-                                    </p>
-                                </div>
-                            </div>
-                        `;
-                        visualsContainer.innerHTML += imgPlaceholder;
-                    }
-                    log("✅ Images Generated.", "success");
-                } else {
-                    log("Skipping visual generation (User preference).");
-                }
-        
-                // --- STEP 5: Finalization ---
-                await delay(500);
-                log("Comic Book Generation Complete", "success");
-        
-                // Reset Button
-                runBtn.disabled = false;
-                runBtn.innerText = "Generate Comic";
-        
-                // Auto-switch to the most relevant tab
-                if (shouldGenImages) {
-                    window.switchTab('visuals');
-                } else {
-                    window.switchTab('script');
-                }
-        
-            } catch (error) {
-                console.error(error);
-                log("Error during execution.", "error");
-                runBtn.disabled = false;
-                runBtn.innerText = "Generate Comic";
-            }
-        }
-        
-        /**
-         * Generates a structured mock script object (mimicking Kotlin data classes).
-         */
-        function generateMockScriptData(subject, style, pageCount) {
-            const title = subject.split(' ').slice(0, 3).join(' ').toUpperCase() || "UNTITLED STORY";
-        
-        
-        
-        
-        
-            
-            // Mock Characters
-            let characters = [];
-            if (style === 'manga') {
-                characters = [
-                    { name: "Hiro", description: "Spiky hair, determined expression", visual_traits: "School uniform, katana" },
-                    { name: "Kenji", description: "Sharp eyes, cool demeanor", visual_traits: "Dark cloak, glasses" }
-                ];
-            } else if (style === 'noir') {
-                characters = [
-                    { name: "Det. Vance", description: "Worn trenchcoat, fedora", visual_traits: "Smoking, stubble, shadow" },
-                    { name: "The Dame", description: "Elegant evening gown", visual_traits: "Red lipstick, mysterious" }
-                ];
-            } else {
-                characters = [
-                    { name: "Captain Solar", description: "Muscular build, glowing emblem", visual_traits: "Gold and white suit, cape" },
-                    { name: "Dr. Void", description: "Lab coat, cybernetic enhancements", visual_traits: "Green energy aura" }
-                ];
-            }
-
-            // Mock Pages
-            const pages = [];
-            for(let i=1; i<=Math.min(pageCount, 3); i++) { // Limit to 3 pages for mock
-                pages.push({
-                    page_number: i,
-                    rows: [
-                        {
-                            row_number: 1,
-                            visual_description: "Establishing shot of the environment.",
-                            frames: [
-                                { frame_number: 1, description: "Wide shot of the city.", dialog: [], caption: "The city never sleeps." },
-                                { frame_number: 2, description: `${characters[0].name} steps into view.`, dialog: [{character: characters[0].name, text: "Here we go again."}], caption: null }
-                            ]
-                        },
-                        {
-                            row_number: 2,
-                            visual_description: "Action sequence initiates.",
-                            frames: [
-                                { frame_number: 3, description: "Close up on eyes.", dialog: [], caption: null },
-                                { frame_number: 4, description: "Dynamic pose.", dialog: [{character: characters[0].name, text: "HAA!"}], caption: "SFX: BOOM" }
-                            ]
-                        }
-                    ]
-                });
-            }
-
-            return {
-                title: title,
-                premise: subject,
-                characters: characters,
-                pages: pages
-            };
-        }
-        
-        /**
-         * Renders the script object to HTML.
-         */
-        function renderScriptToHtml(script) {
-            let html = `
-                <h2 style="font-family: var(--font-display); color: var(--accent-secondary);">${script.title}</h2>
-                <p><em><strong>Premise:</strong> ${script.premise}</em></p>
-                <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
-                <h3>Characters</h3>
-                <ul>
-                    ${script.characters.map(c => `<li><strong>${c.name}</strong>: ${c.description} (${c.visual_traits})</li>`).join('')}
-                </ul>
-                <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
-            `;
-
-            script.pages.forEach(page => {
-                html += `<h3>Page ${page.page_number}</h3>`;
-                page.rows.forEach(row => {
-                    html += `
-                        <div style="margin-left: 1rem; border-left: 2px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1.5rem;">
-                            <strong>Row ${row.row_number}</strong>
-                            <ul style="list-style: none; padding: 0; margin-top: 0.5rem;">
-                    `;
-                    row.frames.forEach(frame => {
-                        html += `
-                            <li style="margin-bottom: 1rem;">
-                                <span style="color: var(--accent-primary);">Panel ${frame.frame_number}:</span> ${frame.description}
-                        `;
-                        if(frame.caption) {
-                            html += `<br><span style="color: #94a3b8;">CAPTION: "${frame.caption}"</span>`;
-                        }
-                        frame.dialog.forEach(d => {
-                            html += `<br><span style="color: #e2e8f0;"><strong>${d.character}</strong>: "${d.text}"</span>`;
-                        });
-                        html += `</li>`;
-                    });
-                    html += `</ul></div>`;
-                });
-            });
-            return html;
-        }
-    </script>
 </body>
 </html>

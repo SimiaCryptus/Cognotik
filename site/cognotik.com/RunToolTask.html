@@ -1,330 +1,429 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Cognotik RunTool Task - Orchestrate external CLI tools and system commands.">
-    <title>Cognotik | RunTool Task</title>
+    <title>Cognotik | RunToolTask - Industrial Design System</title>
 
-    <!-- Fonts -->
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
-        
-        
-        
-        
-        
-        
-        
-        
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-serif: 'Cinzel', serif;
+        }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
 
-        
-        
-        
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
 
-        
-        
-        
+        .page-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 1.5rem;
+        }
 
-        
-        
-        
-        /* Footer styles */
-        
-        footer { background: #0b1120; padding: 60px 24px; border-top: 1px solid var(--border-color); }
-        .footer-content { max-width: var(--container-max-width); margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 24px; }
-        .footer-brand { font-size: 1.5rem; font-weight: 700; color: var(--text-muted); }
-        .footer-links { display: flex; gap: 24px; }
-        .footer-links a { color: var(--text-muted); font-size: 0.9rem; }
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
 
-        .footer-links a:hover { color: var(--accent-color); }
-        
-        /* Terminal specific overrides */
-        .terminal-window { background: #0d1117; padding: 20px; font-family: var(--font-family-mono); overflow-y: auto; height: 100%; }
-        .term-line { display: block; font-size: 0.9rem; margin-bottom: 4px; color: var(--text-color); }
-        .term-prompt::before { content: '$ '; color: var(--accent-secondary); }
-        .text-muted { color: var(--text-muted); }
-        .help-text { font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 4px; }
+        h1 {
+            font-family: var(--font-serif);
+            font-size: 3rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 4rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+            background: #0d1117;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1rem;
+            background: var(--bg-panel);
+        }
+
+        .btn-action {
+            background: var(--accent-primary);
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.05);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            color: #e6edf3;
+        }
+
+        .req { color: #f85149; }
+        .lifecycle-list {
+            padding-left: 1.2rem;
+            color: var(--text-main);
+        }
+        .lifecycle-list li {
+            margin-bottom: 1rem;
+        }
+        .lifecycle-list strong {
+            color: var(--accent-primary);
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
     </style>
 </head>
 <body>
 
-    <cognotik-header current-page="runtool"></cognotik-header>
+<cognotik-header current-page="tasks"></cognotik-header>
 
-    <main>
-        <!-- Hero Section -->
-        <section class="hero">
-            <h1>RunTool Task</h1>
-            <p class="subtitle">
-                Seamlessly integrate external command-line tools into your AI agent's workflow. Orchestrate builds, deployments, and system operations with precision.
-            </p>
-            <button class="cta-button" onclick="location.href='#simulator'">Try the Simulator</button>
-        </section>
+<main class="bento-container">
 
-        <!-- Features Grid -->
-        <section id="features" class="features">
-            <h2>Core Capabilities</h2>
-            
-            <div class="features-grid">
-                <div class="feature-card">
-                    <i class="fa-solid fa-magnifying-glass-location"></i>
-                    <h3>Tool Discovery</h3>
-                    <p>Automatically locates installed tools (Git, Docker, Java, etc.) on the host system using the PATH environment.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fa-solid fa-code-branch"></i>
-                    <h3>Argument Injection</h3>
-                    <p>Dynamically constructs command arguments based on task context and upstream dependencies.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fa-solid fa-folder-closed"></i>
-                    <h3>Process Isolation</h3>
-                    <p>Executes commands in specific working directories to maintain file system context and safety.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fa-solid fa-file-waveform"></i>
-                    <h3>Stream Capture</h3>
-                    <p>Real-time capture of standard output (stdout) and error streams (stderr) for detailed analysis.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fa-brands fa-docker"></i>
-                    <h3>Broad Support</h3>
-                    <p>Native support for 20+ tools including Git, Docker, Kubernetes, AWS CLI, Gradle, Maven, and Python.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <h3>Exit Code Handling</h3>
-                    <p>Validates execution success via exit codes, allowing for automated retry logic or error handling.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Interactive Simulator -->
-        <section id="simulator" class="simulator">
-            <h2>Task Simulator</h2>
-            
-            <div class="simulator-container">
-                <!-- Left Column: Inputs -->
-                <div class="sim-controls">
-                    <form id="runtool-form">
-                        
-                        <div class="control-group">
-                            <label for="input-tool">Tool Provider</label>
-                            <select id="input-tool">
-                                <option value="git">Git</option>
-                                <option value="docker">Docker</option>
-                                <option value="python">Python</option>
-                                <option value="gradle">Gradle</option>
-                                <option value="kubectl">Kubectl</option>
-                                <option value="aws">AWS CLI</option>
-                            </select>
-                        </div>
-
-                        <div class="control-group">
-                            <label for="input-args">Arguments</label>
-                            <input type="text" id="input-args" value="status" placeholder="e.g., commit -m 'Fix bug'">
-                        </div>
-
-                        <div class="control-group">
-                            <label for="input-working-dir">Working Directory</label>
-                            <input type="text" id="input-working-dir" value="./project" placeholder="./">
-                        </div>
-
-                        <button type="submit" id="btn-execute" class="run-button">
-                            Run Command
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Right Column: Outputs -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <button class="tab active" data-tab="tab-console">Console Output</button>
-                        <button class="tab" data-tab="tab-command">Command Preview</button>
-                    </div>
-
-                    <!-- Tab: Console -->
-                    <div id="tab-console" class="tab-content active">
-                        <div class="terminal-window" id="console-output">
-                            <span class="term-line">> System ready.</span>
-                            <span class="term-line">> Select a tool and click Run.</span>
-                        </div>
-                    </div>
-
-                    <!-- Tab: Command -->
-                    <div id="tab-command" class="tab-content">
-                        <div class="terminal-window">
-                            <pre><code id="command-preview"># Command to be executed</code></pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Use Cases -->
-        <section class="modes-section" style="padding: 4rem 2rem; max-width: 1200px; margin: 0 auto;">
-            <h2>When to Use</h2>
-            <div class="mode-grid">
-                <div class="mode-card">
-                    <div class="mode-title">Version Control</div>
-                    <p>Automate git operations like committing changes, creating branches, or pushing code after generation.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Build & Test</div>
-                    <p>Trigger build tools (Gradle, Maven) or run test suites (Pytest, Jest) to validate generated code.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Infrastructure</div>
-                    <p>Manage cloud resources using Terraform, AWS CLI, or Kubectl directly from the agent's plan.</p>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <footer>
-        <div class="footer-content">
-            <div class="footer-brand"><i class="fa-solid fa-brain"></i> Cognotik</div>
-            <div class="footer-links">
-                <a href="#">Documentation</a>
-                <a href="#">API Reference</a>
-                <a href="#">Support</a>
-            </div>
-            <div class="footer-copyright">&copy; 2023 Simiacryptus. All rights reserved.</div>
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Execution > RunToolTask</div>
+        <h1>RunToolTask</h1>
+        <p class="pitch">
+            Executes external CLI tools and scripts within the workspace environment with real-time output streaming and manual approval gates.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Execution</span>
+            <span class="badge">Side-Effect: Destructive</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
         </div>
-    </footer>
+    </header>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Tab Logic
-            const tabButtons = document.querySelectorAll('.tab');
-            const tabContents = document.querySelectorAll('.tab-content');
-            
-            tabButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    tabButtons.forEach(b => b.classList.remove('active'));
-                    tabContents.forEach(c => c.classList.remove('active'));
-                    btn.classList.add('active');
-                    document.getElementById(btn.dataset.tab).classList.add('active');
-                });
-            });
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> Execution Config (JSON)</div>
+            <pre><code class="language-json">
+{
+  "tool": "npm",
+  "args": ["test", "--", "--watchAll=false"],
+  "workingDir": "webui",
+  "task_description": "Run frontend unit tests",
+  "task_dependencies": []
+}
+            </code></pre>
+        </div>
 
-            // Simulator Logic
-            const form = document.getElementById('runtool-form');
-            const consoleOutput = document.getElementById('console-output');
-            const commandPreview = document.getElementById('command-preview');
-            const executeBtn = document.getElementById('btn-execute');
+        <div class="flow-arrow">→</div>
 
-            const mockData = {
-                'git': {
-                    'status': "On branch main\nYour branch is up to date with 'origin/main'.\n\nChanges not staged for commit:\n  (use \"git add <file>...\" to update what will be committed)\n  (use \"git restore <file>...\" to discard changes in working directory)\n\tmodified:   src/main.kt\n\nno changes added to commit (use \"git add\" and/or \"git commit -a\")",
-                    'default': "git version 2.39.0"
-                },
-                'docker': {
-                    'ps': "CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS          PORTS     NAMES\na1b2c3d4e5f6   nginx:latest   \"/docker-entrypoint.…\"   2 minutes ago    Up 2 minutes    80/tcp    web-server",
-                    'default': "Docker version 20.10.21, build baeda1f"
-                },
-                'python': {
-                    '--version': "Python 3.10.6",
-                    'default': "Python 3.10.6"
-                },
-                'gradle': {
-                    'build': "Starting a Gradle Daemon (subsequent builds will be faster)\n> Task :compileKotlin\n> Task :compileJava NO-SOURCE\n> Task :processResources\n> Task :classes\n> Task :jar\n> Task :assemble\n> Task :build\n\nBUILD SUCCESSFUL in 3s\n5 actionable tasks: 5 executed",
-                    'default': "Welcome to Gradle 7.6!"
-                },
-                'kubectl': {
-                    'get pods': "NAME                     READY   STATUS    RESTARTS   AGE\nbackend-5f7d89c4-abcde   1/1     Running   0          5h\nfrontend-6b8c9d0e-12345  1/1     Running   0          5h",
-                    'default': "Client Version: v1.26.0\nKustomize Version: v4.5.7"
-                },
-                'aws': {
-                    's3 ls': "2023-01-01 12:00:00 my-bucket-logs\n2023-01-02 14:30:00 my-bucket-data",
-                    'default': "aws-cli/2.9.15 Python/3.9.11 Linux/5.15.0-56-generic exe/x86_64.ubuntu.22 prompt/off"
-                }
-            };
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI Render</div>
+            <div class="mock-ui-content">
+                <div style="font-weight: 600; margin-bottom: 0.5rem;">Proposed command to run</div>
+                <div style="background: #000; padding: 0.75rem; border-radius: 4px; font-family: monospace; font-size: 0.85rem; border: 1px solid #333;">
+                    npm test -- --watchAll=false
+                </div>
+                <button class="btn-action">Run Tool</button>
+                
+                <div style="margin-top: 1.5rem; color: var(--text-dim); font-size: 0.8rem; border-top: 1px solid #333; padding-top: 1rem;">
+                    <details>
+                        <summary>Process Output</summary>
+                        <pre style="font-size: 0.75rem; color: #8b949e; background: transparent; padding: 0.5rem 0;">
+PASS src/App.test.js
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+Snapshots:   0 total
+Time:        1.2s
+                        </pre>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </section>
 
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const tool = document.getElementById('input-tool').value;
-                const args = document.getElementById('input-args').value;
-                const dir = document.getElementById('input-working-dir').value;
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
 
-                // UI Loading
-                const originalText = executeBtn.innerHTML;
-                executeBtn.disabled = true;
-                executeBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Running...';
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane">
+            <h3 style="font-size: 1.2rem; margin-top: 0;">Execution Configuration (Runtime)</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>tool</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The name of the tool to run. Resolved via <code>UserSettingsManager</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>args</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Arguments passed to the tool executable.</td>
+                </tr>
+                <tr>
+                    <td><code>workingDir</code></td>
+                    <td>String</td>
+                    <td>Relative path of the working directory for execution.</td>
+                </tr>
+                <tr>
+                    <td><code>task_description</code></td>
+                    <td>String</td>
+                    <td>Human-readable description of the intent.</td>
+                </tr>
+                <tr>
+                    <td><code>task_dependencies</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>IDs of tasks that must complete before this one.</td>
+                </tr>
+                </tbody>
+            </table>
 
-                // Update Command Preview
-                commandPreview.innerText = `cd ${dir} && ${tool} ${args}`;
+            <h3 style="font-size: 1.2rem; margin-top: 2.5rem;">Type Configuration (Static)</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>task_type</code></td>
+                    <td>String</td>
+                    <td>Always <code>RunTool</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>model</code></td>
+                    <td>ApiChatModel</td>
+                    <td>Optional LLM override for task-specific logic.</td>
+                </tr>
+                </tbody>
+            </table>
+            <div style="margin-top: 2rem; display: flex; gap: 2rem;">
+                <div>
+                    <h4 style="color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase;">Token Usage</h4>
+                    <span class="badge">Low</span>
+                </div>
+                <div>
+                    <h4 style="color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase;">Dependencies</h4>
+                    <span style="font-size: 0.9rem;">None (Standalone)</span>
+                </div>
+            </div>
+        </div>
 
-                // Clear Console
-                consoleOutput.innerHTML = '';
-                const log = (msg, type='') => {
-                    const span = document.createElement('span');
-                    span.className = `term-line ${type}`;
-                    if(type === 'prompt') span.classList.add('term-prompt');
-                    span.innerText = msg;
-                    consoleOutput.appendChild(span);
-                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
-                };
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <h3 style="font-size: 1.2rem; margin-top: 0;">Task Execution Lifecycle</h3>
+            <ul class="lifecycle-list">
+                <li>
+                    <strong>1. Context Loading</strong>
+                    Retrieves prior code context from the execution state to provide environment awareness.
+                </li>
+                <li>
+                    <strong>2. Tool Resolution</strong>
+                    Looks up the <code>tool</code> name in <code>UserSettings</code>. Resolves the absolute path to the executable using configured providers.
+                </li>
+                <li>
+                    <strong>3. Validation</strong>
+                    Ensures the executable exists and validates the <code>workingDir</code> relative to the project root.
+                </li>
+                <li>
+                    <strong>4. Interaction Gate</strong>
+                    If <code>autoFix</code> is false, the task enters a pending state, rendering a "Run Tool" button for manual approval.
+                </li>
+                <li>
+                    <strong>5. Process Execution</strong>
+                    Spawns a system process via <code>ProcessBuilder</code>. Merges <code>stdout</code> and <code>stderr</code> for unified logging.
+                </li>
+                <li>
+                    <strong>6. Reporting & Cleanup</strong>
+                    Captures exit codes and output. Writes results to the task transcript and updates the Session UI.
+                </li>
+            </ul>
+        </div>
 
-                // Simulate Execution
-                log(`${tool} ${args}`, 'prompt');
-                await new Promise(r => setTimeout(r, 600));
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3 style="font-size: 1.2rem; margin-top: 0;">Kotlin Boilerplate</h3>
+            <pre><code class="language-kotlin">
+val task = RunToolTask(
+    orchestrationConfig = config,
+    planTask = RunToolTask.RunToolTaskExecutionConfigData(
+        tool = "git",
+        args = listOf("status"),
+        workingDir = ".",
+        task_description = "Check repository status"
+    )
+)
+            </code></pre>
 
-                let output = mockData[tool]['default'];
-                // Simple heuristic for mock data
-                for (const key in mockData[tool]) {
-                    if (args.includes(key)) {
-                        output = mockData[tool][key];
-                        break;
-                    }
-                }
+            <h3 style="font-size: 1.2rem; margin-top: 2.5rem;">LLM Prompt Segment</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">This segment is injected into the LLM's system prompt to define the tool's capabilities:</p>
+            <pre style="background: #000; color: #4ade80; border: 1px solid #222;">
+RunTool - Execute a tool with custom arguments
+  * Available tools: [list of configured tools from settings]
+            </pre>
+        </div>
+    </section>
 
-                const lines = output.split('\n');
-                for(const line of lines) {
-                    log(line);
-                    await new Promise(r => setTimeout(r, 50));
-                }
+</main>
 
-                log('', '');
-                log(`Process finished with exit code 0`, 'text-muted');
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-                executeBtn.disabled = false;
-                executeBtn.innerHTML = originalText;
-            });
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-            // Update args placeholder on tool change
-            document.getElementById('input-tool').addEventListener('change', (e) => {
-                const map = {
-                    'git': 'status',
-                    'docker': 'ps',
-                    'python': '--version',
-                    'gradle': 'build',
-                    'kubectl': 'get pods',
-                    'aws': 's3 ls'
-                };
-                document.getElementById('input-args').value = map[e.target.value] || '';
-            });
-        });
-    </script>
 </body>
 </html>

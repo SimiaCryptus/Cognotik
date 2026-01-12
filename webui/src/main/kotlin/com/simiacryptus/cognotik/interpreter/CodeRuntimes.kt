@@ -18,6 +18,7 @@ import java.io.File
 class CodeRuntimes(
     name: String,
     val description: String? = null,
+    val extension: String? = null
 ) : DynamicEnum<CodeRuntimes>(name) {
 
 
@@ -25,55 +26,55 @@ class CodeRuntimes(
         private val runtimeConstructors = mutableMapOf<CodeRuntimes, (Map<String, Any>) -> CodeRuntime>()
 
         val KotlinRuntime = CodeRuntimes(
-            "KotlinRuntime", "Execute Kotlin code with full JVM access"
+            "KotlinRuntime", "Execute Kotlin code with full JVM access", "kts"
         )
 
         val GroovyRuntime = CodeRuntimes(
-            "GroovyRuntime", "Execute Groovy code with dynamic scripting capabilities"
+            "GroovyRuntime", "Execute Groovy code with dynamic scripting capabilities", "groovy"
         )
 
         val BashRuntime = CodeRuntimes(
-            "BashRuntime", "Execute Bash shell scripts (Unix/Linux/Mac)"
+            "BashRuntime", "Execute Bash shell scripts (Unix/Linux/Mac)", "sh"
         )
 
         val PowerShellRuntime = CodeRuntimes(
-            "PowerShellRuntime", "Execute PowerShell scripts (Windows/Cross-platform)"
+            "PowerShellRuntime", "Execute PowerShell scripts (Windows/Cross-platform)", "ps1"
         )
 
         val CmdRuntime = CodeRuntimes(
-            "CmdRuntime", "Execute Windows Command Prompt scripts"
+            "CmdRuntime", "Execute Windows Command Prompt scripts", "bat"
         )
 
         val PythonRuntime = CodeRuntimes(
-            "PythonRuntime", "Execute Python scripts"
+            "PythonRuntime", "Execute Python scripts", "py"
         )
 
         val NodeJsRuntime = CodeRuntimes(
-            "NodeJsRuntime", "Execute Node.js JavaScript code"
+            "NodeJsRuntime", "Execute Node.js JavaScript code", "js"
         )
         val RubyRuntime = CodeRuntimes(
-            "RubyRuntime", "Execute Ruby scripts"
+            "RubyRuntime", "Execute Ruby scripts", "rb"
         )
         val PerlRuntime = CodeRuntimes(
-            "PerlRuntime", "Execute Perl scripts"
+            "PerlRuntime", "Execute Perl scripts", "pl"
         )
         val RRuntime = CodeRuntimes(
-            "RRuntime", "Execute R scripts"
+            "RRuntime", "Execute R scripts", "R"
         )
         val PhpRuntime = CodeRuntimes(
-            "PhpRuntime", "Execute PHP scripts"
+            "PhpRuntime", "Execute PHP scripts", "php"
         )
         val LuaRuntime = CodeRuntimes(
-            "LuaRuntime", "Execute Lua scripts"
+            "LuaRuntime", "Execute Lua scripts", "lua"
         )
         val GoRuntime = CodeRuntimes(
-            "GoRuntime", "Execute Go code"
+            "GoRuntime", "Execute Go code", "go"
         )
         val RustRuntime = CodeRuntimes(
-            "RustRuntime", "Execute Rust code"
+            "RustRuntime", "Execute Rust code", "rs"
         )
         val ScalaRuntime = CodeRuntimes(
-            "ScalaRuntime", "Execute Scala scripts"
+            "ScalaRuntime", "Execute Scala scripts", "scala"
         )
 
 
@@ -245,4 +246,3 @@ class CodeRuntimesDeserializer : DynamicEnumDeserializer<CodeRuntimes>(CodeRunti
 private fun String.resolveTool() =
     ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
         .find { it.provider?.getExecutables()?.contains(this) == true }?.resolve(this) ?: this
-

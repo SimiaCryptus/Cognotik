@@ -1,703 +1,406 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neural Network Layer Designer | Cognotik</title>
+    <title>Cognotik | NeuralNetworkLayerTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
 
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
 
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
 
+        .page-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0.5rem 0;
+        }
 
-        
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+        }
 
+        .pitch {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
 
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
 
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
 
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
 
-
-
-
-
-
-
-
-
-
-
-        /* Custom styles not covered by main.css */
-        
-        .checkbox-group {
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
         }
-        
-        .checkbox-item {
+
+        .panel-header {
+            background: rgba(255,255,255,0.03);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d19a66; /* Monokai-ish */
+        }
+
+        .flow-arrow {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-
-
-
-
-
-
-
-
-            color: var(--text-muted);
+            justify-content: center;
+            color: var(--border-subtle);
+            font-size: 1.5rem;
         }
-        /* Syntax Highlighting */
-        .kw { color: #ff7b72; } /* Keyword */
-        .fn { color: #d2a8ff; } /* Function */
-        .str { color: #a5d6ff; } /* String */
-        .com { color: #8b949e; } /* Comment */
 
-        /* Math Preview */
-        .math-block {
-            background: var(--surface-color);
-            padding: 1.5rem;
-            border-radius: 8px;
-            text-align: center;
-            font-family: 'Times New Roman', serif;
-            font-style: italic;
-            font-size: 1.2rem;
+        /* Mock UI Output */
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .mock-tabs {
+            display: flex;
+            gap: 2px;
+            background: var(--border-subtle);
+            padding-bottom: 1px;
             margin-bottom: 1rem;
-            border: 1px solid var(--border-color);
         }
 
-        /* Footer */
-        footer {
-            padding: 3rem 0;
+        .mock-tab {
+            background: var(--bg-panel);
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .mock-tab.active {
+            background: var(--bg-app);
+            color: var(--accent-primary);
+        }
+
+        .latex-block {
+            background: #000;
+            padding: 1rem;
             text-align: center;
-            color: var(--text-muted);
-            font-size: 0.875rem;
-
-            border-top: 1px solid var(--border-color);
-            margin-top: 4rem;
+            font-family: serif;
+            font-style: italic;
+            margin: 10px 0;
+            border-radius: 4px;
         }
-        
-        /* Override main.css monospace for tab content generally, but keep for code */
-        .tab-content {
-            font-family: var(--font-family-sans);
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        .req { color: #f85149; }
+        code { font-family: var(--font-mono); background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 3px; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
         }
     </style>
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-<!-- Generated Images:
-     - neural-layer-hero.png: A futuristic, abstract 3D visualization of a neural network layer being constructed. Glowing blue and indigo nodes (#38bdf8, #818cf8) connected by data streams against a deep dark slate background (#0f172a). In the center, a holographic wireframe of a tensor cube is being manipulated. High-tech, clean, professional software aesthetic.
-     - math-code-flow.png: A conceptual illustration showing the transformation of math into code. On the left, floating glowing mathematical equations (calculus, linear algebra) in white and cyan. They pass through a central prism or lens and emerge on the right as structured, syntax-highlighted computer code (Python/TensorFlow style) in green and purple. Dark background.
-     - stability-viz.png: A 3D topological map representing a neural network loss landscape. Dark blue wireframe mesh. A glowing neon path traces a stable descent into a global minimum (valley), avoiding chaotic peaks. Visualizes "Lyapunov Stability". Sleek, scientific visualization style.
--->
 </head>
 <body>
-    <cognotik-header current-page="neural_layer"></cognotik-header>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <h1>Neural Network Layer Designer</h1>
-            <p class="subtitle">
-                Bridge the gap between intuition and implementation. Design custom layers with rigorous mathematical analysis, stability proofs, and auto-generated code.
-            </p>
-            <a href="#demo" class="cta-button">Try the Simulator</a>
-            
-            <!-- Hero Image -->
-            <div style="margin-top: 4rem;">
-                <img src="assets/images/neural-layer-hero.png" alt="Futuristic 3D visualization of a neural network layer being constructed with glowing nodes and data streams" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 0 40px rgba(56, 189, 248, 0.15); border: 1px solid var(--border-color);">
-            </div>
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > NeuralNetworkLayerTask</div>
+        <h1>NeuralNetworkLayerTask</h1>
+        <p class="pitch">
+            Design and analyze neural network layers with formal mathematical definitions, intuitive explanations, 
+            and rigorous stability analysis.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Analysis: Comprehensive</span>
+            <span class="badge">Output: Multi-Tab Report</span>
         </div>
-    </section>
+    </header>
 
-    <!-- Features Grid -->
-    <section class="features">
-        <div class="container">
-            <div class="features-grid">
-                <!-- Feature 1 -->
-                <div class="feature-card">
-                    <i>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-                    </i>
-                    <h3>Executive Summary</h3>
-                    <p>Get a high-level overview of your layer's capabilities, including computational cost, training difficulty, and decision criteria for when to use it.</p>
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>ExecutionConfig.json</span>
+                <span>UTF-8</span>
+            </div>
+            <pre><code>{
+  "layer_name": "CustomResidual",
+  "forward_function_description": "y = x + f(x) where f is a MLP",
+  "input_shape": "[batch, d_model]",
+  "output_shape": "[batch, d_model]",
+  "parameters": ["W1", "b1", "W2", "b2"],
+  "activation": "relu",
+  "analysis_depth": "standard",
+  "include_lyapunov": true,
+  "implementation_languages": ["tensorflow.js"]
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>SessionTask UI</span>
+                <span>Live Render</span>
+            </div>
+            <div class="mock-ui-content">
+                <div class="mock-tabs">
+                    <div class="mock-tab active">Executive Summary</div>
+                    <div class="mock-tab">Intuitive</div>
+                    <div class="mock-tab">Formal</div>
+                    <div class="mock-tab">Stability</div>
                 </div>
-
-                <!-- Feature 2 -->
-                <div class="feature-card">
-                    <i>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                    </i>
-                    <h3>Rigorous Math</h3>
-                    <p>Automatically derive forward equations, backward pass gradients (Chain Rule), and higher-order derivatives like the Hessian.</p>
-                </div>
-
-                <!-- Feature 3 -->
-                <div class="feature-card">
-                    <i>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-                    </i>
-                    <h3>Auto-Implementation</h3>
-                    <p>Generate production-ready code in TensorFlow.js, Python (PyTorch/NumPy), or pseudocode, complete with initialization logic.</p>
-                </div>
-
-                <!-- Feature 4 -->
-                <div class="feature-card">
-                    <i>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"></path><path d="m19 5-7 7-7-7"></path></svg>
-                    </i>
-                    <h3>Stability Analysis</h3>
-                    <p>Ensure convergence with Lyapunov stability analysis, Lipschitz continuity checks, and numerical stability warnings (overflow/underflow).</p>
-                </div>
-
-                <!-- Feature 5 -->
-                <div class="feature-card">
-                    <i>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    </i>
-                    <h3>Intuitive Explanations</h3>
-                    <p>Understand the "why" with real-world analogies, visual data flow descriptions, and mental models for gradient behavior.</p>
-                </div>
-
-                <!-- Feature 6 -->
-                <div class="feature-card">
-                    <i>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-                    </i>
-                    <h3>Complexity Analysis</h3>
-                    <p>Evaluate time and space complexity for both forward and backward passes to optimize for memory bandwidth and parallelization.</p>
+                <div style="font-size: 0.8rem;">
+                    <strong style="color: var(--accent-primary);">Key Insight</strong>
+                    <p style="color: var(--text-dim); font-size: 0.75rem;">
+                        The residual connection allows gradients to flow unimpeded through the identity mapping, 
+                        mitigating the vanishing gradient problem in deep architectures.
+                    </p>
+                    <p style="color: var(--text-dim); font-size: 0.75rem;">
+                        <strong>Analogy:</strong> Like a bypass valve in a plumbing system that ensures water pressure 
+                        remains constant even if the main filters are clogged.
+                    </p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Interactive Demo Section -->
-    <section class="simulator" id="demo">
-        <div class="container">
-            <div style="margin-bottom: 2rem;">
-                <h2>Interactive Simulator</h2>
-                <p>Configure a layer definition on the left to see how the agent generates comprehensive analysis.</p>
-            </div>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
 
-            <div class="simulator-container">
-                <!-- Sidebar -->
-                <div class="sim-controls">
-                    <div class="control-group">
-                        <label>Layer Name</label>
-                        <input type="text" value="GatedAttentionUnit" id="layerName">
-                    </div>
-                    <div class="control-group">
-                        <label>Forward Function Description</label>
-                        <textarea id="layerDesc">Computes element-wise product of input and a sigmoid-activated gate derived from a linear projection.</textarea>
-                    </div>
-                    <div class="control-group">
-                        <label>Input Shape</label>
-                        <input type="text" value="[batch, seq_len, d_model]">
-                    </div>
-                    <div class="control-group">
-                        <label>Parameters</label>
-                        <input type="text" value="W_gate: [d_model, d_model], b_gate: [d_model]">
-                    </div>
-                    
-                    <div class="control-group">
-                        <label>Analysis Options</label>
-                        <div class="checkbox-group">
-                            <label class="checkbox-item"><input type="checkbox" checked> Higher-Order Derivatives</label>
-                            <label class="checkbox-item"><input type="checkbox" checked> Lyapunov Stability</label>
-                            <label class="checkbox-item"><input type="checkbox" checked> Lipschitz Analysis</label>
-                            <label class="checkbox-item"><input type="checkbox" checked> Generate Tests</label>
-                        </div>
-                    </div>
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>layer_name</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>Name of the layer type (e.g., 'Attention', 'BatchNorm').</td>
+                </tr>
+                <tr>
+                    <td><code>forward_function_description</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>Mathematical or natural language description of the forward pass.</td>
+                </tr>
+                <tr>
+                    <td><code>input_shape</code></td>
+                    <td>String</td>
+                    <td>Tensor specification (e.g., '[batch, channels, h, w]').</td>
+                </tr>
+                <tr>
+                    <td><code>output_shape</code></td>
+                    <td>String</td>
+                    <td>Output tensor shape specification.</td>
+                </tr>
+                <tr>
+                    <td><code>parameters</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>List of learnable parameters and their intended shapes.</td>
+                </tr>
+                <tr>
+                    <td><code>activation</code></td>
+                    <td>String</td>
+                    <td>Activation function (e.g., 'relu', 'sigmoid', 'none').</td>
+                </tr>
+                <tr>
+                    <td><code>analysis_depth</code></td>
+                    <td>Enum</td>
+                    <td><code>basic</code>, <code>standard</code>, or <code>comprehensive</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>include_lyapunov</code></td>
+                    <td>Boolean</td>
+                    <td>Include training stability analysis (Default: true).</td>
+                </tr>
+                <tr>
+                    <td><code>include_higher_order</code></td>
+                    <td>Boolean</td>
+                    <td>Include Hessian and curvature analysis (Default: true).</td>
+                </tr>
+                <tr>
+                    <td><code>include_lipschitz</code></td>
+                    <td>Boolean</td>
+                    <td>Include Lipschitz continuity analysis (Default: true).</td>
+                </tr>
+                <tr>
+                    <td><code>implementation_languages</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Target languages (e.g., 'tensorflow.js', 'python').</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Analyze Layer</button>
-                </div>
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <h3>Task Execution Lifecycle</h3>
+            <ol style="color: var(--text-dim); padding-left: 1.2rem;">
+                <li><strong>Initialization:</strong> Validates layer specifications and input/output constraints.</li>
+                <li><strong>Executive Summary:</strong> Generates high-level insights and decision criteria.</li>
+                <li><strong>Intuitive Explanation:</strong> Creates real-world analogies and mental models.</li>
+                <li><strong>Conceptualization:</strong> Generates ASCII and Mermaid flow diagrams.</li>
+                <li><strong>Formalization:</strong> Derives LaTeX definitions and backpropagation gradients.</li>
+                <li><strong>Advanced Analysis:</strong> Computes Hessian structures, Lyapunov stability, and Lipschitz constants.</li>
+                <li><strong>Implementation:</strong> Generates idiomatic code and complexity analysis.</li>
+                <li><strong>Contextualization:</strong> Performs originality assessment and use-case mapping.</li>
+            </ol>
+        </div>
 
-                <!-- Main Content -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <div class="tab active" onclick="switchTab('overview')">Overview</div>
-                        <div class="tab" onclick="switchTab('math')">Formal Definition</div>
-                        <div class="tab" onclick="switchTab('code')">Implementation</div>
-                        <div class="tab" onclick="switchTab('stability')">Stability</div>
-                    </div>
-
-                    <div>
-                        <!-- Overview Tab -->
-                        <div id="overview" class="tab-content active">
-                            <h2>Executive Summary</h2>
-                            <p><strong>One-Liner:</strong> A gating mechanism that allows information to flow selectively based on a learned linear projection.</p>
-                            
-                            <div style="background: rgba(74, 222, 128, 0.1); border-left: 4px solid var(--accent-success); padding: 1rem; margin-bottom: 1.5rem;">
-                                <strong>Key Insight:</strong> By multiplying the signal by a value between 0 and 1 (the gate), the network learns to suppress irrelevant features while preserving important ones, acting like a differentiable switch.
-                            </div>
-
-                            <!-- Math to Code Visualization Image -->
-                            <img src="assets/images/math-code-flow.png" alt="Conceptual illustration showing the transformation of mathematical equations into structured computer code" style="width: 100%; height: auto; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--border-color);">
-
-                            <h3>Intuitive Analogy</h3>
-                            <p>Think of this layer like a volume knob for specific frequencies in an audio equalizer. The "gate" decides how loud each feature should be. If the gate is closed (0), the feature is silenced; if open (1), it passes through unchanged.</p>
-
-                            <div class="features-grid" style="margin-top: 1.5rem;">
-                                <div>
-                                    <h4>✅ Strengths</h4>
-                                    <ul style="list-style-position: inside; color: var(--text-secondary);">
-                                        <li>Simple implementation</li>
-                                        <li>Effective feature selection</li>
-                                        <li>Vanishing gradient protection</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h4>⚠️ Limitations</h4>
-                                    <ul style="list-style-position: inside; color: var(--text-secondary);">
-                                        <li>Adds parameters (W_gate)</li>
-                                        <li>Linear projection limit</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Math Tab -->
-                        <div id="math" class="tab-content">
-                            <h2>Formal Definition</h2>
-                            <div class="math-block">
-                                y = x ⊙ σ(xW_{gate} + b_{gate})
-                            </div>
-                            <p>Where ⊙ denotes the Hadamard (element-wise) product and σ is the sigmoid activation function.</p>
-
-                            <h3 style="margin-top: 2rem;">Gradient Derivation</h3>
-                            <p><strong>Gradient w.r.t Input (∂L/∂x):</strong></p>
-                            <div class="math-block" style="font-size: 1rem;">
-                                ∂L/∂x = (∂L/∂y ⊙ g) + (∂L/∂y ⊙ x ⊙ g ⊙ (1-g)) · W_{gate}^T
-                            </div>
-                            <p>Where <em>g</em> is the gate activation <em>σ(xW + b)</em>.</p>
-                            
-                            <h3 style="margin-top: 2rem;">Lipschitz Analysis</h3>
-                            <p>The forward function is Lipschitz continuous. The Lipschitz constant is bounded by:</p>
-                            <div class="math-block" style="font-size: 1rem;">
-                                L_f ≤ 1 + ||W_{gate}||_2
-                            </div>
-                        </div>
-
-                        <!-- Code Tab -->
-                        <div id="code" class="tab-content">
-                            <h2>TensorFlow.js Implementation</h2>
-                            <pre class="code-preview"><code>
-<span class="kw">class</span> GatedAttentionUnit <span class="kw">extends</span> tf.layers.Layer {
-  <span class="fn">constructor</span>(config) {
-    <span class="kw">super</span>(config);
-    <span class="kw">this</span>.units = config.units;
-  }
-
-  <span class="fn">build</span>(inputShape) {
-    <span class="kw">this</span>.wGate = <span class="kw">this</span>.addWeight(
-      <span class="str">'w_gate'</span>,
-      [inputShape[inputShape.length - 1], <span class="kw">this</span>.units],
-      <span class="str">'float32'</span>,
-      <span class="str">'glorotUniform'</span>
-    );
-    <span class="kw">this</span>.bGate = <span class="kw">this</span>.addWeight(
-      <span class="str">'b_gate'</span>,
-      [<span class="kw">this</span>.units],
-      <span class="str">'float32'</span>,
-      <span class="str">'zeros'</span>
-    );
-  }
-
-  <span class="fn">call</span>(inputs) {
-    <span class="kw">return</span> tf.tidy(() => {
-      <span class="com">// Linear projection for gate</span>
-      <span class="kw">const</span> gateLogits = tf.add(tf.matMul(inputs, <span class="kw">this</span>.wGate), <span class="kw">this</span>.bGate);
-      <span class="kw">const</span> gate = tf.sigmoid(gateLogits);
-      
-      <span class="com">// Element-wise multiplication</span>
-      <span class="kw">return</span> tf.mul(inputs, gate);
-    });
-  }
-}</code>
-                            </pre>
-                        </div>
-
-                        <!-- Stability Tab -->
-                        <div id="stability" class="tab-content">
-                            <h2>Lyapunov Stability Analysis</h2>
-                            
-                            <!-- Stability Visualization Image -->
-                            <img src="assets/images/stability-viz.png" alt="3D topological map representing a neural network loss landscape and stable descent path" style="width: 100%; height: auto; border-radius: 8px; margin: 1rem 0 1.5rem; border: 1px solid var(--border-color);">
-
-                            <p><strong>Lyapunov Function Candidate:</strong> V(θ) = L(θ) - L(θ*)</p>
-                            
-                            <h3 style="margin-top: 1.5rem;">Stability Conditions</h3>
-                            <ul style="list-style-position: inside; color: var(--text-secondary); margin-bottom: 1.5rem;">
-                                <li>Learning rate η < 2/L where L is the Lipschitz constant of the gradient.</li>
-                                <li>Gate saturation (g ≈ 0 or g ≈ 1) creates plateaus in the loss landscape.</li>
-                            </ul>
-
-                            <h3>Numerical Stability</h3>
-                            <p><strong>Overflow Risk:</strong> Low. Sigmoid bounds gate values to (0, 1).</p>
-                            <p><strong>Underflow Risk:</strong> Moderate. If gate values approach 0, gradients for the main signal path vanish.</p>
-                            <p><strong>Recommendation:</strong> Initialize bias <em>b_gate</em> to a small positive value (e.g., 1.0) to start with gates open.</p>
-                        </div>
-                    </div>
-                </div>
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3>Kotlin Integration</h3>
+            <div class="panel">
+                <pre><code>val task = NeuralNetworkLayerTask(
+    orchestrationConfig = config,
+    planTask = NeuralNetworkLayerTaskExecutionConfigData(
+        layer_name = "CustomResidual",
+        forward_function_description = "y = x + f(x)",
+        analysis_depth = "standard",
+        include_lyapunov = true
+    )
+)</code></pre>
             </div>
         </div>
     </section>
 
-    <!-- Use Cases -->
-    <section class="features">
-        <div class="container">
-            <h2 style="text-align: center; margin-bottom: 3rem;">Who is this for?</h2>
-            <div class="features-grid">
-                <div>
-                    <h3>🎓 Researchers</h3>
-                    <p>Rapidly prototype novel layer ideas. Get immediate feedback on theoretical properties like Lipschitz continuity and Hessian structure before writing a paper.</p>
-                </div>
-                <div>
-                    <h3>🛠️ ML Engineers</h3>
-                    <p>Generate optimized, numerically stable code for production. Understand the computational cost and memory footprint before deployment.</p>
-                </div>
-                <div>
-                    <h3>📚 Educators</h3>
-                    <p>Create intuitive explanations and visualizations for complex neural network concepts. Use the "Analogy" generator to make abstract math concrete.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+</main>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Cognotik. All rights reserved.</p>
-            <p style="font-size: 0.8em; opacity: 0.6;">Generated by NeuralNetworkLayerTask</p>
-        </div>
-    </footer>
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-    <script>
-        // Tab Switching Logic
-        function switchTab(tabId) {
-            // Remove active class from all tabs
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Remove active class from all content panes
-            document.querySelectorAll('.tab-content').forEach(pane => {
-                pane.classList.remove('active');
-            });
-
-            // Add active class to clicked tab
-            event.target.classList.add('active');
-            
-            // Add active class to corresponding content pane
-            document.getElementById(tabId).classList.add('active');
-        }
-
-        // Simulation Logic (Visual effect only)
-        function runSimulation() {
-            const btn = document.querySelector('.run-button');
-            const originalText = btn.innerText;
-            const content = document.querySelector('.sim-output');
-            
-            btn.innerText = "Analyzing...";
-            btn.style.opacity = "0.7";
-            content.style.opacity = "0.5";
-            
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.opacity = "1";
-                content.style.opacity = "1";
-                
-                // Update title based on input (simple visual feedback)
-                const layerName = document.getElementById('layerName').value;
-                const overviewTitle = document.querySelector('#overview h2');
-                if(overviewTitle) {
-                    // Just a subtle flash to show update happened
-                    overviewTitle.style.color = "var(--accent-primary)";
-                    setTimeout(() => overviewTitle.style.color = "", 300);
-                }
-            }, 800);
-        }
-    </script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            /**
-             * Configuration and State
-             */
-            const state = {
-                isAnalyzing: false,
-                currentTab: 'overview'
-            };
-        
-            /**
-             * DOM Elements
-             */
-            const elements = {
-                tabs: document.querySelectorAll('.tab'),
-                panes: document.querySelectorAll('.tab-content'),
-                analyzeBtn: document.querySelector('.run-button'),
-                inputs: {
-                    name: document.getElementById('layerName'),
-                    desc: document.getElementById('layerDesc'),
-                    // Selecting inputs without IDs based on structure
-                    shape: document.querySelectorAll('input[type="text"]')[1], 
-                    params: document.querySelectorAll('input[type="text"]')[2]
-                },
-                outputs: {
-                    overviewTitle: document.querySelector('#overview h2'),
-                    overviewSummary: document.querySelector('#overview p'),
-                    codeBlock: document.querySelector('.code-preview'),
-                    mathBlock: document.querySelector('.math-block')
-                },
-                heroBtn: document.querySelector('.hero .btn')
-            };
-        
-            /**
-             * Tab Handling Logic
-             * Handles switching between Overview, Math, Code, and Stability tabs
-             */
-            function initTabs() {
-                elements.tabs.forEach(tab => {
-                    // Remove inline onclick attribute to use modern event listener
-                    tab.removeAttribute('onclick');
-            
-                    tab.addEventListener('click', (e) => {
-                        const targetId = getTabTargetId(tab);
-                        switchTab(targetId);
-                    });
-                });
-            }
-        
-            function getTabTargetId(tabElement) {
-                // Map tab text or index to content ID if explicit mapping isn't available
-                const text = tabElement.innerText.toLowerCase();
-                if (text.includes('overview')) return 'overview';
-                if (text.includes('formal')) return 'math';
-                if (text.includes('implementation')) return 'code';
-                if (text.includes('stability')) return 'stability';
-                return 'overview';
-            }
-        
-            function switchTab(paneId) {
-                // Update Tab Styles
-                elements.tabs.forEach(tab => {
-                    const target = getTabTargetId(tab);
-                    if (target === paneId) {
-                        tab.classList.add('active');
-                    } else {
-                        tab.classList.remove('active');
-                    }
-                });
-        
-                // Update Pane Visibility
-                elements.panes.forEach(pane => {
-                    if (pane.id === paneId) {
-                        pane.classList.add('active');
-                        // Trigger a subtle fade-in animation reset
-                        pane.style.animation = 'none';
-                        pane.offsetHeight; /* trigger reflow */
-                        pane.style.animation = 'fadeIn 0.3s ease';
-                    } else {
-                        pane.classList.remove('active');
-                    }
-                });
-        
-                state.currentTab = paneId;
-            }
-        
-            /**
-             * Simulation Logic
-             * Mocks the generation of analysis based on user input
-             */
-            function initSimulator() {
-                // Remove inline onclick
-                elements.analyzeBtn.removeAttribute('onclick');
-        
-                elements.analyzeBtn.addEventListener('click', async () => {
-                    if (state.isAnalyzing) return;
-        
-                    setLoadingState(true);
-        
-                    // Simulate processing delay (1.5s)
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-        
-                    updateAnalysisContent();
-                    setLoadingState(false);
-            
-                    // Visual feedback: flash the content
-                    const activePane = document.querySelector('.tab-content.active');
-                    if (activePane) {
-                        activePane.style.opacity = '0.5';
-                        setTimeout(() => activePane.style.opacity = '1', 200);
-                    }
-                });
-            }
-        
-            function setLoadingState(isLoading) {
-                state.isAnalyzing = isLoading;
-                const btn = elements.analyzeBtn;
-                const content = document.querySelector('.sim-output');
-        
-                if (isLoading) {
-                    btn.dataset.originalText = btn.innerText;
-                    btn.innerText = "Analyzing Layer Geometry...";
-                    btn.style.opacity = "0.7";
-                    btn.style.cursor = "wait";
-                    content.style.opacity = "0.6";
-                    content.style.pointerEvents = "none";
-                } else {
-                    btn.innerText = btn.dataset.originalText || "Analyze Layer";
-                    btn.style.opacity = "1";
-                    btn.style.cursor = "pointer";
-                    content.style.opacity = "1";
-                    content.style.pointerEvents = "all";
-                }
-            }
-        
-            function updateAnalysisContent() {
-                const layerName = elements.inputs.name.value || "CustomLayer";
-                const layerDesc = elements.inputs.desc.value;
-        
-                // 1. Update Overview
-                // Sanitize input to prevent basic HTML injection
-                const safeName = layerName.replace(/[<>]/g, '');
-                const safeDesc = layerDesc.replace(/[<>]/g, '');
-        
-                // Update Executive Summary Title
-                const summaryHeader = document.querySelector('#overview h2');
-                summaryHeader.innerHTML = `Executive Summary: <span style="color:var(--accent-primary)">${safeName}</span>`;
-        
-                // Update One-Liner
-                const oneLiner = document.querySelector('#overview p');
-                if (oneLiner) {
-                    oneLiner.innerHTML = `<strong>One-Liner:</strong> ${safeDesc}`;
-                }
-        
-                // 2. Update Code Preview (Dynamic Class Naming)
-                const codeBlock = elements.outputs.codeBlock;
-                let codeHtml = codeBlock.innerHTML;
-        
-                // Regex to replace class Name extends...
-                const classRegex = /class\s+<span class="kw">(\w+)<\/span>/;
-                codeHtml = codeHtml.replace(classRegex, `class <span class="kw">${safeName.replace(/\s+/g, '')}</span>`);
-        
-                codeBlock.innerHTML = codeHtml;
-        
-                // 3. Update Math (Simple variable substitution)
-                // Note: In a real app, this would use LaTeX rendering
-                const mathBlock = elements.outputs.mathBlock;
-                if (mathBlock) {
-                    // Just a visual update to show reactivity
-                    mathBlock.style.borderColor = 'var(--accent-primary)';
-                    setTimeout(() => mathBlock.style.borderColor = 'transparent', 1000);
-                }
-            }
-        
-            /**
-             * Smooth Scrolling
-             */
-            function initSmoothScroll() {
-                document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                    anchor.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        const targetId = this.getAttribute('href');
-                        const targetElement = document.querySelector(targetId);
-                
-                        if (targetElement) {
-                            targetElement.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'start'
-                            });
-                        }
-                    });
-                });
-            }
-        
-            /**
-             * Initialization
-             */
-            function init() {
-                initTabs();
-                initSimulator();
-                initSmoothScroll();
-        
-                // Initialize default state
-                switchTab('overview');
-            }
-        
-            init();
-        });
-    </script>
 </body>
 </html>

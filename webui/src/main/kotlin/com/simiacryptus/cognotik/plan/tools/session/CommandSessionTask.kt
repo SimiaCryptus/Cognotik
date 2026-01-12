@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.session
 
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -259,23 +259,23 @@ class CommandSessionTask(
 
     companion object {
         val CommandSession = TaskType(
-            "CommandSession",
-            "Session",
-            CommandSessionTask::class.java,
-            CommandSessionTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Execute commands in a stateful, interactive session",
-            """
-                Creates and manages a persistent command-line session (e.g., bash, python).
-                This allows for stateful interactions where commands can build on the results of previous ones.
-                <ul>
-                    <li><b>Start any interactive process:</b> Specify the command to run</li>
-                    <li><b>Send inputs:</b> Provide a list of commands to be executed sequentially in the session.</li>
-                    <li><b>Stateful Sessions:</b> Reuse sessions by providing a `sessionId`. The environment (variables, current directory) persists between tasks using the same ID.</li>
-                    <li><b>Manage Session Lifecycle:</b> Sessions can be explicitly closed or will be cleaned up automatically.</li>
-                    <li><b>TTY Support:</b> Set `tty` to true to allocate a pseudo-terminal (requires pty4j), enabling UI applications and TTY-dependent tools.</li>
-                </ul>
-            """,
+          name = "CommandSession",
+          category = "Session",
+          taskClass = CommandSessionTask::class.java,
+          executionConfigClass = CommandSessionTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Execute commands in a stateful, interactive session",
+          tooltipHtml = """
+                          Creates and manages a persistent command-line session (e.g., bash, python).
+                          This allows for stateful interactions where commands can build on the results of previous ones.
+                          <ul>
+                              <li><b>Start any interactive process:</b> Specify the command to run</li>
+                              <li><b>Send inputs:</b> Provide a list of commands to be executed sequentially in the session.</li>
+                              <li><b>Stateful Sessions:</b> Reuse sessions by providing a `sessionId`. The environment (variables, current directory) persists between tasks using the same ID.</li>
+                              <li><b>Manage Session Lifecycle:</b> Sessions can be explicitly closed or will be cleaned up automatically.</li>
+                              <li><b>TTY Support:</b> Set `tty` to true to allocate a pseudo-terminal (requires pty4j), enabling UI applications and TTY-dependent tools.</li>
+                          </ul>
+                      """,
         )
         private val log = LoggerFactory.getLogger(CommandSessionTask::class.java)
         private val _activeSessions = ConcurrentHashMap<String, ConcurrentHashMap<String, SessionState>>()

@@ -7,17 +7,25 @@ import java.lang.reflect.Type
 
 open class AbbrevWhitelistTSDescriber(private vararg val abbreviated: String) : TypeScriptDescriber() {
 
-    override fun isAbbreviated(self: Type): Boolean {
-        if (self.typeName in primitives) {
-            return false
-        } else if (self is ParameterizedType && List::class.java.isAssignableFrom(self.rawType as Class<*>)) {
-            return isAbbreviated(self.actualTypeArguments[0])
-        } else if (self is ParameterizedType && Map::class.java.isAssignableFrom(self.rawType as Class<*>)) {
-            return isAbbreviated(self.actualTypeArguments[0]) && isAbbreviated(self.actualTypeArguments[1])
-        } else if (self.isArray) {
-            return isAbbreviated(self.componentType!!)
+    override fun isAbbreviated(self: Type): Boolean = when {
+        self.typeName in primitives -> {
+            false
         }
-        val isAbbreviated = (abbreviated.find { self.typeName.startsWith(it) } == null) || super.isAbbreviated(self)
-        return isAbbreviated
+
+        self is ParameterizedType && List::class.java.isAssignableFrom(self.rawType as Class<*>) -> {
+            isAbbreviated(self.actualTypeArguments[0])
+        }
+
+        self is ParameterizedType && Map::class.java.isAssignableFrom(self.rawType as Class<*>) -> {
+            isAbbreviated(self.actualTypeArguments[0]) && isAbbreviated(self.actualTypeArguments[1])
+        }
+
+        self.isArray -> {
+            isAbbreviated(self.componentType!!)
+        }
+
+        else -> {
+            abbreviated.find { self.typeName.startsWith(it) } == null || super.isAbbreviated(self)
+        }
     }
 }

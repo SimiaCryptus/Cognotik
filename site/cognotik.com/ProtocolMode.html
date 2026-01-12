@@ -1,108 +1,246 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Protocol Mode - Cognotik</title>
-    <link rel="stylesheet" href="assets/styles/main.css">
+    <title>Cognotik | ProtocolMode</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .status-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-passed { background: #065f46; color: #34d399; }
+        .status-failed { background: #991b1b; color: #f87171; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
 </head>
 <body>
-    <cognotik-header current-page="taskplanning"></cognotik-header>
 
-    <main>
-        <section class="hero">
-            <h1>Protocol Mode</h1>
-            <p class="subtitle">
-                <strong>The Auditor.</strong> Enforce strict methodologies and quality standards through agent-driven state machines and validation loops.
-            </p>
-        </section>
+<cognotik-header current-page="protocol-mode"></cognotik-header>
 
-        <section class="features">
-            <h2>Core Mechanics</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <i data-lucide="git-commit"></i>
-                    <h3>State Machines</h3>
-                    <p>Define workflows as strict states (e.g., Red-Green-Refactor) with clear transition rules.</p>
-                </div>
-                <div class="feature-card">
-                    <i data-lucide="shield-check"></i>
-                    <h3>The Referee</h3>
-                    <p>A dedicated agent validates every step against specific criteria before allowing progress.</p>
-                </div>
-                <div class="feature-card">
-                    <i data-lucide="file-text"></i>
-                    <h3>Audit Trails</h3>
-                    <p>Generates a comprehensive transcript of every action, validation, and retry for compliance.</p>
-                </div>
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Core > Cognitive Modes</div>
+        <h1>ProtocolMode</h1>
+        <p class="pitch">
+            A strict, state-machine-driven control loop that executes complex workflows via formal protocols with automated referee validation.
+        </p>
+        <div class="badges">
+            <span class="badge">Core Architecture</span>
+            <span class="badge">Stateful</span>
+            <span class="badge">High Reliability</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input: Protocol Definition -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="icon">⚙️</span> protocol.json
             </div>
-        </section>
-
-        <section style="padding: 4rem 2rem; max-width: 1200px; margin: 0 auto;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;">
-                <div>
-                    <h2>Methodology Enforcement</h2>
-                    <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
-                        Protocol Mode is designed for tasks where correctness is paramount. Unlike other modes that prioritize speed or creativity, Protocol Mode prioritizes <strong>adherence to process</strong>.
-                    </p>
-                    <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
-                        It dynamically generates a protocol definition based on your request (or loads a preset), then executes it step-by-step. If a step fails validation, the agent receives feedback and retries automatically.
-                    </p>
-                    <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
-                        <li style="margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
-                            <i data-lucide="check-circle" style="color: var(--accent-primary);"></i>
-                            <span>Test-Driven Development (TDD)</span>
-                        </li>
-                        <li style="margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
-                            <i data-lucide="check-circle" style="color: var(--accent-primary);"></i>
-                            <span>Security Audits</span>
-                        </li>
-                        <li style="margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
-                            <i data-lucide="check-circle" style="color: var(--accent-primary);"></i>
-                            <span>Documentation Verification</span>
-                        </li>
-                    </ul>
-                </div>
-                <div style="background: rgba(255,255,255,0.03); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-                    <h3 style="margin-bottom: 1rem; font-family: 'Cinzel', serif;">Protocol Definition</h3>
-                    <pre><code style="font-family: 'Fira Code', monospace; color: #94a3b8; font-size: 0.9rem;">
+            <pre><code class="language-json">
 {
-  "initialState": "Red",
+  "initialState": "Analyze",
   "states": [
     {
-      "name": "Red",
-      "instructions": "Write a failing test.",
-      "validationCriteria": "Test fails.",
-      "nextState": "Green"
+      "name": "Analyze",
+      "instructions": "Identify the bug in the logs",
+      "validationCriteria": "If bug found -> 'Fix', else -> 'Search'"
     },
     {
-      "name": "Green",
-      "instructions": "Implement feature.",
-      "validationCriteria": "Tests pass.",
-      "nextState": "Refactor"
-    },
-    {
-      "name": "Refactor",
-      "instructions": "Optimize code.",
-      "validationCriteria": "Tests still pass.",
-      "nextState": null
+      "name": "Fix",
+      "instructions": "Apply the patch",
+      "validationCriteria": "If tests pass -> null, else -> 'Fix'"
     }
   ]
 }
-                    </code></pre>
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output: Live Execution -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="icon">🧠</span> Execution Transcript
+            </div>
+            <div class="mock-ui-content" style="padding: 1rem; font-size: 0.9rem;">
+                <div style="margin-bottom: 1rem; border-left: 2px solid var(--accent-primary); padding-left: 0.5rem;">
+                    <strong>State: Analyze</strong><br>
+                    <span style="color: var(--text-dim);">Executing: ReadLogTask...</span>
+                </div>
+                <div style="background: rgba(52, 211, 153, 0.1); padding: 0.5rem; border-radius: 4px; margin-bottom: 1rem;">
+                    <span class="status-badge status-passed">Referee: Passed</span><br>
+                    <span style="font-size: 0.8rem;">"Bug identified in line 42. Transitioning to 'Fix'."</span>
+                </div>
+                <div style="border-left: 2px solid var(--accent-primary); padding-left: 0.5rem;">
+                    <strong>State: Fix</strong><br>
+                    <span style="color: var(--text-dim);">Executing: FileModificationTask...</span>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
+    </section>
 
-    <script>
-        lucide.createIcons();
-    </script>
+    <!-- 3. DETAILS TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('overview')">Overview</button>
+            <button onclick="switchTab('config')">Configuration</button>
+            <button onclick="switchTab('implementation')">Implementation</button>
+        </nav>
+
+        <!-- TAB: OVERVIEW -->
+        <div id="tab-overview" class="tab-pane active">
+            <h3>The State Machine Loop</h3>
+            <p>ProtocolMode operates on a deterministic loop designed for high-stakes automation where every step must be verified by a "Referee" agent before proceeding.</p>
+            <ul>
+                <li><strong>Protocol Definition:</strong> Can be pre-defined in JSON or dynamically generated by the agent.</li>
+                <li><strong>State Execution:</strong> The agent selects the best tool to satisfy the current state's instructions.</li>
+                <li><strong>Referee Validation:</strong> A separate LLM call evaluates the output against strict criteria to decide the next state.</li>
+                <li><strong>Variable Substitution:</strong> Supports <code>{{mustache}}</code> style variables for reusable templates.</li>
+            </ul>
+        </div>
+
+        <!-- TAB: CONFIG -->
+        <div id="tab-config" class="tab-pane" style="display:none;">
+            <h3>ProtocolModeConfig</h3>
+            <table class="docs-table">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>protocolFile</code></td>
+                        <td>String?</td>
+                        <td>Path to a JSON file defining the state machine.</td>
+                    </tr>
+                    <tr>
+                        <td><code>variables</code></td>
+                        <td>Map</td>
+                        <td>Key-value pairs to substitute into the protocol JSON.</td>
+                    </tr>
+                    <tr>
+                        <td><code>maxIterations</code></td>
+                        <td>Int</td>
+                        <td>Safety limit on total state transitions (Default: 20).</td>
+                    </tr>
+                    <tr>
+                        <td><code>maxRetries</code></td>
+                        <td>Int</td>
+                        <td>Retries allowed per state on validation failure (Default: 3).</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: IMPLEMENTATION -->
+        <div id="tab-implementation" class="tab-pane" style="display:none;">
+            <h3>Kotlin Implementation Skeleton</h3>
+            <pre><code class="language-kotlin">
+// From ProtocolMode.kt
+while (currentStateName != null && iteration++ < maxIterations) {
+    val currentState = protocol.states.find { it.name == currentStateName }
+    
+    // 1. Execute Action
+    val taskConfig = selectTask(task, currentState, userMessage, history)
+    val actionResult = taskImpl.run(...)
+
+    // 2. Validate via Referee
+    val validation = validateState(task, currentState, taskConfig, actionResult)
+    
+    if (validation.passed) {
+        currentStateName = validation.nextState
+    } else {
+        // Handle retry or failure
+    }
+}
+            </code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.target.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

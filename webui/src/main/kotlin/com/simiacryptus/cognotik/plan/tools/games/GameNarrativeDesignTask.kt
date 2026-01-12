@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -24,11 +24,17 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 import javax.imageio.ImageIO
+
+
+
+
+
+
+
+
 
 class GameNarrativeDesignTask(
     orchestrationConfig: OrchestrationConfig,
@@ -430,7 +436,8 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
         val api = defaultSmart ?: return
 
         val tabs = TabbedDisplay(task)
-        val transcript = createTranscript(task, gameTitle)
+        val transcriptStream = task.transcript()
+        val transcript = transcriptStream?.bufferedWriter()
 
         // Create game design directory
         val gameDir = File(agent.root.toFile(), ".game_narrative_design")
@@ -1359,19 +1366,6 @@ Provide specific examples and recommendations for improvement.
         }
     }
 
-    private fun createTranscript(task: SessionTask, gameTitle: String): BufferedWriter? {
-        val transcriptFile = "game_narrative_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val file = task.resolveUserFile(transcriptFile)
-        val link = task.linkTo(transcriptFile)
-        task.add(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return file?.outputStream()?.let { BufferedWriter(OutputStreamWriter(it)) }
-    }
 
     private fun saveAnalysisToFile(outputDir: File, filename: String, content: String) {
         try {
@@ -1465,27 +1459,27 @@ Provide specific examples and recommendations for improvement.
         private val log: Logger = LoggerFactory.getLogger(GameNarrativeDesignTask::class.java)
 
         val GameNarrativeDesign = TaskType(
-            "GameNarrativeDesign",
-            "Games",
-            GameNarrativeDesignTask::class.java,
-            GameNarrativeDesignConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Create interactive game narratives with branching storylines",
-            """
-              Creates complete game narrative designs with interactive elements and player agency.
-              <ul>
-                <li>Extends NarrativeGeneration with game-specific features</li>
-                <li>Three-act structure adapted for interactive media</li>
-                <li>Multiple branching points with meaningful choices</li>
-                <li>Character arcs that respond to player decisions</li>
-                <li>Branching dialogue trees with emotional beats</li>
-                <li>Multiple endings based on player choices</li>
-                <li>Optional side quests and expanded content</li>
-                <li>Player agency analysis and replayability factors</li>
-                <li>Complete design documentation for implementation</li>
-                <li>Ideal for RPGs, adventure games, visual novels, interactive fiction</li>
-              </ul>
-            """,
+          name = "GameNarrativeDesign",
+          category = "Games",
+          taskClass = GameNarrativeDesignTask::class.java,
+          executionConfigClass = GameNarrativeDesignConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Create interactive game narratives with branching storylines",
+          tooltipHtml = """
+                        Creates complete game narrative designs with interactive elements and player agency.
+                        <ul>
+                          <li>Extends NarrativeGeneration with game-specific features</li>
+                          <li>Three-act structure adapted for interactive media</li>
+                          <li>Multiple branching points with meaningful choices</li>
+                          <li>Character arcs that respond to player decisions</li>
+                          <li>Branching dialogue trees with emotional beats</li>
+                          <li>Multiple endings based on player choices</li>
+                          <li>Optional side quests and expanded content</li>
+                          <li>Player agency analysis and replayability factors</li>
+                          <li>Complete design documentation for implementation</li>
+                          <li>Ideal for RPGs, adventure games, visual novels, interactive fiction</li>
+                        </ul>
+                      """,
         )
     }
 }

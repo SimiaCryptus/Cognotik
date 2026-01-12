@@ -1,13 +1,12 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.CodeAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.agents.CodeAgent.CodeRequest
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
@@ -17,7 +16,9 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import java.util.*
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Locale.getDefault
 
 open class CodingTask<T : CodeRuntime>(
     val dataStorage: StorageInterface,
@@ -25,7 +26,6 @@ open class CodingTask<T : CodeRuntime>(
     val user: User?,
     val ui: SocketManager,
     val codeRuntime: T,
-//    val interpreter: KClass<T>,
     val symbols: Map<String, Any>,
     val temperature: Double = 0.1,
     val details: String? = null,
@@ -38,17 +38,6 @@ open class CodingTask<T : CodeRuntime>(
     ),
 ) {
 
-    open val codeAgent by lazy {
-        CodeAgent(
-            codeRuntime,
-            symbols = symbols,
-            temperature = temperature,
-            details = details,
-            model = model,
-            fallbackModel = model,
-            describer = describer,
-        )
-    }
 
     open val canPlay by lazy {
         ApplicationServices.authorizationManager.isAuthorized(
@@ -57,7 +46,7 @@ open class CodingTask<T : CodeRuntime>(
     }
 
     fun start(
-        codeRequest: CodeAgent.CodeRequest,
+        codeRequest: CodeRequest,
         task: SessionTask = mainTask,
     ) {
         val subTask = task.newTask()
@@ -93,14 +82,37 @@ open class CodingTask<T : CodeRuntime>(
         }
     }
 
-    open fun codeRequest(messages: List<Pair<String, ModelSchema.Role>>) = CodeAgent.CodeRequest(messages)
+    fun SessionTask.transcript(name: String = this.javaClass.simpleName): FileOutputStream? {
+        val relativePath = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(System.currentTimeMillis())}.md"
+        val (link, file) = Pair(linkTo(relativePath), resolveUserFile(relativePath))
+        val markdownTranscript = file?.outputStream()
+        complete(
+            "Writing $name to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+                link.removeSuffix(
+                    ".md"
+                )
+            }.pdf' target='_blank'>pdf</a>",
+            additionalClasses = "verbose"
+        )
+        return markdownTranscript
+    }
+    open fun codeRequest(messages: List<Pair<String, ModelSchema.Role>>) = CodeRequest(messages)
 
     fun displayCode(
         task: SessionTask,
-        codeRequest: CodeAgent.CodeRequest,
+        codeRequest: CodeRequest,
     ) {
         try {
             val lastUserMessage = codeRequest.messages.last { it.second == ModelSchema.Role.user }.first.trim()
+            val codeAgent = CodeAgent(
+                codeRuntime,
+                symbols = symbols(task),
+                temperature = temperature,
+                details = details,
+                model = model,
+                fallbackModel = model,
+                describer = describer,
+            )
             val codeResponse: CodeAgent.CodeResult = if (lastUserMessage.startsWith("```")) {
                 codeAgent.CodeResultImpl(
                     messages = codeAgent.chatMessages(codeRequest),
@@ -110,23 +122,36 @@ open class CodingTask<T : CodeRuntime>(
             } else {
                 codeAgent.answer(codeRequest)
             }
-            displayCodeAndFeedback(task, codeRequest, codeResponse)
+            displayCodeAndFeedback(task, codeRequest, codeResponse, codeAgent.language)
         } catch (e: Throwable) {
             log.warn("Error", e)
         }
     }
 
+    open fun symbols(task: SessionTask) = symbols + mapOf(
+          "task" to task,
+      )
+
     protected fun displayCodeAndFeedback(
         task: SessionTask,
-        codeRequest: CodeAgent.CodeRequest,
+        codeRequest: CodeRequest,
         response: CodeAgent.CodeResult,
+        language: String,
     ) {
         try {
-            displayCode(task, response)
+            val string = response.renderedResponse
+                ?: "\n```${language.lowercase(getDefault())}\n${response.code.trim()}\n```\n"
+            task.expanded("Code", string.renderMarkdown)
+            task.transcript()?.write("# Generated Code\n$string\n".toByteArray())
             if (autoFix && canPlay) {
                 execute(task, response, codeRequest)
             } else {
-                displayFeedback(task, append(codeRequest, response), response)
+                displayFeedback(
+                    task, codeRequest(
+                    messages = codeRequest.messages + listOf(
+                        response.code to ModelSchema.Role.assistant,
+                    ).filter { it.first.isNotBlank() }), response
+                )
             }
         } catch (e: Throwable) {
             task.error(e)
@@ -134,24 +159,8 @@ open class CodingTask<T : CodeRuntime>(
         }
     }
 
-    fun append(
-        codeRequest: CodeAgent.CodeRequest, response: CodeAgent.CodeResult
-    ) = codeRequest(
-        messages = codeRequest.messages + listOf(
-            response.code to ModelSchema.Role.assistant,
-        ).filter { it.first.isNotBlank() })
-
-    fun displayCode(
-        task: SessionTask, response: CodeAgent.CodeResult
-    ) {
-        val string = response.renderedResponse
-            ?: "\n```${codeAgent.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```\n"
-        task.expanded("Code", string.renderMarkdown)
-        task.transcript()?.write("# Generated Code\n$string\n".toByteArray())
-    }
-
     open fun displayFeedback(
-        task: SessionTask, request: CodeAgent.CodeRequest, response: CodeAgent.CodeResult
+        task: SessionTask, request: CodeRequest, response: CodeAgent.CodeResult
     ) {
         val formHandle = task.add("", additionalClasses = "reply-message")
         val formText = StringBuilder()
@@ -172,7 +181,7 @@ open class CodingTask<T : CodeRuntime>(
 
     protected fun playButton(
         task: SessionTask,
-        request: CodeAgent.CodeRequest,
+        request: CodeRequest,
         response: CodeAgent.CodeResult,
         formText: StringBuilder,
         formHandle: () -> StringBuilder
@@ -204,7 +213,7 @@ open class CodingTask<T : CodeRuntime>(
     }
 
     protected open fun feedback(
-        task: SessionTask, feedback: String, request: CodeAgent.CodeRequest, response: CodeAgent.CodeResult
+        task: SessionTask, feedback: String, request: CodeRequest, response: CodeAgent.CodeResult
     ) {
         try {
             task.echo(feedback.renderMarkdown)
@@ -224,7 +233,7 @@ open class CodingTask<T : CodeRuntime>(
     protected fun execute(
         task: SessionTask,
         response: CodeAgent.CodeResult,
-        request: CodeAgent.CodeRequest,
+        request: CodeRequest,
     ) {
         try {
             val result = execute(task, response)
@@ -235,26 +244,20 @@ open class CodingTask<T : CodeRuntime>(
                     ).filter { it.first.isNotBlank() }), response
             )
         } catch (e: Throwable) {
-            handleExecutionError(e, task, request, response)
+            val message = when {
+                e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
+                e is FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
+                else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
+            }
+            task.add(message, true, "div", "error")
+            displayCode(
+                task, CodeRequest(
+                    messages = request.messages + listOf(
+                        response.code to ModelSchema.Role.assistant,
+                        message to ModelSchema.Role.system,
+                    ).filter { it.first.isNotBlank() })
+            )
         }
-    }
-
-    protected open fun handleExecutionError(
-        e: Throwable, task: SessionTask, request: CodeAgent.CodeRequest, response: CodeAgent.CodeResult
-    ) {
-        val message = when {
-            e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
-            e is FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
-            else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
-        }
-        task.add(message, true, "div", "error")
-        displayCode(
-            task, CodeAgent.CodeRequest(
-                messages = request.messages + listOf(
-                    response.code to ModelSchema.Role.assistant,
-                    message to ModelSchema.Role.system,
-                ).filter { it.first.isNotBlank() })
-        )
     }
 
     protected open fun execute(
@@ -266,6 +269,8 @@ open class CodingTask<T : CodeRuntime>(
         transcript?.write(
             """
             # Execution Result
+            <details><summary>Output & Value</summary>
+            
             ## Output
             ```text
             $resultOutput
@@ -274,6 +279,7 @@ open class CodingTask<T : CodeRuntime>(
             ```text
             $resultValue
             ```
+            </details>
             """.trimIndent().toByteArray()
         )
         val tabs = TabbedDisplay(task)

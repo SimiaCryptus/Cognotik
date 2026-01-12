@@ -10,7 +10,6 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.platform.Session
@@ -1002,7 +1001,10 @@ class CustomFileSetPatchAction : BaseAction() {
                     CompletableFuture.runAsync({
                         Thread.sleep(500)
                         try {
-                            val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                            val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                                AppSettingsState.instance.listeningEndpoint,
+                                AppSettingsState.instance.listeningPort
+                            ).server.uri.resolve("/#$session")
                             log.info("Opening browser to $uri")
                             browse(uri)
                         } catch (e: Throwable) {

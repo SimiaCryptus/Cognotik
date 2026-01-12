@@ -12,9 +12,6 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
-val String.renderMarkdown: String get() = renderMarkdown(true)
-fun String.renderMarkdown(tabs: Boolean = false): String = MarkdownUtil.renderMarkdown(this, tabs = tabs)
-
 class CmdPatchApp(
     root: Path,
     settings: Settings,

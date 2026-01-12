@@ -16,7 +16,7 @@ object JdbcSessionTaskTest {
         PlanHarness.configurePlatform()
     }
 
-   //@Test
+   //@org.junit.jupiter.api.Test
     @Timeout(5, unit = TimeUnit.MINUTES)
     fun testJdbcSession() {
         TaskHarness(
@@ -43,7 +43,7 @@ object JdbcSessionTaskTest {
         ).run()
     }
 
-    //@Test
+    //@org.junit.jupiter.api.Test
     @Timeout(5, unit = TimeUnit.MINUTES)
     fun testSessionPersistence() {
         val sessionId = "test-session-${System.currentTimeMillis()}"

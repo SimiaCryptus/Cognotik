@@ -16,7 +16,7 @@ object ArticleGenerationTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+    //@org.junit.jupiter.api.Test
     @Timeout(15, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         val harness = TaskHarness(
@@ -42,7 +42,7 @@ object ArticleGenerationTaskTest {
         )
 
         // Seed input data for the task to process
-        val workingDir = harness.workspace
+        val workingDir = harness.dataDir
         workingDir.mkdirs()
         File(workingDir, "context.md").writeText("""
             # AI in Software Engineering

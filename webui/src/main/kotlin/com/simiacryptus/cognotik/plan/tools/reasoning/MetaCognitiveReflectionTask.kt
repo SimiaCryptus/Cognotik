@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
@@ -67,6 +68,21 @@ class MetaCognitiveReflectionTask(
             return ValidatedObject.validateFields(this)
         }
     }
+    data class ReflectionAnalysis(
+        @Description("Identified underlying assumptions")
+        val assumptions: List<String> = emptyList(),
+        @Description("Potential cognitive biases detected")
+        val biases: List<String> = emptyList(),
+        @Description("Alternative approaches or perspectives")
+        val alternatives: List<String> = emptyList(),
+        @Description("Confidence level and rationale")
+        val confidence_assessment: String = "",
+        @Description("Logical consistency and completeness check")
+        val logical_check: String = "",
+        @Description("Actionable suggestions for improvement")
+        val improvement_suggestions: List<String> = emptyList()
+    ) : ValidatedObject
+
 
     override fun promptSegment(): String {
         return """
@@ -132,16 +148,18 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         }
 
         val api = defaultSmart ?: return
-        // Create transcript file
-        val (transcriptLink, transcript) = initializeTranscript(task)
+
+        val (transcriptLink, transcript) = initializeTranscript(task, "MetaReflection")
         transcript?.let { stream ->
-            stream.write("# Meta-Cognitive Reflection Transcript\n\n".toByteArray())
-            stream.write("## Subject Task: `$subjectTaskId`\n\n".toByteArray())
-            stream.write("**Timestamp**: ${java.time.Instant.now()}\n\n".toByteArray())
+
+
+            writeToTranscript(stream, "# Meta-Cognitive Reflection Transcript\n\n")
+            writeToTranscript(stream, "## Subject Task: `$subjectTaskId`\n\n")
+            writeToTranscript(stream, "**Timestamp**: ${java.time.Instant.now()}\n\n")
         }
 
 
-        val tabbedDisplay = TabbedDisplay(task)
+        val tabbedDisplay = createTabbedDisplay(task)
         val overviewTask = tabbedDisplay.newTask("Overview")
 
         overviewTask.header("Meta-Cognitive Reflection on Task: $subjectTaskId", level = 2)
@@ -239,39 +257,49 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         reflectionTask.header("Analyzing reasoning process...", level = 3)
 
 
-        val chatAgent = ChatAgent(
-            prompt = buildSystemPrompt(),
+        val reflectionAgent = ParsedAgent(
+            resultClass = ReflectionAnalysis::class.java,
+            prompt = buildSystemPrompt() + "\n\n" + prompt,
             model = api,
+            parsingChatter = defaultFast
         )
 
         try {
-            val reflectionResult: String = chatAgent.answer(listOf(prompt))
+            val analysis = reflectionAgent.answer(listOf("Perform reflection analysis")).obj
             transcript?.let { stream ->
                 writeToTranscript(stream, "\n## Reflection Analysis\n\n")
-                stream.write(reflectionResult.toByteArray())
-                stream.write("\n\n".toByteArray())
+                writeToTranscript(stream, JsonUtil.toJson(analysis))
+                writeToTranscript(stream, "\n\n")
             }
 
 
             reflectionTask.header("Reflection Analysis", level = 3)
-            reflectionTask.add(
-                MarkdownUtil.renderMarkdown(
-                    reflectionResult.truncateForDisplay(),
-                    ui = reflectionTask.ui
-                )
-            )
+            val analysisMarkdown = buildString {
+                appendLine("### Assumptions\n${analysis.assumptions.joinToString("\n") { "- $it" }}")
+                appendLine("\n### Biases\n${analysis.biases.joinToString("\n") { "- $it" }}")
+                appendLine("\n### Alternatives\n${analysis.alternatives.joinToString("\n") { "- $it" }}")
+                appendLine("\n### Confidence\n${analysis.confidence_assessment}")
+                appendLine("\n### Logic & Completeness\n${analysis.logical_check}")
+                appendLine("\n### Improvements\n${analysis.improvement_suggestions.joinToString("\n") { "- $it" }}")
+            }
+            reflectionTask.add(MarkdownUtil.renderMarkdown(analysisMarkdown, ui = reflectionTask.ui))
             reflectionTask.safeComplete("✅ Reflection analysis complete", log)
-            // Step 5: Generate and display summary
+
             val summaryTask = tabbedDisplay.newTask("Summary")
 
 
-            val summary = generateReflectionSummary(reflectionResult)
+            val summary = buildString {
+                appendLine("**Key Insights:**")
+                analysis.improvement_suggestions.take(3).forEach { appendLine("- $it") }
+                appendLine("\n**Confidence:** ${analysis.confidence_assessment.take(200)}...")
+            }
+
             transcript?.let { stream ->
                 writeToTranscript(stream, "\n## Summary\n\n")
-                stream.write(summary.toByteArray())
-                stream.write("\n\n---\n\n".toByteArray())
-                stream.write("**Duration**: ${System.currentTimeMillis() - startTime}ms\n".toByteArray())
-                stream.write("**Status**: Completed successfully\n".toByteArray())
+                writeToTranscript(stream, summary)
+                writeToTranscript(stream, "\n\n---\n\n")
+                writeToTranscript(stream, "**Duration**: ${System.currentTimeMillis() - startTime}ms\n")
+                writeToTranscript(stream, "**Status**: Completed successfully\n")
             }
 
 
@@ -296,7 +324,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
             val finalOutput =
                 "Meta-cognitive reflection completed. View detailed analysis: <a href='$transcriptLink' target='_blank'>transcript.md</a> <a href='${
                     transcriptLink.removeSuffix(".md")
-                }.html' target='_blank'>html</a> <a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>\n\n$summary"
+                }.html' target='_blank'>html</a>\n\n$summary"
             resultFn(finalOutput)
             transcript?.close()
 
@@ -304,8 +332,8 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         } catch (e: Exception) {
             log.error("Error during meta-cognitive reflection", e)
             transcript?.let { stream ->
-                stream.write("\n## ❌ Error\n\n".toByteArray())
-                stream.write("```\n${e.message}\n```\n".toByteArray())
+                writeToTranscript(stream, "\n## ❌ Error\n\n")
+                writeToTranscript(stream, "```\n${e.message}\n```\n")
             }
             transcript?.close()
 
@@ -331,28 +359,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         }
     }
 
-    private fun initializeTranscript(task: SessionTask): Pair<String, FileOutputStream?> {
-        val (link, file) = task.createFile("transcript.md")
-        val markdownTranscript = file?.outputStream()
-        task.add(
-            MarkdownUtil.renderMarkdown(
-                "Writing transcript to <a href='$link' target='_blank'>transcript.md</a> " +
-                        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                        "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>",
-                ui = task.ui
-            )
-        )
-        return Pair(link, markdownTranscript)
-    }
 
-    private fun writeToTranscript(stream: FileOutputStream, content: String) {
-        try {
-            stream.write(content.toByteArray(Charsets.UTF_8))
-            stream.flush()
-        } catch (e: Exception) {
-            log.error("Failed to write to transcript", e)
-        }
-    }
 
     private fun getInputFileContext(inputFiles: List<String>): String {
         if (inputFiles.isEmpty()) return ""
@@ -573,23 +580,23 @@ Begin your meta-cognitive reflection now:
     companion object {
         private val log: Logger = LoggerFactory.getLogger(MetaCognitiveReflectionTask::class.java)
         val MetaCognitiveReflection = TaskType(
-            "MetaCognitiveReflection",
-            "Reasoning",
-            MetaCognitiveReflectionTask::class.java,
-            MetaCognitiveReflectionTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Reflect on and critique reasoning processes",
-            """
-              Performs meta-cognitive reflection on task reasoning and solutions.
-              <ul>
-                <li>Analyzes assumptions and identifies biases</li>
-                <li>Evaluates alternative approaches</li>
-                <li>Assesses confidence and certainty levels</li>
-                <li>Identifies knowledge gaps and uncertainties</li>
-                <li>Suggests improvements to reasoning quality</li>
-                <li>Checks logical consistency and completeness</li>
-              </ul>
-            """,
+          name = "MetaCognitiveReflection",
+          category = "Reasoning",
+          taskClass = MetaCognitiveReflectionTask::class.java,
+          executionConfigClass = MetaCognitiveReflectionTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Reflect on and critique reasoning processes",
+          tooltipHtml = """
+                        Performs meta-cognitive reflection on task reasoning and solutions.
+                        <ul>
+                          <li>Analyzes assumptions and identifies biases</li>
+                          <li>Evaluates alternative approaches</li>
+                          <li>Assesses confidence and certainty levels</li>
+                          <li>Identifies knowledge gaps and uncertainties</li>
+                          <li>Suggests improvements to reasoning quality</li>
+                          <li>Checks logical consistency and completeness</li>
+                        </ul>
+                      """,
         )
     }
 }

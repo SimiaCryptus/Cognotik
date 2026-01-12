@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.Session
@@ -44,14 +44,13 @@ abstract class CognitiveMode<U : CognitiveModeConfig>(
      */
     abstract fun contextData(): List<String>
 
-    fun transcript(
-        task: SessionTask,
-        transcriptFile: String = (this.config.type?.name
-            ?: this.javaClass.simpleName) + "_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-    ): FileOutputStream? {
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
+    val name: String? = (this@CognitiveMode.config.type?.name ?: this.javaClass.simpleName)
+
+    fun SessionTask.transcript(name: String? = this@CognitiveMode.name): FileOutputStream? {
+        val transcriptFile = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val (link, file) = Pair(linkTo(transcriptFile), resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
+        add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
         return markdownTranscript
     }
 }

@@ -84,6 +84,16 @@ object GeminiModels {
         outputTokenPricePerK = 0.0004
     )
 
+    val GeminiFlash_25_Image_Generation = ChatModel(
+        name = "GeminiFlash_20_Preview_Image_Generation",
+        modelName = "gemini-2.5-flash-image-preview",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 8192,
+        provider = APIProvider.Companion.Gemini,
+        inputTokenPricePerK = 0.0001, // ???
+        outputTokenPricePerK = 0.0004 // ???
+    )
+
     val GeminiPro_25 = ChatModel(
         name = "GeminiPro_25",
         modelName = "gemini-2.5-pro-preview-03-25",

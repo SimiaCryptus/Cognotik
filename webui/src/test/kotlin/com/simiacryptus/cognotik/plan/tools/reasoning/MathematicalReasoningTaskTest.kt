@@ -15,7 +15,7 @@ object MathematicalReasoningTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun testAlgebraicSolving() {
         TaskHarness(
@@ -34,7 +34,7 @@ object MathematicalReasoningTaskTest {
         ).run()
     }
 
-    //@Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun testCalculusDerivation() {
         TaskHarness(

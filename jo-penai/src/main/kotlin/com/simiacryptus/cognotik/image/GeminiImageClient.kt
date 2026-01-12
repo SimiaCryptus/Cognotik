@@ -7,13 +7,14 @@ import com.google.genai.types.GenerateImagesResponse
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.*
 import java.util.concurrent.ExecutorService
 
 class GeminiImageClient(
-    apiKey: String,
+    apiKey: SecureString,
     workPool: ExecutorService,
     logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream>,
@@ -31,7 +32,7 @@ class GeminiImageClient(
     private val client: Client = buildClient(apiKey, useVertexAI, project, location)
 
     private fun buildClient(
-        apiKey: String,
+        apiKey: SecureString,
         useVertexAI: Boolean,
         project: String?,
         location: String?
@@ -43,10 +44,10 @@ class GeminiImageClient(
             if (project != null && location != null) {
                 builder.project(project).location(location)
             } else {
-                builder.apiKey(apiKey)
+                builder.apiKey(apiKey.decrypt)
             }
         } else {
-            builder.apiKey(apiKey)
+            builder.apiKey(apiKey.decrypt)
         }
 
         return builder.build()

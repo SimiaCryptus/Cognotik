@@ -1,112 +1,275 @@
---- /dev/null
-+++ /home/andrew/code/Cognotik/site/cognotik.com/CouncilMode.html
-@@ -0,0 +1,108 @@
-+<!DOCTYPE html>
-+<html lang="en">
-+<head>
-+    <link href="logo.svg" rel="icon" type="image/svg+xml">
-+    <meta charset="UTF-8">
-+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-+    <title>Council Mode - Cognotik</title>
-+    <link rel="stylesheet" href="assets/styles/main.css">
-+    <link rel="preconnect" href="https://fonts.googleapis.com">
-+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-+    <script src="https://unpkg.com/lucide@latest"></script>
-+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
-+</head>
-+<body>
-+    <cognotik-header current-page="council-mode"></cognotik-header>
-+
-+    <main>
-+        <section class="hero">
-+            <h1>Council Mode</h1>
-+            <p class="subtitle">
-+                The Boardroom of AI. A multi-agent consensus engine where distinct personas collaborate, debate, and vote to drive complex decision-making.
-+            </p>
-+        </section>
-+
-+        <section class="features">
-+            <h2>Core Mechanics</h2>
-+            <div class="features-grid">
-+                <div class="feature-card">
-+                    <i data-lucide="users"></i>
-+                    <h3>Diverse Personas</h3>
-+                    <p>Simulate a team of experts (e.g., CEO, CTO, QA) who maintain separate goals and reasoning states throughout the session.</p>
-+                </div>
-+                <div class="feature-card">
-+                    <i data-lucide="vote"></i>
-+                    <h3>Democratic Process</h3>
-+                    <p>Agents nominate tasks based on their domain expertise, then vote to prioritize the most critical actions for the current iteration.</p>
-+                </div>
-+                <div class="feature-card">
-+                    <i data-lucide="git-merge"></i>
-+                    <h3>Iterative Refinement</h3>
-+                    <p>Execution results are fed back to all council members, allowing them to update their strategies and adapt to new information.</p>
-+                </div>
-+            </div>
-+        </section>
-+
-+        <section style="padding: 4rem 2rem; max-width: 1200px; margin: 0 auto;">
-+            <h2>Workflow</h2>
-+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 2rem; margin-top: 2rem;">
-+                <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">1. Assembly</h3>
-+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
-+                    The system initializes the configured council members. By default, this includes:
-+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; color: var(--text-secondary);">
-+                        <li><strong>CEO:</strong> Focuses on high-level goals and business value.</li>
-+                        <li><strong>CTO:</strong> Focuses on technical feasibility and architecture.</li>
-+                        <li><strong>QA:</strong> Focuses on testing and quality assurance.</li>
-+                    </ul>
-+                </p>
-+
-+                <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">2. Nomination</h3>
-+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
-+                    Given the user's goal and current project context, each member independently proposes a set of tasks they believe should be done next.
-+                </p>
-+
-+                <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">3. Voting</h3>
-+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
-+                    The council reviews all nominations. Members cast votes for tasks that align with their specific objectives. This filtering process ensures that only the most robust and agreed-upon tasks proceed to execution.
-+                </p>
-+
-+                <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">4. Execution & Reporting</h3>
-+                <p style="color: var(--text-secondary);">
-+                    Winning tasks are executed by the system. The results are shared with the council to update their internal states. A detailed transcript of the session, including nominations and voting logic, is generated for review.
-+                </p>
-+            </div>
-+        </section>
-+
-+        <section style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
-+            <h2>Configuration</h2>
-+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-+                Council Mode is highly configurable. You can define custom personas to suit your specific project needs.
-+            </p>
-+            <pre style="background: #1e293b; padding: 1.5rem; border-radius: 8px; overflow-x: auto;"><code class="language-kotlin" style="color: #e2e8f0;">
-+val councilConfig = CouncilModeConfig(
-+    council = listOf(
-+        ProjectManagerStrategy(
-+            name = "Product Owner", 
-+            description = "Prioritizes user features and roadmap alignment."
-+        ),
-+        ProjectManagerStrategy(
-+            name = "Security Architect", 
-+            description = "Ensures all code meets security standards."
-+        ),
-+        ProjectManagerStrategy(
-+            name = "DevOps", 
-+            description = "Focuses on deployment and infrastructure."
-+        )
-+    ),
-+    maxIterations = 10,
-+    maxTasksPerIteration = 3
-+)
-+            </code></pre>
-+        </section>
-+    </main>
-+
-+    <script>
-+        lucide.createIcons();
-+    </script>
-+</body>
-+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik | CouncilMode</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+
+    <style>
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .vote-badge {
+            background: var(--bg-app);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            border: 1px solid var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="council-mode"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Core > Cognitive Modes</div>
+        <h1>CouncilMode</h1>
+        <p class="pitch">
+            A democratic orchestration engine where multiple specialized agents nominate, vote, and execute tasks in a collaborative loop.
+        </p>
+        <div class="badges">
+            <span class="badge">Core Architecture</span>
+            <span class="badge">Multi-Agent</span>
+            <span class="badge">Collaborative</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <div class="panel">
+            <div class="panel-header">CouncilModeConfig.json</div>
+            <pre><code class="language-json">
+{
+  "council": [
+    "ProjectManager",
+    "AgileDeveloper",
+    "CreativeWriter"
+  ],
+  "maxTasksPerIteration": 3,
+  "maxIterations": 10
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <div class="panel">
+            <div class="panel-header">Live Council Session</div>
+            <div class="mock-ui-content" style="padding: 1rem; font-size: 0.9rem;">
+                <div style="border-left: 2px solid var(--accent-primary); padding-left: 10px; margin-bottom: 1rem;">
+                    <strong>Iteration 1: Nominations</strong><br>
+                    <span style="color: var(--text-dim)">• AgileDeveloper:</span> <code>RunLinterTask</code><br>
+                    <span style="color: var(--text-dim)">• ProjectManager:</span> <code>UpdateReadmeTask</code>
+                </div>
+                <div style="background: rgba(74, 222, 128, 0.1); padding: 8px; border-radius: 4px;">
+                    <strong>Voting Results:</strong><br>
+                    1. RunLinterTask <span class="vote-badge">2 Votes</span><br>
+                    2. UpdateReadmeTask <span class="vote-badge">1 Vote</span>
+                </div>
+                <p style="margin-top: 0.5rem; font-style: italic;">Executing: RunLinterTask...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. DETAILS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('logic')">The Council Loop</button>
+            <button onclick="switchTab('members')">Default Members</button>
+            <button onclick="switchTab('implementation')">Implementation</button>
+        </nav>
+
+        <!-- TAB: LOGIC -->
+        <div id="tab-logic" class="tab-pane active">
+            <h3>Collaborative Reasoning Flow</h3>
+            <div class="mermaid">
+                graph TD
+                A[Initialize Council] --> B[Iteration Start]
+                B --> C[Nomination Phase]
+                C --> D[Voting Phase]
+                D --> E[Parallel Execution]
+                E --> F[State Reflection]
+                F --> G{Goal Met?}
+                G -->|No| B
+                G -->|Yes| H[Complete]
+            </div>
+            <table class="docs-table">
+                <thead>
+                    <tr>
+                        <th>Phase</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Nomination</strong></td>
+                        <td>Each council member uses its specific <code>CognitiveSchemaStrategy</code> to propose tasks based on the current state.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Voting</strong></td>
+                        <td>Members review all nominations and vote for the best path forward. Ties are resolved by priority.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Reflection</strong></td>
+                        <td>After execution, every member updates its internal state independently, allowing for diverse perspectives on progress.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: MEMBERS -->
+        <div id="tab-members" class="tab-pane" style="display:none;">
+            <h3>Built-in Council Strategies</h3>
+            <p>CouncilMode ships with three primary personas that balance technical rigor with project velocity.</p>
+            <table class="docs-table">
+                <thead>
+                    <tr>
+                        <th>Strategy</th>
+                        <th>Focus</th>
+                        <th>Behavior</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Project Manager</strong></td>
+                        <td>Velocity & Scope</td>
+                        <td>Prioritizes high-level goals and documentation.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Agile Developer</strong></td>
+                        <td>Code Quality</td>
+                        <td>Focuses on TDD, linting, and implementation details.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Creative Writer</strong></td>
+                        <td>Communication</td>
+                        <td>Ensures user-facing outputs and comments are clear and professional.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: IMPLEMENTATION -->
+        <div id="tab-implementation" class="tab-pane" style="display:none;">
+            <h3>Kotlin Implementation Skeleton</h3>
+            <pre><code class="language-kotlin">
+class CouncilMode(config: CouncilModeConfig) : CognitiveMode() {
+    override fun handleUserMessage(userMessage: String, task: SessionTask) {
+        // 1. Initialize Council Members
+        config.council.forEach { strategy ->
+            reasoningStates[strategy.name] = strategy.initialize(...)
+        }
+
+        // 2. The Iteration Loop
+        while (iteration++ < maxIterations) {
+            val nominations = config.council.flatMap { it.getNominations(...) }
+            val selectedTasks = voteOnTasks(nominations)
+            
+            // 3. Parallel Execution
+            val results = selectedTasks.map { runTask(it) }
+
+            // 4. Multi-Agent Reflection
+            config.council.forEach { it.update(results) }
+        }
+    }
+}
+            </code></pre>
+        </div>
+    </section>
+
+    <!-- 4. INTEGRATION -->
+    <section class="integration-guide">
+        <h2>Integration Guide</h2>
+        <p>To enable CouncilMode, update your <code>OrchestrationConfig</code>. This mode is ideal for complex refactoring or architectural changes where a single agent might miss edge cases.</p>
+        <pre><code class="language-kotlin">
+val config = OrchestrationConfig(
+    mode = CognitiveModeType.Council,
+    council = listOf(
+        CognitiveSchemaStrategy.ProjectManager,
+        CognitiveSchemaStrategy.AgileDeveloper
+    ),
+    autoFix = true // Allow council to execute plans without manual approval
+)
+        </code></pre>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

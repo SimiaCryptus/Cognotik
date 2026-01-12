@@ -128,9 +128,9 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
                 val apiData =
                     fileApplicationServices().userSettingsManager.getUserSettings().apis.find { it.provider == model.provider }
                 return TranscriptionClient(
-                    key = apiData?.key ?: throw IOException("API key for ${model.provider} not configured"),
+                    key = apiData?.key?.decrypt ?: throw IOException("API key for ${model.provider} not configured"),
                     apiBase = apiData.baseUrl,
-                    logLevel = Level.INFO,
+                    logLevel = Level.DEBUG,
                     logStreams = mutableListOf(),
                     workPool = ApplicationServices.threadPoolManager.getPool(
                         currentSession,

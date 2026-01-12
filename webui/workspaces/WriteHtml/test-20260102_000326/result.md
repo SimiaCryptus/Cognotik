@@ -1,1 +1,0 @@
-Successfully wrote gallery.html

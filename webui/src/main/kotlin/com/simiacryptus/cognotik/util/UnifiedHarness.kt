@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
@@ -30,31 +31,40 @@ import org.eclipse.jetty.server.Server
 import java.awt.Desktop
 import java.awt.SystemTray
 import java.io.File
-import java.io.FileOutputStream
 import java.io.OutputStream
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 open class UnifiedHarness(
-    val port: Int = 8082,
+    val port: Int = Random.nextInt(1024, 65535),
     val serverless: Boolean = false,
     val openBrowser: Boolean = false,
     val captureMessages: Boolean = serverless,
     val redirectData: Boolean = serverless,
-    val modelInstanceFn: (ApiChatModel) -> ChatInterface = { model ->
+    val modelInstanceFn: (ApiChatModel, Session) -> ChatInterface = { model,session ->
         val api = model.findApi()
         val model =
             model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
         model.instance(
             key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
             base = api.baseUrl,
+            onUsage = { model, usage ->
+                ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
+                    session = session,
+                    UserSettingsManager.defaultUser,
+                    model,
+                    usage
+                )
+            },
         )
     },
     val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
+    val temperature: Double = 0.0,
 ) {
     private var jettyServer: Any? = null
     private var appServer: CognotikAppServer? = null
@@ -92,23 +102,17 @@ open class UnifiedHarness(
         timeoutMinutes: Long = 30,
         autoFix: Boolean = !openBrowser,
         workspace: File? = null,
-        config: (Session, File) -> OrchestrationConfig = { session: Session, finalWorkspace: File -> OrchestrationConfig(
-            sessionId = session.sessionId,
-            workingDir = finalWorkspace.absolutePath,
-            defaultFastModel = fastModel.asApiChatModel(),
-            defaultSmartModel = smartModel.asApiChatModel(),
-            defaultImageModel = imageModel.asApiChatModel(),
-            autoFix = autoFix,
-            cognitiveSettings = cognitiveSettings,
-        ) }
+        config: (Session, File) -> OrchestrationConfig = { session: Session, finalWorkspace: File ->
+            initSettings(
+                session,
+                finalWorkspace,
+                autoFix,
+                cognitiveSettings
+            )
+        }
     ) {
-        val finalWorkspace: File = workspace ?: createTempDirectory(cognitiveSettings.type?.name ?: "plan")
-        log.info("Running plan in workspace: ${finalWorkspace.absolutePath}")
-
         val completionLatch = CountDownLatch(1)
         val session = Session.newGlobalID()
-        DataStorage.sessionPaths[session] = finalWorkspace
-        if(redirectData) DataStorage.dataPaths[session] = finalWorkspace
 
         val planApp = object : UnifiedPlanApp(
             path = "/test",
@@ -116,15 +120,17 @@ open class UnifiedHarness(
             showMenubar = false,
             useExpansionSyntax = true
         ) {
-            override fun instance(model: ApiChatModel) = modelInstanceFn(model)
+            override fun instance(model: ApiChatModel) = modelInstanceFn(model,session)
 
             override fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
                 task.resolveUserFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
+                val usageManager = ApplicationServices.fileApplicationServices().usageManager
+                task.resolveUserFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
                 super.onComplete(mode, task)
             }
 
             override fun <T : Any> initSettings(session: Session): T {
-                val orchestrationConfig = config(session, finalWorkspace)
+                val orchestrationConfig = config(session, getRoot(workspace, session, cognitiveSettings.type?.name ?: "plan"))
                 val settingsFile = getSettingsFile(session, defaultUser)
                 val json = orchestrationConfig.toJson()
                 settingsFile.writeText(json)
@@ -166,7 +172,6 @@ open class UnifiedHarness(
                     return socketManager
                 }
             }
-
         }
 
         if (!serverless) {
@@ -202,9 +207,10 @@ open class UnifiedHarness(
             }
 
         } finally {
-            handleBrowserShutdown()
+            handleBrowserShutdown(session)
         }
     }
+
 
     open fun <T : TaskExecutionConfig, U : TaskTypeConfig> runTask(
         taskType: TaskType<T, U>,
@@ -212,28 +218,30 @@ open class UnifiedHarness(
         executionConfig: T,
         timeoutMinutes: Long = 30,
         autoFix: Boolean = !openBrowser,
-        workspace: File? = null
+        workspace: File? = null,
+        initSettings : (Session) -> OrchestrationConfig = { session ->
+            initSettings(session, workspace, autoFix, taskType, typeConfig)
+        }
     ) {
-        val finalWorkspace = workspace ?: createTempDirectory(taskType.name)
-        log.info("Running task in workspace: ${finalWorkspace.absolutePath}")
-
         val completionLatch = CountDownLatch(1)
         var error: Throwable? = null
         val session = Session.newGlobalID()
-        DataStorage.sessionPaths[session] = finalWorkspace
-        if(redirectData) DataStorage.dataPaths[session] = finalWorkspace
+
+
 
         val singleTaskApp = object : SingleTaskApp(
             path = "/test",
             taskType = taskType,
             taskConfig = executionConfig,
-            instanceFn = modelInstanceFn
+            instanceFn = { model -> modelInstanceFn(model,session) },
         ) {
-            override fun instance(model: ApiChatModel) = modelInstanceFn(model)
+            override fun instance(model: ApiChatModel) = modelInstanceFn(model,session)
 
             override fun onTaskComplete(result: String, task: SessionTask) {
                 log.info("Task completed successfully")
                 task.resolveUserFile("result.md")?.writeText(result)
+                val usageManager = ApplicationServices.fileApplicationServices().usageManager
+                task.resolveUserFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
                 completionLatch.countDown()
             }
 
@@ -244,17 +252,7 @@ open class UnifiedHarness(
             }
 
             override fun <T : Any> initSettings(session: Session): T {
-                val orchestrationConfig = OrchestrationConfig(
-                    sessionId = session.sessionId,
-                    workingDir = finalWorkspace.absolutePath,
-                    taskSettings = mutableMapOf(
-                        typeConfig.name!! to typeConfig
-                    ),
-                    defaultFastModel = fastModel.asApiChatModel(),
-                    defaultSmartModel = smartModel.asApiChatModel(),
-                    defaultImageModel = imageModel.asApiChatModel(),
-                    autoFix = autoFix,
-                )
+                val orchestrationConfig = initSettings(session)
                 val json = orchestrationConfig.toJson()
                 getSettingsFile(session, defaultUser).writeText(json)
                 @Suppress("UNCHECKED_CAST")
@@ -315,14 +313,63 @@ open class UnifiedHarness(
             }
 
         } finally {
-            handleBrowserShutdown()
+            handleBrowserShutdown(session)
         }
+    }
+    open fun initSettings(
+        session: Session,
+        finalWorkspace: File,
+        autoFix: Boolean,
+        cognitiveSettings: CognitiveModeConfig
+    ): OrchestrationConfig = OrchestrationConfig(
+        sessionId = session.sessionId,
+        workingDir = finalWorkspace.absolutePath,
+        defaultFastModel = fastModel.asApiChatModel(),
+        defaultSmartModel = smartModel.asApiChatModel(),
+        defaultImageModel = imageModel.asApiChatModel(),
+        autoFix = autoFix,
+        temperature = temperature,
+        cognitiveSettings = cognitiveSettings,
+    )
+
+    open fun <T : TaskExecutionConfig, U : TaskTypeConfig> initSettings(
+        session: Session,
+        workspace: File?,
+        autoFix: Boolean,
+        taskType: TaskType<T, U>,
+        typeConfig: U
+    ): OrchestrationConfig = OrchestrationConfig(
+        sessionId = session.sessionId,
+        workingDir = getRoot(workspace, session, taskType.name).absolutePath,
+        taskSettings = mutableMapOf(
+            typeConfig.name!! to typeConfig
+        ),
+        defaultFastModel = fastModel.asApiChatModel(),
+        defaultSmartModel = smartModel.asApiChatModel(),
+        defaultImageModel = imageModel.asApiChatModel(),
+        autoFix = autoFix,
+        temperature = temperature,
+    )
+
+    open fun getRoot(
+        workspace: File?,
+        session: Session,
+        name: String
+    ): File {
+        val tempDirectory = createTempDirectory(name)
+        log.info("Running task in workspace: ${tempDirectory.absolutePath}")
+        DataStorage.sessionPaths[session] = tempDirectory
+        if (redirectData) DataStorage.dataPaths[session] = tempDirectory
+        return workspace ?: tempDirectory
     }
 
     private fun getMessageLog(workspace: File?): OutputStream? =
-        if (captureMessages) workspace?.resolve("messageEvents_${time()}.log")?.outputStream()?.buffered() else null
+        if (captureMessages) workspace?.resolve(".logs/messageEvents_${time()}.log")?.apply {
+            parentFile?.mkdirs()
+        }?.outputStream()?.buffered() else null
 
-    protected open fun handleBrowserShutdown() {
+    protected open fun handleBrowserShutdown(session: Session) {
+
         if (openBrowser && !serverless) {
             val pair = trayIcon()
             val shutdownLatch = pair.first

@@ -37,24 +37,28 @@
                text="_Cognotik"
                description="Cognotik coding assistant tools">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
+            <action class="cognotik.actions.plan.UnifiedPlanFromMenuAction"
+                    id="UnifiedPlan"
+                    text="🧠 Task Planning"
+                    description="Choose from multiple planning strategies in a unified interface with customizable task settings">
+            </action>
             <action class="cognotik.actions.chat.GenericChatAction"
                     id="GenericChat"
                     text="💬 Cognotik Chat"
                     description="Initiate a general-purpose chat session to discuss coding concepts, get assistance with programming tasks, or explore software development ideas">
             </action>
-            <action class="cognotik.actions.chat.SmartChatAction"
-                    id="SmartChat"
-                    text="🧠 Adaptive Chat"
-                    description="Enhanced chat with automatic history summarization and intelligent query elevation for complex questions">
-            </action>
             <action class="cognotik.actions.analysis.SymbolExtractionAction"
                     text="📊 Extract Symbols"
                     description="Extract symbol definitions and references across the project into a JSON report">
             </action>
-            <action class="cognotik.actions.plan.UnifiedPlanFromMenuAction"
-                    id="UnifiedPlan"
-                    text="🧠 Task Planning"
-                    description="Choose from multiple planning strategies in a unified interface with customizable task settings">
+            <action class="cognotik.actions.SymbolGraphAction"
+                    text="📈 Browse Symbol Graph"
+                    description="Create a visual graph of symbol definitions and references across the project to aid in code comprehension">
+            </action>
+            <action class="cognotik.actions.chat.SmartChatAction"
+                    id="SmartChat"
+                    text="🧠 Adaptive Chat"
+                    description="Enhanced chat with automatic history summarization and intelligent query elevation for complex questions">
             </action>
         </group>
         <group id="cognotik.ui.EditorMenu"

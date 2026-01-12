@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
@@ -21,8 +21,21 @@ class SubPlanTask(
 
     class SubPlanTaskTypeConfig(
         @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveSettings: CognitiveModeConfig? = null,
-        @Description("Task-specific configurations available within sub-plans") val taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
-        @Description("Supplemental description of the purpose of this configuration") val purpose: String = "",
+        @Description("Task-specific configurations available within sub-plans") var taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
+        @Description("Supplemental description of the purpose of this configuration") var purpose: String = "",
+        @Description("Prompt template for summarizing sub-plan results") var summaryPrompt: String = """
+               Create a comprehensive summary of the sub-planning results below.
+               
+               Original Goal: {goal}
+               
+               The summary should:
+               - Highlight key findings and accomplishments
+               - Identify any issues or blockers encountered
+               - Provide actionable next steps if applicable
+               - Be concise but complete
+               
+               Use markdown formatting with headers and bullet points.
+           """.trimIndent(),
         model: ApiChatModel? = null,
         name: String? = SubPlan.name,
     ) : TaskTypeConfig(task_type = SubPlan.name, name = name, model = model), ValidatedObject {
@@ -39,8 +52,8 @@ class SubPlanTask(
     }
 
     class SubPlanTaskExecutionConfigData(
-        @Description("The goal or objective for the sub-planning task") val planning_goal: String? = null,
-        @Description("Context information to provide to the sub-planner") val context: List<String>? = null,
+        @Description("The goal or objective for the sub-planning task") var planning_goal: String? = null,
+        @Description("Context information to provide to the sub-planner") var context: List<String>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -93,7 +106,7 @@ class SubPlanTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         log.info("Starting SubPlanningTask with goal: ${executionConfig?.planning_goal}")
-        val transcript = transcript(task)
+        val transcript = task.transcript()
 
         try {
             val typeConfig = this.typeConfig ?: throw RuntimeException()
@@ -106,8 +119,6 @@ class SubPlanTask(
                 taskSettings = typeConfig.taskSettings,
                 cognitiveSettings = typeConfig.cognitiveSettings ?: orchestrationConfig.cognitiveSettings,
             )
-            log.debug("Created sub-orchestration config with maxIterations=${subConfig.maxIterations}, maxTasksPerIteration=${subConfig.maxTasksPerIteration}")
-
             log.info("Using cognitive mode: ${cognitiveMode.type?.name} for sub-planning")
 
             // Create tabs for displaying sub-plan execution
@@ -154,7 +165,7 @@ class SubPlanTask(
                 }
                 if (!executionConfig?.context.isNullOrEmpty()) {
                     appendLine("**Context:**")
-                    executionConfig.context.forEach { ctx ->
+                    executionConfig.context?.forEach { ctx ->
                         appendLine("- $ctx")
                     }
                     appendLine()
@@ -300,19 +311,10 @@ class SubPlanTask(
             ?: defaultSmart).getChildClient(task)
 
         val summaryAgent = ChatAgent(
-            prompt = """
-               Create a comprehensive summary of the sub-planning results below.
                
-               Original Goal: $goal
                
-               The summary should:
-               - Highlight key findings and accomplishments
-               - Identify any issues or blockers encountered
-               - Provide actionable next steps if applicable
-               - Be concise but complete
                
-               Use markdown formatting with headers and bullet points.
-           """.trimIndent(), model = model
+            prompt = typeConfig.summaryPrompt.replace("{goal}", goal), model = model
         )
 
         val summary = summaryAgent.answer(listOf(combinedResults))
@@ -343,24 +345,24 @@ class SubPlanTask(
         private val log = LoggerFactory.getLogger(SubPlanTask::class.java)
 
         val SubPlan = TaskType(
-            "SubPlan",
-            "Execution & Automation",
-            SubPlanTask::class.java,
-            SubPlanTaskExecutionConfigData::class.java,
-            SubPlanTaskTypeConfig::class.java,
-            "Create and execute sub-plans using recursive planning",
-            """
-             Enables recursive planning and execution with configurable cognitive modes.
-             <ul>
-               <li>Create sub-plans with different cognitive strategies</li>
-               <li>Support for multiple recursion levels</li>
-               <li>Context propagation to sub-plans</li>
-               <li>Configurable recursion depth limits</li>
-               <li>Automatic result aggregation and summarization</li>
-               <li>Flexible cognitive mode selection per sub-plan</li>
-               <li>Useful for complex multi-stage problems</li>
-             </ul>
-           """,
+          name = "SubPlan",
+          category = "Execution",
+          taskClass = SubPlanTask::class.java,
+          executionConfigClass = SubPlanTaskExecutionConfigData::class.java,
+          taskSettingsClass = SubPlanTaskTypeConfig::class.java,
+          description = "Create and execute sub-plans using recursive planning",
+          tooltipHtml = """
+                       Enables recursive planning and execution with configurable cognitive modes.
+                       <ul>
+                         <li>Create sub-plans with different cognitive strategies</li>
+                         <li>Support for multiple recursion levels</li>
+                         <li>Context propagation to sub-plans</li>
+                         <li>Configurable recursion depth limits</li>
+                         <li>Automatic result aggregation and summarization</li>
+                         <li>Flexible cognitive mode selection per sub-plan</li>
+                         <li>Useful for complex multi-stage problems</li>
+                       </ul>
+                     """,
         )
     }
 }

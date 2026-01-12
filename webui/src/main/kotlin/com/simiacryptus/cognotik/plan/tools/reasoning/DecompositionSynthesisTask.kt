@@ -22,23 +22,23 @@ class DecompositionSynthesisTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(DecompositionSynthesisTask::class.java)
         val DecompositionSynthesis: TaskType<DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig> = TaskType(
-            "DecompositionSynthesis",
-            "Reasoning",
-            DecompositionSynthesisTask::class.java,
-            DecompositionSynthesisTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Decompose complex problems and synthesize solutions",
-            """
-              Decomposes complex problems into manageable subproblems, solves them, and synthesizes solutions.
-              <ul>
-                <li>Multiple decomposition strategies (functional, temporal, spatial, hierarchical)</li>
-                <li>Configurable decomposition depth</li>
-                <li>Dependency-aware subproblem solving</li>
-                <li>Solution synthesis with coherence validation</li>
-                <li>Confidence tracking at each level</li>
-                <li>Implements divide-and-conquer reasoning</li>
-              </ul>
-            """,
+          name = "DecompositionSynthesis",
+          category = "Reasoning",
+          taskClass = DecompositionSynthesisTask::class.java,
+          executionConfigClass = DecompositionSynthesisTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Decompose complex problems and synthesize solutions",
+          tooltipHtml = """
+                        Decomposes complex problems into manageable subproblems, solves them, and synthesizes solutions.
+                        <ul>
+                          <li>Multiple decomposition strategies (functional, temporal, spatial, hierarchical)</li>
+                          <li>Configurable decomposition depth</li>
+                          <li>Dependency-aware subproblem solving</li>
+                          <li>Solution synthesis with coherence validation</li>
+                          <li>Confidence tracking at each level</li>
+                          <li>Implements divide-and-conquer reasoning</li>
+                        </ul>
+                      """,
         )
     }
 
@@ -736,15 +736,6 @@ class DecompositionSynthesisTask(
                 ""
             }
         }
-
-    private fun writeToTranscript(stream: FileOutputStream, content: String) {
-        try {
-            stream.write(content.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
-            stream.flush()
-        } catch (e: Exception) {
-            log.error("Failed to write to transcript", e)
-        }
-    }
 
     private fun decomposeProblem(
         problem: String,
