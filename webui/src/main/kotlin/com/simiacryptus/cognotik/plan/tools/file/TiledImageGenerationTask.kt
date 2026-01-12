@@ -490,21 +490,21 @@ IterativeImageGeneration - Generates ultra-high-resolution images via recursive 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(TiledImageGenerationTask::class.java)
     val TiledImageGeneration = TaskType(
-      "TiledImageGeneration",
-      "Writing",
-      TiledImageGenerationTask::class.java,
-      TiledImageGenerationConfig::class.java,
-      TaskTypeConfig::class.java,
-      "Recursively generates and upscales images for high detail.",
-      """
-Generates a base image, identifies regions of interest, and recursively upscales and refines them using generative AI.
-Useful for:
-<ul>
-    <li>Large format posters</li>
-    <li>Detailed maps or "Where's Waldo" style scenes</li>
-    <li>Images requiring text or small details legible at high zoom</li>
-</ul>
-            """,
+      name = "TiledImageGeneration",
+      category = "Writing",
+      taskClass = TiledImageGenerationTask::class.java,
+      executionConfigClass = TiledImageGenerationConfig::class.java,
+      taskSettingsClass = TaskTypeConfig::class.java,
+      description = "Recursively generates and upscales images for high detail.",
+      tooltipHtml = """
+      Generates a base image, identifies regions of interest, and recursively upscales and refines them using generative AI.
+      Useful for:
+      <ul>
+          <li>Large format posters</li>
+          <li>Detailed maps or "Where's Waldo" style scenes</li>
+          <li>Images requiring text or small details legible at high zoom</li>
+      </ul>
+                  """,
     )
   }
 }

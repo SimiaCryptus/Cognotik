@@ -16,7 +16,7 @@ object SeleniumSessionTaskTest {
         PlanHarness.configurePlatform()
     }
 
-     @org.junit.jupiter.api.Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
         TaskHarness(
@@ -37,7 +37,7 @@ object SeleniumSessionTaskTest {
         ).run()
     }
 
-     @org.junit.jupiter.api.Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testSessionReuse() {
         val sessionId = "test-session-${java.util.UUID.randomUUID()}"

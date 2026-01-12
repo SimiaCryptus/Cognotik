@@ -817,24 +817,24 @@ Provide clear, actionable insights grounded in systems thinking principles.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SystemsThinkingTask::class.java)
         val SystemsThinking = TaskType(
-            "SystemsThinking",
-            "Reasoning",
-            SystemsThinkingTask::class.java,
-            SystemsThinkingTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Analyze complex systems through feedback loops and dynamics",
-            """
-              Performs systems thinking analysis to understand complex system behavior.
-              <ul>
-                <li>Identifies feedback loops (reinforcing and balancing)</li>
-                <li>Maps system archetypes (e.g., "Limits to Growth", "Shifting the Burden")</li>
-                <li>Analyzes delays and accumulations</li>
-                <li>Predicts emergent behavior and unintended consequences</li>
-                <li>Finds high-leverage intervention points</li>
-                <li>Simulates potential interventions over time</li>
-                <li>Useful for understanding system dynamics, optimization, and organizational change</li>
-              </ul>
-            """,
+          name = "SystemsThinking",
+          category = "Reasoning",
+          taskClass = SystemsThinkingTask::class.java,
+          executionConfigClass = SystemsThinkingTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Analyze complex systems through feedback loops and dynamics",
+          tooltipHtml = """
+                        Performs systems thinking analysis to understand complex system behavior.
+                        <ul>
+                          <li>Identifies feedback loops (reinforcing and balancing)</li>
+                          <li>Maps system archetypes (e.g., "Limits to Growth", "Shifting the Burden")</li>
+                          <li>Analyzes delays and accumulations</li>
+                          <li>Predicts emergent behavior and unintended consequences</li>
+                          <li>Finds high-leverage intervention points</li>
+                          <li>Simulates potential interventions over time</li>
+                          <li>Useful for understanding system dynamics, optimization, and organizational change</li>
+                        </ul>
+                      """,
         )
     }
 }

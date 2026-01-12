@@ -467,21 +467,21 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(SegmentedImageGenerationTask::class.java)
     val SegmentedImageGeneration = TaskType(
-      "SegmentedImageGeneration",
-      "Writing",
-      SegmentedImageGenerationTask::class.java,
-      SegmentedImageGenerationConfig::class.java,
-      TaskTypeConfig::class.java,
-      "Recursively generates and upscales images using semantic segmentation for high detail.",
-      """
-Generates a base image, identifies semantic regions of interest using AI, and recursively upscales and refines them.
-Useful for:
-<ul>
-    <li>Complex illustrations with many characters</li>
-    <li>Detailed landscapes with distinct focal points</li>
-    <li>Images where grid-based upscaling might cut through objects</li>
-</ul>
-            """,
+      name = "SegmentedImageGeneration",
+      category = "Writing",
+      taskClass = SegmentedImageGenerationTask::class.java,
+      executionConfigClass = SegmentedImageGenerationConfig::class.java,
+      taskSettingsClass = TaskTypeConfig::class.java,
+      description = "Recursively generates and upscales images using semantic segmentation for high detail.",
+      tooltipHtml = """
+      Generates a base image, identifies semantic regions of interest using AI, and recursively upscales and refines them.
+      Useful for:
+      <ul>
+          <li>Complex illustrations with many characters</li>
+          <li>Detailed landscapes with distinct focal points</li>
+          <li>Images where grid-based upscaling might cut through objects</li>
+      </ul>
+                  """,
     )
   }
 }

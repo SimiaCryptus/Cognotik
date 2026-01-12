@@ -342,24 +342,24 @@ Provide a comprehensive synthesis that integrates all perspectives.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(MultiPerspectiveAnalysisTask::class.java)
         val MultiPerspectiveAnalysis = TaskType(
-            "MultiPerspectiveAnalysis",
-            "Social",
-            MultiPerspectiveAnalysisTask::class.java,
-            MultiPerspectiveAnalysisTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Analyze problems from multiple viewpoints with synthesis",
-            """
-              Analyzes topics from multiple perspectives and synthesizes findings.
-              <ul>
-                <li>Examines subject from specified viewpoints</li>
-                <li>Generates detailed analysis for each perspective</li>
-                <li>Identifies agreements and conflicts</li>
-                <li>Synthesizes perspectives into unified conclusion</li>
-                <li>Configurable consensus threshold</li>
-                <li>Useful for architectural decisions and code reviews</li>
-                <li>Supports context from related files</li>
-              </ul>
-            """,
+          name = "MultiPerspectiveAnalysis",
+          category = "Social",
+          taskClass = MultiPerspectiveAnalysisTask::class.java,
+          executionConfigClass = MultiPerspectiveAnalysisTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Analyze problems from multiple viewpoints with synthesis",
+          tooltipHtml = """
+                        Analyzes topics from multiple perspectives and synthesizes findings.
+                        <ul>
+                          <li>Examines subject from specified viewpoints</li>
+                          <li>Generates detailed analysis for each perspective</li>
+                          <li>Identifies agreements and conflicts</li>
+                          <li>Synthesizes perspectives into unified conclusion</li>
+                          <li>Configurable consensus threshold</li>
+                          <li>Useful for architectural decisions and code reviews</li>
+                          <li>Supports context from related files</li>
+                        </ul>
+                      """,
         )
     }
 }

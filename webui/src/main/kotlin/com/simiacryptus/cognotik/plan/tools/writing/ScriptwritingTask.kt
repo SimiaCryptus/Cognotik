@@ -1148,28 +1148,28 @@ Provide the complete revised script with all formatting intact.
         }
 
         val Scriptwriting = TaskType(
-            "Scriptwriting",
-            "Writing",
-            ScriptwritingTask::class.java,
-            ScriptwritingTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate complete scripts for videos, podcasts, and presentations",
-            """
-              Generates production-ready scripts with dialogue, timing, and production notes.
-              <ul>
-                <li>Creates detailed script outline with sections and timing</li>
-                <li>Writes natural, conversational dialogue for spoken delivery</li>
-                <li>Includes visual directions and scene descriptions</li>
-                <li>Suggests B-roll and supporting visuals</li>
-                <li>Marks key points for emphasis or graphics</li>
-                <li>Provides timing markers and duration estimates</li>
-                <li>Includes production notes and speaker guidance</li>
-                <li>Supports multiple script types (video, podcast, presentation, commercial)</li>
-                <li>Configurable tone, pacing, and audience targeting</li>
-                <li>Optional revision passes for quality improvement</li>
-                <li>Ideal for video production, podcasts, presentations, training videos</li>
-              </ul>
-            """,
+          name = "Scriptwriting",
+          category = "Writing",
+          taskClass = ScriptwritingTask::class.java,
+          executionConfigClass = ScriptwritingTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate complete scripts for videos, podcasts, and presentations",
+          tooltipHtml = """
+                        Generates production-ready scripts with dialogue, timing, and production notes.
+                        <ul>
+                          <li>Creates detailed script outline with sections and timing</li>
+                          <li>Writes natural, conversational dialogue for spoken delivery</li>
+                          <li>Includes visual directions and scene descriptions</li>
+                          <li>Suggests B-roll and supporting visuals</li>
+                          <li>Marks key points for emphasis or graphics</li>
+                          <li>Provides timing markers and duration estimates</li>
+                          <li>Includes production notes and speaker guidance</li>
+                          <li>Supports multiple script types (video, podcast, presentation, commercial)</li>
+                          <li>Configurable tone, pacing, and audience targeting</li>
+                          <li>Optional revision passes for quality improvement</li>
+                          <li>Ideal for video production, podcasts, presentations, training videos</li>
+                        </ul>
+                      """,
         )
     }
 }

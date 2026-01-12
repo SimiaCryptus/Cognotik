@@ -1,282 +1,369 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iterative Graph Generation Task - Cognotik</title>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
-    <style>
-        /* Utilities */
-        .container {
-            max-width: var(--container-max-width);
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        /* Hero */
-        .hero {
-            padding-top: 8rem;
-            padding-bottom: 4rem;
-            display: flex;
-            align-items: center;
-            text-align: left;
-            min-height: 80vh;
-            position: relative;
-            background: transparent;
-        }
-        .hero-content {
-            flex: 1;
-            padding-right: 2rem;
-        }
-        
-        .hero-visual {
-            flex: 1;
-            height: 400px;
-            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-        /* Abstract Visual Placeholder */
-        .visual-node {
-            width: 200px;
-            height: 200px;
-            border: 2px solid var(--accent-secondary);
-            border-radius: 50%;
-            position: absolute;
-            animation: pulse 4s infinite;
-            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .visual-node::before {
-            content: '🕸️';
-            font-size: 4rem;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
-        }
-        
-        /* Features */
-        .feature-icon {
-            color: var(--accent-secondary);
-            margin-bottom: 1.5rem;
-        }
-        .feature-icon svg {
-            width: 48px;
-            height: 48px;
-        }
-        
-        /* Simulator */
-        
-        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
-        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-color); }
-        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
-        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
-        
-        /* Use Cases */
-        .use-case-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-        .use-case-item {
-            background: var(--surface-color);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border-left: 4px solid var(--accent-color);
-        }
-        @media (max-width: 768px) {
-            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
-            .hero-content { padding-right: 0; margin-bottom: 3rem; }
-        }
-    </style>
-</head>
-<body>
-    <cognotik-header current-page="iterative-graph-generation"></cognotik-header>
-    <!-- Hero -->
-    <header class="hero container">
-        <div class="hero-content">
-            <h1>Iterative Graph Generation Task</h1>
-            <p class="subtitle">Build comprehensive knowledge graphs by iteratively analyzing context and extracting relationships.</p>
-            <a href="#demo" class="cta-button">Try the Simulator</a>
-        </div>
-        <div class="hero-visual">
-            <div class="visual-node"></div>
-        </div>
-    </header>
-    <!-- Features -->
-    <section id="features" class="features">
-        <div class="container">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10h-10V2z"/><path d="M12 12L2.1 12.5"/></svg>
-                    </div>
-                    <h3>Incremental Building</h3>
-                    <p>Adds nodes and edges iteratively to build complex, interconnected graphs.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                    </div>
-                    <h3>Context Analysis</h3>
-                    <p>Extracts entities and relationships from unstructured text and documents.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-                    </div>
-                    <h3>Schema Enforcement</h3>
-                    <p>Adheres to defined node and edge types for consistent data structure.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- Simulator -->
-    <section id="demo" class="simulator">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="simulator-container">
-                <!-- Inputs -->
-                <div class="sim-controls">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
-                    <div class="control-group">
-                        <label>Goal Prompt</label>
-                        <input type="text" id="goal_prompt" value="Map the relationships in the Harry Potter universe">
-                    </div>
-                    <div class="control-group">
-                        <label>Node Types</label>
-                        <input type="text" id="node_types" value="Character, Location, Organization">
-                    </div>
-                    <div class="control-group">
-                        <label>Edge Types</label>
-                        <input type="text" id="edge_types" value="FRIEND_OF, MEMBER_OF, LOCATED_IN">
-                    </div>
-                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Generate Graph</button>
-                </div>
-                <!-- Outputs -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <div class="tab active" onclick="switchTab('graph')">Graph</div>
-                        <div class="tab" onclick="switchTab('logs')">Logs</div>
-                    </div>
-                    <div id="output-graph" class="tab-content active markdown-preview">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the graph and click "Generate" to see the output.
-                        </div>
-                    </div>
-                    <div id="output-logs" class="tab-content" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- Use Cases -->
-    <section id="use-cases" class="use-cases">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="use-case-list">
-                <div class="use-case-item">
-                    <h4>Knowledge Management</h4>
-                    <p>Organize complex information into structured, queryable graphs.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Relationship Mapping</h4>
-                    <p>Visualize connections between people, organizations, and concepts.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Data Modeling</h4>
-                    <p>Prototype graph database schemas and data structures.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Content Analysis</h4>
-                    <p>Extract structured data from large volumes of unstructured text.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    <script>
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            event.target.classList.add('active');
-            if (tabName === 'graph') {
-                document.getElementById('output-graph').classList.add('active');
-            } else {
-                document.getElementById('output-logs').classList.add('active');
-            }
-        }
-        function runSimulation() {
-            const goal = document.getElementById('goal_prompt').value;
-            const reportEl = document.getElementById('output-graph');
-            const logsEl = document.getElementById('output-logs');
-            
-            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
-            logsEl.innerHTML = '';
-            
-            const logs = [
-                `[INFO] Initializing IterativeGraphGenerationTask...`,
-                `[INFO] Goal: ${goal}`,
-                `[INFO] Iteration 1: Extracting entities...`,
-                `[INFO] Iteration 2: Identifying relationships...`,
-                `[INFO] Iteration 3: Refining graph structure...`,
-                `[SUCCESS] Graph generation complete.`
-            ];
-            
-            let logIndex = 0;
-            const logInterval = setInterval(() => {
-                if (logIndex < logs.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
-                    line.style.marginBottom = '4px';
-                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
-                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
-                    logsEl.appendChild(line);
-                    logsEl.scrollTop = logsEl.scrollHeight;
-                    logIndex++;
-                } else {
-                    clearInterval(logInterval);
-                    renderGraph();
-                }
-            }, 400);
-        }
-        function renderGraph() {
-            const reportEl = document.getElementById('output-graph');
-            const markdown = `
-<h1>Generated Graph</h1>
-
-<h2>Nodes</h2>
-<ul>
-    <li><strong>[Character]</strong> Harry Potter</li>
-    <li><strong>[Character]</strong> Hermione Granger</li>
-    <li><strong>[Character]</strong> Ron Weasley</li>
-    <li><strong>[Location]</strong> Hogwarts</li>
-    <li><strong>[Organization]</strong> Gryffindor</li>
-</ul>
-
-<h2>Edges</h2>
-<ul>
-    <li>Harry Potter --[FRIEND_OF]--> Hermione Granger</li>
-    <li>Harry Potter --[FRIEND_OF]--> Ron Weasley</li>
-    <li>Harry Potter --[MEMBER_OF]--> Gryffindor</li>
-    <li>Gryffindor --[LOCATED_IN]--> Hogwarts</li>
-</ul>
-
-<h2>Summary</h2>
-<p>Graph contains 5 nodes and 4 edges. Relationships successfully mapped based on context.</p>
-            `;
-            reportEl.innerHTML = markdown;
-        }
-    </script>
-</body>
-</html>
+-<!--
+-  TEMPLATE: Cognotik Task Product Page (Industrial Theme)
+-  USAGE: Copy this file, rename to TaskName.html, and fill in the data.
+--->
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+-    <title>Cognotik | Task Name</title>
++    <title>Cognotik | IterativeGraphGenerationTask</title>
+ 
+     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+ 
+     <link rel="stylesheet" href="assets/styles/main.css">
+     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+ 
+     <style>
++        :root {
++            --bg-app: #0f1115;
++            --bg-panel: #161b22;
++            --border-subtle: #30363d;
++            --accent-primary: #58a6ff;
++            --text-main: #c9d1d9;
++            --text-dim: #8b949e;
++            --font-mono: 'JetBrains Mono', monospace;
++        }
++
++        body {
++            background-color: var(--bg-app);
++            color: var(--text-main);
++            font-family: 'Inter', sans-serif;
++            margin: 0;
++        }
++
++        .task-container {
++            max-width: 1200px;
++            margin: 0 auto;
++            padding: 2rem;
++        }
++
++        .page-header {
++            margin-bottom: 3rem;
++        }
++
++        .breadcrumbs {
++            font-family: var(--font-mono);
++            font-size: 0.8rem;
++            color: var(--accent-primary);
++            margin-bottom: 0.5rem;
++        }
++
++        h1 {
++            font-size: 2.5rem;
++            margin: 0 0 1rem 0;
++            font-weight: 600;
++        }
++
++        .pitch {
++            font-size: 1.1rem;
++            color: var(--text-dim);
++            max-width: 800px;
++            margin-bottom: 1.5rem;
++        }
++
++        .badges {
++            display: flex;
++            gap: 0.5rem;
++        }
++
++        .badge {
++            background: var(--bg-panel);
++            border: 1px solid var(--border-subtle);
++            padding: 0.2rem 0.6rem;
++            border-radius: 4px;
++            font-size: 0.75rem;
++            font-family: var(--font-mono);
++        }
++
+         /* Page-Specific Overrides */
+         .reality-check-grid {
+             display: grid;
+             grid-template-columns: 1fr 40px 1fr; /* Code -> Arrow -> UI */
+             gap: 1rem;
+             margin-bottom: 2rem;
+             align-items: center;
+         }
+ 
+         .panel {
+             background: var(--bg-panel);
+             border: 1px solid var(--border-subtle);
+             border-radius: 6px;
+             overflow: hidden;
++            height: 100%;
+         }
+ 
+         .panel-header {
+             background: var(--bg-app);
+             padding: 0.5rem 1rem;
+             border-bottom: 1px solid var(--border-subtle);
+             font-family: var(--font-mono);
+             font-size: 0.85rem;
+             color: var(--text-dim);
+             display: flex;
+             align-items: center;
+             gap: 0.5rem;
+         }
+ 
++        pre {
++            margin: 0;
++            padding: 1rem;
++            font-family: var(--font-mono);
++            font-size: 0.85rem;
++            overflow-x: auto;
++        }
++
+         .flow-arrow {
+             text-align: center;
+             color: var(--text-dim);
+             font-size: 1.5rem;
+         }
+ 
+         /* Tab System */
+         .tabs-nav {
+             display: flex;
+             border-bottom: 1px solid var(--border-subtle);
+             margin-bottom: 1rem;
+         }
+         .tabs-nav button {
+             background: none;
+             border: none;
+             padding: 0.75rem 1.5rem;
+             color: var(--text-dim);
+             cursor: pointer;
+             border-bottom: 2px solid transparent;
++            font-family: var(--font-mono);
++            font-size: 0.9rem;
+         }
+         .tabs-nav button.active {
+             color: var(--accent-primary);
+             border-bottom-color: var(--accent-primary);
+         }
+ 
++        .tab-pane {
++            padding: 1rem 0;
++        }
++
++        /* Docs Table */
++        .docs-table {
++            width: 100%;
++            border-collapse: collapse;
++            font-size: 0.9rem;
++        }
++        .docs-table th {
++            text-align: left;
++            padding: 0.75rem;
++            border-bottom: 1px solid var(--border-subtle);
++            color: var(--text-dim);
++            font-weight: 600;
++        }
++        .docs-table td {
++            padding: 0.75rem;
++            border-bottom: 1px solid var(--border-subtle);
++            vertical-align: top;
++        }
++        .docs-table code {
++            font-family: var(--font-mono);
++            color: var(--accent-primary);
++        }
++        .req { color: #f85149; margin-left: 4px; }
++
++        /* Mermaid Mockup */
++        .mermaid-mock {
++            background: #000;
++            padding: 1rem;
++            border-radius: 4px;
++            font-family: var(--font-mono);
++            font-size: 0.8rem;
++            color: #8b949e;
++        }
++        .mermaid-node { color: #58a6ff; }
++        .mermaid-edge { color: #d29922; }
++
+         /* Mobile Stack */
+         @media (max-width: 768px) {
+             .reality-check-grid {
+                 grid-template-columns: 1fr;
+             }
+             .flow-arrow { transform: rotate(90deg); }
+         }
+     </style>
+ </head>
+ <body>
+ 
+-<cognotik-header current-page="task-id"></cognotik-header>
++<cognotik-header current-page="IterativeGraphGenerationTask"></cognotik-header>
+ 
+ <main class="task-container">
+ 
+     <!-- 1. HEADER -->
+     <header class="page-header">
+-        <div class="breadcrumbs">Tasks / File Operations</div>
+-        <h1>FileModificationTask</h1>
++        <div class="breadcrumbs">Tasks / Writing / IterativeGraphGenerationTask</div>
++        <h1>IterativeGraphGenerationTask</h1>
+         <p class="pitch">
+-            Safe, patch-based file editing with built-in syntax validation and rollback capabilities.
++            Extract structured knowledge from unstructured data by iteratively building an entity-relationship graph with automated reasoning and Mermaid visualization.
+         </p>
+         <div class="badges">
+-            <span class="badge">Side-Effect: Destructive</span>
+-            <span class="badge">Auto-Fix Supported</span>
++            <span class="badge">Category: Writing</span>
++            <span class="badge">Output: GraphSON / Mermaid</span>
++            <span class="badge">Model: GPT-4 Preferred</span>
+         </div>
+     </header>
+ 
+     <!-- 2. REALITY CHECK (The "Anti-Vaporware" Section) -->
+     <section class="reality-check-grid">
+         <!-- Input -->
+         <div class="panel">
+-            <div class="panel-header">Input Configuration</div>
++            <div class="panel-header">⚙️ TaskConfig.json</div>
+             <pre><code class="language-json">
+ {
+-  "target_file": "src/main/App.kt",
+-  "instructions": "Add a logging statement to the main loop",
+-  "context_lines": 5
++  "goal_prompt": "Map the relationships between characters in Hamlet",
++  "node_types": ["Character", "Location"],
++  "edge_types": ["KILLED", "LOVES", "RELATED_TO"],
++  "max_iterations": 10
+ }
+             </code></pre>
+         </div>
+ 
+         <div class="flow-arrow">→</div>
+ 
+         <!-- Output -->
+         <div class="panel">
+-            <div class="panel-header">Session UI Output</div>
++            <div class="panel-header">👁️ Progress Visualization</div>
+             <div class="mock-ui-content" style="padding: 1rem;">
+-                <div style="color: #4ade80; margin-bottom: 0.5rem;">✔ File Updated Successfully</div>
+-                <div style="background: #000; padding: 0.5rem; font-family: monospace; font-size: 0.8rem;">
+-                    <span style="color: grey">12</span>   while(running) {<br>
+-                    <span style="color: green">13 +     logger.info("Heartbeat")</span><br>
+-                    <span style="color: grey">14</span>     processNext()<br>
++                <div style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 0.5rem;">Iteration 3: Added 2 nodes, 1 edge</div>
++                <div class="mermaid-mock">
++                    graph TD<br>
++                    &nbsp;&nbsp;<span class="mermaid-node">v1["Character: Hamlet"]</span><br>
++                    &nbsp;&nbsp;<span class="mermaid-node">v2["Character: Claudius"]</span><br>
++                    &nbsp;&nbsp;<span class="mermaid-node">v3["Character: Gertrude"]</span><br>
++                    &nbsp;&nbsp;v1 <span class="mermaid-edge">-- "KILLED" --></span> v2<br>
++                    &nbsp;&nbsp;v2 <span class="mermaid-edge">-- "MARRIED" --></span> v3
+                 </div>
++                <div style="margin-top: 1rem;"><a href="#" style="color: var(--accent-primary); font-size: 0.85rem;">📥 Download graph.json</a></div>
+             </div>
+         </div>
+     </section>
+ 
+     <!-- 3. TABS -->
+     <section class="details-tabs">
+         <nav class="tabs-nav">
+             <button class="active" onclick="switchTab('docs')">Documentation</button>
+-            <button onclick="switchTab('preview')">Live Preview</button>
++            <button onclick="switchTab('process')">Process & Logic</button>
+             <button onclick="switchTab('integration')">Integration</button>
+         </nav>
+ 
+         <!-- TAB: DOCS -->
+         <div id="tab-docs" class="tab-pane active">
+             <h3>Configuration Parameters</h3>
+             <table class="docs-table">
+                 <thead>
+                 <tr>
+                     <th>Field</th>
+                     <th>Type</th>
+                     <th>Description</th>
+                 </tr>
+                 </thead>
+                 <tbody>
+                 <tr>
+-                    <td><code>target_file</code> <span class="req">*</span></td>
++                    <td><code>goal_prompt</code> <span class="req">*</span></td>
+                     <td>String</td>
+-                    <td>Relative path to the file. Must exist in workspace.</td>
++                    <td>The goal or question the graph should answer/represent.</td>
+                 </tr>
+                 <tr>
+-                    <td><code>instructions</code></td>
++                    <td><code>context_data</code></td>
+                     <td>String</td>
+-                    <td>Natural language description of the edit desired.</td>
++                    <td>Raw input text to analyze for entity extraction.</td>
++                </tr>
++                <tr>
++                    <td><code>input_files</code></td>
++                    <td>List&lt;String&gt;</td>
++                    <td>Paths to files to be read and used as context.</td>
++                </tr>
++                <tr>
++                    <td><code>node_types</code></td>
++                    <td>List&lt;String&gt;</td>
++                    <td>Allowed labels for nodes (e.g., ["Person", "Org"]).</td>
++                </tr>
++                <tr>
++                    <td><code>max_iterations</code></td>
++                    <td>Int</td>
++                    <td>Maximum number of refinement cycles (Default: 20).</td>
+                 </tr>
+                 </tbody>
+             </table>
+         </div>
+ 
+-        <!-- TAB: PREVIEW (With Presets) -->
+-        <div id="tab-preview" class="tab-pane" style="display:none;">
+-            <div class="preset-bar">
+-                <span>Load Scenario:</span>
+-                <button class="btn-small">Fix Syntax Error</button>
+-                <button class="btn-small">Add Documentation</button>
+-            </div>
+-            <!-- Simulator UI goes here -->
++        <!-- TAB: PROCESS -->
++        <div id="tab-process" class="tab-pane" style="display:none;">
++            <h3>Task Lifecycle</h3>
++            <ul style="line-height: 1.6; color: var(--text-dim);">
++                <li><strong>Initialization:</strong> Loads context from text and files. Optionally imports an existing GraphSON file.</li>
++                <li><strong>Chunking:</strong> Large contexts are split into 4000-character chunks to fit model windows.</li>
++                <li><strong>Reasoning Loop:</strong>
++                    <ul>
++                        <li>Agent reviews current graph state and context chunk.</li>
++                        <li>Agent proposes <code>ADD_NODE</code>, <code>ADD_EDGE</code>, or <code>MERGE_NODES</code> actions.</li>
++                        <li>Actions are validated against the schema and applied to the TinkerGraph.</li>
++                    </ul>
++                </li>
++                <li><strong>Visualization:</strong> Generates Mermaid diagrams at each step for real-time UI feedback.</li>
++                <li><strong>Export:</strong> Final state is saved as a standard GraphSON JSON file.</li>
++            </ul>
++        </div>
++
++        <!-- TAB: INTEGRATION -->
++        <div id="tab-integration" class="tab-pane" style="display:none;">
++            <h3>Kotlin Boilerplate</h3>
++            <pre><code class="language-kotlin">
++val task = IterativeGraphGenerationTask(
++    orchestrationConfig = config,
++    planTask = IterativeGraphGenerationTaskExecutionConfigData(
++        goal_prompt = "Analyze the supply chain risks",
++        input_files = listOf("reports/q3_logistics.pdf"),
++        node_types = listOf("Supplier", "RiskFactor", "Location")
++    )
++)
++            </code></pre>
++            <h3>Prompt Segment</h3>
++            <pre><code class="language-text">
++IterativeGraphGeneration - Build knowledge graphs incrementally
++  * goal_prompt: The goal or question the graph should answer/represent.
++  * context_data: Input text to analyze.
++  * input_files: Input files to analyze.
++  * node_types/edge_types: Allowed labels for nodes and edges.
++            </code></pre>
+         </div>
+ 
+     </section>

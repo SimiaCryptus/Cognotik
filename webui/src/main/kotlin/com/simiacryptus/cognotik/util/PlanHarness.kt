@@ -22,6 +22,7 @@ import java.awt.image.BufferedImage
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.concurrent.CountDownLatch
+import kotlin.random.Random
 
 open class PlanHarness(
     val prompt: String,
@@ -43,7 +44,7 @@ open class PlanHarness(
             },
         )
     },
-    val port: Int = 8082,
+    val port: Int = Random.nextInt(1024, 65535),
     val serverless: Boolean = true,
     val openBrowser: Boolean = false,
     val timeoutMinutes: Long = 30,

@@ -664,22 +664,22 @@ class ChainOfThoughtTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ChainOfThoughtTask::class.java)
         val ChainOfThought = TaskType(
-            "ChainOfThought",
-            "Reasoning",
-            ChainOfThoughtTask::class.java,
-            ChainOfThoughtTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Break down complex problems into explicit reasoning steps",
-            """
-              Performs step-by-step reasoning with validation:
-              <ul>
-                <li>Breaks complex problems into logical steps</li>
-                <li>Validates each step before proceeding</li>
-                <li>Provides reasoning transparency</li>
-                <li>Can backtrack if validation fails</li>
-                <li>Generates comprehensive reasoning chains</li>
-              </ul>
-            """,
+          name = "ChainOfThought",
+          category = "Reasoning",
+          taskClass = ChainOfThoughtTask::class.java,
+          executionConfigClass = ChainOfThoughtTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Break down complex problems into explicit reasoning steps",
+          tooltipHtml = """
+                        Performs step-by-step reasoning with validation:
+                        <ul>
+                          <li>Breaks complex problems into logical steps</li>
+                          <li>Validates each step before proceeding</li>
+                          <li>Provides reasoning transparency</li>
+                          <li>Can backtrack if validation fails</li>
+                          <li>Generates comprehensive reasoning chains</li>
+                        </ul>
+                      """,
         )
     }
 }

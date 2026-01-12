@@ -29,25 +29,25 @@ class PoliticalOptimizationTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PoliticalOptimizationTask::class.java)
         val PoliticalOptimization = TaskType(
-            "PoliticalOptimization",
-            "Social",
-            PoliticalOptimizationTask::class.java,
-            PoliticalOptimizationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Optimize text using multi-perspective political consensus analysis",
-            """
-              Evaluates and optimizes text from multiple political perspectives using consensus-based fitness.
-              <ul>
-                <li>Evaluates text from configurable political perspectives (left, center, right, libertarian, etc.)</li>
-                <li>Measures agreement/disagreement across perspectives</li>
-                <li>Calculates consensus fitness (positive = unifying, negative = divisive)</li>
-                <li>Identifies wedge issues and points of contention</li>
-                <li>Generates variants that maximize consensus or highlight divisions</li>
-                <li>Provides detailed perspective-by-perspective analysis</li>
-                <li>Tracks evolution of consensus across generations</li>
-                <li>Useful for crafting bipartisan messaging, identifying divisive topics, or understanding political framing</li>
-              </ul>
-            """,
+          name = "PoliticalOptimization",
+          category = "Social",
+          taskClass = PoliticalOptimizationTask::class.java,
+          executionConfigClass = PoliticalOptimizationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Optimize text using multi-perspective political consensus analysis",
+          tooltipHtml = """
+                        Evaluates and optimizes text from multiple political perspectives using consensus-based fitness.
+                        <ul>
+                          <li>Evaluates text from configurable political perspectives (left, center, right, libertarian, etc.)</li>
+                          <li>Measures agreement/disagreement across perspectives</li>
+                          <li>Calculates consensus fitness (positive = unifying, negative = divisive)</li>
+                          <li>Identifies wedge issues and points of contention</li>
+                          <li>Generates variants that maximize consensus or highlight divisions</li>
+                          <li>Provides detailed perspective-by-perspective analysis</li>
+                          <li>Tracks evolution of consensus across generations</li>
+                          <li>Useful for crafting bipartisan messaging, identifying divisive topics, or understanding political framing</li>
+                        </ul>
+                      """,
         )
         private const val TT = """```"""
     }

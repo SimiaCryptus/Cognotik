@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import java.io.File
 import java.text.SimpleDateFormat
+import kotlin.random.Random
 
 open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val taskType: TaskType<T, U>,
@@ -34,7 +35,7 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
             },
         )
     },
-    val port: Int = 8082,
+    val port: Int = Random.nextInt(1024, 65535),
     val serverless: Boolean = true,
     val openBrowser: Boolean = false,
     val timeoutMinutes: Long = 30,
@@ -46,7 +47,20 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val temperature: Double = 0.0,
 ) {
     val dataDir: File by lazy { createWorkspace() }
-
+    open fun <T : TaskExecutionConfig, U : TaskTypeConfig> initSettings(
+        session: Session,
+        workspace: File?,
+        autoFix: Boolean,
+        taskType: TaskType<T, U>,
+        typeConfig: U,
+        harness: UnifiedHarness
+    ) = harness.initSettings(
+        session = session,
+        workspace = workspace,
+        autoFix = autoFix,
+        taskType = taskType,
+        typeConfig = typeConfig,
+    )
     private val harness = object : UnifiedHarness(
         port = port,
         openBrowser = openBrowser,
@@ -70,7 +84,8 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
                     executionConfig = executionConfig,
                     timeoutMinutes = timeoutMinutes,
                     autoFix = !openBrowser,
-                    workspace = workspace
+                    workspace = workspace,
+                    initSettings = { initSettings(it, workspace, !openBrowser, taskType, typeConfig, harness) }
                 )
             } finally {
                 harness.stop()

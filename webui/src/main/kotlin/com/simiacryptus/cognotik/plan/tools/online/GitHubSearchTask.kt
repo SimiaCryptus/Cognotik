@@ -231,22 +231,22 @@ class GitHubSearchTask(
 
     companion object {
         val GitHubSearch = TaskType(
-            "GitHubSearch",
-            "Online & Search",
-            GitHubSearchTask::class.java,
-            GitHubSearchTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Search GitHub repositories, code, issues and users",
-            """
-          Performs comprehensive searches across GitHub's content.
-          <ul>
-            <li>Searches repositories, code, and issues</li>
-            <li>Supports advanced search queries</li>
-            <li>Filters results by various criteria</li>
-            <li>Formats results with relevant details</li>
-            <li>Handles API rate limiting</li>
-          </ul>
-        """,
+          name = "GitHubSearch",
+          category = "Online",
+          taskClass = GitHubSearchTask::class.java,
+          executionConfigClass = GitHubSearchTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Search GitHub repositories, code, issues and users",
+          tooltipHtml = """
+                    Performs comprehensive searches across GitHub's content.
+                    <ul>
+                      <li>Searches repositories, code, and issues</li>
+                      <li>Supports advanced search queries</li>
+                      <li>Filters results by various criteria</li>
+                      <li>Formats results with relevant details</li>
+                      <li>Handles API rate limiting</li>
+                    </ul>
+                  """,
         )
 
     }

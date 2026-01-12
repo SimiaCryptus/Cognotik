@@ -31,22 +31,22 @@ class SeleniumSessionTask(
         private const val MAX_SESSIONS = 10
 
         val SeleniumSession = TaskType(
-            "SeleniumSession",
-            "Session",
-            SeleniumSessionTask::class.java,
-            SeleniumSessionTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Automate browser interactions with Selenium",
-            """
-          Automates browser interactions using Selenium WebDriver.
-          <ul>
-            <li>Headless Chrome browser automation</li>
-            <li>JavaScript command execution</li>
-            <li>Session management capabilities</li>
-            <li>Configurable timeouts</li>
-            <li>Detailed execution results</li>
-          </ul>
-        """,
+          name = "SeleniumSession",
+          category = "Session",
+          taskClass = SeleniumSessionTask::class.java,
+          executionConfigClass = SeleniumSessionTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Automate browser interactions with Selenium",
+          tooltipHtml = """
+                    Automates browser interactions using Selenium WebDriver.
+                    <ul>
+                      <li>Headless Chrome browser automation</li>
+                      <li>JavaScript command execution</li>
+                      <li>Session management capabilities</li>
+                      <li>Configurable timeouts</li>
+                      <li>Detailed execution results</li>
+                    </ul>
+                  """,
         )
 
 

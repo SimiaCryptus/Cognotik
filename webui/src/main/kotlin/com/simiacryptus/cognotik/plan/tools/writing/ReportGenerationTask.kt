@@ -1256,28 +1256,28 @@ Provide the complete revised report.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ReportGenerationTask::class.java)
         val ReportGeneration = TaskType(
-            "ReportGeneration",
-            "Writing",
-            ReportGenerationTask::class.java,
-            ReportGenerationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate comprehensive business reports with data analysis and recommendations",
-            """
-              Generates complete, professional business reports with structured analysis.
-              <ul>
-                <li>Analyzes metrics and data points with trend analysis</li>
-                <li>Creates structured report outline with multiple sections</li>
-                <li>Generates executive summary/dashboard for quick insights</li>
-                <li>Writes detailed sections with data-driven content</li>
-                <li>Provides actionable recommendations based on findings</li>
-                <li>Includes risk assessment and mitigation strategies</li>
-                <li>Suggests data visualizations (charts, graphs, tables)</li>
-                <li>Supports multiple report types (status updates, quarterly reviews, incident reports)</li>
-                <li>Tailors content to target audience (executives, team members, stakeholders)</li>
-                <li>Optional revision passes for quality improvement</li>
-                <li>Ideal for business reporting, performance analysis, project summaries</li>
-              </ul>
-            """,
+          name = "ReportGeneration",
+          category = "Writing",
+          taskClass = ReportGenerationTask::class.java,
+          executionConfigClass = ReportGenerationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate comprehensive business reports with data analysis and recommendations",
+          tooltipHtml = """
+                        Generates complete, professional business reports with structured analysis.
+                        <ul>
+                          <li>Analyzes metrics and data points with trend analysis</li>
+                          <li>Creates structured report outline with multiple sections</li>
+                          <li>Generates executive summary/dashboard for quick insights</li>
+                          <li>Writes detailed sections with data-driven content</li>
+                          <li>Provides actionable recommendations based on findings</li>
+                          <li>Includes risk assessment and mitigation strategies</li>
+                          <li>Suggests data visualizations (charts, graphs, tables)</li>
+                          <li>Supports multiple report types (status updates, quarterly reviews, incident reports)</li>
+                          <li>Tailors content to target audience (executives, team members, stakeholders)</li>
+                          <li>Optional revision passes for quality improvement</li>
+                          <li>Ideal for business reporting, performance analysis, project summaries</li>
+                        </ul>
+                      """,
         )
     }
 }

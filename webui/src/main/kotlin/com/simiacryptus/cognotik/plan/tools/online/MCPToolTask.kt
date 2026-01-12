@@ -281,24 +281,24 @@ class MCPToolTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(MCPToolTask::class.java)
         val MCPTool = TaskType(
-            "MCPTool",
-            "Online & Search",
-            MCPToolTask::class.java,
-            MCPToolTaskExecutionConfigData::class.java,
-            MCPToolTaskTypeConfig::class.java,
-            "Execute tools from Model Context Protocol servers",
-            """
-              Executes tools from MCP (Model Context Protocol) servers.
-              <ul>
-                <li>Connect to MCP servers via various transports</li>
-                <li>Execute tools with custom arguments</li>
-                <li>Configurable timeouts and retry logic</li>
-                <li>Support for multiple MCP server integrations</li>
-                <li>Structured result handling</li>
-                <li>Automatic tool discovery and validation</li>
-                <li>Exponential backoff retry strategy</li>
-              </ul>
-            """,
+          name = "MCPTool",
+          category = "Online",
+          taskClass = MCPToolTask::class.java,
+          executionConfigClass = MCPToolTaskExecutionConfigData::class.java,
+          taskSettingsClass = MCPToolTaskTypeConfig::class.java,
+          description = "Execute tools from Model Context Protocol servers",
+          tooltipHtml = """
+                        Executes tools from MCP (Model Context Protocol) servers.
+                        <ul>
+                          <li>Connect to MCP servers via various transports</li>
+                          <li>Execute tools with custom arguments</li>
+                          <li>Configurable timeouts and retry logic</li>
+                          <li>Support for multiple MCP server integrations</li>
+                          <li>Structured result handling</li>
+                          <li>Automatic tool discovery and validation</li>
+                          <li>Exponential backoff retry strategy</li>
+                        </ul>
+                      """,
         )
     }
 }

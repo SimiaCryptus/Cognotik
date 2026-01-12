@@ -782,23 +782,23 @@ Generate the Mermaid timeline diagram now:
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TemporalReasoningTask::class.java)
         val TemporalReasoning = TaskType(
-            "TemporalReasoning",
-            "Reasoning",
-            TemporalReasoningTask::class.java,
-            TemporalReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Analyze how systems evolve over time and predict future states",
-            """
-              Performs temporal reasoning and timeline analysis to understand system evolution.
-              <ul>
-                <li>Constructs chronological timelines of events and changes</li>
-                <li>Identifies temporal patterns, cycles, and trends</li>
-                <li>Analyzes rate of change and acceleration</li>
-                <li>Identifies critical transition points and inflection points</li>
-                <li>Predicts future states based on historical trends</li>
-                <li>Useful for technical debt analysis, performance degradation, and system evolution</li>
-              </ul>
-            """,
+          name = "TemporalReasoning",
+          category = "Reasoning",
+          taskClass = TemporalReasoningTask::class.java,
+          executionConfigClass = TemporalReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Analyze how systems evolve over time and predict future states",
+          tooltipHtml = """
+                        Performs temporal reasoning and timeline analysis to understand system evolution.
+                        <ul>
+                          <li>Constructs chronological timelines of events and changes</li>
+                          <li>Identifies temporal patterns, cycles, and trends</li>
+                          <li>Analyzes rate of change and acceleration</li>
+                          <li>Identifies critical transition points and inflection points</li>
+                          <li>Predicts future states based on historical trends</li>
+                          <li>Useful for technical debt analysis, performance degradation, and system evolution</li>
+                        </ul>
+                      """,
         )
     }
 }

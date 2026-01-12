@@ -1,366 +1,390 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tutorial Generation Task - Cognotik</title>
-    <!-- Fonts -->
+    <title>Cognotik | TutorialGenerationTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
-        /* Hero */
-        .hero.hero-split {
-            padding: 8rem 0 4rem;
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Header Styles */
+        .task-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0.5rem 0;
+            color: #fff;
+        }
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+        }
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+        }
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            align-items: stretch;
+        }
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-header {
+            background: rgba(255,255,255,0.03);
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+        .panel-content {
+            padding: 1rem;
+            flex-grow: 1;
+            overflow: auto;
+        }
+        pre { margin: 0; font-family: var(--font-mono); font-size: 0.85rem; color: #d19a66; }
+        .flow-arrow {
             display: flex;
             align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--border-subtle);
+        }
+
+        /* Mock UI Styles */
+        .mock-tabs {
+            display: flex;
+            gap: 2px;
+            background: var(--bg-app);
+            padding: 4px 4px 0 4px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .mock-tab {
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            color: var(--text-dim);
+        }
+        .mock-tab.active {
+            color: var(--accent-primary);
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--bg-panel);
+            margin-bottom: -1px;
+        }
+        .tutorial-preview {
+            font-size: 0.85rem;
+        }
+        .tutorial-preview h2 { color: var(--accent-primary); font-size: 1rem; margin-top: 0; }
+        .step-box {
+            border-left: 2px solid var(--accent-primary);
+            padding-left: 1rem;
+            margin: 1rem 0;
+        }
+
+        /* Tabs System */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-top: 2rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            font-family: var(--font-mono);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.05);
+        }
+        .tab-content {
+            padding: 2rem 0;
+        }
+
+        /* Docs Table */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .docs-table th {
             text-align: left;
-            min-height: 80vh;
-            position: relative;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-weight: 600;
         }
-        .hero-content {
-            flex: 1;
-            padding-right: 2rem;
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
         }
-        .hero.hero-split h1 {
-            font-size: 3.5rem;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(to right, #fff, var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .hero.hero-split p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            margin-bottom: 2rem;
-            max-width: 600px;
-        }
-        .hero-visual {
-            flex: 1;
-            height: 400px;
-            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-        /* Abstract Visual Placeholder */
-        .visual-node {
-            width: 200px;
-            height: 200px;
-            border: 2px solid var(--accent-secondary);
-            border-radius: 50%;
-            position: absolute;
-            animation: pulse 4s infinite;
-            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .visual-node::before {
-            content: '1';
-            font-size: 4rem;
-            color: var(--accent-secondary);
-            font-weight: bold;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
-        }
-        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
-        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-color); }
-        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
-        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
+        .field-name { font-family: var(--font-mono); color: var(--accent-primary); font-weight: bold; }
+        .field-type { font-family: var(--font-mono); color: #c678dd; font-size: 0.8rem; }
+        .req { color: #e06c75; font-weight: bold; }
+
         @media (max-width: 768px) {
-            .hero.hero-split { flex-direction: column; text-align: center; padding-top: 6rem; }
-            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
         }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="tutorial-generation"></cognotik-header>
-    <!-- Hero -->
-    <header class="hero hero-split container">
-        <div class="hero-content">
-            <h1>Tutorial Generation Task</h1>
-            <p>Create clear, step-by-step tutorials for technical processes, software, and projects.</p>
-            <a href="#demo" class="cta-button">Try the Simulator</a>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="bento-container">
+
+    <!-- 1. HEADER AREA -->
+    <section class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Writing > TutorialGenerationTask</div>
+        <h1>TutorialGenerationTask</h1>
+        <p class="pitch">
+            An industrial-grade tutorial engine that transforms complex goals into structured, multi-phase educational content with automated validation and troubleshooting.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Output: Markdown / Tabbed UI</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
         </div>
-        <div class="hero-visual">
-            <div class="visual-node"></div>
+    </section>
+
+    <!-- 2. REALITY CHECK (Visual Proof) -->
+    <section class="reality-check-grid">
+        <!-- Input: The Config -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚙️ ExecutionConfig.json</span>
+            </div>
+            <div class="panel-content">
+                <pre><code>{
+  "goal": "Deploy a React app to AWS Amplify",
+  "target_platform": "AWS / Web",
+  "skill_level": "intermediate",
+  "verbosity": "detailed",
+  "target_step_count": 5,
+  "include_troubleshooting": true
+}</code></pre>
+            </div>
         </div>
-    </header>
-    <!-- Features -->
-    <section id="features" class="features">
-        <div class="container">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <i style="display: inline-flex; justify-content: center; align-items: center;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    </i>
-                    <h3>Step-by-Step Guidance</h3>
-                    <p>Breaks down complex processes into logical, easy-to-follow steps with clear instructions.</p>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output: The UI -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️ SessionTask UI</span>
+                <span style="color: #4ade80">● Running</span>
+            </div>
+            <div class="mock-tabs">
+                <div class="mock-tab">Overview</div>
+                <div class="mock-tab">Outline</div>
+                <div class="mock-tab active">Complete Tutorial</div>
+            </div>
+            <div class="panel-content tutorial-preview">
+                <h2>Tutorial: Deploying React to AWS</h2>
+                <p><strong>Estimated Time:</strong> 45 minutes</p>
+                <div class="step-box">
+                    <strong>Step 1: Initialize Amplify</strong>
+                    <p>Run the following command in your project root:</p>
+                    <pre style="background: #000; padding: 0.5rem; color: #fff;">amplify init</pre>
+                    <p style="font-size: 0.75rem; color: #4ade80;">✓ Validation: Check for amplify/ folder</p>
                 </div>
-                <div class="feature-card">
-                    <i style="display: inline-flex; justify-content: center; align-items: center;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-                    </i>
-                    <h3>Code & Commands</h3>
-                    <p>Includes exact commands, code snippets, and configuration details for execution.</p>
-                </div>
-                <div class="feature-card">
-                    <i style="display: inline-flex; justify-content: center; align-items: center;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    </i>
-                    <h3>Validation & Verification</h3>
-                    <p>Includes specific checks and expected outcomes to ensure the user has succeeded at every step.</p>
+                <div class="step-box" style="opacity: 0.6">
+                    <strong>Step 2: Add Hosting...</strong>
                 </div>
             </div>
         </div>
     </section>
-    <!-- Simulator -->
-    <section id="demo" class="simulator">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="simulator-container">
-                <!-- Inputs -->
-                <div class="sim-controls">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
-                    <div class="control-group">
-                        <label>Tutorial Goal</label>
-                      <input type="text" id="sim_goal" value="Deploy a React app to AWS S3">
+
+    <!-- 3. TABBED DETAILS -->
+    <section class="task-details">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
+            <button onclick="switchTab(event, 'process')">Process Lifecycle</button>
+            <button onclick="switchTab(event, 'integration')">Integration</button>
+        </nav>
+
+        <div id="tab-docs" class="tab-content">
+            <table class="docs-table">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="field-name">goal</span> <span class="req">*</span></td>
+                        <td><span class="field-type">String</span></td>
+                        <td>The final outcome the user should achieve (e.g., 'deploy a web app').</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">target_platform</span></td>
+                        <td><span class="field-type">String</span></td>
+                        <td>Environment context (Windows, Linux, Docker, etc.). Default: "cross-platform".</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">skill_level</span></td>
+                        <td><span class="field-type">String</span></td>
+                        <td>Target audience level: beginner, intermediate, advanced.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">verbosity</span></td>
+                        <td><span class="field-type">String</span></td>
+                        <td>Level of detail: concise, detailed, verbose.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">target_step_count</span></td>
+                        <td><span class="field-type">Int</span></td>
+                        <td>Number of main steps (3 to 20). Default: 7.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">include_troubleshooting</span></td>
+                        <td><span class="field-type">Boolean</span></td>
+                        <td>Whether to generate a common errors section.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">input_files</span></td>
+                        <td><span class="field-type">List&lt;String&gt;</span></td>
+                        <td>Optional glob patterns for source code context.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="tab-process" class="tab-content" style="display:none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                <div class="panel">
+                    <div class="panel-header">Phase 1: Planning</div>
+                    <div class="panel-content" style="font-size: 0.85rem;">
+                        Generates a <code>TutorialOutline</code> including prerequisites, learning objectives, and step-by-step purpose mapping.
                     </div>
-                    <div class="control-group">
-                        <label>Target Platform</label>
-                      <input type="text" id="sim_platform" value="AWS / Linux">
-                    </div>
-                    <div class="control-group">
-                        <label>Skill Level</label>
-                        <select id="skill_level">
-                            <option value="beginner">Beginner</option>
-                            <option value="intermediate" selected>Intermediate</option>
-                            <option value="advanced">Advanced</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label>Verbosity</label>
-                        <select id="verbosity">
-                            <option value="concise">Concise</option>
-                            <option value="detailed" selected>Detailed</option>
-                            <option value="verbose">Verbose</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label>Estimated Duration (minutes)</label>
-                        <input type="text" id="duration" value="30">
-                    </div>
-                    <div class="control-group">
-                        <label>Target Steps</label>
-                      <input type="number" id="sim_steps" value="4" min="3" max="10">
-                    </div>
-                    <div class="control-group" style="flex-direction: row; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-                      <input type="checkbox" id="sim_validation" checked style="width: auto;">
-                      <label for="sim_validation" style="margin: 0; font-weight: normal;">Include Validation</label>
-                    </div>
-                    <div class="control-group" style="flex-direction: row; align-items: center; gap: 0.5rem;">
-                      <input type="checkbox" id="sim_troubleshooting" checked style="width: auto;">
-                      <label for="sim_troubleshooting" style="margin: 0; font-weight: normal;">Include Troubleshooting</label>
-                    </div>
-                  <button class="run-button" onclick="runSimulation()">Generate Tutorial</button>
                 </div>
-              <!-- Output -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <div class="tab active" onclick="switchTab('tutorial')">Tutorial</div>
-                        <div class="tab" onclick="switchTab('logs')">Logs</div>
+                <div class="panel">
+                    <div class="panel-header">Phase 2: Writing</div>
+                    <div class="panel-content" style="font-size: 0.85rem;">
+                        Iteratively writes each <code>TutorialStep</code>, injecting code blocks, validation logic, and platform-specific commands.
                     </div>
-                    <div id="output-tutorial" class="tab-content active markdown-preview">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the tutorial and click "Generate" to see the output.
-                        </div>
-                    </div>
-                    <div id="output-logs" class="tab-content" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                </div>
+                <div class="panel">
+                    <div class="panel-header">Phase 3: Hardening</div>
+                    <div class="panel-content" style="font-size: 0.85rem;">
+                        Compiles <code>TroubleshootingSection</code> and <code>NextSteps</code> to ensure the user isn't left at a dead end.
                     </div>
                 </div>
             </div>
         </div>
-    </section>
-    <!-- Use Cases -->
-    <section id="use-cases" class="modes-section" style="padding: 4rem 0;">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">When to Use</h2>
-            <div class="mode-grid">
-                <div class="mode-card">
-                    <div class="mode-title">Software Documentation</div>
-                    <p>Create user guides and installation manuals for software products.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Onboarding Guides</div>
-                    <p>Help new team members set up development environments and workflows.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Process Standardization</div>
-                    <p>Document standard operating procedures (SOPs) for consistency.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Educational Content</div>
-                    <p>Create learning materials for students or customers.</p>
-                </div>
+
+        <div id="tab-integration" class="tab-content" style="display:none;">
+            <h3>Orchestration Boilerplate</h3>
+            <pre style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-subtle); color: #abb2bf;">
+<span style="color: #c678dd;">val</span> task = TutorialGenerationTask(
+    orchestrationConfig = config,
+    planTask = TutorialGenerationTaskExecutionConfigData(
+        goal = <span style="color: #98c379;">"Setup a CI/CD pipeline"</span>,
+        skill_level = <span style="color: #98c379;">"advanced"</span>
+    )
+)</pre>
+
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <div style="background: #000; padding: 1rem; font-family: var(--font-mono); font-size: 0.85rem; color: #8b949e; border-radius: 6px;">
+                TutorialGeneration - Create complete, step-by-step tutorials for processes and projects<br>
+                ** Specify the goal or final outcome to achieve<br>
+                ** Define target platform and environment<br>
+                ** Set skill level and estimated duration<br>
+                ** Enable screenshot placeholders for visual guidance<br>
+                ** Configure verbosity level (concise, detailed, verbose)<br>
+                ** Include code examples and commands<br>
+                ** Add validation steps to verify success<br>
+                ** Include troubleshooting section for common errors<br>
+                ** Add learning objectives and next steps<br>
+                ** Produces publication-ready tutorial with clear, actionable steps
             </div>
         </div>
     </section>
-    <script>
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            if(tabName === 'tutorial') document.getElementById('output-tutorial').classList.add('active');
-            if(tabName === 'logs') document.getElementById('output-logs').classList.add('active');
-        }
-        function runSimulation() {
-      const goal = document.getElementById('sim_goal').value;
-      const platform = document.getElementById('sim_platform').value;
-      const skill = document.getElementById('sim_skill').value;
-            const duration = document.getElementById('duration').value;
-            const verbosity = document.getElementById('verbosity').value;
-            const steps = document.getElementById('step_count').value;
-            const incValidation = document.getElementById('inc_validation').checked;
-            const incTroubleshooting = document.getElementById('inc_troubleshooting').checked;
+</main>
 
-            const reportEl = document.getElementById('output-tutorial');
-            const logsEl = document.getElementById('output-logs');
-            
-            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
-            logsEl.innerHTML = '';
-            
-            const logs = [
-                `[INFO] Initializing TutorialGenerationTask...`,
-                `[INFO] Goal: ${goal}`,
-                `[INFO] Config: ${platform} | ${skill} | ${verbosity}`,
-                `[INFO] Phase 1: Planning & Outline...`,
-                `[INFO] Generated outline with ${steps} steps and prerequisites.`,
-                `[INFO] Phase 2: Writing detailed steps...`,
-                `[INFO] Writing Step 1...`,
-                `[INFO] Writing Step 2...`,
-                `[INFO] Writing Step 3...`,
-                `[INFO] Adding code examples and visual checkpoints...`,
-                `[INFO] Phase 3: Compiling troubleshooting section...`,
-                `[INFO] Phase 4: Generating next steps suggestions...`,
-                `[INFO] Phase 5: Final Assembly...`,
-          `[SUCCESS] Generation complete.`
-            ];
-            
-            let logIndex = 0;
-            const logInterval = setInterval(() => {
-                if (logIndex < logs.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
-                    line.style.marginBottom = '4px';
-                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
-                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
-                    logsEl.appendChild(line);
-                    logsEl.scrollTop = logsEl.scrollHeight;
-                    logIndex++;
-                } else {
-                    clearInterval(logInterval);
-                    renderTutorial(goal, platform, skill, duration, incValidation, incTroubleshooting);
-                }
-            }, 400);
-        }
-        function renderTutorial(goal, platform, skill, duration, incValidation, incTroubleshooting) {
-            const reportEl = document.getElementById('output-tutorial');
-            let validationSection = '';
-            if (incValidation) {
-                validationSection = `
-<p><strong>Verify Success:</strong></p>
-<ol>
-    <li>Run <code>curl http://localhost:3000</code> to verify the build locally.</li>
-    <li>Check the S3 console to confirm files are listed.</li>
-</ol>`;
-            }
-      let troubleshootingHTML = '';
-            if (incTroubleshooting) {
-                troubleshootingSection = `
-<h2>Troubleshooting</h2>
-<h3>1. Error: Access Denied</h3>
-<p><strong>Symptoms:</strong> 403 Forbidden when accessing the S3 URL.</p>
-<p><strong>Solution:</strong> Ensure your bucket policy allows <code>s3:GetObject</code> for <code>Principal: "*"</code> or check the "Block Public Access" settings.</p>
-<hr>`;
-            }
+<script>
+    function switchTab(event, tabId) {
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(c => c.style.display = 'none');
 
-            const markdown = `
-<h1>${goal}</h1>
-<p>
-    <strong>⏱️ Estimated Time:</strong> ${duration} minutes<br>
-    <strong>🎯 Skill Level:</strong> ${skill.charAt(0).toUpperCase() + skill.slice(1)}<br>
-    <strong>💻 Platform:</strong> ${platform}
-</p>
-<hr>
+        const buttons = document.querySelectorAll('.tabs-nav button');
+        buttons.forEach(b => b.classList.remove('active'));
 
-<h2>What You'll Learn</h2>
-<ul>
-    <li>✓ How to build a production-ready React application</li>
-    <li>✓ Configuring AWS S3 for static website hosting</li>
-    <li>✓ Deploying assets using the AWS CLI</li>
-</ul>
-<hr>
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-<h2>Prerequisites</h2>
-<h3>Required</h3>
-<ul>
-    <li><strong>AWS Account</strong> (Account): Access to create S3 buckets.</li>
-    <li><strong>Node.js</strong> (Software): Version 14+ installed.</li>
-    <li><strong>AWS CLI</strong> (Tool): Configured with valid credentials.</li>
-</ul>
-<hr>
-
-<h2>Tutorial Steps</h2>
-
-<h3>Step 1: Build the React Application</h3>
-<p>First, we need to create a production build of your application.</p>
-<p><em>Run in: <code>/project-root</code></em></p>
-<pre><code>npm run build</code></pre>
-<p>This will create a <code>build</code> directory with your static files.</p>
-<p><strong>Expected Outcome:</strong> A <code>build/</code> folder appears containing <code>index.html</code> and static assets.</p>
-<hr>
-
-<h3>Step 2: Create an S3 Bucket</h3>
-<p>Create a new bucket to host your website.</p>
-<pre><code>aws s3 mb s3://my-react-app-bucket</code></pre>
-<hr>
-
-<h3>Step 3: Configure Static Website Hosting</h3>
-<p>Enable website hosting for your bucket.</p>
-<pre><code>aws s3 website s3://my-react-app-bucket --index-document index.html</code></pre>
-<hr>
-
-<h3>Step 4: Deploy Files</h3>
-<p>Sync your build folder to the S3 bucket.</p>
-
-<pre><code>aws s3 sync build/ s3://my-react-app-bucket --acl public-read</code></pre>
-<p>📸 [Screenshot of the upload progress bar completing]</p>
-<p><strong>Expected Outcome:</strong> All files are uploaded to S3.</p>
-${validationSection}
-<hr>
-
-${troubleshootingSection}
-
-<h2>Next Steps</h2>
-<p>🎉 Congratulations on completing this tutorial!</p>
-<h3>Try These Next</h3>
-<ul>
-    <li>Set up CloudFront for CDN distribution and HTTPS support.</li>
-    <li>Configure a custom domain name using Route 53.</li>
-    <li>Automate this deployment using GitHub Actions.</li>
-</ul>
-            `;
-            reportEl.innerHTML = markdown;
-        }
-    </script>
 </body>
 </html>

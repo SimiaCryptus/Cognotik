@@ -164,21 +164,21 @@ FileAppend - Append content to the end of an existing file
         private val log = LoggerFactory.getLogger(FileAppendTask::class.java)
 
         val FileAppend = TaskType(
-            "FileAppend",
-            "File",
-            FileAppendTask::class.java,
-            FileAppendTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Append content to the end of existing files",
-            """
-                Allows for precise additions to the end of files without modifying existing content.
-                <ul>
-                  <li>Ideal for logs, exports, and list updates</li>
-                  <li>Supports AI-generated content based on context</li>
-                  <li>Provides reviewable previews before applying changes</li>
-                  <li>Integrates with project structure and standards</li>
-                </ul>
-            """.trimIndent(),
+          name = "FileAppend",
+          category = "File",
+          taskClass = FileAppendTask::class.java,
+          executionConfigClass = FileAppendTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Append content to the end of existing files",
+          tooltipHtml = """
+                          Allows for precise additions to the end of files without modifying existing content.
+                          <ul>
+                            <li>Ideal for logs, exports, and list updates</li>
+                            <li>Supports AI-generated content based on context</li>
+                            <li>Provides reviewable previews before applying changes</li>
+                            <li>Integrates with project structure and standards</li>
+                          </ul>
+                      """.trimIndent(),
         )
     }
 }

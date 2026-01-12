@@ -588,23 +588,23 @@ Provide a structured synthesis.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SocraticDialogueTask::class.java)
         val SocraticDialogue = TaskType(
-            "SocraticDialogue",
-            "Reasoning",
-            SocraticDialogueTask::class.java,
-            SocraticDialogueTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Explore ideas through Socratic questioning",
-            """
-              Uses Socratic questioning methodology to deeply explore ideas.
-              <ul>
-                <li>Creates dialogue between questioner and responder agents</li>
-                <li>Challenges assumptions and definitions</li>
-                <li>Explores implications and consequences</li>
-                <li>Identifies contradictions and tensions</li>
-                <li>Configurable dialogue depth and constraints</li>
-                <li>Generates synthesis of insights discovered</li>
-              </ul>
-            """,
+          name = "SocraticDialogue",
+          category = "Reasoning",
+          taskClass = SocraticDialogueTask::class.java,
+          executionConfigClass = SocraticDialogueTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Explore ideas through Socratic questioning",
+          tooltipHtml = """
+                        Uses Socratic questioning methodology to deeply explore ideas.
+                        <ul>
+                          <li>Creates dialogue between questioner and responder agents</li>
+                          <li>Challenges assumptions and definitions</li>
+                          <li>Explores implications and consequences</li>
+                          <li>Identifies contradictions and tensions</li>
+                          <li>Configurable dialogue depth and constraints</li>
+                          <li>Generates synthesis of insights discovered</li>
+                        </ul>
+                      """,
         )
     }
 }

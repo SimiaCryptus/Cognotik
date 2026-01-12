@@ -429,23 +429,23 @@ $priorCode
     companion object {
         private val log: Logger = LoggerFactory.getLogger(CounterfactualAnalysisTask::class.java)
         val CounterfactualAnalysis = TaskType(
-            "CounterfactualAnalysis",
-            "Reasoning",
-            CounterfactualAnalysisTask::class.java,
-            CounterfactualAnalysisTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Explore what-if scenarios to understand causal relationships and decision impacts",
-            """
-              Performs counterfactual analysis to explore alternative scenarios and outcomes.
-              <ul>
-                <li>Analyzes actual scenarios and alternative conditions</li>
-                <li>Compares outcomes across different scenarios</li>
-                <li>Identifies causal relationships and key factors</li>
-                <li>Supports controlled comparison with constant factors</li>
-                <li>Provides insights for risk analysis and decision validation</li>
-                <li>Useful for retrospective analysis and strategic planning</li>
-              </ul>
-            """,
+          name = "CounterfactualAnalysis",
+          category = "Reasoning",
+          taskClass = CounterfactualAnalysisTask::class.java,
+          executionConfigClass = CounterfactualAnalysisTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Explore what-if scenarios to understand causal relationships and decision impacts",
+          tooltipHtml = """
+                        Performs counterfactual analysis to explore alternative scenarios and outcomes.
+                        <ul>
+                          <li>Analyzes actual scenarios and alternative conditions</li>
+                          <li>Compares outcomes across different scenarios</li>
+                          <li>Identifies causal relationships and key factors</li>
+                          <li>Supports controlled comparison with constant factors</li>
+                          <li>Provides insights for risk analysis and decision validation</li>
+                          <li>Useful for retrospective analysis and strategic planning</li>
+                        </ul>
+                      """,
         )
     }
 }

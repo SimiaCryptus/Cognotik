@@ -524,25 +524,25 @@ Style: Clean, modern, professional presentation aesthetic
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GeneratePresentationTask::class.java)
         val GeneratePresentation = TaskType(
-            "GeneratePresentation",
-            "Writing",
-            GeneratePresentationTask::class.java,
-            GeneratePresentationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Create complete Reveal.js presentations with narration support",
-            """
-              Creates professional Reveal.js presentations with speaker notes.
-              <ul>
-                <li>Generates complete, self-contained HTML presentations</li>
-                <li>Includes Reveal.js framework integration</li>
-                <li>Adds speaker notes for each slide</li>
-                <li>Supports custom styling and themes</li>
-                <li>Optional AI-generated images for key slides</li>
-                <li>Interactive approval or auto-apply mode</li>
-                <li>Includes navigation and progress indicators</li>
-                <li>Optional audio narration support</li>
-              </ul>
-            """,
+          name = "GeneratePresentation",
+          category = "Writing",
+          taskClass = GeneratePresentationTask::class.java,
+          executionConfigClass = GeneratePresentationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Create complete Reveal.js presentations with narration support",
+          tooltipHtml = """
+                        Creates professional Reveal.js presentations with speaker notes.
+                        <ul>
+                          <li>Generates complete, self-contained HTML presentations</li>
+                          <li>Includes Reveal.js framework integration</li>
+                          <li>Adds speaker notes for each slide</li>
+                          <li>Supports custom styling and themes</li>
+                          <li>Optional AI-generated images for key slides</li>
+                          <li>Interactive approval or auto-apply mode</li>
+                          <li>Includes navigation and progress indicators</li>
+                          <li>Optional audio narration support</li>
+                        </ul>
+                      """,
         )
     }
 }

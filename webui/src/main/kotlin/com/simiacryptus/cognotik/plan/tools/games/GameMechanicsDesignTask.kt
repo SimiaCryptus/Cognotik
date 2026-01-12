@@ -1482,24 +1482,24 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GameMechanicsDesignTask::class.java)
         val GameMechanicsDesign = TaskType(
-            "GameMechanicsDesign",
-            "Games",
-            GameMechanicsDesignTask::class.java,
-            GameMechanicsDesignTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate comprehensive game mechanics with balance analysis",
-            """
-              Designs complete game mechanics systems with detailed analysis.
-              <ul>
-                <li>Generates core gameplay mechanics from high-level concepts</li>
-                <li>Analyzes mechanic interactions and synergies</li>
-                <li>Designs progression and economy systems</li>
-                <li>Evaluates balance, fairness, and difficulty curves</li>
-                <li>Predicts player behavior through simulated playtesting</li>
-                <li>Provides tuning parameters and recommendations</li>
-                <li>Useful for game design prototyping, balancing, and competitive design</li>
-              </ul>
-            """,
+          name = "GameMechanicsDesign",
+          category = "Games",
+          taskClass = GameMechanicsDesignTask::class.java,
+          executionConfigClass = GameMechanicsDesignTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate comprehensive game mechanics with balance analysis",
+          tooltipHtml = """
+                        Designs complete game mechanics systems with detailed analysis.
+                        <ul>
+                          <li>Generates core gameplay mechanics from high-level concepts</li>
+                          <li>Analyzes mechanic interactions and synergies</li>
+                          <li>Designs progression and economy systems</li>
+                          <li>Evaluates balance, fairness, and difficulty curves</li>
+                          <li>Predicts player behavior through simulated playtesting</li>
+                          <li>Provides tuning parameters and recommendations</li>
+                          <li>Useful for game design prototyping, balancing, and competitive design</li>
+                        </ul>
+                      """,
         )
     }
 }

@@ -1230,27 +1230,27 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
     companion object {
         private val log: Logger = LoggerFactory.getLogger(InteractiveStoryTask::class.java)
         val InteractiveStory = TaskType(
-            "InteractiveStory",
-            "Writing",
-            InteractiveStoryTask::class.java,
-            InteractiveStoryTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Create choose-your-own-adventure narratives with branching paths",
-            """
-              Generates complete interactive stories with meaningful choices and multiple endings.
-              <ul>
-                <li>Creates detailed story structure with decision tree</li>
-                <li>Writes opening segment that hooks the reader</li>
-                <li>Develops branching narrative segments for each decision point</li>
-                <li>Generates multiple distinct endings based on player choices</li>
-                <li>Tracks state variables (health, reputation, inventory, etc.)</li>
-                <li>Ensures all paths lead to meaningful endings (no dead ends)</li>
-                <li>Optimizes for replay value with significantly different experiences</li>
-                <li>Tracks consequences across choices for coherent storytelling</li>
-                <li>Produces complete playable interactive story map</li>
-                <li>Ideal for interactive fiction, training scenarios, educational content, and games</li>
-              </ul>
-            """,
+          name = "InteractiveStory",
+          category = "Writing",
+          taskClass = InteractiveStoryTask::class.java,
+          executionConfigClass = InteractiveStoryTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Create choose-your-own-adventure narratives with branching paths",
+          tooltipHtml = """
+                        Generates complete interactive stories with meaningful choices and multiple endings.
+                        <ul>
+                          <li>Creates detailed story structure with decision tree</li>
+                          <li>Writes opening segment that hooks the reader</li>
+                          <li>Develops branching narrative segments for each decision point</li>
+                          <li>Generates multiple distinct endings based on player choices</li>
+                          <li>Tracks state variables (health, reputation, inventory, etc.)</li>
+                          <li>Ensures all paths lead to meaningful endings (no dead ends)</li>
+                          <li>Optimizes for replay value with significantly different experiences</li>
+                          <li>Tracks consequences across choices for coherent storytelling</li>
+                          <li>Produces complete playable interactive story map</li>
+                          <li>Ideal for interactive fiction, training scenarios, educational content, and games</li>
+                        </ul>
+                      """,
         )
 
         private val textExtensions = setOf(

@@ -310,20 +310,20 @@ $tableRows
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GenerateSpriteSheetTask::class.java)
         val GenerateSpriteSheet = TaskType(
-            "GenerateSpriteSheet",
-            "Writing",
-            GenerateSpriteSheetTask::class.java,
-            GenerateSpriteSheetTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate a sprite sheet and associated JSON metadata",
-            """
-              Creates game assets by generating a sprite sheet image and extracting coordinate data.
-              <ul>
-                <li>Generates visual sprite sheet using AI image models</li>
-                <li>Analyzes the generated image to find sprite bounding boxes</li>
-                <li>Exports standard JSON metadata for game engine integration</li>
-              </ul>
-            """,
+          name = "GenerateSpriteSheet",
+          category = "Writing",
+          taskClass = GenerateSpriteSheetTask::class.java,
+          executionConfigClass = GenerateSpriteSheetTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate a sprite sheet and associated JSON metadata",
+          tooltipHtml = """
+                        Creates game assets by generating a sprite sheet image and extracting coordinate data.
+                        <ul>
+                          <li>Generates visual sprite sheet using AI image models</li>
+                          <li>Analyzes the generated image to find sprite bounding boxes</li>
+                          <li>Exports standard JSON metadata for game engine integration</li>
+                        </ul>
+                      """,
         )
     }
 }

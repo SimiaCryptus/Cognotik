@@ -184,24 +184,24 @@ class DiscussionTask(
     companion object {
         private val log = LoggerFactory.getLogger(DiscussionTask::class.java)
         val Discussion = TaskType(
-            "Discussion",
-            "File",
-            DiscussionTask::class.java,
-            DiscussionTaskExecutionConfigData::class.java,
-            DiscussionTaskTypeConfig::class.java,
-            "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
-            """
-            Provides direct answers and insights using the LLM, optionally referencing project files.
-            <ul>
-              <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>
-              <li>Reading files is optional; the task can operate with or without file input</li>
-              <li>User feedback and iterative refinement are supported but not required</li>
-              <li>Generates comprehensive markdown reports, explanations, and recommendations</li>
-              <li>Can answer detailed questions about code, design, or project context</li>
-              <li>Supports both one-shot and interactive discussion modes</li>
-              <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
-            </ul>
-            """,
+          name = "Discussion",
+          category = "File",
+          taskClass = DiscussionTask::class.java,
+          executionConfigClass = DiscussionTaskExecutionConfigData::class.java,
+          taskSettingsClass = DiscussionTaskTypeConfig::class.java,
+          description = "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
+          tooltipHtml = """
+                      Provides direct answers and insights using the LLM, optionally referencing project files.
+                      <ul>
+                        <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>
+                        <li>Reading files is optional; the task can operate with or without file input</li>
+                        <li>User feedback and iterative refinement are supported but not required</li>
+                        <li>Generates comprehensive markdown reports, explanations, and recommendations</li>
+                        <li>Can answer detailed questions about code, design, or project context</li>
+                        <li>Supports both one-shot and interactive discussion modes</li>
+                        <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
+                      </ul>
+                      """,
         )
 
 

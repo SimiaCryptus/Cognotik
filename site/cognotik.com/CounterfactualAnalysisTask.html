@@ -1,71 +1,416 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Counterfactual Analysis - Cognotik</title>
+    <title>Cognotik | CounterfactualAnalysisTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 4px; }
+
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .bento-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .task-header {
+            margin-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: rgba(255,255,255,0.03);
+            padding: 0.4rem 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 0.75rem;
+            overflow: auto;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            flex-grow: 1;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Mock UI */
+        .mock-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(0,0,0,0.2);
+        }
+        .mock-tab {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.75rem;
+            border-right: 1px solid var(--border-subtle);
+            color: var(--text-dim);
+        }
+        .mock-tab.active {
+            background: var(--bg-panel);
+            color: #fff;
+            border-bottom: 1px solid var(--bg-panel);
+            margin-bottom: -1px;
+        }
+
+        /* Tabs System */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-pane.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        .docs-table th {
+            text-align: left;
+            padding: 0.6rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+        .docs-table td {
+            padding: 0.6rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+            font-size: 0.9rem;
+        }
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+        .req { color: #f85149; margin-left: 4px; font-weight: bold; }
+        .lifecycle-step {
+            border-left: 2px solid var(--border-subtle);
+            padding-left: 1.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
 </head>
 <body>
-    <cognotik-header current-page="counterfactual-analysis"></cognotik-header>
-    <header class="hero">
-        <h1>Counterfactual Analysis</h1>
-        <p class="subtitle">Explore "what-if" scenarios to understand causal relationships, validate decisions, and assess risks.</p>
-        <a href="#demo" class="cta-button">Try the Simulator</a>
-    </header>
-    <section class="features">
-        <div class="features-grid">
-            <div class="feature-card">
-                <h3>Scenario Generation</h3>
-                <p>Creates detailed alternative histories or future scenarios based on changing specific variables.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Outcome Comparison</h3>
-                <p>Compares the actual outcome with counterfactuals to isolate the impact of specific decisions.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Causal Insight</h3>
-                <p>Identifies true causal factors by observing what changes (or stays the same) across scenarios.</p>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="bento-container">
+
+    <!-- 1. HEADER AREA -->
+    <section class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > CounterfactualAnalysisTask</div>
+        <h1>CounterfactualAnalysisTask</h1>
+        <p class="pitch">
+            Explore "what-if" scenarios to understand causal relationships and decision impacts through structured comparative analysis.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">GPT-4 Preferred</span>
+        </div>
+    </section>
+
+    <!-- 2. REALITY CHECK (Visual Proof) -->
+    <section class="reality-check-grid">
+        <!-- Input: The Config -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> TaskConfig.json</div>
+            <pre><code class="language-json">{
+  "actual_scenario": "Project deadline missed by 2 weeks.",
+  "counterfactuals": [
+    "What if we hired a senior dev in month 2?",
+    "What if we cut the reporting module scope?"
+  ],
+  "compare_outcomes": true,
+  "control_factors": ["Budget", "Tech Stack"]
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output: The UI -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI</div>
+            <div class="mock-ui-content">
+                <div class="mock-tabs">
+                    <div class="mock-tab">Overview</div>
+                    <div class="mock-tab">Actual Scenario</div>
+                    <div class="mock-tab">Counterfactuals</div>
+                    <div class="mock-tab active">Comparison</div>
+                </div>
+                <div style="padding: 0.75rem; font-size: 0.85rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: var(--accent-primary);">Comparative Analysis</h4>
+                    <p style="margin-bottom: 0.5rem;"><strong>Key Differences:</strong> Hiring a senior developer would have likely mitigated the integration delays seen in month 4...</p>
+                    <div style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 4px; color: var(--text-dim); font-size: 0.8rem; font-family: var(--font-mono);">
+                        &gt; Impact Assessment: High<br>
+                        &gt; Primary Driver: Resource Bottleneck
+                    </div>
+                </div>
             </div>
         </div>
     </section>
-    <section id="demo" class="simulator">
-        <h2>Interactive Simulator</h2>
-        <div class="simulator-container">
-            <div class="sim-controls">
-                <div class="control-group">
-                    <label>Actual Scenario</label>
-                    <textarea rows="3">We launched the product on Friday. The server crashed due to high load.</textarea>
+
+    <!-- 3. TABBED DETAILS -->
+    <section class="task-details">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3 style="margin-top: 0;">Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>actual_scenario</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The actual scenario or decision to analyze.</td>
+                </tr>
+                <tr>
+                    <td><code>counterfactuals</code><span class="req">*</span></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Alternative conditions to explore (what-if scenarios).</td>
+                </tr>
+                <tr>
+                    <td><code>compare_outcomes</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to compare outcomes across scenarios. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>control_factors</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Factors to hold constant across scenarios for controlled comparison.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Additional files for context (historical data, related analyses).</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Specific files or glob patterns (e.g. <code>**/*.kt</code>) used as input.</td>
+                </tr>
+                <tr>
+                    <td><code>task_description</code></td>
+                    <td>String</td>
+                    <td>Detailed description of the analysis objectives.</td>
+                </tr>
+                <tr>
+                    <td><code>task_dependencies</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>List of task IDs that must complete before this analysis.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Lifecycle</h3>
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                <div class="lifecycle-step">
+                    <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">1. Initialization & Validation</h4>
+                    <p class="text-dim">The task validates that <code>actual_scenario</code> is present and at least one <code>counterfactual</code> is provided. It then initializes a <code>TabbedDisplay</code> in the Session UI to organize the multi-stage analysis.</p>
                 </div>
-                <div class="control-group">
-                    <label>Counterfactuals (What if...)</label>
-                    <textarea rows="3">1. We launched on Tuesday instead.
-2. We had enabled auto-scaling.</textarea>
+                <div class="lifecycle-step">
+                    <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">2. Scenario Analysis</h4>
+                    <p class="text-dim">The task performs a deep dive into the <strong>Actual Scenario</strong> first, establishing a baseline. It then iterates through each <strong>Counterfactual</strong>, analyzing outcomes based on the provided context, related files, and control factors.</p>
                 </div>
-                <button class="run-button">Analyze</button>
-            </div>
-            <div class="sim-output">
-                <div class="tab-content active" style="white-space: pre-wrap;">
-# Comparative Analysis
-
-## Actual: Friday Launch
-- **Outcome:** Crash. High weekend traffic + reduced staff availability.
-
-## Counterfactual 1: Tuesday Launch
-- **Analysis:** Traffic might have been lower or ramped up slower. Staff would be fully available to patch issues immediately.
-- **Likely Outcome:** Issues detected early, hotfix deployed, crash avoided.
-
-## Counterfactual 2: Auto-scaling Enabled
-- **Analysis:** Infrastructure would adapt to load spikes regardless of day.
-- **Likely Outcome:** No crash, but higher cloud costs.
-
-## Insight
-The root cause was lack of scalability, exacerbated by timing. Auto-scaling is the more robust preventive measure.
+                <div class="lifecycle-step">
+                    <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">3. Comparative Synthesis</h4>
+                    <p class="text-dim">If <code>compare_outcomes</code> is enabled, a final pass compares all scenarios to identify causal relationships, risks, and benefits of alternative choices relative to the baseline.</p>
+                </div>
+                <div class="lifecycle-step">
+                    <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">4. Completion</h4>
+                    <p class="text-dim">Generates a comprehensive Markdown report (<code>analysis_results.md</code>) and updates the Session UI with a tabbed view of the findings. The transcript records all prompts and LLM responses for full transparency.</p>
                 </div>
             </div>
         </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Kotlin Boilerplate</h3>
+            <div class="panel" style="margin-bottom: 1.5rem;">
+                <div class="panel-header">OrchestrationConfig.kt</div>
+                <pre><code class="language-kotlin">val task = CounterfactualAnalysisTask(
+    orchestrationConfig = config,
+    planTask = CounterfactualAnalysisTask.CounterfactualAnalysisTaskExecutionConfigData(
+        actual_scenario = "Current marketing strategy focus on SEO",
+        counterfactuals = listOf("Focus on influencer partnerships"),
+        compare_outcomes = true
+    )
+)</code></pre>
+            </div>
+
+            <h3>Prompt Segment</h3>
+            <p class="text-dim" style="font-size: 0.85rem; margin-bottom: 0.75rem;">The following instructions are injected into the LLM context:</p>
+            <div class="panel">
+                <pre style="white-space: pre-wrap; color: var(--text-dim); font-size: 0.8rem;">CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relationships and decision impacts
+  ** Specify the actual scenario or decision that occurred
+  ** Provide a list of alternative conditions to explore (counterfactuals)
+  ** Optionally specify factors to hold constant across scenarios for controlled comparison
+  ** Enable outcome comparison to see differences between scenarios
+  ** Useful for:
+     - Risk analysis and mitigation planning
+     - Decision validation and retrospective analysis
+     - Understanding causal relationships
+     - Exploring alternative strategies
+     - Impact assessment of different choices
+  ** Related files can include historical data, previous analyses, or context documents
+  ** Output includes detailed analysis of each scenario and comparative insights</pre>
+            </div>
+        </div>
     </section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

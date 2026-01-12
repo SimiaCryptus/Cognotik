@@ -1384,26 +1384,26 @@ Provide comprehensive, production-ready documentation.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SoftwareDesignDocumentTask::class.java)
         val SoftwareDesignDocument = TaskType(
-            "SoftwareDesignDocument",
-            "Writing",
-            SoftwareDesignDocumentTask::class.java,
-            SoftwareDesignDocumentTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate comprehensive software design documentation",
-            """
-              Creates complete software design documentation with Mermaid diagrams.
-              <ul>
-                <li>Use case diagrams and actor documentation</li>
-                <li>Functional and non-functional requirements</li>
-                <li>Architecture diagrams (C4, component, deployment)</li>
-                <li>Data model and ERD diagrams</li>
-                <li>Sequence and activity flow diagrams</li>
-                <li>Test plan and test case documentation</li>
-                <li>Phase planning with Gantt charts</li>
-                <li>Project data JSON with tasks, epics, sprints, releases</li>
-                <li>All diagrams use Mermaid syntax</li>
-              </ul>
-            """,
+          name = "SoftwareDesignDocument",
+          category = "Writing",
+          taskClass = SoftwareDesignDocumentTask::class.java,
+          executionConfigClass = SoftwareDesignDocumentTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate comprehensive software design documentation",
+          tooltipHtml = """
+                        Creates complete software design documentation with Mermaid diagrams.
+                        <ul>
+                          <li>Use case diagrams and actor documentation</li>
+                          <li>Functional and non-functional requirements</li>
+                          <li>Architecture diagrams (C4, component, deployment)</li>
+                          <li>Data model and ERD diagrams</li>
+                          <li>Sequence and activity flow diagrams</li>
+                          <li>Test plan and test case documentation</li>
+                          <li>Phase planning with Gantt charts</li>
+                          <li>Project data JSON with tasks, epics, sprints, releases</li>
+                          <li>All diagrams use Mermaid syntax</li>
+                        </ul>
+                      """,
         )
     }
 }

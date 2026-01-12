@@ -399,22 +399,22 @@ ImageTable - Generate a table/grid of AI-generated images
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ImageTableTask::class.java)
         val ImageTable = TaskType(
-            "ImageTable",
-            "File",
-            ImageTableTask::class.java,
-            ImageTableTaskExecutionConfigData::class.java,
-            ImageTableTaskTypeConfig::class.java,
-            "Generate a table/grid of AI-generated images",
-            """
-              Creates a grid of images by generating each cell using AI image generation.
-              <ul>
-                <li>Define rows and columns as labels for the grid</li>
-                <li>Provide a prompt template with {row} and {column} placeholders</li>
-                <li>Optionally specify a base style for consistent aesthetics</li>
-                <li>Generates individual images and an HTML table view</li>
-                <li>Useful for style comparisons, product variations, character sheets</li>
-              </ul>
-            """,
+          name = "ImageTable",
+          category = "File",
+          taskClass = ImageTableTask::class.java,
+          executionConfigClass = ImageTableTaskExecutionConfigData::class.java,
+          taskSettingsClass = ImageTableTaskTypeConfig::class.java,
+          description = "Generate a table/grid of AI-generated images",
+          tooltipHtml = """
+                        Creates a grid of images by generating each cell using AI image generation.
+                        <ul>
+                          <li>Define rows and columns as labels for the grid</li>
+                          <li>Provide a prompt template with {row} and {column} placeholders</li>
+                          <li>Optionally specify a base style for consistent aesthetics</li>
+                          <li>Generates individual images and an HTML table view</li>
+                          <li>Useful for style comparisons, product variations, character sheets</li>
+                        </ul>
+                      """,
         )
     }
 }

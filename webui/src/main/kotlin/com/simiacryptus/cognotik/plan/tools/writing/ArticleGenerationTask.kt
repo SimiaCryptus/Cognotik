@@ -769,27 +769,27 @@ Make each snippet:
         )
 
         val ArticleGeneration = TaskType(
-            "ArticleGeneration",
-            "Writing",
-            ArticleGenerationTask::class.java,
-            ArticleGenerationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate complete journalistic articles from investigation and analysis",
-            """
-              Extends JournalismReasoning to generate publication-ready articles.
-              <ul>
-                <li>Performs comprehensive journalism investigation (inherited from JournalismReasoning)</li>
-                <li>Creates detailed article structure and outline</li>
-                <li>Writes complete article following journalistic standards</li>
-                <li>Supports multiple formats (news, feature, investigative, opinion, profile)</li>
-                <li>Configurable style, tone, and target publication</li>
-                <li>Includes quotes, data, expert analysis, and context as configured</li>
-                <li>Optional revision passes for quality improvement</li>
-                <li>Can generate headlines and social media snippets</li>
-                <li>Produces publication-ready articles with proper structure and attribution</li>
-                <li>Ideal for news writing, content creation, journalism training</li>
-              </ul>
-            """,
+          name = "ArticleGeneration",
+          category = "Writing",
+          taskClass = ArticleGenerationTask::class.java,
+          executionConfigClass = ArticleGenerationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate complete journalistic articles from investigation and analysis",
+          tooltipHtml = """
+                        Extends JournalismReasoning to generate publication-ready articles.
+                        <ul>
+                          <li>Performs comprehensive journalism investigation (inherited from JournalismReasoning)</li>
+                          <li>Creates detailed article structure and outline</li>
+                          <li>Writes complete article following journalistic standards</li>
+                          <li>Supports multiple formats (news, feature, investigative, opinion, profile)</li>
+                          <li>Configurable style, tone, and target publication</li>
+                          <li>Includes quotes, data, expert analysis, and context as configured</li>
+                          <li>Optional revision passes for quality improvement</li>
+                          <li>Can generate headlines and social media snippets</li>
+                          <li>Produces publication-ready articles with proper structure and attribution</li>
+                          <li>Ideal for news writing, content creation, journalism training</li>
+                        </ul>
+                      """,
         )
     }
 }

@@ -1144,27 +1144,27 @@ Provide the complete revised paper.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ResearchPaperGenerationTask::class.java)
         val ResearchPaperGeneration = TaskType(
-            "ResearchPaperGeneration",
-            "Writing",
-            ResearchPaperGenerationTask::class.java,
-            ResearchPaperGenerationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate comprehensive academic research papers with citations",
-            """
-              Generates complete, publication-ready academic research papers.
-              <ul>
-                <li>Analyzes research sources and identifies gaps</li>
-                <li>Creates structured academic outline</li>
-                <li>Generates multi-section papers with proper citations</li>
-                <li>Supports multiple paper types (empirical, theoretical, review, meta-analysis)</li>
-                <li>Configurable academic levels (undergraduate to postdoc)</li>
-                <li>Multiple citation styles (APA, MLA, Chicago, IEEE)</li>
-                <li>Automatic bibliography generation</li>
-                <li>Optional peer review simulation</li>
-                <li>Revision passes for quality improvement</li>
-                <li>Ideal for academic research, literature reviews, thesis chapters</li>
-              </ul>
-            """,
+          name = "ResearchPaperGeneration",
+          category = "Writing",
+          taskClass = ResearchPaperGenerationTask::class.java,
+          executionConfigClass = ResearchPaperGenerationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate comprehensive academic research papers with citations",
+          tooltipHtml = """
+                        Generates complete, publication-ready academic research papers.
+                        <ul>
+                          <li>Analyzes research sources and identifies gaps</li>
+                          <li>Creates structured academic outline</li>
+                          <li>Generates multi-section papers with proper citations</li>
+                          <li>Supports multiple paper types (empirical, theoretical, review, meta-analysis)</li>
+                          <li>Configurable academic levels (undergraduate to postdoc)</li>
+                          <li>Multiple citation styles (APA, MLA, Chicago, IEEE)</li>
+                          <li>Automatic bibliography generation</li>
+                          <li>Optional peer review simulation</li>
+                          <li>Revision passes for quality improvement</li>
+                          <li>Ideal for academic research, literature reviews, thesis chapters</li>
+                        </ul>
+                      """,
         )
     }
 }

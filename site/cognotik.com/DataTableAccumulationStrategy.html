@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataTableAccumulationStrategy | Cognotik Task Docs</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --accent-success: #3fb950;
+            --accent-warning: #d29922;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .task-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            margin: 0 0 1rem 0;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+        }
+
+        .reality-check {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d1d5db;
+            background: #0d1117;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .ui-panel-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            background: #0d1117;
+            flex-grow: 1;
+        }
+
+
+        .mock-browser table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 1rem 0; }
+        .mock-browser th, .mock-browser td { border: 1px solid #30363d; padding: 6px 10px; text-align: left; }
+        .mock-browser th { background: #161b22; color: var(--text-dim); }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-family: var(--font-mono);
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        .req { color: #f85149; font-weight: bold; }
+        .process-step {
+            border-left: 2px solid var(--border-subtle);
+            padding-left: 1.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .process-step::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 0;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+        }
+
+
+        @media (max-width: 768px) {
+            .reality-check { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="bento-container">
+
+    <!-- 1. HEADER -->
+    <header class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Web Crawling > Strategies</div>
+        <h1>DataTableAccumulationStrategy</h1>
+        <p class="pitch">
+            Extracts and accumulates structured tabular data across multiple web pages with automated normalization, deduplication, and multi-format export.
+        </p>
+        <div class="badges">
+            <span class="badge">Stateful: Accumulative</span>
+            <span class="badge">Model: GPT-4o Preferred</span>
+            <span class="badge">Output: CSV/JSON/Markdown</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check">
+        <!-- Input -->
+        <div class="panel code-panel">
+            <div class="panel-header"><span>⚙️</span> ExecutionConfig.json</div>
+            <pre><code class="language-json">{
+  "column_names": "Model, Price, Range",
+  "column_types": { "Price": "number" },
+  "deduplicate": true,
+  "key_columns": "Model",
+  "export_format": "csv",
+  "include_source_urls": true
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel ui-panel">
+            <div class="panel-header"><span>📊</span> Session UI Output</div>
+            <div class="ui-panel-content">
+                <div class="mock-browser">
+                    <h3 style="margin-top: 0; color: var(--accent-success);">✔ Extraction Successful</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-dim);">Confidence: 98% | Rows: 12 | Total: 45</p>
+                    <table>
+                        <thead>
+                            <tr><th>Model</th><th>Price</th><th>Range</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Model 3</td><td>38990</td><td>333 mi</td></tr>
+                            <tr><td>Ioniq 6</td><td>42450</td><td>361 mi</td></tr>
+                            <tr><td>Air Pure</td><td>69900</td><td>419 mi</td></tr>
+                        </tbody>
+                    </table>
+                    <div style="font-size: 0.75rem; color: var(--accent-warning);">
+                        ⚠️ Normalized 'Price' from "$38,990" to "38990"
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="task-details">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane">
+            <h3 style="font-family: var(--font-mono);">DataTableConfig Fields</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>column_names</code> <span class="req">*</span></td>
+                    <td><code>String</code></td>
+                    <td>Comma-separated list of columns to extract.</td>
+                </tr>
+                <tr>
+                    <td><code>column_descriptions</code></td>
+                    <td><code>Map&lt;String, String&gt;</code></td>
+                    <td>Guidance for the LLM on what each column represents.</td>
+                </tr>
+                <tr>
+                    <td><code>column_types</code></td>
+                    <td><code>Map&lt;String, String&gt;</code></td>
+                    <td>Mapping of column names to types (<code>string</code>, <code>number</code>, <code>boolean</code>, <code>date</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>extraction_instructions</code></td>
+                    <td><code>String</code></td>
+                    <td>Natural language guidance for the LLM extraction engine.</td>
+                </tr>
+                <tr>
+                    <td><code>auto_detect_tables</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>If true, prioritizes existing HTML table structures. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>min_rows</code></td>
+                    <td><code>Int</code></td>
+                    <td>Minimum rows required to consider a table valid. Default: <code>1</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>max_rows_per_page</code></td>
+                    <td><code>Int?</code></td>
+                    <td>Limit extraction per page. Default: <code>null</code> (unlimited).</td>
+                </tr>
+                <tr>
+                    <td><code>deduplicate</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>Prevents duplicate rows across multiple pages. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>key_columns</code></td>
+                    <td><code>String?</code></td>
+                    <td>Comma-separated columns used for deduplication identity.</td>
+                </tr>
+                <tr>
+                    <td><code>validate_types</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>Enforce type checking on extracted values. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>normalize_data</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>Clean values (e.g. strip currency symbols). Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>export_format</code></td>
+                    <td><code>String</code></td>
+                    <td>Final output format: <code>csv</code>, <code>json</code>, or <code>markdown</code>. Default: <code>csv</code>.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <div class="process-step">
+                <h4>1. LLM Extraction</h4>
+                <p style="color: var(--text-dim); font-size: 0.9rem;">
+                    Uses a <code>ParsedAgent</code> to transform raw HTML or text into structured <code>ExtractedTableData</code>. The prompt is dynamically generated based on your <code>column_names</code> and <code>extraction_instructions</code>.
+                </p>
+            </div>
+            <div class="process-step">
+                <h4>2. Normalization & Validation</h4>
+                <p style="color: var(--text-dim); font-size: 0.9rem;">
+                    Values are cleaned based on <code>column_types</code>. Numbers are stripped of non-numeric characters, and booleans are normalized from natural language (e.g., "Yes" → <code>true</code>).
+                </p>
+            </div>
+            <div class="process-step">
+                <h4>3. Deduplication</h4>
+                <p style="color: var(--text-dim); font-size: 0.9rem;">
+                    If <code>key_columns</code> are provided, the strategy maintains a <code>ConcurrentHashMap</code> of seen keys to ensure data uniqueness across multi-page crawls.
+                </p>
+            </div>
+            <div class="process-step">
+                <h4>4. Final Export</h4>
+                <p style="color: var(--text-dim); font-size: 0.9rem;">
+                    Upon completion, the strategy aggregates all accumulated rows and generates a final file (<code>data_table.csv</code>, <code>.json</code>, or <code>.md</code>) in the workspace directory.
+                </p>
+            </div>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3 style="font-family: var(--font-mono);">Orchestration Setup</h3>
+            <pre><code class="language-kotlin">val strategy = DataTableAccumulationStrategy()
+val config = DataTableAccumulationStrategy.DataTableConfig(
+    column_names = "Product, Price, Rating",
+    column_types = mapOf("Price" to "number", "Rating" to "number"),
+    export_format = "csv",
+    deduplicate = true,
+    key_columns = "Product"
+)
+
+// Add to CrawlerAgentTask
+val task = CrawlerAgentTask(
+    processingStrategy = strategy,
+    executionConfig = CrawlerAgentTask.ExecutionConfig(
+        content_queries = config.toJson(),
+        max_pages = 50
+    )
+)</code></pre>
+            <div style="margin-top: 2rem;">
+                <h4>Prompt Segment</h4>
+                <p style="color: var(--text-dim); font-size: 0.9rem;">
+                    The following logic is injected into the LLM context:
+                </p>
+                <pre><code>Extract tabular data... REQUIRED COLUMNS: [columns]. 
+Look for HTML tables, lists, or structured data. 
+Return a list of rows and a confidence score.</code></pre>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

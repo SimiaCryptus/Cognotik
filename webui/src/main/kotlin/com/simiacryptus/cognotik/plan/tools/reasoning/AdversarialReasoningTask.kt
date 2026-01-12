@@ -989,25 +989,25 @@ Consider both immediate fixes and long-term architectural improvements.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AdversarialReasoningTask::class.java)
         val AdversarialReasoning = TaskType(
-            "AdversarialReasoning",
-            "Reasoning",
-            AdversarialReasoningTask::class.java,
-            AdversarialReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Red team analysis to identify vulnerabilities and weaknesses",
-            """
-              Performs adversarial reasoning and red team analysis on systems, designs, or arguments.
-              <ul>
-                <li>Identifies security vulnerabilities and attack vectors</li>
-                <li>Challenges assumptions aggressively</li>
-                <li>Finds edge cases and failure modes</li>
-                <li>Simulates adversarial scenarios at different capability levels</li>
-                <li>Stress tests logical arguments and system designs</li>
-                <li>Generates detailed vulnerability reports with severity ratings</li>
-                <li>Optionally provides exploit scenarios and mitigation strategies</li>
-                <li>Supports multiple attack vectors: security, performance, logic, business, privacy, compliance</li>
-              </ul>
-            """,
+          name = "AdversarialReasoning",
+          category = "Reasoning",
+          taskClass = AdversarialReasoningTask::class.java,
+          executionConfigClass = AdversarialReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Red team analysis to identify vulnerabilities and weaknesses",
+          tooltipHtml = """
+                        Performs adversarial reasoning and red team analysis on systems, designs, or arguments.
+                        <ul>
+                          <li>Identifies security vulnerabilities and attack vectors</li>
+                          <li>Challenges assumptions aggressively</li>
+                          <li>Finds edge cases and failure modes</li>
+                          <li>Simulates adversarial scenarios at different capability levels</li>
+                          <li>Stress tests logical arguments and system designs</li>
+                          <li>Generates detailed vulnerability reports with severity ratings</li>
+                          <li>Optionally provides exploit scenarios and mitigation strategies</li>
+                          <li>Supports multiple attack vectors: security, performance, logic, business, privacy, compliance</li>
+                        </ul>
+                      """,
         )
     }
 }

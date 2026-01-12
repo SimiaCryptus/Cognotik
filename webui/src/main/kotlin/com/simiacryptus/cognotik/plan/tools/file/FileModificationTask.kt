@@ -28,8 +28,6 @@ class FileModificationTask(
         files: List<String>? = null,
         related_files: List<String>? = null,
         extractContent: Boolean = false,
-        @Description("Specific modifications to be made to the files")
-        val modifications: Any? = null,
         @Description("Whether to include git diff with HEAD")
         val includeGitDiff: Boolean = false,
         task_description: String? = null,
@@ -307,25 +305,25 @@ ${e.stackTraceToString()}
         private val log = LoggerFactory.getLogger(FileModificationTask::class.java)
 
         val FileModification = TaskType(
-            "FileModification",
-            "File",
-            FileModificationTask::class.java,
-            FileModificationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Create new files or modify existing code with AI-powered assistance",
-            """
-                      Creates or modifies source files with AI assistance while maintaining code quality.
-                      <ul>
-                        <li>Shows proposed changes in diff format for easy review</li>
-                        <li>Supports both automated application and manual approval modes</li>
-                        <li>Maintains project coding standards and style consistency</li>
-                        <li>Handles complex multi-file operations and refactoring</li>
-                        <li>Provides clear documentation of all changes with rationale</li>
-                        <li>Implements proper error handling and edge cases</li>
-                        <li>Updates imports and dependencies automatically</li>
-                        <li>Preserves existing code formatting and structure</li>
-                      </ul>
-                    """,
+          name = "FileModification",
+          category = "File",
+          taskClass = FileModificationTask::class.java,
+          executionConfigClass = FileModificationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Create new files or modify existing code with AI-powered assistance",
+          tooltipHtml = """
+                                Creates or modifies source files with AI assistance while maintaining code quality.
+                                <ul>
+                                  <li>Shows proposed changes in diff format for easy review</li>
+                                  <li>Supports both automated application and manual approval modes</li>
+                                  <li>Maintains project coding standards and style consistency</li>
+                                  <li>Handles complex multi-file operations and refactoring</li>
+                                  <li>Provides clear documentation of all changes with rationale</li>
+                                  <li>Implements proper error handling and edge cases</li>
+                                  <li>Updates imports and dependencies automatically</li>
+                                  <li>Preserves existing code formatting and structure</li>
+                                </ul>
+                              """,
         )
 
         fun String.getGitDiff(): String? {

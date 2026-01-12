@@ -26,25 +26,25 @@ class MathematicalReasoningTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(MathematicalReasoningTask::class.java)
         val MathematicalReasoning = TaskType(
-            "MathematicalReasoning",
-            "Reasoning",
-            MathematicalReasoningTask::class.java,
-            MathematicalReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Solve mathematical problems through step-by-step logical reasoning with verifiable steps",
-            """
-                Uses path search to solve mathematical problems through rigorous step-by-step reasoning.
-                <ul>
-                    <li>Breaks down complex problems into verifiable atomic steps</li>
-                    <li>Each step includes justification and verification</li>
-                    <li>Explores multiple solution paths when needed</li>
-                    <li>Backtracks when encountering dead ends</li>
-                    <li>Provides detailed proof trail with MathJax notation</li>
-                    <li>Supports algebra, calculus, number theory, and more</li>
-                    <li>Validates intermediate results for correctness</li>
-                    <li>Generates human-readable mathematical proofs</li>
-                </ul>
-            """,
+          name = "MathematicalReasoning",
+          category = "Reasoning",
+          taskClass = MathematicalReasoningTask::class.java,
+          executionConfigClass = MathematicalReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Solve mathematical problems through step-by-step logical reasoning with verifiable steps",
+          tooltipHtml = """
+                          Uses path search to solve mathematical problems through rigorous step-by-step reasoning.
+                          <ul>
+                              <li>Breaks down complex problems into verifiable atomic steps</li>
+                              <li>Each step includes justification and verification</li>
+                              <li>Explores multiple solution paths when needed</li>
+                              <li>Backtracks when encountering dead ends</li>
+                              <li>Provides detailed proof trail with MathJax notation</li>
+                              <li>Supports algebra, calculus, number theory, and more</li>
+                              <li>Validates intermediate results for correctness</li>
+                              <li>Generates human-readable mathematical proofs</li>
+                          </ul>
+                      """,
         )
     }
 

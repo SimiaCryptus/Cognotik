@@ -522,25 +522,25 @@ Generate the patches now.
         private val log: Logger = LoggerFactory.getLogger(IllustrateDocumentTask::class.java)
 
         val IllustrateDocument = TaskType(
-            "IllustrateDocument",
-            "Writing",
-            IllustrateDocumentTask::class.java,
-            IllustrateDocumentTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Analyze a document and generate images to enhance its content",
-            """
-Intelligently analyzes document content and generates contextually appropriate images.
-<ul>
-<li>Analyzes document structure to identify optimal image locations</li>
-<li>Generates images that enhance understanding of complex concepts</li>
-<li>Saves images with descriptive names in the document's folder</li>
-<li>Automatically inserts image references at appropriate locations</li>
-<li>Supports both Markdown and HTML formats</li>
-<li>Creates diagrams, illustrations, and visual aids</li>
-<li>Provides meaningful captions and alt text</li>
-<li>Configurable image count and format</li>
-</ul>
-""",
+          name = "IllustrateDocument",
+          category = "Writing",
+          taskClass = IllustrateDocumentTask::class.java,
+          executionConfigClass = IllustrateDocumentTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Analyze a document and generate images to enhance its content",
+          tooltipHtml = """
+          Intelligently analyzes document content and generates contextually appropriate images.
+          <ul>
+          <li>Analyzes document structure to identify optimal image locations</li>
+          <li>Generates images that enhance understanding of complex concepts</li>
+          <li>Saves images with descriptive names in the document's folder</li>
+          <li>Automatically inserts image references at appropriate locations</li>
+          <li>Supports both Markdown and HTML formats</li>
+          <li>Creates diagrams, illustrations, and visual aids</li>
+          <li>Provides meaningful captions and alt text</li>
+          <li>Configurable image count and format</li>
+          </ul>
+          """,
         )
     }
 }

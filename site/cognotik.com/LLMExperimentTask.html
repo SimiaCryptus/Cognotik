@@ -1,221 +1,423 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLM Experiment - Cognotik</title>
+    <title>Cognotik | LLMExperimentTask - Industrial Design</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <style>
-        .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 2rem; }
-        
-        .experiment-hero { padding: 8rem 0 4rem; display: flex; align-items: center; min-height: 80vh; }
-        .hero-content { flex: 1; padding-right: 2rem; }
-        .experiment-hero h1 { font-size: 3.5rem; line-height: 1.1; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .experiment-hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
-        .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
-        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-secondary); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(6, 182, 212, 0.2); }
-        
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
-
-        .features-section { padding: 4rem 0; background: rgba(255,255,255,0.02); }
-        .feature-card:hover { border-color: var(--accent-secondary); transform: translateY(-5px); transition: 0.3s; }
-        .feature-icon { width: 48px; height: 48px; background: rgba(6, 182, 212, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; color: var(--accent-secondary); }
-
-        /* Simulator overrides */
-        .simulator-container { min-height: 600px; }
-        .sim-controls { display: flex; flex-direction: column; }
-        .output-area { padding: 2rem; flex: 1; font-family: var(--font-family-mono); font-size: 0.9rem; color: #d1d5db; overflow-y: auto; white-space: pre-wrap; }
-        
-        /* Missing input type number in main.css */
-        input[type="number"] {
-            display: block; width: 100%; padding: var(--spacing-sm) var(--spacing-md);
-            font-family: inherit; font-size: 1rem; line-height: 1.5;
-            color: var(--text-color); background-color: var(--surface-color);
-            border: 1px solid var(--border-color); border-radius: var(--border-radius);
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-sans: 'Inter', sans-serif;
+            --font-serif: 'Cinzel', serif;
         }
-        input[type="number"]:focus {
-            border-color: var(--accent-color); outline: 0;
-            box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
-        }
-        textarea { resize: vertical; min-height: 100px; }
-        
-        .use-cases { padding: 4rem 0; }
 
-        @media (max-width: 768px) { .experiment-hero { flex-direction: column; text-align: center; padding-top: 6rem; } }
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header Styles */
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: var(--font-serif);
+            font-size: 3rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--border-subtle);
+            font-size: 2rem;
+        }
+
+        /* Mock UI Output */
+        .mock-ui-content {
+            padding: 1.5rem;
+            font-size: 0.85rem;
+        }
+
+        .ui-tab-strip {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .ui-tab { color: var(--text-dim); font-weight: 600; }
+        .ui-tab.active { color: var(--accent-primary); }
+
+        .stat-card {
+            background: #000;
+            border: 1px solid var(--border-subtle);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .docs-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.05);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            color: #e6edf3;
+        }
+
+        .req { color: #f85149; margin-left: 4px; }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="experiment"></cognotik-header>
-    <header class="experiment-hero container">
-        <div class="hero-content">
-            <h1>LLM Experiment</h1>
-            <p>Conduct rigorous experiments on LLM behavior with variable substitution, temperature sweeping, and automated statistical analysis.</p>
-            <a href="#demo" class="cta-button">Try the Simulator</a>
-        </div>
-        <div class="hero-visual">
-            <div class="visual-node"></div>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Social > LLMExperimentTask</div>
+        <h1>LLMExperimentTask</h1>
+        <p class="pitch">
+            Conduct rigorous, multi-condition experiments to characterize LLM behaviors, biases, and performance metrics with automated statistical validation and insight generation.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Social</span>
+            <span class="badge">Side-Effect: Safe</span>
+            <span class="badge">Multi-Condition</span>
         </div>
     </header>
 
-    <section id="features" class="features-section">
-        <div class="container">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </div>
-                    <h3>Controlled Variables</h3>
-                    <p>Test prompts systematically by substituting variables to isolate specific effects.</p>
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>ExecutionConfig.json</span>
+                <span style="opacity: 0.5;">Kotlin / JSON</span>
+            </div>
+            <pre><code>{
+  "prompt_templates": [
+    "Explain {topic} to a {audience}"
+  ],
+  "prompt_variables": {
+    "topic": ["Quantum Computing"],
+    "audience": ["5-year old", "PhD"]
+  },
+  "temperature_values": [0.1, 0.8],
+  "repetitions": 3,
+  "metrics": ["clarity", "accuracy"],
+  "significance_level": 0.05
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>SessionTask UI</span>
+                <span style="color: #4ade80;">● Live</span>
+            </div>
+            <div class="mock-ui-content">
+                <div class="ui-tab-strip">
+                    <span class="ui-tab">Overview</span>
+                    <span class="ui-tab active">Statistical Tables</span>
+                    <span class="ui-tab">Insights</span>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                <div style="font-family: var(--font-mono); font-size: 0.75rem;">
+                    <div style="color: var(--accent-primary); margin-bottom: 0.5rem;">### Table 2: Pairwise Temperature Comparisons</div>
+                    <table style="width: 100%; border-spacing: 0; border: 1px solid var(--border-subtle);">
+                        <tr style="background: #000;">
+                            <th style="border-bottom: 1px solid var(--border-subtle); padding: 4px;">Metric</th>
+                            <th style="border-bottom: 1px solid var(--border-subtle); padding: 4px;">p-value</th>
+                            <th style="border-bottom: 1px solid var(--border-subtle); padding: 4px;">Sig</th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px;">Response Length</td>
+                            <td style="padding: 4px;">0.0042</td>
+                            <td style="padding: 4px; color: #4ade80;">✓</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px;">Clarity</td>
+                            <td style="padding: 4px;">0.1250</td>
+                            <td style="padding: 4px; color: #f85149;">✗</td>
+                        </tr>
+                    </table>
+                    <div class="stat-card">
+                        <span style="color: var(--text-dim);">Insight:</span> Higher temperatures significantly increased response length variance (Cohen's d: 0.82).
                     </div>
-                    <h3>Statistical Validity</h3>
-                    <p>Calculate t-statistics, p-values, and Cohen's d effect sizes to validate differences between temperatures and prompts.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="M12 2v20"/><path d="M4.93 4.93l14.14 14.14"/><path d="M19.07 4.93L4.93 19.07"/></svg>
-                    </div>
-                    <h3>Response Diversity</h3>
-                    <p>Measure output consistency and creativity using compression-based diversity scoring and custom metric evaluation.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="demo" class="simulator">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="simulator-container">
-                <div class="sim-controls">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
-                    <div class="control-group">
-                        <label>Prompt Template</label>
-                      <textarea id="sim-template" class="sim-textarea">Write a {tone} email to a client about a delay.</textarea>
-                    </div>
-                    <div class="control-group">
-                        <label>Variables (JSON)</label>
-                      <textarea id="sim-variables" class="sim-textarea">{"tone": ["polite", "apologetic", "direct"]}</textarea>
-                    </div>
-                    <div class="control-group">
-                        <label>Temperatures (comma-separated)</label>
-                        <input type="text" id="temperatures" value="0.1, 0.7" style="width: 100%; padding: 0.5rem; background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 4px;">
-                    </div>
-                    <div class="control-group">
-                        <label>Metrics</label>
-                        <input type="text" id="metrics" value="response_length, sentiment" style="width: 100%; padding: 0.5rem; background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 4px;">
-                    </div>
-                    <div class="control-group">
-                        <label>Repetitions</label>
-                        <input type="number" id="repetitions" value="5">
-                    </div>
-                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Run Experiment</button>
-                </div>
-                <div class="sim-output">
-                  <div id="output-logs" class="output-terminal">
-                      <div style="color: #64748b; text-align: center; margin-top: 4rem;">
-                            Configure the experiment and click "Run" to see results.
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>prompt_templates</code><span class="req">*</span></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Base templates using <code>{variable}</code> syntax for substitution.</td>
+                </tr>
+                <tr>
+                    <td><code>prompt_variables</code></td>
+                    <td><code>Map&lt;String, List&lt;String&gt;&gt;</code></td>
+                    <td>Keys matching template placeholders and their possible values.</td>
+                </tr>
+                <tr>
+                    <td><code>temperature_values</code></td>
+                    <td><code>List&lt;Double&gt;</code></td>
+                    <td>LLM temperatures to test (e.g., <code>[0.0, 0.7, 1.0]</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>repetitions</code></td>
+                    <td><code>Int</code></td>
+                    <td>Number of times to repeat each condition (Default: 3).</td>
+                </tr>
+                <tr>
+                    <td><code>metrics</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Custom attributes for the LLM to rate in responses.</td>
+                </tr>
+                <tr>
+                    <td><code>statistical_analysis</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>Whether to compute t-tests and variance (Default: true).</td>
+                </tr>
+                <tr>
+                    <td><code>significance_level</code></td>
+                    <td><code>Double</code></td>
+                    <td>Alpha level for statistical tests (Default: 0.05).</td>
+                </tr>
+                </tbody>
+            </table>
         </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Execution Lifecycle</h3>
+            <ol style="padding-left: 1.5rem; color: var(--text-main);">
+                <li style="margin-bottom: 1.2rem;">
+                    <strong>Condition Generation:</strong> Computes the Cartesian product of all templates, variables, and temperatures.
+                </li>
+                <li style="margin-bottom: 1.2rem;">
+                    <strong>Concurrent Execution:</strong> Trials are submitted to a thread pool for parallel processing across the configured model.
+                </li>
+                <li style="margin-bottom: 1.2rem;">
+                    <strong>Metric Calculation:</strong> Uses a secondary <code>ParsedAgent</code> to objectively rate responses based on the <code>metrics</code> list.
+                </li>
+                <li style="margin-bottom: 1.2rem;">
+                    <strong>Statistical Synthesis:</strong> Calculates Mean, SD, Cohen's d, and p-values for all metric pairs using an internal math engine.
+                </li>
+                <li style="margin-bottom: 1.2rem;">
+                    <strong>Insight Generation:</strong> A specialized "Analyst" agent reviews the data to provide natural language interpretations of the findings.
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Kotlin Boilerplate</h3>
+            <pre style="background: #000; border-radius: 6px;"><code>val task = LLMExperimentTask(
+    orchestrationConfig = config,
+    planTask = LLMExperimentTask.LLMExperimentTaskExecutionConfigData(
+        prompt_templates = listOf("Analyze the {sentiment} of: {text}"),
+        prompt_variables = mapOf(
+            "sentiment" to listOf("irony", "sincerity"),
+            "text" to listOf("Great job breaking it.")
+        ),
+        repetitions = 5,
+        significance_level = 0.01
+    )
+)</code></pre>
+
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">The following capabilities are injected into the orchestrator's context:</p>
+            <pre style="background: rgba(88, 166, 255, 0.05); border: 1px solid var(--accent-primary); border-radius: 6px; color: var(--accent-primary);"><code>LLMExperiment - Conduct controlled experiments on LLM behavior
+** Specify one or more prompt templates with variables for substitution
+** Define experimental conditions (temperature(s), prompt variations)
+** Configure number of repetitions for statistical validity
+** Rate custom attributes in responses
+** Analyze statistical significance of results</code></pre>
+        </div>
+
     </section>
 
-    <section id="use-cases" class="use-cases">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="mode-grid">
-                <div class="mode-card">
-                    <div class="mode-title">Bias Studies</div>
-                    <p>Test how changing names or pronouns affects LLM output.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Prompt Engineering</div>
-                    <p>Systematically compare different prompt structures to find the most effective one.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Consistency Testing</div>
-                    <p>Measure how consistent model outputs are across multiple runs.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+</main>
 
-    <script>
-        function runSimulation() {
-      const template = document.getElementById('sim-template').value;
-      const temperatures = document.getElementById('sim-temperatures').value;
-      const repetitions = document.getElementById('sim-repetitions').value;
-            const logsEl = document.getElementById('output-logs');
-            
-            logsEl.innerHTML = '';
-            const steps = [
-          `[INIT] Initializing LLMExperimentTask: repetitions=${repetitions}`,
-          `[PLAN] Generated 6 experimental conditions (3 variables x 2 temps)`,
-          `[EXEC] Running condition 1/6: temp=0.1, vars={tone=polite}...`,
-          `[EXEC] Running condition 2/6: temp=0.7, vars={tone=polite}...`,
-          `[EXEC] Running condition 3/6: temp=0.1, vars={tone=apologetic}...`,
-          `[EXEC] Running condition 4/6: temp=0.7, vars={tone=apologetic}...`,
-          `[ANALYSIS] Collecting metrics via LLM evaluator...`,
-          `[STATS] Generating detailed statistical tables (α = 0.05)...`,
-          `[DONE] Experiment Complete.`
-            ];
-            
-            let i = 0;
-            const interval = setInterval(() => {
-                if (i < steps.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
-                    line.style.marginBottom = '4px';
-              if (steps[i].includes('DONE')) line.style.color = '#4ade80';
-              else line.style.color = '#e2e8f0';
-                    logsEl.appendChild(line);
-                    i++;
-                } else {
-                    clearInterval(interval);
-                    const result = document.createElement('div');
-                    result.innerHTML = `
-                  <br><strong style="color: var(--accent-primary)">### Table 1: Descriptive Statistics by Temperature</strong><br>
-                  <table style="width:100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem; border: 1px solid #333;">
-                      <tr style="border-bottom: 1px solid #444; text-align: left; color: #94a3b8;"><th>Temp</th><th>Metric</th><th>Mean</th><th>SD</th><th>CV</th></tr>
-                            <tr><td>0.1</td><td>Length</td><td>145.2</td><td>12.4</td><td>0.085</td></tr>
-                            <tr><td>0.7</td><td>Length</td><td>168.5</td><td>45.2</td><td>0.268</td></tr>
-                            <tr><td>0.1</td><td>Sentiment</td><td>8.5</td><td>0.5</td><td>0.058</td></tr>
-                            <tr><td>0.7</td><td>Sentiment</td><td>7.2</td><td>1.8</td><td>0.250</td></tr>
-                        </table>
-                        <br>
-                  <strong style="color: var(--accent-primary)">### Table 2: Pairwise Temperature Comparisons</strong><br>
-                        <div style="font-size: 0.85rem; margin-top: 0.5rem;">
-                        | Metric | T1 | T2 | p-value | Sig | Effect Size |<br>
-                        |--------|----|----|---------|-----|-------------|<br>
-                        | Length | 0.1| 0.7| 0.0214  | ✓   | 0.68 (Med)  |<br>
-                        | Sent.  | 0.1| 0.7| 0.1540  | ✗   | 0.35 (Small)|<br>
-                        </div>
-                        <br>
-                        <strong>Response Diversity:</strong><br>
-                        - Temp 0.1: Low Diversity (Compressibility: 1.85)<br>
-                        - Temp 0.7: High Diversity (Compressibility: 1.08)<br>
-                        <br>
-                  <em style="color: #94a3b8;">Insight: Higher temperature significantly increases response length variance and diversity, but reduces sentiment consistency.</em>
-                    `;
-                    result.style.color = '#e2e8f0';
-                    result.style.marginTop = '1rem';
-                    result.style.padding = '1rem';
-                    result.style.border = '1px solid rgba(255,255,255,0.1)';
-                    result.style.borderRadius = '8px';
-                    logsEl.appendChild(result);
-                }
-      }, 400);
-        }
-    </script>
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

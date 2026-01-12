@@ -1,351 +1,393 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Article Generation Task - Cognotik</title>
-    <!-- Fonts -->
+    <title>Cognotik | ArticleGenerationTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
-      /* Page-Specific Overrides */
-        /* Utilities */
-        .container {
-            max-width: var(--container-max-width);
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .task-container {
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 0 var(--spacing-lg);
+            padding: 2rem;
         }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
-            color: #fff;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+
+        .page-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0.5rem 0;
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
         }
-        /* Hero */
-        .hero {
-            padding: var(--spacing-xl) 0;
+
+        .pitch {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
             display: flex;
             align-items: center;
-            min-height: 80vh;
-            position: relative;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .article-preview {
+            background: #fff;
+            color: #1a1a1a;
+            padding: 2rem;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Docs Table */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .docs-table th {
             text-align: left;
-            background: transparent;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-weight: 600;
         }
-        .hero-content {
-            flex: 1;
-            padding-right: var(--spacing-lg);
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
         }
-        .hero h1 {
-            line-height: 1.1;
-            margin-bottom: var(--spacing-md);
-            background: linear-gradient(to right, #fff, var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
         }
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            margin-bottom: var(--spacing-lg);
-            max-width: 600px;
-        }
-        .hero-visual {
-            flex: 1;
-            height: 400px;
-            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-        /* Abstract Visual Placeholder */
-        .visual-node {
-            width: 200px;
-            height: 200px;
-            border: 2px solid var(--accent-secondary);
-            border-radius: 50%;
-            position: absolute;
-            animation: pulse 4s infinite;
-            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .visual-node::before {
-            content: '✍️';
-            font-size: 4rem;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
-        }
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(6, 182, 212, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: var(--spacing-md);
-            color: var(--accent-secondary);
-        }
-        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-primary); }
-        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-secondary); }
-        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
-        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
-        @media (max-width: 768px) {
-            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
-            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+
+        .req { color: #f85149; font-weight: bold; }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
         }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="article-generation"></cognotik-header>
-    <!-- Hero -->
-    <header class="hero container">
-        <div class="hero-content">
-            <h1>Article Generation Task</h1>
-            <p>Generate publication-ready journalistic articles with proper structure, attribution, and style.</p>
-            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
-        </div>
-        <div class="hero-visual">
-            <div class="visual-node"></div>
+
+<cognotik-header current-page="ArticleGenerationTask"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Writing > ArticleGenerationTask</div>
+        <h1>ArticleGenerationTask</h1>
+        <p class="pitch">
+            A multi-phase journalistic engine that performs deep investigation, creates structured outlines, and writes publication-ready articles with automated revision passes.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
         </div>
     </header>
-    <!-- Features -->
-    <section id="features" class="features">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    </div>
-                    <h3>Multi-Phase Workflow</h3>
-                    <p>Orchestrates investigation, structural planning, drafting, and revision passes for high-quality output.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                    </div>
-                    <h3>Style & Format Control</h3>
-                    <p>Configurable writing styles (AP, Narrative) and formats (News, Feature, Opinion) with specific word counts.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                    </div>
-                    <h3>Social Media Integration</h3>
-                    <p>Automatically generates platform-specific snippets (Twitter, LinkedIn, Facebook) alongside the main article.</p>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> ArticleGenerationConfig.json</div>
+            <pre><code>{
+  "story_topic": "The impact of AI on local journalism",
+  "article_format": "feature",
+  "target_word_count": 1200,
+  "writing_style": "narrative",
+  "include_quotes": true,
+  "generate_social_snippets": true,
+  "revision_passes": 2
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI: Article Draft</div>
+            <div class="mock-ui-content">
+                <div class="article-preview">
+                    <h2 style="margin-top:0; font-family: serif;">The Silicon Scribe: Can AI Save the Local Newsroom?</h2>
+                    <h4 style="color: #666; margin-bottom: 1rem;">How small-town papers are leveraging LLMs to stay afloat in a digital-first world.</h4>
+                    <p><strong>By Cognotik Investigative Unit</strong></p>
+                    <p style="font-size: 0.8rem; color: #888;">OAKLAND, CA — October 24, 2023</p>
+                    <hr>
+                    <p>In the dusty corner of the <em>Gazette's</em> main office, the rhythmic clicking of keyboards has been replaced by a quiet hum of servers...</p>
+                    <p>"It's not about replacement," says Sarah Jenkins, editor-in-chief. "It's about amplification."</p>
                 </div>
             </div>
+        </div>
     </section>
-    <!-- Simulator -->
-    <section id="demo" class="simulator">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="simulator-container">
-                <!-- Inputs -->
-                <div class="sim-controls">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
-                    <div class="control-group">
-                        <label>Story Topic</label>
-                        <input type="text" id="story_topic" value="The Rise of Remote Work">
-                    </div>
-                    <div class="control-group-row" style="display: flex; gap: 1rem;">
-                        <div class="control-group" style="flex: 1;">
-                            <label>Word Count</label>
-                            <input type="number" id="word_count" value="800" step="100">
-                        </div>
-                        <div class="control-group" style="flex: 1;">
-                            <label>Style</label>
-                  <select id="sim_style">
-                      <option value="AP Style">AP Style</option>
-                      <option value="Narrative">Narrative</option>
-                                <option value="analytical">Analytical</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label>Article Format</label>
-                        <select id="article_format">
-                            <option value="news">News Report</option>
-                            <option value="feature" selected>Feature Story</option>
-                            <option value="opinion">Opinion Piece</option>
-                            <option value="profile">Profile</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label>Target Publication</label>
-                        <input type="text" id="target_publication" value="TechCrunch">
-                    </div>
-                    <div class="control-group" style="margin-top: 1rem;">
-                        <label style="margin-bottom: 0.5rem; display: block;">Inclusions</label>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.9rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="checkbox" id="inc_quotes" checked> Quotes
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="checkbox" id="inc_data" checked> Data
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="checkbox" id="inc_social" checked> Social Snippets
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="checkbox" id="inc_context" checked> Context
-                            </label>
-                        </div>
-                    </div>
-                    <button class="run-button" onclick="runSimulation()" style="margin-top: 2rem;">Generate Article</button>
-                </div>
-                <!-- Outputs -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <div class="tab active" onclick="switchTab('article')">Article</div>
-                        <div class="tab" onclick="switchTab('social')">Social</div>
-                        <div class="tab" onclick="switchTab('logs')">Logs</div>
-                    </div>
-                    <div id="output-article" class="tab-content active markdown-preview">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the article and click "Generate" to see the output.
-                        </div>
-                    </div>
-                    <div id="output-social" class="tab-content markdown-preview">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Social media snippets will appear here.
-                        </div>
-                    </div>
-                    <div id="output-logs" class="tab-content" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
-                    </div>
-                </div>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>story_topic</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The core subject or event to write about.</td>
+                </tr>
+                <tr>
+                    <td><code>article_format</code></td>
+                    <td>String</td>
+                    <td>Options: <code>news</code>, <code>feature</code>, <code>investigative</code>, <code>opinion</code>, <code>profile</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>target_word_count</code></td>
+                    <td>Int</td>
+                    <td>Desired length (Default: 1000).</td>
+                </tr>
+                <tr>
+                    <td><code>writing_style</code></td>
+                    <td>String</td>
+                    <td>e.g., <code>AP style</code>, <code>narrative</code>, <code>analytical</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Glob patterns for source documents (e.g., <code>docs/*.md</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>revision_passes</code></td>
+                    <td>Int</td>
+                    <td>Number of automated editing cycles (Default: 1).</td>
+                </tr>
+                <tr>
+                    <td><code>generate_social_snippets</code></td>
+                    <td>Boolean</td>
+                    <td>Creates Twitter, FB, and LinkedIn posts.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Lifecycle</h3>
+            <ol style="padding-left: 1.2rem; color: var(--text-main);">
+                <li style="margin-bottom: 1rem;">
+                    <strong>Phase 1: Journalism Investigation</strong><br>
+                    <span style="color: var(--text-dim)">Inherits from <code>JournalismReasoningTask</code>. Analyzes input files, identifies biases, finds gaps, and assesses newsworthiness.</span>
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong>Phase 2: Article Structure</strong><br>
+                    <span style="color: var(--text-dim)">Generates a detailed outline including headline, subheadline, lede, and section-by-section purpose mapping.</span>
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong>Phase 3: Article Writing & Revision</strong><br>
+                    <span style="color: var(--text-dim)">Drafts the full content. If <code>revision_passes > 0</code>, a senior editor agent refines clarity, flow, and transitions.</span>
+                </li>
+                <li>
+                    <strong>Phase 4: Social Media Generation</strong><br>
+                    <span style="color: var(--text-dim)">Optional generation of platform-specific snippets (Twitter, LinkedIn, Facebook).</span>
+                </li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Kotlin Boilerplate</h3>
+            <div class="panel" style="margin-bottom: 1.5rem;">
+                <pre><code>val task = ArticleGenerationTask(
+    orchestrationConfig = config,
+    planTask = ArticleGenerationTask.ArticleGenerationTaskExecutionConfigData(
+        story_topic = "The future of renewable energy",
+        article_format = "investigative",
+        target_word_count = 1500,
+        generate_social_snippets = true
+    )
+)</code></pre>
             </div>
-    </section>
-    <!-- Use Cases -->
-    <section id="use-cases" class="features">
-            <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="mode-grid">
-                <div class="mode-card">
-                    <h4>Content Marketing</h4>
-                    <p>Create high-quality blog posts and articles to engage your audience.</p>
-                </div>
-                <div class="mode-card">
-                    <h4>News Reporting</h4>
-                    <p>Generate timely news reports on current events and industry updates.</p>
-                </div>
-                <div class="mode-card">
-                    <h4>Thought Leadership</h4>
-                    <p>Draft opinion pieces and features that establish authority in your field.</p>
-                </div>
-                <div class="mode-card">
-                    <h4>Social Media Management</h4>
-                    <p>Generate articles and matching social posts in a single workflow.</p>
-                </div>
+
+            <h3>Prompt Segment</h3>
+            <p style="font-size: 0.85rem; color: var(--text-dim);">The following logic is injected into the LLM context:</p>
+            <div class="panel">
+                <pre><code>ArticleGeneration - Generate complete journalistic articles from investigation and analysis
+  ** Extends JournalismReasoning with full article writing
+  ** Specify the story topic to write about
+  ** Define journalism elements: who, what, when, where, why, how
+  ** Set target word count and article format (news, feature, investigative, etc.)
+  ** Configure writing style and target publication
+  ** Enable quotes, data, expert analysis, and context
+  ** Performs investigation, creates structure, then writes article
+  ** Optional revision passes for quality improvement
+  ** Can generate headlines and social media snippets
+  ** Produces publication-ready articles with proper journalistic structure</code></pre>
             </div>
+        </div>
     </section>
-    <script>
-  function switchTab(tabId) {
-      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            if (tabName === 'article') {
-                document.getElementById('output-article').classList.add('active');
-            } else if (tabName === 'social') {
-                document.getElementById('output-social').classList.add('active');
-            } else {
-                document.getElementById('output-logs').classList.add('active');
-            }
-        }
-        function runSimulation() {
-      const topic = document.getElementById('sim_topic').value;
-      const format = document.getElementById('sim_format').value;
-      const style = document.getElementById('sim_style').value;
-            const wordCount = document.getElementById('word_count').value;
-            const publication = document.getElementById('target_publication').value;
-            const incSocial = document.getElementById('inc_social').checked;
-            
-            const reportEl = document.getElementById('output-article');
-            const socialEl = document.getElementById('output-social');
-            const logsEl = document.getElementById('output-logs');
-            
-            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
-            socialEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
-            logsEl.innerHTML = '';
-            
-            const logs = [
-                `[INFO] Initializing ArticleGenerationTask...`,
-          `[INFO] Topic: "${topic}"`,
-                `[INFO] Config: ${format}, ${style}, ${wordCount} words`,
-                `[INFO] Phase 1: Running journalism investigation...`,
-                `[INFO] Analyzing context and verifying facts...`,
-                `[INFO] Phase 2: Generating article structure...`,
-                `[INFO] Creating outline: Headline, Lede, Sections, Conclusion...`,
-                `[INFO] Phase 3: Writing article draft...`,
-          `[INFO] Applying ${pub} tone and ${style}...`,
-                `[INFO] Performing revision pass 1...`,
-                incSocial ? `[INFO] Phase 4: Generating social media snippets...` : null,
-                `[SUCCESS] Article generation complete.`
-            ].filter(Boolean);
-            
-            let logIndex = 0;
-            const logInterval = setInterval(() => {
-                if (logIndex < logs.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
-                    line.style.marginBottom = '4px';
-                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
-                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
-                    logsEl.appendChild(line);
-                    logsEl.scrollTop = logsEl.scrollHeight;
-                    logIndex++;
-                } else {
-                    clearInterval(logInterval);
-                    renderArticle(topic, format, publication);
-                    if(incSocial) renderSocial(topic);
-                    else socialEl.innerHTML = '<div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">Social snippets were not requested.</div>';
-                }
-            }, 400);
-        }
-        function renderArticle(topic, format, publication) {
-            const reportEl = document.getElementById('output-article');
-            const markdown = `
-<h1>Remote Work Revolution: A Permanent Shift?</h1>
-<h2>How the pandemic reshaped the global workforce and what lies ahead.</h2>
-<p><strong>By Cognotik AI</strong> | <em>${new Date().toLocaleDateString()}</em> | <em>${publication}</em></p>
+</main>
 
-<hr>
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-<p>The traditional 9-to-5 office routine has been upended. What began as a temporary necessity has evolved into a fundamental shift in how we work. Companies worldwide are grappling with the new reality of hybrid and remote models.</p>
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-<h3>The Productivity Paradox</h3>
-<p>Initial fears that remote work would lead to a slump in productivity have largely been debunked. "We've seen output actually increase," says Sarah Chen, HR Director at TechGlobal. "The challenge now is burnout, not laziness."</p>
-
-<h3>The Hybrid Compromise</h3>
-<p>Most organizations are settling on a hybrid model. This offers the flexibility employees crave while maintaining the collaborative benefits of in-person interaction. However, managing this balance requires new tools and management styles.</p>
-
-<h3>Looking Ahead</h3>
-<p>As technology evolves, the office will likely become a destination for collaboration rather than a daily requirement. The remote work revolution is not just about where we work, but how we define work itself.</p>
-<hr>
-<p style="font-size: 0.9em; color: var(--text-muted);"><strong>Word Count:</strong> 842 | <strong>Sources Cited:</strong> 3 | <strong>Key Facts:</strong> 5</p>
-            `;
-            reportEl.innerHTML = markdown;
-        }
-        function renderSocial(topic) {
-            const socialEl = document.getElementById('output-social');
-            const markdown = `
-<h3>Twitter / X</h3>
-<code>Remote work isn't just a trend—it's the new normal. 🌍💻 From productivity gains to the hybrid compromise, here's how the workforce is evolving forever. #RemoteWork #FutureOfWork #TechTrends</code>
-<h3>LinkedIn</h3>
-<code>The traditional 9-to-5 is history. As organizations worldwide adapt to hybrid models, the data shows productivity is up, but so is the risk of burnout. Our latest feature explores the permanent shift in global workforce dynamics and what leaders need to know to adapt.</code>
-<h3>Facebook</h3>
-<code>Is the office obsolete? 🏢 We explored the massive shift to remote work and found that while flexibility is great, the hybrid model might be the ultimate winner. What's your preferred way to work? Let us know in the comments! 👇</code>
-            `;
-            socialEl.innerHTML = markdown;
-        }
-    </script>
 </body>
 </html>

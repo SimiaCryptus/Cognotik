@@ -36,9 +36,10 @@ import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 open class UnifiedHarness(
-    val port: Int = 8082,
+    val port: Int = Random.nextInt(1024, 65535),
     val serverless: Boolean = false,
     val openBrowser: Boolean = false,
     val captureMessages: Boolean = serverless,
@@ -101,16 +102,14 @@ open class UnifiedHarness(
         timeoutMinutes: Long = 30,
         autoFix: Boolean = !openBrowser,
         workspace: File? = null,
-        config: (Session, File) -> OrchestrationConfig = { session: Session, finalWorkspace: File -> OrchestrationConfig(
-            sessionId = session.sessionId,
-            workingDir = finalWorkspace.absolutePath,
-            defaultFastModel = fastModel.asApiChatModel(),
-            defaultSmartModel = smartModel.asApiChatModel(),
-            defaultImageModel = imageModel.asApiChatModel(),
-            autoFix = autoFix,
-            temperature = temperature,
-            cognitiveSettings = cognitiveSettings,
-        ) }
+        config: (Session, File) -> OrchestrationConfig = { session: Session, finalWorkspace: File ->
+            initSettings(
+                session,
+                finalWorkspace,
+                autoFix,
+                cognitiveSettings
+            )
+        }
     ) {
         val completionLatch = CountDownLatch(1)
         val session = Session.newGlobalID()
@@ -212,17 +211,23 @@ open class UnifiedHarness(
         }
     }
 
+
     open fun <T : TaskExecutionConfig, U : TaskTypeConfig> runTask(
         taskType: TaskType<T, U>,
         typeConfig: U,
         executionConfig: T,
         timeoutMinutes: Long = 30,
         autoFix: Boolean = !openBrowser,
-        workspace: File? = null
+        workspace: File? = null,
+        initSettings : (Session) -> OrchestrationConfig = { session ->
+            initSettings(session, workspace, autoFix, taskType, typeConfig)
+        }
     ) {
         val completionLatch = CountDownLatch(1)
         var error: Throwable? = null
         val session = Session.newGlobalID()
+
+
 
         val singleTaskApp = object : SingleTaskApp(
             path = "/test",
@@ -247,18 +252,7 @@ open class UnifiedHarness(
             }
 
             override fun <T : Any> initSettings(session: Session): T {
-                val orchestrationConfig = OrchestrationConfig(
-                    sessionId = session.sessionId,
-                    workingDir = getRoot(workspace, session, taskType.name).absolutePath,
-                    taskSettings = mutableMapOf(
-                        typeConfig.name!! to typeConfig
-                    ),
-                    defaultFastModel = fastModel.asApiChatModel(),
-                    defaultSmartModel = smartModel.asApiChatModel(),
-                    defaultImageModel = imageModel.asApiChatModel(),
-                    autoFix = autoFix,
-                    temperature = temperature,
-                )
+                val orchestrationConfig = initSettings(session)
                 val json = orchestrationConfig.toJson()
                 getSettingsFile(session, defaultUser).writeText(json)
                 @Suppress("UNCHECKED_CAST")
@@ -322,6 +316,40 @@ open class UnifiedHarness(
             handleBrowserShutdown(session)
         }
     }
+    open fun initSettings(
+        session: Session,
+        finalWorkspace: File,
+        autoFix: Boolean,
+        cognitiveSettings: CognitiveModeConfig
+    ): OrchestrationConfig = OrchestrationConfig(
+        sessionId = session.sessionId,
+        workingDir = finalWorkspace.absolutePath,
+        defaultFastModel = fastModel.asApiChatModel(),
+        defaultSmartModel = smartModel.asApiChatModel(),
+        defaultImageModel = imageModel.asApiChatModel(),
+        autoFix = autoFix,
+        temperature = temperature,
+        cognitiveSettings = cognitiveSettings,
+    )
+
+    open fun <T : TaskExecutionConfig, U : TaskTypeConfig> initSettings(
+        session: Session,
+        workspace: File?,
+        autoFix: Boolean,
+        taskType: TaskType<T, U>,
+        typeConfig: U
+    ): OrchestrationConfig = OrchestrationConfig(
+        sessionId = session.sessionId,
+        workingDir = getRoot(workspace, session, taskType.name).absolutePath,
+        taskSettings = mutableMapOf(
+            typeConfig.name!! to typeConfig
+        ),
+        defaultFastModel = fastModel.asApiChatModel(),
+        defaultSmartModel = smartModel.asApiChatModel(),
+        defaultImageModel = imageModel.asApiChatModel(),
+        autoFix = autoFix,
+        temperature = temperature,
+    )
 
     open fun getRoot(
         workspace: File?,

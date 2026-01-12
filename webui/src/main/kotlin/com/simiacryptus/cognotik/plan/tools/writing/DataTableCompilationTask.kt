@@ -421,6 +421,15 @@ class DataTableCompilationTask(
     }
 
     companion object {
+        val DataTableCompilation = TaskType(
+            name = "DataTableCompilation",
+            category = "Writing",
+            taskClass = DataTableCompilationTask::class.java,
+            executionConfigClass = DataTableCompilationTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Compile structured data tables from multiple files",
+            tooltipHtml = "Compile structured data tables from multiple files"
+        )
         private val log = LoggerFactory.getLogger(DataTableCompilationTask::class.java)
     }
 }

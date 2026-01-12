@@ -739,24 +739,24 @@ Provide a brief validation assessment.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AnalogicalReasoningTask::class.java)
         val AnalogicalReasoning = TaskType(
-            "AnalogicalReasoning",
-            "Reasoning",
-            AnalogicalReasoningTask::class.java,
-            AnalogicalReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Solve problems by finding and applying analogies from different domains",
-            """
-              Performs creative problem-solving through analogical reasoning.
-              <ul>
-                <li>Draws analogies from specified source domains</li>
-                <li>Maps structural relationships to target problems</li>
-                <li>Generates multiple perspectives and insights</li>
-                <li>Validates mapping coherence and consistency</li>
-                <li>Synthesizes findings across analogies</li>
-                <li>Suggests concrete solutions based on analogies</li>
-                <li>Useful for design thinking and novel approaches</li>
-              </ul>
-            """,
+          name = "AnalogicalReasoning",
+          category = "Reasoning",
+          taskClass = AnalogicalReasoningTask::class.java,
+          executionConfigClass = AnalogicalReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Solve problems by finding and applying analogies from different domains",
+          tooltipHtml = """
+                        Performs creative problem-solving through analogical reasoning.
+                        <ul>
+                          <li>Draws analogies from specified source domains</li>
+                          <li>Maps structural relationships to target problems</li>
+                          <li>Generates multiple perspectives and insights</li>
+                          <li>Validates mapping coherence and consistency</li>
+                          <li>Synthesizes findings across analogies</li>
+                          <li>Suggests concrete solutions based on analogies</li>
+                          <li>Useful for design thinking and novel approaches</li>
+                        </ul>
+                      """,
         )
     }
 }

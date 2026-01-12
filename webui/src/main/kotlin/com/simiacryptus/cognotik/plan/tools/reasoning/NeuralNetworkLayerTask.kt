@@ -24,32 +24,32 @@ class NeuralNetworkLayerTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(NeuralNetworkLayerTask::class.java)
         val NeuralNetworkLayer = TaskType(
-            "NeuralNetworkLayer",
-            "Writing",
-            NeuralNetworkLayerTask::class.java,
-            NeuralNetworkLayerTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Design and analyze neural network layers with formal mathematical definitions and intuitive explanations",
-            """
-                Comprehensive neural network layer design and analysis tool with both rigorous mathematics and intuitive explanations.
-                <ul>
-                    <li>Executive summary with key insights</li>
-                    <li>Intuitive explanations with real-world analogies</li>
-                    <li>Visual conceptual diagrams</li>
-                    <li>Formal mathematical definition of the layer function</li>
-                    <li>Forward pass implementation with detailed equations</li>
-                    <li>Backward pass (gradient) derivation and implementation</li>
-                    <li>Higher-order derivative analysis (Hessian, etc.)</li>
-                    <li>Lyapunov stability analysis for training dynamics</li>
-                    <li>Lipschitz continuity and gradient flow analysis</li>
-                    <li>Numerical stability considerations</li>
-                    <li>Reference implementations in multiple languages</li>
-                    <li>Computational complexity analysis</li>
-                    <li>Memory footprint estimation</li>
-                    <li>Originality and novelty assessment</li>
-                    <li>Practical use cases and applications</li>
-                </ul>
-            """,
+          name = "NeuralNetworkLayer",
+          category = "Writing",
+          taskClass = NeuralNetworkLayerTask::class.java,
+          executionConfigClass = NeuralNetworkLayerTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Design and analyze neural network layers with formal mathematical definitions and intuitive explanations",
+          tooltipHtml = """
+                          Comprehensive neural network layer design and analysis tool with both rigorous mathematics and intuitive explanations.
+                          <ul>
+                              <li>Executive summary with key insights</li>
+                              <li>Intuitive explanations with real-world analogies</li>
+                              <li>Visual conceptual diagrams</li>
+                              <li>Formal mathematical definition of the layer function</li>
+                              <li>Forward pass implementation with detailed equations</li>
+                              <li>Backward pass (gradient) derivation and implementation</li>
+                              <li>Higher-order derivative analysis (Hessian, etc.)</li>
+                              <li>Lyapunov stability analysis for training dynamics</li>
+                              <li>Lipschitz continuity and gradient flow analysis</li>
+                              <li>Numerical stability considerations</li>
+                              <li>Reference implementations in multiple languages</li>
+                              <li>Computational complexity analysis</li>
+                              <li>Memory footprint estimation</li>
+                              <li>Originality and novelty assessment</li>
+                              <li>Practical use cases and applications</li>
+                          </ul>
+                      """,
         )
     }
 

@@ -350,20 +350,20 @@ class DecisionTreeTask(
     companion object {
         private val log = LoggerFactory.getLogger(DecisionTreeTask::class.java)
         val DecisionTree = TaskType(
-            "DecisionTree",
-            "Reasoning",
-            DecisionTreeTask::class.java,
-            DecisionTreeTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Build an LLM-driven symbolic decision tree",
-            """
-              Constructs a decision tree classifier using LLM for rule proposal and data for validation.
-              <ul>
-                <li>Handles unstructured text via semantic rules</li>
-                <li>Generates interpretable code</li>
-                <li>Uses Information Gain for split selection</li>
-              </ul>
-            """,
+          name = "DecisionTree",
+          category = "Reasoning",
+          taskClass = DecisionTreeTask::class.java,
+          executionConfigClass = DecisionTreeTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Build an LLM-driven symbolic decision tree",
+          tooltipHtml = """
+                        Constructs a decision tree classifier using LLM for rule proposal and data for validation.
+                        <ul>
+                          <li>Handles unstructured text via semantic rules</li>
+                          <li>Generates interpretable code</li>
+                          <li>Uses Information Gain for split selection</li>
+                        </ul>
+                      """,
         )
     }
 }

@@ -925,23 +925,23 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbductiveReasoningTask::class.java)
         val AbductiveReasoning = TaskType(
-            "AbductiveReasoning",
-            "Reasoning",
-            AbductiveReasoningTask::class.java,
-            AbductiveReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate and evaluate explanatory hypotheses",
-            """
-              Performs abductive reasoning (inference to best explanation) to generate and evaluate hypotheses.
-              <ul>
-                <li>Generates multiple explanatory hypotheses for observations</li>
-                <li>Evaluates explanatory power, simplicity, testability, and prior probability</li>
-                <li>Applies Occam's Razor to prefer simpler explanations</li>
-                <li>Ranks hypotheses by overall quality</li>
-                <li>Suggests validation tests for top hypotheses</li>
-                <li>Useful for root cause analysis, bug investigation, and scientific reasoning</li>
-              </ul>
-            """,
+          name = "AbductiveReasoning",
+          category = "Reasoning",
+          taskClass = AbductiveReasoningTask::class.java,
+          executionConfigClass = AbductiveReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate and evaluate explanatory hypotheses",
+          tooltipHtml = """
+                        Performs abductive reasoning (inference to best explanation) to generate and evaluate hypotheses.
+                        <ul>
+                          <li>Generates multiple explanatory hypotheses for observations</li>
+                          <li>Evaluates explanatory power, simplicity, testability, and prior probability</li>
+                          <li>Applies Occam's Razor to prefer simpler explanations</li>
+                          <li>Ranks hypotheses by overall quality</li>
+                          <li>Suggests validation tests for top hypotheses</li>
+                          <li>Useful for root cause analysis, bug investigation, and scientific reasoning</li>
+                        </ul>
+                      """,
         )
     }
 }

@@ -1418,26 +1418,26 @@ Provide the complete revised essay.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PersuasiveEssayTask::class.java)
         val PersuasiveEssay = TaskType(
-            "PersuasiveEssay",
-            "Writing",
-            PersuasiveEssayTask::class.java,
-            PersuasiveEssayTaskExecutionConfigData::class.java,
-            PersuasiveEssayTaskTypeConfig::class.java,
-            "Generate compelling persuasive essays with structured arguments",
-            """
-              Generates complete, well-structured persuasive essays using rhetorical techniques.
-              <ul>
-                <li>Creates detailed outline with thesis, arguments, and counterarguments</li>
-                <li>Writes compelling introduction with hook and background</li>
-                <li>Develops main arguments with evidence and rhetorical devices</li>
-                <li>Addresses counterarguments with strong rebuttals</li>
-                <li>Crafts powerful conclusion with call to action</li>
-                <li>Supports multiple tones and target audiences</li>
-                <li>Includes optional revision passes for quality</li>
-                <li>Uses ethos, pathos, and logos for persuasive impact</li>
-                <li>Ideal for opinion pieces, proposals, advocacy, and academic arguments</li>
-              </ul>
-            """,
+          name = "PersuasiveEssay",
+          category = "Writing",
+          taskClass = PersuasiveEssayTask::class.java,
+          executionConfigClass = PersuasiveEssayTaskExecutionConfigData::class.java,
+          taskSettingsClass = PersuasiveEssayTaskTypeConfig::class.java,
+          description = "Generate compelling persuasive essays with structured arguments",
+          tooltipHtml = """
+                        Generates complete, well-structured persuasive essays using rhetorical techniques.
+                        <ul>
+                          <li>Creates detailed outline with thesis, arguments, and counterarguments</li>
+                          <li>Writes compelling introduction with hook and background</li>
+                          <li>Develops main arguments with evidence and rhetorical devices</li>
+                          <li>Addresses counterarguments with strong rebuttals</li>
+                          <li>Crafts powerful conclusion with call to action</li>
+                          <li>Supports multiple tones and target audiences</li>
+                          <li>Includes optional revision passes for quality</li>
+                          <li>Uses ethos, pathos, and logos for persuasive impact</li>
+                          <li>Ideal for opinion pieces, proposals, advocacy, and academic arguments</li>
+                        </ul>
+                      """,
         )
     }
 }

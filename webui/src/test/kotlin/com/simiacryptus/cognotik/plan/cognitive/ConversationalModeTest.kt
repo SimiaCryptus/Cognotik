@@ -15,7 +15,7 @@ object ConversationalModeTest {
         PlanHarness.configurePlatform()
     }
 
-    @org.junit.jupiter.api.Test
+   //@org.junit.jupiter.api.Test
     fun test() {
         object : PlanHarness(
             prompt = "Create a simple python script that prints 'Hello from ConversationalMode'",

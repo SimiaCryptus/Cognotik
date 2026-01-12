@@ -580,23 +580,23 @@ Begin your meta-cognitive reflection now:
     companion object {
         private val log: Logger = LoggerFactory.getLogger(MetaCognitiveReflectionTask::class.java)
         val MetaCognitiveReflection = TaskType(
-            "MetaCognitiveReflection",
-            "Reasoning",
-            MetaCognitiveReflectionTask::class.java,
-            MetaCognitiveReflectionTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Reflect on and critique reasoning processes",
-            """
-              Performs meta-cognitive reflection on task reasoning and solutions.
-              <ul>
-                <li>Analyzes assumptions and identifies biases</li>
-                <li>Evaluates alternative approaches</li>
-                <li>Assesses confidence and certainty levels</li>
-                <li>Identifies knowledge gaps and uncertainties</li>
-                <li>Suggests improvements to reasoning quality</li>
-                <li>Checks logical consistency and completeness</li>
-              </ul>
-            """,
+          name = "MetaCognitiveReflection",
+          category = "Reasoning",
+          taskClass = MetaCognitiveReflectionTask::class.java,
+          executionConfigClass = MetaCognitiveReflectionTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Reflect on and critique reasoning processes",
+          tooltipHtml = """
+                        Performs meta-cognitive reflection on task reasoning and solutions.
+                        <ul>
+                          <li>Analyzes assumptions and identifies biases</li>
+                          <li>Evaluates alternative approaches</li>
+                          <li>Assesses confidence and certainty levels</li>
+                          <li>Identifies knowledge gaps and uncertainties</li>
+                          <li>Suggests improvements to reasoning quality</li>
+                          <li>Checks logical consistency and completeness</li>
+                        </ul>
+                      """,
         )
     }
 }

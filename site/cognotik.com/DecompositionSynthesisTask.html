@@ -1,252 +1,436 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Decomposition Synthesis - Cognotik</title>
+    <title>Cognotik | DecompositionSynthesisTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
-
-
-
-
-
-
-
-
-
-        /* Custom styles extending main.css */
-
-        .feature-icon {
-            color: var(--accent-color);
-            margin-bottom: 1rem;
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
         }
 
-
-
-
-
-
-
-
-        .toggle-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            color: var(--text-color);
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
         }
 
-
-
-
-
-        .log-entry { margin-bottom: 0.5rem; }
-        .log-info { color: #38bdf8; }
-        .log-success { color: #4ade80; }
-        .log-warn { color: #facc15; }
-
-        /* Use Cases */
-        .use-cases {
-            padding: 4rem 2rem;
-            background: radial-gradient(circle at bottom center, #1e1b4b 0%, var(--background-color) 70%);
-        }
-
-        .use-case-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
+        .task-container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Mock UI */
+        .mock-browser {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .tab-strip {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 10px;
+        }
+
+        .tab-strip span {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-subtle);
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            background: #000;
+        }
+
+        .tab-strip span.active {
+            background: var(--accent-primary);
+            color: #000;
+            border-color: var(--accent-primary);
+        }
+
+        /* Tabs System */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .docs-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; margin-left: 4px; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
         }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="decomposition"></cognotik-header>
 
-    <section class="hero">
-        <h1>Decomposition Synthesis</h1>
-        <p class="subtitle">Decompose complex problems into manageable subproblems, solve them independently, and synthesize a coherent, validated solution using divide-and-conquer reasoning.</p>
-        <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">Try the Simulator</button>
-    </section>
+<cognotik-header current-page="tasks"></cognotik-header>
 
-    <section class="features">
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                </div>
-                <h3>Multi-Strategy Decomposition</h3>
-                <p>Choose from functional, temporal, spatial, or hierarchical strategies to break down problems effectively.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                </div>
-                <h3>Coherence Validation</h3>
-                <p>Automatically validates the synthesized solution for logical consistency and completeness.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                </div>
-                <h3>Confidence Tracking</h3>
-                <p>Monitors confidence levels at both the subproblem and final synthesis stages.</p>
-            </div>
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > DecompositionSynthesisTask</div>
+        <h1>DecompositionSynthesisTask</h1>
+        <p class="pitch">
+            Implements divide-and-conquer reasoning by decomposing complex problems into manageable subproblems, solving them in dependency order, and synthesizing a coherent final solution.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Strategy: Divide-and-Conquer</span>
+            <span class="badge">Output: Synthesized Solution</span>
         </div>
-    </section>
+    </header>
 
-    <section id="simulator" class="simulator">
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> ExecutionConfig.json</div>
+            <pre><code>{
+  "complex_problem": "Design a scalable microservices architecture.",
+  "decomposition_strategy": "functional",
+  "max_depth": 2,
+  "include_file_context": true,
+  "input_files": ["src/main/kotlin/**/*.kt"],
+  "synthesize_solution": true,
+  "validate_coherence": true
+}</code></pre>
+        </div>
 
-        <div class="simulator-container">
-            <div class="sim-controls">
-                <h2>Configuration</h2>
-                <div class="control-group">
-                    <label>Complex Problem</label>
-                    <textarea id="inputProblem" rows="4" placeholder="Describe the complex problem...">Design a scalable microservices architecture for a global e-commerce platform.</textarea>
-                </div>
-                <div class="control-group">
-                    <label>Strategy</label>
-                    <select id="inputStrategy">
-                        <option value="functional">Functional</option>
-                        <option value="temporal">Temporal</option>
-                        <option value="spatial">Spatial</option>
-                        <option value="hierarchical">Hierarchical</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label>Max Depth: <span id="depthVal">3</span></label>
-                    <input type="range" id="inputDepth" min="1" max="5" value="3" oninput="document.getElementById('depthVal').innerText = this.value" style="width: 100%">
-                </div>
-                <div class="toggle-row">
-                    <label>Synthesize Solution</label>
-                    <input type="checkbox" id="inputSynthesize" checked>
-                </div>
-                <div class="toggle-row">
-                    <label>Validate Coherence</label>
-                    <input type="checkbox" id="inputValidate" checked>
-                </div>
-                <button class="run-button" onclick="runSimulation()">Run Analysis</button>
-            </div>
+        <div class="flow-arrow">→</div>
 
-            <div class="sim-output">
-                <div class="tabs">
-                    <button class="tab active" onclick="switchTab('overview')">Overview</button>
-                    <button class="tab" onclick="switchTab('decomposition')">Decomposition</button>
-                    <button class="tab" onclick="switchTab('synthesis')">Synthesis</button>
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI (TabbedDisplay)</div>
+            <div class="mock-browser">
+                <div class="tab-strip">
+                    <span class="active">Overview</span>
+                    <span>Context</span>
+                    <span class="active">Decomposition</span>
+                    <span>Solutions</span>
+                    <span>Synthesis</span>
+                    <span>Validation</span>
                 </div>
-                <div id="outputOverview" class="tab-content active">
-                    <div style="color: var(--text-muted); text-align: center; padding-top: 2rem;">
-                        Ready to analyze. Click "Run Analysis" to start.
+                <div style="padding: 10px; border: 1px solid var(--border-subtle); background: #0d1117; border-radius: 4px;">
+                    <div style="color: #4ade80; font-size: 0.8rem; margin-bottom: 8px;">✅ Analysis Complete!</div>
+                    <div style="font-weight: bold; margin-bottom: 5px;">Summary:</div>
+                    <div style="font-size: 0.8rem; color: var(--text-dim); margin-left: 10px;">
+                        • Subproblems Identified: 3<br>
+                        • Solutions Generated: 3<br>
+                        • Average Confidence: 94%
                     </div>
                 </div>
-                <div id="outputDecomposition" class="tab-content"></div>
-                <div id="outputSynthesis" class="tab-content"></div>
             </div>
         </div>
     </section>
 
-    <section class="use-cases">
-        <div style="text-align: center; margin-bottom: 3rem;">
-            <h2>When to Use</h2>
-            <p style="color: var(--text-muted);">Ideal for scenarios requiring structured breakdown of complexity.</p>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Task Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>complex_problem</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The high-level problem or requirement to be decomposed and solved.</td>
+                </tr>
+                <tr>
+                    <td><code>include_file_context</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to include file context in the analysis. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>decomposition_strategy</code></td>
+                    <td>String</td>
+                    <td>Strategy for breakdown: <code>functional</code>, <code>temporal</code>, <code>spatial</code>, or <code>hierarchical</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>max_depth</code></td>
+                    <td>Int</td>
+                    <td>Maximum levels of recursive decomposition. Default: <code>3</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>synthesize_solution</code></td>
+                    <td>Boolean</td>
+                    <td>If true, integrates subproblem solutions into a single response. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>validate_coherence</code></td>
+                    <td>Boolean</td>
+                    <td>Performs a final LLM pass to check for contradictions in the synthesis. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Glob patterns (e.g. <code>**/*.kt</code>) for source code context.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Specific file paths to include as additional context.</td>
+                </tr>
+                </tbody>
+            </table>
         </div>
-        <div class="use-case-grid">
-            <div class="feature-card">
-                <h3>System Architecture</h3>
-                <p>Designing complex software systems by breaking them down into components, services, and interfaces.</p>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Lifecycle & Reasoning Flow</h3>
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div class="panel">
+                    <div class="panel-header">1. Context Assembly</div>
+                    <div style="padding: 1rem; font-size: 0.9rem;">
+                        Gathers data from <code>input_files</code>, <code>related_files</code>, and results from previous tasks in the orchestration chain.
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">2. Decomposition & Dependency Mapping</div>
+                    <div style="padding: 1rem; font-size: 0.9rem;">
+                        The LLM identifies 3-7 subproblems. A topological sort is performed to resolve dependencies and detect circular loops before execution.
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">3. Sequential Subproblem Solving</div>
+                    <div style="padding: 1rem; font-size: 0.9rem;">
+                        Each subproblem is solved in order. Solutions from dependencies are injected into the context of subsequent subproblems to ensure continuity.
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">4. Synthesis & Coherence Validation</div>
+                    <div style="padding: 1rem; font-size: 0.9rem;">
+                        Individual solutions are merged. If <code>validate_coherence</code> is enabled, the system identifies gaps or contradictions and suggests improvements.
+                    </div>
+                </div>
             </div>
-            <div class="feature-card">
-                <h3>Strategic Planning</h3>
-                <p>Developing comprehensive business strategies by analyzing market, operational, and financial dimensions.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Research Analysis</h3>
-                <p>Synthesizing findings from multiple sources or domains into a coherent research paper or report.</p>
-            </div>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Kotlin Implementation</h3>
+            <pre><code class="language-kotlin">
+val task = DecompositionSynthesisTask(
+    orchestrationConfig = config,
+    planTask = DecompositionSynthesisTaskExecutionConfigData(
+        complex_problem = "Implement a distributed locking mechanism",
+        decomposition_strategy = "functional",
+        max_depth = 2,
+        include_file_context = true
+    )
+)
+            </code></pre>
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">The following logic is injected into the LLM context:</p>
+            <pre style="background: #000; border-radius: 4px;"><code>
+DecompositionSynthesis - Break down complex problems into subproblems
+** Optionally, list input files (supports glob patterns) to be examined for context
+** Specify the complex problem to decompose
+** Choose decomposition strategy: functional, temporal, spatial, hierarchical
+** Set maximum decomposition depth (default: 3)
+** Enable solution synthesis to combine subproblem solutions
+** Enable coherence validation to check solution consistency
+** Related files can provide context for the problem
+** Output: Comprehensive solution with decomposition analysis, subproblem solutions, and synthesis
+** Returns: Final synthesized solution or concatenated subproblem solutions
+** Implements divide-and-conquer reasoning approach
+            </code></pre>
         </div>
     </section>
+</main>
 
-    <script>
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-            event.target.classList.add('active');
-            document.getElementById('output' + tabId.charAt(0).toUpperCase() + tabId.slice(1)).classList.add('active');
-        }
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-        async function runSimulation() {
-            const problem = document.getElementById('inputProblem').value;
-            const strategy = document.getElementById('inputStrategy').value;
-            const overview = document.getElementById('outputOverview');
-            const decomp = document.getElementById('outputDecomposition');
-            const synth = document.getElementById('outputSynthesis');
-
-            // Reset
-            overview.innerHTML = '';
-            decomp.innerHTML = '';
-            synth.innerHTML = '';
-            switchTab('overview');
-
-            const log = (msg, type='info') => {
-                const div = document.createElement('div');
-                div.className = `log-entry log-${type}`;
-                div.innerText = `> ${msg}`;
-                overview.appendChild(div);
-                overview.scrollTop = overview.scrollHeight;
-            };
-
-            log(`Initializing DecompositionSynthesisTask...`);
-            log(`Problem: ${problem.substring(0, 50)}...`);
-            log(`Strategy: ${strategy}`);
-
-            await new Promise(r => setTimeout(r, 800));
-            log(`Analyzing problem structure...`, 'warn');
-
-            await new Promise(r => setTimeout(r, 1200));
-            log(`Decomposition complete. Identified 4 subproblems.`, 'success');
-
-            // Mock Decomposition Data
-            const subproblems = [
-                { id: "SP1", desc: "User Authentication & Identity Management", complexity: 6 },
-                { id: "SP2", desc: "Product Catalog & Inventory Service", complexity: 7 },
-                { id: "SP3", desc: "Order Processing & Payment Gateway", complexity: 8 },
-                { id: "SP4", desc: "Frontend Client Application", complexity: 5 }
-            ];
-
-            let decompHtml = `### Problem Decomposition\n\n**Rationale:** The problem requires a separation of concerns based on business domains.\n\n`;
-            subproblems.forEach(sp => {
-                decompHtml += `**${sp.id}**: ${sp.desc}\n   Complexity: ${sp.complexity}/10\n\n`;
-            });
-            decomp.innerText = decompHtml;
-
-            // Solving
-            for (const sp of subproblems) {
-                await new Promise(r => setTimeout(r, 600));
-                log(`Solving ${sp.id}...`);
-            }
-            log(`All subproblems solved.`, 'success');
-
-            // Synthesis
-            if (document.getElementById('inputSynthesize').checked) {
-                await new Promise(r => setTimeout(r, 1000));
-                log(`Synthesizing solution...`, 'warn');
-
-                if (document.getElementById('inputValidate').checked) {
-                    await new Promise(r => setTimeout(r, 800));
-                    log(`Validating coherence...`, 'info');
-                    log(`Validation passed. Coherent: Yes.`, 'success');
-                }
-
-                const synthText = `### Synthesized Solution\n\n**Approach:** Microservices Pattern\n**Confidence:** 92%\n\nTo address the requirement for a scalable e-commerce platform, we propose a microservices architecture centered around domain-driven design:\n\n1. **Identity Service (SP1)**: Handles OAuth2/OIDC for secure access.\n2. **Catalog Service (SP2)**: Manages high-read throughput for products using caching strategies.\n3. **Order Service (SP3)**: Implements Saga patterns for distributed transactions across inventory and payments.\n4. **Frontend (SP4)**: A Single Page Application (SPA) interacting via an API Gateway.\n\nThis architecture ensures loose coupling and independent scalability of components.`;
-                synth.innerText = synthText;
-            }
-
-            log(`Task completed successfully.`, 'success');
-        }
-    </script>
 </body>
 </html>

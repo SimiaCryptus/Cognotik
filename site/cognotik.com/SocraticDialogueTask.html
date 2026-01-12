@@ -1,1358 +1,408 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- 
-    IMAGE PROMPT FOR HERO SECTION:
-    A high-quality, abstract 3D illustration representing Socratic dialogue and dialectic reasoning. 
-    Two glowing, translucent spheres (one cyan, one gold) floating in a dark void. 
-    Between them, intricate filaments of light are weaving together, representing the exchange of arguments. 
-    The filaments form a complex geometric knot in the center, symbolizing synthesis. 
-    The background is a deep slate blue with faint mathematical grid lines.
--->
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Socratic Dialogue Task | Cognotik</title>
-    <meta name="description" content="Automated dialectic reasoning agent that explores hypotheses, challenges assumptions, and synthesizes insights through multi-agent dialogue.">
+    <title>Cognotik | SocraticDialogueTask - Industrial Reasoning</title>
 
-    <!-- Load Shared Styles -->
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
-
-    <!-- Load Component Script -->
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
-    <!-- Page Specific Styles Placeholder -->
     <style>
-        /* CSS will be added here */
-    </style>
-
-    <style>
-        /* =========================================
-           1. VARIABLES & RESET
-           ========================================= */
         :root {
-            /* Page Specific Palette */
-            --bg-input: #334155;      /* Slate 700 */
-            --bg-panel: #172033;      /* Darker Slate */
-        
-            --text-accent: #38bdf8;   /* Sky 400 */
-        
-            /* Brand Accents - Socratic Theme */
-            --accent-cyan: #22d3ee;   /* Cyan 400 (Questioner) */
-            --accent-gold: #fbbf24;   /* Amber 400 (Responder) */
-            --accent-purple: #a855f7; /* Purple 500 (Synthesis) */
-        
-        
-            /* Spacing & Layout */
-            --radius-sm: 4px;
-            --radius-md: var(--border-radius);
-            --radius-lg: 16px;
-        
-            /* Effects */
-            --shadow-glow-cyan: 0 0 20px rgba(34, 211, 238, 0.15);
-            --shadow-glow-gold: 0 0 20px rgba(251, 191, 36, 0.15);
-            --transition-fast: 0.2s ease;
-            --transition-smooth: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
         }
-        
-        
-        
-        
-        /* =========================================
-           2. LAYOUT UTILITIES
-           ========================================= */
-        
-        section {
-            margin-bottom: 6rem;
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
         }
-        
-        .section-header {
-            text-align: center;
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header Styles */
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: flex;
+            align-items: stretch;
+            gap: 1rem;
             margin-bottom: 3rem;
         }
-        
-        .section-header h2 {
-            background: linear-gradient(to right, #fff, var(--text-muted));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-        
-        .section-header p {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
-        
-        /* =========================================
-           3. HERO SECTION
-           ========================================= */
-        .hero-section {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 4rem;
-            min-height: 80vh;
-            padding: 2rem 0;
-        }
-        
-        .hero-content {
-            display: flex;
-            flex-direction: row;
-            width: 100%;
-            align-items: center;
-        }
-        
-        .hero-text {
+
+        .reality-check-grid > .panel {
             flex: 1;
-            max-width: 600px;
         }
-        
-        .hero-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            background: rgba(34, 211, 238, 0.1);
-            color: var(--accent-cyan);
-            border: 1px solid rgba(34, 211, 238, 0.2);
-            border-radius: 100px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        
-        .hero-title {
-            font-size: 3.5rem;
-            line-height: 1.1;
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .hero-subtitle {
-            font-size: 1.125rem;
-            color: var(--text-muted);
-            margin-bottom: 2.5rem;
-            max-width: 90%;
-        }
-        
-        .hero-actions {
-            display: flex;
-            gap: 1rem;
-        }
-        
-        /* Buttons */
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-cyan), #0ea5e9);
-            color: #fff;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            transition: var(--transition-fast);
-            box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3);
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
-        }
-        
-        .btn-secondary {
-            background: transparent;
-            color: var(--text-color);
-            padding: 0.75rem 1.5rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            font-weight: 600;
-        }
-        
-        .btn-secondary:hover {
-            border-color: var(--text-color);
-            background: rgba(255,255,255,0.05);
-        }
-        
-        /* Hero Visual (Abstract 3D CSS) */
-        .hero-visual {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-        
-        .visual-placeholder {
-            width: 400px;
-            height: 400px;
-            position: relative;
-            /* Mathematical grid background */
-            background-image: 
-                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .sphere {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(20px);
-            opacity: 0.6;
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        .sphere-left {
-            width: 150px;
-            height: 150px;
-            background: var(--accent-cyan);
-            left: 20%;
-            top: 30%;
-            animation-delay: 0s;
-        }
-        
-        .sphere-right {
-            width: 120px;
-            height: 120px;
-            background: var(--accent-gold);
-            right: 20%;
-            bottom: 30%;
-            animation-delay: 3s;
-        }
-        
-        .connection-filaments {
-            width: 200px;
-            height: 200px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-            position: absolute;
-            animation: morph 10s linear infinite;
-            box-shadow: inset 0 0 20px rgba(168, 85, 247, 0.2);
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-        
-        @keyframes morph {
-            0% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg); }
-            50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-            100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(360deg); }
-        }
-        
-        /* =========================================
-           4. FEATURES GRID
-           ========================================= */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-        
-        .feature-card {
-            background: var(--surface-color);
-            padding: 2rem;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-color);
-            transition: var(--transition-smooth);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-cyan);
-            box-shadow: var(--shadow-glow-cyan);
-        }
-        
-        .icon-container {
-            width: 48px;
-            height: 48px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--accent-cyan);
-        }
-        
-        .feature-card h3 {
-            font-size: 1.25rem;
-            margin-bottom: 0.75rem;
-            color: var(--text-color);
-        }
-        
-        .feature-card p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-        
-        /* =========================================
-           5. INTERACTIVE SIMULATOR
-           ========================================= */
-        .simulator-section {
-            scroll-margin-top: 100px;
-        }
-        
-        .simulator-container {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 0; /* Seamless look */
-            background: var(--surface-color);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            min-height: 650px;
-        }
-        
-        /* Left Column: Config */
-        .sim-config-panel {
+
+        .panel {
             background: var(--bg-panel);
-            padding: 1.5rem;
-            border-right: 1px solid var(--border-color);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
             display: flex;
             flex-direction: column;
         }
-        
+
         .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
+            gap: 0.5rem;
         }
-        
-        .panel-header h3 {
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #d1d5db;
         }
-        
-        .status-indicator {
-            font-size: 0.75rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            background: rgba(74, 222, 128, 0.1);
-            color: var(--success-color);
-            border: 1px solid rgba(74, 222, 128, 0.2);
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
         }
-        
-        /* Form Styling */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-group label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: var(--text-color);
-        }
-        
-        .required { color: var(--accent-cyan); }
-        
-        .form-group input[type="text"],
-        .form-group textarea,
-        .form-group select {
-            width: 100%;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 0.75rem;
-            border-radius: var(--radius-md);
-            font-family: inherit;
+
+        /* Mock UI Styles */
+        .mock-ui-content {
+            padding: 1rem;
             font-size: 0.9rem;
-            transition: var(--transition-fast);
         }
-        
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.2);
-        }
-        
-        .hint {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 0.4rem;
-        }
-        
-        /* Range Slider */
-        .label-row {
+
+        .tab-strip {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 10px;
         }
-        
-        .value-display {
-            font-family: monospace;
-            color: var(--accent-cyan);
+
+        .mock-tab {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-subtle);
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            background: #21262d;
         }
-        
-        .range-slider {
-            width: 100%;
-            height: 6px;
-            background: var(--bg-input);
-            border-radius: 3px;
-            outline: none;
-            -webkit-appearance: none;
+
+        .mock-tab.active {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--bg-panel);
+            margin-bottom: -1px;
+            color: var(--accent-primary);
         }
-        
-        .range-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            background: var(--accent-cyan);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        
-        .range-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
-        
-        /* Toggle Switch */
-        .toggle-group {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-        }
-        
-        .switch input { opacity: 0; width: 0; height: 0; }
-        
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: var(--bg-input);
-            transition: .4s;
-            border-radius: 24px;
-        }
-        
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        
-        input:checked + .slider { background-color: var(--accent-cyan); }
-        input:checked + .slider:before { transform: translateX(20px); }
-        
-        /* Form Actions */
-        .form-actions { margin-top: auto; padding-top: 1rem; }
-        .full-width { width: 100%; display: flex; justify-content: center; align-items: center; }
-        
-        /* Right Column: Output */
-        .sim-output-panel {
-            display: flex;
-            flex-direction: column;
-            background: #131c2e;
-        }
-        
+
+        /* Tabs System */
         .tabs-nav {
             display: flex;
-            border-bottom: 1px solid var(--border-color);
-            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
         }
-        
-        .tab-btn {
-            padding: 1rem 1.5rem;
-            background: transparent;
-            color: var(--text-muted);
-            font-weight: 500;
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
             border-bottom: 2px solid transparent;
-            transition: var(--transition-fast);
+            transition: all 0.2s;
         }
-        
-        .tab-btn:hover { color: var(--text-color); background: rgba(255,255,255,0.02); }
-        .tab-btn.active {
-            color: var(--accent-cyan);
-            border-bottom-color: var(--accent-cyan);
-            background: rgba(34, 211, 238, 0.05);
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
         }
-        
-        .tab-content {
-            padding: 1.5rem;
-            flex: 1;
-            overflow-y: auto;
+
+        .tab-pane {
             display: none;
+            animation: fadeIn 0.3s ease-in-out;
         }
-        
-        .tab-content.active { display: block; }
-        
-        /* Empty State */
-        .empty-state {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            text-align: center;
-            padding: 2rem;
+
+        .tab-pane.active {
+            display: block;
         }
-        
-        .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
-        
-        /* Live Stats */
-        .live-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        
-        .stat-card {
-            background: var(--bg-input);
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th {
+            text-align: left;
             padding: 0.75rem;
-            border-radius: var(--radius-sm);
-            text-align: center;
-        }
-        
-        .stat-label { display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
-        .stat-value { display: block; font-size: 1.1rem; font-weight: 700; color: var(--text-color); }
-        .status-text { color: var(--accent-gold); font-size: 0.9rem; }
-        
-        /* Typing Indicator */
-        .current-action-display {
-            background: rgba(34, 211, 238, 0.05);
-            border: 1px solid rgba(34, 211, 238, 0.2);
-            padding: 1rem;
-            border-radius: var(--radius-md);
-        }
-        
-        .current-action-display h4 { font-size: 0.8rem; text-transform: uppercase; color: var(--accent-cyan); margin-bottom: 0.5rem; }
-        .agent-name { font-weight: bold; color: var(--text-color); }
-        
-        /* Code/Transcript */
-        .code-block-container {
-            background: #000;
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.9rem;
-            color: #d1d5db;
-            height: 100%;
-            overflow-y: auto;
-        }
-        
-        /* Terminal */
-        .terminal-window {
-            background: #0c0c0c;
-            color: #4ade80;
-            font-family: 'Courier New', monospace;
-            padding: 1rem;
-            border-radius: var(--radius-md);
-            height: 100%;
-            overflow-y: auto;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
             font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
-        
-        .terminal-line { margin-bottom: 0.5rem; }
-        .timestamp { color: #64748b; margin-right: 0.5rem; }
-        
-        /* Utility Classes for JS */
-        .hidden { display: none !important; }
-        
-        /* =========================================
-           6. WORKFLOW SECTION
-           ========================================= */
-        .workflow-steps {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            position: relative;
-            padding: 2rem 0;
+
+        .docs-table td {
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
         }
-        
-        .step-card {
-            flex: 1;
-            background: var(--surface-color);
-            padding: 2rem;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-color);
-            position: relative;
-            z-index: 2;
-            text-align: center;
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
         }
-        
-        .step-number {
-            font-size: 3rem;
-            font-weight: 900;
-            color: rgba(255,255,255,0.05);
-            position: absolute;
-            top: 0.5rem;
-            right: 1rem;
-            line-height: 1;
-        }
-        
-        .step-card h3 { color: var(--accent-cyan); margin-bottom: 1rem; }
-        
-        .step-connector {
-            flex: 0 0 50px;
-            height: 2px;
-            background: var(--border-color);
-            margin-top: 3rem; /* Align with card center approx */
-            position: relative;
-        }
-        
-        .step-connector::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: -4px;
-            width: 0; 
-            height: 0; 
-            border-top: 5px solid transparent;
-            border-bottom: 5px solid transparent;
-            border-left: 8px solid var(--border-color);
-        }
-        
-        /* =========================================
-           7. USE CASES
-           ========================================= */
-        .use-cases-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-        
-        .use-case-card {
-            background: linear-gradient(180deg, var(--surface-color) 0%, var(--background-color) 100%);
-            border: 1px solid var(--border-color);
-            padding: 1.5rem;
-            border-radius: var(--radius-md);
-            border-left: 4px solid var(--accent-gold);
-        }
-        
-        .use-case-card h3 {
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-color);
-        }
-        
-        .use-case-card p {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-        
-        /* =========================================
-           8. FOOTER
-           ========================================= */
-        .site-footer {
-            background: var(--surface-color);
-            border-top: 1px solid var(--border-color);
-            padding: 3rem 0;
-            margin-top: 4rem;
-        }
-        
-        .footer-content {
-            max-width: var(--container-max-width);
-            margin: 0 auto;
-            padding: 0 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .footer-brand {
-            font-weight: 800;
-            font-size: 1.25rem;
-            color: var(--text-color);
-        }
-        
-        .footer-links {
-            display: flex;
-            gap: 2rem;
-        }
-        
-        .footer-links a {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-        
-        .footer-links a:hover { color: var(--accent-cyan); }
-        
-        .footer-copyright {
-            color: var(--text-muted);
+        .docs-table .type-label {
+            font-family: var(--font-mono);
             font-size: 0.8rem;
+            color: var(--text-dim);
         }
-        
-        /* =========================================
-           9. RESPONSIVE DESIGN
-           ========================================= */
-        @media (max-width: 900px) {
-            .hero-section {
-                flex-direction: column;
-                text-align: center;
-                gap: 2rem;
-            }
-        
-            .hero-text { max-width: 100%; }
-            .hero-actions { justify-content: center; }
-        
-            .simulator-container {
-                grid-template-columns: 1fr;
-                min-height: auto;
-            }
-        
-            .sim-config-panel {
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-            }
-        
-            .sim-output-panel {
-                min-height: 400px;
-            }
-        
-            .workflow-steps {
-                flex-direction: column;
-                gap: 1.5rem;
-            }
-        
-            .step-connector {
-                display: none;
-            }
-        }
-        
-        @media (max-width: 600px) {
-            .hero-title { font-size: 2.5rem; }
-        
-            .tabs-nav {
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-        
-            .footer-content {
-                flex-direction: column;
-                gap: 1.5rem;
-                text-align: center;
-            }
+
+
+        .req { color: #f85149; margin-left: 4px; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
         }
     </style>
-<!-- Generated Images:
-     - socratic-dialogue-hero.png: A high-quality, abstract 3D illustration representing Socratic dialogue and dialectic reasoning. Two glowing, translucent spheres (one cyan, one gold) floating in a dark void. Between them, intricate filaments of light are weaving together, representing the exchange of arguments. The filaments form a complex geometric knot in the center, symbolizing synthesis. The background is a deep slate blue with faint mathematical grid lines.
-     - dialectic-process-flow.png: A wide, isometric 3D diagram on a dark background representing the workflow. On the left, a stack of digital documents glows with blue wireframe edges (Input). In the center, two stylized abstract geometric nodes orbit each other, connected by cycling arrows of light in Cyan and Gold, indicating a recursive feedback loop (The Exchange). On the right, a beam of purple light projects upwards from the center loop, forming a structured, crystallized data block (Synthesis). The style is clean, neon, and "Future-Professional".
-     - synthesis-crystal-abstract.png: An abstract 3D render representing a "crystallized insight" for the Synthesis output section. A glowing, multi-faceted geometric gem floats in the center of the frame, composed of compacted data streams and light. The gem glows with an inner gold light, casting soft purple reflections on a dark, reflective floor. Surrounding the gem are faint, dissipating clouds of grey "noise," symbolizing the clarity achieved through the dialogue process.
--->
 </head>
 <body>
 
-    <!-- Navigation Component -->
-    <!-- Highlighting 'examples' or specific ID if configured in tasks.json -->
-    <cognotik-header current-page="socratic-dialogue"></cognotik-header>
+<cognotik-header current-page="tasks"></cognotik-header>
 
-    <main class="task-container">
-        
-        <!-- HERO SECTION -->
-        <section class="hero-section">
-            <div class="hero-content">
-                <div class="hero-text">
-                    <span class="hero-badge">Reasoning Engine</span>
-                    <h1 class="hero-title">Socratic Dialogue</h1>
-                    <p class="hero-subtitle">
-                        Explore complex ideas through rigorous, automated questioning. 
-                        This task orchestrates a dialectic between a Questioner and a Responder to uncover hidden assumptions, 
-                        identify contradictions, and synthesize deep insights from your initial hypothesis.
-                    </p>
-                    <div class="hero-actions">
-                        <button class="btn-primary" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
-                            Try the Simulator
-                        </button>
-                        <a href="#workflow" class="btn-secondary">How it Works</a>
-                    </div>
-                </div>
-                <div class="hero-visual">
-                    <!-- Abstract 3D representation of the task -->
-                    <img src="assets/images/socratic-dialogue-hero.png"
-                         alt="Abstract 3D illustration of Socratic dialogue showing two glowing spheres (cyan and gold) connected by weaving filaments of light forming a synthesis knot" 
-                         class="hero-image glow-effect">
-                </div>
-            </div>
-        </section>
+<main class="task-container">
 
-        <!-- FEATURES GRID -->
-        <section class="features-section">
-            <div class="section-header">
-                <h2>Core Capabilities</h2>
-                <p>Powered by multi-agent recursive logic</p>
-            </div>
-            <div class="features-grid">
-                <!-- Feature 1 -->
-                <div class="feature-card">
-                    <div class="icon-container">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    </div>
-                    <h3>Dual-Agent Dialectic</h3>
-                    <p>Orchestrates a debate between a "Questioner" and a "Responder" to simulate rigorous critical thinking.</p>
-                </div>
-                <!-- Feature 2 -->
-                <div class="feature-card">
-                    <div class="icon-container">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-                    </div>
-                    <h3>Assumption Challenger</h3>
-                    <p>Actively identifies and challenges the underlying premises of arguments rather than just accepting surface-level answers.</p>
-                </div>
-                <!-- Feature 3 -->
-                <div class="feature-card">
-                    <div class="icon-container">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    </div>
-                    <h3>Context Aware</h3>
-                    <p>Ingests local files via glob patterns to ground the dialogue in specific documentation or codebases.</p>
-                </div>
-                <!-- Feature 4 -->
-                <div class="feature-card">
-                    <div class="icon-container">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-                    </div>
-                    <h3>Automated Synthesis</h3>
-                    <p>Compiles the back-and-forth exchange into a structured report highlighting key insights and contradictions.</p>
-                </div>
-                <!-- Feature 5 -->
-                <div class="feature-card">
-                    <div class="icon-container">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                    </div>
-                    <h3>Domain Constraints</h3>
-                    <p>Keeps the conversation focused by applying strict topic boundaries to the agents.</p>
-                </div>
-                <!-- Feature 6 -->
-                <div class="feature-card">
-                    <div class="icon-container">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-                    </div>
-                    <h3>Configurable Depth</h3>
-                    <p>Control the number of exchange cycles (1-20) to balance speed vs. depth of inquiry.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- INTERACTIVE SIMULATOR -->
-        <section id="simulator" class="simulator-section">
-            <div class="simulator-container">
-                
-                <!-- Left Column: Configuration -->
-                <div class="sim-config-panel">
-                    <div class="panel-header">
-                        <h3>Execution Configuration</h3>
-                        <span class="status-indicator idle">Ready</span>
-                    </div>
-                    
-                    <form id="task-config-form" onsubmit="return false;">
-                        <!-- Initial Question -->
-                        <div class="form-group">
-                            <label for="initial_question">Initial Question / Hypothesis <span class="required">*</span></label>
-                            <textarea id="initial_question" rows="3" placeholder="e.g., Is microservices architecture suitable for our low-latency trading platform?"></textarea>
-                            <small class="hint">The starting point for the inquiry.</small>
-                        </div>
-
-                        <!-- Domain Constraints -->
-                        <div class="form-group">
-                            <label for="domain_constraints">Domain Constraints</label>
-                            <input type="text" id="domain_constraints" placeholder="e.g., System Performance, Network Latency, Cost">
-                            <small class="hint">Comma-separated topics to constrain the dialogue.</small>
-                        </div>
-
-                        <!-- Input Files -->
-                        <div class="form-group">
-                            <label for="input_files">Context Files (Glob Patterns)</label>
-                            <input type="text" id="input_files" placeholder="e.g., src/main/**/*.kt, docs/*.md">
-                        </div>
-
-                        <!-- Max Depth Slider -->
-                        <div class="form-group">
-                            <div class="label-row">
-                                <label for="max_depth">Dialogue Depth (Exchanges)</label>
-                                <span id="depth-value" class="value-display">5</span>
-                            </div>
-                            <input type="range" id="max_depth" min="1" max="20" value="5" class="range-slider">
-                        </div>
-
-                        <!-- Challenge Assumptions Toggle -->
-                        <div class="form-group toggle-group">
-                            <label for="challenge_assumptions">Challenge Assumptions</label>
-                            <label class="switch">
-                                <input type="checkbox" id="challenge_assumptions" checked>
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="button" id="run-simulation-btn" class="btn-primary full-width">
-                                <span class="btn-text">Start Dialogue</span>
-                                <span class="loader hidden"></span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Right Column: Visualization/Output -->
-                <div class="sim-output-panel">
-                    <!-- Output Tabs -->
-                    <div class="tabs-nav">
-                        <button class="tab-btn active" data-tab="overview">Overview</button>
-                        <button class="tab-btn" data-tab="transcript">Transcript</button>
-                        <button class="tab-btn" data-tab="synthesis">Synthesis</button>
-                        <button class="tab-btn" data-tab="logs">System Logs</button>
-                    </div>
-
-                    <!-- Tab Content: Overview -->
-                    <div id="tab-overview" class="tab-content active">
-                        <div class="empty-state">
-                            <div class="empty-icon">💬</div>
-                            <p>Configure the task on the left and click "Start Dialogue" to begin the Socratic process.</p>
-                        </div>
-                        <div class="live-stats hidden">
-                            <div class="stat-card">
-                                <span class="stat-label">Exchange</span>
-                                <span class="stat-value" id="stat-exchange">0/5</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="stat-label">Time Elapsed</span>
-                                <span class="stat-value" id="stat-time">0.0s</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="stat-label">Status</span>
-                                <span class="stat-value status-text">Initializing...</span>
-                            </div>
-                        </div>
-                        <div class="current-action-display hidden">
-                            <h4>Current Action</h4>
-                            <div class="typing-indicator">
-                                <span class="agent-name">Questioner Agent</span> is formulating a challenge...
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tab Content: Transcript -->
-                    <div id="tab-transcript" class="tab-content">
-                        <div class="code-block-container">
-                            <pre><code class="language-markdown" id="transcript-output">// Dialogue transcript will appear here...</code></pre>
-                        </div>
-                    </div>
-
-                    <!-- Tab Content: Synthesis -->
-                    <div id="tab-synthesis" class="tab-content">
-                        <div class="synthesis-container">
-                            <img src="assets/images/synthesis-crystal-abstract.png"
-                                 alt="Glowing geometric crystal representing synthesized insights and clarity" 
-                                 class="synthesis-visual">
-                            <div class="skeleton-loader"></div>
-                        </div>
-                    </div>
-
-                    <!-- Tab Content: Logs -->
-                    <div id="tab-logs" class="tab-content">
-                        <div class="terminal-window">
-                            <div class="terminal-line"><span class="timestamp">[System]</span> Waiting for input...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- WORKFLOW VISUALIZATION -->
-        <section id="workflow" class="workflow-section">
-            <div class="section-header">
-                <h2>The Dialectic Process</h2>
-                <p>How the Socratic Dialogue Task constructs knowledge</p>
-            </div>
-            
-            <div class="workflow-visual-container">
-                <img src="assets/images/dialectic-process-flow.png"
-                     alt="Isometric 3D diagram showing the workflow: Input documents feed into a recursive exchange loop between two nodes, which then outputs a crystallized synthesis" 
-                     class="workflow-diagram">
-            </div>
-
-            <div class="workflow-steps">
-                <div class="step-card">
-                    <div class="step-number">01</div>
-                    <h3>Initialization</h3>
-                    <p>The system ingests the initial hypothesis and context files, then instantiates two distinct personas: a Questioner and a Responder.</p>
-                </div>
-                <div class="step-connector"></div>
-                <div class="step-card">
-                    <div class="step-number">02</div>
-                    <h3>Recursive Exchange</h3>
-                    <p>The Questioner challenges the Responder's previous statement. The Responder clarifies or revises. This loop repeats for the configured depth.</p>
-                </div>
-                <div class="step-connector"></div>
-                <div class="step-card">
-                    <div class="step-number">03</div>
-                    <h3>Synthesis</h3>
-                    <p>Once the depth limit is reached, a third process analyzes the entire transcript to extract insights, contradictions, and conclusions.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- USE CASES -->
-        <section class="use-cases-section">
-            <div class="section-header">
-                <h2>When to Use</h2>
-            </div>
-            <div class="use-cases-grid">
-                <div class="use-case-card">
-                    <h3>Research Validation</h3>
-                    <p>Before committing to a research path, use the dialogue to find holes in your initial hypothesis or experimental design.</p>
-                </div>
-                <div class="use-case-card">
-                    <h3>Architectural Review</h3>
-                    <p>Feed system design documents as context and ask the agent to challenge the scalability or security assumptions of the architecture.</p>
-                </div>
-                <div class="use-case-card">
-                    <h3>Ethical Analysis</h3>
-                    <p>Explore the potential downstream consequences of a product decision by constraining the domain to "Ethics" and "Society".</p>
-                </div>
-                <div class="use-case-card">
-                    <h3>Learning & Study</h3>
-                    <p>Use the tool to deepen your own understanding of a complex topic by observing the agents debate definitions and principles.</p>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Footer -->
-    <footer class="site-footer">
-        <div class="footer-content">
-            <div class="footer-brand">Cognotik</div>
-            <div class="footer-links">
-                <a href="#">Documentation</a>
-                <a href="#">API Reference</a>
-                <a href="#">Support</a>
-            </div>
-            <div class="footer-copyright">&copy; 2024 Simiacryptus. All rights reserved.</div>
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > SocraticDialogueTask</div>
+        <h1>SocraticDialogueTask</h1>
+        <p class="pitch">
+            Explore ideas through Socratic questioning. This task orchestrates a dialogue between specialized Questioner and Responder agents to challenge assumptions, explore implications, and identify contradictions.
+        </p>
+        <div class="badges">
+            <span class="badge">Reasoning</span>
+            <span class="badge">Side-Effect: Safe</span>
+            <span class="badge">Multi-Agent</span>
         </div>
-    </footer>
+    </header>
 
-    <!-- Page Specific Logic Placeholder -->
-    <script>
-        // JavaScript logic for the simulator will be added here
-    </script>
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚙️</span> ExecutionConfig.json
+            </div>
+            <pre><code>{
+  "initial_question": "Can AI possess true creativity?",
+  "input_files": ["docs/theory_of_mind.md"],
+  "max_depth": 5,
+  "challenge_assumptions": true,
+  "domain_constraints": ["Philosophy", "Computer Science"]
+}</code></pre>
+        </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // ==========================================
-            // DOM Elements
-            // ==========================================
-            const configForm = document.getElementById('task-config-form');
-            const runBtn = document.getElementById('run-simulation-btn');
-            const btnText = runBtn.querySelector('.btn-text');
-            const btnLoader = runBtn.querySelector('.loader');
-        
-            // Inputs
-            const inputQuestion = document.getElementById('initial_question');
-            const inputDepth = document.getElementById('max_depth');
-            const displayDepth = document.getElementById('depth-value');
-            const inputDomain = document.getElementById('domain_constraints');
-            const inputFiles = document.getElementById('input_files');
-            const inputChallenge = document.getElementById('challenge_assumptions');
-        
-            // Output Areas
-            const tabButtons = document.querySelectorAll('.tab-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
-        
-            // Overview Tab Elements
-            const emptyState = document.querySelector('.empty-state');
-            const liveStats = document.querySelector('.live-stats');
-            const currentActionDisplay = document.querySelector('.current-action-display');
-            const statExchange = document.getElementById('stat-exchange');
-            const statTime = document.getElementById('stat-time');
-            const statusText = document.querySelector('.status-text');
-            const agentName = document.querySelector('.agent-name');
-            const typingIndicator = document.querySelector('.typing-indicator');
-        
-            // Other Tabs
-            const transcriptOutput = document.getElementById('transcript-output');
-            const synthesisContainer = document.querySelector('.synthesis-container');
-            const terminalWindow = document.querySelector('.terminal-window');
-        
-            // ==========================================
-            // State & Constants
-            // ==========================================
-            let isRunning = false;
-            let simulationInterval = null;
-            let startTime = 0;
-        
-            // Mock templates to make the simulation feel "real"
-            const questionTemplates = [
-                "What are the fundamental premises underlying this assumption?",
-                "If we accept this definition, how do we account for edge cases in {domain}?",
-                "Does this conclusion necessarily follow, or is there a hidden variable?",
-                "How does this align with the constraints defined in {files}?",
-                "Are we conflating correlation with causation in this instance?"
-            ];
-        
-            const responseTemplates = [
-                "Acknowledging the ambiguity. Let me refine the definition...",
-                "Upon review of the context files, the constraint appears to be...",
-                "That is a valid contradiction. Revising the hypothesis to account for...",
-                "The implication holds true only if we assume strict adherence to...",
-                "Synthesizing the previous points, we can establish that..."
-            ];
-        
-            // ==========================================
-            // Event Listeners
-            // ==========================================
-        
-            // 1. Range Slider Update
-            inputDepth.addEventListener('input', (e) => {
-                displayDepth.textContent = e.target.value;
-            });
-        
-            // 2. Tab Switching Logic
-            tabButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    // Remove active class from all
-                    tabButtons.forEach(b => b.classList.remove('active'));
-                    tabContents.forEach(c => c.classList.remove('active'));
-        
-                    // Add active class to clicked
-                    btn.classList.add('active');
-                    const tabId = btn.getAttribute('data-tab');
-                    document.getElementById(`tab-${tabId}`).classList.add('active');
-                });
-            });
-        
-            // 3. Run Simulation
-            runBtn.addEventListener('click', handleSimulationStart);
-        
-            // ==========================================
-            // Core Logic
-            // ==========================================
-        
-            async function handleSimulationStart() {
-                if (isRunning) return;
-        
-                // Validation
-                if (!inputQuestion.value.trim()) {
-                    alert("Please enter an initial question or hypothesis.");
-                    inputQuestion.focus();
-                    return;
-                }
-        
-                // UI Reset & Setup
-                isRunning = true;
-                setLoadingState(true);
-                resetOutput();
-                switchToTab('overview');
-        
-                // Configuration Data
-                const config = {
-                    question: inputQuestion.value,
-                    depth: parseInt(inputDepth.value),
-                    domain: inputDomain.value || "General Logic",
-                    files: inputFiles.value || "None",
-                    challenge: inputChallenge.checked
-                };
-        
-                // Start Timer
-                startTime = Date.now();
-                startTimerDisplay();
-        
-                // Log Initialization
-                logSystem(`Initializing Socratic Dialogue Task...`);
-                logSystem(`Loading context from: ${config.files}`);
-                logSystem(`Spawning agents: Questioner (Temperature 0.7), Responder (Temperature 0.5)`);
-        
-                await wait(1500); // Simulate boot time
-        
-                // Initial Transcript Setup
-                updateTranscript(`# Socratic Dialogue Transcript\n\n**Topic:** ${config.question}\n**Domain:** ${config.domain}\n---\n\n`);
-        
-                // Main Dialectic Loop
-                for (let i = 1; i <= config.depth; i++) {
-                    updateExchangeStat(i, config.depth);
-            
-                    // --- Phase 1: Questioner ---
-                    updateAction("Questioner Agent", "analyzing previous response...");
-                    await wait(1000);
-            
-                    updateAction("Questioner Agent", "formulating challenge...");
-                    await wait(1500);
-            
-                    const qText = generateMockText(questionTemplates, config.domain, config.files);
-                    logSystem(`[Exchange ${i}] Questioner: ${qText.substring(0, 40)}...`);
-                    updateTranscript(`### Exchange ${i}: Question\n**Q:** ${qText}\n\n`);
-        
-                    // --- Phase 2: Responder ---
-                    updateAction("Responder Agent", "consulting context files...");
-                    await wait(1000);
-        
-                    updateAction("Responder Agent", "drafting rebuttal...");
-                    await wait(1500);
-        
-                    const rText = generateMockText(responseTemplates, config.domain, config.files);
-                    logSystem(`[Exchange ${i}] Responder: ${rText.substring(0, 40)}...`);
-                    updateTranscript(`**A:** ${rText}\n\n---\n\n`);
-                }
-        
-                // --- Phase 3: Synthesis ---
-                updateAction("System", "synthesizing insights...");
-                statusText.textContent = "Synthesizing...";
-                statusText.style.color = "var(--accent-gold)";
-        
-                logSystem(`Max depth reached. Initiating synthesis protocol.`);
-                await wait(2000);
-        
-                generateSynthesis(config);
-                logSystem(`Synthesis complete. Task finished.`);
-        
-                // Cleanup
-                finishSimulation();
-            }
-        
-            // ==========================================
-            // Helper Functions
-            // ==========================================
-        
-            function setLoadingState(loading) {
-                if (loading) {
-                    runBtn.classList.add('loading');
-                    btnText.textContent = "Processing...";
-                    btnLoader.classList.remove('hidden');
-            
-                    // Show stats, hide empty state
-                    emptyState.classList.add('hidden');
-                    liveStats.classList.remove('hidden');
-                    currentActionDisplay.classList.remove('hidden');
-                    statusText.textContent = "Active";
-                    statusText.classList.remove('idle');
-                    statusText.style.color = "var(--accent-cyan)";
-                } else {
-                    runBtn.classList.remove('loading');
-                    btnText.textContent = "Start Dialogue";
-                    btnLoader.classList.add('hidden');
-            
-                    statusText.textContent = "Complete";
-                    statusText.style.color = "var(--accent-green)";
-                    currentActionDisplay.classList.add('hidden');
-                }
-            }
-        
-            function resetOutput() {
-                transcriptOutput.textContent = "";
-                terminalWindow.innerHTML = '<div class="terminal-line"><span class="timestamp">[System]</span> Ready.</div>';
-                synthesisContainer.innerHTML = '<div class="skeleton-loader"></div>';
-                statExchange.textContent = "0/" + inputDepth.value;
-                statTime.textContent = "0.0s";
-            }
-        
-            function startTimerDisplay() {
-                simulationInterval = setInterval(() => {
-                    const elapsed = (Date.now() - startTime) / 1000;
-                    statTime.textContent = elapsed.toFixed(1) + "s";
-                }, 100);
-            }
-        
-            function finishSimulation() {
-                isRunning = false;
-                clearInterval(simulationInterval);
-                setLoadingState(false);
-        
-                // Auto-switch to synthesis tab after a brief delay to show completion
-                setTimeout(() => {
-                    switchToTab('synthesis');
-                }, 1000);
-            }
-        
-            function updateExchangeStat(current, total) {
-                statExchange.textContent = `${current}/${total}`;
-            }
-        
-            function updateAction(agent, action) {
-                agentName.textContent = agent;
-                // Reset animation by replacing text
-                const span = typingIndicator.querySelector('span'); // agent name span
-                typingIndicator.innerHTML = ''; 
-                typingIndicator.appendChild(span);
-                typingIndicator.append(` is ${action}`);
-            }
-        
-            function logSystem(msg) {
-                const line = document.createElement('div');
-                line.className = 'terminal-line';
-                const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-                line.innerHTML = `<span class="timestamp">[${time}]</span> ${msg}`;
-                terminalWindow.appendChild(line);
-                terminalWindow.scrollTop = terminalWindow.scrollHeight;
-            }
-        
-            function updateTranscript(text) {
-                transcriptOutput.textContent += text;
-                // Auto scroll transcript if user is looking at it
-                const container = transcriptOutput.parentElement;
-                container.scrollTop = container.scrollHeight;
-            }
-        
-            function switchToTab(tabId) {
-                const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
-                if(btn) btn.click();
-            }
-        
-            function generateMockText(templates, domain, files) {
-                const template = templates[Math.floor(Math.random() * templates.length)];
-                return template
-                    .replace('{domain}', domain)
-                    .replace('{files}', files.split(',')[0]); // simple replacement
-            }
-        
-            function generateSynthesis(config) {
-                const html = `
-                    <div class="synthesis-report">
-                        <h4>Dialectic Synthesis Report</h4>
-                        <p><strong>Hypothesis:</strong> ${config.question}</p>
-                
-                        <div class="insight-box">
-                            <h5>Key Contradiction Identified</h5>
-                            <p>The dialogue revealed a tension between the initial assumption of <em>${config.domain}</em> efficiency and the practical constraints found in the context files.</p>
-                        </div>
-        
-                        <ul class="insight-list">
-                            <li><strong>Assumption Challenged:</strong> The premise that linear scaling is possible was refuted in Exchange 3.</li>
-                            <li><strong>Definition Refined:</strong> "Latency" was redefined to include network overhead, not just processing time.</li>
-                            <li><strong>Conclusion:</strong> The hypothesis holds true only under specific boundary conditions.</li>
-                        </ul>
-        
-                        <div class="code-snippet">
-                            <span class="lang-tag">Suggested Action</span>
-                            <pre>Refactor module X to decouple state management from the core logic loop.</pre>
-                        </div>
-                    </div>
-                `;
-                synthesisContainer.innerHTML = html;
-            }
-        
-            // Utility for async delays
-            const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-        });
-    </script>
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️</span> TabbedDisplay Output
+            </div>
+            <div class="mock-ui-content">
+                <div class="tab-strip">
+                    <div class="mock-tab">Overview</div>
+                    <div class="mock-tab active">Exchange 1</div>
+                    <div class="mock-tab">Synthesis</div>
+                </div>
+                <div style="border: 1px solid var(--border-subtle); padding: 10px; border-radius: 4px; background: #0d1117;">
+                    <div style="color: var(--accent-primary); font-weight: bold; margin-bottom: 8px;">Question</div>
+                    <div style="font-style: italic; color: var(--text-dim); margin-bottom: 12px;">"How do you define 'true' creativity in a way that excludes algorithmic generation?"</div>
+                    <div style="color: #4ade80; font-weight: bold; margin-bottom: 8px;">Response</div>
+                    <div style="font-size: 0.85rem;">"True creativity often implies intent and subjective experience, which current LLMs lack..."</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process & Logic</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>initial_question</code><span class="req">*</span></td>
+                    <td><span class="type-label">String</span></td>
+                    <td>The starting hypothesis or question to explore.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td><span class="type-label">List&lt;String&gt;</span></td>
+                    <td>Optional glob patterns for files to provide context (e.g., source code or docs).</td>
+                </tr>
+                <tr>
+                    <td><code>max_depth</code></td>
+                    <td><span class="type-label">Int</span></td>
+                    <td>Number of Q&A exchanges. Default: <code>5</code>. Range: <code>1-20</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>challenge_assumptions</code></td>
+                    <td><span class="type-label">Boolean</span></td>
+                    <td>If true, the questioner agent will actively look for and challenge logical leaps.</td>
+                </tr>
+                <tr>
+                    <td><code>domain_constraints</code></td>
+                    <td><span class="type-label">List&lt;String&gt;</span></td>
+                    <td>Limits the dialogue to specific fields (e.g., "Legal", "Physics").</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Process Lifecycle</h3>
+            <ol style="color: var(--text-dim); line-height: 2;">
+                <li><strong style="color: var(--text-main)">Initialization:</strong> Loads context from <code>input_files</code> and validates the <code>initial_question</code>.</li>
+                <li><strong style="color: var(--text-main)">Agent Creation:</strong> Spawns two distinct <code>ChatAgent</code> instances:
+                    <ul>
+                        <li><strong>Questioner:</strong> Probes for contradictions and fundamental principles.</li>
+                        <li><strong>Responder:</strong> Provides reasoned answers and acknowledges uncertainty.</li>
+                    </ul>
+                </li>
+                <li><strong style="color: var(--text-main)">Dialogue Loop:</strong> Iterates through <code>max_depth</code>. Each step is rendered in a new UI tab.</li>
+                <li><strong style="color: var(--text-main)">Synthesis:</strong> After the loop, the Responder agent reviews the entire transcript to summarize key insights.</li>
+                <li><strong style="color: var(--text-main)">Artifact Generation:</strong> Produces a full Markdown transcript and links to HTML/PDF versions.</li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Kotlin Usage</h3>
+            <pre><code class="language-kotlin">val task = SocraticDialogueTask(
+    orchestrationConfig,
+    SocraticDialogueTaskExecutionConfigData(
+        initial_question = "Is the P vs NP problem solvable via heuristic search?",
+        input_files = listOf("src/**/*.kt"),
+        max_depth = 8,
+        challenge_assumptions = true,
+        domain_constraints = listOf("Computer Science", "Mathematics")
+    )
+)</code></pre>
+
+            <h3>Prompt Segment</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">The following text is injected into the orchestrator's context to describe this tool:</p>
+            <pre style="background: #000;"><code>SocraticDialogue - Explore ideas through Socratic questioning
+** Specify the initial question or hypothesis to explore
+** Optionally provide input files (supports glob patterns) for context
+** Configure maximum dialogue depth (default: 5 exchanges)
+** Enable/disable assumption challenging
+** Optionally constrain to specific topics or domains
+** Creates a dialogue between questioner and responder agents
+** Explores definitions, assumptions, implications, and contradictions
+** Produces a structured dialogue transcript with insights</code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

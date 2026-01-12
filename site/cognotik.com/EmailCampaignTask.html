@@ -1,277 +1,407 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Campaign Task - Cognotik</title>
-    <!-- Fonts -->
+    <title>Cognotik | EmailCampaignTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
-        .container {
-            max-width: var(--container-max-width);
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .task-container {
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 0 var(--spacing-md);
+            padding: 2rem;
         }
-        
-        /* Custom Split Hero */
-        .hero-split {
-            padding: 8rem 0 4rem;
-            display: flex;
-            align-items: center;
-            min-height: 80vh;
-            position: relative;
+
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
         }
-        .hero-content {
-            flex: 1;
-            padding-right: 2rem;
-        }
-        .hero-split h1 {
-            font-size: 3.5rem;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(to right, #fff, var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .hero-split p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            margin-bottom: 2rem;
-            max-width: 600px;
-        }
-        .hero-visual {
-            flex: 1;
-            height: 400px;
-            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-        
-        /* Visual Node Animation */
-        .visual-node {
-            width: 200px;
-            height: 200px;
-            border: 2px solid var(--accent-secondary);
-            border-radius: 50%;
-            position: absolute;
-            animation: pulse 4s infinite;
-            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-color);
-        }
-        .visual-node::before {
-            content: '📧';
-            font-size: 4rem;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
-        }
-        
-        /* Adjustments for main.css components */
-        .feature-card svg {
-            color: var(--accent-secondary);
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-primary);
             margin-bottom: 1rem;
         }
-        
-        /* Simulator Output Overrides */
-        .tab-content h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
-        .tab-content h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-color); }
-        .tab-content ul { padding-left: 1.5em; list-style: disc; }
-        
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 1rem 0;
+            font-weight: 600;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: #090c10;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow: auto;
+            flex-grow: 1;
+            background: #0d1117;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--border-subtle);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.9rem;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; margin-left: 4px; }
+
         @media (max-width: 768px) {
-            .hero-split { flex-direction: column; text-align: center; padding-top: 6rem; }
-            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
         }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="email-campaign"></cognotik-header>
-    <!-- Hero -->
-    <header class="hero-split container">
-        <div class="hero-content">
-            <h1>Email Campaign Task</h1>
-            <p>Generate complete email sequences for marketing, sales, or outreach with strategy and persuasive copy.</p>
-            <a href="#demo" class="btn">Try the Simulator</a>
-        </div>
-        <div class="hero-visual">
-            <div class="visual-node"></div>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Tasks / Writing / EmailCampaignTask</div>
+        <h1>EmailCampaignTask</h1>
+        <p class="pitch">
+            Generate complete, multi-stage email marketing sequences with strategic planning, A/B tested subject lines, and automated revision passes.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Model: GPT-4 / Smart Preferred</span>
+            <span class="badge">Side-Effect Safe</span>
         </div>
     </header>
-    <!-- Features -->
-    <section id="features" class="features">
-        <div class="container">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    <h3>Campaign Strategy</h3>
-                    <p>Develops comprehensive messaging arcs, send schedules, and audience targeting.</p>
-                </div>
-                <div class="feature-card">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    <h3>A/B Testing</h3>
-                    <p>Generates multiple subject line variants to optimize open rates and engagement.</p>
-                </div>
-                <div class="feature-card">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                    <h3>Persuasive Copy</h3>
-                    <p>Writes engaging, conversion-focused emails tailored to your brand voice.</p>
-                </div>
-            </div>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> ExecutionConfig.json</div>
+            <pre><code class="language-json">
+{
+  "campaign_goal": "Re-engage inactive users",
+  "subject_matter": "New AI-powered bento grids",
+  "num_emails": 3,
+  "campaign_type": "re_engagement",
+  "brand_voice": "friendly",
+  "generate_subject_variants": true
+}
+            </code></pre>
         </div>
-    </section>
-    <!-- Simulator -->
-    <section id="demo" class="simulator">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="simulator-container">
-                <!-- Inputs -->
-                <div class="sim-controls">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
-                    <div class="control-group">
-                        <label>Campaign Goal</label>
-                        <input type="text" id="goal" value="Welcome new subscribers">
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI (Complete Campaign)</div>
+            <div class="mock-ui-content">
+                <div style="border-left: 3px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1.5rem;">
+                    <div style="font-weight: bold; color: var(--accent-primary); margin-bottom: 0.5rem;">Email 1 - Day 0</div>
+                    <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.5rem;">Subject Options (A/B Test):</div>
+                    <div style="background: #0d1117; padding: 0.5rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.8rem;">
+                        [A] We've missed you! See what's new.<br>
+                        [B] Your dashboard just got an upgrade.
                     </div>
-                    <div class="control-group">
-                        <label>Target Audience</label>
-                        <input type="text" id="audience" value="Small business owners">
-                    </div>
-                    <div class="control-group">
-                        <label>Number of Emails</label>
-                        <input type="number" id="num_emails" value="3">
-                    </div>
-                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Generate Campaign</button>
                 </div>
-                <!-- Outputs -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <div class="tab active" onclick="switchTab('campaign')">Campaign</div>
-                        <div class="tab" onclick="switchTab('logs')">Logs</div>
-                    </div>
-                    <div id="output-campaign" class="tab-content active">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the campaign and click "Generate" to see the output.
-                        </div>
-                    </div>
-                    <div id="output-logs" class="tab-content" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                <div style="font-size: 0.85rem;">
+                    <p>Hi {{first_name}},</p>
+                    <p>It's been a while since you logged into Cognotik. We've been busy building the "Industrial" design system...</p>
+                    <div style="background: var(--accent-primary); color: white; padding: 0.5rem 1rem; display: inline-block; border-radius: 4px; font-weight: bold; margin-top: 0.5rem;">
+                        Explore the New UI
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <!-- Use Cases -->
-    <section id="use-cases" class="use-cases">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="mode-grid">
-                <div class="mode-card">
-                    <div class="mode-title">Welcome Series</div>
-                    <p>Onboard new users and introduce them to your brand and products.</p>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>campaign_goal</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The primary objective (e.g., "Launch new API features").</td>
+                </tr>
+                <tr>
+                    <td><code>subject_matter</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The product, service, or topic being promoted.</td>
+                </tr>
+                <tr>
+                    <td><code>num_emails</code></td>
+                    <td>Int</td>
+                    <td>Number of emails in sequence (1-10). Default: <code>3</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>campaign_type</code></td>
+                    <td>String</td>
+                    <td><code>welcome_series</code>, <code>nurture</code>, <code>sales</code>, <code>re_engagement</code>, etc.</td>
+                </tr>
+                <tr>
+                    <td><code>brand_voice</code></td>
+                    <td>String</td>
+                    <td>Tone (e.g., <code>professional</code>, <code>friendly</code>, <code>authoritative</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>body_length</code></td>
+                    <td>String</td>
+                    <td><code>short</code> (&lt;150 words), <code>medium</code>, or <code>long</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>revision_passes</code></td>
+                    <td>Int</td>
+                    <td>Number of automated quality improvement passes (0-5).</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h4>Dependencies</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-dim);">None. Operates as a standalone generator or can ingest <code>input_files</code> for brand context.</p>
                 </div>
-                <div class="mode-card">
-                    <div class="mode-title">Nurture Campaigns</div>
-                    <p>Educate leads and build trust over time with valuable content.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Sales Outreach</div>
-                    <p>Cold email sequences designed to start conversations and book meetings.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Re-engagement</div>
-                    <p>Win back inactive subscribers with targeted offers and updates.</p>
+                <div>
+                    <h4>Token Usage</h4>
+                    <span class="badge" style="color: #f2cc60; border-color: #f2cc60;">High Consumption</span>
+                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0.5rem;">
+                        Uses multiple LLM calls: Strategy (1), Outlines (1 per email), Generation (1 per email), Revisions (N per email).
+                    </p>
                 </div>
             </div>
         </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Execution Lifecycle</h3>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; border-left: 4px solid var(--accent-primary);">
+                    <strong>Phase 1: Strategy Development</strong>
+                    <p style="font-size: 0.9rem; margin: 0.5rem 0 0 0;">Analyzes audience and subject matter to create a progression logic and key messaging map.</p>
+                </div>
+                <div style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; border-left: 4px solid var(--accent-primary);">
+                    <strong>Phase 2: Sequence Outlining</strong>
+                    <p style="font-size: 0.9rem; margin: 0.5rem 0 0 0;">Plans the specific purpose, emotional tone, and CTA for every email in the sequence.</p>
+                </div>
+                <div style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; border-left: 4px solid var(--accent-primary);">
+                    <strong>Phase 3: Content Generation</strong>
+                    <p style="font-size: 0.9rem; margin: 0.5rem 0 0 0;">Writes the copy, generates A/B subject variants, and injects personalization tokens.</p>
+                </div>
+                <div style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; border-left: 4px solid var(--accent-primary);">
+                    <strong>Phase 4: Revision (Optional)</strong>
+                    <p style="font-size: 0.9rem; margin: 0.5rem 0 0 0;">Performs N passes of editing for clarity, conciseness, and brand consistency.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Kotlin Boilerplate</h3>
+            <pre><code class="language-kotlin">
+val task = EmailCampaignTask(
+    orchestrationConfig = config,
+    planTask = EmailCampaignTaskExecutionConfigData(
+        campaign_goal = "Onboard new developers",
+        subject_matter = "Cognotik SDK",
+        num_emails = 5,
+        brand_voice = "technical",
+        revision_passes = 2
+    )
+)
+            </code></pre>
+
+            <h3>Prompt Segment</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM context:</p>
+            <pre><code class="language-text">
+EmailCampaign - Generate multi-email marketing or outreach sequences.
+- campaign_goal: Primary objective.
+- subject_matter: Product or topic.
+- target_audience: Who is receiving the emails.
+- campaign_type: welcome_series, nurture, sales, etc.
+- num_emails: Length of sequence (1-10).
+- brand_voice: professional, friendly, etc.
+- primary_cta: Main action desired.
+- related_files: Brand guidelines or context.
+            </code></pre>
+        </div>
     </section>
-    <script>
-  function switchTab(tabId) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            if (tabName === 'campaign') document.getElementById('output-campaign').classList.add('active');
-            if (tabName === 'logs') document.getElementById('output-logs').classList.add('active');
-        }
-        function runSimulation() {
-            const goal = document.getElementById('goal').value;
-            const audience = document.getElementById('audience').value;
-            const reportEl = document.getElementById('output-campaign');
-            const logsEl = document.getElementById('output-logs');
-            
-            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
-            logsEl.innerHTML = '';
-            
-            const logs = [
-                `[INFO] Initializing EmailCampaignTask...`,
-                `[INFO] Goal: ${goal}`,
-                `[INFO] Developing strategy...`,
-                `[INFO] Outlining sequence...`,
-                `[INFO] Writing emails...`,
-                `[INFO] Generating subject lines...`,
-                `[SUCCESS] Campaign generation complete.`
-            ];
-            
-            let logIndex = 0;
-            const logInterval = setInterval(() => {
-                if (logIndex < logs.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
-                    line.style.marginBottom = '4px';
-                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
-                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
-                    logsEl.appendChild(line);
-                    logsEl.scrollTop = logsEl.scrollHeight;
-                    logIndex++;
-                } else {
-                    clearInterval(logInterval);
-                    renderCampaign(goal);
-                }
-            }, 400);
-        }
-        function renderCampaign(goal) {
-            const reportEl = document.getElementById('output-campaign');
-            const markdown = `
-<h1>Campaign: ${goal}</h1>
+</main>
 
-<h2>Email 1: Welcome & Value</h2>
-<p><strong>Subject A:</strong> Welcome to the community, {{first_name}}!</p>
-<p><strong>Subject B:</strong> Here's what you've been missing...</p>
-<p><strong>Body:</strong><br>
-Hi {{first_name}},<br><br>
-Thanks for joining us! We know running a small business is tough, which is why we created [Product Name].<br><br>
-Over the next few days, I'll share some tips to help you save time and money.<br><br>
-Best,<br>
-[Your Name]</p>
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-<hr>
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.target.classList.add('active');
+    }
+</script>
 
-<h2>Email 2: Problem & Solution</h2>
-<p><strong>Subject:</strong> The #1 mistake small business owners make</p>
-<p><strong>Body:</strong><br>
-Hi {{first_name}},<br><br>
-Did you know that 80% of small businesses overspend on [Problem Area]?<br><br>
-Here's how you can avoid that trap...</p>
-
-<hr>
-
-<h2>Email 3: Social Proof & CTA</h2>
-<p><strong>Subject:</strong> See how [Customer] grew by 200%</p>
-<p><strong>Body:</strong><br>
-Hi {{first_name}},<br><br>
-Don't just take our word for it. See how [Customer Name] used our tool to transform their business.<br><br>
-Ready to get started? Click here to book a demo.</p>
-            `;
-            reportEl.innerHTML = markdown;
-        }
-    </script>
 </body>
 </html>

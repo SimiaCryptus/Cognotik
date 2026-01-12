@@ -1051,28 +1051,28 @@ Provide the complete revised explanation.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TechnicalExplanationTask::class.java)
         val TechnicalExplanation = TaskType(
-            "TechnicalExplanation",
-            "Writing",
-            TechnicalExplanationTask::class.java,
-            TechnicalExplanationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Break down complex technical subjects into clear, digestible explanations",
-            """
-              Generates clear, audience-appropriate explanations of complex technical topics.
-              <ul>
-                <li>Creates structured outline with key concepts and terminology</li>
-                <li>Adjusts language and depth for target audience (layperson to expert)</li>
-                <li>Generates relatable analogies and metaphors</li>
-                <li>Includes code examples with detailed explanations</li>
-                <li>Defines essential terminology in context</li>
-                <li>Provides visual descriptions and diagrams</li>
-                <li>Includes practical examples and use cases</li>
-                <li>Compares with related concepts for clarity</li>
-                <li>Supports multiple formats (markdown, Q&A, step-by-step, tutorial)</li>
-                <li>Optional revision passes for clarity improvement</li>
-                <li>Ideal for documentation, onboarding, education, and knowledge sharing</li>
-              </ul>
-            """,
+          name = "TechnicalExplanation",
+          category = "Writing",
+          taskClass = TechnicalExplanationTask::class.java,
+          executionConfigClass = TechnicalExplanationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Break down complex technical subjects into clear, digestible explanations",
+          tooltipHtml = """
+                        Generates clear, audience-appropriate explanations of complex technical topics.
+                        <ul>
+                          <li>Creates structured outline with key concepts and terminology</li>
+                          <li>Adjusts language and depth for target audience (layperson to expert)</li>
+                          <li>Generates relatable analogies and metaphors</li>
+                          <li>Includes code examples with detailed explanations</li>
+                          <li>Defines essential terminology in context</li>
+                          <li>Provides visual descriptions and diagrams</li>
+                          <li>Includes practical examples and use cases</li>
+                          <li>Compares with related concepts for clarity</li>
+                          <li>Supports multiple formats (markdown, Q&A, step-by-step, tutorial)</li>
+                          <li>Optional revision passes for clarity improvement</li>
+                          <li>Ideal for documentation, onboarding, education, and knowledge sharing</li>
+                        </ul>
+                      """,
         )
     }
 }

@@ -437,17 +437,17 @@ ImageVariation - Creates 'Find the Differences' style image sets.
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ImageVariationTask::class.java)
     val ImageVariation = TaskType(
-      "ImageVariation",
-      "File Operations",
-      ImageVariationTask::class.java,
-      ImageVariationConfig::class.java,
-      TaskTypeConfig::class.java,
-      "Generates 'Find the Differences' style image variations.",
-      """
-      Analyzes an image to find distinct regions, generates specific visual changes for those regions,
-      and creates multiple alternative images by randomly combining these changes.
-      Outputs images and JSON manifests describing the differences.
-      """,
+      name = "ImageVariation",
+      category = "File",
+      taskClass = ImageVariationTask::class.java,
+      executionConfigClass = ImageVariationConfig::class.java,
+      taskSettingsClass = TaskTypeConfig::class.java,
+      description = "Generates 'Find the Differences' style image variations.",
+      tooltipHtml = """
+            Analyzes an image to find distinct regions, generates specific visual changes for those regions,
+            and creates multiple alternative images by randomly combining these changes.
+            Outputs images and JSON manifests describing the differences.
+            """,
     )
   }
 }

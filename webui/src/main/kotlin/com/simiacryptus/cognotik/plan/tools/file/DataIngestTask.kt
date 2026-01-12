@@ -355,21 +355,21 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
     companion object {
         private val log: Logger = LoggerFactory.getLogger(DataIngestTask::class.java)
         val DataIngest = TaskType(
-            "DataIngest",
-            "File",
-            DataIngestTask::class.java,
-            DataIngestTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Iteratively parse unstructured logs into structured data",
-            """
-              Automates the creation of regex parsers for log files.
-              <ul>
-                <li>Samples data to discover patterns using LLM</li>
-                <li>Iteratively targets residual (unparsed) data</li>
-                <li>Streams large files to produce JSONL output</li>
-                <li>Generates an index linking data back to source lines</li>
-              </ul>
-            """,
+          name = "DataIngest",
+          category = "File",
+          taskClass = DataIngestTask::class.java,
+          executionConfigClass = DataIngestTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Iteratively parse unstructured logs into structured data",
+          tooltipHtml = """
+                        Automates the creation of regex parsers for log files.
+                        <ul>
+                          <li>Samples data to discover patterns using LLM</li>
+                          <li>Iteratively targets residual (unparsed) data</li>
+                          <li>Streams large files to produce JSONL output</li>
+                          <li>Generates an index linking data back to source lines</li>
+                        </ul>
+                      """,
         )
     }
 }

@@ -463,23 +463,23 @@ Generate the constraint satisfaction solution now:
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ConstraintSatisfactionTask::class.java)
         val ConstraintSatisfaction = TaskType(
-            "ConstraintSatisfaction",
-            "Reasoning",
-            ConstraintSatisfactionTask::class.java,
-            ConstraintSatisfactionTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Solve problems with multiple competing constraints",
-            """
-              Solves constraint satisfaction problems with hard and soft constraints.
-              <ul>
-                <li>Handles hard constraints that must be satisfied</li>
-                <li>Optimizes soft constraints with configurable weights</li>
-                <li>Supports multiple search strategies (backtracking, forward, local)</li>
-                <li>Provides detailed reasoning and trade-off analysis</li>
-                <li>Suggests alternative solutions when applicable</li>
-                <li>Useful for architectural decisions, resource allocation, and optimization</li>
-              </ul>
-            """,
+          name = "ConstraintSatisfaction",
+          category = "Reasoning",
+          taskClass = ConstraintSatisfactionTask::class.java,
+          executionConfigClass = ConstraintSatisfactionTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Solve problems with multiple competing constraints",
+          tooltipHtml = """
+                        Solves constraint satisfaction problems with hard and soft constraints.
+                        <ul>
+                          <li>Handles hard constraints that must be satisfied</li>
+                          <li>Optimizes soft constraints with configurable weights</li>
+                          <li>Supports multiple search strategies (backtracking, forward, local)</li>
+                          <li>Provides detailed reasoning and trade-off analysis</li>
+                          <li>Suggests alternative solutions when applicable</li>
+                          <li>Useful for architectural decisions, resource allocation, and optimization</li>
+                        </ul>
+                      """,
         )
     }
 }

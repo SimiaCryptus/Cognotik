@@ -1,364 +1,368 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Journalism Reasoning Task - Cognotik</title>
-    <!-- Fonts -->
+    <title>Cognotik | JournalismReasoningTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
-      /* Page-Specific Overrides */
-        .container {
-            max-width: var(--container-max-width);
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
-            color: #fff;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
         }
 
-        /* Hero */
-        .hero {
-            padding: 8rem 0 4rem;
-            display: flex;
-            align-items: center;
-            min-height: 80vh;
-            position: relative;
-            background: transparent; /* Override main.css radial gradient */
-            text-align: left; /* Override main.css center alignment */
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
         }
-        .hero-content {
-            flex: 1;
-            padding-right: 2rem;
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
         }
-        .hero h1 {
-            background: linear-gradient(to right, #fff, var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+
+        /* Header Styles */
+        .page-header {
+            margin-bottom: 3rem;
+        }
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
             margin-bottom: 1.5rem;
         }
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
 
-        .hero-visual {
-            flex: 1;
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
             height: 400px;
-            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
             display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-        .visual-node {
-            width: 200px;
-            height: 200px;
-            border: 2px solid var(--accent-secondary);
-            border-radius: 50%;
-            position: absolute;
-            animation: pulse 4s infinite;
-            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .visual-node::before {
-            content: '📰';
-            font-size: 4rem;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
+            flex-direction: column;
         }
 
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(6, 182, 212, 0.1);
-            border-radius: 12px;
+        .panel-header {
+            background: #000;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
             display: flex;
             align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem auto;
-            color: var(--accent-secondary);
+            gap: 0.5rem;
         }
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow: auto;
+            flex-grow: 1;
+            background: #0d1117;
         }
-        .feature-card {
-            background: rgba(255, 255, 255, 0.03);
-            padding: 2rem;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: transform 0.3s ease;
+
+        .flow-arrow {
             text-align: center;
-        }
-        .feature-card:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-dim);
+            font-size: 1.5rem;
         }
 
+        /* Mock UI Output */
+        .mock-ui-content {
+            padding: 0;
+            flex-grow: 1;
+            background: #0d1117;
+            overflow-y: auto;
+        }
+        .mock-tabs {
+            display: flex;
+            background: #161b22;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .mock-tab {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            border-right: 1px solid var(--border-subtle);
+            color: var(--text-dim);
+        }
+        .mock-tab.active {
+            background: #0d1117;
+            color: var(--accent-primary);
+        }
+        .mock-markdown {
+            padding: 1rem;
+            font-size: 0.85rem;
+        }
 
-        /* Markdown Preview */
-        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
-        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-color); }
-        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
-        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
-        
-        /* Use Cases */
-        .use-cases {
-            padding: 4rem 0;
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
         }
-        .use-case-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
         }
-        .use-case-item {
-            background: rgba(255,255,255,0.03);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border-left: 4px solid var(--accent-color);
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
         }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.9rem;
+        }
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+        .req { color: #f85149; }
+
         @media (max-width: 768px) {
-            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
-            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
         }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="journalism-reasoning"></cognotik-header>
-    <!-- Hero -->
-    <header class="hero container">
-        <div class="hero-content">
-            <h1>Journalism Reasoning Task</h1>
-            <p>Investigate stories using professional journalistic principles, fact-checking, and multi-perspective analysis.</p>
-            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
-        </div>
-        <div class="hero-visual">
-            <div class="visual-node"></div>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Tasks / Writing / JournalismReasoningTask</div>
+        <h1>JournalismReasoningTask</h1>
+        <p class="pitch">
+            Investigate stories through professional journalistic principles. Analyzes facts, perspectives, context, and biases to produce structured investigative reports.
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">GPT-4 Preferred</span>
+            <span class="badge">Category: Writing</span>
         </div>
     </header>
-    <!-- Features -->
-    <section id="features" class="features">
-        <div class="container">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    </div>
-                    <h3>Fact Verification</h3>
-                    <p>Rigorously checks claims against evidence and sources to ensure accuracy.</p>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">⚙️ JournalismReasoningConfig.json</div>
+            <pre><code class="language-json">{
+  "story_topic": "Impact of AI on local newsrooms",
+  "journalism_elements": {
+    "who": "Local journalists, AI developers",
+    "why": "Economic pressure vs efficiency"
+  },
+  "verify_facts": true,
+  "alternative_angles": 3,
+  "find_gaps": true
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">👁️ SessionTask UI (Tabbed View)</div>
+            <div class="mock-ui-content">
+                <div class="mock-tabs">
+                    <div class="mock-tab">Overview</div>
+                    <div class="mock-tab active">Fact Verification</div>
+                    <div class="mock-tab">Perspectives</div>
+                    <div class="mock-tab">Synthesis</div>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </div>
-                    <h3>Multi-Perspective</h3>
-                    <p>Identifies and analyzes diverse viewpoints and stakeholders for balanced reporting.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    </div>
-                    <h3>Contextual Analysis</h3>
-                    <p>Provides historical background, broader implications, and trend analysis.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    </div>
-                    <h3>Bias Detection</h3>
-                    <p>Analyzes framing, missing voices, and conflicts of interest to ensure balance.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    </div>
-                    <h3>Gap Analysis</h3>
-                    <p>Identifies unanswered questions and missing evidence critical to the story.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                    </div>
-                    <h3>Editorial Strategy</h3>
-                    <p>Generates alternative story angles and synthesizes findings into a cohesive report.</p>
+                <div class="mock-markdown">
+                    <h3 style="color: #fff; margin-top: 0;">Verified Facts</h3>
+                    <p><strong>✅ 1. AI adoption in newsrooms increased by 35% in 2023.</strong></p>
+                    <p style="font-size: 0.8rem; color: var(--text-dim);">Status: Verified | Source: Reuters Institute Report</p>
+                    <hr style="border: 0; border-top: 1px solid var(--border-subtle);">
+                    <p><strong>⚠️ 2. Local news employment has reached an all-time low.</strong></p>
+                    <p style="font-size: 0.8rem; color: var(--text-dim);">Status: Partially True | Context: Varies significantly by region.</p>
                 </div>
             </div>
         </div>
     </section>
-    <!-- Simulator -->
-    <section id="demo" class="simulator">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center; color: var(--primary-color);">Interactive Simulator</h2>
-            <div class="simulator-container">
-                <!-- Inputs -->
-                <div class="sim-controls">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
-                    <div class="control-group">
-                        <label>Story Topic</label>
-                  <input type="text" id="sim-topic" value="Impact of AI on Creative Jobs">
-                    </div>
-                    <div class="control-group">
-                        <label>Journalism Elements</label>
-                        <textarea id="elements" placeholder="Who, What, Where, When, Why, How">Who: Artists, Writers, Designers
-What: Generative AI tools
-Why: Efficiency vs. Displacement</textarea>
-                    </div>
-                    <div class="control-group">
-                        <label>Alternative Angles</label>
-                        <input type="range" id="angles" min="1" max="5" value="3" oninput="document.getElementById('angle-val').innerText = this.value">
-                        <div style="text-align: right; font-size: 0.8em; color: var(--text-muted);">Count: <span id="angle-val">3</span></div>
-                    </div>
-                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Investigate</button>
-                </div>
-                <!-- Outputs -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <div class="tab active" onclick="switchTab('report')">Investigation</div>
-                        <div class="tab" onclick="switchTab('logs')">Logs</div>
-                    </div>
-                    <div id="output-report" class="tab-content active markdown-preview">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the investigation and click "Investigate" to see the output.
-                        </div>
-                    </div>
-                    <div id="output-logs" class="tab-content" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
-                    </div>
-                </div>
-            </div>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>story_topic</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The story topic or event to investigate.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Glob patterns for documents to inform the investigation.</td>
+                </tr>
+                <tr>
+                    <td><code>journalism_elements</code></td>
+                    <td>Map</td>
+                    <td>Elements to consider (who, what, when, where, why, how).</td>
+                </tr>
+                <tr>
+                    <td><code>verify_facts</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to identify and verify key facts (Default: true).</td>
+                </tr>
+                <tr>
+                    <td><code>alternative_angles</code></td>
+                    <td>Int</td>
+                    <td>Number of alternative angles to explore (1-10, Default: 3).</td>
+                </tr>
+                <tr>
+                    <td><code>identify_biases</code></td>
+                    <td>Boolean</td>
+                    <td>Detect potential biases and conflicts of interest.</td>
+                </tr>
+                </tbody>
+            </table>
+            <p style="font-size: 0.85rem; color: var(--text-dim);">* Required fields</p>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <h3>Task Execution Flow</h3>
+            <ol style="padding-left: 1.2rem;">
+                <li><strong>Fact Verification:</strong> Identifies 5-10 key claims and checks against evidence.</li>
+                <li><strong>Perspective Identification:</strong> Maps 4-6 stakeholder viewpoints and credibility.</li>
+                <li><strong>Context Analysis:</strong> Researches historical background and broader implications.</li>
+                <li><strong>Bias Detection:</strong> Analyzes framing issues and missing voices.</li>
+                <li><strong>Angle Exploration:</strong> Generates creative approaches with newsworthiness scores.</li>
+                <li><strong>Gap Identification:</strong> Finds unanswered questions and research approaches.</li>
+                <li><strong>Editorial Synthesis:</strong> Final authoritative summary of findings.</li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3>Kotlin Boilerplate</h3>
+            <pre><code class="language-kotlin">val task = JournalismReasoningTask(
+    orchestrationConfig = config,
+    planTask = JournalismReasoningTaskExecutionConfigData(
+        story_topic = "The rise of vertical farming",
+        verify_facts = true,
+        alternative_angles = 5
+    )
+)</code></pre>
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM context:</p>
+            <pre><code class="language-text">JournalismReasoning - Investigate stories through journalistic principles
+** Specify the story topic or event to investigate
+** Define journalism elements: who, what, when, where, why, how
+** Enable fact verification and source checking
+** Identify multiple perspectives and stakeholder voices
+** Detect potential biases and conflicts of interest</code></pre>
         </div>
     </section>
-    <!-- Use Cases -->
-    <section id="use-cases" class="use-cases">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="use-case-list">
-                <div class="use-case-item">
-                    <h4>Investigative Reporting</h4>
-                    <p>Deep dive into complex topics to uncover facts and connections.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Fact-Checking</h4>
-                    <p>Verify claims and statements against reliable sources and evidence.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Editorial Planning</h4>
-                    <p>Identify angles, gaps, and key questions for story development.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Bias Analysis</h4>
-                    <p>Detect potential biases and ensure balanced coverage of sensitive topics.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    <script>
-  function switchTab(tabId) {
-      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-            event.target.classList.add('active');
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById('output-' + tabName).classList.add('active');
-        }
-        function runSimulation() {
-      const topic = document.getElementById('sim-topic').value;
-      const anglesCount = document.getElementById('sim-angles').value;
-            const anglesCount = document.getElementById('angles').value;
-            const reportEl = document.getElementById('output-report');
-            const logsEl = document.getElementById('output-logs');
-            
-            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
-            logsEl.innerHTML = '';
-            
-            const logs = [
-                `[INFO] Initializing JournalismReasoningTask...`,
-                `[INFO] Topic: ${topic}`,
-                `[INFO] Verifying facts...`,
-                `[INFO] Identifying source perspectives...`,
-                `[INFO] Analyzing context...`,
-                `[INFO] Checking for biases and balance...`,
-                `[INFO] Exploring ${anglesCount} alternative angles...`,
-                `[INFO] Identifying information gaps...`,
-                `[INFO] Generating editorial synthesis...`,
-                `[SUCCESS] Investigation complete.`
-            ];
-            
-            let logIndex = 0;
-            const logInterval = setInterval(() => {
-                if (logIndex < logs.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
-                    line.style.marginBottom = '4px';
-                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
-                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
-                    logsEl.appendChild(line);
-                    logsEl.scrollTop = logsEl.scrollHeight;
-                    logIndex++;
-                } else {
-                    clearInterval(logInterval);
-                    renderReport(topic, anglesCount);
-                }
-            }, 400);
-        }
-        function renderReport(topic, anglesCount) {
-            const reportEl = document.getElementById('output-report');
-            const markdown = `
-<h1>Investigation: ${topic}</h1>
 
-<h2>Key Facts Verified</h2>
-<ul>
-    <li>✅ <strong>Claim:</strong> AI tools are increasing efficiency. <strong>Status:</strong> Verified. Studies show 30-50% time savings in drafting phases.</li>
-    <li>⚠️ <strong>Claim:</strong> AI is replacing all junior roles. <strong>Status:</strong> Partially True. Some displacement observed, but new roles are emerging.</li>
-</ul>
+</main>
 
-<h2>Perspectives</h2>
-<ul>
-    <li><strong>Creative Professionals:</strong> Concerned about copyright and devaluation of human skill.</li>
-    <li><strong>Tech Advocates:</strong> Emphasize democratization of creativity and new toolsets.</li>
-    <li><strong>Legal Experts:</strong> Focused on intellectual property rights and regulation.</li>
-</ul>
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-<h2>Context Analysis</h2>
-<p>This shift parallels previous technological disruptions like the advent of photography or digital design software. The rapid pace of adoption is the primary differentiator.</p>
-
-<h2>Bias & Balance</h2>
-<ul>
-    <li><strong>Potential Bias:</strong> Heavy focus on visual arts; less coverage on writing/music.</li>
-    <li><strong>Missing Voices:</strong> Consumers of AI art and independent developers.</li>
-    <li><strong>Assessment:</strong> Generally balanced, but needs more economic data.</li>
-</ul>
-
-<h2>Story Angles</h2>
-<ul>
-              <li><strong>1. The Human Element:</strong> Artists adapting workflows (Human Interest).</li>
-              <li><strong>2. The Legal Frontier:</strong> Copyright lawsuits (Policy/Legal).</li>
-              ${anglesCount > 2 ? '<li><strong>3. The Economic Shift:</strong> Impact on freelance rates (Business).</li>' : ''}
-</ul>
-
-<h2>Information Gaps</h2>
-<ul>
-    <li>🔴 <strong>Critical:</strong> Long-term impact on wages in creative sectors.</li>
-    <li>🟡 <strong>Important:</strong> Specific legal precedents for AI-generated works in current courts.</li>
-</ul>
-
-<h2>Editorial Synthesis</h2>
-<p>The story is not just about job loss, but a fundamental shift in the definition of creativity and the value of human input. Coverage should balance economic realities with cultural implications.</p>
-            `;
-      reportDiv.innerHTML = markdown;
-        }
-    </script>
 </body>
 </html>

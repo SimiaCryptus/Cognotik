@@ -705,24 +705,24 @@ Be comprehensive yet concise in your final integration.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(DialecticalReasoningTask::class.java)
         val DialecticalReasoning = TaskType(
-            "DialecticalReasoning",
-            "Reasoning",
-            DialecticalReasoningTask::class.java,
-            DialecticalReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Resolve contradictions through thesis-antithesis-synthesis",
-            """
-              Applies dialectical reasoning to resolve contradictions and find higher-level synthesis.
-              <ul>
-                <li>Analyzes thesis and antithesis positions thoroughly</li>
-                <li>Explores contradictions and tensions between positions</li>
-                <li>Generates synthesis that transcends opposition</li>
-                <li>Iterates through multiple synthesis levels for deeper understanding</li>
-                <li>Preserves valuable aspects from both sides</li>
-                <li>Provides final integration with practical implications</li>
-                <li>Useful for architectural debates, requirement conflicts, and design philosophy</li>
-              </ul>
-            """,
+          name = "DialecticalReasoning",
+          category = "Reasoning",
+          taskClass = DialecticalReasoningTask::class.java,
+          executionConfigClass = DialecticalReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Resolve contradictions through thesis-antithesis-synthesis",
+          tooltipHtml = """
+                        Applies dialectical reasoning to resolve contradictions and find higher-level synthesis.
+                        <ul>
+                          <li>Analyzes thesis and antithesis positions thoroughly</li>
+                          <li>Explores contradictions and tensions between positions</li>
+                          <li>Generates synthesis that transcends opposition</li>
+                          <li>Iterates through multiple synthesis levels for deeper understanding</li>
+                          <li>Preserves valuable aspects from both sides</li>
+                          <li>Provides final integration with practical implications</li>
+                          <li>Useful for architectural debates, requirement conflicts, and design philosophy</li>
+                        </ul>
+                      """,
         )
     }
 }

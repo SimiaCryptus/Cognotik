@@ -1,206 +1,365 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <title>Cognotik | LLMPollSimulationTask</title>
+</head>
+<body>
+    <h1>LLMPollSimulationTask</h1>
+    <p>This task simulates polls and surveys with AI personas.</p>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLM Poll Simulation - Cognotik</title>
+    <title>Cognotik | LLMPollSimulationTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
-        
-        /* Page-specific overrides and additions to main.css */
-        .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 var(--spacing-lg); }
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
 
-        /* Hero Layout Overrides */
-        .hero { padding: 8rem 0 4rem; display: flex; align-items: center; min-height: 80vh; text-align: left; }
-        .hero-content { flex: 1; padding-right: 2rem; }
-        .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; margin-left: 0; margin-right: auto; }
-        .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
-        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-color); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(139, 92, 246, 0.2); }
-        
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
 
-        /* Feature Enhancements */
-        .feature-card:hover { border-color: var(--accent-color); transform: translateY(-5px); transition: 0.3s; }
-        .feature-icon { width: 48px; height: 48px; background: rgba(139, 92, 246, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; color: var(--accent-color); }
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
 
-        /* Simulator Adjustments */
-        .sim-output { padding: 2rem; }
-        .output-area { flex: 1; font-family: var(--font-family-mono); font-size: 0.9rem; color: var(--text-color); overflow-y: auto; white-space: pre-wrap; height: 100%; }
-        
-        /* Missing Input Style in main.css */
-        input[type="number"] {
-            display: block;
+        .page-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0.5rem 0;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            overflow: auto;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            flex-grow: 1;
+        }
+
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
             width: 100%;
-            padding: var(--spacing-sm) var(--spacing-md);
-            font-family: inherit;
-            font-size: 1rem;
-            line-height: 1.5;
-            color: var(--text-color);
-            background-color: var(--surface-color);
-            background-clip: padding-box;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            border-collapse: collapse;
+            font-size: 0.9rem;
         }
-        input[type="number"]:focus {
-            border-color: var(--accent-color);
-            outline: 0;
-            box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
-        }
-        
-        .use-cases { padding: 4rem 0; }
-        .use-case-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-        .use-case-item { background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent-secondary); }
 
-        @media (max-width: 768px) { .hero { flex-direction: column; text-align: center; padding-top: 6rem; } .simulator-container { grid-template-columns: 1fr; } .sim-controls { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); } }
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        .req { color: #f85149; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="poll"></cognotik-header>
-    <header class="hero container">
-        <div class="hero-content">
-            <h1>LLM Poll Simulation</h1>
-            <p>Simulate polls and surveys with diverse AI personas to predict responses and detect biases.</p>
-            <a href="#demo" class="btn">Try the Simulator</a>
-        </div>
-        <div class="hero-visual">
-            <div class="visual-node"></div>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Social</div>
+        <h1>LLMPollSimulationTask</h1>
+        <p class="pitch">
+            Simulate complex polls and surveys using diverse AI personas. Model demographic patterns, detect instrument bias, and generate synthetic research data with high fidelity.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Social</span>
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">GPT-4 Preferred</span>
         </div>
     </header>
 
-    <section id="features" class="features">
-        <div class="container">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </div>
-                    <h3>Diverse Personas</h3>
-                    <p>Simulates respondents with varied demographics, backgrounds, and characteristics for realistic data.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-                    </div>
-                    <h3>Statistical Analysis</h3>
-                    <p>Automatically generates descriptive statistics, frequency distributions, and cross-tabulations.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                    </div>
-                    <h3>Bias Detection</h3>
-                    <p>Identifies potential response patterns, central tendency biases, and demographic skews.</p>
-                </div>
-            </div>
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> ExecutionConfig.json</div>
+            <pre><code class="language-json">
+{
+  "questions": [
+    {
+      "id": "remote_work",
+      "text": "How has remote work affected your productivity?",
+      "type": "LIKERT_SCALE",
+      "min": 1, "max": 5
+    }
+  ],
+  "respondent_profiles": [
+    {
+      "description": "Urban Tech Professional",
+      "demographics": {"age": "25-34", "location": "Urban"},
+      "characteristics": ["Tech-savvy", "Early adopter"]
+    }
+  ],
+  "respondents_per_profile": 20,
+  "bias_detection": true
+}
+            </code></pre>
         </div>
-    </section>
 
-    <section id="demo" class="simulator">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="simulator-container">
-                <div class="sim-controls">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Configuration</h3>
-                    <div class="control-group">
-                        <label>Survey Question</label>
-                        <input type="text" id="question" value="How likely are you to purchase an electric vehicle in the next 5 years?">
-                    </div>
-                    <div class="control-group">
-                        <label>Respondent Profiles (JSON)</label>
-                        <textarea id="profiles" style="height: 150px;">[
-  {"description": "Urban millennial, environmentally conscious"},
-  {"description": "Rural conservative, values reliability"},
-  {"description": "Suburban parent, budget-focused"}
-]</textarea>
-                    </div>
-                    <div class="control-group">
-                        <label>Respondents per Profile</label>
-                        <input type="number" id="count" value="5">
-                    </div>
-                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Run Simulation</button>
-                </div>
-                <div class="sim-output">
-                    <div id="output-logs" class="output-area">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the poll and click "Run" to see results.
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>📊</span> Session UI (Statistics Tab)</div>
+            <div class="mock-ui-content">
+                <h3 style="margin-top:0">Descriptive Statistics</h3>
+                <div style="background: #0d1117; padding: 1rem; border-radius: 4px; border: 1px solid #30363d;">
+                    <strong>remote_work: How has remote work...</strong>
+                    <div style="margin-top: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #8b949e;">
+                            <span>Mean: 4.22</span>
+                            <span>Median: 4.00</span>
+                            <span>Std Dev: 0.65</span>
+                        </div>
+                        <div style="height: 8px; background: #30363d; border-radius: 4px; margin-top: 4px; overflow: hidden;">
+                            <div style="width: 84%; height: 100%; background: #58a6ff;"></div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="use-cases" class="use-cases">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="use-case-list">
-                <div class="use-case-item">
-                    <h4>Survey Testing</h4>
-                    <p>Test survey instruments for clarity and bias before deploying to real people.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Market Research</h4>
-                    <p>Get preliminary feedback on product concepts from specific demographic personas.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Demographic Analysis</h4>
-                    <p>Understand how different groups might perceive a topic or question.</p>
+                <h4 style="margin-bottom: 0.5rem;">Bias Detection</h4>
+                <div style="color: #e3b341; font-size: 0.85rem;">
+                    ⚠️ <strong>remote_work</strong>: Possible central tendency bias detected (mean=4.22, midpoint=3.0)
                 </div>
             </div>
         </div>
     </section>
 
-    <script>
-        function runSimulation() {
-            const question = document.getElementById('question').value;
-            const count = document.getElementById('count').value;
-            const logsEl = document.getElementById('output-logs');
-            
-            logsEl.innerHTML = '';
-            const steps = [
-                `[INFO] Initializing simulation...`,
-                `[INFO] Generating ${count * 3} respondent personas...`,
-                `[INFO] Conducting survey: "${question}"`,
-                `[INFO] Collecting responses...`,
-                `[INFO] Analyzing demographics and sentiment...`,
-                `[SUCCESS] Simulation Complete.`
-            ];
-            
-            let i = 0;
-            const interval = setInterval(() => {
-                if (i < steps.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
-                    line.style.marginBottom = '4px';
-                    if (steps[i].includes('SUCCESS')) line.style.color = 'var(--success-color)';
-                    else line.style.color = 'var(--accent-secondary)';
-                    logsEl.appendChild(line);
-                    i++;
-                } else {
-                    clearInterval(interval);
-                    const result = document.createElement('div');
-                    result.innerHTML = `
-                        <br><strong>Results Summary:</strong><br>
-                        - <strong>Urban Millennials:</strong> 80% Likely (High interest)<br>
-                        - <strong>Rural Conservatives:</strong> 20% Likely (Concerns about range/charging)<br>
-                        - <strong>Suburban Parents:</strong> 40% Likely (Price sensitivity)<br><br>
-                        <em>Bias Detected:</em> Responses correlate strongly with location and political leaning.
-                    `;
-                    result.style.color = '#e2e8f0';
-                    result.style.marginTop = '1rem';
-                    result.style.padding = '1rem';
-                    result.style.border = '1px solid rgba(255,255,255,0.1)';
-                    result.style.borderRadius = '8px';
-                    logsEl.appendChild(result);
-                }
-            }, 600);
-        }
-    </script>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process & Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>questions</code> <span class="req">*</span></td>
+                    <td>List&lt;SurveyQuestion&gt;</td>
+                    <td>List of survey questions to ask respondents. Supports Multiple Choice, Likert, Open-Ended, etc.</td>
+                </tr>
+                <tr>
+                    <td><code>respondent_profiles</code> <span class="req">*</span></td>
+                    <td>List&lt;RespondentProfile&gt;</td>
+                    <td>Templates defining demographics and characteristics for simulated personas.</td>
+                </tr>
+                <tr>
+                    <td><code>respondents_per_profile</code></td>
+                    <td>Int</td>
+                    <td>Number of simulated respondents per profile. Default: <code>10</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>cross_tabulation</code></td>
+                    <td>Boolean</td>
+                    <td>Generate analysis across demographic dimensions. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>bias_detection</code></td>
+                    <td>Boolean</td>
+                    <td>Detect response patterns like central tendency or primacy effects. Default: <code>true</code>.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <h3>Task Lifecycle</h3>
+            <ol>
+                <li><strong>Persona Generation:</strong> Creates unique <code>SimulatedRespondent</code> instances based on profiles and demographic variations.</li>
+                <li><strong>Survey Execution:</strong> Parallelized LLM calls where each persona answers the question set based on their background.</li>
+                <li><strong>Statistical Analysis:</strong> Computes frequency distributions, means, and standard deviations.</li>
+                <li><strong>Advanced Analytics:</strong> Performs sentiment analysis on text and cross-tabs on demographics.</li>
+                <li><strong>Reporting:</strong> Generates a multi-tabbed UI and a persistent Markdown/HTML report.</li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3>Kotlin Boilerplate</h3>
+            <pre><code class="language-kotlin">
+val pollTask = LLMPollSimulationTask(
+    orchestrationConfig = config,
+    planTask = LLMPollSimulationTask.LLMPollSimulationTaskExecutionConfigData(
+        questions = listOf(SurveyQuestion(text = "Do you like Kotlin?", type = QuestionType.YES_NO)),
+        respondent_profiles = listOf(RespondentProfile(description = "Developer")),
+        respondents_per_profile = 50
+    )
+)
+            </code></pre>
+            <h3>Prompt Segment</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">The following logic is injected into the orchestrator:</p>
+            <pre><code class="language-text">
+LLMPollSimulation - Simulate polls and surveys with diverse AI personas
+  ** Define survey questions with various types (multiple choice, Likert, open-ended)
+  ** Create respondent profiles with demographics and characteristics
+  ** Generate realistic survey responses from simulated personas
+  ** Analyze results with cross-tabulations and statistical summaries
+            </code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

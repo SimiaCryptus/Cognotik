@@ -1459,27 +1459,27 @@ Provide specific examples and recommendations for improvement.
         private val log: Logger = LoggerFactory.getLogger(GameNarrativeDesignTask::class.java)
 
         val GameNarrativeDesign = TaskType(
-            "GameNarrativeDesign",
-            "Games",
-            GameNarrativeDesignTask::class.java,
-            GameNarrativeDesignConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Create interactive game narratives with branching storylines",
-            """
-              Creates complete game narrative designs with interactive elements and player agency.
-              <ul>
-                <li>Extends NarrativeGeneration with game-specific features</li>
-                <li>Three-act structure adapted for interactive media</li>
-                <li>Multiple branching points with meaningful choices</li>
-                <li>Character arcs that respond to player decisions</li>
-                <li>Branching dialogue trees with emotional beats</li>
-                <li>Multiple endings based on player choices</li>
-                <li>Optional side quests and expanded content</li>
-                <li>Player agency analysis and replayability factors</li>
-                <li>Complete design documentation for implementation</li>
-                <li>Ideal for RPGs, adventure games, visual novels, interactive fiction</li>
-              </ul>
-            """,
+          name = "GameNarrativeDesign",
+          category = "Games",
+          taskClass = GameNarrativeDesignTask::class.java,
+          executionConfigClass = GameNarrativeDesignConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Create interactive game narratives with branching storylines",
+          tooltipHtml = """
+                        Creates complete game narrative designs with interactive elements and player agency.
+                        <ul>
+                          <li>Extends NarrativeGeneration with game-specific features</li>
+                          <li>Three-act structure adapted for interactive media</li>
+                          <li>Multiple branching points with meaningful choices</li>
+                          <li>Character arcs that respond to player decisions</li>
+                          <li>Branching dialogue trees with emotional beats</li>
+                          <li>Multiple endings based on player choices</li>
+                          <li>Optional side quests and expanded content</li>
+                          <li>Player agency analysis and replayability factors</li>
+                          <li>Complete design documentation for implementation</li>
+                          <li>Ideal for RPGs, adventure games, visual novels, interactive fiction</li>
+                        </ul>
+                      """,
         )
     }
 }

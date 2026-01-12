@@ -1482,28 +1482,28 @@ Ensure variants maintain the core level design while adjusting challenge.
         private val log: Logger = LoggerFactory.getLogger(GameLevelDesignTask::class.java)
 
         val GameLevelDesign = TaskType(
-            "GameLevelDesign",
-            "Games",
-            GameLevelDesignTask::class.java,
-            GameLevelDesignTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate complete game level designs with layout, pacing, and encounters",
-            """
-              Generates production-ready game level designs with comprehensive documentation.
-              <ul>
-                <li>Creates detailed level layout with zones and connections</li>
-                <li>Designs encounters with appropriate difficulty progression</li>
-                <li>Analyzes and visualizes pacing curves</li>
-                <li>Places collectibles and secret areas strategically</li>
-                <li>Designs player guidance systems (implicit and explicit)</li>
-                <li>Generates difficulty variants for accessibility</li>
-                <li>Includes ASCII/text-based level visualization</li>
-                <li>Supports multiple game types (platformer, shooter, puzzle, RPG)</li>
-                <li>Configurable pacing styles (steady, escalating, varied)</li>
-                <li>Optional boss encounters, puzzles, and secrets</li>
-                <li>Ideal for game development, level design documentation, and prototyping</li>
-              </ul>
-            """,
+          name = "GameLevelDesign",
+          category = "Games",
+          taskClass = GameLevelDesignTask::class.java,
+          executionConfigClass = GameLevelDesignTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate complete game level designs with layout, pacing, and encounters",
+          tooltipHtml = """
+                        Generates production-ready game level designs with comprehensive documentation.
+                        <ul>
+                          <li>Creates detailed level layout with zones and connections</li>
+                          <li>Designs encounters with appropriate difficulty progression</li>
+                          <li>Analyzes and visualizes pacing curves</li>
+                          <li>Places collectibles and secret areas strategically</li>
+                          <li>Designs player guidance systems (implicit and explicit)</li>
+                          <li>Generates difficulty variants for accessibility</li>
+                          <li>Includes ASCII/text-based level visualization</li>
+                          <li>Supports multiple game types (platformer, shooter, puzzle, RPG)</li>
+                          <li>Configurable pacing styles (steady, escalating, varied)</li>
+                          <li>Optional boss encounters, puzzles, and secrets</li>
+                          <li>Ideal for game development, level design documentation, and prototyping</li>
+                        </ul>
+                      """,
         )
     }
 }

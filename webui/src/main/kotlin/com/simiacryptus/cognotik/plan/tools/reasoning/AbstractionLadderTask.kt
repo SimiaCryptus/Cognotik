@@ -514,24 +514,24 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractionLadderTask::class.java)
         val AbstractionLadder = TaskType(
-            "AbstractionLadder",
-            "Reasoning",
-            AbstractionLadderTask::class.java,
-            AbstractionLadderTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Traverse abstraction levels to identify patterns and design insights",
-            """
-              Analyzes concepts by moving up and down abstraction levels.
-              <ul>
-                <li>Move up to find generalizations and patterns</li>
-                <li>Move down to find specific implementations</li>
-                <li>Identify design patterns at each level</li>
-                <li>Discover refactoring opportunities</li>
-                <li>Analyze architectural patterns</li>
-                <li>Find code smells and anti-patterns</li>
-                <li>Generate actionable recommendations</li>
-              </ul>
-            """,
+          name = "AbstractionLadder",
+          category = "Reasoning",
+          taskClass = AbstractionLadderTask::class.java,
+          executionConfigClass = AbstractionLadderTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Traverse abstraction levels to identify patterns and design insights",
+          tooltipHtml = """
+                        Analyzes concepts by moving up and down abstraction levels.
+                        <ul>
+                          <li>Move up to find generalizations and patterns</li>
+                          <li>Move down to find specific implementations</li>
+                          <li>Identify design patterns at each level</li>
+                          <li>Discover refactoring opportunities</li>
+                          <li>Analyze architectural patterns</li>
+                          <li>Find code smells and anti-patterns</li>
+                          <li>Generate actionable recommendations</li>
+                        </ul>
+                      """,
         )
     }
 }

@@ -357,22 +357,22 @@ FileSearch - Search for patterns in files and provide results with context
         private val log = LoggerFactory.getLogger(FileSearchTask::class.java)
 
         val FileSearch = TaskType(
-            "FileSearch",
-            "File",
-            FileSearchTask::class.java,
-            SearchTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Search project files using patterns with contextual results",
-            """
-                      Performs pattern-based searches across project files with context.
-                      <ul>
-                        <li>Supports both substring and regex search patterns</li>
-                        <li>Shows configurable context lines around matches</li>
-                        <li>Groups results by file with line numbers</li>
-                        <li>Filters for text-based files automatically</li>
-                        <li>Provides organized, readable output format</li>
-                      </ul>
-                    """,
+          name = "FileSearch",
+          category = "File",
+          taskClass = FileSearchTask::class.java,
+          executionConfigClass = SearchTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Search project files using patterns with contextual results",
+          tooltipHtml = """
+                                Performs pattern-based searches across project files with context.
+                                <ul>
+                                  <li>Supports both substring and regex search patterns</li>
+                                  <li>Shows configurable context lines around matches</li>
+                                  <li>Groups results by file with line numbers</li>
+                                  <li>Filters for text-based files automatically</li>
+                                  <li>Provides organized, readable output format</li>
+                                </ul>
+                              """,
         )
     }
 }

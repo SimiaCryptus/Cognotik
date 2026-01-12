@@ -165,15 +165,15 @@ class RunToolTask(
     companion object {
         private val log = LoggerFactory.getLogger(RunToolTask::class.java)
         val RunTool = TaskType(
-            "RunTool",
-            "Execution & Automation",
-            RunToolTask::class.java,
-            RunToolTaskExecutionConfigData::class.java,
-            RunToolTaskTypeConfig::class.java,
-            "Execute external tools",
-            """
-          Executes configured external tools.
-        """,
+          name = "RunTool",
+          category = "Execution",
+          taskClass = RunToolTask::class.java,
+          executionConfigClass = RunToolTaskExecutionConfigData::class.java,
+          taskSettingsClass = RunToolTaskTypeConfig::class.java,
+          description = "Execute external tools",
+          tooltipHtml = """
+                    Executes configured external tools.
+                  """,
         )
     }
 }

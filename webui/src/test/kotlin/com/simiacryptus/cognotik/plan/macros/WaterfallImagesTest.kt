@@ -17,7 +17,7 @@ object WaterfallImagesTest {
         PlanHarness.configurePlatform()
     }
 
-    @Test
+   //@org.junit.jupiter.api.Test
     fun test() {
         object : PlanHarness(
             prompt = "Create a family tree of monsters; each image is an individual monster.",

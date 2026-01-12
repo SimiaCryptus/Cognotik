@@ -1,94 +1,455 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Level Design - Cognotik</title>
+    <title>Cognotik | GameLevelDesignTask - Industrial Level Design</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/variables.css">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .task-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0.5rem 0;
+            color: #fff;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        .reality-check {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 480px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: var(--bg-app);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow: auto;
+            flex-grow: 1;
+            background: var(--bg-app);
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .ui-panel-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            flex-grow: 1;
+            background: var(--bg-app);
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; }
+        
+        .process-list {
+            list-style: none;
+            padding: 0;
+        }
+        .process-step {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+        }
+        .step-number {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .reality-check { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
 </head>
 <body>
-    <cognotik-header current-page="game-level-design"></cognotik-header>
-    <header class="hero">
-        <h1>Game Level Design</h1>
-        <p class="subtitle">Generate complete game level designs with layout, pacing, and encounters. Create immersive worlds with structured zones, balanced challenges, and rewarding exploration.</p>
-        <a href="#demo" class="btn cta-button">Try the Simulator</a>
-    </header>
-    <section class="features">
-        <div class="features-grid">
-            <div class="feature-card">
-                <h3>Structured Layouts</h3>
-                <p>Creates detailed level layouts with distinct zones, logical connections, and ASCII visualizations.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Encounter Design</h3>
-                <p>Designs combat and puzzle encounters with appropriate difficulty progression and rewards.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Pacing Analysis</h3>
-                <p>Analyzes and visualizes pacing curves to ensure optimal flow and player engagement.</p>
-            </div>
+
+<cognotik-header current-page="GameLevelDesignTask"></cognotik-header>
+
+<main class="bento-container">
+
+    <!-- 1. HEADER -->
+    <section class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Games > GameLevelDesignTask</div>
+        <h1>GameLevelDesignTask</h1>
+        <p class="pitch">
+            Generates production-ready game level designs with comprehensive documentation, including layout, encounters, pacing analysis, and player guidance.
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">GPT-4 Preferred</span>
+            <span class="badge">Category: Games</span>
         </div>
     </section>
-    <section id="demo" class="simulator">
-        <h2>Interactive Simulator</h2>
-        <div class="simulator-container">
-            <div class="sim-controls">
-                <div class="control-group">
-                    <label>Level Name</label>
-                  <input type="text" id="sim-name" value="The Forgotten Catacombs">
-                </div>
-                <div class="control-group">
-                    <label>Game Type</label>
-                    <input type="text" value="Action RPG">
-                </div>
-                <div class="control-group">
-                    <label>Theme</label>
-                    <input type="text" value="Ancient underground ruins, dark, mysterious">
-                </div>
-                <div class="control-group">
-                    <label>Difficulty</label>
-                    <select>
-                        <option>Easy</option>
-                        <option selected>Medium</option>
-                        <option>Hard</option>
-                    </select>
-                </div>
-                <button class="run-button">Generate Level</button>
-            </div>
-            <div class="sim-output">
-                <div class="tab-content active" style="white-space: pre-wrap;">
-# Level Design: The Forgotten Catacombs
 
-## Overview
-**Theme:** Ancient underground ruins
-**Difficulty:** ${diff}
-**Est. Duration:** 15-20 mins
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check">
+        <!-- Input -->
+        <div class="panel code-panel">
+            <div class="panel-header">⚙️ TaskConfig.json</div>
+            <pre><code class="language-json">
+{
+  "level_name": "The Obsidian Vault",
+  "game_type": "metroidvania",
+  "level_theme": "dungeon",
+  "level_duration_minutes": 15,
+  "difficulty_tier": "hard",
+  "include_boss_encounter": true
+}
+            </code></pre>
+        </div>
 
-## Layout
-[Start] -> [Hall of Echoes] -> [Puzzle Chamber] -> [Boss Arena]
-                  |
-            [Hidden Armory]
+        <div class="flow-arrow">→</div>
 
-## Zones
-1. **Hall of Echoes**: A long, narrow corridor filled with skeletal warriors.
-   - *Encounter:* 3 Skeleton Warriors, 1 Archer.
-2. **Puzzle Chamber**: A room with pressure plates and locked doors.
-   - *Mechanic:* Sequence puzzle to unlock the path forward.
-3. **Hidden Armory** (Secret): Accessible via a cracked wall in the Hall.
-   - *Reward:* Rare weapon chest.
-
-## Pacing
-- Start: Low intensity (exploration)
-- Mid: Medium intensity (combat & puzzle)
-- Climax: High intensity (Boss fight)
+        <!-- Output -->
+        <div class="panel ui-panel">
+            <div class="panel-header">👁️ User UI</div>
+            <div class="ui-panel-content">
+                <div style="color: var(--accent-primary); font-weight: bold; margin-bottom: 0.5rem;"># Level Design: The Obsidian Vault</div>
+                <div style="font-family: var(--font-mono); font-size: 0.75rem; background: #000; padding: 0.5rem; border-radius: 4px; margin-bottom: 1rem; color: #4ade80; border: 1px solid var(--border-subtle);">
+                    [S] -- [Z1] -- [Z2] <br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[P1] -- [B]
+                </div>
+                <div style="font-size: 0.8rem;">
+                    <div style="margin-bottom: 0.3rem;"><span style="color: #4ade80;">✔</span> <strong>Phase 1:</strong> Level structure created (9 zones)</div>
+                    <div style="margin-bottom: 0.3rem;"><span style="color: #4ade80;">✔</span> <strong>Phase 2:</strong> 6 encounters designed</div>
+                    <div style="margin-bottom: 0.3rem;"><span style="color: #4ade80;">✔</span> <strong>Phase 3:</strong> Pacing curve analyzed (Intensity: 82/100)</div>
+                    <div style="margin-bottom: 0.3rem;"><span style="color: #4ade80;">✔</span> <strong>Phase 4:</strong> 15 collectibles placed</div>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- 3. TABS -->
+    <section class="task-details">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>level_name</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The name of the level.</td>
+                </tr>
+                <tr>
+                    <td><code>game_type</code></td>
+                    <td>String</td>
+                    <td>The type of game (e.g., 'platformer', 'shooter', 'puzzle', 'rpg', 'metroidvania'). Default: <code>platformer</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>level_duration_minutes</code></td>
+                    <td>Int</td>
+                    <td>Target duration in minutes (5-30). Default: <code>10</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>difficulty_tier</code></td>
+                    <td>String</td>
+                    <td>tutorial, easy, medium, hard, expert. Default: <code>medium</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>player_count</code></td>
+                    <td>Int</td>
+                    <td>Number of players (1-8). Default: <code>1</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>level_theme</code></td>
+                    <td>String</td>
+                    <td>Level theme (e.g., 'forest', 'dungeon', 'city', 'space_station'). Default: <code>dungeon</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>pacing_style</code></td>
+                    <td>String</td>
+                    <td>steady, escalating, varied. Default: <code>escalating</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>include_boss_encounter</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to include a final boss. Default: <code>false</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>include_puzzles</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to include puzzle elements. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>include_secrets</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to include secret areas. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>include_collectibles</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to include collectibles. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>generate_difficulty_variants</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to generate difficulty variants for accessibility. Default: <code>false</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>include_visual_layout</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to include ASCII visual layout. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Optional glob patterns for context (e.g. **/*.kt).</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <div class="process-list">
+                <div class="process-step">
+                    <div class="step-number">01</div>
+                    <div>
+                        <strong>Context Gathering</strong>
+                        <p>Analyzes <code>input_files</code> and prior orchestration state to ensure the level fits existing game mechanics, narrative context, or code standards.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">02</div>
+                    <div>
+                        <strong>Phase 1: Level Structure</strong>
+                        <p>Generates the macro-layout, including zones, connections, and an ASCII visual representation of the map.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">03</div>
+                    <div>
+                        <strong>Phase 2: Encounter Design</strong>
+                        <p>Populates zones with combat, puzzles, and environmental challenges, including enemy composition and rewards.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">04</div>
+                    <div>
+                        <strong>Phase 3: Pacing Analysis</strong>
+                        <p>Calculates intensity curves, identifies the climax location, and strategically places rest points.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">05</div>
+                    <div>
+                        <strong>Phase 4: Content Placement</strong>
+                        <p>Adds collectibles and secret areas based on the theme and difficulty tier.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">06</div>
+                    <div>
+                        <strong>Phase 5: UX & Guidance</strong>
+                        <p>Defines implicit (environmental) and explicit (markers) player guidance systems.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">07</div>
+                    <div>
+                        <strong>Phase 6: Difficulty Variants</strong>
+                       <p>Generates optional balance adjustments for Easy, Hard, and Expert modes for accessibility.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h4>Orchestration Boilerplate</h4>
+            <pre><code class="language-kotlin">
+val task = GameLevelDesignTask(
+    orchestrationConfig = config,
+    planTask = GameLevelDesignTask.GameLevelDesignTaskExecutionConfigData(
+        level_name = "Crystal Caves",
+        game_type = "platformer",
+        difficulty_tier = "medium"
+    )
+)
+orchestrator.runTask(task)
+            </code></pre>
+            <h4>Prompt Segment</h4>
+            <pre><code class="language-text">
+GameLevelDesign - Generate complete game level designs with layout, pacing, and encounters
+  ** Optionally, list input files (supports glob patterns) to be examined for context
+  ** Specify level name and game type (platformer, shooter, puzzle, rpg, etc.)
+  ** Set target duration and difficulty tier
+  ** Configure player count (single or multiplayer)
+  ** Choose level theme and visual style
+  ** Include boss encounters, puzzles, secrets, and collectibles
+  ** Define pacing style (steady, escalating, varied)
+  ** Generate difficulty variants for accessibility
+  ** Produces complete level design with ASCII visualization
+  ** Includes encounter progression, pacing analysis, and player guidance
+  ** Ideal for game development, level design documentation, and prototyping
+            </code></pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.target.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

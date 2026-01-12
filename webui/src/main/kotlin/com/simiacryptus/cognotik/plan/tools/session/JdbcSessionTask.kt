@@ -271,20 +271,20 @@ class JdbcSessionTask(
 
     companion object {
         val JdbcSession = TaskType(
-            "JdbcSession",
-            "Session",
-            JdbcSessionTask::class.java,
-            JdbcSessionTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Execute SQL queries via JDBC",
-            """
-                Executes SQL statements against a database using JDBC.
-                <ul>
-                    <li><b>Connection:</b> Requires `url`. Optional `user`, `password`, and `driver`.</li>
-                    <li><b>Stateful:</b> Use `sessionId` to keep connections open across multiple tasks (useful for transactions or temp tables).</li>
-                    <li><b>Output:</b> Returns results as Markdown tables.</li>
-                </ul>
-            """,
+          name = "JdbcSession",
+          category = "Session",
+          taskClass = JdbcSessionTask::class.java,
+          executionConfigClass = JdbcSessionTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Execute SQL queries via JDBC",
+          tooltipHtml = """
+                          Executes SQL statements against a database using JDBC.
+                          <ul>
+                              <li><b>Connection:</b> Requires `url`. Optional `user`, `password`, and `driver`.</li>
+                              <li><b>Stateful:</b> Use `sessionId` to keep connections open across multiple tasks (useful for transactions or temp tables).</li>
+                              <li><b>Output:</b> Returns results as Markdown tables.</li>
+                          </ul>
+                      """,
         )
         private val log = LoggerFactory.getLogger(JdbcSessionTask::class.java)
         private val _activeSessions = ConcurrentHashMap<String, ConcurrentHashMap<String, SessionState>>()

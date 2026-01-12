@@ -243,22 +243,22 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
     companion object {
         private val log = LoggerFactory.getLogger(RunCodeTask::class.java)
         val RunCode = TaskType(
-            "RunCode",
-            "Execution & Automation",
-            RunCodeTask::class.java,
-            RunCodeTaskExecutionConfigData::class.java,
-            RunCodeTaskTypeConfig::class.java,
-            "Execute code snippets with oversight",
-            """
-          Executes code snippets in an interactive environment.
-          <ul>
-            <li>User-approved code execution</li>
-            <li>Working directory configuration</li>
-            <li>Output capture and formatting</li>
-            <li>Error handling and reporting</li>
-            <li>Interactive result review</li>
-          </ul>
-        """,
+          name = "RunCode",
+          category = "Execution",
+          taskClass = RunCodeTask::class.java,
+          executionConfigClass = RunCodeTaskExecutionConfigData::class.java,
+          taskSettingsClass = RunCodeTaskTypeConfig::class.java,
+          description = "Execute code snippets with oversight",
+          tooltipHtml = """
+                    Executes code snippets in an interactive environment.
+                    <ul>
+                      <li>User-approved code execution</li>
+                      <li>Working directory configuration</li>
+                      <li>Output capture and formatting</li>
+                      <li>Error handling and reporting</li>
+                      <li>Interactive result review</li>
+                    </ul>
+                  """,
         )
 
     }

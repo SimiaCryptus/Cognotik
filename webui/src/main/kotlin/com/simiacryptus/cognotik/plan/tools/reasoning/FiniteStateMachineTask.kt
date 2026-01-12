@@ -882,24 +882,24 @@ Format as a clear table or structured list.
         private val log: Logger = LoggerFactory.getLogger(FiniteStateMachineTask::class.java)
 
         val FiniteStateMachine = TaskType(
-            "FiniteStateMachine",
-            "Reasoning",
-            FiniteStateMachineTask::class.java,
-            FiniteStateMachineTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Model concepts using finite state machine analysis",
-            """
-        Analyzes concepts, systems, or processes using finite state machine modeling.
-        <ul>
-          <li>Identifies all possible states and their properties</li>
-          <li>Maps state transitions and triggering events</li>
-          <li>Generates visual state diagrams</li>
-          <li>Identifies edge cases and error states</li>
-          <li>Validates FSM properties (determinism, completeness, reachability)</li>
-          <li>Generates comprehensive test scenarios</li>
-          <li>Useful for system design, protocol analysis, and workflow validation</li>
-        </ul>
-      """,
+          name = "FiniteStateMachine",
+          category = "Reasoning",
+          taskClass = FiniteStateMachineTask::class.java,
+          executionConfigClass = FiniteStateMachineTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Model concepts using finite state machine analysis",
+          tooltipHtml = """
+                  Analyzes concepts, systems, or processes using finite state machine modeling.
+                  <ul>
+                    <li>Identifies all possible states and their properties</li>
+                    <li>Maps state transitions and triggering events</li>
+                    <li>Generates visual state diagrams</li>
+                    <li>Identifies edge cases and error states</li>
+                    <li>Validates FSM properties (determinism, completeness, reachability)</li>
+                    <li>Generates comprehensive test scenarios</li>
+                    <li>Useful for system design, protocol analysis, and workflow validation</li>
+                  </ul>
+                """,
         )
     }
 }

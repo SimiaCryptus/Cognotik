@@ -25,21 +25,21 @@ class AutoFixTask(
     companion object {
         private val log = LoggerFactory.getLogger(AutoFixTask::class.java)
         val AutoFix = TaskType(
-            "AutoFix",
-            "Execution & Automation",
-            AutoFixTask::class.java,
-            AutoFixTaskExecutionConfigData::class.java,
-            AutoFixTaskTypeConfig::class.java,
-            "Run a command and automatically fix any issues that arise",
-            """
-          Executes a command and automatically fixes any issues that arise.
-          <ul>
-            <li>Specify commands and working directories</li>
-            <li>Supports multiple commands and directories</li>
-            <li>Interactive approval mode</li>
-            <li>Output diff formatting</li>
-          </ul>
-        """,
+          name = "AutoFix",
+          category = "Execution",
+          taskClass = AutoFixTask::class.java,
+          executionConfigClass = AutoFixTaskExecutionConfigData::class.java,
+          taskSettingsClass = AutoFixTaskTypeConfig::class.java,
+          description = "Run a command and automatically fix any issues that arise",
+          tooltipHtml = """
+                    Executes a command and automatically fixes any issues that arise.
+                    <ul>
+                      <li>Specify commands and working directories</li>
+                      <li>Supports multiple commands and directories</li>
+                      <li>Interactive approval mode</li>
+                      <li>Output diff formatting</li>
+                    </ul>
+                  """,
         )
     }
 

@@ -29,26 +29,26 @@ class GameTheoryTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)
         val GameTheory = TaskType(
-            "GameTheory",
-            "Reasoning",
-            GameTheoryTask::class.java,
-            GameTheoryTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Analyze strategic interactions using game theory",
-            """
-              Performs comprehensive game theory analysis of strategic situations.
-              <ul>
-                <li>Analyzes game structure and player strategies</li>
-                <li>Constructs payoff matrices for strategy combinations</li>
-                <li>Identifies Nash equilibria (pure and mixed strategies)</li>
-                <li>Analyzes dominant and dominated strategies</li>
-                <li>Finds Pareto optimal outcomes</li>
-                <li>Supports repeated game analysis with trigger strategies</li>
-                <li>Provides strategic recommendations for each player</li>
-                <li>Handles cooperative, non-cooperative, zero-sum, and sequential games</li>
-                <li>Useful for competitive analysis, negotiation, and strategic planning</li>
-              </ul>
-            """,
+          name = "GameTheory",
+          category = "Reasoning",
+          taskClass = GameTheoryTask::class.java,
+          executionConfigClass = GameTheoryTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Analyze strategic interactions using game theory",
+          tooltipHtml = """
+                        Performs comprehensive game theory analysis of strategic situations.
+                        <ul>
+                          <li>Analyzes game structure and player strategies</li>
+                          <li>Constructs payoff matrices for strategy combinations</li>
+                          <li>Identifies Nash equilibria (pure and mixed strategies)</li>
+                          <li>Analyzes dominant and dominated strategies</li>
+                          <li>Finds Pareto optimal outcomes</li>
+                          <li>Supports repeated game analysis with trigger strategies</li>
+                          <li>Provides strategic recommendations for each player</li>
+                          <li>Handles cooperative, non-cooperative, zero-sum, and sequential games</li>
+                          <li>Useful for competitive analysis, negotiation, and strategic planning</li>
+                        </ul>
+                      """,
         )
         private val textExtensions = setOf(
             "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs",

@@ -834,23 +834,23 @@ Generate the experiment recommendations now:
     companion object {
       private val log = LoggerFactory.getLogger(ProbabilisticReasoningTask::class.java)
         val ProbabilisticReasoning = TaskType(
-            "ProbabilisticReasoning",
-            "Reasoning",
-            ProbabilisticReasoningTask::class.java,
-            ProbabilisticReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Reason under uncertainty using Bayesian analysis",
-            """
-              Performs probabilistic reasoning and Bayesian analysis under uncertainty.
-              <ul>
-                <li>Assigns and updates probabilities using Bayes' theorem</li>
-                <li>Calculates expected values and quantifies risks</li>
-                <li>Identifies key uncertainties and information gaps</li>
-                <li>Suggests experiments to reduce uncertainty</li>
-                <li>Provides confidence intervals and sensitivity analysis</li>
-                <li>Useful for risk assessment, diagnostic reasoning, and decision making</li>
-              </ul>
-            """,
+          name = "ProbabilisticReasoning",
+          category = "Reasoning",
+          taskClass = ProbabilisticReasoningTask::class.java,
+          executionConfigClass = ProbabilisticReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Reason under uncertainty using Bayesian analysis",
+          tooltipHtml = """
+                        Performs probabilistic reasoning and Bayesian analysis under uncertainty.
+                        <ul>
+                          <li>Assigns and updates probabilities using Bayes' theorem</li>
+                          <li>Calculates expected values and quantifies risks</li>
+                          <li>Identifies key uncertainties and information gaps</li>
+                          <li>Suggests experiments to reduce uncertainty</li>
+                          <li>Provides confidence intervals and sensitivity analysis</li>
+                          <li>Useful for risk assessment, diagnostic reasoning, and decision making</li>
+                        </ul>
+                      """,
         )
     }
 }

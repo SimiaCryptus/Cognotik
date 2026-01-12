@@ -1,192 +1,364 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Isomorphism Discovery - Cognotik</title>
-    <!-- Prompt: Abstract 3D illustration of two distinct geometric structures (one cubic, one spherical) with glowing lines connecting corresponding nodes, representing isomorphism. Dark background, neon cyan and purple accents. -->
+    <title>Cognotik | IsomorphismDiscoveryTask - Structural Mapping Engine</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --accent-success: #3fb950;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 1rem 0;
+            font-weight: 600;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 420px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: #090b0e;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow: auto;
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        pre {
+            margin: 0;
+            font-family: var(--font-mono);
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--accent-primary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        /* Custom overrides for specific SVG alignment in feature cards if needed */
-        .feature-card svg {
-            color: var(--accent-secondary);
-            margin-bottom: 1rem;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+            .panel { height: auto; min-height: 300px; }
         }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="isomorphism"></cognotik-header>
 
-    <main class="task-container">
+<cognotik-header current-page="tasks"></cognotik-header>
 
-        <!-- Hero Section -->
-        <section class="hero">
-            <h1>Isomorphism Discovery</h1>
-            <p class="subtitle">
-                Search for and validate structural mappings between two distinct domains.
-                Identify primitives, generate mapping rules, and verify operational preservation to discover hidden analogies.
-            </p>
-            <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
-                Try the Simulator
-            </button>
-        </section>
+<main class="bento-container">
 
-        <!-- Features Grid -->
-        <section class="features">
-            <div class="features-grid">
-            <div class="feature-card">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
-                <h3>Primitive Identification</h3>
-                <p>Automatically identifies fundamental objects (atoms) and operations (verbs) in both source and target domains.</p>
-            </div>
-            <div class="feature-card">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                <h3>Mapping Generation</h3>
-                <p>Proposes candidate mapping rules and dictionaries to translate concepts and structures between domains.</p>
-            </div>
-            <div class="feature-card">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                <h3>Structural Verification</h3>
-                <p>Verifies if operations are preserved (f(A op B) = f(A) op' f(B)) with concrete examples and derivations.</p>
-            </div>
-            </div>
-        </section>
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > IsomorphismDiscoveryTask</div>
+        <h1>IsomorphismDiscoveryTask</h1>
+        <p class="pitch">
+            Search for and validate structural mappings between two distinct domains. Identifies primitives, generates candidate mapping rules, and verifies structural preservation.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">Model: GPT-4o / Claude 3.5</span>
+        </div>
+    </header>
 
-        <!-- Simulator -->
-        <section id="simulator" class="simulator">
-            <h2>Interactive Simulator</h2>
-            <div class="simulator-container">
-                <!-- Inputs -->
-                <div class="sim-controls">
-                    <div class="control-group">
-                        <label>Source Domain</label>
-                        <textarea rows="3" id="sourceDomain">Number Theory (Integers under addition)</textarea>
-                    </div>
-                    <div class="control-group">
-                        <label>Target Domain</label>
-                        <textarea rows="3" id="targetDomain">Group Theory (Cyclic Groups)</textarea>
-                    </div>
-                    <div class="control-group">
-                        <label>Mapping Strictness</label>
-                        <select id="strictness">
-                            <option value="strict">Strict (Isomorphism)</option>
-                            <option value="loose">Loose (Homomorphism)</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label>Context Files</label>
-                        <input type="text" placeholder="path/to/file1.txt, path/to/file2.txt">
-                    </div>
-                    <div class="control-group">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="verifyOps" checked> Verify Operations
-                        </label>
-                    </div>
-                    <button class="run-button" onclick="runSimulation()">Run Discovery</button>
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> TaskConfig.json</div>
+            <div class="panel-content">
+                <pre><code class="language-json">{
+  "source_domain": "Relational Databases",
+  "target_domain": "Set Theory",
+  "mapping_strictness": "strict",
+  "verify_operations": true
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>👁️</span> Session UI</div>
+            <div class="panel-content">
+                <div style="border-left: 3px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1rem;">
+                    <strong style="color: var(--accent-primary);">Isomorphism Discovered</strong><br>
+                    <span style="font-size: 0.8rem; color: var(--text-dim);">Confidence: 94.2%</span>
                 </div>
-
-                <!-- Outputs -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <div class="tab active" onclick="switchTab('overview')">Overview</div>
-                        <div class="tab" onclick="switchTab('mappings')">Mappings</div>
-                        <div class="tab" onclick="switchTab('verification')">Verification</div>
-                    </div>
-                    <div class="tab-content active" id="outputDisplay">
-                        <span style="color: #64748b;">// Configure domains and click 'Run Discovery' to start analysis...</span>
-                    </div>
+                <table style="width: 100%; font-size: 0.8rem; border-spacing: 0 4px;">
+                    <tr style="color: var(--text-dim);">
+                        <th align="left">Source (DB)</th>
+                        <th align="left">Target (Sets)</th>
+                    </tr>
+                    <tr>
+                        <td><code>Table</code></td>
+                        <td><code>Set</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>Join (⋈)</code></td>
+                        <td><code>Intersection (∩)</code></td>
+                    </tr>
+                </table>
+                <div style="margin-top: 1rem; font-size: 0.8rem; background: #000; padding: 0.5rem; border-radius: 4px;">
+                    <span style="color: var(--accent-success);">✅ Verification Passed</span><br>
+                    <code style="font-size: 0.7rem;">f(A ⋈ B) = f(A) ∩ f(B)</code><br>
+                    <span style="color: var(--text-dim);">Relational joins preserve set-theoretic intersection properties.</span>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Use Cases -->
-        <section class="features">
-            <h2>When to Use</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <h3>Theoretical Physics</h3>
-                    <p>Mapping concepts between different physical theories (e.g., fluid dynamics and electromagnetism) to transfer solutions and insights.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>System Architecture</h3>
-                    <p>Validating if a new system design preserves the properties, invariants, and data flows of a legacy system during migration.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Abstract Modeling</h3>
-                    <p>Finding analogies between disparate business or logic domains to apply proven strategies from one field to another.</p>
-                </div>
-            </div>
-        </section>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
 
-    </main>
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane">
+            <h3 style="font-family: var(--font-mono); font-size: 1rem; color: var(--accent-primary);">TaskExecutionConfig Fields</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>source_domain</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>Description of the source domain (e.g., 'Number Theory').</td>
+                </tr>
+                <tr>
+                    <td><code>target_domain</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>Description of the target domain (e.g., 'Geometry').</td>
+                </tr>
+                <tr>
+                    <td><code>mapping_strictness</code></td>
+                    <td>String</td>
+                    <td>'loose' (homomorphism) or 'strict' (isomorphism). Default: <code>strict</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>verify_operations</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to verify that operations are preserved across the map. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Optional files to provide domain context.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Additional context files for structural analysis.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-    <script>
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            // In a real app, this would switch content visibility.
-        }
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <h3 style="font-family: var(--font-mono); font-size: 1rem; color: var(--accent-primary);">Task Process Lifecycle</h3>
+            <ol style="color: var(--text-dim); line-height: 2;">
+                <li><strong style="color: var(--text-main);">Primitive Definition:</strong> Identify fundamental objects (atoms) and operations (verbs) in both domains.</li>
+                <li><strong style="color: var(--text-main);">Candidate Generation:</strong> Propose a mapping function (dictionary) between objects and operations.</li>
+                <li><strong style="color: var(--text-main);">Structure Verification:</strong> Verify preservation: <code>f(A * B) = f(A) # f(B)</code>.</li>
+                <li><strong style="color: var(--text-main);">Refinement:</strong> Adjust mappings based on verification failures to find the most consistent fit.</li>
+                <li><strong style="color: var(--text-main);">Conclusion:</strong> Final assessment of validity, confidence score, and limitations.</li>
+            </ol>
+        </div>
 
-        function runSimulation() {
-            const source = document.getElementById('sourceDomain').value;
-            const target = document.getElementById('targetDomain').value;
-            const display = document.getElementById('outputDisplay');
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3 style="font-family: var(--font-mono); font-size: 1rem; color: var(--accent-primary);">Kotlin Boilerplate</h3>
+            <pre style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-subtle);"><code style="background: none; color: var(--text-main);">val task = IsomorphismDiscoveryTask(
+    orchestrationConfig = config,
+    planTask = IsomorphismDiscoveryTaskExecutionConfigData(
+        source_domain = "Quantum Mechanics",
+        target_domain = "Linear Algebra",
+        mapping_strictness = "strict"
+    )
+)</code></pre>
 
-            display.innerHTML = `<span style="color: var(--accent-secondary)">> Initializing IsomorphismDiscoveryTask...</span>
-<span style="color: #94a3b8">> Source:</span> ${source}
-<span style="color: #94a3b8">> Target:</span> ${target}
-<span style="color: #94a3b8">> Strictness:</span> ${document.getElementById('strictness').value}
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">The following logic is injected into the LLM context:</p>
+            <pre style="background: #000; padding: 1rem; border-radius: 6px; font-family: var(--font-mono); font-size: 0.85rem; color: #4ade80;">
+IsomorphismDiscovery - Search for and validate structural mappings between two distinct domains
+  ** Specify source_domain and target_domain
+  ** Set mapping_strictness ('loose' or 'strict')
+  ** Enable verify_operations to check structural preservation
+  ** The task will:
+     - Identify primitives (objects and operations) in both domains
+     - Generate candidate mapping rules
+     - Verify if operations are preserved (f(A op B) = f(A) op' f(B))
+     - Refine and assess the validity of the isomorphism
+  ** Useful for theoretical physics, system architecture, cryptography, and abstract modeling</pre>
+        </div>
+    </section>
+</main>
 
-<span style="color: var(--accent-color)">> Identifying Primitives...</span>
-  Source Objects: [Integer, Zero, One]
-  Source Ops: [Addition, Negation]
-  Target Objects: [Element, Identity, Generator]
-  Target Ops: [Multiplication, Inverse]
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
-<span style="color: var(--accent-color)">> Generating Mappings...</span>
-  1. Integer(n) -> Element(g^n)
-  2. Addition(+) -> Multiplication(*)
-  3. Zero -> Identity(e)
-
-<span style="color: var(--accent-color)">> Verifying Structure...</span>
-  Checking: f(A + B) = f(A) * f(B)
-  LHS: f(n + m) = g^(n+m)
-  RHS: f(n) * f(m) = g^n * g^m = g^(n+m)
-  Result: <span style="color: #4ade80">VERIFIED</span>
-
-<span style="color: var(--accent-secondary)">> Conclusion:</span>
-  The domains are isomorphic under the proposed mapping.
-  Confidence: 99.2%`;
-        }
-    </script>
 </body>
 </html>

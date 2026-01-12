@@ -642,23 +642,23 @@ Generate the causal analysis now:
     companion object {
         private val log: Logger = LoggerFactory.getLogger(CausalInferenceTask::class.java)
         val CausalInference = TaskType(
-            "CausalInference",
-            "Reasoning",
-            CausalInferenceTask::class.java,
-            CausalInferenceTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Identify causal relationships and root causes",
-            """
-              Performs causal inference analysis to identify true causal relationships.
-              <ul>
-                <li>Distinguishes causation from correlation</li>
-                <li>Identifies root causes vs intermediate factors</li>
-                <li>Builds causal graphs showing relationships</li>
-                <li>Identifies confounding variables</li>
-                <li>Provides evidence-based causal reasoning</li>
-                <li>Useful for debugging and root cause analysis</li>
-              </ul>
-            """,
+          name = "CausalInference",
+          category = "Reasoning",
+          taskClass = CausalInferenceTask::class.java,
+          executionConfigClass = CausalInferenceTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Identify causal relationships and root causes",
+          tooltipHtml = """
+                        Performs causal inference analysis to identify true causal relationships.
+                        <ul>
+                          <li>Distinguishes causation from correlation</li>
+                          <li>Identifies root causes vs intermediate factors</li>
+                          <li>Builds causal graphs showing relationships</li>
+                          <li>Identifies confounding variables</li>
+                          <li>Provides evidence-based causal reasoning</li>
+                          <li>Useful for debugging and root cause analysis</li>
+                        </ul>
+                      """,
         )
     }
 }

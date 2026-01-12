@@ -1,249 +1,277 @@
-<!-- Image Prompt: A futuristic, abstract 3D visualization of a causal network. Glowing nodes in deep blue and purple are connected by data streams. One specific path is highlighted in bright cyan, tracing from a root node to an effect node, symbolizing the discovery of a root cause amidst complexity. High contrast, cinematic lighting, dark background. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Causal Inference - Cognotik</title>
+    <title>Cognotik | CausalInferenceTask - Industrial Reasoning Engine</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
     <style>
-
-
-
-
-
-
-
-
-
-
-        /* Custom styles specific to this page */
-        .feature-card svg {
-            width: 48px;
-            height: 48px;
-            color: var(--accent-secondary);
-            margin-bottom: 1rem;
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+            --success-green: #2ea043;
         }
 
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
 
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
 
+        .page-header { margin-bottom: 2rem; }
+        .breadcrumbs { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.5rem; }
+        h1 { font-size: 2rem; margin: 0 0 0.5rem 0; color: #fff; font-family: 'Cinzel', serif; }
+        .pitch { font-size: 1.2rem; color: var(--text-dim); max-width: 800px; }
 
-
-
-
-
-        .toggle-group {
-            display: flex;
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
             gap: 1rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 3rem;
+            align-items: center;
         }
 
-
-
-
-
-        .mermaid-container {
-            background: var(--surface-color);
-            padding: 1rem;
-            border-radius: var(--border-radius);
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 420px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
         }
 
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        pre { margin: 0; padding: 1rem; overflow: auto; flex: 1; font-family: var(--font-mono); font-size: 0.85rem; }
+        code { color: var(--accent-primary); }
+
+        .mock-ui {
+            padding: 1rem;
+            background: #0d1117;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .tabs-nav { display: flex; border-bottom: 1px solid var(--border-subtle); margin-bottom: 2rem; }
+        .tabs-nav button {
+            background: none; border: none; padding: 1rem 2rem; color: var(--text-dim);
+            cursor: pointer; border-bottom: 2px solid transparent; font-weight: 600;
+        }
+        .tabs-nav button.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+
+        .docs-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .docs-table th { text-align: left; color: var(--text-dim); border-bottom: 1px solid var(--border-subtle); padding: 0.75rem; font-size: 0.9rem; }
+        .docs-table td { padding: 0.75rem; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+        .req { color: #f85149; font-weight: bold; }
+
+        .badge-ui {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: var(--border-subtle);
+            margin-right: 0.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
+        }
     </style>
 </head>
 <body>
 
-<cognotik-header current-page="causal-inference"></cognotik-header>
+<cognotik-header current-page="tasks"></cognotik-header>
 
-<main>
-    <!-- Hero Section -->
-    <section class="hero">
-        <h1>Causal Inference Engine</h1>
-        <p class="subtitle">
-            Move beyond correlation. Systematically identify root causes, map causal chains, and detect confounding factors in complex systems using advanced reasoning.
+<main class="task-container">
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > CausalInferenceTask</div>
+        <h1>CausalInferenceTask</h1>
+        <p class="pitch">
+            Identify causal relationships and root causes using evidence-based reasoning, confounding factor identification, and automated causal graph generation.
         </p>
-        <a href="#simulator" class="cta-button">Try the Simulator</a>
-    </section>
-
-    <!-- Features Grid -->
-    <section class="features">
-        <div class="features-grid">
-        <div class="feature-card">
-            <div>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-            </div>
-            <h3>Root Cause Analysis</h3>
-            <p>Distinguish between proximate triggers and fundamental root causes using counterfactual reasoning.</p>
+        <div style="margin-top: 1rem;">
+            <span class="badge-ui">Side-Effect Safe</span>
+            <span class="badge-ui" style="color: #aff5b4; border: 1px solid var(--success-green);">Reasoning Engine</span>
         </div>
-        <div class="feature-card">
-            <div>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-            </div>
-            <h3>Causal Graphing</h3>
-            <p>Automatically generate Mermaid diagrams to visualize complex dependencies and causal flows.</p>
-        </div>
-        <div class="feature-card">
-            <div>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-            </div>
-            <h3>Evidence Integration</h3>
-            <p>Ingest logs, code files, and metrics to ground analysis in concrete evidence, not just speculation.</p>
-        </div>
-        </div>
-    </section>
+    </header>
 
-    <!-- Simulator -->
-    <section id="simulator" class="simulator">
-        <div class="simulator-container">
-            <!-- Inputs -->
-            <div class="sim-controls">
-                <h2>Configuration</h2>
-                <div class="control-group">
-                    <label>Observed Effect</label>
-                    <textarea id="input-effect" rows="2">High latency in payment processing API</textarea>
-                </div>
-                <div class="control-group">
-                    <label>Potential Causes (Optional)</label>
-                    <textarea id="input-causes" rows="3" placeholder="One per line">Database lock contention
-Third-party fraud service timeout
-Memory leak in container</textarea>
-                </div>
-                <div class="control-group">
-                    <label>Evidence Sources (Glob patterns)</label>
-                    <input type="text" id="input-evidence" value="logs/app.log, src/**/*.kt">
-                </div>
-                <div class="toggle-group">
-                    <label><input type="checkbox" id="check-graph" checked> Build Graph</label>
-                    <label><input type="checkbox" id="check-confounders" checked> Identify Confounders</label>
-                </div>
-                <button class="run-button" onclick="runSimulation()">Analyze Causality</button>
-            </div>
+    <section class="reality-check-grid">
+        <div class="panel">
+            <div class="panel-header"><span>ExecutionConfig.json</span><span>JSON</span></div>
+            <pre><code>{
+  "observed_effect": "High latency in checkout service",
+  "potential_causes": [
+    "Database connection pooling",
+    "Recent deployment of Auth module",
+    "Network congestion"
+  ],
+  "evidence_sources": ["logs/checkout/*.log"],
+  "input_files": ["src/services/AuthService.kt"],
+  "build_causal_graph": true
+}</code></pre>
+        </div>
 
-            <!-- Outputs -->
-            <div class="sim-output">
-                <div class="tabs">
-                    <div class="tab active" onclick="switchTab('analysis')">Analysis</div>
-                    <div class="tab" onclick="switchTab('graph')">Causal Graph</div>
-                    <div class="tab" onclick="switchTab('evidence')">Evidence</div>
-                </div>
+        <div style="text-align: center; color: var(--text-dim); font-size: 1.5rem;">→</div>
 
-                <div id="tab-analysis" class="tab-content active">
-                    <div style="color: #64748b; text-align: center; padding-top: 4rem;">
-                        Configure inputs and click "Analyze Causality" to start.
+        <div class="panel">
+            <div class="panel-header"><span>Session UI Output</span><span>Rendered</span></div>
+            <div class="mock-ui">
+                <div style="border-left: 3px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1rem;">
+                    <h4 style="margin: 0; color: var(--accent-primary);">Causal Analysis Results</h4>
+                    <p style="font-size: 0.85rem; margin: 0.5rem 0;">Root Cause: <strong>Auth Module Token Validation</strong></p>
+                </div>
+                <div style="background: #1c2128; padding: 0.5rem; border-radius: 4px; font-size: 0.75rem; font-family: var(--font-mono);">
+                    <div style="color: #8b949e;">graph TD</div>
+                    <div style="padding-left: 1rem;">
+                        Auth_Deploy -->|Increased CPU| Latency<br>
+                        DB_Pool -.->|Correlation| Latency<br>
+                        Confounder[Traffic Spike] --> Auth_Deploy
                     </div>
                 </div>
-
-                <div id="tab-graph" class="tab-content">
-                    <div class="mermaid-container">
-                        <!-- Graph will render here -->
-                    </div>
-                </div>
-
-                <div id="tab-evidence" class="tab-content">
-                    <div style="color: #64748b;">No evidence loaded.</div>
-                </div>
+                <ul style="font-size: 0.8rem; padding-left: 1.2rem; color: var(--text-dim);">
+                    <li>Mechanism: Synchronous crypto calls blocking event loop</li>
+                    <li>Confidence: High (85%)</li>
+                </ul>
             </div>
         </div>
     </section>
 
-    <!-- Use Cases -->
-    <section class="features">
-        <div class="features-grid">
-        <div class="feature-card">
-            <h3>Production Incidents</h3>
-            <p>Rapidly diagnose outages by correlating symptoms with recent changes and logs.</p>
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <div id="tab-docs" class="tab-pane">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>observed_effect</code> <span class="req">*</span></td>
+                        <td>String</td>
+                        <td>The observed effect or outcome to explain (e.g., a bug or performance drop).</td>
+                    </tr>
+                    <tr>
+                        <td><code>potential_causes</code></td>
+                        <td>List&lt;String&gt;</td>
+                        <td>Specific hypotheses to investigate. If empty, the agent identifies causes from evidence.</td>
+                    </tr>
+                    <tr>
+                        <td><code>evidence_sources</code></td>
+                        <td>List&lt;String&gt;</td>
+                        <td>Glob patterns for logs, metrics, or data files to be used as evidence.</td>
+                    </tr>
+                    <tr>
+                        <td><code>input_files</code></td>
+                        <td>List&lt;String&gt;</td>
+                        <td>Specific files or patterns (e.g. <code>**/*.kt</code>) to be examined as primary input.</td>
+                    </tr>
+                    <tr>
+                        <td><code>related_files</code></td>
+                        <td>List&lt;String&gt;</td>
+                        <td>Additional files for context that are not primary evidence but relevant.</td>
+                    </tr>
+                    <tr>
+                        <td><code>build_causal_graph</code></td>
+                        <td>Boolean</td>
+                        <td>Whether to generate a Mermaid-based visualization of the causal chain. Default: <code>true</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>identify_confounders</code></td>
+                        <td>Boolean</td>
+                        <td>Whether to explicitly look for variables that create spurious correlations. Default: <code>true</code>.</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        <div class="feature-card">
-            <h3>Performance Regressions</h3>
-            <p>Trace latency spikes to specific bottlenecks in code or infrastructure.</p>
+
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <h3>Task Execution Flow</h3>
+            <ol style="color: var(--text-dim); line-height: 2;">
+                <li><strong>Evidence Gathering:</strong> Scans workspace for files matching <code>evidence_sources</code> and <code>input_files</code>.</li>
+                <li><strong>Context Assembly:</strong> Aggregates evidence, prior task results, and user instructions into a reasoning prompt.</li>
+                <li><strong>Causal Inference:</strong> LLM applies temporal precedence and counterfactual reasoning to distinguish causation from correlation.</li>
+                <li><strong>Graph Generation:</strong> (Optional) Generates a Mermaid diagram representing the identified causal chain.</li>
+                <li><strong>Reporting:</strong> Produces a structured <code>CausalAnalysisResult</code> with recommendations.</li>
+            </ol>
         </div>
-        <div class="feature-card">
-            <h3>Legacy Code Analysis</h3>
-            <p>Understand side effects and hidden dependencies in undocumented systems.</p>
-        </div>
+
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3>Kotlin Boilerplate</h3>
+            <div class="panel" style="height: auto;">
+                <pre><code>val task = CausalInferenceTask(
+    orchestrationConfig = config,
+    planTask = CausalInferenceTaskExecutionConfigData(
+        observed_effect = "Memory leak in production",
+        evidence_sources = listOf("logs/heap_dump.log"),
+        input_files = listOf("src/main/MemoryManager.kt"),
+        build_causal_graph = true
+    )
+)</code></pre>
+            </div>
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the orchestrator's system prompt:</p>
+            <pre style="background: #000; border-radius: 4px;"><code>CausalInference - Identify causal relationships and root causes
+  ** Specify the observed effect or outcome to explain
+  ** List potential causes to investigate
+  ** Optionally build a causal graph showing relationships
+  ** Optionally identify confounding factors
+ ** Provide evidence sources (logs, metrics, code files)
+  ** Optionally, list input files (supports glob patterns) to be examined
+  ** Useful for:
+     - Root cause analysis
+     - Debugging complex issues
+     - Understanding system behavior
+     - Distinguishing correlation from causation</code></pre>
         </div>
     </section>
 </main>
 
 <script>
-    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
-
-    function switchTab(tabName) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-        event.target.classList.add('active');
-        document.getElementById('tab-' + tabName).classList.add('active');
-    }
-
-    function runSimulation() {
-        const effect = document.getElementById('input-effect').value;
-        const analysisTab = document.getElementById('tab-analysis');
-        const graphTab = document.querySelector('.mermaid-container');
-
-        analysisTab.innerHTML = '<div style="text-align:center; padding-top:4rem;">🔄 Analyzing causal chains...</div>';
-
-        setTimeout(() => {
-            // Mock Analysis Output
-            analysisTab.innerHTML = `### Causal Analysis Results
-
-**Observed Effect:** ${effect}
-
-**Primary Root Cause:** Database Lock Contention
-
-**Mechanism:**
-The evidence indicates that the \`processPayment\` transaction in \`PaymentService.kt\` is holding a row lock on the \`accounts\` table while synchronously waiting for the external fraud check API. When the fraud service degrades, the lock duration increases, causing a pile-up of other transactions.
-
-**Evidence:**
-- \`logs/app.log\`: Repeated "Lock wait timeout exceeded" errors correlating with latency spikes.
-- \`src/PaymentService.kt\`: Code analysis confirms external call inside \`@Transactional\` block.
-
-**Confidence:** High
-
-**Recommendations:**
-1. Move the external fraud check call outside the database transaction.
-2. Implement circuit breaker for the fraud service.`;
-
-            // Mock Graph Output
-            const graphDefinition = `
-graph TD
-    A[Start Payment] --> B{Transaction Start}
-    B --> C[Lock Account Row]
-    C --> D[Call Fraud API]
-    D -.->|High Latency| C
-    C -->|Holds Lock| E[Database]
-    E -->|Blocks| F[Other Requests]
-    F -->|Result| G[System Latency]
-    style G fill:#ef4444,stroke:#991b1b
-    style D fill:#f59e0b,stroke:#b45309
-            `;
-
-            graphTab.innerHTML = `<div class="mermaid">${graphDefinition}</div>`;
-            mermaid.init(undefined, document.querySelectorAll('.mermaid'));
-
-            // Mock Evidence Output
-            document.getElementById('tab-evidence').innerHTML = `### logs/app.log
-\`\`\`
-2023-10-27 10:15:01 ERROR [PaymentService] Lock wait timeout exceeded; try restarting transaction
-2023-10-27 10:15:02 WARN  [FraudClient] API response time: 2500ms
-\`\`\`
-
-### src/PaymentService.kt
-\`\`\`kotlin
-@Transactional
-fun processPayment(req: PaymentRequest) {
-    val account = repo.findById(req.accountId) // Locks row
-    fraudClient.check(account) // External call while locked!
-    // ...
-}
-\`\`\``;
-
-        }, 1500);
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
     }
 </script>
+
 </body>
 </html>

@@ -450,21 +450,21 @@ ${result.toJson()}
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ImageDecompositionTask::class.java)
     val ImageDecomposition = TaskType(
-      "ImageDecomposition",
-      "File Operations",
-      ImageDecompositionTask::class.java,
-      ImageDecompositionConfig::class.java,
-      TaskTypeConfig::class.java,
-      "Recursively analyze an image to find details, text, or specific objects.",
-      """
-Performs a deep-dive analysis of an image by:
-<ul>
-    <li>Identifying regions of interest based on a query</li>
-    <li>Recursively cropping and re-analyzing those regions</li>
-    <li>Stitching results into a hierarchical dataset</li>
-</ul>
-Useful for OCR on complex forms, crowd analysis, or finding small details.
-            """,
+      name = "ImageDecomposition",
+      category = "File",
+      taskClass = ImageDecompositionTask::class.java,
+      executionConfigClass = ImageDecompositionConfig::class.java,
+      taskSettingsClass = TaskTypeConfig::class.java,
+      description = "Recursively analyze an image to find details, text, or specific objects.",
+      tooltipHtml = """
+      Performs a deep-dive analysis of an image by:
+      <ul>
+          <li>Identifying regions of interest based on a query</li>
+          <li>Recursively cropping and re-analyzing those regions</li>
+          <li>Stitching results into a hierarchical dataset</li>
+      </ul>
+      Useful for OCR on complex forms, crowd analysis, or finding small details.
+                  """,
     )
   }
 }

@@ -17,7 +17,7 @@ class SymbolsDbCodeTask(
     companion object {
         val SymbolsDbCode = TaskType(
             name = "SymbolsDbCodeTask",
-            category = "Execution & Automation",
+            category = "Execution",
             taskClass = SymbolsDbCodeTask::class.java,
             executionConfigClass = SymbolsDbCodeTaskExecutionConfigData::class.java,
             taskSettingsClass = SymbolsDbCodeTaskTypeConfig::class.java,

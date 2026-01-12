@@ -906,24 +906,24 @@ Select the best option and summarize the findings now.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(BrainstormingTask::class.java)
         val Brainstorming = TaskType(
-            "Brainstorming",
-            "Reasoning",
-            BrainstormingTask::class.java,
-            BrainstormingTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate and analyze multiple solution options",
-            """
-              Systematically generates diverse options and analyzes each independently.
-              <ul>
-                <li>Generates multiple solution options for a given problem</li>
-                <li>Analyzes each option independently (pros, cons, feasibility, impact, risks)</li>
-                <li>Provides comparative summary with recommendations</li>
-                <li>Supports creative and conventional approaches</li>
-                <li>Configurable analysis depth and option count</li>
-                <li>Identifies hybrid approaches and synergies</li>
-                <li>Useful for decision making, strategic planning, and problem solving</li>
-              </ul>
-            """,
+          name = "Brainstorming",
+          category = "Reasoning",
+          taskClass = BrainstormingTask::class.java,
+          executionConfigClass = BrainstormingTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate and analyze multiple solution options",
+          tooltipHtml = """
+                        Systematically generates diverse options and analyzes each independently.
+                        <ul>
+                          <li>Generates multiple solution options for a given problem</li>
+                          <li>Analyzes each option independently (pros, cons, feasibility, impact, risks)</li>
+                          <li>Provides comparative summary with recommendations</li>
+                          <li>Supports creative and conventional approaches</li>
+                          <li>Configurable analysis depth and option count</li>
+                          <li>Identifies hybrid approaches and synergies</li>
+                          <li>Useful for decision making, strategic planning, and problem solving</li>
+                        </ul>
+                      """,
         )
     }
 }

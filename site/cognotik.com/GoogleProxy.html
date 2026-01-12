@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cognotik - GoogleProxy</title>
+</head>
+<body>
+    <h1>GoogleProxy</h1>
+    <p>This task allows for searching Google via a proxy.</p>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik | GoogleProxy</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui-content {
+            padding: 1rem;
+        }
+
+        .search-result {
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 0.5rem;
+        }
+
+        .search-result:last-child { border-bottom: none; }
+
+        .result-title { color: var(--accent-primary); font-weight: 600; text-decoration: none; display: block; }
+        .result-link { color: #4ade80; font-size: 0.75rem; margin-bottom: 0.2rem; }
+        .result-snippet { color: var(--text-dim); font-size: 0.85rem; }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .docs-table td code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="google-proxy"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Search > GoogleProxy</div>
+        <h1>GoogleProxy</h1>
+        <p class="pitch">
+            High-performance Google Search integration via secure AWS Lambda proxy. Designed for automated seed discovery in web crawling workflows.
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">External API</span>
+            <span class="badge">SeedMethodFactory</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header"><span>⚙️</span> CrawlerTaskExecutionConfigData</div>
+            <pre><code class="language-json">
+{
+  "search_query": "latest trends in AI orchestration",
+  "max_results": 20
+}
+            </code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header"><span>🔍</span> SeedItem Results</div>
+            <div class="mock-ui-content">
+                <div class="search-result">
+                    <div class="result-link">https://example.com/ai-orchestration</div>
+                    <div class="result-title">Top 10 AI Orchestration Trends for 2024</div>
+                    <div class="result-snippet">Explore how autonomous agents and proxy-based search are revolutionizing...</div>
+                </div>
+                <div class="search-result">
+                    <div class="result-link">https://techdocs.io/agents</div>
+                    <div class="result-title">Building Scalable Crawler Agents</div>
+                    <div class="result-snippet">A deep dive into using GoogleProxy for dynamic seed generation in large-scale...</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Runtime Configuration</h3>
+            <p>These parameters are passed during task execution via <code>CrawlerTaskExecutionConfigData</code>.</p>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>search_query</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The primary search term. Leading/trailing whitespace is trimmed automatically.</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin-top: 2rem;">Output Data (SeedItem)</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>link</code></td>
+                    <td>String</td>
+                    <td>The destination URL of the search result.</td>
+                </tr>
+                <tr>
+                    <td><code>title</code></td>
+                    <td>String</td>
+                    <td>The page title as indexed by Google.</td>
+                </tr>
+                <tr>
+                    <td><code>additionalData</code></td>
+                    <td>Map</td>
+                    <td>Contains <code>snippet</code>, <code>pagemap</code>, and <code>displayLink</code>.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane" style="display:none;">
+            <h3>Static Configuration</h3>
+            <p>Environment variables used by the factory:</p>
+            <pre><code class="language-bash">GOOGLE_SEARCH_PROXY_ENDPOINT="https://..."</code></pre>
+
+            <h3>Lifecycle & Error Handling</h3>
+            <ul style="color: var(--text-dim); font-size: 0.95rem;">
+                <li><strong>Validation:</strong> Throws <code>IllegalArgumentException</code> if <code>search_query</code> is blank.</li>
+                <li><strong>Network:</strong> Uses <code>java.net.http.HttpClient</code> with a 30-second timeout.</li>
+                <li><strong>Proxy:</strong> Requests are routed through an AWS Lambda proxy to avoid IP blocking and manage rate limits.</li>
+                <li><strong>Resilience:</strong> Non-200 responses from the proxy trigger a <code>RuntimeException</code> to allow orchestration-level retries.</li>
+            </ul>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3>Kotlin Boilerplate</h3>
+            <pre><code class="language-kotlin">
+// Registering the GoogleProxy in a CrawlerAgentTask
+val strategy = GoogleProxy().createStrategy(crawlerTask, currentUser)
+val seeds = strategy.getSeedItems(
+    taskConfig = CrawlerTaskExecutionConfigData(search_query = "Cognotik Documentation"),
+    orchestrationConfig = currentOrchestration
+)
+            </code></pre>
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

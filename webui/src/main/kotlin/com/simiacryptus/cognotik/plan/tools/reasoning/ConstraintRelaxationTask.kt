@@ -816,25 +816,25 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ConstraintRelaxationTask::class.java)
         val ConstraintRelaxation = TaskType(
-            "ConstraintRelaxation",
-            "Reasoning",
-            ConstraintRelaxationTask::class.java,
-            ConstraintRelaxationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Solve over-constrained problems through progressive constraint relaxation",
-            """
-              Solves complex problems by temporarily relaxing constraints and progressively reintroducing them.
-              <ul>
-                <li>Identifies which constraints to initially relax based on priority</li>
-                <li>Solves simplified problem without relaxed constraints</li>
-                <li>Progressively reintroduces constraints in configurable order</li>
-                <li>Adapts solution at each step to satisfy new constraints</li>
-                <li>Finds creative ways to satisfy multiple constraints simultaneously</li>
-                <li>Supports multiple relaxation strategies (progressive, selective, hierarchical)</li>
-                <li>Configurable reintroduction order (by priority, difficulty, or dependency)</li>
-                <li>Useful for over-constrained problems, algorithm design, and architecture under constraints</li>
-              </ul>
-            """,
+          name = "ConstraintRelaxation",
+          category = "Reasoning",
+          taskClass = ConstraintRelaxationTask::class.java,
+          executionConfigClass = ConstraintRelaxationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Solve over-constrained problems through progressive constraint relaxation",
+          tooltipHtml = """
+                        Solves complex problems by temporarily relaxing constraints and progressively reintroducing them.
+                        <ul>
+                          <li>Identifies which constraints to initially relax based on priority</li>
+                          <li>Solves simplified problem without relaxed constraints</li>
+                          <li>Progressively reintroduces constraints in configurable order</li>
+                          <li>Adapts solution at each step to satisfy new constraints</li>
+                          <li>Finds creative ways to satisfy multiple constraints simultaneously</li>
+                          <li>Supports multiple relaxation strategies (progressive, selective, hierarchical)</li>
+                          <li>Configurable reintroduction order (by priority, difficulty, or dependency)</li>
+                          <li>Useful for over-constrained problems, algorithm design, and architecture under constraints</li>
+                        </ul>
+                      """,
         )
     }
 }

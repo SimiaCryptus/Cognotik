@@ -1,740 +1,397 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Cognotik RunCode Task - Interactive code execution and automation environment.">
-    <title>Cognotik | RunCode Task</title>
+    <title>Cognotik | RunCodeTask - Industrial Execution</title>
 
-    <!-- Fonts: Inter for UI, JetBrains Mono for Code, Cinzel for Headers -->
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
-    <!-- Icons: FontAwesome CDN for UI icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
+        :root {
+            --bg-app: #0d1117;       /* GitHub Dark Dimmed style */
+            --bg-panel: #161b22;     /* Panel background */
+            --border-subtle: #30363d; /* Border color */
+            --accent-primary: #58a6ff; /* VS Code / GitHub Blue */
+            --text-main: #c9d1d9;    /* Primary text */
+            --text-dim: #8b949e;     /* Secondary text */
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+        }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        /* Custom styles for sections not in main.css */
-        .runtimes-section {
-            padding: 4rem 2rem;
-            background: linear-gradient(to bottom, #131c31, var(--background-color));
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
         }
-        .workflow-section {
-            padding: 4rem 2rem;
-            background: var(--background-color);
-        }
-        .workflow-steps {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            max-width: var(--container-max-width);
+
+        .task-container {
+            max-width: 1200px;
             margin: 0 auto;
-            position: relative;
-        }
-        .step-item {
-            flex: 1;
-            text-align: center;
-            position: relative;
-            z-index: 2;
-            padding: 0 10px;
-        }
-        .step-number {
-            width: 50px;
-            height: 50px;
-            background: var(--surface-color);
-            border: 2px solid var(--accent-secondary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-weight: 700;
-            color: var(--accent-secondary);
-        }
-        .step-connector {
-            flex: 1;
-            height: 2px;
-            background: linear-gradient(90deg, var(--accent-secondary), transparent);
-            margin-top: 25px;
-            opacity: 0.3;
-        }
-        /* Footer */
-        footer {
-            background: #0b1120;
-            padding: 60px 24px;
-            border-top: 1px solid var(--border-color);
-        }
-        .footer-content {
-            max-width: var(--container-max-width);
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 24px;
-        }
-        .footer-links {
-            display: flex;
-            gap: 24px;
-        }
-        .footer-links a {
-            color: var(--text-muted);
-        }
-        .footer-links a:hover {
-            color: var(--accent-color);
-        }
-        /* Adjustments for Simulator Inputs */
-        .sim-controls textarea {
-            background: var(--surface-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-        }
-        /* Code Window */
-        .code-window {
-            background: #0d1117;
-            padding: 20px;
-            font-family: var(--font-family-mono);
-            overflow: auto;
-            flex: 1;
-        }
-        .terminal-window {
-            background: #000;
-            padding: 20px;
-            font-family: var(--font-family-mono);
-            overflow-y: auto;
-            flex: 1;
-        }
-        .result-card {
             padding: 2rem;
         }
-        .result-box {
-            background: rgba(255,255,255,0.03);
-            border: 1px dashed var(--border-color);
+
+        .page-header {
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            font-weight: 600;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        pre {
+            margin: 0;
             padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .flow-arrow {
             text-align: center;
-            font-family: var(--font-family-mono);
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .docs-table th, .docs-table td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .docs-table th {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .docs-table code {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .req { color: #f85149; }
+
+        /* Mock UI */
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .execution-details {
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            margin-top: 0.5rem;
+        }
+
+        .execution-header {
+            background: #21262d;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 
-      IMAGE PROMPT FOR HERO SECTION:
-      "Abstract 3D illustration of a glowing digital terminal interface, floating code syntax fragments in neon cyan and gold, dark slate background, glassmorphism style, high-tech automation concept."
-    -->
+<cognotik-header current-page="RunCodeTask"></cognotik-header>
 
-    <cognotik-header current-page="run_code"></cognotik-header>
+<main class="task-container">
 
-    <main>
-        <!-- B. Hero Section -->
-        <section class="hero">
-            <h1>RunCode Task</h1>
-            <p class="subtitle">
-                Executes code snippets in an interactive environment. Features user-approved code execution, working directory configuration, output capture, and automated error handling.
-            </p>
-            <a href="#simulator" class="cta-button">Try the Simulator <i class="fa-solid fa-arrow-right"></i></a>
-        </section>
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Execution > RunCodeTask</div>
+        <h1>RunCodeTask</h1>
+        <p class="pitch">
+            Execute code snippets in an interactive environment with full oversight, working directory isolation, and output capture.
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect: Destructive</span>
+            <span class="badge">Interactive Review</span>
+            <span class="badge">Auto-Fix Supported</span>
+        </div>
+    </header>
 
-        <!-- C. Features Grid -->
-        <section id="features" class="features">
-                <h2>Core Capabilities</h2>
-
-            <div class="features-grid">
-                <!-- Feature 1 -->
-                <div class="feature-card">
-                    <i class="fa-solid fa-layer-group"></i>
-                    <h3>Versatile Runtimes</h3>
-                    <p>Support for internal JVM languages (Kotlin, Groovy) and external CLI tools (Python, Bash, Node.js).</p>
-                </div>
-                <!-- Feature 2 -->
-                <div class="feature-card">
-                    <i class="fa-solid fa-folder-tree"></i>
-                    <h3>Directory Config</h3>
-                    <p>Full control over the working directory path for file system operations and context.</p>
-                </div>
-                <!-- Feature 3 -->
-                <div class="feature-card">
-                    <i class="fa-solid fa-file-code"></i>
-                    <h3>Output Capture</h3>
-                    <p>Comprehensive capture of standard output, return values, and error streams for analysis.</p>
-                </div>
-                <!-- Feature 4 -->
-                <div class="feature-card">
-                    <i class="fa-solid fa-bug-slash"></i>
-                    <h3>Error Handling</h3>
-                    <p>Robust error reporting and stack trace analysis to facilitate debugging and auto-fixing.</p>
-                </div>
-                <!-- Feature 5 -->
-                <div class="feature-card">
-                    <i class="fa-solid fa-user-check"></i>
-                    <h3>User-in-the-Loop</h3>
-                    <p>Review and approve code before execution. You retain full control over operations on your machine.</p>
-                </div>
-                <!-- Feature 6 -->
-                <div class="feature-card">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <h3>Auto-Fix</h3>
-                    <p>Optional automated correction of code based on execution errors or feedback.</p>
-                </div>
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>RunCodeTaskExecutionConfigData</span>
+                <span>JSON</span>
             </div>
-        </section>
-        <!-- Supported Environments Section -->
-        <section class="runtimes-section">
-            <div class="container">
-                <div style="text-align: center; margin-bottom: 40px;">
-                    <h3>Supported Environments</h3>
-                    <p style="color: var(--text-muted);">Choose between integrated JVM execution or external process orchestration.</p>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; margin-top: 40px;">
-                    <!-- Internal -->
-                    <div style="background: var(--surface-color); padding: 30px; border-radius: var(--border-radius); border: 1px solid var(--border-color);">
-                        <h4 style="color: var(--accent-secondary); margin-bottom: 15px;"><i class="fa-brands fa-java"></i> Internal JVM</h4>
-                        <p style="color: var(--text-muted); margin-bottom: 20px;">High-performance execution within the agent's process. Groovy is the default runtime for stability.</p>
-                        <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Groovy</li>
-                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Kotlin</li>
-                        </ul>
-                    </div>
-                    <!-- External -->
-                    <div style="background: var(--surface-color); padding: 30px; border-radius: var(--border-radius); border: 1px solid var(--border-color);">
-                        <h4 style="color: var(--accent-color); margin-bottom: 15px;"><i class="fa-solid fa-terminal"></i> External Processes</h4>
-                        <p style="color: var(--text-muted); margin-bottom: 20px;">Orchestrate installed tools and scripts available in your system's PATH.</p>
-                        <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Bash / Shell</li>
-                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> PowerShell / Cmd</li>
-                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Python</li>
-                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Node.js</li>
-                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Ruby / Perl / PHP</li>
-                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Go / Rust / Scala</li>
-                        </ul>
-                    </div>
-                </div>
+            <pre><code class="language-json">{
+  "goal": "Find all .log files and summarize their size",
+  "workingDir": "./logs",
+  "task_type": "RunCode"
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>Session UI Output</span>
+                <span>Rendered</span>
             </div>
-        </section>
-
-
-        <!-- D. Interactive Simulator -->
-        <section id="simulator" class="simulator">
-                <h2>Task Simulator</h2>
-            
-            <div class="simulator-container">
-                <!-- Left Column: Inputs (ExecutionConfigData) -->
-                <div class="sim-controls">
-                    <form id="runcode-form" class="sim-form">
-                        
-                        <!-- Input: Goal -->
-                        <div class="control-group">
-                            <label for="input-goal">Goal / Instruction</label>
-                            <textarea id="input-goal" rows="4" placeholder="E.g., Calculate the Fibonacci sequence up to 100 and save it to a file."></textarea>
-                        </div>
-
-                        <!-- Input: Working Directory -->
-                        <div class="control-group">
-                            <label for="input-working-dir">Working Directory</label>
-                            <div>
-                                <input type="text" id="input-working-dir" value="./workspace" placeholder="./">
-                            </div>
-                        </div>
-
-                        <!-- Input: Dependencies (List) -->
-                        <div class="control-group">
-                            <label for="input-dependencies">Dependencies</label>
-                            <input type="text" id="input-dependencies" placeholder="E.g., task_init, data_load">
-                        </div>
-
-                        <!-- Input: Auto-Fix Toggle (Derived from OrchestrationConfig logic) -->
-                        <div class="control-group toggle-group">
-                            <label for="input-autofix">Enable Auto-Fix</label>
-                            <label class="switch">
-                                <input type="checkbox" id="input-autofix">
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
-
-                        <button type="submit" id="btn-execute" class="run-button">
-                            <i class="fa-solid fa-play"></i> Generate & Run
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Right Column: Outputs -->
-                <div class="sim-output">
-                    <!-- Output Tabs -->
-                    <div class="tabs">
-                        <button class="tab active" data-tab="tab-code">Generated Code</button>
-                        <button class="tab" data-tab="tab-console">Console Output</button>
-                        <button class="tab" data-tab="tab-result">Result Value</button>
-                    </div>
-
-                    <!-- Tab Content: Code -->
-                    <div id="tab-code" class="tab-content active">
-                        <div class="code-window">
-                            <div class="window-bar">
-                                <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-                                <span class="lang-badge">Groovy</span>
-                            </div>
-                            <pre><code id="code-display" class="language-kotlin">// Code generated by the agent will appear here...
-// Waiting for input...</code></pre>
-                        </div>
-                    </div>
-
-                    <!-- Tab Content: Console Logs -->
-                    <div id="tab-console" class="tab-content">
-                        <div class="terminal-window">
-                            <div id="console-output" class="terminal-text">
-                                <span class="term-line text-muted">> System ready.</span>
-                                <span class="term-line text-muted">> Waiting for execution command...</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tab Content: Result Value -->
-                    <div id="tab-result" class="tab-content">
-                        <div class="result-card">
-                            <h4>Execution Result</h4>
-                            <div id="result-value" class="result-box">
-                                -- No result yet --
-                            </div>
-                        </div>
+            <div class="mock-ui-content">
+                <div class="execution-details">
+                    <div class="execution-header">▼ Execution Details</div>
+                    <div style="padding: 0.8rem; background: #0d1117;">
+                        <div style="color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; margin-bottom: 0.4rem;">### Code</div>
+                        <pre style="background: #161b22; padding: 0.5rem; font-size: 0.8rem; color: #d2a8ff;">new File(".").listFiles().findAll { 
+  it.name.endsWith(".log") 
+}.sum { it.length() }</pre>
+                        <div style="color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; margin: 0.8rem 0 0.4rem 0;">### Result</div>
+                        <div style="font-family: var(--font-mono); color: #79c0ff;">10485760</div>
+                        <div style="color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; margin: 0.8rem 0 0.4rem 0;">### Output</div>
+                        <div style="font-family: var(--font-mono); color: var(--text-dim); font-size: 0.8rem;">Scanning directory... found 12 files.</div>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <!-- E. Workflow / Process -->
-        <section id="workflow" class="workflow-section" style="text-align: center;">
-            <h2 style="margin-bottom: 40px;">Execution Pipeline</h2>
-            
-            <!-- Visual Highlight: Pipeline Flow -->
-            <div class="workflow-visual-container" style="margin-bottom: 40px;">
-                <img src="assets/images/execution-pipeline-flow.png"
-                     alt="Sleek isometric 3D visualization of a four-step digital workflow pipeline" 
-                     class="workflow-image">
-            </div>
-
-            <div class="workflow-steps">
-                <!-- Step 1 -->
-                <div class="step-item">
-                    <div class="step-number">01</div>
-                    <div class="step-content">
-                        <h4>Plan & Prompt</h4>
-                        <p>The system analyzes the user goal and constructs a prompt for the coding agent.</p>
-                    </div>
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button style="background: #238636; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Continue</button>
+                    <button style="background: #30363d; color: white; border: 1px solid var(--border-subtle); padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Revise</button>
                 </div>
-                <!-- Connector -->
-                <div class="step-connector"></div>
-                <!-- Step 2 -->
-                <div class="step-item">
-                    <div class="step-number">02</div>
-                    <div class="step-content">
-                        <h4>Code Generation</h4>
-                        <p>The LLM generates the necessary code (Kotlin/Groovy) to solve the problem.</p>
-                    </div>
-                </div>
-                <!-- Connector -->
-                <div class="step-connector"></div>
-                <!-- Step 3 -->
-                <div class="step-item">
-                    <div class="step-number">03</div>
-                    <div class="step-content">
-                        <h4>Review & Execute</h4>
-                        <p>User reviews the generated code. You can "Continue" to execute or provide feedback to revise.</p>
-                    </div>
-                </div>
-                <!-- Connector -->
-                <div class="step-connector"></div>
-                <!-- Step 4 -->
-                <div class="step-item">
-                    <div class="step-number">04</div>
-                    <div class="step-content">
-                        <h4>Result & Feedback</h4>
-                        <p>Output is captured. If errors occur, the Auto-Fix loop attempts to resolve them.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- F. Use Cases -->
-        <section class="modes-section" style="padding: 4rem 2rem; background: var(--surface-color);">
-            <h2>When to Use</h2>
-            <div class="mode-grid">
-                <div class="mode-card">
-                    <div class="mode-title">Data Processing</div>
-                    <p style="color: var(--text-muted);">Perfect for on-the-fly manipulation of datasets, file parsing, and format conversion tasks.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">System Automation</div>
-                    <p style="color: var(--text-muted);">Automate repetitive file system operations, backups, or environment setup scripts.</p>
-                </div>
-                <div class="mode-card">
-                    <div class="mode-title">Math & Logic</div>
-                    <p style="color: var(--text-muted);">Solve complex algorithmic problems that require computational accuracy beyond standard LLM capabilities.</p>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Footer -->
-    <footer>
-        <div class="footer-content">
-            <div class="footer-brand">
-                <i class="fa-solid fa-brain"></i> Cognotik
-            </div>
-            <div class="footer-links">
-                <a href="#">Documentation</a>
-                <a href="#">API Reference</a>
-                <a href="#">Support</a>
-            </div>
-            <div class="footer-copyright">
-                &copy; 2023 Simiacryptus. All rights reserved.
             </div>
         </div>
-    </footer>
+    </section>
 
-    <!-- JavaScript will be added here -->
-    <script>
-        /* 
-           Interactive logic for the simulator, tabs, and animations 
-           will be implemented here.
-        */
-    </script>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-        
-            // ==========================================
-            // 1. Navigation & Smooth Scrolling
-            // ==========================================
-            const navLinks = document.querySelectorAll('a[href^="#"]');
-        
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const targetId = this.getAttribute('href');
-                    const targetElement = document.querySelector(targetId);
-            
-                    if (targetElement) {
-                        // Offset for fixed header
-                        const headerOffset = 80;
-                        const elementPosition = targetElement.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-        
-                        window.scrollTo({
-                            top: offsetPosition,
-                            behavior: "smooth"
-                        });
-                    }
-                });
-            });
-        
-            // ==========================================
-            // 2. Tab Interface Logic
-            // ==========================================
-            const tabButtons = document.querySelectorAll('.tab');
-            const tabContents = document.querySelectorAll('.tab-content');
-        
-            function switchTab(tabId) {
-                // Remove active class from all buttons and contents
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                tabContents.forEach(content => content.classList.remove('active'));
-        
-                // Activate target
-                const targetBtn = document.querySelector(`.tab[data-tab="${tabId}"]`);
-                const targetContent = document.getElementById(tabId);
-        
-                if (targetBtn && targetContent) {
-                    targetBtn.classList.add('active');
-                    targetContent.classList.add('active');
-                }
-            }
-        
-            tabButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    switchTab(btn.getAttribute('data-tab'));
-                });
-            });
-        
-            // ==========================================
-            // 3. Simulator Logic
-            // ==========================================
-            const form = document.getElementById('runcode-form');
-            const executeBtn = document.getElementById('btn-execute');
-            const codeDisplay = document.getElementById('code-display');
-            const consoleOutput = document.getElementById('console-output');
-            const resultValue = document.getElementById('result-value');
-        
-            // Mock Data Generators
-            const generateMockCode = (goal, workingDir) => {
-                const cleanGoal = goal.toLowerCase();
-                let code = `import java.io.File\n\n// Goal: ${goal}\n// Working Dir: ${workingDir}\n\n`;
-        
-                if (cleanGoal.includes('fibonacci')) {
-                    code += `def fibonacci(n) {\n    if (n <= 1) return n\n    def a = 0L\n    def b = 1L\n    (2..n).each {\n        def temp = a + b\n        a = b\n        b = temp\n    }\n    return b\n}\n\ndef result = fibonacci(100)\nprintln "Fibonacci(100) calculated."\nreturn result`;
-                } else if (cleanGoal.includes('file') || cleanGoal.includes('save')) {
-                    code += `def file = new File("${workingDir}/output.txt")\nfile.text = "Processed Data Timestamp: " + System.currentTimeMillis()\n\nprintln "File created at ${workingDir}/output.txt"\nreturn file.absolutePath`;
-                } else {
-                    code += `// Generic processing task\ndef data = [1, 2, 3, 4, 5]\ndef processed = data.collect { it * 2 }\n\nprintln "Data processed successfully."\nreturn processed.join(", ")`;
-                }
-                return code;
-            };
-        
-            const generateMockResult = (goal) => {
-                const cleanGoal = goal.toLowerCase();
-                if (cleanGoal.includes('fibonacci')) return "3736710778780434371";
-                if (cleanGoal.includes('file')) return "/workspace/output.txt";
-                return "2, 4, 6, 8, 10";
-            };
-        
-            // Typewriter Effect for Code
-            const typeCode = async (element, text) => {
-                element.innerHTML = ''; // Clear
-                // Simple syntax highlighting wrapper
-                const highlight = (str) => {
-                    return str
-                  .replace(/(def|return|if|for|import|new|class|val|var)/g, '<span style="color:#c678dd">$1</span>')
-                        .replace(/(".+?")/g, '<span style="color:#98c379">$1</span>')
-                        .replace(/(\/\/.*)/g, '<span style="color:#5c6370">$1</span>');
-                };
-        
-                // Simulate typing chunks for speed
-                const lines = text.split('\n');
-                let currentHTML = "";
-        
-                for (let line of lines) {
-                    currentHTML += highlight(line) + '\n';
-                    element.innerHTML = currentHTML;
-                    // Scroll to bottom
-                    element.parentElement.scrollTop = element.parentElement.scrollHeight;
-                    await new Promise(r => setTimeout(r, 50)); // Typing speed
-                }
-            };
-        
-            // Console Logger
-      const log = (msg, type = 'info') => {
-                const span = document.createElement('span');
-                span.className = 'term-line';
-                if (type === 'error') span.style.color = '#ef4444';
-                if (type === 'success') span.style.color = '#22c55e';
-                if (type === 'muted') span.classList.add('text-muted');
-        
-                const timestamp = new Date().toLocaleTimeString('en-US', {hour12: false});
-                span.innerHTML = `<span class="text-muted">[${timestamp}]</span> ${msg}`;
-        
-                consoleOutput.appendChild(span);
-                // Scroll to bottom
-                consoleOutput.parentElement.scrollTop = consoleOutput.parentElement.scrollHeight;
-            };
-        
-            // Main Execution Handler
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-        
-                // 1. UI State: Loading
-                const originalBtnText = executeBtn.innerHTML;
-                executeBtn.disabled = true;
-                executeBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
-        
-                // Get Inputs
-                const goal = document.getElementById('input-goal').value || "Calculate generic data";
-                const workingDir = document.getElementById('input-working-dir').value;
-                const autoFix = document.getElementById('input-autofix').checked;
-        
-                // Clear previous outputs
-                consoleOutput.innerHTML = '';
-                resultValue.innerText = '-- Pending --';
-        
-                // 2. Step: Plan & Generate Code
-                switchTab('tab-code');
-                logToConsole("Received task goal.", "muted");
-                logToConsole("Initializing CodeAgent...", "info");
-        
-                await new Promise(r => setTimeout(r, 800));
-                const mockCode = generateMockCode(goal, workingDir);
-                await typeCode(codeDisplay, mockCode);
-        
-                // 3. Step: Execution
-                await new Promise(r => setTimeout(r, 500));
-                switchTab('tab-console');
-                logToConsole("User approved. Executing script...", "info");
-                await new Promise(r => setTimeout(r, 800));
-        
-                // Simulate Error & Auto-Fix if enabled (randomly or forced for demo)
-                if (autoFix && Math.random() > 0.5) {
-                    logToConsole("Runtime Error: NullPointerException at line 12", "error");
-                    await new Promise(r => setTimeout(r, 1000));
-                    logToConsole("Auto-Fix enabled. Analyzing stack trace...", "info");
-                    logToConsole("Applying patch...", "success");
-                    await new Promise(r => setTimeout(r, 800));
-                    logToConsole("Re-running execution...", "info");
-                }
-        
-                logToConsole("Execution started.", "success");
-                logToConsole(`Working Directory: ${workingDir}`, "muted");
-                await new Promise(r => setTimeout(r, 600));
-                logToConsole("Process completed with exit code 0.", "success");
-        
-                // 4. Step: Result
-                await new Promise(r => setTimeout(r, 500));
-                switchTab('tab-result');
-                resultValue.innerText = generateMockResult(goal);
-                resultValue.style.borderLeft = "4px solid #22c55e"; // Green indicator
-        
-                // Reset UI
-                executeBtn.disabled = false;
-                executeBtn.innerHTML = originalBtnText;
-            });
-        
-            // ==========================================
-            // 4. Visual Effects (Optional Polish)
-            // ==========================================
-        
-            // Add hover glow effect to feature cards
-            const cards = document.querySelectorAll('.feature-card');
-            cards.forEach(card => {
-                card.addEventListener('mousemove', (e) => {
-                    const rect = card.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    card.style.setProperty('--mouse-x', `${x}px`);
-                    card.style.setProperty('--mouse-y', `${y}px`);
-                });
-            });
-        });
-    </script>
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Execution Configuration</h3>
+            <p>These parameters define the specific goal and environment for a single task execution.</p>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>goal</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The specific task or goal to be accomplished via code execution.</td>
+                </tr>
+                <tr>
+                    <td><code>workingDir</code></td>
+                    <td>String</td>
+                    <td>The relative file path of the working directory for the script.</td>
+                </tr>
+                <tr>
+                    <td><code>task_description</code></td>
+                    <td>String</td>
+                    <td>Optional metadata describing the purpose of this specific execution.</td>
+                </tr>
+                <tr>
+                    <td><code>task_dependencies</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>List of task IDs that must complete before this execution.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Lifecycle</h3>
+            <ol>
+                <li><strong>Initialization:</strong> Loads the specified <code>CodeRuntime</code> (Groovy by default) and injects symbols.</li>
+                <li><strong>Agent Planning:</strong> A <code>CodingTask</code> agent generates a solution based on the <code>goal</code>.</li>
+                <li><strong>Execution:</strong> The code is executed within the configured <code>workingDir</code>.</li>
+                <li><strong>Feedback Loop:</strong>
+                    <ul>
+                        <li><strong>Auto-Fix Mode:</strong> If <code>autoFix</code> is true, the task executes and completes automatically.</li>
+                        <li><strong>Interactive Mode:</strong> The user reviews the code, result, and output, with options to <strong>Continue</strong> or <strong>Revise</strong>.</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3>Type Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Default</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>codeRuntime</code></td>
+                    <td>CodeRuntimes</td>
+                    <td><code>GroovyRuntime</code></td>
+                </tr>
+                <tr>
+                    <td><code>model</code></td>
+                    <td>ApiChatModel</td>
+                    <td>System Default</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Orchestration Boilerplate</h3>
+            <pre><code class="language-kotlin">// Adding RunCodeTask to your orchestration plan
+val runTask = RunCodeTask(
+    orchestrationConfig = config,
+    planTask = RunCodeTask.RunCodeTaskExecutionConfigData(
+        goal = "Analyze project dependencies",
+        workingDir = "./"
+    )
+)</code></pre>
+
+            <h3>LLM Prompt Segment</h3>
+            <p>The following instructions are injected into the LLM context when this task is active:</p>
+            <pre style="background: #0d1117; border: 1px solid var(--border-subtle); color: var(--text-dim);">RunCode - Use a groovy interpreter to solve and complete the user's request.
+  * Do not directly write code (yet)
+  * Include detailed technical requirements for the needed solution</pre>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

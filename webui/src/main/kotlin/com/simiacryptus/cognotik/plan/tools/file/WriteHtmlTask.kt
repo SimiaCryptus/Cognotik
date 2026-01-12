@@ -567,25 +567,25 @@ Provide the complete updated HTML structure within a code block:
     companion object {
         private val log: Logger = LoggerFactory.getLogger(WriteHtmlTask::class.java)
         val WriteHtml = TaskType(
-            "WriteHtml",
-            "Writing",
-            WriteHtmlTask::class.java,
-            WriteHtmlTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Create complete HTML files with embedded CSS and JavaScript",
-            """
-              Creates standalone HTML files with embedded CSS and JavaScript.
-              <ul>
-                <li>Generates complete, self-contained HTML documents</li>
-                <li>Embeds CSS styles within &lt;style&gt; tags</li>
-                <li>Embeds JavaScript within &lt;script&gt; tags</li>
-                <li>Supports modern HTML5 features</li>
-                <li>Can generate images using AI image models</li>
-                <li>Automatically creates image directory and references</li>
-                <li>Interactive approval or auto-apply mode</li>
-                <li>Proper HTML structure and formatting</li>
-              </ul>
-            """,
+          name = "WriteHtml",
+          category = "Writing",
+          taskClass = WriteHtmlTask::class.java,
+          executionConfigClass = WriteHtmlTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Create complete HTML files with embedded CSS and JavaScript",
+          tooltipHtml = """
+                        Creates standalone HTML files with embedded CSS and JavaScript.
+                        <ul>
+                          <li>Generates complete, self-contained HTML documents</li>
+                          <li>Embeds CSS styles within &lt;style&gt; tags</li>
+                          <li>Embeds JavaScript within &lt;script&gt; tags</li>
+                          <li>Supports modern HTML5 features</li>
+                          <li>Can generate images using AI image models</li>
+                          <li>Automatically creates image directory and references</li>
+                          <li>Interactive approval or auto-apply mode</li>
+                          <li>Proper HTML structure and formatting</li>
+                        </ul>
+                      """,
         )
     }
 }

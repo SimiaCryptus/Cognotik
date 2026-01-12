@@ -1,140 +1,412 @@
-<!--
-Image Prompt: A high-quality, abstract 3D illustration of a geometric object being analyzed, stripped of its outer layers to reveal a glowing, crystalline core structure. Deep blues and neon cyan accents.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Structural Invariant Analysis - Cognotik</title>
+    <title>Cognotik | Structural Invariant Analysis</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;       /* Very dark grey, almost black */
+            --bg-panel: #161b22;     /* Slightly lighter for cards */
+            --border-subtle: #30363d; /* Borders for definition */
+            --accent-primary: #58a6ff; /* VS Code Blue */
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .task-header {
+            margin-bottom: 2.5rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.8rem;
+            margin: 0 0 1rem 0;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--accent-primary);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            font-weight: 500;
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 4rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 420px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow: auto;
+            flex-grow: 1;
+            background: transparent;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Mock UI */
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .mock-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+        }
+
+        .mock-tab {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            border-bottom: 2px solid transparent;
+            color: var(--text-dim);
+        }
+
+        .mock-tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* Main Tabs System */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+            font-size: 0.9rem;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.05);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            color: var(--accent-primary);
+        }
+
+        .req { color: #f85149; font-weight: bold; }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); margin: 1rem 0; }
+        }
+    </style>
 </head>
 <body>
 
-<cognotik-header current-page="structural-invariant-analysis"></cognotik-header>
+<cognotik-header current-page="tasks"></cognotik-header>
 
-<main class="task-container">
-    <!-- Hero Section -->
-    <section class="hero">
-        <h1>Structural Invariant Analysis</h1>
-        <p class="subtitle">Distill any object down to its immutable properties and symmetries through rigorous decontextualization and theoretical stress-testing.</p>
-        <div class="hero-visual">
-            <!-- Placeholder for 3D Illustration -->
-            <div style="width: 100%; height: 300px; background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid rgba(6, 182, 212, 0.3);">
-                <span style="color: var(--accent-secondary); font-size: 1.2rem;">[Abstract 3D Core Structure]</span>
+<main class="bento-container">
+
+    <!-- 1. HEADER -->
+    <header class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > StructuralInvariantAnalysisTask</div>
+        <h1>StructuralInvariantAnalysisTask</h1>
+        <p class="pitch">
+            Distill complex objects down to their immutable properties and symmetries through rigorous decontextualization and mathematical stress testing. Proves structural integrity across domain boundaries.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+            <span class="badge">Side-Effect: Safe</span>
+        </div>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚙️</span> TaskConfig.json
             </div>
+            <pre><code class="language-json">
+{
+  "task_type": "StructuralInvariantAnalysis",
+  "subject_object": "Distributed Consensus",
+  "transformation_types": [
+    "network_partition",
+    "latency_scaling"
+  ],
+  "output_format": "signature",
+  "input_files": ["src/consensus/Raft.kt"]
+}
+            </code></pre>
         </div>
-        <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">Try the Simulator</button>
-    </section>
 
-    <!-- Features Grid -->
-    <section class="features">
-        <div class="features-grid">
-        <div class="feature-card">
-            <i>🔍</i>
-            <h3>Decontextualization</h3>
-            <p>Removes domain-specific bias to reveal the underlying abstract structure.</p>
-        </div>
-        <div class="feature-card">
-            <i>🔄</i>
-            <h3>Stress Testing</h3>
-            <p>Applies theoretical transformations like scaling and rotation to test robustness.</p>
-        </div>
-        <div class="feature-card">
-            <i>💎</i>
-            <h3>Invariant Extraction</h3>
-            <p>Identifies properties that remain constant across all applied transformations.</p>
-        </div>
-        </div>
-    </section>
+        <div class="flow-arrow">→</div>
 
-    <!-- Interactive Simulator -->
-    <section id="simulator" class="simulator">
-        <h2>Interactive Simulator</h2>
-        <div class="simulator-container">
-            <div class="sim-controls">
-                <div class="control-group">
-                    <label for="subject">Subject Object</label>
-                    <input type="text" id="subject" placeholder="e.g., A Prime Number, A Black Hole" value="A Prime Number">
-                </div>
-                <div class="control-group">
-                    <label for="transformations">Transformations (comma separated)</label>
-                    <input type="text" id="transformations" value="symmetry_groups, limit_cases, context_inversion">
-                </div>
-                <div class="control-group">
-                    <label for="format">Output Format</label>
-                    <select id="format">
-                        <option value="fingerprint">Fingerprint (List of Invariants)</option>
-                        <option value="signature">Signature (Hashable Summary)</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label for="input_files">Input Files (Optional)</label>
-                    <input type="text" id="input_files" placeholder="e.g., src/main/kotlin/*.kt">
-                </div>
-                <button class="run-button">Run Analysis</button>
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️</span> User UI (Result Tab)
             </div>
-            <div class="sim-output">
-                <div class="tabs">
-                    <button class="tab active">Result</button>
+            <div class="mock-ui-content">
+                <div class="mock-tabs">
+                    <div class="mock-tab">Overview</div>
+                    <div class="mock-tab">Prompt</div>
+                    <div class="mock-tab">Analysis</div>
+                    <div class="mock-tab active">Result</div>
                 </div>
-                <div id="output-content" class="tab-content active">
-                    <!-- Output will appear here -->
+                <div style="font-family: serif; color: #c9d1d9;">
+                    <h3 style="font-size: 1rem; border-bottom: 1px solid #30363d; padding-bottom: 0.3rem; margin-top: 0;">Decontextualized Description</h3>
+                    <p style="font-size: 0.8rem; color: #8b949e;">A mechanism for achieving agreement on a single data value among distributed processes despite failures...</p>
+                    
+                    <h3 style="font-size: 1rem; border-bottom: 1px solid #30363d; padding-bottom: 0.3rem;">Identified Invariants</h3>
+                    <ul style="font-size: 0.8rem; color: #8b949e; padding-left: 1.2rem;">
+                        <li><strong>Quorum Consistency:</strong> Property persists under network partition.</li>
+                        <li><strong>Monotonicity:</strong> State progression remains constant across scaling.</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Use Cases -->
-    <section class="use-cases">
-        <h2>When to Use</h2>
-        <ul>
-            <li><strong>Cross-Domain Mapping:</strong> When you need to find analogies between disparate fields (e.g., Biology vs. Economics).</li>
-            <li><strong>First Principles Thinking:</strong> When you need to strip away assumptions and understand the core mechanics of a system.</li>
-            <li><strong>Robustness Testing:</strong> To verify if a concept holds true under extreme theoretical conditions.</li>
-        </ul>
+    <!-- 3. TABS -->
+    <section class="task-details">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>subject_object</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The object to analyze (e.g., 'A Prime Number', 'Distributed Consensus').</td>
+                </tr>
+                <tr>
+                    <td><code>transformation_types</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Transformations to apply. Defaults: <code>symmetry_groups</code>, <code>limit_cases</code>, <code>context_inversion</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>output_format</code></td>
+                    <td>String</td>
+                    <td><code>fingerprint</code> (list of invariants) or <code>signature</code> (hashable summary).</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Specific files or patterns to be used as primary input context.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Additional files for secondary context.</td>
+                </tr>
+                </tbody>
+            </table>
+            <p style="color: var(--text-dim); font-size: 0.85rem;">Token Usage: <strong>Medium</strong> (Context dependent)</p>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h3>Task Lifecycle</h3>
+                    <ol style="color: var(--text-dim); line-height: 1.8; font-size: 0.9rem;">
+                        <li><strong>Initialization:</strong> Validates <code>subject_object</code> and <code>output_format</code>.</li>
+                        <li><strong>Context Loading:</strong> Aggregates content from <code>input_files</code> and <code>priorCode</code>.</li>
+                        <li><strong>Decontextualization:</strong> LLM strips domain terminology to find the mathematical core.</li>
+                        <li><strong>Stress Testing:</strong> Applies transformations (scaling, rotation, permutation) to test property stability.</li>
+                        <li><strong>Invariant Extraction:</strong> Identifies properties that survive all transformations.</li>
+                        <li><strong>Finalization:</strong> Generates a transcript and renders the result in the Session UI.</li>
+                    </ol>
+                </div>
+                <div>
+                    <h3>Error Handling</h3>
+                    <p style="color: var(--text-dim); font-size: 0.9rem;">
+                        The task performs pre-execution validation on configuration fields. If the LLM fails to identify invariants, the task logs the failure in the transcript and provides a partial analysis of the stress test results.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Orchestration Boilerplate</h3>
+            <pre><code class="language-kotlin">
+val task = StructuralInvariantAnalysisTask(
+    orchestrationConfig = config,
+    planTask = StructuralInvariantAnalysisTaskExecutionConfigData(
+        subject_object = "Distributed Consensus",
+        transformation_types = listOf("network_partition", "latency_scaling"),
+        output_format = "signature"
+    )
+)
+            </code></pre>
+
+            <h3>Prompt Segment</h3>
+            <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 0.5rem;">The following logic is injected into the orchestrator's context:</p>
+            <pre><code class="language-text">
+StructuralInvariantAnalysis - Distill an object to immutable properties
+  ** Specify the subject_object to analyze
+  ** Define transformation_types (e.g., symmetry_groups, limit_cases)
+  ** Select output_format ('fingerprint' or 'signature')
+  ** Process involves:
+     - Decontextualization (stripping domain terminology)
+     - Stress Testing (applying transformations)
+     - Invariant Extraction (identifying constants)
+     - Signature Generation
+            </code></pre>
+        </div>
     </section>
+
 </main>
 
 <script>
-    const subjectInput = document.getElementById('subject');
-    const transformationsInput = document.getElementById('transformations');
-    const formatInput = document.getElementById('format');
-    const outputContent = document.getElementById('output-content');
-    const runBtn = document.querySelector('.run-button');
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-    function generateMockOutput() {
-        const subject = subjectInput.value || 'Unknown Object';
-        const format = formatInput.value;
-        
-        outputContent.innerHTML = 'Analyzing ' + subject + '...\\nApplying transformations...\\n\\n';
-        
-        setTimeout(() => {
-            let result = `## Analysis Result: ${subject}\n\n`;
-            result += `### Decontextualized Description\n`;
-            result += `An abstract entity defined by indivisibility and sequential position within a set.\n\n`;
-            
-            result += `### Identified Invariants\n`;
-            result += `- **Indivisibility:** Cannot be decomposed into smaller factors of the same type.\n`;
-            result += `- **Distribution Regularity:** Follows asymptotic distribution laws.\n\n`;
-            
-            result += `### Structural ${format.charAt(0).toUpperCase() + format.slice(1)}\n`;
-            if (format === 'fingerprint') {
-                result += `- Invariant A: True\n- Invariant B: True\n- Symmetry: None`;
-            } else {
-                result += `Hash: 0x8F3A2C1B\nType: NumberTheory.Primitive`;
-            }
-            
-            outputContent.innerText = result;
-        }, 800);
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
     }
-
-    runBtn.addEventListener('click', generateMockOutput);
-    
-    // Initial run
-    generateMockOutput();
 </script>
 
 </body>

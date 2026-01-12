@@ -261,20 +261,20 @@ Only include fields where a value can be confidently determined from the context
         private val log = LoggerFactory.getLogger(PdfFormTask::class.java)
 
         val PdfForm = TaskType(
-            "PdfForm",
-            "File",
-            PdfFormTask::class.java,
-            PdfFormExecutionConfig::class.java,
-            PdfFormTypeConfig::class.java,
-            "Fills out a specific PDF form template with provided data.",
-            """
-            Fills fields in a pre-configured PDF template.
-            <ul>
-              <li><b>Requires:</b> A template PDF file defined in the global Type Config.</li>
-              <li><b>Output:</b> A new PDF file with the fields populated.</li>
-              <li>Automatically lists available fields from the template to the Planner.</li>
-            </ul>
-            """,
+          name = "PdfForm",
+          category = "File",
+          taskClass = PdfFormTask::class.java,
+          executionConfigClass = PdfFormExecutionConfig::class.java,
+          taskSettingsClass = PdfFormTypeConfig::class.java,
+          description = "Fills out a specific PDF form template with provided data.",
+          tooltipHtml = """
+                      Fills fields in a pre-configured PDF template.
+                      <ul>
+                        <li><b>Requires:</b> A template PDF file defined in the global Type Config.</li>
+                        <li><b>Output:</b> A new PDF file with the fields populated.</li>
+                        <li>Automatically lists available fields from the template to the Planner.</li>
+                      </ul>
+                      """,
         )
     }
 }

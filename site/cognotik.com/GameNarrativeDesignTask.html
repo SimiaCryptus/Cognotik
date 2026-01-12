@@ -1,80 +1,448 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Narrative Design - Cognotik</title>
+    <title>Cognotik | GameNarrativeDesignTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/variables.css">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+        }
+
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .task-header {
+            margin-bottom: 2rem;
+        }
+
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+        }
+
+        .pitch {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+        }
+
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 450px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: #1c2128;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-y: auto;
+            flex-grow: 1;
+            background: #0d1117;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        .mock-ui {
+            padding: 1rem;
+            overflow-y: auto;
+            flex-grow: 1;
+            font-size: 0.9rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-content {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 2rem;
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .docs-table th {
+            text-align: left;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.75rem;
+        }
+
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .docs-table tr:hover {
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+
+        code {
+            font-family: var(--font-mono);
+            background: #21262d;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            color: #ff7b72;
+        }
+
+        .req { color: #f85149; font-weight: bold; }
+        .process-list {
+            list-style: none;
+            padding: 0;
+        }
+        .process-list li { margin-bottom: 1rem; padding-left: 1.5rem; position: relative; }
+        .process-list li::before { content: "→"; position: absolute; left: 0; color: var(--accent-primary); }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
 </head>
 <body>
-    <cognotik-header current-page="game-narrative"></cognotik-header>
-    <header class="hero">
-        <h1>Game Narrative Design</h1>
-        <p class="subtitle">Create interactive game narratives with branching storylines, dynamic character arcs, and meaningful player choices.</p>
-        <a href="#demo" class="cta-button">Try the Simulator</a>
-    </header>
-    <section class="features">
-        <div class="features-grid">
-            <div class="feature-card">
-                <h3>Branching Storylines</h3>
-                <p>Designs complex narrative structures with multiple paths, decision points, and endings based on player agency.</p>
+
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<main class="bento-container">
+
+    <!-- 1. HEADER AREA -->
+    <section class="task-header">
+        <div class="breadcrumbs">Home > Tasks > Games > GameNarrativeDesignTask</div>
+        <h1>GameNarrativeDesignTask</h1>
+        <div class="pitch">
+            Architect complex, branching game narratives with interactive dialogue trees, character arcs, and player agency analysis. Extends base narrative generation with game-specific structural logic.
+        </div>
+        <div class="badges">
+            <span class="badge">Category: Games</span>
+            <span class="badge">Output: Multi-Tab Markdown</span>
+            <span class="badge">Model: GPT-4o Preferred</span>
+        </div>
+    </section>
+
+    <!-- 2. REALITY CHECK (Visual Proof) -->
+    <section class="reality-check-grid">
+        <!-- Input: The Config -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="icon">⚙️</span> GameNarrativeConfig.json
             </div>
-            <div class="feature-card">
-                <h3>Interactive Dialogue</h3>
-                <p>Generates dialogue trees with emotional beats and consequences that affect relationships and story outcomes.</p>
+            <pre><code class="language-json">
+{
+  "game_title": "Neon Shadows",
+  "genre": "Cyberpunk RPG",
+  "narrative_style": "branching",
+  "player_agency_level": "high",
+  "num_main_characters": 5,
+  "num_branching_points": 10,
+  "player_role": "protagonist",
+  "estimated_playtime_hours": 15,
+  "num_endings": 4,
+  "include_dialogue_trees": true,
+  "include_game_mechanics": true,
+  "generate_character_portraits": true,
+  "tone": "dark/mysterious"
+}
+            </code></pre>
+        </div>
+
+        <!-- Arrow Connector -->
+        <div class="flow-arrow">→</div>
+
+        <!-- Output: The UI -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="icon">👁️</span> Session Task UI
             </div>
-            <div class="feature-card">
-                <h3>Character Arcs</h3>
-                <p>Develops deep character backgrounds and dynamic arcs that evolve in response to the game's events.</p>
+            <div class="mock-ui">
+                <div style="border-bottom: 1px solid #30363d; padding-bottom: 10px; margin-bottom: 10px;">
+                    <span style="color: #58a6ff; font-weight: bold;">[Tab: Branching Map]</span>
+                </div>
+                <h3 style="margin-top: 0;">Decision Point: The Black Market Deal</h3>
+                <p style="color: #8b949e; font-style: italic;">Location: Sector 7 Slums</p>
+                <div style="background: #0d1117; padding: 10px; border-radius: 4px; margin: 10px 0;">
+                    <strong>Choice A:</strong> Betray the fixer.<br>
+                    <span style="color: #4ade80;">Consequence:</span> Gain 5000 credits, lose reputation with Syndicate.
+                </div>
+                <div style="background: #0d1117; padding: 10px; border-radius: 4px;">
+                    <strong>Choice B:</strong> Honor the agreement.<br>
+                    <span style="color: #4ade80;">Consequence:</span> Unlock "Loyalty" questline, gain ally 'Jax'.
+                </div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <img src="assets/images/mocks/character_portrait_jax.png" alt="Jax" style="border-radius: 50%; border: 2px solid #58a6ff; width: 120px; height: 120px; background: #1c2128;">
+                    <div style="font-size: 0.8rem; color: #8b949e;">Generated Portrait: Jax (The Fixer)</div>
+                </div>
             </div>
         </div>
     </section>
-    <section id="demo" class="simulator">
-        <h2>Interactive Simulator</h2>
-        <div class="simulator-container">
-            <div class="sim-controls">
-                <div class="control-group">
-                    <label>Game Title</label>
-                    <input type="text" value="The Last Signal">
-                </div>
-                <div class="control-group">
-                    <label>Genre</label>
-                    <input type="text" value="Sci-Fi Mystery">
-                </div>
-                <div class="control-group">
-                    <label>Narrative Style</label>
-                    <select>
-                        <option>Linear</option>
-                        <option selected>Branching</option>
-                        <option>Open-ended</option>
-                    </select>
-                </div>
-                <button class="run-button">Generate Narrative</button>
+
+    <!-- 3. TABBED DETAILS -->
+    <section class="task-details">
+        <div class="tabs-nav">
+            <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
+            <button onclick="switchTab(event, 'process')">Config & Process</button>
+            <button onclick="switchTab(event, 'integration')">Integration</button>
+        </div>
+
+        <div class="tab-content">
+            <!-- TAB 1: DOCS -->
+            <div id="tab-docs" class="tab-pane">
+                <h3>Configuration Parameters</h3>
+                <table class="docs-table">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>game_title</code> <span class="req">*</span></td>
+                            <td>String</td>
+                            <td>The title of the game used for context and file naming.</td>
+                        </tr>
+                        <tr>
+                            <td><code>genre</code></td>
+                            <td>String</td>
+                            <td>Game genre (e.g., 'RPG', 'adventure', 'visual novel'). Default: 'RPG'.</td>
+                        </tr>
+                        <tr>
+                            <td><code>narrative_style</code></td>
+                            <td>String</td>
+                            <td>'linear', 'branching', or 'open-ended'. Default: 'branching'.</td>
+                        </tr>
+                        <tr>
+                            <td><code>player_agency_level</code></td>
+                            <td>String</td>
+                            <td>'low', 'medium', or 'high'. Affects choice impact. Default: 'high'.</td>
+                        </tr>
+                        <tr>
+                            <td><code>num_main_characters</code></td>
+                            <td>Int</td>
+                            <td>Number of main characters (1-10). Default: 4.</td>
+                        </tr>
+                        <tr>
+                            <td><code>num_branching_points</code></td>
+                            <td>Int</td>
+                            <td>Number of major branching points (3-15). Default: 8.</td>
+                        </tr>
+                        <tr>
+                            <td><code>num_endings</code></td>
+                            <td>Int</td>
+                            <td>Number of possible endings (1-10). Default: 4.</td>
+                        </tr>
+                        <tr>
+                            <td><code>player_role</code></td>
+                            <td>String</td>
+                            <td>'protagonist', 'observer', or 'custom'. Default: 'protagonist'.</td>
+                        </tr>
+                        <tr>
+                            <td><code>estimated_playtime_hours</code></td>
+                            <td>Int</td>
+                            <td>Estimated playtime (1-100). Affects word count. Default: 20.</td>
+                        </tr>
+                        <tr>
+                            <td><code>include_dialogue_trees</code></td>
+                            <td>Boolean</td>
+                            <td>Whether to include detailed dialogue trees. Default: true.</td>
+                        </tr>
+                        <tr>
+                            <td><code>include_character_arcs</code></td>
+                            <td>Boolean</td>
+                            <td>Whether to include character arc development. Default: true.</td>
+                        </tr>
+                        <tr>
+                            <td><code>include_side_quests</code></td>
+                            <td>Boolean</td>
+                            <td>Whether to include side quest narratives. Default: true.</td>
+                        </tr>
+                        <tr>
+                            <td><code>include_game_mechanics</code></td>
+                            <td>Boolean</td>
+                            <td>Whether to include game mechanics design. Default: true.</td>
+                        </tr>
+                        <tr>
+                            <td><code>generate_character_portraits</code></td>
+                            <td>Boolean</td>
+                            <td>Triggers DALL-E/Midjourney asset generation.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-dim);">
+                    <strong>Token Usage:</strong> High. This task performs multiple LLM passes and optional image generation.
+                </p>
             </div>
-            <div class="sim-output">
-                <div class="tab-content active" style="white-space: pre-wrap;">
-# Narrative Design: The Last Signal
 
-## Premise
-A lone operator at a deep-space listening post receives a transmission that predates humanity.
+            <!-- TAB 2: PROCESS -->
+            <div id="tab-process" class="tab-pane" style="display:none;">
+                <h3>Task Process Lifecycle</h3>
+                <ul class="process-list">
+                    <li><strong>Initialization:</strong> Validates configuration and creates <code>.game_narrative_design</code> workspace.</li>
+                    <li><strong>Phase 1: Base Narrative:</strong> Executes <code>NarrativeGenerationTask</code> to establish core story beats.</li>
+                    <li><strong>Phase 2: Game Structure Analysis:</strong> Extracts characters, acts, and themes into a structured <code>GameNarrative</code> object.</li>
+                    <li><strong>Phase 2.5: Mechanics Design:</strong> (Optional) Designs core loops and systems that achieve ludonarrative harmony.</li>
+                    <li><strong>Asset Generation:</strong> (Optional) Triggers <code>ImageProcessingAgent</code> for character portraits.</li>
+                    <li><strong>Phase 3: Branching Map:</strong> Generates a comprehensive map of decision points and consequences.</li>
+                    <li><strong>Phase 4: Dialogue Trees:</strong> (Optional) Authors multi-turn branching conversations with emotional beats.</li>
+                    <li><strong>Phase 5: Multiple Endings:</strong> Defines unique resolutions and character fates for all narrative paths.</li>
+                    <li><strong>Phase 6: Side Quests:</strong> (Optional) Creates optional content that expands the world and character backstories.</li>
+                    <li><strong>Phase 7: Agency Analysis:</strong> Evaluates choice impact, replayability, and agency balance.</li>
+                    <li><strong>Phase 8: Final Design Document:</strong> Compiles all phases into a master Markdown document and JSON data file.</li>
+                </ul>
+            </div>
 
-## Branching Point: The Decryption
-**Context:** The signal is encrypted with a hazardous memetic virus.
-- **Choice A:** Isolate the signal to protect the network. (Safety)
-- **Choice B:** Interface directly to decode it faster. (Risk)
+            <!-- TAB 3: INTEGRATION -->
+            <div id="tab-integration" class="tab-pane" style="display:none;">
+                <h3>Kotlin Boilerplate</h3>
+                <pre><code class="language-kotlin">
+val task = GameNarrativeDesignTask(
+    orchestrationConfig = config,
+    planTask = GameNarrativeDesignConfigData(
+        game_title = "Project Orion",
+        genre = "Sci-Fi",
+        narrative_style = "branching",
+        num_endings = 3,
+        player_role = "protagonist",
+        include_game_mechanics = true
+    )
+)
+orchestrator.runTask(task)
+                </code></pre>
 
-## Consequences
-- **If A:** The signal degrades. You gain partial info but stay sane.
-- **If B:** You learn the truth about the "Precursors" but begin hallucinating.
-
-## Endings
-1. **The Guardian:** You destroy the signal to save Earth.
-2. **The Prophet:** You merge with the signal and ascend.
-                </div>
+                <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+                <pre><code class="language-text">
+GameNarrativeDesign - Create interactive game narratives with branching storylines
+  ** Extends NarrativeGeneration with game-specific features
+  ** Specify game title, genre, and narrative style
+  ** Define player agency level and role
+  ** Design core game mechanics and systems
+  ** Configure branching points and multiple endings
+  ** Include dialogue trees with emotional beats
+  ** Character arcs that respond to player choices
+  ** Side quests and optional content
+  ** Produces complete game narrative design document
+                </code></pre>
             </div>
         </div>
     </section>
+</main>
+
+<script>
+    function switchTab(event, tabId) {
+        const panes = document.querySelectorAll('.tab-pane');
+        const buttons = document.querySelectorAll('.tabs-nav button');
+        
+        panes.forEach(p => p.style.display = 'none');
+        buttons.forEach(b => b.classList.remove('active'));
+        
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

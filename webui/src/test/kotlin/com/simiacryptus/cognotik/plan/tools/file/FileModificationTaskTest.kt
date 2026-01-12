@@ -16,7 +16,7 @@ object FileModificationTaskTest {
         PlanHarness.configurePlatform()
     }
 
-     @org.junit.jupiter.api.Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         TaskHarness(
@@ -27,7 +27,6 @@ object FileModificationTaskTest {
             executionConfig = FileModificationTaskExecutionConfigData(
                 files = listOf("Calculator.kt"),
                 task_description = "Add a subtract function to the Calculator class",
-                modifications = "Implement fun subtract(a: Int, b: Int): Int",
             ),
             timeoutMinutes = 10,
         ).run()

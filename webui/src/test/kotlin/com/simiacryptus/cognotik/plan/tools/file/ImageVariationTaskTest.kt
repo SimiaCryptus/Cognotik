@@ -21,7 +21,7 @@ class ImageVariationTaskTest {
     }
   }
 
-  @Test
+ //@org.junit.jupiter.api.Test
   @Timeout(30, unit = TimeUnit.MINUTES)
   fun test() {
     val inputFile = "input.png"

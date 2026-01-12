@@ -307,22 +307,22 @@ Keep responses concise (typically 1-3 sentences or a few words/numbers as approp
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TableCompilationTask::class.java)
         val TableCompilation = TaskType(
-            "TableCompilation",
-            "Reasoning",
-            TableCompilationTask::class.java,
-            TableCompilationTaskExecutionConfigData::class.java,
-            TableCompilationTaskTypeConfig::class.java,
-            "Generate structured tables with AI-computed cell values",
-            """
-              Generates tables by computing each cell value using AI.
-              <ul>
-                <li>Define rows and columns as headers</li>
-                <li>Provide a query template with {row} and {column} placeholders</li>
-                <li>Cells are computed in configurable partitions for efficiency</li>
-                <li>Supports markdown, HTML, and CSV output formats</li>
-                <li>Useful for comparison matrices, analysis tables, decision matrices</li>
-              </ul>
-            """,
+          name = "TableCompilation",
+          category = "Reasoning",
+          taskClass = TableCompilationTask::class.java,
+          executionConfigClass = TableCompilationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TableCompilationTaskTypeConfig::class.java,
+          description = "Generate structured tables with AI-computed cell values",
+          tooltipHtml = """
+                        Generates tables by computing each cell value using AI.
+                        <ul>
+                          <li>Define rows and columns as headers</li>
+                          <li>Provide a query template with {row} and {column} placeholders</li>
+                          <li>Cells are computed in configurable partitions for efficiency</li>
+                          <li>Supports markdown, HTML, and CSV output formats</li>
+                          <li>Useful for comparison matrices, analysis tables, decision matrices</li>
+                        </ul>
+                      """,
         )
     }
 }

@@ -31,26 +31,26 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     companion object {
         private val log: Logger = LoggerFactory.getLogger(JournalismReasoningTask::class.java)
         val JournalismReasoning = TaskType(
-            "JournalismReasoning",
-            "Writing",
-            JournalismReasoningTask::class.java,
-            JournalismReasoningTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Investigate stories through journalistic principles and methods",
-            """
-              Analyzes stories using professional journalism standards and practices.
-              <ul>
-                <li>Verifies facts and checks claims against evidence</li>
-                <li>Identifies multiple perspectives and source credibility</li>
-                <li>Analyzes context, background, and broader implications</li>
-                <li>Detects potential biases and conflicts of interest</li>
-                <li>Finds information gaps and unanswered questions</li>
-                <li>Explores alternative story angles and approaches</li>
-                <li>Assesses newsworthiness and public interest</li>
-                <li>Useful for investigative reporting, fact-checking, editorial planning</li>
-                <li>Generates structured journalistic analysis with verified facts</li>
-              </ul>
-            """,
+          name = "JournalismReasoning",
+          category = "Writing",
+          taskClass = JournalismReasoningTask::class.java,
+          executionConfigClass = JournalismReasoningTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Investigate stories through journalistic principles and methods",
+          tooltipHtml = """
+                        Analyzes stories using professional journalism standards and practices.
+                        <ul>
+                          <li>Verifies facts and checks claims against evidence</li>
+                          <li>Identifies multiple perspectives and source credibility</li>
+                          <li>Analyzes context, background, and broader implications</li>
+                          <li>Detects potential biases and conflicts of interest</li>
+                          <li>Finds information gaps and unanswered questions</li>
+                          <li>Explores alternative story angles and approaches</li>
+                          <li>Assesses newsworthiness and public interest</li>
+                          <li>Useful for investigative reporting, fact-checking, editorial planning</li>
+                          <li>Generates structured journalistic analysis with verified facts</li>
+                        </ul>
+                      """,
         )
     }
 

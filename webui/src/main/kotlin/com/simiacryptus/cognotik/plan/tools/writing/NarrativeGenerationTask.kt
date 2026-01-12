@@ -1382,26 +1382,26 @@ Provide the revised scene content only.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(NarrativeGenerationTask::class.java)
         val NarrativeGeneration = TaskType(
-            "NarrativeGeneration",
-            "Writing",
-            NarrativeGenerationTask::class.java,
-            NarrativeGenerationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate complete narratives from analysis and outlines",
-            """
-              Extends NarrativeReasoning to generate complete, publication-ready narratives.
-              <ul>
-                <li>Performs comprehensive narrative analysis (inherited from NarrativeReasoning)</li>
-                <li>Creates detailed scene-by-scene outline based on analysis</li>
-                <li>Generates each scene iteratively with full context</li>
-                <li>Maintains consistency by feeding previous scenes into each generation</li>
-                <li>Supports configurable structure (acts, scenes, word count)</li>
-                <li>Customizable writing style, POV, tone, and narrative elements</li>
-                <li>Optional revision passes for quality improvement</li>
-                <li>Produces complete, coherent narrative with consistent style and voice</li>
-                <li>Ideal for story generation, scenario planning, user journey narratives</li>
-              </ul>
-            """,
+          name = "NarrativeGeneration",
+          category = "Writing",
+          taskClass = NarrativeGenerationTask::class.java,
+          executionConfigClass = NarrativeGenerationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate complete narratives from analysis and outlines",
+          tooltipHtml = """
+                        Extends NarrativeReasoning to generate complete, publication-ready narratives.
+                        <ul>
+                          <li>Performs comprehensive narrative analysis (inherited from NarrativeReasoning)</li>
+                          <li>Creates detailed scene-by-scene outline based on analysis</li>
+                          <li>Generates each scene iteratively with full context</li>
+                          <li>Maintains consistency by feeding previous scenes into each generation</li>
+                          <li>Supports configurable structure (acts, scenes, word count)</li>
+                          <li>Customizable writing style, POV, tone, and narrative elements</li>
+                          <li>Optional revision passes for quality improvement</li>
+                          <li>Produces complete, coherent narrative with consistent style and voice</li>
+                          <li>Ideal for story generation, scenario planning, user journey narratives</li>
+                        </ul>
+                      """,
         )
     }
 }

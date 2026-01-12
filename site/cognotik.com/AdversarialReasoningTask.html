@@ -1,248 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adversarial Reasoning Task - Cognotik</title>
+    <title>Cognotik | AdversarialReasoningTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+
     <style>
         :root {
-            /* Override main.css variables */
-            --accent-color: #ef4444; /* Red for Adversarial/Red Team */
-            --accent-hover: #dc2626;
-            --font-family-mono: 'JetBrains Mono', monospace;
-
-            /* Custom variables */
-            --accent-secondary: #f59e0b; /* Amber for Warnings */
-            --accent-glow: rgba(239, 68, 68, 0.3);
-
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
+            --severity-critical: #f85149;
+            --severity-high: #f97316;
+            --severity-medium: #d29922;
+            --severity-low: #3fb950;
         }
 
-        /* Hero Section */
-        .hero {
-
-            padding: 6rem 2rem; /* Override main.css padding */
-            background: radial-gradient(circle at top center, #2a1015 0%, var(--background-color) 70%);
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
         }
 
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            max-width: 800px;
-            margin: 0 auto 2rem;
-        }
-
-        .btn-cta {
-            background: var(--accent-color);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 20px var(--accent-glow);
-            border: none;
-            cursor: pointer;
-            font-size: 1.1rem;
-        }
-
-        .btn-cta:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px var(--accent-glow);
-        }
-
-        /* Features Grid */
-        /* .features and .features-grid handled by main.css */
-
-        .feature-card {
-            background: var(--surface-color);
-            padding: 2rem;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: transform 0.3s ease;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-color);
-        }
-
-        .feature-icon {
-            color: var(--accent-color);
-            margin-bottom: 1rem;
-        }
-
-        /* Simulator */
-        .simulator-section {
-            padding: 4rem 2rem;
-            background: #0b1120;
-        }
-
-        .simulator-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            max-width: 1400px;
+        .task-container {
+            max-width: 1200px;
             margin: 0 auto;
-            height: 800px;
+            padding: 2rem;
         }
 
-        .sim-panel {
-            background: var(--surface-color);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+        /* Header Styling */
+        .page-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 1.5rem;
         }
-
-        .panel-header {
-            padding: 1rem 1.5rem;
-            background: rgba(0, 0, 0, 0.2);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .panel-content {
-            padding: 1.5rem;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        /* Form Elements */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            display: block;
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
             margin-bottom: 0.5rem;
-            color: var(--text-muted);
-            font-size: 0.9rem;
         }
-
-        .form-control {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: var(--text-color);
-            padding: 0.75rem;
-            border-radius: 6px;
-            font-family: var(--font-family-mono);
-            font-size: 0.9rem;
-            transition: border-color 0.2s;
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            color: #fff;
         }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-
-        textarea.form-control {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .checkbox-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-        }
-
-        /* Output Tabs */
-        .tabs {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .tab {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.5rem 0;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-
-        .tab.active {
-            color: var(--accent-color);
-            border-bottom-color: var(--accent-color);
-        }
-
-        .output-content {
-            font-family: var(--font-family-mono);
-            font-size: 0.9rem;
-        }
-
-        .vuln-item {
-            background: rgba(255, 0, 0, 0.05);
-            border-left: 3px solid var(--accent-color);
-            padding: 1rem;
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
             margin-bottom: 1rem;
         }
-
-        .vuln-header {
+        .badges {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
+            gap: 0.5rem;
         }
-
-        .severity-badge {
-            padding: 0.2rem 0.5rem;
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
             border-radius: 4px;
             font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: stretch;
+        }
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-header {
+            background: rgba(255,255,255,0.03);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            color: #e6edf3;
+        }
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Mock UI Styling */
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+        .risk-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+        }
+        .risk-table td {
+            padding: 4px 8px;
+            border: 1px solid var(--border-subtle);
+        }
+        .severity-tag {
+            padding: 2px 6px;
+            border-radius: 3px;
             font-weight: bold;
             text-transform: uppercase;
+            font-size: 0.7rem;
         }
 
-        .severity-critical { background: #7f1d1d; color: #fecaca; }
-        .severity-high { background: #c2410c; color: #fed7aa; }
-        .severity-medium { background: #a16207; color: #fef08a; }
-
-        /* Use Cases */
-        .use-cases {
-            padding: 4rem 2rem;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .use-case-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .use-case-list li {
+        /* Tabs */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
             margin-bottom: 1.5rem;
-            padding-left: 2rem;
-            position: relative;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        .tab-pane {
+            display: none;
+        }
+        .tab-pane.active {
+            display: block;
         }
 
-        .use-case-list li::before {
-            content: "→";
-            position: absolute;
-            left: 0;
-            color: var(--accent-color);
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
         }
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+        }
+        .docs-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+        .docs-table code {
+            color: var(--accent-primary);
+            font-family: var(--font-mono);
+        }
+        .req { color: var(--severity-critical); }
 
         @media (max-width: 768px) {
-            .simulator-container {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
-            .hero h1 { font-size: 2.5rem; }
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
         }
     </style>
 </head>
@@ -250,209 +203,198 @@
 
 <cognotik-header current-page="adversarial-reasoning"></cognotik-header>
 
-<main>
-    <!-- Hero Section -->
-    <section class="hero">
-        <h1>Adversarial Reasoning</h1>
-        <p>Automated red team analysis to identify vulnerabilities, challenge assumptions, and stress-test systems against simulated adversaries.</p>
-        <button class="btn-cta" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
-            Try the Simulator
-        </button>
-    </section>
+<main class="task-container">
 
-    <!-- Features Grid -->
-    <section class="features">
-        <div class="features-grid">
-        <div class="feature-card">
-            <div class="feature-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-            </div>
-            <h3>Multi-Vector Analysis</h3>
-            <p>Simultaneously analyze security, logic, privacy, and compliance vectors to find holistic weaknesses.</p>
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home / Tasks / Reasoning / AdversarialReasoningTask</div>
+        <h1>AdversarialReasoningTask</h1>
+        <p class="pitch">
+            Automated red-team analysis to identify vulnerabilities, challenge architectural assumptions, and simulate sophisticated attack vectors against systems and designs.
+        </p>
+        <div class="badges">
+            <span class="badge">Side-Effect: Safe</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+            <span class="badge">Category: Security & Logic</span>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>ExecutionConfig.json</span>
+                <span style="opacity: 0.5;">Input</span>
             </div>
-            <h3>Assumption Challenging</h3>
-            <p>Aggressively questions system design assumptions to uncover hidden failure modes and edge cases.</p>
+            <pre><code class="language-json">{
+  "target_system": "OAuth2 Auth Service",
+  "attack_vectors": ["security", "logic"],
+  "adversary_capability": "advanced",
+  "generate_exploits": true,
+  "input_files": ["src/auth/**/*.kt"],
+  "max_vulnerabilities_per_vector": 3,
+  "challenge_assumptions": ["Tokens are non-predictable"]
+}</code></pre>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>Executive Summary</span>
+                <span style="opacity: 0.5;">Output</span>
             </div>
-            <h3>Adversary Simulation</h3>
-            <p>Simulate attackers ranging from basic script kiddies to nation-state actors with advanced capabilities.</p>
-        </div>
-        </div>
-    </section>
-
-    <!-- Simulator Section -->
-    <section id="simulator" class="simulator-section">
-        <div class="simulator-container">
-            <!-- Inputs -->
-            <div class="sim-panel">
-                <div class="panel-header">
-                    <span>Configuration</span>
-                    <span style="font-size: 0.8rem; color: var(--accent-color)">LIVE PREVIEW</span>
-                </div>
-                <div class="panel-content">
-                    <div class="form-group">
-                        <label class="form-label">Target System Description</label>
-                        <textarea class="form-control" id="targetSystem" rows="4">E-commerce Payment Gateway API. Handles credit card transactions, currency conversion, and fraud detection checks. Uses JWT for authentication.</textarea>
+            <div class="mock-ui-content">
+                <div style="font-weight: bold; margin-bottom: 10px;">📊 Risk Assessment</div>
+                <table class="risk-table">
+                    <tr><td>🔴 Critical</td><td>1</td><td style="color: var(--text-dim)">Token Replay Vulnerability</td></tr>
+                    <tr><td>🟠 High</td><td>2</td><td style="color: var(--text-dim)">Insecure Redirect URI validation</td></tr>
+                    <tr><td>🟡 Medium</td><td>1</td><td style="color: var(--text-dim)">Verbose Error Messages</td></tr>
+                </table>
+                <div style="margin-top: 15px; padding: 8px; background: rgba(248, 81, 73, 0.1); border-left: 3px solid var(--severity-critical);">
+                    <span class="severity-tag" style="background: var(--severity-critical); color: white;">Critical</span>
+                    <div style="margin-top: 5px; font-size: 0.8rem;">
+                        <strong>Logic Flaw:</strong> Race condition in authorization code exchange allows for single-use token reuse under high concurrency.
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Adversary Capability</label>
-                        <select class="form-control" id="capability">
-                            <option value="basic">Basic (Script Kiddie)</option>
-                            <option value="intermediate" selected>Intermediate (Skilled Hacker)</option>
-                            <option value="advanced">Advanced (Security Researcher)</option>
-                            <option value="nation-state">Nation-State (APT)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Attack Vectors</label>
-                        <div class="checkbox-group">
-                            <label class="checkbox-item"><input type="checkbox" checked value="security"> Security</label>
-                            <label class="checkbox-item"><input type="checkbox" checked value="logic"> Logic</label>
-                            <label class="checkbox-item"><input type="checkbox" value="privacy"> Privacy</label>
-                            <label class="checkbox-item"><input type="checkbox" value="performance"> Performance</label>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Options</label>
-                        <div class="checkbox-group">
-                            <label class="checkbox-item"><input type="checkbox" id="genExploits"> Generate Exploit Scenarios</label>
-                            <label class="checkbox-item"><input type="checkbox" id="suggestMitigations" checked> Suggest Mitigations</label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Outputs -->
-            <div class="sim-panel">
-                <div class="panel-header">
-                    <div class="tabs">
-                        <button class="tab active" onclick="switchTab('summary')">Summary</button>
-                        <button class="tab" onclick="switchTab('vulns')">Vulnerabilities</button>
-                        <button class="tab" onclick="switchTab('mitigations')">Mitigations</button>
-                    </div>
-                </div>
-                <div class="panel-content output-content" id="outputArea">
-                    <!-- Content injected via JS -->
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Use Cases -->
-    <section class="use-cases">
-        <h2>When to Use</h2>
-        <ul class="use-case-list">
-            <li><strong>Security Audits:</strong> Before deploying critical infrastructure or public-facing APIs.</li>
-            <li><strong>Design Reviews:</strong> Stress-testing architectural decisions against logical flaws.</li>
-            <li><strong>Compliance Checks:</strong> Ensuring systems meet privacy and regulatory standards under pressure.</li>
-            <li><strong>Legacy Code Analysis:</strong> Identifying vulnerabilities in older systems where documentation is scarce.</li>
-        </ul>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Process Lifecycle</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Configuration Parameters</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>target_system</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>-</td>
+                    <td>The system, design, or argument to analyze for weaknesses.</td>
+                </tr>
+                <tr>
+                    <td><code>attack_vectors</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td><code>["security", "logic"]</code></td>
+                    <td>Vectors to explore: <code>security</code>, <code>performance</code>, <code>logic</code>, <code>business</code>, <code>privacy</code>, <code>compliance</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>adversary_capability</code></td>
+                    <td>String</td>
+                    <td><code>"intermediate"</code></td>
+                    <td>Capability level: <code>basic</code>, <code>intermediate</code>, <code>advanced</code>, <code>nation-state</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>generate_exploits</code></td>
+                    <td><code>Boolean</code></td>
+                    <td><code>false</code></td>
+                    <td>Whether to generate detailed technical exploit scenarios.</td>
+                </tr>
+                <tr>
+                    <td><code>suggest_mitigations</code></td>
+                    <td><code>Boolean</code></td>
+                    <td><code>true</code></td>
+                    <td>Whether to provide defensive recommendations for found issues.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>-</td>
+                    <td>Glob patterns for related code or documentation to provide context.</td>
+                </tr>
+                <tr>
+                    <td><code>challenge_assumptions</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>-</td>
+                    <td>Specific architectural or logical assumptions to target.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>-</td>
+                    <td>Glob patterns for source code or documentation to be analyzed.</td>
+                </tr>
+                <tr>
+                    <td><code>max_vulnerabilities_per_vector</code></td>
+                    <td><code>Int</code></td>
+                    <td><code>5</code></td>
+                    <td>Limit of findings per category (Range: 1-20).</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Execution Flow</h3>
+            <ol style="padding-left: 1.2rem; color: var(--text-main);">
+                <li><strong>Context Gathering:</strong> Aggregates content from <code>input_files</code>, <code>related_files</code>, and prior task results.</li>
+                <li><strong>Adversarial Agent Initialization:</strong> Spawns specialized agents for each <code>attack_vector</code> with a persona matching the <code>adversary_capability</code>.</li>
+                <li><strong>Vector Analysis:</strong> Parallel analysis of the system to identify vulnerabilities, challenging any provided <code>challenge_assumptions</code>.</li>
+                <li><strong>Mitigation Synthesis:</strong> If enabled, a separate Security Architect agent reviews findings to propose immediate and long-term fixes.</li>
+                <li><strong>Reporting:</strong> Generates a structured Markdown transcript, PDF/HTML reports, and an Executive Summary with risk ratings.</li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Kotlin Boilerplate</h3>
+            <pre style="background: #000; border-radius: 6px;"><code>val task = AdversarialReasoningTask(
+    orchestrationConfig = config,
+    planTask = AdversarialReasoningTaskExecutionConfigData(
+        target_system = "Payment Gateway API",
+        attack_vectors = listOf("security", "compliance"),
+        adversary_capability = "advanced",
+        input_files = listOf("docs/api-spec.md", "src/main/kotlin/com/pay/**"),
+        challenge_assumptions = listOf("Database is isolated")
+    )
+)</code></pre>
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="font-size: 0.85rem; color: var(--text-dim);">The following instructions are injected into the LLM context:</p>
+            <pre style="background: #1c2128; font-size: 0.8rem; border: 1px solid var(--border-subtle);"><code>AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknesses
+  ** Specify target_system: the system, design, or argument to analyze
+  ** Choose attack_vectors from: 'security', 'performance', 'logic', 'business', 'privacy', 'compliance'
+  ** Set adversary_capability: 'basic', 'intermediate', 'advanced', 'nation-state'
+  ** Enable generate_exploits for detailed attack scenarios (use with caution)
+  ** Enable suggest_mitigations to get defensive recommendations
+  ** Optionally specify related_files (glob patterns) to analyze code
+  ** Optionally list challenge_assumptions to target specific beliefs
+  ** Identifies vulnerabilities, edge cases, and failure modes
+  ** Simulates adversarial thinking to stress test systems
+  ** Produces structured vulnerability reports with severity ratings</code></pre>
+        </div>
+
     </section>
+
 </main>
 
 <script>
-    // Mock Data Generator
-    function generateOutput() {
-        const capability = document.getElementById('capability').value;
-        const showExploits = document.getElementById('genExploits').checked;
-        const showMitigations = document.getElementById('suggestMitigations').checked;
-        const vectors = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-            .map(cb => cb.value).filter(v => ['security', 'logic', 'privacy', 'performance'].includes(v));
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-        // Dynamic content based on capability
-        let vulns = [];
-        
-        if (vectors.includes('security')) {
-            vulns.push({
-                title: "JWT Algorithm Confusion",
-                severity: capability === 'basic' ? "Medium" : "Critical",
-                desc: "The API accepts unsigned tokens if the algorithm header is set to 'None'.",
-                exploit: "Attacker modifies the JWT header to 'alg': 'none' and removes the signature."
-            });
-        }
-
-        if (vectors.includes('logic')) {
-            vulns.push({
-                title: "Negative Currency Conversion",
-                severity: "High",
-                desc: "Currency conversion logic does not validate positive integers, allowing credit generation.",
-                exploit: "Submit a transaction with amount: -100 USD."
-            });
-        }
-
-        if (capability === 'nation-state' || capability === 'advanced') {
-            vulns.push({
-                title: "Timing Attack on Signature Verification",
-                severity: "High",
-                desc: "Comparison of HMAC signatures is not constant-time, allowing brute-force via timing analysis.",
-                exploit: "Measure response times for invalid signatures to deduce the correct key byte-by-byte."
-            });
-        }
-
-        return {
-            summary: `
-                <h3>Executive Summary</h3>
-                <p><strong>Target:</strong> Payment Gateway API</p>
-                <p><strong>Adversary:</strong> ${capability.toUpperCase()}</p>
-                <p>Analysis identified <strong>${vulns.length} critical/high vulnerabilities</strong>. The system is susceptible to authentication bypass and logical manipulation.</p>
-                <br>
-                <div><strong>Risk Level:</strong> <span style="color: var(--accent-color)">HIGH</span></div>
-            `,
-            vulns: vulns.map(v => `
-                <div class="vuln-item">
-                    <div class="vuln-header">
-                        <strong>${v.title}</strong>
-                        <span class="severity-badge severity-${v.severity.toLowerCase() === 'critical' ? 'critical' : 'high'}">${v.severity}</span>
-                    </div>
-                    <p>${v.desc}</p>
-                    ${showExploits ? `<div style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-muted)"><strong>Exploit:</strong> ${v.exploit}</div>` : ''}
-                </div>
-            `).join(''),
-            mitigations: showMitigations ? `
-                <h3>Recommended Actions</h3>
-                <ul>
-                    <li>Enforce strict JWT algorithm verification (allowlist 'HS256').</li>
-                    <li>Implement input validation layer for all numeric fields (amount > 0).</li>
-                    <li>Use constant-time comparison functions for cryptographic operations.</li>
-                    <li>Implement rate limiting to prevent timing analysis.</li>
-                </ul>
-            ` : '<p><em>Mitigation suggestions disabled.</em></p>'
-        };
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.target.classList.add('active');
     }
-
-    let currentTab = 'summary';
-
-    function render() {
-        const data = generateOutput();
-        const outputArea = document.getElementById('outputArea');
-        outputArea.innerHTML = data[currentTab];
-    }
-
-    function switchTab(tab) {
-        currentTab = tab;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
-        render();
-    }
-
-    // Event Listeners
-    document.querySelectorAll('input, select, textarea').forEach(el => {
-        el.addEventListener('change', render);
-        el.addEventListener('input', render);
-    });
-
-    // Initial Render
-    render();
 </script>
+
 </body>
 </html>

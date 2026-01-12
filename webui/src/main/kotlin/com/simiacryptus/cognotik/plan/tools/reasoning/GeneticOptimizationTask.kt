@@ -31,25 +31,25 @@ class GeneticOptimizationTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GeneticOptimizationTask::class.java)
         val GeneticOptimization = TaskType(
-            "GeneticOptimization",
-            "Reasoning",
-            GeneticOptimizationTask::class.java,
-            GeneticOptimizationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Iteratively evolve and perfect text through genetic algorithms",
-            """
-              Uses genetic algorithms to optimize text through iterative evolution.
-              <ul>
-                <li>Generates variations using configurable mutation strategies</li>
-                <li>Evaluates variants against optimization criteria</li>
-                <li>Selects top performers for next generation</li>
-                <li>Applies crossover to combine successful traits</li>
-                <li>Tracks fitness progression across generations</li>
-                <li>Provides detailed analysis of evolution</li>
-                <li>Supports custom evaluation criteria and weights</li>
-                <li>Useful for perfecting prompts, copy, documentation, and messaging</li>
-              </ul>
-            """,
+          name = "GeneticOptimization",
+          category = "Reasoning",
+          taskClass = GeneticOptimizationTask::class.java,
+          executionConfigClass = GeneticOptimizationTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Iteratively evolve and perfect text through genetic algorithms",
+          tooltipHtml = """
+                        Uses genetic algorithms to optimize text through iterative evolution.
+                        <ul>
+                          <li>Generates variations using configurable mutation strategies</li>
+                          <li>Evaluates variants against optimization criteria</li>
+                          <li>Selects top performers for next generation</li>
+                          <li>Applies crossover to combine successful traits</li>
+                          <li>Tracks fitness progression across generations</li>
+                          <li>Provides detailed analysis of evolution</li>
+                          <li>Supports custom evaluation criteria and weights</li>
+                          <li>Useful for perfecting prompts, copy, documentation, and messaging</li>
+                        </ul>
+                      """,
         )
         private const val TT = """```"""
         fun compressedStringBits(str: String): Int {

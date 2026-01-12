@@ -269,21 +269,21 @@ OCR - Convert documents (PDF, Images) to Markdown text.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(OCRTask::class.java)
         val OCR = TaskType(
-            "OCRTask",
-            "File Operations",
-            OCRTask::class.java,
-            OCRTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Convert documents (PDF, Images) to Markdown text",
-            """
-Uses Vision models to extract text and formatting from documents.
-<ul>
-<li>Supports PDF and Image files</li>
-<li>Converts to Markdown format</li>
-<li>Preserves layout and structure where possible</li>
-<li>Optionally extracts figures and metadata</li>
-</ul>
-"""
+          name = "OCRTask",
+          category = "File",
+          taskClass = OCRTask::class.java,
+          executionConfigClass = OCRTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Convert documents (PDF, Images) to Markdown text",
+          tooltipHtml = """
+          Uses Vision models to extract text and formatting from documents.
+          <ul>
+          <li>Supports PDF and Image files</li>
+          <li>Converts to Markdown format</li>
+          <li>Preserves layout and structure where possible</li>
+          <li>Optionally extracts figures and metadata</li>
+          </ul>
+          """
         )
     }
 }

@@ -345,24 +345,24 @@ class SubPlanTask(
         private val log = LoggerFactory.getLogger(SubPlanTask::class.java)
 
         val SubPlan = TaskType(
-            "SubPlan",
-            "Execution & Automation",
-            SubPlanTask::class.java,
-            SubPlanTaskExecutionConfigData::class.java,
-            SubPlanTaskTypeConfig::class.java,
-            "Create and execute sub-plans using recursive planning",
-            """
-             Enables recursive planning and execution with configurable cognitive modes.
-             <ul>
-               <li>Create sub-plans with different cognitive strategies</li>
-               <li>Support for multiple recursion levels</li>
-               <li>Context propagation to sub-plans</li>
-               <li>Configurable recursion depth limits</li>
-               <li>Automatic result aggregation and summarization</li>
-               <li>Flexible cognitive mode selection per sub-plan</li>
-               <li>Useful for complex multi-stage problems</li>
-             </ul>
-           """,
+          name = "SubPlan",
+          category = "Execution",
+          taskClass = SubPlanTask::class.java,
+          executionConfigClass = SubPlanTaskExecutionConfigData::class.java,
+          taskSettingsClass = SubPlanTaskTypeConfig::class.java,
+          description = "Create and execute sub-plans using recursive planning",
+          tooltipHtml = """
+                       Enables recursive planning and execution with configurable cognitive modes.
+                       <ul>
+                         <li>Create sub-plans with different cognitive strategies</li>
+                         <li>Support for multiple recursion levels</li>
+                         <li>Context propagation to sub-plans</li>
+                         <li>Configurable recursion depth limits</li>
+                         <li>Automatic result aggregation and summarization</li>
+                         <li>Flexible cognitive mode selection per sub-plan</li>
+                         <li>Useful for complex multi-stage problems</li>
+                       </ul>
+                     """,
         )
     }
 }

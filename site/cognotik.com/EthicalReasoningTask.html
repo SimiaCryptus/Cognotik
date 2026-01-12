@@ -1,194 +1,377 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ethical Reasoning - Cognotik</title>
+    <title>Cognotik | EthicalReasoningTask</title>
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --accent-primary: #a855f7; /* Purple */
-            --accent-secondary: #6366f1; /* Indigo */
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --border-subtle: #30363d;
+            --accent-primary: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --font-mono: 'JetBrains Mono', monospace;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-sans); line-height: 1.6; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
-        .btn { display: inline-block; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; text-decoration: none; color: #fff; }
-        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(168, 85, 247, 0.5); }
-        
-        .hero { padding: 8rem 0 4rem; display: flex; align-items: center; min-height: 80vh; }
-        .hero-content { flex: 1; padding-right: 2rem; }
-        .hero h1 { font-size: 3.5rem; line-height: 1.1; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
-        .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
-        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-primary); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(168, 85, 247, 0.2); }
-        
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
 
-        .features { padding: 4rem 0; background: rgba(255,255,255,0.02); }
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
-        .feature-card { background: var(--bg-card); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
-        .feature-card:hover { border-color: var(--accent-primary); transform: translateY(-5px); }
-        .feature-icon { width: 48px; height: 48px; background: rgba(168, 85, 247, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; color: var(--accent-primary); }
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
 
-        .simulator { padding: 4rem 0; }
-        .sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: var(--bg-card); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); min-height: 600px; }
-        .sim-panel { padding: 2rem; display: flex; flex-direction: column; }
-        .sim-left { border-right: 1px solid rgba(255,255,255,0.05); }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
-        .form-control { width: 100%; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); color: var(--text-main); padding: 0.75rem; border-radius: 6px; font-family: monospace; font-size: 0.9rem; }
-        .form-control:focus { outline: none; border-color: var(--accent-primary); }
-        textarea.form-control { resize: vertical; min-height: 100px; }
-        .output-area { flex: 1; font-family: monospace; font-size: 0.9rem; color: #d1d5db; overflow-y: auto; white-space: pre-wrap; }
-        
-        .use-cases { padding: 4rem 0; }
-        .use-case-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-        .use-case-item { background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent-secondary); }
+        .task-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
 
-        @media (max-width: 768px) { .hero { flex-direction: column; text-align: center; padding-top: 6rem; } .sim-container { grid-template-columns: 1fr; } .sim-left { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); } }
+        /* Header Styling */
+        .page-header {
+            margin-bottom: 3rem;
+        }
+        .breadcrumbs {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin: 0 0 1rem 0;
+            color: #fff;
+        }
+        .pitch {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .badge {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Reality Check Grid */
+        .reality-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            align-items: center;
+        }
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-header {
+            background: #090c10;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+        pre {
+            margin: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow: auto;
+            flex-grow: 1;
+        }
+        .flow-arrow {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+        }
+
+        /* Mock UI Output */
+        .mock-ui-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            overflow-y: auto;
+        }
+        .mock-tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1rem;
+        }
+        .mock-tab {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-subtle);
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            color: var(--text-dim);
+        }
+        .mock-tab.active {
+            background: var(--accent-primary);
+            color: #000;
+            border-color: var(--accent-primary);
+        }
+
+        /* Tabs System */
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+        }
+        .tabs-nav button {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tabs-nav button.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Tables */
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        .docs-table th {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 2px solid var(--border-subtle);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+        .docs-table td {
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: top;
+        }
+        .req { color: #f85149; margin-left: 4px; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .reality-check-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); padding: 1rem 0; }
+        }
     </style>
 </head>
 <body>
-    <cognotik-header current-page="ethical"></cognotik-header>
-    <header class="hero container">
-        <div class="hero-content">
-            <h1>Ethical Reasoning</h1>
-            <p>Analyze complex dilemmas through multiple ethical frameworks to guide responsible decision-making.</p>
-            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
-        </div>
-        <div class="hero-visual">
-            <div class="visual-node"></div>
+
+<cognotik-header current-page="ethical-reasoning"></cognotik-header>
+
+<main class="task-container">
+
+    <!-- 1. HEADER -->
+    <header class="page-header">
+        <div class="breadcrumbs">Home > Tasks > Reasoning > EthicalReasoningTask</div>
+        <h1>EthicalReasoningTask</h1>
+        <p class="pitch">
+            Analyze complex dilemmas through multiple ethical frameworks (Utilitarianism, Deontology, Virtue Ethics) to guide balanced decision-making and identify critical trade-offs.
+        </p>
+        <div class="badges">
+            <span class="badge">Category: Reasoning</span>
+            <span class="badge">Model: GPT-4 Preferred</span>
+            <span class="badge">Output: Multi-Format Report</span>
         </div>
     </header>
 
-    <section id="features" class="features">
-        <div class="container">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                    </div>
-                    <h3>Multi-Framework</h3>
-                    <p>Evaluates dilemmas using Utilitarianism, Deontology, Virtue Ethics, and other established frameworks.</p>
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>⚙️ TaskConfig.json</span>
+            </div>
+            <pre><code style="color: #79c0ff;">{
+  "task_type": "EthicalReasoning",
+  "ethical_dilemma": "Should we deploy an unvetted AI safety patch to prevent a theoretical breach?",
+  "stakeholders": [
+    "End Users",
+    "Security Team",
+    "Company Shareholders"
+  ],
+  "ethical_frameworks": [
+    "utilitarianism",
+    "deontology"
+  ],
+  "context": "The breach is estimated at 5% probability but catastrophic impact."
+}</code></pre>
+        </div>
+
+        <div class="flow-arrow">→</div>
+
+        <!-- Output -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️ Session UI Output</span>
+            </div>
+            <div class="mock-ui-content">
+                <div class="mock-tabs">
+                    <div class="mock-tab">Overview</div>
+                    <div class="mock-tab">Context</div>
+                    <div class="mock-tab">Dilemma Analysis</div>
+                    <div class="mock-tab active">Synthesis</div>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </div>
-                    <h3>Stakeholder Analysis</h3>
-                    <p>Identifies all affected parties and assesses the potential impact of decisions on each group.</p>
+                <h4 style="margin-top: 0; color: var(--accent-primary);">Synthesis & Recommendation</h4>
+                <p style="font-size: 0.8rem; color: var(--text-dim);">
+                    <strong>Conflict:</strong> Utilitarianism favors deployment to minimize aggregate risk, while Deontology warns against violating testing protocols.
+                </p>
+                <div style="background: #0d1117; border-left: 3px solid #4ade80; padding: 0.5rem; font-size: 0.8rem;">
+                    <strong>Final Recommendation:</strong> Perform a 'Canary' deployment to 1% of users. This balances the duty of care (Deontology) with risk mitigation (Utilitarianism).
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l9 6 9-6 9 6-9 6-9-6"/></svg>
-                    </div>
-                    <h3>Balanced Recommendation</h3>
-                    <p>Synthesizes findings into a comprehensive recommendation that acknowledges trade-offs.</p>
+                <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--accent-primary);">
+                    📥 Download: <span style="text-decoration: underline;">Report.pdf</span> | <span style="text-decoration: underline;">Report.md</span>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="demo" class="simulator">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="sim-container">
-                <div class="sim-panel sim-left">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Configuration</h3>
-                    <div class="form-group">
-                        <label>Ethical Dilemma</label>
-                        <textarea id="dilemma" class="form-control">Should a self-driving car prioritize the safety of its passengers or pedestrians in an unavoidable accident?</textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Stakeholders</label>
-                        <input type="text" id="stakeholders" class="form-control" value="Passengers, Pedestrians, Car Manufacturer, Society">
-                    </div>
-                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Run Analysis</button>
-                </div>
-                <div class="sim-panel sim-right">
-                    <div id="output-logs" class="output-area">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Describe the dilemma and click "Run" to see the analysis.
-                        </div>
-                    </div>
-                </div>
+    <!-- 3. TABS -->
+    <section class="details-tabs">
+        <nav class="tabs-nav">
+            <button class="active" onclick="switchTab('docs')">Documentation</button>
+            <button onclick="switchTab('process')">Config & Process</button>
+            <button onclick="switchTab('integration')">Integration</button>
+        </nav>
+
+        <!-- TAB: DOCS -->
+        <div id="tab-docs" class="tab-pane active">
+            <h3>Execution Configuration</h3>
+            <table class="docs-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>ethical_dilemma</code><span class="req">*</span></td>
+                    <td><code>String</code></td>
+                    <td>A clear description of the ethical problem or decision to be made.</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Optional glob patterns for files providing context for the analysis.</td>
+                </tr>
+                <tr>
+                    <td><code>stakeholders</code><span class="req">*</span></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Individuals, groups, or entities affected by the decision.</td>
+                </tr>
+                <tr>
+                    <td><code>ethical_frameworks</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Frameworks to apply. Options: <code>utilitarianism</code>, <code>deontology</code>, <code>virtue_ethics</code>, <code>care_ethics</code>, <code>rights_based</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>context</code></td>
+                    <td><code>String</code></td>
+                    <td>Optional background information or constraints.</td>
+                </tr>
+                </tbody>
+            </table>
+            <p style="color: var(--text-dim); font-size: 0.85rem;">* Required fields</p>
+        </div>
+
+        <!-- TAB: PROCESS -->
+        <div id="tab-process" class="tab-pane">
+            <h3>Task Process Lifecycle</h3>
+            <ol style="color: var(--text-dim);">
+                <li><strong>Initialization:</strong> Validates configuration and ensures dilemma and stakeholders are defined.</li>
+                <li><strong>Context Loading:</strong> Aggregates context from previous tasks and specified input files.</li>
+                <li><strong>Dilemma Analysis:</strong> An expert agent deconstructs the core conflict and maps stakeholder interests.</li>
+                <li><strong>Framework Application:</strong> Sequential analysis of the dilemma through each selected ethical lens (Utilitarianism, Deontology, etc.).</li>
+                <li><strong>Synthesis:</strong> A "Master Ethicist" agent compares framework recommendations and identifies critical trade-offs.</li>
+                <li><strong>Reporting:</strong> Generates a comprehensive multi-format report (Markdown, HTML, PDF).</li>
+            </ol>
+        </div>
+
+        <!-- TAB: INTEGRATION -->
+        <div id="tab-integration" class="tab-pane">
+            <h3>Kotlin Boilerplate</h3>
+            <div class="panel">
+                <pre><code style="color: #d2a8ff;">val task = EthicalReasoningTask(
+    orchestrationConfig = config,
+    planTask = EthicalReasoningTaskExecutionConfigData(
+        ethical_dilemma = "Use of user data for training",
+        stakeholders = listOf("Users", "Developers"),
+        ethical_frameworks = listOf("utilitarianism", "rights_based")
+    )
+)</code></pre>
+            </div>
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">The following logic is injected into the LLM context:</p>
+            <div class="panel" style="height: auto;">
+                <pre style="color: #8b949e;">EthicalReasoning - Analyze a dilemma through multiple ethical frameworks
+  ** Optionally specify input files (supports glob patterns) to provide context
+  ** Files will be read and included in the analysis
+  ** Specify the ethical dilemma and stakeholders
+  ** Choose from frameworks: utilitarianism, deontology, virtue_ethics, care_ethics, rights_based
+  ** Provides analysis from each framework's perspective
+  ** Synthesizes findings into a balanced recommendation
+  ** Highlights ethical trade-offs and points of conflict</pre>
             </div>
         </div>
     </section>
 
-    <section id="use-cases" class="use-cases">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="use-case-list">
-                <div class="use-case-item">
-                    <h4>AI Safety</h4>
-                    <p>Evaluate the ethical implications of algorithmic decisions and autonomous systems.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Product Development</h4>
-                    <p>Assess the societal impact of new technologies or features before launch.</p>
-                </div>
-                <div class="use-case-item">
-                    <h4>Corporate Governance</h4>
-                    <p>Navigate complex business decisions involving conflicting stakeholder interests.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+</main>
 
-    <script>
-        function runSimulation() {
-            const dilemma = document.getElementById('dilemma').value;
-            const logsEl = document.getElementById('output-logs');
-            
-            logsEl.innerHTML = '';
-            const steps = [
-                `[INFO] Analyzing dilemma: "${dilemma.substring(0, 30)}..."`,
-                `[INFO] Identifying stakeholders...`,
-                `[INFO] Applying Utilitarian framework...`,
-                `[INFO] Applying Deontological framework...`,
-                `[INFO] Synthesizing findings...`,
-                `[SUCCESS] Analysis Complete.`
-            ];
-            
-            let i = 0;
-            const interval = setInterval(() => {
-                if (i < steps.length) {
-                    const line = document.createElement('div');
-                    line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
-                    line.style.marginBottom = '4px';
-                    if (steps[i].includes('SUCCESS')) line.style.color = '#4ade80';
-                    else line.style.color = '#c084fc';
-                    logsEl.appendChild(line);
-                    i++;
-                } else {
-                    clearInterval(interval);
-                    const result = document.createElement('div');
-                    result.innerHTML = `
-                        <br><strong>Recommendation:</strong><br>
-                        While Utilitarianism suggests minimizing total harm (potentially sacrificing passengers), Deontology emphasizes duties to customers. A balanced approach prioritizes harm minimization generally but requires regulatory frameworks to define liability, rather than leaving the decision to individual algorithms.
-                    `;
-                    result.style.color = '#e2e8f0';
-                    result.style.marginTop = '1rem';
-                    result.style.padding = '1rem';
-                    result.style.border = '1px solid rgba(255,255,255,0.1)';
-                    result.style.borderRadius = '8px';
-                    logsEl.appendChild(result);
-                }
-            }, 800);
-        }
-    </script>
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

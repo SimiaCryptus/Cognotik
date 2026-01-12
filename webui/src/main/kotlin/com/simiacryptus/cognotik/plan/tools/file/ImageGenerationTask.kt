@@ -199,20 +199,20 @@ GenerateImage - Create images using AI image generation models
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ImageGenerationTask::class.java)
         val GenerateImage = TaskType(
-            "GenerateImage",
-            "Writing",
-            ImageGenerationTask::class.java,
-            GenerateImageTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Generate images using AI image generation models",
-            """
-              Creates images from text descriptions using AI models like DALL-E.
-              <ul>
-                <li>Generates high-quality images from detailed prompts</li>
-                <li>Context-aware generation using related files</li>
-                <li>Integration with previous task results</li>
-              </ul>
-            """,
+          name = "GenerateImage",
+          category = "Writing",
+          taskClass = ImageGenerationTask::class.java,
+          executionConfigClass = GenerateImageTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Generate images using AI image generation models",
+          tooltipHtml = """
+                        Creates images from text descriptions using AI models like DALL-E.
+                        <ul>
+                          <li>Generates high-quality images from detailed prompts</li>
+                          <li>Context-aware generation using related files</li>
+                          <li>Integration with previous task results</li>
+                        </ul>
+                      """,
         )
     }
 }

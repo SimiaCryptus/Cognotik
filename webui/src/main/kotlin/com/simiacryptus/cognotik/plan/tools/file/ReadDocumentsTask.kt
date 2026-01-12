@@ -170,24 +170,24 @@ class ReadDocumentsTask(
     companion object {
         private val log = LoggerFactory.getLogger(ReadDocumentsTask::class.java)
         val ReadDocuments = TaskType(
-            "ReadDocuments",
-            "File",
-            ReadDocumentsTask::class.java,
-            ReadDocumentsTaskExecutionConfigData::class.java,
-            ReadDocumentsTaskTypeConfig::class.java,
-            "Deeply analyze project files and provide comprehensive technical insights or answers to specific questions.",
-            """
-            Analyzes project files and provides detailed technical insights using the LLM.
-            <ul>
-              <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>
-              <li>Reading files is optional; the task can operate with or without file input</li>
-              <li>User feedback and iterative refinement are supported but not required</li>
-              <li>Generates comprehensive markdown reports, explanations, and recommendations</li>
-              <li>Can answer detailed questions about code, design, or project context</li>
-              <li>Supports both one-shot and interactive discussion modes</li>
-              <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
-            </ul>
-            """,
+          name = "ReadDocuments",
+          category = "File",
+          taskClass = ReadDocumentsTask::class.java,
+          executionConfigClass = ReadDocumentsTaskExecutionConfigData::class.java,
+          taskSettingsClass = ReadDocumentsTaskTypeConfig::class.java,
+          description = "Deeply analyze project files and provide comprehensive technical insights or answers to specific questions.",
+          tooltipHtml = """
+                      Analyzes project files and provides detailed technical insights using the LLM.
+                      <ul>
+                        <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>
+                        <li>Reading files is optional; the task can operate with or without file input</li>
+                        <li>User feedback and iterative refinement are supported but not required</li>
+                        <li>Generates comprehensive markdown reports, explanations, and recommendations</li>
+                        <li>Can answer detailed questions about code, design, or project context</li>
+                        <li>Supports both one-shot and interactive discussion modes</li>
+                        <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
+                      </ul>
+                      """,
         )
 
         fun getAvailableFiles(
