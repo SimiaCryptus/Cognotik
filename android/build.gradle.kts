@@ -109,11 +109,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":jo-penai")) {
-        exclude(group = "org.apache.pdfbox")
-        exclude(group = "com.vladsch.flexmark", module = "flexmark-pdf-converter")
-        exclude(group = "de.rototor.pdfbox", module = "graphics2d")
-    }
     implementation(project(":core")) {
         exclude(group = "org.apache.pdfbox")
         exclude(group = "com.vladsch.flexmark", module = "flexmark-pdf-converter")

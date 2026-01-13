@@ -34,7 +34,6 @@ java {
 }
 
 dependencies {
-    implementation(project(":jo-penai"))
     implementation(project(":core"))
     implementation(project(":groovy"))
     implementation(project(":kotlin"))
