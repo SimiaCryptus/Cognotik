@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.online
+package com.simiacryptus.cognotik.crawl
 
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.net.URI

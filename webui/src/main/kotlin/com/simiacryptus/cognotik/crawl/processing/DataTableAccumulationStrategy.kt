@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.online.processing
+package com.simiacryptus.cognotik.crawl.processing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.parserCast

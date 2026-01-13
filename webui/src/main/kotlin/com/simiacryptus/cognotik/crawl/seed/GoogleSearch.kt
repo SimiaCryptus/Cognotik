@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.online.seed
+package com.simiacryptus.cognotik.crawl.seed
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue

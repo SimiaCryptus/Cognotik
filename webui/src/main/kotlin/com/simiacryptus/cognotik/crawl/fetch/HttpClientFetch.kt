@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.online.fetch
+package com.simiacryptus.cognotik.crawl.fetch
 
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.OrchestrationConfig

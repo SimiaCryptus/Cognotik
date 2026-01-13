@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.online.processing
+package com.simiacryptus.cognotik.crawl.processing
 
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.*

@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.online.seed
+package com.simiacryptus.cognotik.crawl.seed
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
