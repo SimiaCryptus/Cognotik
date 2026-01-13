@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan
 
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.cognotik.plan.tools.TaskType
 
 class TaskContextYamlDescriber(
     val orchestrationConfig: OrchestrationConfig

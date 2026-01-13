@@ -4,6 +4,10 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -441,13 +445,13 @@ $priorCode
     companion object {
         private val log: Logger = LoggerFactory.getLogger(CounterfactualAnalysisTask::class.java)
         val CounterfactualAnalysis = TaskType(
-          name = "CounterfactualAnalysis",
-          category = "Reasoning",
-          taskClass = CounterfactualAnalysisTask::class.java,
-          executionConfigClass = CounterfactualAnalysisTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Explore what-if scenarios to understand causal relationships and decision impacts",
-          tooltipHtml = """
+            name = "CounterfactualAnalysis",
+            category = "Reasoning",
+            taskClass = CounterfactualAnalysisTask::class.java,
+            executionConfigClass = CounterfactualAnalysisTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Explore what-if scenarios to understand causal relationships and decision impacts",
+            tooltipHtml = """
                         Performs counterfactual analysis to explore alternative scenarios and outcomes.
                         <ul>
                           <li>Analyzes actual scenarios and alternative conditions</li>

@@ -4,6 +4,10 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -31,13 +35,13 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     companion object {
         private val log: Logger = LoggerFactory.getLogger(JournalismReasoningTask::class.java)
         val JournalismReasoning = TaskType(
-          name = "JournalismReasoning",
-          category = "Writing",
-          taskClass = JournalismReasoningTask::class.java,
-          executionConfigClass = JournalismReasoningTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Investigate stories through journalistic principles and methods",
-          tooltipHtml = """
+            name = "JournalismReasoning",
+            category = "Writing",
+            taskClass = JournalismReasoningTask::class.java,
+            executionConfigClass = JournalismReasoningTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Investigate stories through journalistic principles and methods",
+            tooltipHtml = """
                         Analyzes stories using professional journalism standards and practices.
                         <ul>
                           <li>Verifies facts and checks claims against evidence</li>

@@ -5,6 +5,10 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -20,10 +24,10 @@ class SubPlanTask(
 ) {
 
     class SubPlanTaskTypeConfig(
-        @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveSettings: CognitiveModeConfig? = null,
-        @Description("Task-specific configurations available within sub-plans") var taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
-        @Description("Supplemental description of the purpose of this configuration") var purpose: String = "",
-        @Description("Prompt template for summarizing sub-plan results") var summaryPrompt: String = """
+      @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveSettings: CognitiveModeConfig? = null,
+      @Description("Task-specific configurations available within sub-plans") var taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
+      @Description("Supplemental description of the purpose of this configuration") var purpose: String = "",
+      @Description("Prompt template for summarizing sub-plan results") var summaryPrompt: String = """
                Create a comprehensive summary of the sub-planning results below.
                
                Original Goal: {goal}
@@ -36,8 +40,8 @@ class SubPlanTask(
                
                Use markdown formatting with headers and bullet points.
            """.trimIndent(),
-        model: ApiChatModel? = null,
-        name: String? = SubPlan.name,
+      model: ApiChatModel? = null,
+      name: String? = SubPlan.name,
     ) : TaskTypeConfig(task_type = SubPlan.name, name = name, model = model), ValidatedObject {
         val cognitiveMode: CognitiveModeType<*>? get() = cognitiveSettings?.type
         override fun validate(): String? {

@@ -5,7 +5,9 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
+import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
@@ -272,10 +274,10 @@ ${JsonUtil.toJson(taskConfig)}
     }
 
     private fun runTask(
-        coordinator: TaskOrchestrator,
-        currentTask: TaskExecutionConfig,
-        userMessage: String,
-        task: SessionTask
+      coordinator: TaskOrchestrator,
+      currentTask: TaskExecutionConfig,
+      userMessage: String,
+      task: SessionTask
     ): String {
         val currentThinkingStatus =
             reasoningState.get() ?: throw IllegalStateException("ThinkingStatus is null during runTask")
@@ -522,11 +524,11 @@ ${JsonUtil.toJson(taskConfig)}
     )
 
     data class ExecutionRecord(
-        val time: Date? = Date(),
-        val iteration: Int = 0,
-        val task: TaskExecutionConfig? = null,
-        val result: String? = null,
-        @Description("Meta-cognitive reflection about the task execution.")
+      val time: Date? = Date(),
+      val iteration: Int = 0,
+      val task: TaskExecutionConfig? = null,
+      val result: String? = null,
+      @Description("Meta-cognitive reflection about the task execution.")
         val reflections: Reflection? = null
     )
 

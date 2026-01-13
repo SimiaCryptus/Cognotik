@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.util.TaskHarness
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.writing.SoftwareDesignDocumentTask.SoftwareDesignDocumentTaskExecutionConfigData
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll

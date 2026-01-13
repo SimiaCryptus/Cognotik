@@ -5,6 +5,10 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
@@ -1245,13 +1249,13 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ResearchPaperGenerationTask::class.java)
         val ResearchPaperGeneration = TaskType(
-          name = "ResearchPaperGeneration",
-          category = "Writing",
-          taskClass = ResearchPaperGenerationTask::class.java,
-          executionConfigClass = ResearchPaperGenerationTaskExecutionConfigData::class.java,
+            name = "ResearchPaperGeneration",
+            category = "Writing",
+            taskClass = ResearchPaperGenerationTask::class.java,
+            executionConfigClass = ResearchPaperGenerationTaskExecutionConfigData::class.java,
             taskSettingsClass = ResearchPaperGenerationTypeConfig::class.java,
-          description = "Generate comprehensive academic research papers with citations",
-          tooltipHtml = """
+            description = "Generate comprehensive academic research papers with citations",
+            tooltipHtml = """
                         Generates complete, publication-ready academic research papers.
                         <ul>
                           <li>Analyzes research sources and identifies gaps</li>

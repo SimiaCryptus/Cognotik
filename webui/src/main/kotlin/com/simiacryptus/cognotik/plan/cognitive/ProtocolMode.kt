@@ -5,7 +5,9 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
+import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
@@ -279,11 +281,11 @@ open class ProtocolMode(
     }
 
     private fun validateState(
-        task : SessionTask,
-        state: ProtocolState,
-        taskConfig: TaskExecutionConfig,
-        result: String,
-        messages: List<String> = emptyList()
+      task : SessionTask,
+      state: ProtocolState,
+      taskConfig: TaskExecutionConfig,
+      result: String,
+      messages: List<String> = emptyList()
     ): ValidationResult {
         val prompt = """
             You are the Referee.

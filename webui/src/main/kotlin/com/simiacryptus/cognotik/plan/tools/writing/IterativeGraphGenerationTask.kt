@@ -3,6 +3,10 @@ package com.simiacryptus.cognotik.plan.tools.writing
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -417,13 +421,13 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
     companion object {
         private val log = LoggerFactory.getLogger(IterativeGraphGenerationTask::class.java)
         val IterativeGraphGeneration = TaskType(
-          name = "IterativeGraphGeneration",
-          category = "Writing",
-          taskClass = IterativeGraphGenerationTask::class.java,
-          executionConfigClass = IterativeGraphGenerationTaskExecutionConfigData::class.java,
+            name = "IterativeGraphGeneration",
+            category = "Writing",
+            taskClass = IterativeGraphGenerationTask::class.java,
+            executionConfigClass = IterativeGraphGenerationTaskExecutionConfigData::class.java,
             taskSettingsClass = IterativeGraphGenerationTaskTypeConfig::class.java,
-          description = "Extract structured knowledge from unstructured data by iteratively building an entity-relationship graph.",
-          tooltipHtml = """
+            description = "Extract structured knowledge from unstructured data by iteratively building an entity-relationship graph.",
+            tooltipHtml = """
                       Constructs a knowledge graph by iteratively analyzing context and adding nodes/edges.
                       <ul>
                         <li>Processes large contexts by chunking and iterative refinement</li>

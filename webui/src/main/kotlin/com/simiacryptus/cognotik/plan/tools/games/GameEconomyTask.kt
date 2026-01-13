@@ -4,6 +4,10 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
@@ -25,13 +29,13 @@ class GameEconomyTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GameEconomyTask::class.java)
         val GameEconomy = TaskType(
-          name = "GameEconomy",
-          category = "Games",
-          taskClass = GameEconomyTask::class.java,
-          executionConfigClass = GameEconomyTaskExecutionConfigData::class.java,
+            name = "GameEconomy",
+            category = "Games",
+            taskClass = GameEconomyTask::class.java,
+            executionConfigClass = GameEconomyTaskExecutionConfigData::class.java,
             taskSettingsClass = GameEconomyTypeConfig::class.java,
-          description = "Design complete game economic systems with progression and monetization",
-          tooltipHtml = """
+            description = "Design complete game economic systems with progression and monetization",
+            tooltipHtml = """
                         Designs comprehensive game economy systems with balanced progression.
                         <ul>
                           <li>Creates multi-resource economic systems with generation and consumption</li>

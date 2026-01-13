@@ -3,6 +3,10 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -21,13 +25,13 @@ class FunctorialMappingTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(FunctorialMappingTask::class.java)
         val FunctorialMapping = TaskType(
-            name = "FunctorialMapping",
-            category = "Reasoning",
-            taskClass = FunctorialMappingTask::class.java,
-            executionConfigClass = FunctorialMappingTaskExecutionConfigData::class.java,
-            taskSettingsClass = TaskTypeConfig::class.java,
-            description = "Solve complex problems by abstracting them into Category Theory and mapping them to domains with superior tools.",
-            tooltipHtml = """
+          name = "FunctorialMapping",
+          category = "Reasoning",
+          taskClass = FunctorialMappingTask::class.java,
+          executionConfigClass = FunctorialMappingTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Solve complex problems by abstracting them into Category Theory and mapping them to domains with superior tools.",
+          tooltipHtml = """
                           This task implements the logic of Category Theory. It treats domains as "Categories" (collections of objects and arrows/morphisms).
                           The goal is to construct a "Functor"—a bridge that allows you to transport a difficult problem from Domain A to Domain B, solve it there, and transport the solution back.
                           <ul>

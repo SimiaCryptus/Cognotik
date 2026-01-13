@@ -2,6 +2,10 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.extractDocumentContent
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -383,13 +387,13 @@ FileSearch - Search for patterns in files and provide results with context
         private val log = LoggerFactory.getLogger(FileSearchTask::class.java)
 
         val FileSearch = TaskType(
-          name = "FileSearch",
-          category = "File",
-          taskClass = FileSearchTask::class.java,
-          executionConfigClass = SearchTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Search project files using patterns with contextual results",
-          tooltipHtml = """
+            name = "FileSearch",
+            category = "File",
+            taskClass = FileSearchTask::class.java,
+            executionConfigClass = SearchTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Search project files using patterns with contextual results",
+            tooltipHtml = """
                                 Performs pattern-based searches across project files with context.
                                 <ul>
                                   <li>Supports both substring and regex search patterns</li>

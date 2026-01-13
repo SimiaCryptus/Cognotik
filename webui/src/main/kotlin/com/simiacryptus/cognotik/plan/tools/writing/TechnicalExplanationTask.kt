@@ -5,6 +5,10 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -1026,13 +1030,13 @@ Provide the complete revised explanation.
   companion object {
     private val log: Logger = LoggerFactory.getLogger(TechnicalExplanationTask::class.java)
     val TechnicalExplanation = TaskType(
-      name = "TechnicalExplanation",
-      category = "Writing",
-      taskClass = TechnicalExplanationTask::class.java,
-      executionConfigClass = TechnicalExplanationTaskExecutionConfigData::class.java,
-      taskSettingsClass = TaskTypeConfig::class.java,
-      description = "Break down complex technical subjects into clear, digestible explanations",
-      tooltipHtml = """
+        name = "TechnicalExplanation",
+        category = "Writing",
+        taskClass = TechnicalExplanationTask::class.java,
+        executionConfigClass = TechnicalExplanationTaskExecutionConfigData::class.java,
+        taskSettingsClass = TaskTypeConfig::class.java,
+        description = "Break down complex technical subjects into clear, digestible explanations",
+        tooltipHtml = """
                         Generates clear, audience-appropriate explanations of complex technical topics.
                         <ul>
                           <li>Creates structured outline with key concepts and terminology</li>

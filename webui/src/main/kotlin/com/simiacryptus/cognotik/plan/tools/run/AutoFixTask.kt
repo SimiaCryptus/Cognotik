@@ -4,6 +4,10 @@ import com.simiacryptus.cognotik.apps.CmdPatchApp
 import com.simiacryptus.cognotik.apps.PatchApp
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -26,13 +30,13 @@ class AutoFixTask(
     companion object {
         private val log = LoggerFactory.getLogger(AutoFixTask::class.java)
         val AutoFix = TaskType(
-          name = "AutoFix",
-          category = "Execution",
-          taskClass = AutoFixTask::class.java,
-          executionConfigClass = AutoFixTaskExecutionConfigData::class.java,
-          taskSettingsClass = AutoFixTaskTypeConfig::class.java,
-          description = "Run a command and automatically fix any issues that arise",
-          tooltipHtml = """
+            name = "AutoFix",
+            category = "Execution",
+            taskClass = AutoFixTask::class.java,
+            executionConfigClass = AutoFixTaskExecutionConfigData::class.java,
+            taskSettingsClass = AutoFixTaskTypeConfig::class.java,
+            description = "Run a command and automatically fix any issues that arise",
+            tooltipHtml = """
                     Executes a command and automatically fixes any issues that arise.
                     <ul>
                       <li>Specify commands and working directories</li>

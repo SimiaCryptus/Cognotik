@@ -2,6 +2,10 @@ package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -179,13 +183,13 @@ class RunToolTask(
     companion object {
         private val log = LoggerFactory.getLogger(RunToolTask::class.java)
         val RunTool = TaskType(
-          name = "RunTool",
-          category = "Execution",
-          taskClass = RunToolTask::class.java,
-          executionConfigClass = RunToolTaskExecutionConfigData::class.java,
-          taskSettingsClass = RunToolTaskTypeConfig::class.java,
-          description = "Execute external tools",
-          tooltipHtml = """
+            name = "RunTool",
+            category = "Execution",
+            taskClass = RunToolTask::class.java,
+            executionConfigClass = RunToolTaskExecutionConfigData::class.java,
+            taskSettingsClass = RunToolTaskTypeConfig::class.java,
+            description = "Execute external tools",
+            tooltipHtml = """
                 <p>Executes configured external tools and scripts.</p>
                 <ul>
                     <li>Supports custom arguments and working directories.</li>

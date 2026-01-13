@@ -5,6 +5,10 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -231,13 +235,13 @@ class GitHubSearchTask(
 
     companion object {
         val GitHubSearch = TaskType(
-          "GitHubSearch",
-          "Online & Search",
-          GitHubSearchTask::class.java,
-          GitHubSearchTaskExecutionConfigData::class.java,
-          TaskTypeConfig::class.java,
-          "Search GitHub repositories, code, issues and users",
-          """
+            "GitHubSearch",
+            "Online & Search",
+            GitHubSearchTask::class.java,
+            GitHubSearchTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Search GitHub repositories, code, issues and users",
+            """
           Performs comprehensive searches across GitHub's content.
           <ul>
             <li>Searches repositories, code, and issues</li>

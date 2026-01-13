@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.util.TaskHarness
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.data.toFile
 import com.simiacryptus.cognotik.plan.tools.file.IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData
 import com.simiacryptus.cognotik.util.UnifiedHarness

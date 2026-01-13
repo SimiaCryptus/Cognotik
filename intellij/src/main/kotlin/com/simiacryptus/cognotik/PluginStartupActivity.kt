@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
-import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser

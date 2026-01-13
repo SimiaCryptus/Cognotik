@@ -15,6 +15,10 @@ import com.simiacryptus.cognotik.crawl.processing.PageProcessingStrategy.PagePro
 import com.simiacryptus.cognotik.crawl.processing.PageProcessingStrategy.ProcessingContext
 import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType
 import com.simiacryptus.cognotik.crawl.seed.SeedMethod
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask

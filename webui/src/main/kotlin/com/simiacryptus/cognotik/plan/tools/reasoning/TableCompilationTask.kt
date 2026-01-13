@@ -3,6 +3,10 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -370,13 +374,13 @@ TableCompilation - Generate structured tables with AI-computed cell values
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TableCompilationTask::class.java)
         val TableCompilation = TaskType(
-          name = "TableCompilation",
-          category = "Reasoning",
-          taskClass = TableCompilationTask::class.java,
-          executionConfigClass = TableCompilationTaskExecutionConfigData::class.java,
-          taskSettingsClass = TableCompilationTaskTypeConfig::class.java,
-          description = "Generate structured tables with AI-computed cell values",
-          tooltipHtml = """
+            name = "TableCompilation",
+            category = "Reasoning",
+            taskClass = TableCompilationTask::class.java,
+            executionConfigClass = TableCompilationTaskExecutionConfigData::class.java,
+            taskSettingsClass = TableCompilationTaskTypeConfig::class.java,
+            description = "Generate structured tables with AI-computed cell values",
+            tooltipHtml = """
                         Generates tables by computing each cell value using AI.
                         <ul>
                           <li>Define rows and columns as headers</li>

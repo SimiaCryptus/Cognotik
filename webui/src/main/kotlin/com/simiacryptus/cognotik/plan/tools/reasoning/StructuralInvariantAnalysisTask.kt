@@ -3,6 +3,10 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -234,13 +238,13 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
     companion object {
       private val log = LoggerFactory.getLogger(StructuralInvariantAnalysisTask::class.java)
         val StructuralInvariantAnalysis = TaskType(
-            name = "StructuralInvariantAnalysis",
-            category = "Reasoning",
-            taskClass = StructuralInvariantAnalysisTask::class.java,
-            executionConfigClass = StructuralInvariantAnalysisTaskExecutionConfigData::class.java,
-            taskSettingsClass = TaskTypeConfig::class.java,
-            description = "Distill an object down to its immutable properties and symmetries",
-            tooltipHtml = """
+          name = "StructuralInvariantAnalysis",
+          category = "Reasoning",
+          taskClass = StructuralInvariantAnalysisTask::class.java,
+          executionConfigClass = StructuralInvariantAnalysisTaskExecutionConfigData::class.java,
+          taskSettingsClass = TaskTypeConfig::class.java,
+          description = "Distill an object down to its immutable properties and symmetries",
+          tooltipHtml = """
                           Performs rigorous structural analysis to identify invariants.
                           <ul>
                             <li>Decontextualizes objects to remove domain bias</li>

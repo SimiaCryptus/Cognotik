@@ -7,7 +7,10 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
+import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.Discussable
@@ -35,8 +38,8 @@ open class CodingMode(
     protected val history = mutableListOf<Pair<String, ModelSchema.Role>>()
 
     inner class TaskFunctionImpl<T : TaskExecutionConfig, U : TaskTypeConfig>(
-        private val taskType: TaskType<*, *>?,
-        private val task: SessionTask
+      private val taskType: TaskType<*, *>?,
+      private val task: SessionTask
     ) : TaskFunction<T>(
         executionConfigClass = taskType?.executionConfigClass as Class<out T>
     ) {
@@ -185,7 +188,7 @@ open class CodingMode(
         orchestrationConfig.taskSettings.map { (name, taskTypeConfig) ->
             Pair(
                 name.replace("[^a-zA-Z01-9_]".toRegex(), "_"),
-                TaskFunctionImpl<TaskExecutionConfig, TaskTypeConfig>(taskTypeConfig.task_type?.let {
+                TaskFunctionImpl<com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig, TaskTypeConfig>(taskTypeConfig.task_type?.let {
                     TaskType.valueOf(
                         it
                     )

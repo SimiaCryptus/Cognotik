@@ -4,6 +4,10 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -1036,13 +1040,13 @@ Provide the complete revised email body only.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(EmailCampaignTask::class.java)
         val EmailCampaign = TaskType(
-          name = "EmailCampaign",
-          category = "Writing",
-          taskClass = EmailCampaignTask::class.java,
-          executionConfigClass = EmailCampaignTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Generate complete email sequences for marketing, sales, or outreach",
-          tooltipHtml = """
+            name = "EmailCampaign",
+            category = "Writing",
+            taskClass = EmailCampaignTask::class.java,
+            executionConfigClass = EmailCampaignTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Generate complete email sequences for marketing, sales, or outreach",
+            tooltipHtml = """
                         Generates complete, ready-to-use email campaigns with strategic planning.
                         <ul>
                           <li>Develops comprehensive campaign strategy and messaging</li>

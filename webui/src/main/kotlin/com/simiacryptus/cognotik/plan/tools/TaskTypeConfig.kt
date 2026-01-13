@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan
+package com.simiacryptus.cognotik.plan.tools
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.DatabindContext

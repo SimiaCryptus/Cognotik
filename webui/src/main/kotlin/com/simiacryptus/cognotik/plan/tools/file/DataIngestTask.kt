@@ -4,6 +4,10 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -389,13 +393,13 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
     companion object {
         private val log = LoggerFactory.getLogger(DataIngestTask::class.java)
         val DataIngest = TaskType(
-          name = "DataIngest",
-          category = "File",
-          taskClass = DataIngestTask::class.java,
-          executionConfigClass = DataIngestTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Iteratively parse unstructured logs into structured data",
-          tooltipHtml = """
+            name = "DataIngest",
+            category = "File",
+            taskClass = DataIngestTask::class.java,
+            executionConfigClass = DataIngestTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Iteratively parse unstructured logs into structured data",
+            tooltipHtml = """
                         Automates the creation of regex parsers for log files.
                         <ul>
                           <li>Samples data to discover patterns using LLM</li>

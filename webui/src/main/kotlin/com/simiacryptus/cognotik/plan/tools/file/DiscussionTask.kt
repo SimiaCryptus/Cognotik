@@ -8,6 +8,10 @@ import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
@@ -225,13 +229,13 @@ class DiscussionTask(
     companion object {
         private val log = LoggerFactory.getLogger(DiscussionTask::class.java)
         val Discussion = TaskType(
-          name = "Discussion",
-          category = "File",
-          taskClass = DiscussionTask::class.java,
-          executionConfigClass = DiscussionTaskExecutionConfigData::class.java,
-          taskSettingsClass = DiscussionTaskTypeConfig::class.java,
-          description = "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
-          tooltipHtml = """
+            name = "Discussion",
+            category = "File",
+            taskClass = DiscussionTask::class.java,
+            executionConfigClass = DiscussionTaskExecutionConfigData::class.java,
+            taskSettingsClass = DiscussionTaskTypeConfig::class.java,
+            description = "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
+            tooltipHtml = """
                       Provides direct answers and insights using the LLM, optionally referencing project files.
                       <ul>
                         <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>

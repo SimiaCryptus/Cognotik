@@ -4,6 +4,10 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -24,13 +28,13 @@ class DecompositionSynthesisTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(DecompositionSynthesisTask::class.java)
         val DecompositionSynthesis: TaskType<DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig> = TaskType(
-          name = "DecompositionSynthesis",
-          category = "Reasoning",
-          taskClass = DecompositionSynthesisTask::class.java,
-          executionConfigClass = DecompositionSynthesisTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Decompose complex problems and synthesize solutions",
-          tooltipHtml = """
+            name = "DecompositionSynthesis",
+            category = "Reasoning",
+            taskClass = DecompositionSynthesisTask::class.java,
+            executionConfigClass = DecompositionSynthesisTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Decompose complex problems and synthesize solutions",
+            tooltipHtml = """
                         Decomposes complex problems into manageable subproblems, solves them, and synthesizes solutions.
                         <ul>
                           <li>Multiple decomposition strategies (functional, temporal, spatial, hierarchical)</li>

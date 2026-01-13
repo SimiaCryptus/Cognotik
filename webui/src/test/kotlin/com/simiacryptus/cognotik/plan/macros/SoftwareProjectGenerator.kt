@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.macros
 
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningConfig
 import com.simiacryptus.cognotik.plan.cognitive.CodingMode.CodingModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig

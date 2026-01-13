@@ -5,6 +5,10 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -32,13 +36,13 @@ class GeneticOptimizationTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GeneticOptimizationTask::class.java)
         val GeneticOptimization = TaskType(
-          name = "GeneticOptimization",
-          category = "Reasoning",
-          taskClass = GeneticOptimizationTask::class.java,
-          executionConfigClass = GeneticOptimizationTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Iteratively evolve and perfect text through genetic algorithms",
-          tooltipHtml = """
+            name = "GeneticOptimization",
+            category = "Reasoning",
+            taskClass = GeneticOptimizationTask::class.java,
+            executionConfigClass = GeneticOptimizationTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Iteratively evolve and perfect text through genetic algorithms",
+            tooltipHtml = """
                         Uses genetic algorithms to optimize text through iterative evolution.
                         <ul>
                           <li>Generates variations using configurable mutation strategies</li>

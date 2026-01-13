@@ -3,8 +3,9 @@ package com.simiacryptus.cognotik.plan.cognitive
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
+import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode.Companion.requestToTask
+import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser

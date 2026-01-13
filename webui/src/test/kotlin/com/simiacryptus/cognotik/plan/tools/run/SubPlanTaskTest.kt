@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.util.TaskHarness
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.SubPlanTaskExecutionConfigData

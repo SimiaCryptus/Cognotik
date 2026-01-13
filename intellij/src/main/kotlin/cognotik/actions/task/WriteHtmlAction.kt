@@ -17,7 +17,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.plan.AbstractTask.TaskState
+import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.file.WriteHtmlTask
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel

@@ -3,6 +3,10 @@ package com.simiacryptus.cognotik.plan.tools.writing
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -1228,13 +1232,13 @@ Make suggestions:
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TutorialGenerationTask::class.java)
         val TutorialGeneration = TaskType(
-          name = "TutorialGeneration",
-          category = "Writing",
-          taskClass = TutorialGenerationTask::class.java,
-          executionConfigClass = TutorialGenerationTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Create complete, step-by-step tutorials for processes and projects",
-          tooltipHtml = """
+            name = "TutorialGeneration",
+            category = "Writing",
+            taskClass = TutorialGenerationTask::class.java,
+            executionConfigClass = TutorialGenerationTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Create complete, step-by-step tutorials for processes and projects",
+            tooltipHtml = """
                         Generates comprehensive tutorials with clear, actionable steps.
                         <ul>
                           <li>Creates detailed outline with prerequisites and learning objectives</li>

@@ -1,7 +1,8 @@
-package com.simiacryptus.cognotik.plan
+package com.simiacryptus.cognotik.plan.tools
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask
 import com.simiacryptus.cognotik.plan.tools.file.*
 import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask

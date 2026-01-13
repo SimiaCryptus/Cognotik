@@ -5,6 +5,10 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -1353,13 +1357,13 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
     companion object {
         private val log: Logger = LoggerFactory.getLogger(LLMPollSimulationTask::class.java)
         val LLMPollSimulation = TaskType(
-          name = "LLMPollSimulation",
-          category = "Social",
-          taskClass = LLMPollSimulationTask::class.java,
-          executionConfigClass = LLMPollSimulationTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Simulate polls and surveys with AI personas",
-          tooltipHtml = """
+            name = "LLMPollSimulation",
+            category = "Social",
+            taskClass = LLMPollSimulationTask::class.java,
+            executionConfigClass = LLMPollSimulationTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Simulate polls and surveys with AI personas",
+            tooltipHtml = """
                         Simulates polls and surveys using LLMs to model diverse respondent personas.
                         <ul>
                           <li>Define survey questions with multiple types (choice, Likert, open-ended)</li>

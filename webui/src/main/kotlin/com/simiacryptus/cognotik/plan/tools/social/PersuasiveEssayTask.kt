@@ -6,6 +6,10 @@ import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -1422,13 +1426,13 @@ Provide the complete revised essay.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PersuasiveEssayTask::class.java)
         val PersuasiveEssay = TaskType(
-          name = "PersuasiveEssay",
-          category = "Writing",
-          taskClass = PersuasiveEssayTask::class.java,
-          executionConfigClass = PersuasiveEssayTaskExecutionConfigData::class.java,
-          taskSettingsClass = PersuasiveEssayTaskTypeConfig::class.java,
-          description = "Generate compelling persuasive essays with structured arguments",
-          tooltipHtml = """
+            name = "PersuasiveEssay",
+            category = "Writing",
+            taskClass = PersuasiveEssayTask::class.java,
+            executionConfigClass = PersuasiveEssayTaskExecutionConfigData::class.java,
+            taskSettingsClass = PersuasiveEssayTaskTypeConfig::class.java,
+            description = "Generate compelling persuasive essays with structured arguments",
+            tooltipHtml = """
                         Generates complete, well-structured persuasive essays using rhetorical techniques.
                         <ul>
                           <li>Creates detailed outline with thesis, arguments, and counterarguments</li>

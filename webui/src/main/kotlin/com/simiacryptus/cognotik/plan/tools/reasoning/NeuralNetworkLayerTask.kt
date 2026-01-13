@@ -4,6 +4,10 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -24,13 +28,13 @@ class NeuralNetworkLayerTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(NeuralNetworkLayerTask::class.java)
         val NeuralNetworkLayer = TaskType(
-          name = "NeuralNetworkLayer",
-          category = "Writing",
-          taskClass = NeuralNetworkLayerTask::class.java,
-          executionConfigClass = NeuralNetworkLayerTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Design and analyze neural network layers with formal mathematical definitions and intuitive explanations",
-          tooltipHtml = """
+            name = "NeuralNetworkLayer",
+            category = "Writing",
+            taskClass = NeuralNetworkLayerTask::class.java,
+            executionConfigClass = NeuralNetworkLayerTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Design and analyze neural network layers with formal mathematical definitions and intuitive explanations",
+            tooltipHtml = """
                           Comprehensive neural network layer design and analysis tool with both rigorous mathematics and intuitive explanations.
                           <ul>
                               <li>Executive summary with key insights</li>

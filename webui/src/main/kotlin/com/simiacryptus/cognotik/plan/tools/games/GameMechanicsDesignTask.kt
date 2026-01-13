@@ -3,6 +3,10 @@ package com.simiacryptus.cognotik.plan.tools.games
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -1445,13 +1449,13 @@ class GameMechanicsDesignTask(
   companion object {
         private val log: Logger = LoggerFactory.getLogger(GameMechanicsDesignTask::class.java)
         val GameMechanicsDesign = TaskType(
-          name = "GameMechanicsDesign",
-          category = "Games",
-          taskClass = GameMechanicsDesignTask::class.java,
-          executionConfigClass = GameMechanicsDesignTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Generate comprehensive game mechanics with balance analysis",
-          tooltipHtml = """
+            name = "GameMechanicsDesign",
+            category = "Games",
+            taskClass = GameMechanicsDesignTask::class.java,
+            executionConfigClass = GameMechanicsDesignTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Generate comprehensive game mechanics with balance analysis",
+            tooltipHtml = """
                         Designs complete game mechanics systems with detailed analysis.
                         <ul>
                           <li>Generates core gameplay mechanics from high-level concepts</li>

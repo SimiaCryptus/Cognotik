@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.macros
 
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.ParallelModeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileAppendTask.Companion.FileAppend
 import com.simiacryptus.cognotik.platform.Session

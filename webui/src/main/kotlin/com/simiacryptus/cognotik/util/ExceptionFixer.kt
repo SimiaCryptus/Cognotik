@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.diff.PatchProcessors
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import java.io.ByteArrayOutputStream
 import java.io.File

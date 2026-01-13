@@ -3,6 +3,10 @@ package com.simiacryptus.cognotik.plan.tools.games
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -1485,13 +1489,13 @@ Ensure variants maintain the core level design while adjusting challenge.
         private val log: Logger = LoggerFactory.getLogger(GameLevelDesignTask::class.java)
 
         val GameLevelDesign = TaskType(
-          name = "GameLevelDesign",
-          category = "Games",
-          taskClass = GameLevelDesignTask::class.java,
-          executionConfigClass = GameLevelDesignTaskExecutionConfigData::class.java,
+            name = "GameLevelDesign",
+            category = "Games",
+            taskClass = GameLevelDesignTask::class.java,
+            executionConfigClass = GameLevelDesignTaskExecutionConfigData::class.java,
             taskSettingsClass = GameLevelDesignTaskTypeConfig::class.java,
-          description = "Generate complete game level designs with layout, pacing, and encounters",
-          tooltipHtml = """
+            description = "Generate complete game level designs with layout, pacing, and encounters",
+            tooltipHtml = """
                         Generates production-ready game level designs with comprehensive documentation.
                         <ul>
                           <li>Creates detailed level layout with zones and connections</li>

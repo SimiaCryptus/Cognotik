@@ -1,8 +1,11 @@
-package com.simiacryptus.cognotik.plan
+package com.simiacryptus.cognotik.plan.tools
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.input.isDocumentFile
+import com.simiacryptus.cognotik.plan.ExecutionState
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager

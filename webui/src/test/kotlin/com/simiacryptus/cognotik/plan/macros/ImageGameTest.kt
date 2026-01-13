@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.macros
 
 import com.simiacryptus.cognotik.util.PlanHarness
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
 import com.simiacryptus.cognotik.plan.tools.file.ImageGenerationTask.Companion.GenerateImage
 import com.simiacryptus.cognotik.plan.tools.file.ImageVariationTask.Companion.ImageVariation
