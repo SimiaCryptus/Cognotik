@@ -2,13 +2,13 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
-import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
 
@@ -25,21 +25,24 @@ class CausalInferenceTask(
 
     class CausalInferenceTaskExecutionConfigData(
         @Description("The observed effect or outcome to explain")
-        val observed_effect: String? = null,
+        var observed_effect: String? = null,
         @Description("Potential causes to investigate")
-        val potential_causes: List<String>? = null,
+        var potential_causes: List<String>? = null,
         @Description("Whether to build a causal graph")
-        val build_causal_graph: Boolean = true,
+        var build_causal_graph: Boolean = true,
         @Description("Whether to identify confounding factors")
-        val identify_confounders: Boolean = true,
+        var identify_confounders: Boolean = true,
         @Description("Data sources for evidence (file patterns or paths)")
-        val evidence_sources: List<String>? = null,
+        var evidence_sources: List<String>? = null,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         @Description("Additional files for context")
-        val related_files: List<String>? = null,
+        var related_files: List<String>? = null,
+        @Description("A description of the task's purpose")
         task_description: String? = null,
+        @Description("List of task IDs this task depends on")
         task_dependencies: List<String>? = null,
+        @Description("The current state of the task")
         state: TaskState? = TaskState.Pending,
     ) : TaskExecutionConfig(
         task_type = CausalInference.name,
@@ -103,251 +106,186 @@ CausalInference - Identify causal relationships and root causes
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript()
-        val startTime = System.currentTimeMillis()
-        log.info("Starting CausalInference task for effect: ${executionConfig?.observed_effect}")
-        // Create transcript file for logging the analysis
-        var markdownTranscript: FileOutputStream? = null
+      val startTime = System.currentTimeMillis()
 
-        val observedEffect = executionConfig?.observed_effect
-        if (observedEffect.isNullOrBlank()) {
-            val errorMsg = "CONFIGURATION ERROR: No observed effect specified"
-            log.error(errorMsg)
-            task.complete(errorMsg)
-            resultFn(formatResultMessage(task, transcript, errorMsg))
-            return
-        }
-        markdownTranscript = task.transcript()
 
-        // Validate configuration
-        executionConfig?.validate()?.let { validationError ->
-            val errorMsg = "CONFIGURATION ERROR: $validationError"
-            log.error(errorMsg)
-            markdownTranscript?.write("# Configuration Error\n\n$errorMsg\n".toByteArray())
-            markdownTranscript?.close()
-            task.complete(errorMsg)
-            resultFn(formatResultMessage(task, transcript, errorMsg))
-            return
-        }
+      val transcript = task.transcript()
 
-        val toInput = { it: String -> listOf(it) }
-        val ui = task.ui
-        val api = defaultSmart?.getChildClient(task) ?: run {
-            log.error("No default chatter available")
-            markdownTranscript?.write("# Error\n\nNo API available\n".toByteArray())
-            markdownTranscript?.close()
-            task.complete("ERROR: No API available")
-            resultFn(formatResultMessage(task, transcript, "ERROR: No API available"))
-            return
-        }
-        val fastApi = defaultFast?.getChildClient(task) ?: api
-        try {
-            // Create tabbed display for organized output
-            val tabs = TabbedDisplay(task)
-            // Write header to transcript
-            markdownTranscript?.write(
-                """
-        |# Causal Inference Analysis
-        |
-        |**Observed Effect:** $observedEffect
-        |**Start Time:** ${java.time.Instant.ofEpochMilli(startTime)}
-        |
-        |---
-        |
-        """.trimMargin().toByteArray()
-            )
+      try {
 
-            // Overview tab
-            val overviewTask = tabs.newTask("Overview")
 
-            // Static Overview Content
-            overviewTask.add(MarkdownUtil.renderMarkdown("## Input Files\n\n${getInputFileCode()}", ui = ui))
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "---\n\n## Causal Inference Analysis\n\n**Observed Effect:** $observedEffect",
-                    ui = ui
-                )
-            )
-
-            // Dynamic Status Buffer
-            val overviewStatusBuffer =
-                overviewTask.add(MarkdownUtil.renderMarkdown("**Status:** 🔄 Gathering evidence...", ui = ui))
-
-            // Gather evidence from sources
-            log.debug("Gathering evidence from ${executionConfig?.evidence_sources?.size ?: 0} sources")
-            val evidenceTask = tabs.newTask("Evidence Sources")
-            val evidenceStatusBuffer =
-                evidenceTask.add(MarkdownUtil.renderMarkdown("## Evidence Sources\n\n🔄 Loading evidence...", ui = ui))
-
-            val evidenceContext = gatherEvidence()
-            log.debug("Evidence gathered: ${evidenceContext.length} characters")
-            markdownTranscript?.write(
-                """
-        |## Evidence Sources
-        |
-        |**Sources processed:** ${executionConfig?.evidence_sources?.size ?: 0}
-        |
-        |${evidenceContext.take(maxOutputLength)}${if (evidenceContext.length > maxOutputLength) "\n... (truncated)" else ""}
-        |
-        |---
-        |
-        """.trimMargin().toByteArray()
-            )
-            evidenceStatusBuffer?.setLength(0)
-            evidenceStatusBuffer?.append(
-                MarkdownUtil.renderMarkdown(
-                    "## Evidence Sources\n\n✅ Evidence gathered successfully\n\n**Sources processed:** ${executionConfig?.evidence_sources?.size ?: 0}",
-                    ui = ui
-                )
-            )
-
-            evidenceTask.expandable(
-                "Evidence Context",
-                MarkdownUtil.renderMarkdown(
-                    "```\n${evidenceContext.take(maxOutputLength)}${if (evidenceContext.length > maxOutputLength) "\n... (truncated)" else ""}\n```",
-                    ui = ui
-                )
-            )
-            task.update()
-            log.debug("Retrieving prior context from execution state")
-
-            val priorContext = getPriorCode(agent.executionState)
-            val messageContext = messages.joinToString("\n\n")
-
-            val potentialCauses = executionConfig.potential_causes ?: emptyList()
-            val causesText = if (potentialCauses.isNotEmpty()) {
-                "**Potential Causes to Investigate:**\n" + potentialCauses.joinToString("\n") { "- $it" }
-            } else {
-                "**Note:** No specific potential causes provided. Will identify causes from evidence."
+        task.ui.pool.submit {
+          try {
+            val observedEffect = executionConfig?.observed_effect
+            if (observedEffect.isNullOrBlank()) {
+              throw IllegalArgumentException("observed_effect must not be null or blank")
             }
 
-            // Update overview with causes
+            log.info("Starting CausalInference task for effect: $observedEffect")
+            transcript?.write("# Causal Inference Analysis\n\n**Observed Effect:** $observedEffect\n".toByteArray())
+
+            task.ui
+            val api = defaultSmart?.getChildClient(task) ?: throw IllegalStateException("No default chatter available")
+            val fastApi = defaultFast?.getChildClient(task) ?: api
+
+            val tabs = TabbedDisplay(task)
+            val overviewTask = tabs.newTask("Overview")
+            overviewTask.add("## Input Files\n\n${getInputFileCode()}".renderMarkdown())
+            overviewTask.add("---\n\n## Causal Inference Analysis\n\n**Observed Effect:** $observedEffect".renderMarkdown())
+
+            val overviewStatusBuffer = overviewTask.add("**Status:** 🔄 Gathering evidence...".renderMarkdown())
+
+            // Evidence Gathering
+            val evidenceTask = tabs.newTask("Evidence Sources")
+            val evidenceStatusBuffer = evidenceTask.add("## Evidence Sources\n\n🔄 Loading evidence...".renderMarkdown())
+
+            val evidenceContext = gatherEvidence()
+            transcript?.write(
+              """
+                        <details>
+                        <summary>Evidence Context</summary>
+
+                        ${evidenceContext.take(maxOutputLength)}${if (evidenceContext.length > maxOutputLength) "\n... (truncated)" else ""}
+                        </details>
+                    """.trimIndent().toByteArray()
+            )
+
+            evidenceStatusBuffer?.setLength(0)
+            evidenceStatusBuffer?.append("## Evidence Sources\n\n✅ Evidence gathered successfully\n\n**Sources processed:** ${executionConfig?.evidence_sources?.size ?: 0}".renderMarkdown())
+            evidenceTask.expandable(
+              "Evidence Context",
+              "```\n${evidenceContext.take(maxOutputLength)}\n```".renderMarkdown()
+            )
+
+            // Analysis Preparation
+            val priorContext = getPriorCode(agent.executionState)
+            val messageContext = messages.joinToString("\n\n")
+            val potentialCauses = executionConfig?.potential_causes ?: emptyList()
+            val causesText = if (potentialCauses.isNotEmpty()) {
+              "**Potential Causes to Investigate:**\n" + potentialCauses.joinToString("\n") { "- $it" }
+            } else {
+              "**Note:** No specific potential causes provided. Will identify causes from evidence."
+            }
+
             overviewStatusBuffer?.setLength(0)
-            overviewStatusBuffer?.append(
-                MarkdownUtil.renderMarkdown(
-                    "$causesText\n\n**Status:** 🔄 Analyzing causal relationships...",
-                    ui = ui
-                )
-            )
+            overviewStatusBuffer?.append("$causesText\n\n**Status:** 🔄 Analyzing causal relationships...".renderMarkdown())
             overviewTask.update()
-            log.debug("Building analysis prompt with ${potentialCauses.size} potential causes")
 
-            // Build the analysis prompt
-            val prompt = buildAnalysisPrompt(
-                observedEffect,
-                potentialCauses,
-                evidenceContext,
-                priorContext,
-                messageContext
-            )
-            log.debug("Initializing ChatAgent with model: ${api.javaClass.simpleName}")
-
+            val prompt =
+              buildAnalysisPrompt(observedEffect, potentialCauses, evidenceContext, priorContext, messageContext)
             val analysisAgent = ParsedAgent(
-                resultClass = CausalAnalysisResult::class.java,
-                prompt = prompt,
-                model = api,
-                parsingChatter = fastApi
+              resultClass = CausalAnalysisResult::class.java,
+              prompt = prompt,
+              model = api,
+              parsingChatter = fastApi
             )
-            // Analysis tab
+
+            // Perform Analysis
             val analysisTask = tabs.newTask("Causal Analysis")
-            analysisTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "## Causal Analysis\n\n🔄 Performing causal inference...",
-                    ui = ui
-                )
-            )
-            log.debug("Requesting causal analysis from LLM")
+            analysisTask.add("## Causal Analysis\n\n🔄 Performing causal inference...".renderMarkdown())
+            val analysisResult = analysisAgent.answer(listOf(prompt)).obj
 
+            transcript?.write(
+              """
+                        ## Causal Analysis Results
+                        <details>
+                        <summary>Raw Analysis JSON</summary>
 
-            val analysisResult = analysisAgent.answer(toInput(prompt)).obj
-
-            // Write analysis to transcript
-            markdownTranscript?.write(
-                """
-        |## Causal Analysis Results
-        |
-        |### Summary
-        |${analysisResult.summary}
-        |
-        |### Identified Causes
-        |${analysisResult.causes.joinToString("\n") { "- **${it.name}** (${it.strength}): ${it.mechanism}" }}
-        |
-        |### Root Causes
-        |${analysisResult.root_causes.joinToString("\n") { "- $it" }}
-        |
-        |### Causal Chain
-        |${analysisResult.causal_chain}
-        |
-        |${
-                    if (analysisResult.confounders != null) {
-                        "### Confounding Factors\n${analysisResult.confounders.joinToString("\n") { "- $it" }}\n"
-                    } else ""
-                }
-        |
-        |### Recommendations
-        |${analysisResult.recommendations.joinToString("\n") { "- $it" }}
-        |
-        |---
-        |
-        """.trimMargin().toByteArray()
+                        ```json
+                        ${analysisResult.toJson()}
+                        ```
+                        </details>
+                    """.trimIndent().toByteArray()
             )
 
             analysisTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
-                    |## Causal Analysis Results
-                    |
-                    |✅ Analysis complete
-                    |
-                    |### Summary
-                    |${analysisResult.summary}
-                    |
-                    |### Identified Causes
-                    |${analysisResult.causes.joinToString("\n") { "* **${it.name}** (${it.strength} strength, ${it.confidence} confidence)\n  * *Mechanism:* ${it.mechanism}\n  * *Evidence:* ${it.evidence}" }}
-                    |
-                    |### Root Causes
-                    |${analysisResult.root_causes.joinToString("\n") { "* $it" }}
-                    |
-                    |### Causal Chain
-                    |${analysisResult.causal_chain}
-                    |
-                    |${
-                        if (analysisResult.confounders != null) {
-                            "### Confounding Factors\n${analysisResult.confounders.joinToString("\n") { "* $it" }}\n"
-                        } else ""
-                    }
-                    |
-                    |### Recommendations
-                    |${analysisResult.recommendations.joinToString("\n") { "* $it" }}
-                    """.trimMargin(),
-                    ui = ui
-                )
+              """
+                        ## Causal Analysis Results
+                        
+                        ✅ Analysis complete
+                        
+                        ### Summary
+                        ${analysisResult.summary}
+                        
+                        ### Identified Causes
+                        ${analysisResult.causes.joinToString("\n") { "* **${it.name}** (${it.strength} strength)\n  * *Mechanism:* ${it.mechanism}" }}
+                        
+                        ### Root Causes
+                        ${analysisResult.root_causes.joinToString("\n") { "* $it" }}
+                        
+                        ### Causal Chain
+                        ${analysisResult.causal_chain}
+                        
+                        ${
+                if (analysisResult.confounders != null) "### Confounding Factors\n${
+                  analysisResult.confounders.joinToString(
+                    "\n"
+                  ) { "* $it" }
+                }\n" else ""
+              }
+                        
+                        ### Recommendations
+                        ${analysisResult.recommendations.joinToString("\n") { "* $it" }}
+                    """.trimMargin().renderMarkdown()
             )
             analysisTask.complete()
-            task.update()
 
-            // Update overview status
             overviewStatusBuffer?.setLength(0)
-            overviewStatusBuffer?.append(
-                MarkdownUtil.renderMarkdown(
-                    "$causesText\n\n**Status:** ✅ Analysis complete",
-                    ui = ui
-                )
-            )
+            overviewStatusBuffer?.append("$causesText\n\n**Status:** ✅ Analysis complete".renderMarkdown())
             overviewTask.update()
 
-            // If building causal graph, generate visualization
-            if (executionConfig.build_causal_graph) {
-                log.debug("Building causal graph visualization")
-                val graphTask = tabs.newTask("Causal Graph")
-                val graphBuffer = graphTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        "## Causal Graph\n\n🔄 Generating causal graph visualization...",
-                        ui = ui
-                    )
-                )
+            // Causal Graph
+            if (executionConfig?.build_causal_graph == true) {
+              generateCausalGraph(tabs, analysisResult, api, transcript)
+            }
 
-                val graphPrompt = """
+            val duration = System.currentTimeMillis() - startTime
+            val summary = "Causal inference analysis completed for effect: $observedEffect"
+            log.info("$summary (duration: ${duration}ms)")
+
+            task.complete(summary)
+            resultFn(formatResultMessage(task, transcript, summary))
+
+          } catch (e: Exception) {
+            // Triple Log Rule
+            task.error(e)
+            log.error("CausalInference task failed", e)
+            transcript?.write(
+              """
+                        ## Error
+                        <details>
+                        <summary>Stack Trace</summary>
+
+                        ```
+                        ${e.stackTraceToString()}
+                        ```
+                        </details>
+                    """.trimIndent().toByteArray()
+            )
+
+            task.complete("Analysis failed: ${e.message}")
+            resultFn("ERROR: Causal inference analysis failed - ${e.message}")
+          } finally {
+            transcript?.close()
+          }
+        }
+      } catch (e: Exception) {
+        log.error("Failed to submit CausalInference task to pool", e)
+        task.error(e)
+        transcript?.close()
+      }
+    }
+
+  private fun generateCausalGraph(
+    tabs: TabbedDisplay,
+    analysisResult: CausalAnalysisResult,
+    api: ChatInterface,
+    transcript: java.io.OutputStream?
+  ) {
+    val graphTask = tabs.newTask("Causal Graph")
+    val graphBuffer = graphTask.add("## Causal Graph\n\n🔄 Generating causal graph visualization...".renderMarkdown())
+
+    val graphPrompt = """
 Based on the following causal analysis, create a Mermaid diagram showing the causal relationships.
 
 Analysis:
@@ -361,117 +299,45 @@ Use the following format:
 - Use descriptive node labels
 
 Generate the Mermaid diagram now:
-            """.trimIndent()
-                log.debug("Requesting causal graph from LLM")
-                val chatAgent = ChatAgent(
-                    prompt = graphPrompt,
-                    model = api,
-                )
 
-                var graphResult: String? = chatAgent.answer(toInput(graphPrompt))
-                val mermaidCode = extractMermaidCode(graphResult ?: "")
-                graphTask.complete()
-                // Write graph to transcript
-                markdownTranscript?.write(
-                    """
-          |## Causal Graph
-          |
-          |```mermaid
-          |$mermaidCode
-          |```
-          |
-          |---
-          |
-          """.trimMargin().toByteArray()
-                )
 
-                graphBuffer?.setLength(0)
-                if (mermaidCode.isNotEmpty()) {
-                    graphBuffer?.append(
-                        MarkdownUtil.renderMarkdown(
-                            """
-                        |## Causal Graph
-                        |
-                        |✅ Graph generated successfully
-                        |
-                        |```mermaid
-                        |$mermaidCode
-                        |```
-                        """.trimMargin(),
-                            ui = ui
-                        )
-                    )
-                } else {
-                    graphBuffer?.append(
-                        MarkdownUtil.renderMarkdown(
-                            """
-                        |## Causal Graph
-                        |
-                        |⚠️ Failed to generate graph visualization
-                        |
-                        |The analysis did not produce a valid Mermaid diagram.
-                        """.trimMargin(),
-                            ui = ui
-                        )
-                    )
-                }
-                task.update()
-            }
 
-            val duration = System.currentTimeMillis() - startTime
-            val summary = "Causal inference analysis completed for effect: $observedEffect"
-            log.info("$summary (duration: ${duration}ms, causes analyzed: ${potentialCauses.size}, evidence sources: ${executionConfig?.evidence_sources?.size ?: 0})")
-            // Write summary to transcript
-            markdownTranscript?.write(
-                """
-        |## Summary
-        |
-        |$summary
-        |
-        |**Duration:** ${duration}ms
-        |**Causes Analyzed:** ${potentialCauses.size}
-        |**Evidence Sources:** ${executionConfig?.evidence_sources?.size ?: 0}
-        |
-        """.trimMargin().toByteArray()
-            )
-            markdownTranscript?.close()
 
-            task.complete(summary)
-            resultFn(formatResultMessage(task, transcript, summary))
 
-        } catch (e: Exception) {
-            val duration = System.currentTimeMillis() - startTime
-            log.error("CausalInference task failed after ${duration}ms for effect: $observedEffect", e)
-            // Write error to transcript
-            markdownTranscript?.write(
-                """
-        |## Error
-        |
-        |An error occurred during causal inference analysis:
-        |
-        |```
-        |${e.message}
-        |${e.stackTraceToString()}
-        |```
-        |
-        |**Duration:** ${duration}ms
-        |
-        """.trimMargin().toByteArray()
-            )
-            markdownTranscript?.close()
 
-            task.error(e)
 
-            val errorTask = task.newTask()
-//            tabs["Error"] = errorTask.placeholder
-            errorTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "## ❌ Error\n\nAn error occurred during causal inference analysis:\n\n```\n${e.message}\n```",
-                    ui = ui
-                )
-            )
-            task.complete("Analysis failed: ${e.message}")
-            resultFn(formatResultMessage(task, transcript, "ERROR: Causal inference analysis failed - ${e.message}"))
+        """.trimIndent()
+
+    val chatAgent = ChatAgent(prompt = graphPrompt, model = api)
+    val graphResult = chatAgent.answer(listOf(graphPrompt))
+    val mermaidCode = extractMermaidCode(graphResult ?: "")
+    graphTask.complete()
+
+    transcript?.write("## Causal Graph\n\n```mermaid\n$mermaidCode\n```\n".toByteArray())
+
+    graphBuffer?.setLength(0)
+    if (mermaidCode.isNotEmpty()) {
+      graphBuffer?.append(
+        """
+                ## Causal Graph
+                
+                ✅ Graph generated successfully
+                
+                ```mermaid
+                $mermaidCode
+                ```
+            """.trimIndent().renderMarkdown()
+      )
+    } else {
+      graphBuffer?.append(
+        """
+                ## Causal Graph
+                
+                ⚠️ Failed to generate graph visualization
+                
+                The analysis did not produce a valid Mermaid diagram.
+            """.trimIndent().renderMarkdown()
+      )
         }
     }
 
@@ -583,14 +449,14 @@ Generate the causal analysis now:
             }
         }.let { if (it.isBlank()) "No input files specified" else it }
 
-    private fun formatResultMessage(task: SessionTask, transcript: FileOutputStream?, summary: String): String {
+  private fun formatResultMessage(task: SessionTask, transcript: java.io.OutputStream?, summary: String): String {
         return try {
             val (link, _) = task.createFile("analysis_results.md")
-            transcript?.close()
-            "✅ $summary\n\n" +
-                    "📄 Detailed results: <a href='$link' target='_blank'>$link</a> " +
-                    "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                    "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+          """
+                ## Analysis Complete
+                * $summary
+                * Detailed results saved to: `$link`
+            """.trimIndent()
         } catch (e: Exception) {
             log.error("Failed to create result file", e)
             summary

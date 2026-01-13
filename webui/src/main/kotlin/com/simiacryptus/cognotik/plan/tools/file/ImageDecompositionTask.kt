@@ -36,17 +36,17 @@ class ImageDecompositionTask(
     @Description("The image file to analyze (relative path)")
     files: List<String>? = null,
     @Description("The goal of the analysis (e.g., 'Find Waldo', 'Read all text', 'Describe every person')")
-    val segmentation_query: String? = "Describe the contents of this image in detail",
-    @Description("The goal of the analysis (e.g., 'Find Waldo', 'Read all text', 'Describe every person')")
-    val analysis_query: String? = "Describe the contents of this image in detail",
+    var segmentation_query: String? = "Describe the contents of this image in detail",
+    @Description("The specific query for detailed analysis of identified regions")
+    var analysis_query: String? = "Describe the contents of this image in detail",
     @Description("DPI for rendering document pages (default: 150)")
-    val dpi: Float = 150f,
+    var dpi: Float = 150f,
     @Description("Maximum recursion depth (1-5). Higher is slower but more detailed.")
-    val max_depth: Int = 2,
+    var max_depth: Int = 2,
     @Description("Minimum width/height (in pixels) of a region to trigger recursive analysis.")
-    val min_region_size: Int = 100,
+    var min_region_size: Int = 100,
     @Description("The output JSON file to save the analysis tree to.")
-    val output_file: String? = "analysis_result.json",
+    var output_file: String? = "analysis_result.json",
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : ValidatedObject, FileTaskExecutionConfig(
@@ -98,14 +98,14 @@ class ImageDecompositionTask(
   )
 
   open class ImageBounds(
-    @Description("X coordinate of the top-left corner (0-1000 scale)")
-    val x: Int = 0,
-    @Description("Y coordinate of the top-left corner (0-1000 scale)")
-    val y: Int = 0,
-    @Description("Width of the region (0-1000 scale)")
-    val width: Int = 0,
-    @Description("Height of the region (0-1000 scale)")
-    val height: Int = 0,
+    @Description("X coordinate of the top-left corner (0-1000 scale relative to parent)")
+    var x: Int = 0,
+    @Description("Y coordinate of the top-left corner (0-1000 scale relative to parent)")
+    var y: Int = 0,
+    @Description("Width of the region (0-1000 scale relative to parent)")
+    var width: Int = 0,
+    @Description("Height of the region (0-1000 scale relative to parent)")
+    var height: Int = 0,
   ) {
     fun isValid(
       currentImage: BufferedImage,
@@ -136,11 +136,11 @@ class ImageDecompositionTask(
   }
 
   override fun promptSegment() = """
-IterativeImageDecomposition - Recursively analyzes images for fine details
-* Use for: OCR on complex documents, finding small objects (Waldo), or crowd analysis.
-* Inputs: Image file, query (what to look for).
-* Outputs: A hierarchical JSON report and an annotated image.
-* Mechanism: Recursively crops and re-prompts the vision model on regions of interest.
+    IterativeImageDecomposition - Recursively analyzes images for fine details.
+    * Use for: OCR on complex documents, finding small objects, or detailed scene analysis.
+    * Inputs: Image file path, segmentation query, and analysis query.
+    * Outputs: A hierarchical JSON report and annotated debug images.
+    * Mechanism: Recursively crops and re-prompts the vision model on regions of interest.
       """.trimIndent()
 
   override fun run(
@@ -162,8 +162,10 @@ IterativeImageDecomposition - Recursively analyzes images for fine details
     val logTab = tabs.newTask("Live Log")
 
     task.ui.pool.submit {
+      log.info("Starting ImageDecompositionTask for $imagePath")
       try {
-        task.header("Starting Iterative Analysis: $imagePath", level = 2)
+        task.add("## Starting Iterative Analysis\nProcessing image: `$imagePath`".renderMarkdown())
+        transcript?.write("## Image Decomposition Analysis: $imagePath\n".toByteArray())
         logTab.add("Loading image...".renderMarkdown())
 
         val inputFile = root.resolve(imagePath).toFile()
@@ -268,13 +270,15 @@ If a region looks like it contains smaller details (text, faces, objects) that a
               // Log raw result to transcript
               transcript?.write(
                 """
-### Depth $currentDepth - ${currentNode.label}
-<details><summary>Raw JSON</summary>
 
-```json
-${result.toJson()}
-```
-</details>
+                ### Depth $currentDepth - ${currentNode.label}
+                <details>
+                <summary>Raw Region Analysis JSON</summary>
+
+                ```json
+                ${result.toJson()}
+                ```
+                </details>
                         """.toByteArray()
               )
 
@@ -345,7 +349,7 @@ ${result.toJson()}
           }
           processRegion(originalImage, rootNode, 0, 0, 0)
 
-          task.header("Generating Report...", level = 3)
+          task.add("### Generating Visual Report...".renderMarkdown())
 
           // 1. Draw Debug Image
           val debugImage = BufferedImage(originalImage.width, originalImage.height, BufferedImage.TYPE_INT_ARGB)
@@ -396,19 +400,36 @@ ${result.toJson()}
         val jsonOutput = rootNodes.toJson()
         root.resolve(outputFile).toFile().writeText(jsonOutput)
         tabs["Structured Data"] = """
-                    <p>Full analysis saved to <a href="${task.linkTo(outputFile)}">$outputFile</a></p>
-                    <pre style="max-height: 400px; overflow: auto;">$jsonOutput</pre>
-                """.trimIndent()
-        task.header("Final Analysis", level = 3)
+            <p>Full analysis saved to <a href="${task.linkTo(outputFile)}">$outputFile</a></p>
+            <details>
+            <summary>Raw JSON Tree</summary>
+            <pre style="max-height: 400px; overflow: auto;">$jsonOutput</pre>
+            </details>
+        """.trimIndent()
+
+        task.add("### Finalizing Analysis...".renderMarkdown())
         val finalResult = ChatAgent(
           model = model,
           prompt = """Review the following hierarchical analysis of the image regions and answer the query: "$analysis_query" """.trimIndent()
         ).answer(listOf(rootNodes.toJson()))
 
         tabs["Final Report"] = MarkdownUtil.renderMarkdown(finalResult, ui = task.ui)
-        task.safeComplete("Analysis complete. Found ${allNodes.size - 1} regions.", log)
+        task.safeComplete("### Analysis Complete\nFound **${allNodes.size - 1}** regions.".renderMarkdown(), log)
         root.resolve("final_analysis_${WaterfallMode.Companion.now()}.md").toFile().writeText(finalResult)
-        resultFn("Completed iterative analysis of $imagePath. Found ${allNodes.size - 1} regions. See $outputFile for structure.\n\nSummary:\n${finalResult}")
+
+        log.info("ImageDecompositionTask completed successfully for $imagePath")
+        resultFn(
+          """
+            ## Image Analysis Complete
+            * **Source:** `$imagePath`
+            * **Regions Identified:** ${allNodes.size - 1}
+            * **Structured Data:** `$outputFile`
+            
+            ### Summary
+            $finalResult
+        """.trimIndent()
+        )
+
       } catch (e: Exception) {
         log.error("Error in IterativeImageDecomposition", e)
         task.error(e)

@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.plan.tools.session
 
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.sql.Connection
 import java.sql.Driver
@@ -37,14 +37,14 @@ class JdbcSessionTask(
         get() = _activeSessions.getOrPut(orchestrationConfig.sessionId) { ConcurrentHashMap() }
 
     class JdbcSessionTaskExecutionConfigData(
-        @Description("JDBC Connection URL (e.g., jdbc:postgresql://localhost:5432/mydb)") val url: String? = null,
-        @Description("Database User") val user: String? = null,
-        @Description("Database Password") val password: String? = null,
-        @Description("JDBC Driver Class Name (optional, e.g., org.postgresql.Driver)") val driver: String? = null,
-        @Description("SQL statements to execute") val sql: List<String> = listOf(),
-        @Description("Session ID for reusing existing connections") val sessionId: String? = null,
-        @Description("Close the session after execution") val closeSession: Boolean = false,
-        task_description: String? = null,
+      @Description("JDBC Connection URL (e.g., jdbc:postgresql://localhost:5432/mydb)") var url: String? = null,
+      @Description("Database User") var user: String? = null,
+      @Description("Database Password") var password: String? = null,
+      @Description("JDBC Driver Class Name (optional, e.g., org.postgresql.Driver)") var driver: String? = null,
+      @Description("SQL statements to execute") var sql: List<String> = listOf(),
+      @Description("Session ID for reusing existing connections") var sessionId: String? = null,
+      @Description("Close the session after execution") var closeSession: Boolean = false,
+      @Description("Description of the task") task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskExecutionConfig(
@@ -60,13 +60,12 @@ class JdbcSessionTask(
             "  ** Session $id (valid=$valid)"
         }
         return """
-           JdbcSession - Execute SQL queries via JDBC in a stateful session.
-           ** Specify the `url`, `user`, and `password` to start a new session.
-           ** Use `sessionId` to reuse an existing connection for transactions or subsequent queries.
-           ** Provide a list of `sql` statements to execute.
+           JdbcSession - Stateful SQL execution via JDBC.
+           * Use `url`, `user`, and `password` for new connections.
+           * Use `sessionId` to maintain transactions or temporary state across tasks.
+           * Accepts a list of `sql` statements.
            
-           Active Sessions:
-           ${if (activeSessionsInfo.isBlank()) "None" else activeSessionsInfo}
+          ${if (activeSessionsInfo.isBlank()) "None" else "Active Sessions:\n$activeSessionsInfo"}
            """.trimIndent()
     }
 
@@ -83,10 +82,11 @@ class JdbcSessionTask(
 
         val execute: (Boolean) -> Unit = { shouldComplete ->
             task.ui.pool.submit {
-                task.header("JDBC Session Results")
                 val transcript = task.transcript()
                 
                 try {
+                  log.info("Starting JDBC execution for session: ${executionConfig.sessionId ?: "transient"}")
+                  task.header("JDBC Session Results")
                     // 1. Session Management
                     val sessionState = getOrCreateSession(task)
                     val connection = sessionState.connection
@@ -95,7 +95,16 @@ class JdbcSessionTask(
                     executionConfig.sql.forEachIndexed { index, sql ->
                         val inputHeader = "\n### Query ${index + 1}"
                         val inputBlock = "```sql\n$sql\n```"
-                        transcript?.write("$inputHeader\n$inputBlock\n".toByteArray())
+                      transcript?.write(
+                        """
+                            $inputHeader
+                            <details>
+                            <summary>SQL Statement</summary>
+                            
+                            $inputBlock
+                            </details>
+                        """.trimIndent().toByteArray()
+                      )
                         task.add(inputBlock.renderMarkdown())
                         resultBuffer.appendLine(inputHeader).appendLine(inputBlock)
 
@@ -113,16 +122,35 @@ class JdbcSessionTask(
                             }
                             statement.close()
 
-                            transcript?.write("Result:\n$outputText\n".toByteArray())
+                          transcript?.write(
+                            """
+                                #### Result
+                                <details>
+                                <summary>Query Output</summary>
+                                
+                                $outputText
+                                </details>
+                            """.trimIndent().toByteArray()
+                          )
                             task.add(outputText.renderMarkdown())
                             resultBuffer.appendLine("Result:").appendLine(outputText)
 
                         } catch (e: SQLException) {
                             val errorMsg = "SQL Error: ${e.message}"
-                            log.error(errorMsg, e)
-                            transcript?.write("$errorMsg\n".toByteArray())
+                          log.error("SQL execution failed: ${e.message}")
                             task.error(e)
                             resultBuffer.appendLine(errorMsg)
+                          transcript?.write(
+                            """
+                                #### SQL Error
+                                <details>
+                                <summary>Stack Trace</summary>
+                                ```
+                                ${e.stackTraceToString()}
+                                ```
+                                </details>
+                            """.trimIndent().toByteArray()
+                          )
                         }
                     }
 
@@ -130,21 +158,32 @@ class JdbcSessionTask(
                     if (executionConfig.closeSession) {
                         connection.close()
                         executionConfig.sessionId?.let { activeSessions.remove(it) }
-                        task.add("Session closed.")
+                      task.add("Session closed.".renderMarkdown())
                     }
 
                     if (shouldComplete) {
-                        task.complete("SQL execution finished.")
+                      task.complete("SQL execution finished.".renderMarkdown())
                         resultFn(resultBuffer.toString())
                     } else {
-                        task.add("Execution Complete.")
+                      task.add("Execution Complete.".renderMarkdown())
                     }
 
                 } catch (e: Exception) {
                     val errorResult = "Error in JdbcSessionTask: ${e.message}"
                     resultBuffer.appendLine(errorResult)
-                    log.error("Error in JdbcSessionTask", e)
+                  log.error("JDBC Task failed: ${e.message}")
                     task.error(e)
+                  transcript?.write(
+                    """
+                        ### Task Failure
+                        <details>
+                        <summary>Stack Trace</summary>
+                        ```
+                        ${e.stackTraceToString()}
+                        ```
+                        </details>
+                    """.trimIndent().toByteArray()
+                  )
                     if (shouldComplete) {
                         resultFn(resultBuffer.toString())
                     }
@@ -166,7 +205,7 @@ class JdbcSessionTask(
             }
             task.add(plan.renderMarkdown())
 
-            task.add(task.ui.hrefLink("Run SQL", "btn btn-primary") {
+          task.add(task.ui.hrefLink("▶ Run SQL", "btn btn-primary") {
                 execute(false)
             })
 
@@ -184,11 +223,11 @@ class JdbcSessionTask(
         if (sessionId != null) {
             val existing = activeSessions[sessionId]
             if (existing != null && existing.isValid()) {
-                task.add("Reusing session: $sessionId")
+              task.add("Reusing session: `$sessionId`".renderMarkdown())
                 return existing
             } else if (existing != null) {
                 activeSessions.remove(sessionId)
-                task.add("Previous session $sessionId was invalid/closed. Creating new.")
+              task.add("Previous session `$sessionId` was invalid/closed. Creating new.".renderMarkdown())
             }
         }
 
@@ -227,9 +266,9 @@ class JdbcSessionTask(
         val newState = SessionState(connection)
         if (sessionId != null) {
             activeSessions[sessionId] = newState
-            task.add("Created new session: $sessionId")
+          task.add("Created new session: `$sessionId`".renderMarkdown())
         } else {
-            task.add("Created transient connection to $url")
+          task.add("Created transient connection to `$url`".renderMarkdown())
         }
         
         return newState

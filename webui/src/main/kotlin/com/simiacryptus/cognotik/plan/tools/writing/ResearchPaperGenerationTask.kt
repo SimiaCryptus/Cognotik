@@ -2,17 +2,12 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
@@ -23,50 +18,188 @@ import java.time.format.DateTimeFormatter
 class ResearchPaperGenerationTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: ResearchPaperGenerationTaskExecutionConfigData?
-) : AbstractTask<ResearchPaperGenerationTask.ResearchPaperGenerationTaskExecutionConfigData, TaskTypeConfig>(
+) : AbstractTask<ResearchPaperGenerationTask.ResearchPaperGenerationTaskExecutionConfigData, ResearchPaperGenerationTask.ResearchPaperGenerationTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
+    class ResearchPaperGenerationTypeConfig(
+        var analysisPrompt: String = """
+            You are a research analyst. Analyze the provided sources and research context.
+            Research Topic: {research_topic}
+            Paper Type: {paper_type}
+            Academic Level: {academic_level}
+            {context}
+            Provide:
+            1. Summary of existing research on this topic
+            2. Key findings and themes from sources
+            3. Research gaps and unanswered questions
+            4. Potential research directions
+            5. Methodological considerations
+            Be thorough and academic in tone.
+        """.trimIndent(),
+        var outlinePrompt: String = """
+            You are an academic paper structure expert. Create a detailed outline for this research paper.
+            Research Topic: {research_topic}
+            Paper Type: {paper_type}
+            Academic Level: {academic_level}
+            Target Word Count: {target_word_count}
+            Number of Sections: {number_of_sections}
+            Research Analysis:
+            {analysis_result}
+            Create an outline with:
+            1. A compelling title
+            2. A clear thesis statement
+            3. Abstract summary (150-250 words)
+            4. {number_of_sections} main sections including:
+               - Introduction
+               {literature_review}
+               {methodology}
+               - Results/Findings
+               - Discussion
+               {statistical_analysis}
+               - Conclusion
+            5. Key research gaps addressed
+            6. Estimated word count per section
+            For each section, specify:
+            - Section title and purpose
+            - Key points to cover
+            - Whether citations are required
+            - Estimated word count
+            Ensure academic rigor appropriate for {academic_level} level.
+        """.trimIndent(),
+        var sectionPrompt: String = """
+            You are an academic writer. Write Section {section_number}: {section_title}
+            Paper Title: {paper_title}
+            Thesis: {thesis_statement}
+            Paper Type: {paper_type}
+            Academic Level: {academic_level}
+            Section Details:
+            - Purpose: {section_purpose}
+            - Target Word Count: {target_word_count}
+            Key Points to Cover:
+            {key_points}
+            {previous_context}
+            Research Context:
+            {analysis_result}
+            Write a complete, academically rigorous section that:
+            1. Opens with a clear topic sentence
+            2. Develops arguments with evidence
+            {citation_instruction}
+            4. Maintains logical flow
+            5. Uses appropriate academic terminology
+            6. Concludes with transition to next section
+            7. Approximately {target_word_count} words
+            After writing, provide:
+            - The section content
+            - Actual word count
+            - Citations used (in [Author, Year] format)
+            - 3-5 key arguments or findings
+            Write in a {academic_level} level academic style.
+        """.trimIndent(),
+        var bibliographyPrompt: String = """
+            You are a citation expert. Generate a bibliography for this research paper.
+            Paper Topic: {research_topic}
+            Citation Style: {citation_style}
+            Citations Used in Paper:
+            {citations_used}
+            Research Sources:
+            {analysis_result}
+            Create a comprehensive bibliography with:
+            - All citations mentioned in the paper
+            - Additional relevant sources from the research analysis
+            - Proper formatting in {citation_style} style
+            For each citation, provide:
+            - Key (identifier used in paper)
+            - Authors
+            - Year
+            - Title
+            - Source/Journal/Publisher
+            - URL/DOI if available
+            Ensure all citations are properly formatted and complete.
+        """.trimIndent(),
+        var reviewPrompt: String = """
+            You are an academic peer reviewer. Provide a critical review of this research paper.
+            Paper Title: {paper_title}
+            Paper Type: {paper_type}
+            Academic Level: {academic_level}
+            Paper Summary:
+            {paper_content}
+            Provide a comprehensive peer review including:
+            1. Overall Assessment: Brief summary of the paper's contribution
+            2. Strengths: 3-5 positive aspects (methodology, clarity, novelty, etc.)
+            3. Weaknesses: 3-5 areas for improvement (gaps, limitations, unclear sections, etc.)
+            4. Suggestions: 3-5 specific recommendations for improvement
+            5. Recommendation: Accept / Minor Revisions / Major Revisions / Reject
+            Be constructive but rigorous. Consider:
+            - Novelty and contribution to the field
+            - Methodological soundness
+            - Clarity of presentation
+            - Completeness of literature review
+            - Validity of conclusions
+            - Appropriate for {academic_level} level
+            Format as a professional peer review.
+        """.trimIndent(),
+        var revisionPrompt: String = """
+            You are an expert academic editor. Review and improve this research paper.
+            Current Paper:
+            {paper_content}
+            Focus on:
+            1. Academic rigor and clarity
+            2. Logical flow and organization
+            3. Consistency of terminology
+            4. Proper citation integration
+            5. Appropriate tone for {academic_level} level
+            6. Completeness of arguments
+            7. Clarity of conclusions
+            Maintain:
+            - All key content and arguments
+            - Citation format ({citation_style})
+            - Approximate word count ({word_count} words)
+            - Academic structure
+            Provide the complete revised paper.
+        """.trimIndent()
+    ) : TaskTypeConfig()
+
 
     class ResearchPaperGenerationTaskExecutionConfigData(
         @Description("The main research question or topic")
-        val research_topic: String? = null,
+        var research_topic: String? = null,
 
         @Description("Type of research paper (e.g., 'empirical', 'theoretical', 'review', 'meta-analysis')")
-        val paper_type: String = "empirical",
+        var paper_type: String = "empirical",
 
         @Description("Academic level (e.g., 'undergraduate', 'masters', 'phd', 'postdoc')")
-        val academic_level: String = "masters",
+        var academic_level: String = "masters",
 
         @Description("Target word count for the complete paper")
-        val target_word_count: Int = 8000,
+        var target_word_count: Int = 8000,
 
         @Description("Citation style (e.g., 'apa', 'mla', 'chicago', 'ieee')")
-        val citation_style: String = "apa",
+        var citation_style: String = "apa",
 
         @Description("Whether to include a literature review section")
-        val include_literature_review: Boolean = true,
+        var include_literature_review: Boolean = true,
 
         @Description("Whether to include methodology section")
-        val include_methodology: Boolean = true,
+        var include_methodology: Boolean = true,
 
         @Description("Whether to include statistical analysis descriptions")
-        val include_statistical_analysis: Boolean = true,
+        var include_statistical_analysis: Boolean = true,
 
         @Description("Whether to include peer review simulation")
-        val include_peer_review: Boolean = true,
+        var include_peer_review: Boolean = true,
 
         @Description("Number of main sections (excluding abstract/conclusion)")
-        val number_of_sections: Int = 6,
+        var number_of_sections: Int = 6,
 
         @Description("Number of revision passes for quality improvement")
-        val revision_passes: Int = 1,
+        var revision_passes: Int = 1,
 
         @Description("Research source files or data to incorporate")
-        val research_files: List<String>? = null,
+        var research_files: List<String>? = null,
 
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
 
         task_description: String? = null,
         task_dependencies: List<String>? = null,
@@ -225,11 +358,11 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
         orchestrationConfig: OrchestrationConfig
     ) {
         val startTime = System.currentTimeMillis()
-        log.info("Starting ResearchPaperGenerationTask for topic: '${executionConfig?.research_topic}'")
+        log.info("Starting ResearchPaperGenerationTask for topic: '{}'", executionConfig?.research_topic)
         val markdownTranscript = task.transcript()
 
         // Read input from messages parameter
-        val messageContext = messages.filter { it.isNotBlank() }.joinToString("\n\n")
+        val messageContext = messages.filter { it.isNotBlank() }.joinToString("\n\n").trim()
         log.debug("Received ${messages.size} messages with total length: ${messageContext.length}")
 
         // Load input files if specified
@@ -241,9 +374,20 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
 
         // Validate configuration
         executionConfig?.validate()?.let { validationError ->
-            log.error("Configuration validation failed: $validationError")
+            log.error("Configuration validation failed: {}", validationError)
             task.safeComplete("CONFIGURATION ERROR: $validationError", log)
             task.error(ValidatedObject.ValidationError(validationError, executionConfig))
+            markdownTranscript?.write(
+                """
+                ## Configuration Error
+                $validationError
+                <details><summary>Config Dump</summary>```json${
+                    JsonUtil.toJson(
+                        executionConfig
+                    )
+                }```</details>
+            """.trimIndent().toByteArray()
+            )
             resultFn("CONFIGURATION ERROR: $validationError")
             return
         }
@@ -291,7 +435,12 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             appendLine("### Phase 1: Research Analysis")
             appendLine("*Analyzing sources and identifying research gaps...*")
         }
-        markdownTranscript?.write(overviewContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+        markdownTranscript?.write(
+            """
+            # Research Paper Generation Started
+            <details><summary>Initial Configuration</summary>$overviewContent</details>
+        """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
+        )
         overviewTask.add(overviewContent.renderMarkdown)
         task.update()
 
@@ -334,7 +483,12 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                         }"
                     )
                 }
-                markdownTranscript?.write(contextContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                markdownTranscript?.write(
+                    """
+                    ## Research Sources & Context
+                    <details><summary>Full Context Data</summary>$contextContent</details>
+                """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
+                )
                 task.update()
             }
 
@@ -351,27 +505,20 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 }.renderMarkdown
             )
             task.update()
+            val analysisContextStr = listOfNotNull(
+                if (fullContext.isNotBlank()) "Sources and Context:\n${fullContext.truncateForDisplay(5000)}\n" else null,
+                if (priorContext.isNotBlank()) "Additional Context:\n${priorContext.truncateForDisplay(3000)}\n" else null
+            ).joinToString("\n")
 
+
+            val typeConfig = typeConfig!!
             val analysisAgent = ChatAgent(
-                prompt = """
-You are a research analyst. Analyze the provided sources and research context.
 
-Research Topic: $researchTopic
-Paper Type: ${executionConfig.paper_type}
-Academic Level: ${executionConfig.academic_level}
 
-${if (fullContext.isNotBlank()) "Sources and Context:\n${fullContext.truncateForDisplay(5000)}\n" else ""}
-${if (priorContext.isNotBlank()) "Additional Context:\n${priorContext.truncateForDisplay(3000)}\n" else ""}
-
-Provide:
-1. Summary of existing research on this topic
-2. Key findings and themes from sources
-3. Research gaps and unanswered questions
-4. Potential research directions
-5. Methodological considerations
-
-Be thorough and academic in tone.
-        """.trimIndent(),
+                prompt = typeConfig!!.analysisPrompt.replace("{research_topic}", researchTopic)
+                    .replace("{paper_type}", executionConfig.paper_type)
+                    .replace("{academic_level}", executionConfig.academic_level)
+                    .replace("{context}", analysisContextStr),
                 model = api,
                 temperature = 0.6
             )
@@ -385,8 +532,13 @@ Be thorough and academic in tone.
                 appendLine(analysisResult)
                 appendLine()
                 appendLine("**Status:** ✅ Complete")
-            }
-            markdownTranscript?.write(analysisContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            }.trimIndent()
+            markdownTranscript?.write(
+                """
+                ## Phase 1: Research Analysis Complete
+                <details><summary>Analysis Results</summary>$analysisContent</details>
+            """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
+            )
             analysisBuffer?.setLength(0)
             analysisBuffer?.append(analysisContent.renderMarkdown)
             task.update()
@@ -411,48 +563,30 @@ Be thorough and academic in tone.
 
             val outlineAgent = ParsedAgent(
                 resultClass = ResearchOutline::class.java,
-                prompt = """
-You are an academic paper structure expert. Create a detailed outline for this research paper.
 
-Research Topic: $researchTopic
-Paper Type: ${executionConfig.paper_type}
-Academic Level: ${executionConfig.academic_level}
-Target Word Count: ${executionConfig.target_word_count}
-Number of Sections: ${executionConfig.number_of_sections}
 
-Research Analysis:
-${analysisResult.truncateForDisplay(3000)}
-
-Create an outline with:
-1. A compelling title
-2. A clear thesis statement
-3. Abstract summary (150-250 words)
-4. ${executionConfig.number_of_sections} main sections including:
-   - Introduction
-   ${if (executionConfig.include_literature_review) "- Literature Review" else ""}
-   ${if (executionConfig.include_methodology) "- Methodology" else ""}
-   - Results/Findings
-   - Discussion
-   ${if (executionConfig.include_statistical_analysis) "- Statistical Analysis" else ""}
-   - Conclusion
-5. Key research gaps addressed
-6. Estimated word count per section
-
-For each section, specify:
-- Section title and purpose
-- Key points to cover
-- Whether citations are required
-- Estimated word count
-
-Ensure academic rigor appropriate for ${executionConfig.academic_level} level.
-        """.trimIndent(),
+                prompt = typeConfig.outlinePrompt.replace("{research_topic}", researchTopic)
+                    .replace("{paper_type}", executionConfig.paper_type)
+                    .replace("{academic_level}", executionConfig.academic_level)
+                    .replace("{target_word_count}", executionConfig.target_word_count.toString())
+                    .replace("{number_of_sections}", executionConfig.number_of_sections.toString())
+                    .replace("{analysis_result}", analysisResult.truncateForDisplay(3000))
+                    .replace(
+                        "{literature_review}",
+                        if (executionConfig.include_literature_review) "- Literature Review" else ""
+                    )
+                    .replace("{methodology}", if (executionConfig.include_methodology) "- Methodology" else "")
+                    .replace(
+                        "{statistical_analysis}",
+                        if (executionConfig.include_statistical_analysis) "- Statistical Analysis" else ""
+                    ),
                 model = api,
                 temperature = 0.7,
                 parsingChatter = defaultFast
             )
 
             val outline = outlineAgent.answer(listOf("Create outline")).obj
-            log.info("Created outline with ${outline.sections.size} sections")
+            log.info("Created outline with {} sections", outline.sections.size)
 
             val outlineContent = buildString {
                 appendLine("# ${outline.title}")
@@ -486,8 +620,12 @@ Ensure academic rigor appropriate for ${executionConfig.academic_level} level.
                 appendLine()
                 appendLine("**Status:** ✅ Complete")
             }
-            markdownTranscript?.write(outlineContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
-            outlineBuffer?.setLength(0)
+            markdownTranscript?.write(
+                """
+                ## Phase 2: Outline Generation Complete
+                <details><summary>Paper Outline</summary>$outlineContent</details>
+            """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
+            )
             outlineBuffer?.append(outlineContent.renderMarkdown)
             task.update()
 
@@ -538,43 +676,25 @@ Ensure academic rigor appropriate for ${executionConfig.academic_level} level.
 
                 val sectionAgent = ParsedAgent(
                     resultClass = GeneratedSection::class.java,
-                    prompt = """
-You are an academic writer. Write Section ${sectionOutline.section_number}: ${sectionOutline.title}
 
-Paper Title: ${outline.title}
-Thesis: ${outline.thesis_statement}
-Paper Type: ${executionConfig.paper_type}
-Academic Level: ${executionConfig.academic_level}
 
-Section Details:
-- Purpose: ${sectionOutline.purpose}
-- Target Word Count: ${sectionOutline.estimated_word_count}
-
-Key Points to Cover:
-${sectionOutline.key_points.joinToString("\n") { "- $it" }}
-
-$previousContext
-
-Research Context:
-${analysisResult.truncateForDisplay(2000)}
-
-Write a complete, academically rigorous section that:
-1. Opens with a clear topic sentence
-2. Develops arguments with evidence
-${if (sectionOutline.requires_citations) "3. Includes citations in [Author, Year] format" else ""}
-4. Maintains logical flow
-5. Uses appropriate academic terminology
-6. Concludes with transition to next section
-7. Approximately ${sectionOutline.estimated_word_count} words
-
-After writing, provide:
-- The section content
-- Actual word count
-- Citations used (in [Author, Year] format)
-- 3-5 key arguments or findings
-
-Write in a ${executionConfig.academic_level} level academic style.
-          """.trimIndent(),
+                    prompt = typeConfig.sectionPrompt.replace(
+                        "{section_number}",
+                        sectionOutline.section_number.toString()
+                    )
+                        .replace("{section_title}", sectionOutline.title).replace("{paper_title}", outline.title)
+                        .replace("{thesis_statement}", outline.thesis_statement)
+                        .replace("{paper_type}", executionConfig.paper_type)
+                        .replace("{academic_level}", executionConfig.academic_level)
+                        .replace("{section_purpose}", sectionOutline.purpose)
+                        .replace("{target_word_count}", sectionOutline.estimated_word_count.toString())
+                        .replace("{key_points}", sectionOutline.key_points.joinToString("\n") { "- $it" })
+                        .replace("{previous_context}", previousContext)
+                        .replace("{analysis_result}", analysisResult.truncateForDisplay(2000))
+                        .replace(
+                            "{citation_instruction}",
+                            if (sectionOutline.requires_citations) "3. Includes citations in [Author, Year] format" else ""
+                        ),
                     model = api,
                     temperature = 0.7,
                     parsingChatter = defaultFast
@@ -607,7 +727,12 @@ Write in a ${executionConfig.academic_level} level academic style.
                     }
                 sectionBuffer?.setLength(0)
                 sectionBuffer?.append(sectionContent.renderMarkdown)
-                markdownTranscript?.write(sectionContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                markdownTranscript?.write(
+                    """
+                    ### Section ${sectionOutline.section_number}: ${sectionOutline.title}
+                    <details><summary>Section Content</summary>$sectionContent</details>
+                """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
+                )
                 task.update()
 
                 resultBuilder.append("## ${sectionOutline.title}\n\n")
@@ -639,40 +764,21 @@ Write in a ${executionConfig.academic_level} level academic style.
 
             val bibliographyAgent = ParsedAgent(
                 resultClass = Bibliography::class.java,
-                prompt = """
-You are a citation expert. Generate a bibliography for this research paper.
 
-Paper Topic: $researchTopic
-Citation Style: ${executionConfig.citation_style}
 
-Citations Used in Paper:
-${generatedSections.flatMap { it.citations_used }.distinct().joinToString("\n") { "- $it" }}
-
-Research Sources:
-${analysisResult.truncateForDisplay(3000)}
-
-Create a comprehensive bibliography with:
-- All citations mentioned in the paper
-- Additional relevant sources from the research analysis
-- Proper formatting in ${executionConfig.citation_style} style
-
-For each citation, provide:
-- Key (identifier used in paper)
-- Authors
-- Year
-- Title
-- Source/Journal/Publisher
-- URL/DOI if available
-
-Ensure all citations are properly formatted and complete.
-        """.trimIndent(),
+                prompt = typeConfig.bibliographyPrompt.replace("{research_topic}", researchTopic)
+                    .replace("{citation_style}", executionConfig.citation_style)
+                    .replace(
+                        "{citations_used}",
+                        generatedSections.flatMap { it.citations_used }.distinct().joinToString("\n") { "- $it" })
+                    .replace("{analysis_result}", analysisResult.truncateForDisplay(3000)),
                 model = api,
                 temperature = 0.6,
                 parsingChatter = defaultFast
             )
 
             val bibliography = bibliographyAgent.answer(listOf("Generate bibliography")).obj.citations
-            log.info("Generated ${bibliography.size} citations")
+            log.info("Generated {} citations", bibliography.size)
 
             val bibliographyContent = buildString {
                 appendLine("# Bibliography")
@@ -701,7 +807,12 @@ Ensure all citations are properly formatted and complete.
             }
             bibBuffer?.setLength(0)
             bibBuffer?.append(bibliographyContent.renderMarkdown)
-            markdownTranscript?.write(bibliographyContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            markdownTranscript?.write(
+                """
+                ## Phase 4: Bibliography Generation Complete
+                <details><summary>Bibliography Details</summary>$bibliographyContent</details>
+            """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
+            )
             task.update()
 
             resultBuilder.append("## Bibliography\n\n")
@@ -732,41 +843,19 @@ Ensure all citations are properly formatted and complete.
 
                 val reviewAgent = ParsedAgent(
                     resultClass = PeerReview::class.java,
-                    prompt = """
-You are an academic peer reviewer. Provide a critical review of this research paper.
 
-Paper Title: ${outline.title}
-Paper Type: ${executionConfig.paper_type}
-Academic Level: ${executionConfig.academic_level}
 
-Paper Summary:
-${resultBuilder.toString().truncateForDisplay(5000)}
-
-Provide a comprehensive peer review including:
-
-1. Overall Assessment: Brief summary of the paper's contribution
-2. Strengths: 3-5 positive aspects (methodology, clarity, novelty, etc.)
-3. Weaknesses: 3-5 areas for improvement (gaps, limitations, unclear sections, etc.)
-4. Suggestions: 3-5 specific recommendations for improvement
-5. Recommendation: Accept / Minor Revisions / Major Revisions / Reject
-
-Be constructive but rigorous. Consider:
-- Novelty and contribution to the field
-- Methodological soundness
-- Clarity of presentation
-- Completeness of literature review
-- Validity of conclusions
-- Appropriate for ${executionConfig.academic_level} level
-
-Format as a professional peer review.
-          """.trimIndent(),
+                    prompt = typeConfig.reviewPrompt.replace("{paper_title}", outline.title)
+                        .replace("{paper_type}", executionConfig.paper_type)
+                        .replace("{academic_level}", executionConfig.academic_level)
+                        .replace("{paper_content}", resultBuilder.toString().truncateForDisplay(5000)),
                     model = api,
                     temperature = 0.6,
                     parsingChatter = defaultFast
                 )
 
                 val review = reviewAgent.answer(listOf("Review the paper")).obj
-                log.info("Peer review generated")
+                log.info("Peer review generated for topic: {}", researchTopic)
 
                 val reviewContent = buildString {
                     appendLine("# Peer Review Report")
@@ -796,7 +885,12 @@ Format as a professional peer review.
                 }
                 reviewBuffer?.setLength(0)
                 reviewBuffer?.append(reviewContent.renderMarkdown)
-                markdownTranscript?.write(reviewContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                markdownTranscript?.write(
+                    """
+                    ## Phase 5: Peer Review Complete
+                    <details><summary>Peer Review Report</summary>$reviewContent</details>
+                """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
+                )
                 task.update()
 
                 resultBuilder.append("## Peer Review\n\n")
@@ -834,29 +928,12 @@ Format as a professional peer review.
                     log.debug("Revision pass ${passNum + 1}/${executionConfig.revision_passes}")
 
                     val revisionAgent = ChatAgent(
-                        prompt = """
-You are an expert academic editor. Review and improve this research paper.
 
-Current Paper:
-$fullPaper
 
-Focus on:
-1. Academic rigor and clarity
-2. Logical flow and organization
-3. Consistency of terminology
-4. Proper citation integration
-5. Appropriate tone for ${executionConfig.academic_level} level
-6. Completeness of arguments
-7. Clarity of conclusions
-
-Maintain:
-- All key content and arguments
-- Citation format (${executionConfig.citation_style})
-- Approximate word count ($cumulativeWordCount words)
-- Academic structure
-
-Provide the complete revised paper.
-            """.trimIndent(),
+                        prompt = typeConfig.revisionPrompt.replace("{paper_content}", fullPaper)
+                            .replace("{academic_level}", executionConfig.academic_level)
+                            .replace("{citation_style}", executionConfig.citation_style)
+                            .replace("{word_count}", cumulativeWordCount.toString()),
                         model = api,
                         temperature = 0.6
                     )
@@ -873,7 +950,12 @@ Provide the complete revised paper.
                             appendLine()
                         }.renderMarkdown
                     )
-                    markdownTranscript?.write("## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                    markdownTranscript?.write(
+                        """
+                        ### Revision Pass ${passNum + 1}
+                        <details><summary>Revision Details</summary>Revision pass ${passNum + 1} completed successfully.</details>
+                    """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
+                    )
                     task.update()
                 }
 
@@ -924,7 +1006,12 @@ Provide the complete revised paper.
             val fileUrl = task.saveFile(filename, finalPaper.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             finalTask.add("<div class='mt-3'><a href='$fileUrl' class='btn btn-primary' target='_blank'>Download Markdown</a></div>")
 
-            markdownTranscript?.write(finalPaper.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            markdownTranscript?.write(
+                """
+                ## Phase 7: Final Assembly Complete
+                <details><summary>Final Paper Content</summary>$finalPaper</details>
+            """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
+            )
             task.update()
 
             // Final statistics
@@ -953,7 +1040,12 @@ Provide the complete revised paper.
                     )
                 }.renderMarkdown
             )
-            markdownTranscript?.write(overviewTask.toString().toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            markdownTranscript?.write(
+                """
+                ## Generation Statistics
+                <details><summary>Final Stats</summary>$overviewTask</details>
+            """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
+            )
             task.update()
 
             // Concise summary for resultFn
@@ -975,7 +1067,13 @@ Provide the complete revised paper.
                 appendLine("> The complete paper is available in the Complete Paper tab for detailed review.")
             }
 
-            log.info("ResearchPaperGenerationTask completed: words=$cumulativeWordCount, sections=${generatedSections.size}, citations=${bibliography.size}, time=${totalTime}ms")
+            log.info(
+                "ResearchPaperGenerationTask completed: words={}, sections={}, citations={}, time={}ms",
+                cumulativeWordCount,
+                generatedSections.size,
+                bibliography.size,
+                totalTime
+            )
             markdownTranscript?.write("\n\n---\n\n# Final Result\n\n${finalResult}".toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             markdownTranscript?.close()
 
@@ -1006,8 +1104,16 @@ Provide the complete revised paper.
             }
 
         } catch (e: Exception) {
-            log.error("Error during research paper generation", e)
+            log.error("Error during research paper generation for topic: {}", researchTopic, e)
             task.error(e)
+            markdownTranscript?.write(
+                """
+                ## Error Occurred
+                **Error:** ${e.message}
+                **Type:** ${e.javaClass.simpleName}
+                <details><summary>Stack Trace</summary>```${e.stackTraceToString()}```</details>
+            """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
+            )
 
             overviewTask.add(
                 buildString {
@@ -1020,11 +1126,6 @@ Provide the complete revised paper.
                     appendLine()
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
-            )
-            markdownTranscript?.write(
-                "\n\n---\n\n# Error\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n".toByteArray(
-                    java.nio.charset.StandardCharsets.UTF_8
-                )
             )
             task.update()
 
@@ -1148,7 +1249,7 @@ Provide the complete revised paper.
           category = "Writing",
           taskClass = ResearchPaperGenerationTask::class.java,
           executionConfigClass = ResearchPaperGenerationTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
+            taskSettingsClass = ResearchPaperGenerationTypeConfig::class.java,
           description = "Generate comprehensive academic research papers with citations",
           tooltipHtml = """
                         Generates complete, publication-ready academic research papers.

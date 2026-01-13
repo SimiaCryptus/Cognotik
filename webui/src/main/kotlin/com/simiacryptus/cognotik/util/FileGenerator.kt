@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTypeConfig
 import com.simiacryptus.cognotik.util.FileGenerator.OverwriteModes.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
@@ -39,7 +38,7 @@ abstract class FileGenerator {
           overwriteMode.prepare(source, target)?.let { patchProcessor ->
             concurrencyProcessor.submit {
               try {
-                harness.runTask<FileModificationTaskExecutionConfigData, FileModificationTypeConfig>(
+                harness.runTask(
                   taskType = FileModification,
                   typeConfig = TaskTypeConfig(task_type = FileModification.name),
                   executionConfig = FileModificationTaskExecutionConfigData(
@@ -50,7 +49,7 @@ abstract class FileGenerator {
                   timeoutMinutes = 5,
                   workspace = root.absoluteFile,
                   initSettings = { session ->
-                    harness.initSettings<FileModificationTaskExecutionConfigData, FileModificationTypeConfig>(
+                    harness.initSettings(
                       session = session,
                       workspace = root.absoluteFile,
                       autoFix = true,

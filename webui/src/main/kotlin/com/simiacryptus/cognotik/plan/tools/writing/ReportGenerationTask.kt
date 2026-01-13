@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
@@ -10,8 +9,8 @@ import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.file.FileSystems
@@ -28,54 +27,54 @@ class ReportGenerationTask(
 
     class ReportGenerationTaskExecutionConfigData(
         @Description("The subject or topic of the report")
-        val report_topic: String? = null,
+        var report_topic: String? = null,
 
         @Description("Type of report (e.g., 'status_update', 'quarterly_review', 'incident_report', 'performance_analysis', 'market_research')")
-        val report_type: String = "status_update",
+        var report_type: String = "status_update",
 
         @Description("Target audience for the report (e.g., 'executives', 'team_members', 'stakeholders', 'board_of_directors')")
-        val target_audience: String = "executives",
+        var target_audience: String = "executives",
 
         @Description("Time period covered by the report (e.g., 'Q1 2024', 'January 2024', 'Last 30 days')")
-        val time_period: String? = null,
+        var time_period: String? = null,
 
         @Description("Key metrics or KPIs to include in the report")
-        val key_metrics: List<String>? = null,
+        var key_metrics: List<String>? = null,
 
         @Description("Data points or statistics to analyze")
-        val data_points: Map<String, Any>? = null,
+        var data_points: Map<String, Any>? = null,
 
         @Description("Whether to include trend analysis comparing to previous periods")
-        val include_trend_analysis: Boolean = true,
+        var include_trend_analysis: Boolean = true,
 
         @Description("Whether to include data visualization descriptions")
-        val include_visualizations: Boolean = true,
+        var include_visualizations: Boolean = true,
 
         @Description("Whether to include executive summary/dashboard")
-        val include_executive_summary: Boolean = true,
+        var include_executive_summary: Boolean = true,
 
         @Description("Whether to include actionable recommendations")
-        val include_recommendations: Boolean = true,
+        var include_recommendations: Boolean = true,
 
         @Description("Whether to include comparative analysis (benchmarks, competitors, previous periods)")
-        val include_comparative_analysis: Boolean = true,
+        var include_comparative_analysis: Boolean = true,
 
         @Description("Whether to include risk assessment or challenges section")
-        val include_risk_assessment: Boolean = true,
+        var include_risk_assessment: Boolean = true,
 
         @Description("Tone of the report (e.g., 'formal', 'professional', 'analytical', 'conversational')")
-        val tone: String = "professional",
+        var tone: String = "professional",
 
         @Description("Target word count for the complete report")
-        val target_word_count: Int = 2000,
+        var target_word_count: Int = 2000,
 
         @Description("Number of revision passes for quality improvement")
-        val revision_passes: Int = 1,
+        var revision_passes: Int = 1,
 
         @Description("Related files or data sources to incorporate")
-        val related_files: List<String>? = null,
+        var related_files: List<String>? = null,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
 
 
         task_description: String? = null,
@@ -115,15 +114,15 @@ class ReportGenerationTask(
 
     data class ReportOutline(
         @Description("Report title")
-        val title: String = "",
+        var title: String = "",
         @Description("Executive summary or key highlights")
-        val executive_summary: String = "",
+        var executive_summary: String = "",
         @Description("Main sections of the report")
-        val sections: List<ReportSection> = emptyList(),
+        var sections: List<ReportSection> = emptyList(),
         @Description("Key findings or takeaways")
-        val key_findings: List<String> = emptyList(),
+        var key_findings: List<String> = emptyList(),
         @Description("Recommended visualizations")
-        val visualization_suggestions: List<VisualizationSuggestion> = emptyList()
+        var visualization_suggestions: List<VisualizationSuggestion> = emptyList()
     ) : ValidatedObject {
         override fun validate(): String? {
             if (title.isBlank()) return "title must not be blank"
@@ -134,17 +133,17 @@ class ReportGenerationTask(
 
     data class ReportSection(
         @Description("Section number")
-        val section_number: Int = 1,
+        var section_number: Int = 1,
         @Description("Section title")
-        val title: String = "",
+        var title: String = "",
         @Description("Section purpose or focus")
-        val purpose: String = "",
+        var purpose: String = "",
         @Description("Key points to cover")
-        val key_points: List<String> = emptyList(),
+        var key_points: List<String> = emptyList(),
         @Description("Metrics or data to include")
-        val metrics: List<String> = emptyList(),
+        var metrics: List<String> = emptyList(),
         @Description("Estimated word count")
-        val estimated_word_count: Int = 0
+        var estimated_word_count: Int = 0
     ) : ValidatedObject {
         override fun validate(): String? {
             if (section_number < 1) return "section_number must be positive"
@@ -155,83 +154,83 @@ class ReportGenerationTask(
 
     data class VisualizationSuggestion(
         @Description("Type of visualization (e.g., 'line_chart', 'bar_chart', 'pie_chart', 'table', 'heatmap')")
-        val type: String = "",
+        var type: String = "",
         @Description("What data to visualize")
-        val data_description: String = "",
+        var data_description: String = "",
         @Description("Purpose of this visualization")
-        val purpose: String = "",
+        var purpose: String = "",
         @Description("Suggested placement in report")
-        val placement: String = ""
+        var placement: String = ""
     ) : ValidatedObject
 
     data class DataAnalysis(
         @Description("Metric or data point being analyzed")
-        val metric_name: String = "",
+        var metric_name: String = "",
         @Description("Current value or status")
-        val current_value: String = "",
+        var current_value: String = "",
         @Description("Comparison to previous period")
-        val comparison: String = "",
+        var comparison: String = "",
         @Description("Trend direction (e.g., 'increasing', 'decreasing', 'stable')")
-        val trend: String = "",
+        var trend: String = "",
         @Description("Interpretation of the data")
-        val interpretation: String = "",
+        var interpretation: String = "",
         @Description("Significance level (e.g., 'critical', 'important', 'notable', 'minor')")
-        val significance: String = ""
+        var significance: String = ""
     ) : ValidatedObject
 
     data class DataAnalyses(
-        val analyses: List<DataAnalysis> = emptyList()
+        var analyses: List<DataAnalysis> = emptyList()
     ) : ValidatedObject
 
     data class RecommendationSet(
         @Description("Actionable recommendations")
-        val recommendations: List<Recommendation> = emptyList()
+        var recommendations: List<Recommendation> = emptyList()
     ) : ValidatedObject
 
     data class Recommendation(
         @Description("Priority level (e.g., 'high', 'medium', 'low')")
-        val priority: String = "",
+        var priority: String = "",
         @Description("The recommended action")
-        val action: String = "",
+        var action: String = "",
         @Description("Rationale for this recommendation")
-        val rationale: String = "",
+        var rationale: String = "",
         @Description("Expected impact or benefit")
-        val expected_impact: String = "",
+        var expected_impact: String = "",
         @Description("Implementation timeline")
-        val timeline: String = "",
+        var timeline: String = "",
         @Description("Resources required")
-        val resources_required: List<String> = emptyList()
+        var resources_required: List<String> = emptyList()
     ) : ValidatedObject
 
     data class RiskAssessment(
         @Description("Identified risks or challenges")
-        val risks: List<Risk> = emptyList()
+        var risks: List<Risk> = emptyList()
     ) : ValidatedObject
 
     data class Risk(
         @Description("Risk category (e.g., 'operational', 'financial', 'strategic', 'technical')")
-        val category: String = "",
+        var category: String = "",
         @Description("Description of the risk")
-        val description: String = "",
+        var description: String = "",
         @Description("Likelihood (e.g., 'high', 'medium', 'low')")
-        val likelihood: String = "",
+        var likelihood: String = "",
         @Description("Potential impact (e.g., 'high', 'medium', 'low')")
-        val impact: String = "",
+        var impact: String = "",
         @Description("Mitigation strategies")
-        val mitigation: String = ""
+        var mitigation: String = ""
     ) : ValidatedObject
 
     data class GeneratedSection(
         @Description("Section number")
-        val section_number: Int = 1,
+        var section_number: Int = 1,
         @Description("Section title")
-        val title: String = "",
+        var title: String = "",
         @Description("Section content")
-        val content: String = "",
+        var content: String = "",
         @Description("Word count")
-        val word_count: Int = 0,
+        var word_count: Int = 0,
         @Description("Key insights from this section")
-        val key_insights: List<String> = emptyList()
+        var key_insights: List<String> = emptyList()
     ) : ValidatedObject
 
     override fun promptSegment(): String {
@@ -258,16 +257,18 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
         orchestrationConfig: OrchestrationConfig
     ) {
         val startTime = System.currentTimeMillis()
-        log.info("Starting ReportGenerationTask for topic: '${executionConfig?.report_topic}'")
-        val (_, markdownTranscript) = initializeTranscript(task, "ReportGen")
+        val reportTopic = executionConfig?.report_topic
+        log.info("Starting ReportGenerationTask. Topic: '$reportTopic'")
+
+        val transcript = task.transcript()
+        task.ui.pool.submit {
+            try {
         // Read input from messages parameter
         val messageContext = messages.filter { it.isNotBlank() }.joinToString("\n\n")
-        log.debug("Received ${messages.size} messages with total length: ${messageContext.length}")
         // Load input files if specified
         val inputFileContent = getInputFileCode()
-        log.debug("Loaded input files: ${inputFileContent.length} characters")
-        val fullContext =
-            listOfNotNull(messageContext, inputFileContent).filter { it.isNotBlank() }.joinToString("\n\n---\n\n")
+                val fullContext = listOfNotNull(messageContext, inputFileContent).filter { it.isNotBlank() }
+                    .joinToString("\n\n---\n\n")
 
         // Validate configuration
         executionConfig?.validate()?.let { validationError ->
@@ -275,18 +276,17 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
             task.safeComplete("CONFIGURATION ERROR: $validationError", log)
             task.error(ValidatedObject.ValidationError(validationError, executionConfig))
             resultFn("CONFIGURATION ERROR: $validationError")
-            return
+            return@submit
         }
 
-        val reportTopic = executionConfig?.report_topic
         if (reportTopic.isNullOrBlank()) {
             log.error("No report topic specified")
             task.safeComplete("CONFIGURATION ERROR: No report topic specified", log)
             resultFn("CONFIGURATION ERROR: No report topic specified")
-            return
+            return@submit
         }
 
-        val api = defaultSmart ?: return
+                val api = defaultSmart ?: return@submit
 
         val tabs = createTabbedDisplay(task)
 
@@ -323,7 +323,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
             appendLine("### Phase 1: Data Analysis")
             appendLine("*Analyzing metrics and data points...*")
         }
-        writeToTranscript(markdownTranscript, overviewContent)
+                transcript?.write(overviewContent.toByteArray())
         overviewTask.add(overviewContent.renderMarkdown)
         task.update()
 
@@ -331,7 +331,6 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
         resultBuilder.append("# ${executionConfig.report_type.replace("_", " ").capitalize()} Report: $reportTopic\n\n")
 
         try {
-            // Gather context
             val priorContext = getPriorCode(agent.executionState)
             val contextFiles = getRelatedContextFiles()
 
@@ -357,7 +356,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
                     if (priorContext.isNotBlank()) appendLine("## Prior Context\n${priorContext.truncateForDisplay(2000)}\n")
                     if (contextFiles.isNotBlank()) appendLine("## Related Files\n${contextFiles.truncateForDisplay(2000)}")
                 }
-                writeToTranscript(markdownTranscript, contextContent)
+                transcript?.write(contextContent.toByteArray())
 
                 task.update()
             }
@@ -380,14 +379,14 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
             val metricsContext = buildString {
                 if (!executionConfig.key_metrics.isNullOrEmpty()) {
                     appendLine("Key Metrics to Analyze:")
-                    executionConfig.key_metrics.forEach { metric ->
+                    executionConfig.key_metrics?.forEach { metric ->
                         appendLine("- $metric")
                     }
                     appendLine()
                 }
                 if (!executionConfig.data_points.isNullOrEmpty()) {
                     appendLine("Data Points:")
-                    executionConfig.data_points.forEach { (key, value) ->
+                    executionConfig.data_points?.forEach { (key, value) ->
                         appendLine("- $key: $value")
                     }
                     appendLine()
@@ -458,7 +457,7 @@ Be specific with numbers and percentages where available.
                 }
                 appendLine("**Status:** ✅ Complete")
             }
-            writeToTranscript(markdownTranscript, dataAnalysisContent)
+            transcript?.write(dataAnalysisContent.toByteArray())
             dataAnalysisTask.add(dataAnalysisContent.renderMarkdown)
             dataAnalysisTask.complete()
             task.update()
@@ -576,7 +575,7 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
                 }
                 appendLine("**Status:** ✅ Complete")
             }
-            writeToTranscript(markdownTranscript, outlineContent)
+            transcript?.write(outlineContent.toByteArray())
             outlineTask.add(outlineContent.renderMarkdown)
             outlineTask.complete()
             task.update()
@@ -626,7 +625,7 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
                 val relevantAnalyses = dataAnalyses.filter { analysis ->
                     sectionOutline.metrics.any { metric ->
                         analysis.metric_name.contains(metric, ignoreCase = true) ||
-                                metric.contains(analysis.metric_name, ignoreCase = true)
+                            metric.contains(analysis.metric_name, ignoreCase = true)
                     }
                 }
 
@@ -705,7 +704,7 @@ Be specific, data-driven, and actionable.
                         appendLine("**Status:** ✅ Complete")
                     }.renderMarkdown
                 )
-                writeToTranscript(markdownTranscript, sectionTask.toString())
+                transcript?.write(sectionTask.toString().toByteArray())
                 sectionTask.complete()
                 task.update()
 
@@ -819,7 +818,7 @@ Tailor recommendations to ${executionConfig.target_audience}.
                     appendLine("**Status:** ✅ Complete")
                 }
                 recommendationsTask.add(recommendationsContent.renderMarkdown)
-                writeToTranscript(markdownTranscript, recommendationsContent)
+                transcript?.write(recommendationsContent.toByteArray())
                 recommendationsTask.complete()
                 task.update()
 
@@ -927,7 +926,7 @@ Be realistic and specific. Focus on risks that ${executionConfig.target_audience
                     appendLine("**Status:** ✅ Complete")
                 }
                 riskTask.add(riskContent.renderMarkdown)
-                writeToTranscript(markdownTranscript, riskContent)
+                transcript?.write(riskContent.toByteArray())
                 riskTask.complete()
                 task.update()
 
@@ -1004,7 +1003,7 @@ Provide the complete revised report.
                             appendLine()
                         }.renderMarkdown
                     )
-                    writeToTranscript(markdownTranscript, "## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n")
+                    transcript?.write("## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray())
                     task.update()
                 }
                 revisionTask.complete()
@@ -1064,7 +1063,7 @@ Provide the complete revised report.
             val reportUrl = task.saveFile("reports/$reportFileName", finalReport.toByteArray())
             finalTask.add("<div class='mt-3'><a href='$reportUrl' class='btn btn-primary' target='_blank'>Download Report (Markdown)</a></div>")
             finalTask.complete()
-            writeToTranscript(markdownTranscript, finalReport)
+            transcript?.write(finalReport.toByteArray())
             task.update()
 
             // Final statistics
@@ -1089,14 +1088,14 @@ Provide the complete revised report.
                     appendLine("- Revision Passes: ${executionConfig.revision_passes}")
                     appendLine("- Total Time: ${totalTime / 1000.0}s")
                     appendLine()
-                    appendLine( 
+                    appendLine(
                         "**Completed:** ${
                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         }"
                     )
                 }.renderMarkdown
             )
-            writeToTranscript(markdownTranscript, overviewTask.toString())
+            transcript?.write(overviewTask.toString().toByteArray())
             overviewTask.complete()
             task.update()
 
@@ -1127,10 +1126,10 @@ Provide the complete revised report.
             }
 
             log.info("ReportGenerationTask completed: words=$cumulativeWordCount, sections=${generatedSections.size}, time=${totalTime}ms")
-            writeToTranscript(markdownTranscript, "\n\n---\n\n# Final Result\n\n${finalResult}")
-            markdownTranscript?.close()
 
-            task.safeComplete("Report generation complete: $cumulativeWordCount words in ${totalTime / 1000}s", log)
+            transcript?.write("\n\n---\n\n# Final Result\n\n${finalResult}".toByteArray())
+
+            task.complete("Report generation complete: $cumulativeWordCount words in ${totalTime / 1000}s")
             resultFn(finalResult)
 
         } catch (e: Exception) {
@@ -1149,7 +1148,17 @@ Provide the complete revised report.
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
             )
-            writeToTranscript(markdownTranscript, "\n\n---\n\n# Error\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n")
+            transcript?.write(
+                """
+                <details>
+                <summary>Stack Trace</summary>
+                
+                ```
+                ${e.stackTraceToString()}
+                ```
+                </details>
+            """.trimIndent().toByteArray()
+            )
             task.update()
 
             val errorOutput = buildString {
@@ -1165,8 +1174,11 @@ Provide the complete revised report.
                     appendLine(resultBuilder.toString())
                 }
             }
-            markdownTranscript?.close()
             resultFn(errorOutput)
+        }
+            } finally {
+                transcript?.close()
+            }
         }
     }
 
@@ -1256,13 +1268,13 @@ Provide the complete revised report.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ReportGenerationTask::class.java)
         val ReportGeneration = TaskType(
-          name = "ReportGeneration",
-          category = "Writing",
-          taskClass = ReportGenerationTask::class.java,
-          executionConfigClass = ReportGenerationTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Generate comprehensive business reports with data analysis and recommendations",
-          tooltipHtml = """
+            name = "ReportGeneration",
+            category = "Writing",
+            taskClass = ReportGenerationTask::class.java,
+            executionConfigClass = ReportGenerationTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Generate comprehensive business reports with data analysis and recommendations",
+            tooltipHtml = """
                         Generates complete, professional business reports with structured analysis.
                         <ul>
                           <li>Analyzes metrics and data points with trend analysis</li>

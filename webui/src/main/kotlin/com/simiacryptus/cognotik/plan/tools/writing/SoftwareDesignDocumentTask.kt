@@ -1,15 +1,11 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
@@ -21,139 +17,142 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 
 class SoftwareDesignDocumentTask(
-    orchestrationConfig: OrchestrationConfig,
-    planTask: SoftwareDesignDocumentTaskExecutionConfigData?
+  orchestrationConfig: OrchestrationConfig,
+  planTask: SoftwareDesignDocumentTaskExecutionConfigData?
 ) : AbstractTask<SoftwareDesignDocumentTask.SoftwareDesignDocumentTaskExecutionConfigData, TaskTypeConfig>(
-    orchestrationConfig,
-    planTask
+  orchestrationConfig,
+  planTask
 ) {
 
-    val maxDescriptionLength = 2000
+  val maxDescriptionLength = 2000
 
-    class SoftwareDesignDocumentTaskExecutionConfigData(
-        @Description("The name/title of the software project")
-        val project_name: String? = null,
-        @Description("High-level description of the software system to design")
-        val system_description: String? = null,
-        @Description("Target audience for the software (e.g., 'enterprise users', 'mobile consumers')")
-        val target_audience: String? = null,
-        @Description("Key stakeholders and their roles")
-        val stakeholders: List<String>? = null,
-        @Description("Whether to generate use case diagrams and documentation")
-        val generate_use_cases: Boolean = true,
-        @Description("Whether to generate functional and non-functional requirements")
-        val generate_requirements: Boolean = true,
-        @Description("Whether to generate architectural diagrams (C4, component, deployment)")
-        val generate_architecture: Boolean = true,
-        @Description("Whether to generate data model and ERD diagrams")
-        val generate_data_model: Boolean = true,
-        @Description("Whether to generate sequence and activity diagrams for key flows")
-        val generate_flow_diagrams: Boolean = true,
-        @Description("Whether to generate test plan and test case documentation")
-        val generate_test_plan: Boolean = true,
-        @Description("Whether to generate phase planning with milestones")
-        val generate_phase_plan: Boolean = true,
-        @Description("Whether to generate the project data JSON file with tasks, epics, sprints, etc.")
-        val generate_project_data: Boolean = true,
-        @Description("Number of sprints to plan (default: 6)")
-        val sprint_count: Int = 6,
-        @Description("Sprint duration in weeks (default: 2)")
-        val sprint_duration_weeks: Int = 2,
-        @Description("Technology stack constraints or preferences")
-        val technology_stack: List<String>? = null,
-        @Description("Known constraints or limitations")
-        val constraints: List<String>? = null,
-        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for context")
-        val input_files: List<String>? = null,
-        task_description: String? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = TaskState.Pending,
-    ) : TaskExecutionConfig(
-        task_type = SoftwareDesignDocument.name,
-        task_description = task_description
-            ?: "Generate software design document for: ${project_name ?: system_description?.take(50)}",
-        task_dependencies = task_dependencies?.toMutableList(),
-        state = state
-    )
+  class SoftwareDesignDocumentTaskExecutionConfigData(
+    @Description("The name/title of the software project")
+    var project_name: String? = null,
+    @Description("High-level description of the software system to design")
+    var system_description: String? = null,
+    @Description("Target audience for the software (e.g., 'enterprise users', 'mobile consumers')")
+    var target_audience: String? = null,
+    @Description("Key stakeholders and their roles")
+    var stakeholders: List<String>? = null,
+    @Description("Whether to generate use case diagrams and documentation")
+    var generate_use_cases: Boolean = true,
+    @Description("Whether to generate functional and non-functional requirements")
+    var generate_requirements: Boolean = true,
+    @Description("Whether to generate architectural diagrams (C4, component, deployment)")
+    var generate_architecture: Boolean = true,
+    @Description("Whether to generate data model and ERD diagrams")
+    var generate_data_model: Boolean = true,
+    @Description("Whether to generate sequence and activity diagrams for key flows")
+    var generate_flow_diagrams: Boolean = true,
+    @Description("Whether to generate test plan and test case documentation")
+    var generate_test_plan: Boolean = true,
+    @Description("Whether to generate phase planning with milestones")
+    var generate_phase_plan: Boolean = true,
+    @Description("Whether to generate the project data JSON file with tasks, epics, sprints, etc.")
+    var generate_project_data: Boolean = true,
+    @Description("Number of sprints to plan (default: 6)")
+    var sprint_count: Int = 6,
+    @Description("Sprint duration in weeks (default: 2)")
+    var sprint_duration_weeks: Int = 2,
+    @Description("Technology stack constraints or preferences")
+    var technology_stack: List<String>? = null,
+    @Description("Known constraints or limitations")
+    var constraints: List<String>? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for context")
+    var input_files: List<String>? = null,
+    @Description("Description of the task")
+    task_description: String? = null,
+    @Description("List of task IDs this task depends on")
+    task_dependencies: List<String>? = null,
+    @Description("The current state of the task")
+    state: TaskState? = TaskState.Pending,
+  ) : TaskExecutionConfig(
+    task_type = SoftwareDesignDocument.name,
+    task_description = task_description
+      ?: "Generate software design document for: ${project_name ?: system_description?.take(50)}",
+    task_dependencies = task_dependencies?.toMutableList(),
+    state = state
+  )
 
-    // Data classes for project planning JSON output
-    data class ProjectData(
-        val project_name: String = "",
-        val description: String = "",
-        val created_date: String = "",
-        val epics: List<Epic> = emptyList(),
-        val releases: List<Release> = emptyList(),
-        val sprints: List<Sprint> = emptyList(),
-        val tasks: List<Task> = emptyList(),
-        val milestones: List<Milestone> = emptyList(),
-        val dependencies: List<Dependency> = emptyList()
-    )
+  // Data classes for project planning JSON output
+  data class ProjectData(
+    val project_name: String = "",
+    val description: String = "",
+    val created_date: String = "",
+    val epics: List<Epic> = emptyList(),
+    val releases: List<Release> = emptyList(),
+    val sprints: List<Sprint> = emptyList(),
+    val tasks: List<Task> = emptyList(),
+    val milestones: List<Milestone> = emptyList(),
+    val dependencies: List<Dependency> = emptyList()
+  )
 
-    data class Epic(
-        val id: String = "",
-        val name: String = "",
-        val description: String = "",
-        val priority: String = "Medium",
-        val status: String = "Planned",
-        val story_points: Int? = null
-    )
+  data class Epic(
+    val id: String = "",
+    val name: String = "",
+    val description: String = "",
+    val priority: String = "Medium",
+    val status: String = "Planned",
+    val story_points: Int? = null
+  )
 
-    data class Release(
-        val id: String = "",
-        val name: String = "",
-        val version: String = "",
-        val target_date: String = "",
-        val description: String = "",
-        val epic_ids: List<String> = emptyList(),
-        val status: String = "Planned"
-    )
+  data class Release(
+    val id: String = "",
+    val name: String = "",
+    val version: String = "",
+    val target_date: String = "",
+    val description: String = "",
+    val epic_ids: List<String> = emptyList(),
+    val status: String = "Planned"
+  )
 
-    data class Sprint(
-        val id: String = "",
-        val name: String = "",
-        val number: Int = 0,
-        val start_date: String = "",
-        val end_date: String = "",
-        val goals: List<String> = emptyList(),
-        val capacity_points: Int = 0,
-        val task_ids: List<String> = emptyList(),
-        val status: String = "Planned"
-    )
+  data class Sprint(
+    val id: String = "",
+    val name: String = "",
+    val number: Int = 0,
+    val start_date: String = "",
+    val end_date: String = "",
+    val goals: List<String> = emptyList(),
+    val capacity_points: Int = 0,
+    val task_ids: List<String> = emptyList(),
+    val status: String = "Planned"
+  )
 
-    data class Task(
-        val id: String = "",
-        val title: String = "",
-        val description: String = "",
-        val type: String = "Feature", // "Feature", "Bug", "Chore", "Spike"
-        val epic_id: String? = null,
-        var sprint_id: String? = null,
-        val priority: String = "Medium", // "Low", "Medium", "High", "Critical"
-        val story_points: Int? = null,
-        val status: String = "Backlog",
-        val acceptance_criteria: List<String>? = null,
-        val labels: List<String>? = null
-    )
+  data class Task(
+    val id: String = "",
+    val title: String = "",
+    val description: String = "",
+    val type: String = "Feature", // "Feature", "Bug", "Chore", "Spike"
+    val epic_id: String? = null,
+    var sprint_id: String? = null,
+    val priority: String = "Medium", // "Low", "Medium", "High", "Critical"
+    val story_points: Int? = null,
+    val status: String = "Backlog",
+    val acceptance_criteria: List<String>? = null,
+    val labels: List<String>? = null
+  )
 
-    data class Milestone(
-        val id: String = "",
-        val name: String = "",
-        val target_date: String = "",
-        val description: String = "",
-        val deliverables: List<String> = emptyList(),
-        val status: String = "Planned"
-    )
+  data class Milestone(
+    val id: String = "",
+    val name: String = "",
+    val target_date: String = "",
+    val description: String = "",
+    val deliverables: List<String> = emptyList(),
+    val status: String = "Planned"
+  )
 
-    data class Dependency(
-        val id: String = "",
-        val source_id: String = "",
-        val source_type: String = "", // "task", "epic", "milestone"
-        val target_id: String = "",
-        val target_type: String = "", // "task", "epic", "milestone"
-        val dependency_type: String = "" // "blocks", "depends_on", "relates_to"
-    )
+  data class Dependency(
+    val id: String = "",
+    val source_id: String = "",
+    val source_type: String = "", // "task", "epic", "milestone"
+    val target_id: String = "",
+    val target_type: String = "", // "task", "epic", "milestone"
+    val dependency_type: String = "" // "blocks", "depends_on", "relates_to"
+  )
 
-    override fun promptSegment(): String {
-        return """
+  override fun promptSegment(): String {
+    return """
 SoftwareDesignDocument - Generate comprehensive software design documentation
   ** Specify the project name and system description
   ** Generate use case diagrams and actor documentation
@@ -172,43 +171,44 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
      - Stakeholder communication
      - Development team onboarding
         """.trimIndent()
+  }
+
+  override fun run(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    resultFn: (String) -> Unit,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+
+    val projectName = executionConfig?.project_name ?: "Unnamed Project"
+    log.info("Task 'SoftwareDesignDocument' started for project: $projectName")
+    val startTime = System.currentTimeMillis()
+
+    val systemDescription = executionConfig?.system_description
+    if (systemDescription.isNullOrBlank()) {
+      val errorMsg = "CONFIGURATION ERROR: No system description specified"
+      log.error(errorMsg)
+      task.safeComplete(errorMsg, log)
+      resultFn(errorMsg)
+      return
     }
 
-    override fun run(
-        agent: TaskOrchestrator,
-        messages: List<String>,
-        task: SessionTask,
-        resultFn: (String) -> Unit,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        val startTime = System.currentTimeMillis()
-        log.info("Starting SoftwareDesignDocumentTask for project: '${executionConfig?.project_name}'")
-        var transcriptStream: FileOutputStream? = null
+    val tabs = TabbedDisplay(task)
+    val transcriptStream = task.transcript()
+    val overviewTask = tabs.newTask("Overview")
 
-        val projectName = executionConfig?.project_name ?: "Unnamed Project"
-        val systemDescription = executionConfig?.system_description
-        if (systemDescription.isNullOrBlank()) {
-            val errorMsg = "CONFIGURATION ERROR: No system description specified"
-            log.error(errorMsg)
-            task.safeComplete(errorMsg, log)
-            resultFn(errorMsg)
-            return
-        }
-
+    task.ui.pool.submit {
+      try {
         val api = defaultSmart.getChildClient(task)
-
-        val tabs = TabbedDisplay(task)
-        transcriptStream = task.transcript()
-
-        val overviewTask = tabs.newTask("Overview")
         overviewTask.header("Software Design Document: $projectName")
         val checklist = mutableMapOf<String, String>()
         fun updateChecklist() {
-            val content = buildString {
-                appendLine("### Generation Progress")
-                checklist.forEach { (name, status) -> appendLine("- $status $name") }
-            }
-            overviewTask.add(content.renderMarkdown)
+          val content = buildString {
+            appendLine("### Generation Progress")
+            checklist.forEach { (name, status) -> appendLine("- $status $name") }
+          }
+          overviewTask.add(content.renderMarkdown)
         }
 
         if (executionConfig.generate_use_cases) checklist["Use Cases & Actors"] = "⏳"
@@ -220,68 +220,78 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
         if (executionConfig.generate_phase_plan) checklist["Phase Planning"] = "⏳"
         if (executionConfig.generate_project_data) checklist["Project Data JSON"] = "⏳"
 
-        try {
 
-            val targetAudience = executionConfig.target_audience ?: "general users"
+        val targetAudience = executionConfig.target_audience ?: "general users"
 
-            overviewTask.add(
-                buildString {
-                    appendLine("**System:** ${systemDescription.take(200)}${if (systemDescription.length > 200) "..." else ""}")
-                    appendLine()
-                    appendLine("**Target Audience:** $targetAudience")
-                }.renderMarkdown
-            )
-            val statusBuffer = overviewTask.add("**Status:** 🔄 Gathering context...".renderMarkdown)
-            updateChecklist()
-            
-            transcriptStream?.write(
-                "# Software Design Document: $projectName\n\n**System:** $systemDescription\n\n**Generated:** ${
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                }\n\n---\n\n".toByteArray()
-            )
-            task.update()
+        overviewTask.add(
+          buildString {
+            appendLine("**System:** ${systemDescription.take(200)}${if (systemDescription.length > 200) "..." else ""}")
+            appendLine()
+            appendLine("**Target Audience:** $targetAudience")
+          }.renderMarkdown
+        )
+        val statusBuffer = overviewTask.add("**Status:** 🔄 Gathering context...".renderMarkdown)
+        updateChecklist()
 
-            // Gather context
-            log.debug("Gathering context from prior tasks and input files")
-            val priorContext = getPriorCode(agent.executionState)
-            val inputFileContext = getInputFileCode()
+        transcriptStream?.write(
+          "# Software Design Document: $projectName\n\n**System:** $systemDescription\n\n**Generated:** ${
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+          }\n\n---\n\n".toByteArray()
+        )
+        task.update()
 
-            // Initialize design agent
-            log.info("Initializing software design agent")
-            val designAgent = ChatAgent(
-                prompt = buildDesignPrompt(
-                  projectName = projectName,
-                  systemDescription = systemDescription,
-                  targetAudience = targetAudience,
+        // Gather context
+        log.debug("Gathering context from prior tasks and input files")
+        val priorContext = getPriorCode(agent.executionState)
+        val inputFileContext = getInputFileCode()
+        transcriptStream?.write(
+          """
+                    <details>
+                    <summary>Input Context Data</summary>
+                    ### Prior Task Context
+                    $priorContext
+                    ### Input File Context
+                    $inputFileContext
+                    </details>
+                """.trimIndent().toByteArray()
+        )
+
+        // Initialize design agent
+        log.info("Initializing software design agent")
+        val designAgent = ChatAgent(
+          prompt = buildDesignPrompt(
+            projectName = projectName,
+            systemDescription = systemDescription,
+            targetAudience = targetAudience,
 //                  stakeholders = stakeholders,
 //                  techStack = techStack,
 //                  constraints = constraints,
-                  priorContext = priorContext,
-                  inputFileContext = inputFileContext
-                ),
-                model = api,
-                temperature = 0.5
-            )
+            priorContext = priorContext,
+            inputFileContext = inputFileContext
+          ),
+          model = api,
+          temperature = 0.5
+        )
 
-            // Collected data for project JSON
-            val collectedEpics = mutableListOf<Epic>()
-            val collectedTasks = mutableListOf<Task>()
-            val collectedMilestones = mutableListOf<Milestone>()
-            val collectedDependencies = mutableListOf<Dependency>()
+        // Collected data for project JSON
+        val collectedEpics = mutableListOf<Epic>()
+        val collectedTasks = mutableListOf<Task>()
+        val collectedMilestones = mutableListOf<Milestone>()
+        val collectedDependencies = mutableListOf<Dependency>()
 
-            // Section 1: Use Cases
-            if (executionConfig.generate_use_cases) {
-                statusBuffer?.setLength(0)
-                statusBuffer?.append("**Status:** 🔄 Generating Use Cases...".renderMarkdown)
-                log.debug("Generating use cases and actor documentation")
-                val useCaseTask = tabs.newTask("Use Cases")
+        // Section 1: Use Cases
+        if (executionConfig.generate_use_cases) {
+          statusBuffer?.setLength(0)
+          statusBuffer?.append("**Status:** 🔄 Generating Use Cases...".renderMarkdown)
+          log.debug("Generating use cases and actor documentation")
+          val useCaseTask = tabs.newTask("Use Cases")
 
-                val useCaseBuffer = useCaseTask.add("## Use Cases\n\n🔄 Analyzing actors and use cases...".renderMarkdown)
-                task.update()
+          val useCaseBuffer = useCaseTask.add("## Use Cases\n\n🔄 Analyzing actors and use cases...".renderMarkdown)
+          task.update()
 
-                val useCaseAnalysis = designAgent.answer(
-                    listOf(
-                        """
+          val useCaseAnalysis = designAgent.answer(
+            listOf(
+              """
 Generate comprehensive use case documentation:
 
 1. **Actor Identification**
@@ -322,41 +332,42 @@ Generate comprehensive use case documentation:
 
 Provide detailed, actionable use case documentation.
                         """.trimIndent()
-                    )
-                )
+            )
+          )
 
-                useCaseBuffer?.setLength(0)
-                useCaseBuffer?.append(
-                    buildString {
-                        appendLine("## Use Cases & Actors")
-                        appendLine()
-                        appendLine("✅ Analysis complete")
-                        appendLine()
-                        appendLine(useCaseAnalysis)
-                    }.renderMarkdown
-                )
-                useCaseTask.update()
-                transcriptStream?.write("## Use Cases & Actors\n\n$useCaseAnalysis\n\n---\n\n".toByteArray())
+          useCaseBuffer?.setLength(0)
+          useCaseBuffer?.append(
+            buildString {
+              appendLine("## Use Cases & Actors")
+              appendLine()
+              appendLine("✅ Analysis complete")
+              appendLine()
+              appendLine(useCaseAnalysis)
+            }.renderMarkdown
+          )
+          useCaseTask.update()
+          transcriptStream?.write("## Use Cases & Actors\n\n$useCaseAnalysis\n\n---\n\n".toByteArray())
 
-                // Extract epics from use cases
-                extractEpicsFromUseCases(useCaseAnalysis, collectedEpics)
-                checklist["Use Cases & Actors"] = "✅"
-                updateChecklist()
-            }
+          // Extract epics from use cases
+          extractEpicsFromUseCases(useCaseAnalysis, collectedEpics)
+          checklist["Use Cases & Actors"] = "✅"
+          updateChecklist()
+        }
 
-            // Section 2: Requirements
-            if (executionConfig.generate_requirements) {
-                statusBuffer?.setLength(0)
-                statusBuffer?.append("**Status:** 🔄 Defining Requirements...".renderMarkdown)
-                log.debug("Generating requirements specification")
-                val requirementsTask = tabs.newTask("Requirements")
+        // Section 2: Requirements
+        if (executionConfig.generate_requirements) {
+          statusBuffer?.setLength(0)
+          statusBuffer?.append("**Status:** 🔄 Defining Requirements...".renderMarkdown)
+          log.debug("Generating requirements specification")
+          val requirementsTask = tabs.newTask("Requirements")
 
-                val requirementsBuffer = requirementsTask.add("## Requirements\n\n🔄 Defining functional and non-functional requirements...".renderMarkdown)
-                task.update()
+          val requirementsBuffer =
+            requirementsTask.add("## Requirements\n\n🔄 Defining functional and non-functional requirements...".renderMarkdown)
+          task.update()
 
-                val requirementsAnalysis = designAgent.answer(
-                    listOf(
-                        """
+          val requirementsAnalysis = designAgent.answer(
+            listOf(
+              """
 Generate comprehensive requirements documentation:
 
 1. **Functional Requirements**
@@ -392,41 +403,42 @@ Generate comprehensive requirements documentation:
 
 Provide detailed, prioritized requirements.
                         """.trimIndent()
-                    )
-                )
+            )
+          )
 
-                requirementsBuffer?.setLength(0)
-                requirementsBuffer?.append(
-                    buildString {
-                        appendLine("## Requirements Specification")
-                        appendLine()
-                        appendLine("✅ Requirements defined")
-                        appendLine()
-                        appendLine(requirementsAnalysis)
-                    }.renderMarkdown
-                )
-                requirementsTask.update()
-                transcriptStream?.write("## Requirements Specification\n\n$requirementsAnalysis\n\n---\n\n".toByteArray())
+          requirementsBuffer?.setLength(0)
+          requirementsBuffer?.append(
+            buildString {
+              appendLine("## Requirements Specification")
+              appendLine()
+              appendLine("✅ Requirements defined")
+              appendLine()
+              appendLine(requirementsAnalysis)
+            }.renderMarkdown
+          )
+          requirementsTask.update()
+          transcriptStream?.write("## Requirements Specification\n\n$requirementsAnalysis\n\n---\n\n".toByteArray())
 
-                // Extract tasks from requirements
+          // Extract tasks from requirements
 //               extractTasksFrom requirements(requirementsAnalysis, collectedTasks, collectedEpics)
-                checklist["Requirements Specification"] = "✅"
-                updateChecklist()
-            }
+          checklist["Requirements Specification"] = "✅"
+          updateChecklist()
+        }
 
-            // Section 3: Architecture
-            if (executionConfig.generate_architecture) {
-                statusBuffer?.setLength(0)
-                statusBuffer?.append("**Status:** 🔄 Designing Architecture...".renderMarkdown)
-                log.debug("Generating architectural diagrams")
-                val architectureTask = tabs.newTask("Architecture")
+        // Section 3: Architecture
+        if (executionConfig.generate_architecture) {
+          statusBuffer?.setLength(0)
+          statusBuffer?.append("**Status:** 🔄 Designing Architecture...".renderMarkdown)
+          log.debug("Generating architectural diagrams")
+          val architectureTask = tabs.newTask("Architecture")
 
-                val architectureBuffer = architectureTask.add("## Architecture\n\n🔄 Designing system architecture...".renderMarkdown)
-                task.update()
+          val architectureBuffer =
+            architectureTask.add("## Architecture\n\n🔄 Designing system architecture...".renderMarkdown)
+          task.update()
 
-                val architectureAnalysis = designAgent.answer(
-                    listOf(
-                        """
+          val architectureAnalysis = designAgent.answer(
+            listOf(
+              """
 Generate comprehensive architecture documentation:
 
 1. **System Context Diagram (C4 Level 1)**
@@ -499,49 +511,49 @@ Generate comprehensive architecture documentation:
 
 Provide detailed architecture documentation with all diagrams.
                         """.trimIndent()
-                    )
-                )
+            )
+          )
 
-                architectureBuffer?.setLength(0)
-                architectureBuffer?.append(
-                    buildString {
-                        appendLine("## System Architecture")
-                        appendLine()
-                        appendLine("✅ Architecture designed")
-                        appendLine()
-                        appendLine(architectureAnalysis)
-                    }.renderMarkdown
-                )
-                architectureTask.update()
-                transcriptStream?.write("## System Architecture\n\n$architectureAnalysis\n\n---\n\n".toByteArray())
+          architectureBuffer?.setLength(0)
+          architectureBuffer?.append(
+            buildString {
+              appendLine("## System Architecture")
+              appendLine()
+              appendLine("✅ Architecture designed")
+              appendLine()
+              appendLine(architectureAnalysis)
+            }.renderMarkdown
+          )
+          architectureTask.update()
+          transcriptStream?.write("## System Architecture\n\n$architectureAnalysis\n\n---\n\n".toByteArray())
 
-                // Add architecture epic
-                collectedEpics.add(
-                    Epic(
-                        id = "EPIC-ARCH",
-                        name = "Architecture & Infrastructure",
-                        description = "Set up system architecture and infrastructure",
-                        priority = "High",
-                        story_points = 21
-                    )
-                )
-                checklist["Architecture Diagrams"] = "✅"
-                updateChecklist()
-            }
+          // Add architecture epic
+          collectedEpics.add(
+            Epic(
+              id = "EPIC-ARCH",
+              name = "Architecture & Infrastructure",
+              description = "Set up system architecture and infrastructure",
+              priority = "High",
+              story_points = 21
+            )
+          )
+          checklist["Architecture Diagrams"] = "✅"
+          updateChecklist()
+        }
 
-            // Section 4: Data Model
-            if (executionConfig.generate_data_model) {
-                statusBuffer?.setLength(0)
-                statusBuffer?.append("**Status:** 🔄 Designing Data Model...".renderMarkdown)
-                log.debug("Generating data model and ERD")
-                val dataModelTask = tabs.newTask("Data Model")
+        // Section 4: Data Model
+        if (executionConfig.generate_data_model) {
+          statusBuffer?.setLength(0)
+          statusBuffer?.append("**Status:** 🔄 Designing Data Model...".renderMarkdown)
+          log.debug("Generating data model and ERD")
+          val dataModelTask = tabs.newTask("Data Model")
 
-                val dataModelBuffer = dataModelTask.add("## Data Model\n\n🔄 Designing data structures...".renderMarkdown)
-                task.update()
+          val dataModelBuffer = dataModelTask.add("## Data Model\n\n🔄 Designing data structures...".renderMarkdown)
+          task.update()
 
-                val dataModelAnalysis = designAgent.answer(
-                    listOf(
-                        """
+          val dataModelAnalysis = designAgent.answer(
+            listOf(
+              """
 Generate comprehensive data model documentation:
 
 1. **Entity-Relationship Diagram**
@@ -602,38 +614,38 @@ Generate comprehensive data model documentation:
 
 Provide complete data model documentation.
                         """.trimIndent()
-                    )
-                )
+            )
+          )
 
-                dataModelBuffer?.setLength(0)
-                dataModelBuffer?.append(
-                    buildString {
-                        appendLine("## Data Model & ERD")
-                        appendLine()
-                        appendLine("✅ Data model designed")
-                        appendLine()
-                        appendLine(dataModelAnalysis)
-                    }.renderMarkdown
-                )
-                dataModelTask.update()
-                transcriptStream?.write("## Data Model & ERD\n\n$dataModelAnalysis\n\n---\n\n".toByteArray())
-                checklist["Data Model & ERD"] = "✅"
-                updateChecklist()
-            }
+          dataModelBuffer?.setLength(0)
+          dataModelBuffer?.append(
+            buildString {
+              appendLine("## Data Model & ERD")
+              appendLine()
+              appendLine("✅ Data model designed")
+              appendLine()
+              appendLine(dataModelAnalysis)
+            }.renderMarkdown
+          )
+          dataModelTask.update()
+          transcriptStream?.write("## Data Model & ERD\n\n$dataModelAnalysis\n\n---\n\n".toByteArray())
+          checklist["Data Model & ERD"] = "✅"
+          updateChecklist()
+        }
 
-            // Section 5: Flow Diagrams
-            if (executionConfig.generate_flow_diagrams) {
-                statusBuffer?.setLength(0)
-                statusBuffer?.append("**Status:** 🔄 Mapping Flow Diagrams...".renderMarkdown)
-                log.debug("Generating sequence and activity diagrams")
-                val flowTask = tabs.newTask("Flow Diagrams")
+        // Section 5: Flow Diagrams
+        if (executionConfig.generate_flow_diagrams) {
+          statusBuffer?.setLength(0)
+          statusBuffer?.append("**Status:** 🔄 Mapping Flow Diagrams...".renderMarkdown)
+          log.debug("Generating sequence and activity diagrams")
+          val flowTask = tabs.newTask("Flow Diagrams")
 
-                val flowBuffer = flowTask.add("## Flow Diagrams\n\n🔄 Mapping system flows...".renderMarkdown)
-                task.update()
+          val flowBuffer = flowTask.add("## Flow Diagrams\n\n🔄 Mapping system flows...".renderMarkdown)
+          task.update()
 
-                val flowAnalysis = designAgent.answer(
-                    listOf(
-                        """
+          val flowAnalysis = designAgent.answer(
+            listOf(
+              """
 Generate flow diagrams for key system interactions:
 
 1. **Sequence Diagrams**
@@ -691,38 +703,38 @@ Generate flow diagrams for key system interactions:
 
 Provide detailed flow documentation for all critical paths.
                         """.trimIndent()
-                    )
-                )
+            )
+          )
 
-                flowBuffer?.setLength(0)
-                flowBuffer?.append(
-                    buildString {
-                        appendLine("## Flow Diagrams")
-                        appendLine()
-                        appendLine("✅ Flows documented")
-                        appendLine()
-                        appendLine(flowAnalysis)
-                    }.renderMarkdown
-                )
-                flowTask.update()
-                transcriptStream?.write("## Flow Diagrams\n\n$flowAnalysis\n\n---\n\n".toByteArray())
-                checklist["Flow Diagrams"] = "✅"
-                updateChecklist()
-            }
+          flowBuffer?.setLength(0)
+          flowBuffer?.append(
+            buildString {
+              appendLine("## Flow Diagrams")
+              appendLine()
+              appendLine("✅ Flows documented")
+              appendLine()
+              appendLine(flowAnalysis)
+            }.renderMarkdown
+          )
+          flowTask.update()
+          transcriptStream?.write("## Flow Diagrams\n\n$flowAnalysis\n\n---\n\n".toByteArray())
+          checklist["Flow Diagrams"] = "✅"
+          updateChecklist()
+        }
 
-            // Section 6: Test Plan
-            if (executionConfig.generate_test_plan) {
-                statusBuffer?.setLength(0)
-                statusBuffer?.append("**Status:** 🔄 Creating Test Plan...".renderMarkdown)
-                log.debug("Generating test plan")
-                val testPlanTask = tabs.newTask("Test Plan")
+        // Section 6: Test Plan
+        if (executionConfig.generate_test_plan) {
+          statusBuffer?.setLength(0)
+          statusBuffer?.append("**Status:** 🔄 Creating Test Plan...".renderMarkdown)
+          log.debug("Generating test plan")
+          val testPlanTask = tabs.newTask("Test Plan")
 
-                val testPlanBuffer = testPlanTask.add("## Test Plan\n\n🔄 Creating test strategy...".renderMarkdown)
-                task.update()
+          val testPlanBuffer = testPlanTask.add("## Test Plan\n\n🔄 Creating test strategy...".renderMarkdown)
+          task.update()
 
-                val testPlanAnalysis = designAgent.answer(
-                    listOf(
-                        """
+          val testPlanAnalysis = designAgent.answer(
+            listOf(
+              """
 Generate comprehensive test plan documentation:
 
 1. **Test Strategy Overview**
@@ -780,52 +792,52 @@ Generate comprehensive test plan documentation:
 
 Provide actionable test documentation.
                         """.trimIndent()
-                    )
-                )
+            )
+          )
 
-                testPlanBuffer?.setLength(0)
-                testPlanBuffer?.append(
-                    buildString {
-                        appendLine("## Test Plan")
-                        appendLine()
-                        appendLine("✅ Test plan created")
-                        appendLine()
-                        appendLine(testPlanAnalysis)
-                    }.renderMarkdown
-                )
-                testPlanTask.update()
-                transcriptStream?.write("## Test Plan\n\n$testPlanAnalysis\n\n---\n\n".toByteArray())
+          testPlanBuffer?.setLength(0)
+          testPlanBuffer?.append(
+            buildString {
+              appendLine("## Test Plan")
+              appendLine()
+              appendLine("✅ Test plan created")
+              appendLine()
+              appendLine(testPlanAnalysis)
+            }.renderMarkdown
+          )
+          testPlanTask.update()
+          transcriptStream?.write("## Test Plan\n\n$testPlanAnalysis\n\n---\n\n".toByteArray())
 
-                // Add testing epic
-                collectedEpics.add(
-                    Epic(
-                        id = "EPIC-TEST",
-                        name = "Quality Assurance",
-                        description = "Testing and quality assurance activities",
-                        priority = "High",
-                        story_points = 13
-                    )
-                )
-                checklist["Test Plan"] = "✅"
-                updateChecklist()
-            }
+          // Add testing epic
+          collectedEpics.add(
+            Epic(
+              id = "EPIC-TEST",
+              name = "Quality Assurance",
+              description = "Testing and quality assurance activities",
+              priority = "High",
+              story_points = 13
+            )
+          )
+          checklist["Test Plan"] = "✅"
+          updateChecklist()
+        }
 
-            // Section 7: Phase Planning
-            if (executionConfig.generate_phase_plan) {
-                statusBuffer?.setLength(0)
-                statusBuffer?.append("**Status:** 🔄 Planning Phases...".renderMarkdown)
-                log.debug("Generating phase plan")
-                val phasePlanTask = tabs.newTask("Phase Plan")
+        // Section 7: Phase Planning
+        if (executionConfig.generate_phase_plan) {
+          statusBuffer?.setLength(0)
+          statusBuffer?.append("**Status:** 🔄 Planning Phases...".renderMarkdown)
+          log.debug("Generating phase plan")
+          val phasePlanTask = tabs.newTask("Phase Plan")
 
-                val phasePlanBuffer =
-                    phasePlanTask.add("## Phase Plan\n\n🔄 Planning development phases...".renderMarkdown)
-                task.update()
-                val sprintCount = executionConfig.sprint_count
-                val sprintDuration = executionConfig.sprint_duration_weeks
+          val phasePlanBuffer =
+            phasePlanTask.add("## Phase Plan\n\n🔄 Planning development phases...".renderMarkdown)
+          task.update()
+          val sprintCount = executionConfig.sprint_count
+          val sprintDuration = executionConfig.sprint_duration_weeks
 
-                val phasePlanAnalysis = designAgent.answer(
-                    listOf(
-                        """
+          val phasePlanAnalysis = designAgent.answer(
+            listOf(
+              """
 Generate development phase planning:
 
 1. **Project Timeline Overview**
@@ -883,45 +895,45 @@ Generate development phase planning:
 
 Provide detailed phase planning with realistic timelines.
                         """.trimIndent()
-                    )
-                )
+            )
+          )
 
-                phasePlanBuffer?.setLength(0)
-                phasePlanBuffer?.append(
-                    buildString {
-                        appendLine("## Phase Plan")
-                        appendLine()
-                        appendLine("✅ Phases planned")
-                        appendLine()
-                        appendLine(phasePlanAnalysis)
-                    }.renderMarkdown
-                )
-                phasePlanTask.update()
-                transcriptStream?.write("## Phase Plan\n\n$phasePlanAnalysis\n\n---\n\n".toByteArray())
+          phasePlanBuffer?.setLength(0)
+          phasePlanBuffer?.append(
+            buildString {
+              appendLine("## Phase Plan")
+              appendLine()
+              appendLine("✅ Phases planned")
+              appendLine()
+              appendLine(phasePlanAnalysis)
+            }.renderMarkdown
+          )
+          phasePlanTask.update()
+          transcriptStream?.write("## Phase Plan\n\n$phasePlanAnalysis\n\n---\n\n".toByteArray())
 
-                // Extract milestones from phase plan
-                extractMilestonesFromPhasePlan(phasePlanAnalysis, collectedMilestones)
-                checklist["Phase Planning"] = "✅"
-                updateChecklist()
-            }
+          // Extract milestones from phase plan
+          extractMilestonesFromPhasePlan(phasePlanAnalysis, collectedMilestones)
+          checklist["Phase Planning"] = "✅"
+          updateChecklist()
+        }
 
-            // Section 8: Project Data JSON
-            if (executionConfig.generate_project_data) {
-                statusBuffer?.setLength(0)
-                statusBuffer?.append("**Status:** 🔄 Generating Project Data...".renderMarkdown)
-                log.debug("Generating project data JSON")
-                val projectDataTask = tabs.newTask("Project Data")
+        // Section 8: Project Data JSON
+        if (executionConfig.generate_project_data) {
+          statusBuffer?.setLength(0)
+          statusBuffer?.append("**Status:** 🔄 Generating Project Data...".renderMarkdown)
+          log.debug("Generating project data JSON")
+          val projectDataTask = tabs.newTask("Project Data")
 
-                val projectDataBuffer =
-                    projectDataTask.add("## Project Data\n\n🔄 Generating structured project data...".renderMarkdown)
-                task.update()
-                val sprintCount = executionConfig.sprint_count
-                val sprintDuration = executionConfig.sprint_duration_weeks
+          val projectDataBuffer =
+            projectDataTask.add("## Project Data\n\n🔄 Generating structured project data...".renderMarkdown)
+          task.update()
+          val sprintCount = executionConfig.sprint_count
+          val sprintDuration = executionConfig.sprint_duration_weeks
 
-                // Generate detailed tasks and sprints
-                val projectDataAnalysis = designAgent.answer(
-                    listOf(
-                        """
+          // Generate detailed tasks and sprints
+          val projectDataAnalysis = designAgent.answer(
+            listOf(
+              """
 Generate a detailed breakdown of all project work items. For each item provide:
 
 1. **Epics** (high-level features/initiatives)
@@ -962,160 +974,183 @@ Generate a detailed breakdown of all project work items. For each item provide:
 
 Provide comprehensive, realistic project breakdown.
                         """.trimIndent()
-                    )
-                )
-
-                // Parse the analysis and build structured data
-                parseProjectDataFromAnalysis(
-                    projectDataAnalysis,
-                    collectedEpics,
-                    collectedTasks,
-                    collectedMilestones,
-                    collectedDependencies,
-                    sprintCount,
-                    sprintDuration
-                )
-
-                // Build sprints
-                val sprints = buildSprints(collectedTasks, sprintCount, sprintDuration)
-
-                // Build releases
-                val releases = buildReleases(collectedEpics, sprints)
-
-                // Create project data object
-                val projectData = ProjectData(
-                    project_name = projectName,
-                    description = systemDescription,
-                    created_date = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
-                    epics = collectedEpics,
-                    releases = releases,
-                    sprints = sprints,
-                    tasks = collectedTasks,
-                    milestones = collectedMilestones,
-                    dependencies = collectedDependencies
-                )
-
-                // Write JSON file
-                val jsonContent = JsonUtil.toJson(projectData)
-                val jsonFileName = "${projectName.replace(" ", "_").lowercase()}_project_data.json"
-
-                val jsonLink = task.saveFile(jsonFileName, jsonContent.toByteArray())
-                projectDataBuffer?.setLength(0)
-                projectDataBuffer?.append(
-                    buildString {
-                        appendLine("## Project Data")
-                        appendLine()
-                        appendLine("✅ Project data generated")
-                        appendLine()
-                        appendLine("### Summary")
-                        appendLine()
-                        appendLine("| Category | Count |")
-                        appendLine("|----------|-------|")
-                        appendLine("| Epics | ${collectedEpics.size} |")
-                        appendLine("| Tasks | ${collectedTasks.size} |")
-                        appendLine("| Sprints | ${sprints.size} |")
-                        appendLine("| Releases | ${releases.size} |")
-                        appendLine("| Milestones | ${collectedMilestones.size} |")
-                        appendLine("| Dependencies | ${collectedDependencies.size} |")
-                        appendLine()
-                        appendLine("### Download")
-                        appendLine()
-                        appendLine("📥 [Download Project Data JSON]($jsonLink)")
-                        appendLine()
-                        appendLine("### Preview")
-                        appendLine()
-                        appendLine("```json")
-                        appendLine(jsonContent.take(2000))
-                        if (jsonContent.length > 2000) appendLine("... (truncated)")
-                        appendLine("```")
-                    }.renderMarkdown
-                )
-                projectDataTask.update()
-                transcriptStream?.write("## Project Data\n\nGenerated JSON file: $jsonFileName\n\n```json\n$jsonContent\n```\n\n---\n\n".toByteArray())
-                checklist["Project Data JSON"] = "✅"
-                updateChecklist()
-            }
-
-            // Final summary
-            val duration = System.currentTimeMillis() - startTime
-            log.info("SoftwareDesignDocumentTask completed: project='$projectName', duration=${duration}ms")
-
-            statusBuffer?.setLength(0)
-            statusBuffer?.append(
-                buildString {
-                    appendLine("---")
-                    appendLine("### ✅ Document Generation Complete")
-                    appendLine("**Total Time:** ${duration / 1000.0}s | **Tasks:** ${collectedTasks.size} | **Epics:** ${collectedEpics.size}")
-                }.renderMarkdown
             )
-            overviewTask.complete()
-            task.update()
+          )
 
-            val relativePath = "${
-                projectName.replace(" ", "_").lowercase()
-            }_design_document_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-            val (transcriptLink, _) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
-            task.safeComplete(
-                "Software design document generated in ${duration / 1000}s. " +
-                        "View document: <a href='$transcriptLink' target='_blank'>markdown</a> " +
-                        "<a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                        "<a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>",
-                log
-            )
+          // Parse the analysis and build structured data
+          parseProjectDataFromAnalysis(
+            projectDataAnalysis,
+            collectedEpics,
+            collectedTasks,
+            collectedMilestones,
+            collectedDependencies,
+            sprintCount,
+            sprintDuration
+          )
 
-            val finalResult = buildString {
-                appendLine("# Software Design Document: $projectName")
-                appendLine()
-                appendLine("**System:** ${systemDescription.truncateForDisplay(500)}")
-                appendLine()
-                appendLine("## Generated Sections")
-                if (executionConfig.generate_use_cases) appendLine("- ✅ Use Cases & Actors")
-                if (executionConfig.generate_requirements) appendLine("- ✅ Requirements Specification")
-                if (executionConfig.generate_architecture) appendLine("- ✅ Architecture Diagrams")
-                if (executionConfig.generate_data_model) appendLine("- ✅ Data Model & ERD")
-                if (executionConfig.generate_flow_diagrams) appendLine("- ✅ Flow Diagrams")
-                if (executionConfig.generate_test_plan) appendLine("- ✅ Test Plan")
-                if (executionConfig.generate_phase_plan) appendLine("- ✅ Phase Planning")
-                if (executionConfig.generate_project_data) appendLine("- ✅ Project Data JSON (${collectedTasks.size} tasks, ${collectedEpics.size} epics)")
-            }
-            resultFn(finalResult)
+          // Build sprints
+          val sprints = buildSprints(collectedTasks, sprintCount, sprintDuration)
 
-        } catch (e: Exception) {
-            val duration = System.currentTimeMillis() - startTime
-            transcriptStream?.write("\n\n## Error Occurred\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n".toByteArray())
-            log.error("SoftwareDesignDocumentTask failed after ${duration}ms for project: $projectName", e)
-            task.error(e)
+          // Build releases
+          val releases = buildReleases(collectedEpics, sprints)
 
-            overviewTask.add(
-                buildString {
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
-            )
-            overviewTask.update()
-            task.update()
+          // Create project data object
+          val projectData = ProjectData(
+            project_name = projectName,
+            description = systemDescription,
+            created_date = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
+            epics = collectedEpics,
+            releases = releases,
+            sprints = sprints,
+            tasks = collectedTasks,
+            milestones = collectedMilestones,
+            dependencies = collectedDependencies
+          )
 
-            resultFn("Error generating software design document: ${e.message}")
-        } finally {
-            transcriptStream?.flush()
-            transcriptStream?.close()
+          // Write JSON file
+          val jsonContent = JsonUtil.toJson(projectData)
+          val jsonFileName = "${projectName.replace(" ", "_").lowercase()}_project_data.json"
+
+          val jsonLink = task.saveFile(jsonFileName, jsonContent.toByteArray())
+          projectDataBuffer?.setLength(0)
+          projectDataBuffer?.append(
+            buildString {
+              appendLine("## Project Data")
+              appendLine()
+              appendLine("✅ Project data generated")
+              appendLine()
+              appendLine("### Summary")
+              appendLine()
+              appendLine("| Category | Count |")
+              appendLine("|----------|-------|")
+              appendLine("| Epics | ${collectedEpics.size} |")
+              appendLine("| Tasks | ${collectedTasks.size} |")
+              appendLine("| Sprints | ${sprints.size} |")
+              appendLine("| Releases | ${releases.size} |")
+              appendLine("| Milestones | ${collectedMilestones.size} |")
+              appendLine("| Dependencies | ${collectedDependencies.size} |")
+              appendLine()
+              appendLine("### Download")
+              appendLine()
+              appendLine("📥 [Download Project Data JSON]($jsonLink)")
+              appendLine()
+              appendLine("### Preview")
+              appendLine()
+              appendLine("```json")
+              appendLine(jsonContent.take(2000))
+              if (jsonContent.length > 2000) appendLine("... (truncated)")
+              appendLine("```")
+            }.renderMarkdown
+          )
+          projectDataTask.update()
+          transcriptStream?.write(
+            """
+                    ## Project Data
+                    Generated JSON file: $jsonFileName
+                    <details>
+                    <summary>Raw JSON Content</summary>
+                    ```json
+                    $jsonContent
+                    ```
+                    </details>
+                """.trimIndent().toByteArray()
+          )
+          checklist["Project Data JSON"] = "✅"
+          updateChecklist()
         }
-    }
 
-    private fun buildDesignPrompt(
-        projectName: String,
-        systemDescription: String,
-        targetAudience: String,
-        stakeholders: List<String> = emptyList(),
-        techStack: List<String> = emptyList(),
-        constraints: List<String> = emptyList(),
-        priorContext: String,
-        inputFileContext: String
-    ): String {
-        return """
+        // Final summary
+        val duration = System.currentTimeMillis() - startTime
+        log.info("SoftwareDesignDocumentTask completed: project='$projectName', duration=${duration}ms")
+
+        statusBuffer?.setLength(0)
+        statusBuffer?.append(
+          buildString {
+            appendLine("---")
+            appendLine("### ✅ Document Generation Complete")
+            appendLine("**Total Time:** ${duration / 1000.0}s | **Tasks:** ${collectedTasks.size} | **Epics:** ${collectedEpics.size}")
+          }.renderMarkdown
+        )
+        overviewTask.complete()
+        task.update()
+
+        val relativePath = "${
+          projectName.replace(" ", "_").lowercase()
+        }_design_document_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val (transcriptLink, _) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
+        task.safeComplete(
+          "Software design document generated in ${duration / 1000}s. " +
+              "View document: <a href='$transcriptLink' target='_blank'>markdown</a> " +
+              "<a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+              "<a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>",
+          log
+        )
+
+        val finalResult = buildString {
+          appendLine("# Software Design Document: $projectName")
+          appendLine()
+          appendLine("**System:** ${systemDescription.truncateForDisplay(500)}")
+          appendLine()
+          appendLine("## Generated Sections")
+          if (executionConfig.generate_use_cases) appendLine("- ✅ Use Cases & Actors")
+          if (executionConfig.generate_requirements) appendLine("- ✅ Requirements Specification")
+          if (executionConfig.generate_architecture) appendLine("- ✅ Architecture Diagrams")
+          if (executionConfig.generate_data_model) appendLine("- ✅ Data Model & ERD")
+          if (executionConfig.generate_flow_diagrams) appendLine("- ✅ Flow Diagrams")
+          if (executionConfig.generate_test_plan) appendLine("- ✅ Test Plan")
+          if (executionConfig.generate_phase_plan) appendLine("- ✅ Phase Planning")
+          if (executionConfig.generate_project_data) appendLine("- ✅ Project Data JSON (${collectedTasks.size} tasks, ${collectedEpics.size} epics)")
+        }
+        resultFn(finalResult)
+
+      } catch (e: Exception) {
+        task.error(e)
+        log.error("SoftwareDesignDocumentTask failed for project: $projectName", e)
+        transcriptStream?.write(
+          """
+                ## Error Occurred
+                **Error:** ${e.message}
+                **Type:** ${e.javaClass.simpleName}
+                <details>
+                <summary>Stack Trace</summary>
+                ```
+                ${e.stackTraceToString()}
+                ```
+                </details>
+            """.trimIndent().toByteArray()
+        )
+
+        overviewTask.add(
+          buildString {
+            appendLine("## ❌ Error Occurred")
+            appendLine()
+            appendLine("**Error:** ${e.message}")
+            appendLine()
+            appendLine("**Type:** ${e.javaClass.simpleName}")
+          }.renderMarkdown
+        )
+        overviewTask.update()
+        task.update()
+
+        resultFn("Error generating software design document: ${e.message}")
+      } finally {
+        transcriptStream?.flush()
+        transcriptStream?.close()
+      }
+    }
+  }
+
+  private fun buildDesignPrompt(
+    projectName: String,
+    systemDescription: String,
+    targetAudience: String,
+    stakeholders: List<String> = emptyList(),
+    techStack: List<String> = emptyList(),
+    constraints: List<String> = emptyList(),
+    priorContext: String,
+    inputFileContext: String
+  ): String {
+    return """
 You are an expert software architect and technical writer. Your role is to create comprehensive software design documentation with detailed Mermaid diagrams.
 
 ## Project: $projectName
@@ -1155,242 +1190,242 @@ ${if (inputFileContext.isNotBlank()) "## Input Files:\n$inputFileContext\n" else
 
 Provide comprehensive, production-ready documentation.
         """.trimIndent()
-    }
+  }
 
-    private fun extractEpicsFromUseCases(analysis: String, epics: MutableList<Epic>) {
-        // Extract use case groups as epics
-        val ucPattern = "UC-\\d+".toRegex()
-        val matches = ucPattern.findAll(analysis)
-        val ucCount = matches.count()
+  private fun extractEpicsFromUseCases(analysis: String, epics: MutableList<Epic>) {
+    // Extract use case groups as epics
+    val ucPattern = "UC-\\d+".toRegex()
+    val matches = ucPattern.findAll(analysis)
+    val ucCount = matches.count()
 
-        if (ucCount > 0) {
-            epics.add(
-                Epic(
-                    id = "EPIC-UC",
-                    name = "User Features",
-                    description = "Core user-facing functionality based on use cases",
-                    priority = "High",
-                    story_points = ucCount * 5
-                )
-            )
-        }
-    }
-
-    private fun extractMilestonesFromPhasePlan(analysis: String, milestones: MutableList<Milestone>) {
-        val milestonePattern = "M\\d+:?\\s*([^|\\n]+)".toRegex()
-        val matches = milestonePattern.findAll(analysis)
-
-        matches.forEachIndexed { index, match ->
-            milestones.add(
-                Milestone(
-                    id = "MS-${index + 1}",
-                    name = match.groupValues[1].trim().take(50),
-                    target_date = LocalDateTime.now().plusWeeks((index + 1) * 4L).format(DateTimeFormatter.ISO_DATE),
-                    description = "Project milestone ${index + 1}",
-                    deliverables = listOf("Phase ${index + 1} deliverables complete")
-                )
-            )
-        }
-    }
-
-    private fun parseProjectDataFromAnalysis(
-        analysis: String,
-        epics: MutableList<Epic>,
-        tasks: MutableList<Task>,
-        milestones: MutableList<Milestone>,
-        dependencies: MutableList<Dependency>,
-        sprintCount: Int,
-        sprintDuration: Int
-    ) {
-        // Parse EPIC patterns
-        val epicPattern = "EPIC-(\\w+)".toRegex()
-        epicPattern.findAll(analysis).forEach { match ->
-            val epicId = match.value
-            if (epics.none { it.id == epicId }) {
-                epics.add(
-                    Epic(
-                        id = epicId,
-                        name = "Epic $epicId",
-                        description = "Auto-extracted epic from analysis",
-                        priority = "Medium",
-                        story_points = 13
-                    )
-                )
-            }
-        }
-
-        // Parse TASK patterns
-        val taskPattern = "TASK-(\\d+)".toRegex()
-        taskPattern.findAll(analysis).forEach { match ->
-            val taskId = match.value
-            if (tasks.none { it.id == taskId }) {
-                tasks.add(
-                    Task(
-                        id = taskId,
-                        title = "Task $taskId",
-                        description = "Auto-extracted task from analysis",
-                        type = "task",
-                        epic_id = epics.firstOrNull()?.id,
-                        sprint_id = null,
-                        priority = "Medium",
-                        story_points = 3,
-                        acceptance_criteria = listOf("Task completed successfully"),
-                        labels = listOf("auto-generated")
-                    )
-                )
-            }
-        }
-
-        // Parse dependency patterns
-        val depPattern = "(TASK-\\d+|EPIC-\\w+)\\s+(blocks|depends_on|relates_to)\\s+(TASK-\\d+|EPIC-\\w+)".toRegex()
-        depPattern.findAll(analysis).forEachIndexed { index, match ->
-            dependencies.add(
-                Dependency(
-                    id = "DEP-${index + 1}",
-                    source_id = match.groupValues[1],
-                    source_type = if (match.groupValues[1].startsWith("EPIC")) "epic" else "task",
-                    target_id = match.groupValues[3],
-                    target_type = if (match.groupValues[3].startsWith("EPIC")) "epic" else "task",
-                    dependency_type = match.groupValues[2]
-                )
-            )
-        }
-
-        // Ensure minimum tasks if none extracted
-        if (tasks.isEmpty()) {
-            val defaultTasks = listOf(
-                "Project Setup", "Architecture Design", "Database Schema",
-                "API Development", "Frontend Development", "Integration Testing",
-                "Documentation", "Deployment Setup"
-            )
-            defaultTasks.forEachIndexed { index, title ->
-                tasks.add(
-                    Task(
-                        id = "TASK-${index + 1}",
-                        title = title,
-                        description = "Default task: $title",
-                        type = "task",
-                        epic_id = epics.firstOrNull()?.id,
-                        sprint_id = null,
-                        priority = if (index < 3) "High" else "Medium",
-                        story_points = listOf(2, 3, 5, 8).random(),
-                        acceptance_criteria = listOf("$title completed"),
-                        labels = listOf("default")
-                    )
-                )
-            }
-        }
-    }
-
-    private fun buildSprints(tasks: MutableList<Task>, sprintCount: Int, sprintDuration: Int): List<Sprint> {
-        val sprints = mutableListOf<Sprint>()
-        val tasksPerSprint = (tasks.size / sprintCount).coerceAtLeast(1)
-        var taskIndex = 0
-        val startDate = LocalDateTime.now()
-
-        for (i in 1..sprintCount) {
-            val sprintTasks = mutableListOf<String>()
-            var sprintPoints = 0
-
-            while (taskIndex < tasks.size && sprintPoints < 40 && sprintTasks.size < tasksPerSprint + 2) {
-                val task = tasks[taskIndex]
-                task.sprint_id = "SPRINT-$i"
-                sprintTasks.add(task.id)
-                sprintPoints += task.story_points ?: 3
-                taskIndex++
-            }
-
-            val sprintStart = startDate.plusWeeks(((i - 1) * sprintDuration).toLong())
-            val sprintEnd = sprintStart.plusWeeks(sprintDuration.toLong())
-
-            sprints.add(
-                Sprint(
-                    id = "SPRINT-$i",
-                    name = "Sprint $i",
-                    number = i,
-                    start_date = sprintStart.format(DateTimeFormatter.ISO_DATE),
-                    end_date = sprintEnd.format(DateTimeFormatter.ISO_DATE),
-                    goals = listOf("Complete sprint $i deliverables"),
-                    capacity_points = 40,
-                    task_ids = sprintTasks
-                )
-            )
-        }
-
-        return sprints
-    }
-
-    private fun buildReleases(epics: List<Epic>, sprints: List<Sprint>): List<Release> {
-        val releases = mutableListOf<Release>()
-        val sprintsPerRelease = (sprints.size / 2).coerceAtLeast(1)
-
-        releases.add(
-            Release(
-                id = "REL-1",
-                name = "MVP Release",
-                version = "1.0.0",
-                target_date = sprints.getOrNull(sprintsPerRelease - 1)?.end_date
-                    ?: LocalDateTime.now().plusMonths(2).format(DateTimeFormatter.ISO_DATE),
-                description = "Minimum Viable Product release with core functionality",
-                epic_ids = epics.take(epics.size / 2).map { it.id }
-            )
+    if (ucCount > 0) {
+      epics.add(
+        Epic(
+          id = "EPIC-UC",
+          name = "User Features",
+          description = "Core user-facing functionality based on use cases",
+          priority = "High",
+          story_points = ucCount * 5
         )
+      )
+    }
+  }
 
-        if (sprints.size > sprintsPerRelease) {
-            releases.add(
-                Release(
-                    id = "REL-2",
-                    name = "Feature Complete Release",
-                    version = "1.1.0",
-                    target_date = sprints.lastOrNull()?.end_date
-                        ?: LocalDateTime.now().plusMonths(4).format(DateTimeFormatter.ISO_DATE),
-                    description = "Full feature release with all planned functionality",
-                    epic_ids = epics.map { it.id }
-                )
-            )
-        }
+  private fun extractMilestonesFromPhasePlan(analysis: String, milestones: MutableList<Milestone>) {
+    val milestonePattern = "M\\d+:?\\s*([^|\\n]+)".toRegex()
+    val matches = milestonePattern.findAll(analysis)
 
-        return releases
+    matches.forEachIndexed { index, match ->
+      milestones.add(
+        Milestone(
+          id = "MS-${index + 1}",
+          name = match.groupValues[1].trim().take(50),
+          target_date = LocalDateTime.now().plusWeeks((index + 1) * 4L).format(DateTimeFormatter.ISO_DATE),
+          description = "Project milestone ${index + 1}",
+          deliverables = listOf("Phase ${index + 1} deliverables complete")
+        )
+      )
+    }
+  }
+
+  private fun parseProjectDataFromAnalysis(
+    analysis: String,
+    epics: MutableList<Epic>,
+    tasks: MutableList<Task>,
+    milestones: MutableList<Milestone>,
+    dependencies: MutableList<Dependency>,
+    sprintCount: Int,
+    sprintDuration: Int
+  ) {
+    // Parse EPIC patterns
+    val epicPattern = "EPIC-(\\w+)".toRegex()
+    epicPattern.findAll(analysis).forEach { match ->
+      val epicId = match.value
+      if (epics.none { it.id == epicId }) {
+        epics.add(
+          Epic(
+            id = epicId,
+            name = "Epic $epicId",
+            description = "Auto-extracted epic from analysis",
+            priority = "Medium",
+            story_points = 13
+          )
+        )
+      }
     }
 
-    private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
-        .flatMap { pattern: String ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            (FileSelectionUtils.filteredWalk(root.toFile()) {
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    matcher.matches(root.relativize(it.toPath())) -> true
-                    it.isDirectory -> true
-                    else -> false
-                }
-            })
-        }.filter { file ->
-            file.isFile && file.exists()
-        }
-        .distinct()
-        .sortedBy { it }
-        .take(10) // Limit files
-        .joinToString("\n\n") { relativePath ->
-            val file = root.toFile().resolve(relativePath)
-            try {
-                val content = file.readText()
-                "# $relativePath\n\n```\n${content.truncateForDisplay(1000)}\n```"
-            } catch (e: Throwable) {
-                log.warn("Error reading file: $relativePath", e)
-                ""
-            }
-        }
+    // Parse TASK patterns
+    val taskPattern = "TASK-(\\d+)".toRegex()
+    taskPattern.findAll(analysis).forEach { match ->
+      val taskId = match.value
+      if (tasks.none { it.id == taskId }) {
+        tasks.add(
+          Task(
+            id = taskId,
+            title = "Task $taskId",
+            description = "Auto-extracted task from analysis",
+            type = "task",
+            epic_id = epics.firstOrNull()?.id,
+            sprint_id = null,
+            priority = "Medium",
+            story_points = 3,
+            acceptance_criteria = listOf("Task completed successfully"),
+            labels = listOf("auto-generated")
+          )
+        )
+      }
+    }
 
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(SoftwareDesignDocumentTask::class.java)
-        val SoftwareDesignDocument = TaskType(
-          name = "SoftwareDesignDocument",
-          category = "Writing",
-          taskClass = SoftwareDesignDocumentTask::class.java,
-          executionConfigClass = SoftwareDesignDocumentTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Generate comprehensive software design documentation",
-          tooltipHtml = """
+    // Parse dependency patterns
+    val depPattern = "(TASK-\\d+|EPIC-\\w+)\\s+(blocks|depends_on|relates_to)\\s+(TASK-\\d+|EPIC-\\w+)".toRegex()
+    depPattern.findAll(analysis).forEachIndexed { index, match ->
+      dependencies.add(
+        Dependency(
+          id = "DEP-${index + 1}",
+          source_id = match.groupValues[1],
+          source_type = if (match.groupValues[1].startsWith("EPIC")) "epic" else "task",
+          target_id = match.groupValues[3],
+          target_type = if (match.groupValues[3].startsWith("EPIC")) "epic" else "task",
+          dependency_type = match.groupValues[2]
+        )
+      )
+    }
+
+    // Ensure minimum tasks if none extracted
+    if (tasks.isEmpty()) {
+      val defaultTasks = listOf(
+        "Project Setup", "Architecture Design", "Database Schema",
+        "API Development", "Frontend Development", "Integration Testing",
+        "Documentation", "Deployment Setup"
+      )
+      defaultTasks.forEachIndexed { index, title ->
+        tasks.add(
+          Task(
+            id = "TASK-${index + 1}",
+            title = title,
+            description = "Default task: $title",
+            type = "task",
+            epic_id = epics.firstOrNull()?.id,
+            sprint_id = null,
+            priority = if (index < 3) "High" else "Medium",
+            story_points = listOf(2, 3, 5, 8).random(),
+            acceptance_criteria = listOf("$title completed"),
+            labels = listOf("default")
+          )
+        )
+      }
+    }
+  }
+
+  private fun buildSprints(tasks: MutableList<Task>, sprintCount: Int, sprintDuration: Int): List<Sprint> {
+    val sprints = mutableListOf<Sprint>()
+    val tasksPerSprint = (tasks.size / sprintCount).coerceAtLeast(1)
+    var taskIndex = 0
+    val startDate = LocalDateTime.now()
+
+    for (i in 1..sprintCount) {
+      val sprintTasks = mutableListOf<String>()
+      var sprintPoints = 0
+
+      while (taskIndex < tasks.size && sprintPoints < 40 && sprintTasks.size < tasksPerSprint + 2) {
+        val task = tasks[taskIndex]
+        task.sprint_id = "SPRINT-$i"
+        sprintTasks.add(task.id)
+        sprintPoints += task.story_points ?: 3
+        taskIndex++
+      }
+
+      val sprintStart = startDate.plusWeeks(((i - 1) * sprintDuration).toLong())
+      val sprintEnd = sprintStart.plusWeeks(sprintDuration.toLong())
+
+      sprints.add(
+        Sprint(
+          id = "SPRINT-$i",
+          name = "Sprint $i",
+          number = i,
+          start_date = sprintStart.format(DateTimeFormatter.ISO_DATE),
+          end_date = sprintEnd.format(DateTimeFormatter.ISO_DATE),
+          goals = listOf("Complete sprint $i deliverables"),
+          capacity_points = 40,
+          task_ids = sprintTasks
+        )
+      )
+    }
+
+    return sprints
+  }
+
+  private fun buildReleases(epics: List<Epic>, sprints: List<Sprint>): List<Release> {
+    val releases = mutableListOf<Release>()
+    val sprintsPerRelease = (sprints.size / 2).coerceAtLeast(1)
+
+    releases.add(
+      Release(
+        id = "REL-1",
+        name = "MVP Release",
+        version = "1.0.0",
+        target_date = sprints.getOrNull(sprintsPerRelease - 1)?.end_date
+          ?: LocalDateTime.now().plusMonths(2).format(DateTimeFormatter.ISO_DATE),
+        description = "Minimum Viable Product release with core functionality",
+        epic_ids = epics.take(epics.size / 2).map { it.id }
+      )
+    )
+
+    if (sprints.size > sprintsPerRelease) {
+      releases.add(
+        Release(
+          id = "REL-2",
+          name = "Feature Complete Release",
+          version = "1.1.0",
+          target_date = sprints.lastOrNull()?.end_date
+            ?: LocalDateTime.now().plusMonths(4).format(DateTimeFormatter.ISO_DATE),
+          description = "Full feature release with all planned functionality",
+          epic_ids = epics.map { it.id }
+        )
+      )
+    }
+
+    return releases
+  }
+
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .take(10) // Limit files
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = file.readText()
+        "# $relativePath\n\n```\n${content.truncateForDisplay(1000)}\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(SoftwareDesignDocumentTask::class.java)
+    val SoftwareDesignDocument = TaskType(
+      name = "SoftwareDesignDocument",
+      category = "Writing",
+      taskClass = SoftwareDesignDocumentTask::class.java,
+      executionConfigClass = SoftwareDesignDocumentTaskExecutionConfigData::class.java,
+      taskSettingsClass = TaskTypeConfig::class.java,
+      description = "Generate comprehensive software design documentation",
+      tooltipHtml = """
                         Creates complete software design documentation with Mermaid diagrams.
                         <ul>
                           <li>Use case diagrams and actor documentation</li>
@@ -1404,6 +1439,6 @@ Provide comprehensive, production-ready documentation.
                           <li>All diagrams use Mermaid syntax</li>
                         </ul>
                       """,
-        )
-    }
+    )
+  }
 }

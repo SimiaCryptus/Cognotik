@@ -15,8 +15,8 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -58,7 +58,7 @@ class GenerateQRImageTask(
             if (files.isNullOrEmpty()) {
                 return "GenerateQRImageTask requires at least one output file to be specified"
             }
-            val imageFile = files.first()
+            val imageFile = files!!.first()
             if (!imageFile.matches(Regex(".*\\.(png|jpg|jpeg)$", RegexOption.IGNORE_CASE))) {
                 return "GenerateQRImageTask file must have .png, .jpg, or .jpeg extension: $imageFile"
             }
@@ -84,10 +84,10 @@ GenerateQRImage - Generate artistic QR codes using AI image processing
         """.trimIndent()
     }
 
-    override fun toString(relativePath: File): CharSequence? {
+    override fun formatFileForLLM(relativePath: File): CharSequence? {
         return when (relativePath.name.split('.').last()) {
             "png", "jpg", "jpeg" -> null
-            else -> super.toString(relativePath)
+            else -> super.formatFileForLLM(relativePath)
         }
     }
 
@@ -518,21 +518,21 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GenerateQRImageTask::class.java)
         val GenerateQRImage = TaskType(
-          name = "GenerateQRImage",
-          category = "Writing",
-          taskClass = GenerateQRImageTask::class.java,
-          executionConfigClass = GenerateQRImageTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Generate artistic QR codes with AI styling",
-          tooltipHtml = """
-                        Creates stylized QR codes using AI image processing while maintaining scannability.
-                        <ul>
-                          <li>Generates QR codes with high error correction (30% redundancy)</li>
-                          <li>Applies artistic styles using AI image generation</li>
-                          <li>Verifies the resulting QR code remains readable</li>
-                          <li>Retries with more conservative styling if verification fails</li>
-                        </ul>
-                      """
+            "GenerateQRImage",
+            "Writing",
+            GenerateQRImageTask::class.java,
+            GenerateQRImageTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Generate artistic QR codes with AI styling",
+            """
+              Creates stylized QR codes using AI image processing while maintaining scannability.
+              <ul>
+                <li>Generates QR codes with high error correction (30% redundancy)</li>
+                <li>Applies artistic styles using AI image generation</li>
+                <li>Verifies the resulting QR code remains readable</li>
+                <li>Retries with more conservative styling if verification fails</li>
+              </ul>
+            """
         )
     }
 }

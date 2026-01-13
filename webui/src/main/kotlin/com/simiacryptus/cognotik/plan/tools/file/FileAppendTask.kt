@@ -6,12 +6,8 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.FileAppendTask.FileAppendTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.util.concurrent.Semaphore
@@ -23,12 +19,12 @@ class FileAppendTask(
 
     class FileAppendTaskExecutionConfigData(
         @Description("The file to append content to")
-        val file: String? = null,
+        var file: String? = null,
         @Description("Additional files to provide context for the append operation")
-        val related_files: List<String>? = null,
+        var related_files: List<String>? = null,
         @Description("The specific content to append or a description of what to add")
-        val append_content: String? = null,
-        task_description: String? = null,
+        var append_content: String? = null,
+        task_description: String? = mutableListOf<String>().toString(),
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskExecutionConfig(
@@ -71,20 +67,28 @@ FileAppend - Append content to the end of an existing file
 
         try {
             overviewTab.header("File Append Task: $targetPath")
-            val status = overviewTab.add(renderMarkdown("🔄 Preparing append operation...", ui = task.ui))
+          val status = overviewTab.add("🔄 Preparing append operation...".renderMarkdown())
             
             transcript?.write("# File Append Task Transcript\n\n".toByteArray())
-            Retryable(task, process = { task: SessionTask ->
+          Retryable(task, process = { subTask: SessionTask ->
                 completionNotes.clear()
                 val context = getInputFileContent(executionConfig?.related_files, root)
                 if (context.isNotBlank()) {
                     val contextTab = tabs.newTask("Context")
-                    contextTab.add(renderMarkdown("### Context Files\n\n$context", ui = task.ui))
+                  contextTab.add("### Context Files\n\n$context".renderMarkdown())
                     contextTab.complete()
+                  transcript?.write(
+                    """
+                        <details>
+                        <summary>Context Files Used</summary>
+                        $context
+                        </details>
+                    """.trimIndent().toByteArray()
+                  )
                 }
                 status?.setLength(0)
-                status?.append(renderMarkdown("🔄 Generating content to append...", ui = task.ui))
-                task.update()
+            status?.append("🔄 Generating content to append...".renderMarkdown())
+            subTask.update()
 
                 val chatAgent = ChatAgent(
                     name = "FileAppend",
@@ -109,7 +113,7 @@ FileAppend - Append content to the end of an existing file
                     )).filter { it.isNotBlank() }
                 ).let { extractCode(it) }
                 val proposedTab = tabs.newTask("Proposed Append")
-                proposedTab.add(renderMarkdown("### Proposed Append to `$targetPath`\n\n```\n$codeResult\n```", ui = task.ui))
+            proposedTab.add("### Proposed Append to `$targetPath`\n\n```\n$codeResult\n```".renderMarkdown())
 
 
                 transcript?.write("\n## AI Proposed Append to $targetPath\n\n".toByteArray())
@@ -124,14 +128,14 @@ FileAppend - Append content to the end of an existing file
                 if (orchestrationConfig.autoFix) {
                     appendAction()
                     status?.setLength(0)
-                    status?.append(renderMarkdown("✅ **Auto-applied append to `$targetPath`.**", ui = task.ui))
+                  status?.append("✅ **Auto-applied append to `$targetPath`.**".renderMarkdown())
                     proposedTab.complete()
                     semaphore.release()
                 } else {
                     val footer = acceptButtonFooter(task.ui) {
                         appendAction()
                         status?.setLength(0)
-                        status?.append(renderMarkdown("✅ **Appended successfully to `$targetPath`.**", ui = task.ui))
+                      status?.append("✅ **Appended successfully to `$targetPath`.**".renderMarkdown())
                         proposedTab.complete()
                         semaphore.release()
                     }
@@ -147,9 +151,21 @@ FileAppend - Append content to the end of an existing file
             transcript?.write(completionNotes.joinToString("\n").toByteArray())
             resultFn(completionNotes.joinToString("\n"))
         } catch (e: Throwable) {
-            log.warn("Error in FileAppendTask", e)
-            overviewTab.add(renderMarkdown("❌ **Error:** ${e.message}", ui = task.ui))
+          // Triple Log Rule
             task.error(e)
+          log.error("Error in FileAppendTask for $targetPath: ${e.message}", e)
+          transcript?.write(
+            """
+                <details>
+                <summary>Stack Trace</summary>
+                ```
+                ${e.stackTraceToString()}
+                ```
+                </details>
+            """.trimIndent().toByteArray()
+          )
+          overviewTab.add("❌ **Error:** ${e.message}".renderMarkdown())
+          overviewTab.complete()
         } finally {
             transcript?.close()
         }

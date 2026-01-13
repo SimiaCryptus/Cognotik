@@ -5,8 +5,10 @@ import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -58,7 +60,7 @@ class GeneratePresentationTask(
             }
 
             // Validate that the file has .html extension
-            val htmlFile = files.first()
+            val htmlFile = files!!.first()
             if (!htmlFile.endsWith(".html", ignoreCase = true)) {
                 return "GeneratePresentationTask file must have .html extension: $htmlFile"
             }
@@ -524,25 +526,25 @@ Style: Clean, modern, professional presentation aesthetic
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GeneratePresentationTask::class.java)
         val GeneratePresentation = TaskType(
-          name = "GeneratePresentation",
-          category = "Writing",
-          taskClass = GeneratePresentationTask::class.java,
-          executionConfigClass = GeneratePresentationTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Create complete Reveal.js presentations with narration support",
-          tooltipHtml = """
-                        Creates professional Reveal.js presentations with speaker notes.
-                        <ul>
-                          <li>Generates complete, self-contained HTML presentations</li>
-                          <li>Includes Reveal.js framework integration</li>
-                          <li>Adds speaker notes for each slide</li>
-                          <li>Supports custom styling and themes</li>
-                          <li>Optional AI-generated images for key slides</li>
-                          <li>Interactive approval or auto-apply mode</li>
-                          <li>Includes navigation and progress indicators</li>
-                          <li>Optional audio narration support</li>
-                        </ul>
-                      """,
+            "GeneratePresentation",
+            "Writing",
+            GeneratePresentationTask::class.java,
+            GeneratePresentationTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Create complete Reveal.js presentations with narration support",
+            """
+              Creates professional Reveal.js presentations with speaker notes.
+              <ul>
+                <li>Generates complete, self-contained HTML presentations</li>
+                <li>Includes Reveal.js framework integration</li>
+                <li>Adds speaker notes for each slide</li>
+                <li>Supports custom styling and themes</li>
+                <li>Optional AI-generated images for key slides</li>
+                <li>Interactive approval or auto-apply mode</li>
+                <li>Includes navigation and progress indicators</li>
+                <li>Optional audio narration support</li>
+              </ul>
+            """,
         )
     }
 }

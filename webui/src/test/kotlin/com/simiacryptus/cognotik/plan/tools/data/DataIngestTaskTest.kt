@@ -2,7 +2,8 @@ package com.simiacryptus.cognotik.plan.tools.data
 
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.DataIngestTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.DataIngestTask
+import com.simiacryptus.cognotik.plan.tools.file.DataIngestTask.DataIngestTaskExecutionConfigData
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout

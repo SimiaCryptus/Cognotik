@@ -4,20 +4,16 @@ package com.simiacryptus.cognotik.plan.tools.writing
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.io.ByteArrayOutputStream
-import java.io.OutputStreamWriter
+import java.util.concurrent.Semaphore
 import javax.imageio.ImageIO
 
 open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerationTaskExecutionConfigData>(
@@ -30,19 +26,19 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
 
     open class ComicBookGenerationTaskExecutionConfigData(
         @Description("The subject or scenario to develop into a comic book")
-        val subject: String? = null,
+        var subject: String? = null,
 
         @Description("Target number of pages")
-        val target_pages: Int = 5,
+        var target_pages: Int = 5,
 
         @Description("Art style (e.g., 'manga', 'western superhero', 'noir', 'cartoon')")
-        val art_style: String = "western superhero",
+        var art_style: String = "western superhero",
         @Description("Additional style details or visual guidelines")
-        val style_details: String = "",
+        var style_details: String = "",
 
 
         @Description("Whether to generate images for each row")
-        val generate_images: Boolean = true,
+        var generate_images: Boolean = true,
 
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -97,10 +93,10 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
     override fun promptSegment(): String {
         return """
 ComicBookGeneration - Generate comic book scripts and visuals
-  - Create a comic book script with page/row/frame structure
-  - Specify subject, target pages, and art style
-  - Generates character profiles and visual descriptions
-  - Can generate images for each row (strip)
+  - **Use this tool** to create professional comic book scripts with a structured page/row/frame layout.
+  - **Inputs:** Requires a 'subject', 'target_pages', and 'art_style'.
+  - **Capabilities:** Generates character profiles, detailed visual descriptions, and can optionally generate AI visuals for each row (strip).
+  - **Output:** Returns a summary of the generated script and links to saved image artifacts.
         """.trimIndent()
     }
 
@@ -111,27 +107,30 @@ ComicBookGeneration - Generate comic book scripts and visuals
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val startTime = System.currentTimeMillis()
-        log.info("Starting ComicBookGenerationTask - Subject: '${executionConfig?.subject}'")
-        val transcript = task.transcript("ComicBookGeneration")?.let { OutputStreamWriter(it) }
-        val genConfig = executionConfig
-        transcript?.write("# Comic Book Generation Task\n\n")
 
-        if (genConfig == null || genConfig.subject.isNullOrBlank()) {
-            task.safeComplete("CONFIGURATION ERROR: Invalid configuration", log)
-            resultFn("CONFIGURATION ERROR")
-            return
-        }
 
-        val api = defaultSmart.getChildClient(task)
-        val tabs = TabbedDisplay(task)
-
-        val overviewTask = tabs.newTask("Overview")
-        overviewTask.header("Comic Book Generation: ${genConfig.subject}", 1)
-        val statusBuffer = overviewTask.add("Generating script...")
-        task.update()
-
+      val transcript = task.transcript()
+      task.ui.pool.submit {
         try {
+          log.info("Task 'ComicBookGeneration' started for subject: ${executionConfig?.subject}")
+          transcript?.write("# Comic Book Generation Task\n\n".toByteArray())
+
+          val genConfig = executionConfig
+          if (genConfig == null || genConfig.subject.isNullOrBlank()) {
+            val err = "CONFIGURATION ERROR: Invalid or missing subject."
+            task.error(Exception(err))
+            log.error(err)
+            resultFn(err)
+            return@submit
+          }
+
+          val api = defaultSmart.getChildClient(task)
+          val tabs = TabbedDisplay(task)
+          val overviewTask = tabs.newTask("Overview")
+          overviewTask.header("Comic Book Generation: ${genConfig.subject}", 1)
+          val statusBuffer = overviewTask.add("Generating script...".renderMarkdown())
+          task.update()
+
             val parsingChatter = defaultFast.getChildClient(task)
             val scriptAgent = ParsedAgent(
                 resultClass = ComicScript::class.java,
@@ -184,19 +183,32 @@ ComicBookGeneration - Generate comic book scripts and visuals
 
             val scriptTask = tabs.newTask("Script")
             scriptTask.add(scriptContent.renderMarkdown)
-            transcript?.write(scriptContent)
-            transcript?.flush()
+          transcript?.write("## Generated Script\n<details><summary>Expand Script Content</summary>\n\n$scriptContent\n\n</details>\n".toByteArray())
             task.update()
 
             statusBuffer?.setLength(0)
-            statusBuffer?.append("✅ Script Generated")
+          statusBuffer?.append("✅ Script Generated".renderMarkdown())
             overviewTask.update()
 
             val characterImages = mutableMapOf<String, String>()
             val rowImages = mutableMapOf<String, String>()
 
             if (genConfig.generate_images) {
-                var lastImage: java.awt.image.BufferedImage? = null
+              if (!orchestrationConfig.autoFix) {
+                val semaphore = Semaphore(0)
+                val footer = acceptButtonFooter(task.ui) {
+                  statusBuffer?.setLength(0)
+                  statusBuffer?.append("✅ Script Approved. Generating visuals...".renderMarkdown())
+                  overviewTask.update()
+                  semaphore.release()
+                }
+                overviewTask.add("### Approval Required\nReview the script in the 'Script' tab and click below to generate visuals.".renderMarkdown())
+                overviewTask.add(footer)
+                log.info("Task paused. Waiting for user approval to generate visuals.")
+                semaphore.acquire()
+              }
+
+              var lastImage: java.awt.image.BufferedImage? = null
                 val charRefTask = tabs.newTask("Characters")
                 charRefTask.header("Character References", 1)
 
@@ -228,8 +240,10 @@ ComicBookGeneration - Generate comic book scripts and visuals
                         charRefTask.append("<img src='$link' alt='${char.name}' style='max-width: 100%'/>")
                         charRefTask.add("*${char.description}*")
 
-                        transcript?.write("## ${char.name}\n\n" + "![${char.name}]($link)".transcriptFilter() + "\n\n*${char.description}*\n\n")
-                        transcript?.flush()
+                      transcript?.write(
+                        "## Character: ${char.name}\n\n![${char.name}]($link)".transcriptFilter()
+                          .toByteArray() + "\n\n*${char.description}*\n\n".toByteArray()
+                      )
                         task.update()
                     } catch (e: Exception) {
                         log.error("Failed to generate character image for ${char.name}", e)
@@ -237,7 +251,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
                 }
 
                 statusBuffer?.setLength(0)
-                statusBuffer?.append("✅ Script Generated<br/>Generating pages...")
+              statusBuffer?.append("✅ Script Generated<br/>Generating pages...".renderMarkdown())
                 overviewTask.update()
                 task.update()
 
@@ -321,8 +335,10 @@ ComicBookGeneration - Generate comic book scripts and visuals
 
                             pageTask.add(rowHtml.renderMarkdown)
                             finalOutput.append("![Row ${row.row_number}]($link)\n\n")
-                            transcript?.write("![Page ${page.page_number} Row ${row.row_number}]($link)".transcriptFilter() + "\n\n")
-                            transcript?.flush()
+                          transcript?.write(
+                            "![Page ${page.page_number} Row ${row.row_number}]($link)".transcriptFilter()
+                              .toByteArray() + "\n\n".toByteArray()
+                          )
 
                             val textContent = buildString {
                                 row.frames.forEach { frame ->
@@ -342,11 +358,23 @@ ComicBookGeneration - Generate comic book scripts and visuals
                 }
 
                 statusBuffer?.setLength(0)
-                statusBuffer?.append("✅ Images Generated")
+              statusBuffer?.append("✅ Images Generated".renderMarkdown())
                 overviewTask.update()
-                resultFn(finalOutput.toString())
+
+              resultFn(
+                """
+                    ## Comic Book Generation Complete
+                    * **Title:** ${script.title}
+                    * **Pages:** ${script.pages.size}
+                    * **Visuals:** Generated for all rows.
+                    * **Artifacts:**
+                      * Full Metadata: `comic_book.json`
+                      * Character Images: ${characterImages.size} files
+                      * Page Strips: ${rowImages.size} files
+                """.trimIndent()
+              )
             } else {
-                resultFn(scriptContent)
+              resultFn("## Comic Book Script Generated\nTitle: ${script.title}\nPages: ${script.pages.size}\nVisual generation was disabled.")
             }
             task.saveFile(
                 "comic_book.json",
@@ -364,11 +392,13 @@ ComicBookGeneration - Generate comic book scripts and visuals
             task.safeComplete("Comic Book Generation Complete", log)
 
         } catch (e: Exception) {
-            log.error("Error in ComicBookGenerationTask", e)
-            task.error(e)
-            resultFn("Error: ${e.message}")
+          task.error(e)
+          log.error("Error in ComicBookGenerationTask: ${e.message}")
+          transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+          resultFn("Error: ${e.message}")
         } finally {
-            transcript?.close()
+          transcript?.close()
+        }
         }
     }
 

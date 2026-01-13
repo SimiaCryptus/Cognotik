@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -111,12 +112,13 @@ class AutoFixTask(
 
             fun execute() {
                 subTask.ui.pool.submit {
-                    val (markdownTranscript, transcriptLink) = createTranscript(subTask)
-                    subTask.add(transcriptLink)
+                    val transcript = createTranscript(subTask)
+                    subTask.add(transcript.second.renderMarkdown())
                     val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
                         ?: defaultSmart).getChildClient(subTask)
+                    val markdownTranscript = transcript.first
                     try {
-                        markdownTranscript?.write("# Self-Healing Task Execution\n\n".toByteArray())
+                        markdownTranscript?.write("## Self-Healing Task Execution\n\n".toByteArray())
                         markdownTranscript?.write("## Commands\n".toByteArray())
                         CmdPatchApp(
                             root = agent.root,
@@ -157,40 +159,42 @@ class AutoFixTask(
                         ).run(
                             task = subTask, model = model
                         ).apply {
-                            markdownTranscript?.write("\n## Result\n".toByteArray())
-                            markdownTranscript?.write("Exit code: ${this.exitCode}\n".toByteArray())
+                            markdownTranscript?.write("\n### Execution Result\n* **Exit Code:** ${this.exitCode}\n".toByteArray())
                             when {
                                 this.exitCode == 0 -> {
                                     if (orchestrationConfig.autoFix) {
-                                        resultFn("All Commands completed")
+                                        resultFn("### Success\nAll commands executed successfully with exit code 0.")
                                         semaphore.release()
                                         subTask.complete()
                                     } else {
                                         subTask.add(
                                             subTask.ui.hrefLink("Accept & Continue", "btn btn-primary") {
-                                                resultFn("All Commands completed")
+                                                resultFn("### Success\nUser accepted command execution results.")
                                                 semaphore.release()
                                                 subTask.complete()
-                                            }
+                                            }.renderMarkdown()
                                         )
                                     }
                                 }
 
                                 else -> {
+                                    log.warn("Command failed with exit code ${this.exitCode}")
                                     subTask.add(
                                         subTask.ui.hrefLink("Ignore Error", "href-link cmd-button") {
-                                            resultFn("Error: ${this.exitCode}")
+                                            resultFn("### Warning\nCommands failed with exit code ${this.exitCode}, but error was ignored by user.")
                                             semaphore.release()
                                             subTask.complete()
-                                        }
+                                        }.renderMarkdown()
                                     )
                                 }
                             }
                         }
                     } catch (e: Throwable) {
+                        // Triple Log Rule: UI, SLF4J, and Transcript
                         subTask.error(e)
-                        log.error("Error in AutoFixTask", e)
-                        markdownTranscript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                        log.error("Critical error during AutoFixTask execution", e)
+                        markdownTranscript?.write("\n### Execution Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
+
                         if (orchestrationConfig.autoFix) {
                             semaphore.release()
                             subTask.complete()
@@ -204,8 +208,8 @@ class AutoFixTask(
                 execute()
             } else {
                 subTask.add(subTask.ui.hrefLink("▶ Run AutoFix", "btn btn-primary") {
-                    execute()
-                })
+                execute()
+                }.renderMarkdown())
             }
             subTask.placeholder
         }

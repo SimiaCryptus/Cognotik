@@ -8,9 +8,9 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
@@ -41,6 +41,7 @@ class ImageGenerationTask(
     ) {
         override fun validate(): String? {
             // Validate that at least one file is specified
+            val files = files
             if (files.isNullOrEmpty()) {
                 return "GenerateImageTask requires at least one file to be specified"
             }
@@ -59,14 +60,18 @@ class ImageGenerationTask(
 
     override fun promptSegment(): String {
         return """
-GenerateImage - Create images using AI image generation models
+        GenerateImage - Create high-quality images using AI generation models.
+          * Specify a single output file path (png, jpg, or jpeg).
+          * Provide a detailed task_description covering style, composition, and mood.
+          * Use related_files to provide visual context or style references.
+          * Useful for UI mockups, illustrations, and visual assets.
         """.trimIndent()
     }
 
-    override fun toString(relativePath: File): CharSequence? {
+    override fun formatFileForLLM(relativePath: File): CharSequence? {
         return when (relativePath.name.split('.').last()) {
             "png", "jpg", "jpeg" -> null
-            else -> super.toString(relativePath)
+            else -> super.formatFileForLLM(relativePath)
         }
     }
 
@@ -77,114 +82,136 @@ GenerateImage - Create images using AI image generation models
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript("GenerateImage")?.bufferedWriter()
-        transcript?.write("# Generate Image Task\n\n")
-        val tabs = TabbedDisplay(task)
-
-        val imageFiles = executionConfig?.files ?: emptyList()
-        if (imageFiles.isEmpty()) {
-            resultFn("CONFIGURATION ERROR: No image file specified")
-            return
-        }
-        val inputImageFiles = executionConfig?.related_files?.filter {
-            it.matches(Regex(".*\\.(png|jpg|jpeg)$", RegexOption.IGNORE_CASE))
-        } ?: emptyList()
-        val inputImages = inputImageFiles.mapNotNull { filePath ->
-            val file = root.resolve(filePath)
-            if (file.toFile().exists()) {
-                val image = ImageIO.read(file.toFile())
-                ImageAndText(image = image, text = "Reference image: $filePath")
-            } else {
-                null
-            }
-        }
-
-        val imageOutputFile = imageFiles.first()
-        if (!imageOutputFile.matches(Regex(".*\\.(png|jpg|jpeg)$", RegexOption.IGNORE_CASE))) {
-            resultFn("CONFIGURATION ERROR: File must have .png, .jpg, or .jpeg extension: $imageOutputFile")
-            return
-        }
-
-        val previewTask = tabs.newTask("Preview")
-        val promptTask = tabs.newTask("Prompt")
-
-        previewTask.header("Generating Image: $imageOutputFile", level = 2)
-
-        val contextFiles = getInputFileCode()
-        val priorCode = getPriorCode(agent.executionState)
-
-        // Build the image generation prompt
-        val imagePrompt = buildString {
-            append(executionConfig?.task_description ?: "Generate an image")
-
-            if (contextFiles.isNotEmpty()) {
-                append("\n\nContext from related files:\n")
-                append(contextFiles)
-            }
-
-            if (priorCode.isNotEmpty()) {
-                append("\n\nPrevious task results:\n")
-                append(priorCode)
-            }
-        }
-
-        promptTask.add(MarkdownUtil.renderMarkdown("### Image Generation Prompt\n\n```\n$imagePrompt\n```", ui = task.ui))
-        transcript?.write("## Prompt\n\n$imagePrompt\n\n")
-        transcript?.flush()
-
+        val transcript = task.transcript()
         try {
-            // Generate the image
-            previewTask.add("Generating image...", additionalClasses = "text-info")
+            transcript?.write("# Generate Image Task\n\n".toByteArray())
+            val tabs = TabbedDisplay(task)
 
-            // Use the image generation agent
-            val imageAgent = ImageProcessingAgent(
-                prompt = "Transform the user request into an image",
-                name = "ImageGenerator",
-                model = orchestrationConfig.defaultImage.getChildClient(task),
-            )
-
-            val result = imageAgent.answer(listOf(ImageAndText(imagePrompt)) + inputImages)
-            val generatedImage = result.image
-                ?: throw RuntimeException("No image generated by the agent")
-            val optimizedPrompt = result.text
-
-            promptTask.add(
-                MarkdownUtil.renderMarkdown("### Optimized Prompt Used\n\n```\n$optimizedPrompt\n```", ui = task.ui)
-            )
-            transcript?.write("## Optimized Prompt\n\n$optimizedPrompt\n\n")
-            transcript?.flush()
-
-            // Display the generated image
-            previewTask.header("Generated Image Preview", level = 3)
-            previewTask.image(generatedImage)
-
-            // Save the image
-            val outputPath = root.resolve(imageOutputFile)
-            outputPath.toFile().parentFile?.mkdirs()
-
-            val format = when {
-                imageOutputFile.endsWith(".png", ignoreCase = true) -> "png"
-                imageOutputFile.endsWith(".jpg", ignoreCase = true) -> "jpg"
-                imageOutputFile.endsWith(".jpeg", ignoreCase = true) -> "jpeg"
-                else -> "png"
+            val imageFiles = executionConfig?.files ?: emptyList()
+            if (imageFiles.isEmpty()) {
+                val err = "CONFIGURATION ERROR: No image file specified"
+                task.add(err.renderMarkdown())
+                resultFn(err)
+                return
             }
 
-            ImageIO.write(generatedImage, format, outputPath.toFile())
-            val link = task.linkTo(imageOutputFile)
+            val imageOutputFile = imageFiles.first()
+            val previewTask = tabs.newTask("Preview")
+            val promptTask = tabs.newTask("Prompt")
 
-            val summary =
-                "Successfully generated and saved image to <a href=\"$link\">$imageOutputFile</a>."
-            previewTask.add(summary)
-            transcript?.write("## Result\n\n$summary\n\n")
-            transcript?.close()
+            task.ui.pool.submit {
+                try {
+                    log.info("Starting image generation for $imageOutputFile")
+                    previewTask.header("Generating Image: $imageOutputFile", level = 2)
 
-            previewTask.complete()
-            resultFn(summary)
+                    val inputImageFiles = executionConfig?.related_files?.filter {
+                        it.matches(Regex(".*\\.(png|jpg|jpeg)$", RegexOption.IGNORE_CASE))
+                    } ?: emptyList()
+                    val inputImages = inputImageFiles.mapNotNull { filePath ->
+                        val file = root.resolve(filePath)
+                        if (file.toFile().exists()) {
+                            val image = ImageIO.read(file.toFile())
+                            ImageAndText(image = image, text = "Reference image: $filePath")
+                        } else {
+                            null
+                        }
+                    }
 
+                    val contextFiles = getInputFileCode()
+                    val priorCode = getPriorCode(agent.executionState)
+
+                    val imagePrompt = buildString {
+                        append(executionConfig?.task_description ?: "Generate an image")
+                        if (contextFiles.isNotEmpty()) {
+                            append("\n\nContext from related files:\n")
+                            append(contextFiles)
+                        }
+                        if (priorCode.isNotEmpty()) {
+                            append("\n\nPrevious task results:\n")
+                            append(priorCode)
+                        }
+                    }
+
+                    promptTask.add("### Image Generation Prompt\n\n```\n$imagePrompt\n```".renderMarkdown())
+                    transcript?.write("## Prompt\n\n$imagePrompt\n\n".toByteArray())
+
+                    previewTask.add("Generating image...".renderMarkdown())
+
+                    val imageAgent = ImageProcessingAgent(
+                        prompt = "Transform the user request into an image",
+                        name = "ImageGenerator",
+                        model = orchestrationConfig.defaultImage.getChildClient(task),
+                    )
+
+                    val result = imageAgent.answer(listOf(ImageAndText(imagePrompt)) + inputImages)
+                    val generatedImage = result.image ?: throw RuntimeException("No image generated by the agent")
+                    val optimizedPrompt = result.text
+
+                    promptTask.add("### Optimized Prompt Used\n\n```\n$optimizedPrompt\n```".renderMarkdown())
+                    transcript?.write("## Optimized Prompt\n\n$optimizedPrompt\n\n".toByteArray())
+
+                    previewTask.header("Generated Image Preview", level = 3)
+                    previewTask.image(generatedImage)
+
+                    val saveAction = {
+                        val outputPath = root.resolve(imageOutputFile)
+                        outputPath.toFile().parentFile?.mkdirs()
+
+                        val format = when {
+                            imageOutputFile.endsWith(".png", ignoreCase = true) -> "png"
+                            imageOutputFile.endsWith(".jpg", ignoreCase = true) -> "jpg"
+                            imageOutputFile.endsWith(".jpeg", ignoreCase = true) -> "jpeg"
+                            else -> "png"
+                        }
+
+                        ImageIO.write(generatedImage, format, outputPath.toFile())
+                        val link = task.linkTo(imageOutputFile)
+                        val summary =
+                            "Successfully generated and saved image to <a href=\"$link\">$imageOutputFile</a>."
+
+                        previewTask.add(summary.renderMarkdown())
+                        transcript?.write("## Result\n\n$summary\n\n".toByteArray())
+                        log.info("Image saved successfully to $imageOutputFile")
+
+                        previewTask.complete()
+                        resultFn(summary)
+                    }
+
+
+
+
+
+                    if (orchestrationConfig.autoFix) {
+                        saveAction()
+                    } else {
+                        previewTask.add("Image generated. Click below to save to workspace.".renderMarkdown())
+                        previewTask.add(acceptButtonFooter(task.ui) {
+                            saveAction()
+                        })
+                    }
+
+                } catch (e: Exception) {
+                    // Triple Log Rule
+                    log.error("Error in ImageGenerationTask for $imageOutputFile", e)
+                    previewTask.error(e)
+                    val errorDetails = """
+                        <details>
+                        <summary>Stack Trace</summary>
+
+                        ```
+                        ${e.stackTraceToString()}
+                        ```
+                        </details>
+                    """.trimIndent()
+                    transcript?.write("## Error\n\n${e.message}\n$errorDetails\n".toByteArray())
+                    resultFn("ERROR: ${e.message}")
+                } finally {
+                    transcript?.close()
+                }
+            }
         } catch (e: Exception) {
-            log.error("Error generating image", e)
-            previewTask.error(e)
-            transcript?.write("## Error\n\n${e.message}\n")
+            log.error("Failed to schedule ImageGenerationTask", e)
+            task.error(e)
             transcript?.close()
             resultFn("ERROR: ${e.message}")
         }

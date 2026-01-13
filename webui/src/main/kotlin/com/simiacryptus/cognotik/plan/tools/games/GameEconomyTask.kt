@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter
 class GameEconomyTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: GameEconomyTaskExecutionConfigData?
-) : AbstractTask<GameEconomyTask.GameEconomyTaskExecutionConfigData, TaskTypeConfig>(
+) : AbstractTask<GameEconomyTask.GameEconomyTaskExecutionConfigData, GameEconomyTask.GameEconomyTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
@@ -29,7 +29,7 @@ class GameEconomyTask(
           category = "Games",
           taskClass = GameEconomyTask::class.java,
           executionConfigClass = GameEconomyTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
+            taskSettingsClass = GameEconomyTypeConfig::class.java,
           description = "Design complete game economic systems with progression and monetization",
           tooltipHtml = """
                         Designs comprehensive game economy systems with balanced progression.
@@ -151,40 +151,272 @@ class GameEconomyTask(
         val forecasts: List<EconomyForecast> = emptyList(),
         val balance_recommendations: List<String> = emptyList()
     )
+    class GameEconomyTypeConfig(
+        var resourcePrompt: String = """
+            You are an expert game economy designer. Your task is to design a comprehensive resource system for a game.
+            ## Game Information:
+            **Title:** {game_title}
+            **Type:** {game_type}
+            **Progression Style:** {progression_style}
+            ## Design Requirements:
+            - Number of resources: {num_resources}
+            - Include crafting: {include_crafting}
+            - Include trading: {include_trading}
+            {context}
+            ## Resource System Design Instructions:
+            Design {num_resources} distinct resource types that work together to create a balanced economy.
+            For each resource, specify:
+            1. **Resource Identity**:
+               - Name and type (currency, material, experience, premium)
+               - Purpose and role in the economy
+               - Thematic fit with game type
+            2. **Generation Sources**:
+               - How players acquire this resource
+               - Amount per activity
+               - Frequency of acquisition
+               - Scaling with player progression
+            3. **Consumption Uses**:
+               - What players spend this resource on
+               - Amount required for each use
+               - Frequency of spending
+               - Value proposition (why spend it?)
+            4. **Storage and Limits**:
+               - Storage capacity (if any)
+               - Rationale for limits
+               - Overflow mechanics
+            5. **Exchange Rates**:
+               - Conversion rates to other resources
+               - Trading mechanics (if enabled)
+               - Market dynamics
+            6. **Sink Mechanisms**:
+               - How excess resources are removed from economy
+               - Inflation prevention
+               - Long-term balance
+            Ensure the resource system:
+            - Creates meaningful choices
+            - Avoids single dominant strategy
+            - Provides multiple progression paths
+            - Balances short-term and long-term goals
+            - Supports the chosen monetization model
+            Generate the complete resource system design now:
+        """.trimIndent(),
+        var progressionPrompt: String = """
+            Based on the resource system above, design a comprehensive progression system for {game_title}.
+            Create a progression system with:
+            - {num_progression_tiers} levels/tiers
+            - Experience curve (XP required per level)
+            - Unlock schedule (what unlocks at each level)
+            - Milestone rewards
+            - Estimated time to reach max level
+            For the experience curve, use a {progression_style} progression style.
+            Consider:
+            - Early game should feel rewarding (faster progression)
+            - Mid game should establish rhythm
+            - Late game should provide long-term goals
+            - Balance between casual and hardcore players
+            If skill trees are enabled ({include_skill_tree}), design:
+            - Number of skill branches
+            - Skills per branch
+            - Synergies between skills
+            - Respec mechanics
+            Generate the progression system design now:
+        """.trimIndent(),
+        var lootPrompt: String = """
+            Based on the resource and progression systems above, design a loot and reward system for {game_title}.
+            Create loot tables for different content types:
+            - Common enemies/activities
+            - Elite enemies/challenges
+            - Boss encounters
+            - Quest rewards
+            - Achievement rewards
+            For each loot table, specify:
+            - Item types and rarities (common, rare, epic, legendary)
+            - Drop rates and weights
+            - Scaling with difficulty/level
+            - Pity systems or bad luck protection
+            Design reward structures for:
+            - Quest completion
+            - Achievement unlocks
+            - Milestone rewards
+            - First-time bonuses
+            Ensure the loot system:
+            - Feels rewarding at all progression stages
+            - Provides clear upgrade paths
+            - Avoids excessive randomness frustration
+            - Balances common vs rare rewards
+            Generate the loot and reward system design now:
+        """.trimIndent(),
+        var monetizationPrompt: String = """
+            Based on the complete economy design above, create a monetization strategy for {game_title}.
+            Monetization Model: {monetization_model}
+            Design monetization that:
+            - Respects player experience (avoid pay-to-win)
+            - Provides value for money
+            - Offers optional purchases
+            - Maintains game balance
+            Include:
+            1. **Optional Purchases**:
+               - Cosmetic items (skins, emotes, effects)
+               - Convenience items (inventory space, fast travel)
+               - Time savers (XP boosts, resource doublers)
+               - Price points and perceived value
+            2. **Battle Pass** (if enabled: {include_battle_pass}):
+               - Duration and price
+               - Free tier rewards
+               - Premium tier rewards
+               - Estimated completion time
+               - Value proposition
+            3. **Cosmetics**:
+               - Categories (character, weapon, mount, etc.)
+               - Rarity tiers
+               - Acquisition methods
+               - Pricing strategy
+            4. **Pay-to-Win Risk Assessment**:
+               - Analyze each purchase type
+               - Identify potential balance issues
+               - Recommend safeguards
+            Generate the monetization strategy now:
+        """.trimIndent(),
+        var engagementPrompt: String = """
+            Based on the complete economy design above, create engagement systems for {game_title}.
+            Design engagement hooks that encourage regular play without feeling manipulative:
+            1. **Daily Rewards** (if enabled: {include_daily_rewards}):
+               - Reward structure
+               - Streak bonuses
+               - Catch-up mechanics
+               - Value scaling
+            2. **Seasonal Content** (if enabled: {include_seasonal_content}):
+               - Season duration
+               - Seasonal themes
+               - Exclusive rewards
+               - Seasonal progression
+            3. **Events**:
+               - Event types (limited-time, recurring, special)
+               - Event frequency
+               - Event rewards
+               - Participation incentives
+            4. **Retention Mechanics**:
+               - Login bonuses
+               - Comeback rewards
+               - Social features
+               - Guild/clan systems
+            For each engagement system, specify:
+            - Frequency and duration
+            - Reward structure
+            - Expected retention impact
+            - Balance with core gameplay
+            Generate the engagement systems design now:
+        """.trimIndent(),
+        var forecastPrompt: String = """
+            Based on the complete economy design above, generate a {forecast_months}-month forecast for {game_title}.
+            For each month, project:
+            1. **Player Progression**:
+               - Average player level
+               - Percentage reaching endgame
+               - Skill tree completion
+            2. **Resource Abundance**:
+               - Average holdings per resource type
+               - Resource velocity (generation vs consumption)
+               - Wealth distribution
+            3. **Economy Health**:
+               - Inflation rate
+               - Sink effectiveness
+               - Balance issues
+               - Health status (healthy, inflated, deflated)
+            4. **Recommended Adjustments**:
+               - Resource generation tweaks
+               - Sink mechanism adjustments
+               - Progression pacing changes
+               - Loot table modifications
+            Consider different player archetypes:
+            - Casual players (1-2 hours/day)
+            - Regular players (3-4 hours/day)
+            - Hardcore players (6+ hours/day)
+            Generate the {forecast_months}-month economy forecast now:
+        """.trimIndent(),
+        var balancePrompt: String = """
+            Based on the complete economy design and forecast above, generate a comprehensive balance report for {game_title}.
+            Analyze:
+            1. **Resource Balance**:
+               - Generation vs consumption rates
+               - Storage limits appropriateness
+               - Exchange rate fairness
+               - Sink mechanism effectiveness
+            2. **Progression Balance**:
+               - XP curve appropriateness
+               - Unlock pacing
+               - Skill tree balance
+               - Time-to-max-level reasonableness
+            3. **Loot Balance**:
+               - Drop rate fairness
+               - Rarity distribution
+               - Reward scaling
+               - Pity system effectiveness
+            4. **Monetization Balance**:
+               - Pay-to-win risk assessment
+               - Value proposition analysis
+               - Price point appropriateness
+               - Cosmetic vs power balance
+            5. **Engagement Balance**:
+               - Daily commitment requirements
+               - FOMO (fear of missing out) risk
+               - Burnout prevention
+               - Casual vs hardcore balance
+            6. **Overall Recommendations**:
+               - Critical balance issues
+               - Suggested adjustments
+               - Testing priorities
+               - Monitoring metrics
+            Generate the comprehensive balance report now:
+        """.trimIndent(),
+        var summaryPrompt: String = """
+            Based on all the analysis above, provide a structured summary of the game economy design.
+            Extract and organize:
+            - Key resources and their roles
+            - Progression system overview
+            - Loot system highlights
+            - Monetization approach
+            - Engagement systems
+            - Economy health projections
+            - Critical balance recommendations
+            Provide this in a clear, structured format suitable for game designers and stakeholders.
+          """.trimIndent()
+    ) : TaskTypeConfig()
+
 
     class GameEconomyTaskExecutionConfigData(
         @Description("The title of the game")
-        val game_title: String? = null,
+        var game_title: String? = null,
         @Description("Type of game: RPG, strategy, idle, multiplayer")
-        val game_type: String? = "RPG",
+        var game_type: String? = "RPG",
         @Description("Progression style: linear, branching, open")
-        val progression_style: String? = "linear",
+        var progression_style: String? = "linear",
         @Description("Number of resource types (2-10)")
-        val num_resources: Int = 3,
+        var num_resources: Int = 3,
         @Description("Number of progression tiers/levels (5-100)")
-        val num_progression_tiers: Int = 50,
+        var num_progression_tiers: Int = 50,
         @Description("Whether to include a skill tree system")
-        val include_skill_tree: Boolean = true,
+        var include_skill_tree: Boolean = true,
         @Description("Whether to include crafting system")
-        val include_crafting: Boolean = false,
+        var include_crafting: Boolean = false,
         @Description("Whether to include player trading")
-        val include_trading: Boolean = false,
+        var include_trading: Boolean = false,
         @Description("Monetization model: free-to-play, premium, subscription")
-        val monetization_model: String? = "free-to-play",
+        var monetization_model: String? = "free-to-play",
         @Description("Whether to include daily rewards")
-        val include_daily_rewards: Boolean = true,
+        var include_daily_rewards: Boolean = true,
         @Description("Whether to include seasonal content")
-        val include_seasonal_content: Boolean = true,
+        var include_seasonal_content: Boolean = true,
         @Description("Whether to include battle pass system")
-        val include_battle_pass: Boolean = true,
+        var include_battle_pass: Boolean = true,
         @Description("Number of months to forecast (3-12)")
-        val forecast_months: Int = 6,
+        var forecast_months: Int = 6,
         @Description("Whether to generate detailed balance report")
-        val generate_balance_report: Boolean = true,
+        var generate_balance_report: Boolean = true,
         @Description("Additional context or design constraints")
-        val additional_context: String? = null,
+        var additional_context: String? = null,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -248,8 +480,6 @@ GameEconomy - Design complete game economic systems with progression and monetiz
         orchestrationConfig: OrchestrationConfig
     ) {
         val startTime = System.currentTimeMillis()
-        log.info("Starting GameEconomy task for: ${executionConfig?.game_title}")
-        val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
 
         val gameTitle = executionConfig?.game_title
         if (gameTitle.isNullOrBlank()) {
@@ -259,19 +489,23 @@ GameEconomy - Design complete game economic systems with progression and monetiz
             resultFn(errorMsg)
             return
         }
+        val transcript = task.transcript()
 
         val ui = task.ui
         val api = defaultSmart ?: return
-        val transcript = task.transcript()
-
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)
 
         // Overview tab
         val overviewTask = task.newTask()
         tabs["Overview"] = overviewTask.placeholder
+        task.ui.pool.submit {
+            try {
+                log.info("Starting GameEconomy task for: $gameTitle")
+                val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
 
-        try {
+
+
             transcript?.write("# Game Economy Design: $gameTitle\n\n".toByteArray())
             transcript?.write(
                 "**Started:** ${
@@ -280,8 +514,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
             )
 
             val overviewBuffer = overviewTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
+                """
             |## Game Economy Design
             |
             |**Game:** $gameTitle
@@ -291,8 +524,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
             |**Progression Style:** ${executionConfig.progression_style}
             |
             |**Status:** 🔄 Initializing economy design...
-        """.trimMargin(), ui = ui
-                )
+        """.trimMargin().renderMarkdown()
             )
             transcript?.write(
                 """
@@ -321,13 +553,11 @@ GameEconomy - Design complete game economic systems with progression and monetiz
                 val contextTask = task.newTask()
                 tabs["Context"] = contextTask.placeholder
                 contextTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
+                    """
             |# Context from Previous Tasks
             |
             |$priorContext
-            """.trimMargin(), ui = ui
-                    )
+            """.trimMargin().renderMarkdown()
                 )
                 transcript?.write(
                     """
@@ -336,6 +566,10 @@ GameEconomy - Design complete game economic systems with progression and monetiz
           |$priorContext
           |
           |""".trimMargin().toByteArray()
+                )
+                transcript?.write(
+                    "\n## Context\n<details><summary>Prior Context</summary>\n\n$priorContext\n</details>\n"
+                        .toByteArray()
                 )
                 task.update()
             }
@@ -349,8 +583,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
             // Update overview
             overviewBuffer?.setLength(0)
             overviewBuffer?.append(
-                MarkdownUtil.renderMarkdown(
-                    """
+                """
             |## Game Economy Design
             |
             |**Game:** $gameTitle
@@ -360,8 +593,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
             |**Progression Style:** ${executionConfig.progression_style}
             |
             |**Status:** 🔄 Designing resource system...
-        """.trimMargin(), ui = ui
-                )
+        """.trimMargin().renderMarkdown()
             )
             overviewTask.update()
 
@@ -371,11 +603,20 @@ GameEconomy - Design complete game economic systems with progression and monetiz
             val resourceTask = task.newTask()
             tabs["Resources"] = resourceTask.placeholder
             val resourceBuffer = resourceTask.add(
-                MarkdownUtil.renderMarkdown("## Resource System\n\n🔄 Designing resource types and flows...", ui = ui)
+
+                "## Resource System\n\n🔄 Designing resource types and flows...".renderMarkdown()
             )
 
-            val resourcePrompt = buildResourcePrompt(gameTitle, contextBuilder.toString())
-            val chatAgent = ChatAgent(
+                val resourcePrompt = (typeConfig?.resourcePrompt ?: "")
+                    .replace("{game_title}", gameTitle ?: "")
+                    .replace("{game_type}", executionConfig.game_type ?: "")
+                    .replace("{progression_style}", executionConfig.progression_style ?: "")
+                    .replace("{num_resources}", executionConfig.num_resources.toString())
+                    .replace("{include_crafting}", executionConfig.include_crafting.toString())
+                    .replace("{include_trading}", executionConfig.include_trading.toString())
+                    .replace("{context}", contextBuilder.toString())
+
+                val chatAgent = ChatAgent(
                 prompt = resourcePrompt,
                 model = api,
                 temperature = 0.3
@@ -394,15 +635,13 @@ GameEconomy - Design complete game economic systems with progression and monetiz
 
             resourceBuffer?.setLength(0)
             resourceBuffer?.append(
-                MarkdownUtil.renderMarkdown(
-                    """
+                """
             |## Resource System Design
             |
             |✅ Design complete
             |
             |$resourceAnalysis
-            """.trimMargin(), ui = ui
-                )
+            """.trimMargin().renderMarkdown()
             )
             resourceTask.complete()
             resourceTask.update()
@@ -413,34 +652,16 @@ GameEconomy - Design complete game economic systems with progression and monetiz
             val progressionTask = task.newTask()
             tabs["Progression"] = progressionTask.placeholder
             val progressionBuffer = progressionTask.add(
-                MarkdownUtil.renderMarkdown("## Progression System\n\n🔄 Designing level curves and unlocks...", ui = ui)
+
+
+                "## Progression System\n\n🔄 Designing level curves and unlocks...".renderMarkdown()
             )
 
-            val progressionPrompt = """
-Based on the resource system above, design a comprehensive progression system for $gameTitle.
-
-Create a progression system with:
-- ${executionConfig.num_progression_tiers} levels/tiers
-- Experience curve (XP required per level)
-- Unlock schedule (what unlocks at each level)
-- Milestone rewards
-- Estimated time to reach max level
-
-For the experience curve, use a ${executionConfig.progression_style} progression style.
-Consider:
-- Early game should feel rewarding (faster progression)
-- Mid game should establish rhythm
-- Late game should provide long-term goals
-- Balance between casual and hardcore players
-
-If skill trees are enabled (${executionConfig.include_skill_tree}), design:
-- Number of skill branches
-- Skills per branch
-- Synergies between skills
-- Respec mechanics
-
-Generate the progression system design now:
-        """.trimIndent()
+                val progressionPrompt = (typeConfig?.progressionPrompt ?: "")
+                    .replace("{game_title}", gameTitle ?: "")
+                    .replace("{num_progression_tiers}", executionConfig.num_progression_tiers.toString())
+                    .replace("{progression_style}", executionConfig.progression_style ?: "")
+                    .replace("{include_skill_tree}", executionConfig.include_skill_tree.toString())
 
             val progressionAnalysis = chatAgent.answer(toInput(progressionPrompt))
             log.info("Progression system designed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${progressionAnalysis.length} characters")
@@ -455,15 +676,13 @@ Generate the progression system design now:
 
             progressionBuffer?.setLength(0)
             progressionBuffer?.append(
-                MarkdownUtil.renderMarkdown(
-                    """
+                """
             |## Progression System Design
             |
             |✅ Design complete
             |
             |$progressionAnalysis
-            """.trimMargin(), ui = ui
-                )
+            """.trimMargin().renderMarkdown()
             )
             progressionTask.complete()
             progressionTask.update()
@@ -474,42 +693,13 @@ Generate the progression system design now:
             val lootTask = task.newTask()
             tabs["Loot & Rewards"] = lootTask.placeholder
             val lootBuffer = lootTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "## Loot & Reward System\n\n🔄 Designing loot tables and drop rates...",
-                    ui = ui
-                )
+
+
+                "## Loot & Reward System\n\n🔄 Designing loot tables and drop rates...".renderMarkdown()
             )
 
-            val lootPrompt = """
-Based on the resource and progression systems above, design a loot and reward system for $gameTitle.
-
-Create loot tables for different content types:
-- Common enemies/activities
-- Elite enemies/challenges
-- Boss encounters
-- Quest rewards
-- Achievement rewards
-
-For each loot table, specify:
-- Item types and rarities (common, rare, epic, legendary)
-- Drop rates and weights
-- Scaling with difficulty/level
-- Pity systems or bad luck protection
-
-Design reward structures for:
-- Quest completion
-- Achievement unlocks
-- Milestone rewards
-- First-time bonuses
-
-Ensure the loot system:
-- Feels rewarding at all progression stages
-- Provides clear upgrade paths
-- Avoids excessive randomness frustration
-- Balances common vs rare rewards
-
-Generate the loot and reward system design now:
-        """.trimIndent()
+                val lootPrompt = (typeConfig?.lootPrompt ?: "")
+                    .replace("{game_title}", gameTitle ?: "")
 
             val lootAnalysis = chatAgent.answer(toInput(lootPrompt))
             log.info("Loot system designed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${lootAnalysis.length} characters")
@@ -524,15 +714,13 @@ Generate the loot and reward system design now:
 
             lootBuffer?.setLength(0)
             lootBuffer?.append(
-                MarkdownUtil.renderMarkdown(
-                    """
+                """
             |## Loot & Reward System Design
             |
             |✅ Design complete
             |
             |$lootAnalysis
-            """.trimMargin(), ui = ui
-                )
+            """.trimMargin().renderMarkdown()
             )
             lootTask.complete()
             lootTask.update()
@@ -543,47 +731,15 @@ Generate the loot and reward system design now:
             val monetizationTask = task.newTask()
             tabs["Monetization"] = monetizationTask.placeholder
             val monetizationBuffer = monetizationTask.add(
-                MarkdownUtil.renderMarkdown("## Monetization Strategy\n\n🔄 Designing monetization approach...", ui = ui)
+
+
+                "## Monetization Strategy\n\n🔄 Designing monetization approach...".renderMarkdown()
             )
 
-            val monetizationPrompt = """
-Based on the complete economy design above, create a monetization strategy for $gameTitle.
-
-Monetization Model: ${executionConfig.monetization_model}
-
-Design monetization that:
-- Respects player experience (avoid pay-to-win)
-- Provides value for money
-- Offers optional purchases
-- Maintains game balance
-
-Include:
-1. **Optional Purchases**:
-   - Cosmetic items (skins, emotes, effects)
-   - Convenience items (inventory space, fast travel)
-   - Time savers (XP boosts, resource doublers)
-   - Price points and perceived value
-
-2. **Battle Pass** (if enabled: ${executionConfig.include_battle_pass}):
-   - Duration and price
-   - Free tier rewards
-   - Premium tier rewards
-   - Estimated completion time
-   - Value proposition
-
-3. **Cosmetics**:
-   - Categories (character, weapon, mount, etc.)
-   - Rarity tiers
-   - Acquisition methods
-   - Pricing strategy
-
-4. **Pay-to-Win Risk Assessment**:
-   - Analyze each purchase type
-   - Identify potential balance issues
-   - Recommend safeguards
-
-Generate the monetization strategy now:
-        """.trimIndent()
+                val monetizationPrompt = (typeConfig?.monetizationPrompt ?: "")
+                    .replace("{game_title}", gameTitle ?: "")
+                    .replace("{monetization_model}", executionConfig.monetization_model ?: "")
+                    .replace("{include_battle_pass}", executionConfig.include_battle_pass.toString())
 
             val monetizationAnalysis = chatAgent.answer(toInput(monetizationPrompt))
             log.info("Monetization strategy designed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${monetizationAnalysis.length} characters")
@@ -598,15 +754,13 @@ Generate the monetization strategy now:
 
             monetizationBuffer?.setLength(0)
             monetizationBuffer?.append(
-                MarkdownUtil.renderMarkdown(
-                    """
+                """
             |## Monetization Strategy Design
             |
             |✅ Design complete
             |
             |$monetizationAnalysis
-            """.trimMargin(), ui = ui
-                )
+            """.trimMargin().renderMarkdown()
             )
             monetizationTask.complete()
             monetizationTask.update()
@@ -617,46 +771,15 @@ Generate the monetization strategy now:
             val engagementTask = task.newTask()
             tabs["Engagement"] = engagementTask.placeholder
             val engagementBuffer = engagementTask.add(
-                MarkdownUtil.renderMarkdown("## Engagement Systems\n\n🔄 Designing retention mechanics...", ui = ui)
+
+
+                "## Engagement Systems\n\n🔄 Designing retention mechanics...".renderMarkdown()
             )
 
-            val engagementPrompt = """
-Based on the complete economy design above, create engagement systems for $gameTitle.
-
-Design engagement hooks that encourage regular play without feeling manipulative:
-
-1. **Daily Rewards** (if enabled: ${executionConfig.include_daily_rewards}):
-   - Reward structure
-   - Streak bonuses
-   - Catch-up mechanics
-   - Value scaling
-
-2. **Seasonal Content** (if enabled: ${executionConfig.include_seasonal_content}):
-   - Season duration
-   - Seasonal themes
-   - Exclusive rewards
-   - Seasonal progression
-
-3. **Events**:
-   - Event types (limited-time, recurring, special)
-   - Event frequency
-   - Event rewards
-   - Participation incentives
-
-4. **Retention Mechanics**:
-   - Login bonuses
-   - Comeback rewards
-   - Social features
-   - Guild/clan systems
-
-For each engagement system, specify:
-- Frequency and duration
-- Reward structure
-- Expected retention impact
-- Balance with core gameplay
-
-Generate the engagement systems design now:
-        """.trimIndent()
+                val engagementPrompt = (typeConfig?.engagementPrompt ?: "")
+                    .replace("{game_title}", gameTitle ?: "")
+                    .replace("{include_daily_rewards}", executionConfig.include_daily_rewards.toString())
+                    .replace("{include_seasonal_content}", executionConfig.include_seasonal_content.toString())
 
             val engagementAnalysis = chatAgent.answer(toInput(engagementPrompt))
             log.info("Engagement systems designed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${engagementAnalysis.length} characters")
@@ -671,15 +794,13 @@ Generate the engagement systems design now:
 
             engagementBuffer?.setLength(0)
             engagementBuffer?.append(
-                MarkdownUtil.renderMarkdown(
-                    """
+                """
             |## Engagement Systems Design
             |
             |✅ Design complete
             |
             |$engagementAnalysis
-            """.trimMargin(), ui = ui
-                )
+            """.trimMargin().renderMarkdown()
             )
             engagementTask.complete()
             engagementTask.update()
@@ -690,42 +811,14 @@ Generate the engagement systems design now:
             val forecastTask = task.newTask()
             tabs["Forecast"] = forecastTask.placeholder
             val forecastBuffer = forecastTask.add(
-                MarkdownUtil.renderMarkdown("## Economy Forecast\n\n🔄 Projecting economy health...", ui = ui)
+
+
+                "## Economy Forecast\n\n🔄 Projecting economy health...".renderMarkdown()
             )
 
-            val forecastPrompt = """
-Based on the complete economy design above, generate a ${executionConfig.forecast_months}-month forecast for $gameTitle.
-
-For each month, project:
-1. **Player Progression**:
-   - Average player level
-   - Percentage reaching endgame
-   - Skill tree completion
-
-2. **Resource Abundance**:
-   - Average holdings per resource type
-   - Resource velocity (generation vs consumption)
-   - Wealth distribution
-
-3. **Economy Health**:
-   - Inflation rate
-   - Sink effectiveness
-   - Balance issues
-   - Health status (healthy, inflated, deflated)
-
-4. **Recommended Adjustments**:
-   - Resource generation tweaks
-   - Sink mechanism adjustments
-   - Progression pacing changes
-   - Loot table modifications
-
-Consider different player archetypes:
-- Casual players (1-2 hours/day)
-- Regular players (3-4 hours/day)
-- Hardcore players (6+ hours/day)
-
-Generate the ${executionConfig.forecast_months}-month economy forecast now:
-        """.trimIndent()
+                val forecastPrompt = (typeConfig?.forecastPrompt ?: "")
+                    .replace("{game_title}", gameTitle ?: "")
+                    .replace("{forecast_months}", executionConfig.forecast_months.toString())
 
             val forecastAnalysis = chatAgent.answer(toInput(forecastPrompt))
             log.info("Economy forecast generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${forecastAnalysis.length} characters")
@@ -740,15 +833,13 @@ Generate the ${executionConfig.forecast_months}-month economy forecast now:
 
             forecastBuffer?.setLength(0)
             forecastBuffer?.append(
-                MarkdownUtil.renderMarkdown(
-                    """
+                """
             |## Economy Forecast (${executionConfig.forecast_months} months)
             |
             |✅ Forecast complete
             |
             |$forecastAnalysis
-            """.trimMargin(), ui = ui
-                )
+            """.trimMargin().renderMarkdown()
             )
             forecastTask.complete()
             forecastTask.update()
@@ -761,51 +852,13 @@ Generate the ${executionConfig.forecast_months}-month economy forecast now:
                 val balanceTask = task.newTask()
                 tabs["Balance Report"] = balanceTask.placeholder
                 val balanceBuffer = balanceTask.add(
-                    MarkdownUtil.renderMarkdown("## Balance Report\n\n🔄 Analyzing economy balance...", ui = ui)
+
+
+                    "## Balance Report\n\n🔄 Analyzing economy balance...".renderMarkdown()
                 )
 
-                val balancePrompt = """
-Based on the complete economy design and forecast above, generate a comprehensive balance report for $gameTitle.
-
-Analyze:
-1. **Resource Balance**:
-   - Generation vs consumption rates
-   - Storage limits appropriateness
-   - Exchange rate fairness
-   - Sink mechanism effectiveness
-
-2. **Progression Balance**:
-   - XP curve appropriateness
-   - Unlock pacing
-   - Skill tree balance
-   - Time-to-max-level reasonableness
-
-3. **Loot Balance**:
-   - Drop rate fairness
-   - Rarity distribution
-   - Reward scaling
-   - Pity system effectiveness
-
-4. **Monetization Balance**:
-   - Pay-to-win risk assessment
-   - Value proposition analysis
-   - Price point appropriateness
-   - Cosmetic vs power balance
-
-5. **Engagement Balance**:
-   - Daily commitment requirements
-   - FOMO (fear of missing out) risk
-   - Burnout prevention
-   - Casual vs hardcore balance
-
-6. **Overall Recommendations**:
-   - Critical balance issues
-   - Suggested adjustments
-   - Testing priorities
-   - Monitoring metrics
-
-Generate the comprehensive balance report now:
-        """.trimIndent()
+                val balancePrompt = (typeConfig?.balancePrompt ?: "")
+                    .replace("{game_title}", gameTitle ?: "")
 
                 balanceReport = chatAgent.answer(toInput(balancePrompt))
                 log.info("Balance report generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${balanceReport.length} characters")
@@ -820,15 +873,13 @@ Generate the comprehensive balance report now:
 
                 balanceBuffer?.setLength(0)
                 balanceBuffer?.append(
-                    MarkdownUtil.renderMarkdown(
-                        """
+                    """
               |## Balance Report
               |
               |✅ Report complete
               |
               |$balanceReport
-              """.trimMargin(), ui = ui
-                    )
+              """.trimMargin().renderMarkdown()
                 )
                 balanceTask.complete()
                 balanceTask.update()
@@ -840,23 +891,13 @@ Generate the comprehensive balance report now:
             val summaryTask = task.newTask()
             tabs["Summary"] = summaryTask.placeholder
             val summaryBuffer = summaryTask.add(
-                MarkdownUtil.renderMarkdown("## Summary\n\n🔄 Generating comprehensive summary...", ui = ui)
+
+
+                "## Summary\n\n🔄 Generating comprehensive summary...".renderMarkdown()
             )
 
-            val summaryPrompt = """
-Based on all the analysis above, provide a structured summary of the game economy design.
-
-Extract and organize:
-- Key resources and their roles
-- Progression system overview
-- Loot system highlights
-- Monetization approach
-- Engagement systems
-- Economy health projections
-- Critical balance recommendations
-
-Provide this in a clear, structured format suitable for game designers and stakeholders.
-      """.trimIndent()
+                val summaryPrompt = (typeConfig?.summaryPrompt ?: "")
+                    .replace("{game_title}", gameTitle ?: "")
 
             val parsedAgent = ParsedAgent(
                 resultClass = GameEconomyConfig::class.java,
@@ -895,8 +936,7 @@ Provide this in a clear, structured format suitable for game designers and stake
 
             summaryBuffer?.setLength(0)
             summaryBuffer?.append(
-                MarkdownUtil.renderMarkdown(
-                    """
+                """
             |## Game Economy Design Summary
             |
             |✅ Summary complete
@@ -918,8 +958,7 @@ Provide this in a clear, structured format suitable for game designers and stake
             |
             |### Balance Recommendations
             |${gameEconomy.balance_recommendations.joinToString("\n") { "- $it" }}
-            """.trimMargin(), ui = ui
-                )
+            """.trimMargin().renderMarkdown()
             )
             summaryTask.complete()
             summaryTask.update()
@@ -927,8 +966,7 @@ Provide this in a clear, structured format suitable for game designers and stake
             // Update overview with completion
             overviewBuffer?.setLength(0)
             overviewBuffer?.append(
-                MarkdownUtil.renderMarkdown(
-                    """
+                """
             |## Game Economy Design
             |
             |**Game:** $gameTitle
@@ -940,8 +978,7 @@ Provide this in a clear, structured format suitable for game designers and stake
             |**Status:** ✅ Design complete
             |
             |**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
-        """.trimMargin(), ui = ui
-                )
+        """.trimMargin().renderMarkdown()
             )
             overviewTask.complete()
             overviewTask.update()
@@ -1018,26 +1055,27 @@ Provide this in a clear, structured format suitable for game designers and stake
             task.safeComplete(summary, log)
             resultFn(finalResult)
 
-        } catch (e: Exception) {
-            val duration = System.currentTimeMillis() - startTime
-            log.error("GameEconomy task failed after ${duration}ms for: $gameTitle", e)
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(
+            } catch (e: Exception) {
+                val duration = System.currentTimeMillis() - startTime
+                log.error("GameEconomy task failed after ${duration}ms for: $gameTitle", e)
+                overviewTask.add(
                     """
-            |## Game Economy Design
-            |
-            |**Status:** ❌ Design Failed
-            |
-            |**Error:** ${e.message}
-            """.trimMargin(), ui = ui
+                |## Game Economy Design
+                |
+                |**Status:** ❌ Design Failed
+                |
+                |**Error:** ${e.message}
+                """.trimMargin().renderMarkdown()
                 )
-            )
-            overviewTask.update()
-            transcript?.write("\n---\n**ERROR:** ${e.message}\n".toByteArray())
-            transcript?.close()
-            task.error(e)
-            task.safeComplete("Design failed: ${e.message}", log)
-            resultFn("ERROR: Game economy design failed - ${e.message}")
+                overviewTask.update()
+                transcript?.write("\n---\n**ERROR:** ${e.message}\n".toByteArray())
+                transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                task.error(e)
+                task.safeComplete("Design failed: ${e.message}", log)
+                resultFn("ERROR: Game economy design failed - ${e.message}")
+            } finally {
+                transcript?.close()
+            }
         }
     }
 
@@ -1068,71 +1106,18 @@ Provide this in a clear, structured format suitable for game designers and stake
             }
         }
 
-    private fun buildResourcePrompt(
-        gameTitle: String,
-        context: String
-    ): String {
-        return """
-You are an expert game economy designer. Your task is to design a comprehensive resource system for a game.
 
-## Game Information:
-**Title:** $gameTitle
-**Type:** ${executionConfig?.game_type}
-**Progression Style:** ${executionConfig?.progression_style}
 
-## Design Requirements:
-- Number of resources: ${executionConfig?.num_resources}
-- Include crafting: ${executionConfig?.include_crafting}
-- Include trading: ${executionConfig?.include_trading}
 
-$context
 
-## Resource System Design Instructions:
 
-Design ${executionConfig?.num_resources} distinct resource types that work together to create a balanced economy.
 
-For each resource, specify:
 
-1. **Resource Identity**:
-   - Name and type (currency, material, experience, premium)
-   - Purpose and role in the economy
-   - Thematic fit with game type
 
-2. **Generation Sources**:
-   - How players acquire this resource
-   - Amount per activity
-   - Frequency of acquisition
-   - Scaling with player progression
 
-3. **Consumption Uses**:
-   - What players spend this resource on
-   - Amount required for each use
-   - Frequency of spending
-   - Value proposition (why spend it?)
 
-4. **Storage and Limits**:
-   - Storage capacity (if any)
-   - Rationale for limits
-   - Overflow mechanics
 
-5. **Exchange Rates**:
-   - Conversion rates to other resources
-   - Trading mechanics (if enabled)
-   - Market dynamics
 
-6. **Sink Mechanisms**:
-   - How excess resources are removed from economy
-   - Inflation prevention
-   - Long-term balance
 
-Ensure the resource system:
-- Creates meaningful choices
-- Avoids single dominant strategy
-- Provides multiple progression paths
-- Balances short-term and long-term goals
-- Supports the chosen monetization model
 
-Generate the complete resource system design now:
-        """.trimIndent()
-    }
 }

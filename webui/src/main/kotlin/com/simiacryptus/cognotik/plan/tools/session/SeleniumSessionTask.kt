@@ -175,116 +175,144 @@ class SeleniumSessionTask(
                 }
             }
         requireNotNull(executionConfig) { "SeleniumSessionTaskData is required" }
+
+
+
+
+
+
+
+      task.ui.pool.submit {
         var selenium: Selenium? = null
         var transcriptStream: FileOutputStream? = null
-        task.header("Selenium Session Execution")
-        val statusBuffer = task.add("Initializing session...")
         try {
+          task.header("Selenium Session Execution")
+          val statusBuffer = task.add("Initializing browser session...".renderMarkdown())
 
-            cleanupInactiveSessions()
+          cleanupInactiveSessions()
 
-            if (activeSessions.size >= MAX_SESSIONS && executionConfig.sessionId == null) {
-                throw IllegalStateException("Maximum number of concurrent sessions ($MAX_SESSIONS) reached")
+          if (activeSessions.size >= MAX_SESSIONS && executionConfig.sessionId == null) {
+            throw IllegalStateException("Maximum number of concurrent sessions ($MAX_SESSIONS) reached")
+          }
+
+          selenium = executionConfig.sessionId?.let { id -> activeSessions[id] }
+            ?: seleniumFactory(agent.pool, null).also { newSession ->
+              executionConfig.sessionId?.let { id -> activeSessions[id] = newSession }
             }
-            selenium = executionConfig.sessionId?.let { id -> activeSessions[id] }
-                ?: seleniumFactory(agent.pool, null).also { newSession ->
-                    executionConfig.sessionId?.let { id -> activeSessions[id] = newSession }
-                }
-            statusBuffer?.setLength(0)
-            statusBuffer?.append("Session active. ID: ${executionConfig.sessionId ?: "temporary"}")
-            task.update()
 
-            if (executionConfig.createTranscript) {
-                transcriptStream = task.transcript("Selenium Session")
-                transcriptStream?.write("# Selenium Session Transcript\n\n".toByteArray())
-            }
-            log.debug("Starting Selenium session ${executionConfig.sessionId ?: "temporary"} for URL: ${executionConfig.url} with timeout ${executionConfig.timeout}ms")
-            selenium.setScriptTimeout(executionConfig.timeout)
+          statusBuffer?.setLength(0)
+          statusBuffer?.append("Session active. ID: `${executionConfig.sessionId ?: "temporary"}`".renderMarkdown())
+          task.update()
 
+          if (executionConfig.createTranscript) {
+            transcriptStream = task.transcript("Selenium Session")
+            transcriptStream?.write("# Selenium Session Transcript\n\n".toByteArray())
+          }
 
+          log.info("Starting Selenium session ${executionConfig.sessionId ?: "temporary"}")
+          selenium.setScriptTimeout(executionConfig.timeout)
+
+          val runLogic = {
             if (executionConfig.url.isNotBlank()) {
-                statusBuffer?.setLength(0)
-                statusBuffer?.append("Navigating to: ${executionConfig.url}")
-                task.update()
-                selenium.navigate(executionConfig.url)
-                transcriptStream?.write("## Navigation\nNavigated to: ${executionConfig.url}\n\n".toByteArray())
+              statusBuffer?.setLength(0)
+              statusBuffer?.append("Navigating to: `${executionConfig.url}`".renderMarkdown())
+              task.update()
+              selenium.navigate(executionConfig.url)
+              transcriptStream?.write("## Navigation\nNavigated to: ${executionConfig.url}\n\n".toByteArray())
             }
 
             val results = executionConfig.commands.mapIndexed { index, command ->
-                try {
-                    log.debug("Executing command: $command")
-                    task.add("<b>Command ${index + 1}:</b> <code>$command</code>")
-                    transcriptStream?.write("### Executing Command\n```javascript\n$command\n```\n\n".toByteArray())
-                    val startTime = System.currentTimeMillis()
-                    val result = selenium.executeScript(command)?.toString() ?: "null"
-                    val duration = System.currentTimeMillis() - startTime
-                    log.debug("Command completed in ${duration}ms")
-                    if (result.length > 200) {
-                        task.expandable("Result (${duration}ms)", "<pre>${result.take(5000)}</pre>")
-                    } else {
-                        task.add("Result (${duration}ms): <pre>$result</pre>")
-                    }
+              try {
+                log.debug("Executing command: $command")
+                task.add("Executing command ${index + 1}...".renderMarkdown())
+                transcriptStream?.write("### Command ${index + 1}\n```javascript\n$command\n```\n\n".toByteArray())
 
-                    transcriptStream?.write("**Duration:** ${duration}ms\n\n".toByteArray())
-                    transcriptStream?.write("**Result:**\n```\n${result.take(1000)}\n```\n\n".toByteArray())
-                    result
-                } catch (e: Exception) {
-                    task.error(e)
-                    log.error("Error executing command: $command", e)
-                    transcriptStream?.write("**Error:** ${e.message}\n\n".toByteArray())
-                    e.message ?: "Error executing command"
-                }
-            }
-            transcriptStream?.write("## Final State\n".toByteArray())
-            transcriptStream?.write("**Final URL:** ${selenium.getCurrentUrl()}\n\n".toByteArray())
-            statusBuffer?.setLength(0)
-            statusBuffer?.append("Execution complete.")
-            task.update()
-            val tabs = TabbedDisplay(task)
-            tabs["Summary"] = """
-                <ul>
-                    <li><b>Final URL:</b> ${selenium.getCurrentUrl()}</li>
-                    <li><b>Session ID:</b> ${executionConfig.sessionId ?: "temporary"}</li>
-                    <li><b>Browser:</b> ${selenium.getBrowserInfo()}</li>
-                </ul>
-            """.trimIndent()
-            val pageSource = try {
-                HtmlSimplifier.scrubHtml(
-                    str = selenium.getPageSource(),
-                    baseUrl = selenium.getCurrentUrl(),
-                    includeCssData = executionConfig.includeCssData ?: false,
-                    simplifyStructure = executionConfig.simplifyStructure,
-                    keepObjectIds = executionConfig.keepObjectIds,
-                    preserveWhitespace = executionConfig.preserveWhitespace
-                )
-            } catch (e: Exception) {
+                val startTime = System.currentTimeMillis()
+                val result = selenium.executeScript(command)?.toString() ?: "null"
+                val duration = System.currentTimeMillis() - startTime
+
+                task.expandable("Result (${duration}ms)", "<pre><code>$result</code></pre>")
+                transcriptStream?.write("<details><summary>Result (${duration}ms)</summary>\n\n```\n$result\n```\n</details>\n\n".toByteArray())
+                result
+              } catch (e: Exception) {
+                task.error(e)
+                log.error("Command failed: $command", e)
+                transcriptStream?.write("#### Error\n```\n${e.message}\n```\n\n".toByteArray())
                 "Error: ${e.message}"
+              }
             }
-            tabs["Page Source"] =
-                "<pre><code class=\"language-html\">${pageSource.replace("<", "&lt;").take(50000)}</code></pre>"
 
+            val tabs = TabbedDisplay(task)
+            val pageSource = try {
+              HtmlSimplifier.scrubHtml(
+                str = selenium.getPageSource(),
+                baseUrl = selenium.getCurrentUrl(),
+                includeCssData = executionConfig.includeCssData ?: false,
+                simplifyStructure = executionConfig.simplifyStructure,
+                keepObjectIds = executionConfig.keepObjectIds,
+                preserveWhitespace = executionConfig.preserveWhitespace
+              )
+            } catch (e: Exception) {
+              "Error: ${e.message}"
+            }
 
-            val result = formatResults(executionConfig, selenium, results)
-            resultFn(result)
-            transcriptStream?.flush()
-            transcriptStream?.close()
+            tabs["Summary"] = """
+                        ### Session Summary
+                        * **Final URL:** [${selenium.getCurrentUrl()}](${selenium.getCurrentUrl()})
+                        * **Browser:** ${selenium.getBrowserInfo()}
+                        * **Commands Executed:** ${results.size}
+                    """.trimIndent().renderMarkdown()
+
+            tabs["Page Source"] = "<details open><summary>Scrubbed HTML</summary><pre><code class=\"language-html\">${
+              pageSource.replace(
+                "<",
+                "&lt;"
+              ).take(50000)
+            }</code></pre></details>"
+
+            transcriptStream?.write("## Final State\n**URL:** ${selenium.getCurrentUrl()}\n\n".toByteArray())
+            transcriptStream?.write("<details><summary>Final Page Source</summary>\n\n```html\n$pageSource\n```\n</details>\n".toByteArray())
+
+            resultFn(formatResults(executionConfig, selenium, results))
+            task.complete()
+          }
+
+          if (orchestrationConfig.autoFix || (executionConfig.commands.isEmpty() && executionConfig.url.isBlank())) {
+            runLogic()
+          } else {
+            val proposal = buildString {
+              append("### Proposed Browser Actions\n")
+              if (executionConfig.url.isNotBlank()) append("* Navigate to: `${executionConfig.url}`\n")
+              executionConfig.commands.forEach { append("* Execute: `$it`\n") }
+            }
+            task.add(proposal.renderMarkdown())
+            task.add(acceptButtonFooter(task.ui) {
+              runLogic()
+            })
+          }
+
         } catch (e: Exception) {
-            transcriptStream?.close()
-            throw e
-        } finally {
+          task.error(e)
+          log.error("Selenium task failed: ${e.message}")
+          try {
 
-            if ((executionConfig.sessionId == null || executionConfig.closeSession) && selenium != null) {
-                log.info("Closing temporary session")
-                try {
-                    selenium.quit()
-                    if (executionConfig.sessionId != null) {
-                        activeSessions.remove(executionConfig.sessionId)
-                    }
-                } catch (e: Exception) {
-                    log.error("Error closing temporary session", e)
-                    selenium.forceQuit()
-                    if (executionConfig.sessionId != null) {
-                        activeSessions.remove(executionConfig.sessionId)
+
+            transcriptStream?.write("\n## Critical Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+          } catch (_: Exception) {
+          }
+          throw e
+        } finally {
+          transcriptStream?.flush()
+          transcriptStream?.close()
+          if ((executionConfig.sessionId == null || executionConfig.closeSession) && selenium != null) {
+            log.info("Closing Selenium session")
+            try {
+              selenium.quit()
+              if (executionConfig.sessionId != null) activeSessions.remove(executionConfig.sessionId)
+            } catch (e: Exception) {
+              log.error("Error closing session", e)
+              selenium.forceQuit()
+              if (executionConfig.sessionId != null) activeSessions.remove(executionConfig.sessionId)
                     }
                 }
             }
@@ -312,12 +340,12 @@ class SeleniumSessionTask(
             Optional.empty()
         ))
         devTools.addListener(Network.requestWillBeSent()) { request ->
-            println("Request URL: " + request.request.url)
+          log.debug("Request URL: ${request.request.url}")
         }
 
         devTools.send(Log.enable())
         devTools.addListener(Log.entryAdded()) { logEntry ->
-            println("Console: " + logEntry.text)
+          log.debug("Browser Console: ${logEntry.text}")
         }
         return driver
     }
@@ -361,12 +389,13 @@ class SeleniumSessionTask(
                     simplifyStructure = executionConfig?.simplifyStructure ?: true,
                     keepObjectIds = executionConfig?.keepObjectIds ?: false,
                     preserveWhitespace = executionConfig?.preserveWhitespace ?: false
-                )
+                ).take(10000) // Truncate for LLM context
             )
+          if (selenium.getPageSource().length > 10000) appendLine("... (truncated)")
 
             appendLine("```")
         } catch (e: Exception) {
-            appendLine("\nError getting page source: ${e.message}")
+          appendLine("\n*Error retrieving page source: ${e.message}*")
         }
     }
 

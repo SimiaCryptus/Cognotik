@@ -1,79 +1,77 @@
 package com.simiacryptus.cognotik.plan.tools.games
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class GameLevelDesignTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: GameLevelDesignTaskExecutionConfigData?
-) : AbstractTask<GameLevelDesignTask.GameLevelDesignTaskExecutionConfigData, TaskTypeConfig>(
+) : AbstractTask<GameLevelDesignTask.GameLevelDesignTaskExecutionConfigData, GameLevelDesignTask.GameLevelDesignTaskTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
 
     class GameLevelDesignTaskExecutionConfigData(
         @Description("The name of the level")
-        val level_name: String? = null,
+        var level_name: String? = null,
 
         @Description("The type of game (e.g., 'platformer', 'shooter', 'puzzle', 'rpg', 'metroidvania')")
-        val game_type: String = "platformer",
+        var game_type: String = "platformer",
 
         @Description("Target duration in minutes")
-        val level_duration_minutes: Int = 10,
+        var level_duration_minutes: Int = 10,
 
         @Description("Difficulty tier")
-        val difficulty_tier: String = "medium",
+        var difficulty_tier: String = "medium",
 
         @Description("Number of players (1 for single-player, 2+ for multiplayer)")
-        val player_count: Int = 1,
+        var player_count: Int = 1,
 
         @Description("Level theme (e.g., 'forest', 'dungeon', 'city', 'space_station')")
-        val level_theme: String = "dungeon",
+        var level_theme: String = "dungeon",
 
         @Description("Whether to include a boss encounter")
-        val include_boss_encounter: Boolean = false,
+        var include_boss_encounter: Boolean = false,
 
         @Description("Whether to include puzzle elements")
-        val include_puzzles: Boolean = true,
+        var include_puzzles: Boolean = true,
 
         @Description("Whether to include secret areas")
-        val include_secrets: Boolean = true,
+        var include_secrets: Boolean = true,
 
         @Description("Whether to include collectibles")
-        val include_collectibles: Boolean = true,
+        var include_collectibles: Boolean = true,
 
         @Description("Pacing style")
-        val pacing_style: String = "escalating",
+        var pacing_style: String = "escalating",
 
         @Description("Whether to generate difficulty variants")
-        val generate_difficulty_variants: Boolean = false,
+        var generate_difficulty_variants: Boolean = false,
 
         @Description("Whether to include ASCII visual layout")
-        val include_visual_layout: Boolean = true,
+        var include_visual_layout: Boolean = true,
 
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
 
         task_description: String? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = TaskState.Pending,
+        task_dependencies: MutableList<String>? = null,
+        state: TaskState? = TaskState.Pending
     ) : TaskExecutionConfig(
         task_type = GameLevelDesign.name,
         task_description = task_description ?: "Generate game level design: '$level_name'",
-        task_dependencies = task_dependencies?.toMutableList(),
+        task_dependencies = task_dependencies,
         state = state
     ), ValidatedObject {
         override fun validate(): String? {
@@ -324,21 +322,34 @@ class GameLevelDesignTask(
             return ValidatedObject.validateFields(this)
         }
     }
+    class GameLevelDesignTaskTypeConfig(
+        var structurePrompt: String = "You are an expert game level designer. Create a complete level structure for this game.",
+        var encounterPrompt: String = "You are an expert game encounter designer. Design detailed encounters for this level.",
+        var pacingPrompt: String = "You are an expert game pacing designer. Analyze and define the pacing curve for this level.",
+        var collectiblesPrompt: String = "You are an expert game content designer. Add collectibles and secrets to this level.",
+        var guidancePrompt: String = "You are an expert game UX designer. Design player guidance systems for this level.",
+        var variantsPrompt: String = "You are an expert game balance designer. Create difficulty variants for this level.",
+        var promptSegmentTemplate: String = """
+            GameLevelDesign - Generate complete game level designs with layout, pacing, and encounters
+              ** Optionally, list input files (supports glob patterns) to be examined for context
+              ** Specify level name and game type (platformer, shooter, puzzle, rpg, etc.)
+              ** Set target duration and difficulty tier
+              ** Configure player count (single or multiplayer)
+              ** Choose level theme and visual style
+              ** Include boss encounters, puzzles, secrets, and collectibles
+              ** Define pacing style (steady, escalating, varied)
+              ** Generate difficulty variants for accessibility
+              ** Produces complete level design with ASCII visualization
+              ** Includes encounter progression, pacing analysis, and player guidance
+              ** Ideal for game development, level design documentation, and prototyping
+        """.trimIndent()
+    ) : TaskTypeConfig()
+
 
     override fun promptSegment(): String {
-        return """
- GameLevelDesign - Generate complete game level designs with layout, pacing, and encounters
-  ** Optionally, list input files (supports glob patterns) to be examined for context
-  ** Specify level name and game type (platformer, shooter, puzzle, rpg, etc.)
-  ** Set target duration and difficulty tier
-  ** Configure player count (single or multiplayer)
-  ** Choose level theme and visual style
-  ** Include boss encounters, puzzles, secrets, and collectibles
-  ** Define pacing style (steady, escalating, varied)
-  ** Generate difficulty variants for accessibility
-  ** Produces complete level design with ASCII visualization
-  ** Includes encounter progression, pacing analysis, and player guidance
-  ** Ideal for game development, level design documentation, and prototyping
+        return typeConfig?.promptSegmentTemplate ?: """
+            GameLevelDesign - Generate complete game level designs with layout, pacing, and encounters
+            (Template missing in config)
         """.trimIndent()
     }
 
@@ -352,15 +363,13 @@ class GameLevelDesignTask(
         val startTime = System.currentTimeMillis()
         log.info("Starting GameLevelDesignTask for level: '${executionConfig?.level_name}'")
 
-        val transcriptStream = task.transcript()
-        val transcriptWriter = transcriptStream?.bufferedWriter()
+        val transcript = task.transcript()
 
         // Validate configuration
         executionConfig?.validate()?.let { validationError ->
             log.error("Configuration validation failed: $validationError")
             task.safeComplete("CONFIGURATION ERROR: $validationError", log)
             task.error(ValidatedObject.ValidationError(validationError, executionConfig))
-            transcriptWriter?.close()
             resultFn("CONFIGURATION ERROR: $validationError")
             return
         }
@@ -369,7 +378,6 @@ class GameLevelDesignTask(
         if (levelName.isNullOrBlank()) {
             log.error("No level name specified")
             task.safeComplete("CONFIGURATION ERROR: No level name specified", log)
-            transcriptWriter?.close()
             resultFn("CONFIGURATION ERROR: No level name specified")
             return
         }
@@ -409,13 +417,12 @@ class GameLevelDesignTask(
             appendLine("*Creating level layout and zone structure...*")
         }
 
-        transcriptWriter?.apply {
-            write("# Game Level Design Transcript\n\n")
-            write("**Level Name:** $levelName\n\n")
-            write("## Configuration\n\n")
-            write(overviewContent)
-            write("\n---\n\n")
-            flush()
+        transcript?.apply {
+            write("# Game Level Design Transcript\n\n".toByteArray())
+            write("**Level Name:** $levelName\n\n".toByteArray())
+            write("## Configuration\n\n".toByteArray())
+            write(overviewContent.toByteArray())
+            write("\n---\n\n".toByteArray())
         }
 
         overviewTask.add(overviewContent.renderMarkdown)
@@ -432,11 +439,10 @@ class GameLevelDesignTask(
                     (if (priorContext.isNotBlank()) "\n\n## Prior Context\n\n$priorContext" else "")
 
             if (combinedContext.isNotBlank()) {
-                transcriptWriter?.apply {
-                    write("## Context\n\n")
-                    write(combinedContext.truncateForDisplay(2000))
-                    write("\n\n---\n\n")
-                    flush()
+                transcript?.apply {
+                    write("## Context\n<details><summary>Context Data</summary>\n\n".toByteArray())
+                    write(combinedContext.toByteArray())
+                    write("\n</details>\n\n---\n\n".toByteArray())
                 }
                 log.debug("Found context: ${combinedContext.length} chars")
                 val contextTask = task.newTask()
@@ -453,10 +459,9 @@ class GameLevelDesignTask(
 
             // Phase 1: Create level structure
             log.info("Phase 1: Creating level structure")
-            transcriptWriter?.apply {
-                write("## Phase 1: Level Structure\n\n")
-                write("Creating level layout and zone structure...\n\n")
-                flush()
+            transcript?.apply {
+                write("## Phase 1: Level Structure\n\n".toByteArray())
+                write("Creating level layout and zone structure...\n\n".toByteArray())
             }
 
             val structureTask = task.newTask()
@@ -482,7 +487,7 @@ class GameLevelDesignTask(
             val structureAgent = ParsedAgent(
                 resultClass = GameLevel::class.java,
                 prompt = """
-You are an expert game level designer. Create a complete level structure for this game.
+${typeConfig?.structurePrompt}
 
 Level Name: $levelName
 Game Type: ${executionConfig.game_type}
@@ -527,7 +532,6 @@ Keep zone descriptions brief - detailed content will be added later.
             level.validate()?.let { validationError ->
                 log.error("Level structure validation failed: $validationError")
                 structureTask.error(ValidatedObject.ValidationError(validationError, level))
-                transcriptWriter?.close()
                 task.safeComplete("Level structure validation failed: $validationError", log)
                 resultFn("ERROR: Level structure validation failed: $validationError")
                 return
@@ -535,14 +539,13 @@ Keep zone descriptions brief - detailed content will be added later.
 
             log.info("Generated level structure: ${level.layout.zones.size} zones")
 
-            transcriptWriter?.apply {
-                write("### Level Structure\n\n")
-                write("**Zones:** ${level.layout.zones.size}\n\n")
+            transcript?.apply {
+                write("### Level Structure\n\n".toByteArray())
+                write("**Zones:** ${level.layout.zones.size}\n\n".toByteArray())
                 level.layout.zones.forEach { zone ->
-                    write("- ${zone.zone_id}: ${zone.name} (${zone.type})\n")
+                    write("- ${zone.zone_id}: ${zone.name} (${zone.type})\n".toByteArray())
                 }
-                write("\n---\n\n")
-                flush()
+                write("\n---\n\n".toByteArray())
             }
 
             val structureContent = buildString {
@@ -589,10 +592,9 @@ Keep zone descriptions brief - detailed content will be added later.
 
             // Phase 2: Design encounters
             log.info("Phase 2: Designing encounters")
-            transcriptWriter?.apply {
-                write("## Phase 2: Encounter Design\n\n")
-                write("Designing encounters and challenges...\n\n")
-                flush()
+            transcript?.apply {
+                write("## Phase 2: Encounter Design\n\n".toByteArray())
+                write("Designing encounters and challenges...\n\n".toByteArray())
             }
 
             val encounterTask = task.newTask()
@@ -611,7 +613,7 @@ Keep zone descriptions brief - detailed content will be added later.
             val encounterAgent = ParsedAgent(
                 resultClass = GameLevel::class.java,
                 prompt = """
-You are an expert game encounter designer. Design detailed encounters for this level.
+${typeConfig?.encounterPrompt}
 
 Level: ${level.name}
 Game Type: ${executionConfig.game_type}
@@ -649,14 +651,13 @@ Return the complete level with all encounters filled in.
 
             level = encounterAgent.answer(listOf("Design encounters")).obj
 
-            transcriptWriter?.apply {
-                write("### Encounters\n\n")
-                write("**Total Encounters:** ${level.encounters.size}\n\n")
+            transcript?.apply {
+                write("### Encounters\n\n".toByteArray())
+                write("**Total Encounters:** ${level.encounters.size}\n\n".toByteArray())
                 level.encounters.forEach { enc ->
-                    write("- ${enc.encounter_id}: ${enc.type} (${enc.difficulty})\n")
+                    write("- ${enc.encounter_id}: ${enc.type} (${enc.difficulty})\n".toByteArray())
                 }
-                write("\n---\n\n")
-                flush()
+                write("\n---\n\n".toByteArray())
             }
 
             val encounterContent = buildString {
@@ -702,10 +703,9 @@ Return the complete level with all encounters filled in.
 
             // Phase 3: Pacing analysis
             log.info("Phase 3: Analyzing pacing")
-            transcriptWriter?.apply {
-                write("## Phase 3: Pacing Analysis\n\n")
-                write("Analyzing level pacing and intensity...\n\n")
-                flush()
+            transcript?.apply {
+                write("## Phase 3: Pacing Analysis\n\n".toByteArray())
+                write("Analyzing level pacing and intensity...\n\n".toByteArray())
             }
 
             val pacingTask = task.newTask()
@@ -724,7 +724,7 @@ Return the complete level with all encounters filled in.
             val pacingAgent = ParsedAgent(
                 resultClass = GameLevel::class.java,
                 prompt = """
-You are an expert game pacing designer. Analyze and define the pacing curve for this level.
+${typeConfig?.pacingPrompt}
 
 Level: ${level.name}
 Duration: ${executionConfig.level_duration_minutes} minutes
@@ -760,13 +760,12 @@ Return the complete level with pacing_curve filled in.
 
             level = pacingAgent.answer(listOf("Analyze pacing")).obj
 
-            transcriptWriter?.apply {
-                write("### Pacing Curve\n\n")
-                write("**Overall Intensity:** ${level.pacing_curve.overall_intensity}\n")
-                write("**Climax:** ${level.pacing_curve.climax_location}\n")
-                write("**Rest Points:** ${level.pacing_curve.rest_points.size}\n\n")
-                write("---\n\n")
-                flush()
+            transcript?.apply {
+                write("### Pacing Curve\n\n".toByteArray())
+                write("**Overall Intensity:** ${level.pacing_curve.overall_intensity}\n".toByteArray())
+                write("**Climax:** ${level.pacing_curve.climax_location}\n".toByteArray())
+                write("**Rest Points:** ${level.pacing_curve.rest_points.size}\n\n".toByteArray())
+                write("---\n\n".toByteArray())
             }
 
             val pacingContent = buildString {
@@ -818,10 +817,9 @@ Return the complete level with pacing_curve filled in.
                 task.update()
 
                 log.info("Phase 4: Designing collectibles and secrets")
-                transcriptWriter?.apply {
-                    write("## Phase 4: Collectibles & Secrets\n\n")
-                    write("Placing collectibles and secret areas...\n\n")
-                    flush()
+                transcript?.apply {
+                    write("## Phase 4: Collectibles & Secrets\n\n".toByteArray())
+                    write("Placing collectibles and secret areas...\n\n".toByteArray())
                 }
 
                 val collectiblesTask = task.newTask()
@@ -840,7 +838,7 @@ Return the complete level with pacing_curve filled in.
                 val collectiblesAgent = ParsedAgent(
                     resultClass = GameLevel::class.java,
                     prompt = """
-You are an expert game content designer. Add collectibles and secrets to this level.
+${typeConfig?.collectiblesPrompt}
 
 Level: ${level.name}
 Theme: ${level.theme}
@@ -866,12 +864,11 @@ Return the complete level with collectibles and secrets filled in.
 
                 level = collectiblesAgent.answer(listOf("Add collectibles and secrets")).obj
 
-                transcriptWriter?.apply {
-                    write("### Collectibles & Secrets\n\n")
-                    write("**Collectibles:** ${level.collectibles.size}\n")
-                    write("**Secrets:** ${level.secrets.size}\n\n")
-                    write("---\n\n")
-                    flush()
+                transcript?.apply {
+                    write("### Collectibles & Secrets\n\n".toByteArray())
+                    write("**Collectibles:** ${level.collectibles.size}\n".toByteArray())
+                    write("**Secrets:** ${level.secrets.size}\n\n".toByteArray())
+                    write("---\n\n".toByteArray())
                 }
 
                 val collectiblesContent = buildString {
@@ -920,10 +917,9 @@ Return the complete level with collectibles and secrets filled in.
             task.update()
 
             log.info("Phase 5: Designing player guidance")
-            transcriptWriter?.apply {
-                write("## Phase 5: Player Guidance\n\n")
-                write("Designing guidance systems...\n\n")
-                flush()
+            transcript?.apply {
+                write("## Phase 5: Player Guidance\n\n".toByteArray())
+                write("Designing guidance systems...\n\n".toByteArray())
             }
 
             val guidanceTask = task.newTask()
@@ -932,7 +928,7 @@ Return the complete level with collectibles and secrets filled in.
             val guidanceAgent = ParsedAgent(
                 resultClass = PlayerGuidance::class.java,
                 prompt = """
-You are an expert game UX designer. Design player guidance systems for this level.
+${typeConfig?.guidancePrompt}
 
 Level: ${level.name}
 Game Type: ${executionConfig.game_type}
@@ -961,12 +957,11 @@ Create comprehensive guidance that helps without patronizing.
 
             val guidance = guidanceAgent.answer(listOf("Design player guidance")).obj
 
-            transcriptWriter?.apply {
-                write("### Player Guidance\n\n")
-                write("**Implicit Cues:** ${guidance.implicit_cues.size}\n")
-                write("**Explicit Markers:** ${guidance.explicit_markers.size}\n\n")
-                write("---\n\n")
-                flush()
+            transcript?.apply {
+                write("### Player Guidance\n\n".toByteArray())
+                write("**Implicit Cues:** ${guidance.implicit_cues.size}\n".toByteArray())
+                write("**Explicit Markers:** ${guidance.explicit_markers.size}\n\n".toByteArray())
+                write("---\n\n".toByteArray())
             }
 
             val guidanceContent = buildString {
@@ -1015,10 +1010,9 @@ Create comprehensive guidance that helps without patronizing.
                 task.update()
 
                 log.info("Phase 6: Generating difficulty variants")
-                transcriptWriter?.apply {
-                    write("## Phase 6: Difficulty Variants\n\n")
-                    write("Generating difficulty variants...\n\n")
-                    flush()
+                transcript?.apply {
+                    write("## Phase 6: Difficulty Variants\n\n".toByteArray())
+                    write("Generating difficulty variants...\n\n".toByteArray())
                 }
 
                 val variantsTask = task.newTask()
@@ -1027,7 +1021,7 @@ Create comprehensive guidance that helps without patronizing.
                 val variantsAgent = ParsedAgent(
                     resultClass = DifficultyVariants::class.java,
                     prompt = """
-You are an expert game balance designer. Create difficulty variants for this level.
+${typeConfig?.variantsPrompt}
 
 Base Level: ${level.name}
 Base Difficulty: ${executionConfig.difficulty_tier}
@@ -1057,11 +1051,10 @@ Ensure variants maintain the core level design while adjusting challenge.
 
                 val variants = variantsAgent.answer(listOf("Generate difficulty variants")).obj
 
-                transcriptWriter?.apply {
-                    write("### Difficulty Variants\n\n")
-                    write("**Variants:** ${variants.variants.size}\n\n")
-                    write("---\n\n")
-                    flush()
+                transcript?.apply {
+                    write("### Difficulty Variants\n\n".toByteArray())
+                    write("**Variants:** ${variants.variants.size}\n\n".toByteArray())
+                    write("---\n\n".toByteArray())
                 }
 
                 val variantsContent = buildString {
@@ -1263,32 +1256,29 @@ Ensure variants maintain the core level design while adjusting challenge.
             }
 
             finalTask.add(completeDesign.renderMarkdown)
-            transcriptWriter?.apply {
-                write("## Complete Level Design\n\n")
-                write(completeDesign)
-                write("\n---\n\n")
-                flush()
+            transcript?.apply {
+                write("## Complete Level Design\n<details><summary>Full Design Markdown</summary>\n\n".toByteArray())
+                write(completeDesign.toByteArray())
+                write("\n</details>\n\n---\n\n".toByteArray())
             }
             task.update()
 
             // Final statistics
             val totalTime = System.currentTimeMillis() - startTime
 
-            transcriptWriter?.apply {
-                write("## Generation Complete\n\n")
-                write("**Statistics:**\n\n")
-                write("- Zones: ${level.layout.zones.size}\n")
-                write("- Encounters: ${level.encounters.size}\n")
-                write("- Collectibles: ${level.collectibles.size}\n")
-                write("- Secrets: ${level.secrets.size}\n")
-                write("- Total Time: ${totalTime / 1000.0}s\n\n")
+            transcript?.apply {
+                write("## Generation Complete\n\n".toByteArray())
+                write("**Statistics:**\n\n".toByteArray())
+                write("- Zones: ${level.layout.zones.size}\n".toByteArray())
+                write("- Encounters: ${level.encounters.size}\n".toByteArray())
+                write("- Collectibles: ${level.collectibles.size}\n".toByteArray())
+                write("- Secrets: ${level.secrets.size}\n".toByteArray())
+                write("- Total Time: ${totalTime / 1000.0}s\n\n".toByteArray())
                 write(
                     "**Completed:** ${
                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                    }\n"
+                    }\n".toByteArray()
                 )
-                flush()
-                close()
             }
 
             overviewTask.add(
@@ -1340,9 +1330,20 @@ Ensure variants maintain the core level design while adjusting challenge.
             resultFn(buildFinalResultWithLinks(task, finalResult, completeDesign, level, totalTime))
 
         } catch (e: Exception) {
-            log.error("Error during level design generation", e)
-            transcriptWriter?.close()
+            // Triple Log Rule
             task.error(e)
+            log.error("Error in GameLevelDesignTask for level: '$levelName'", e)
+            transcript?.write(
+                """
+                <details>
+                <summary>Stack Trace</summary>
+                ```
+                ${e.stackTraceToString()}
+                ```
+                </details>
+            """.trimIndent().toByteArray()
+            )
+
 
             overviewTask.add(
                 buildString {
@@ -1372,6 +1373,8 @@ Ensure variants maintain the core level design while adjusting challenge.
                 }
             }
             resultFn(errorOutput)
+        } finally {
+            transcript?.close()
         }
     }
 
@@ -1486,7 +1489,7 @@ Ensure variants maintain the core level design while adjusting challenge.
           category = "Games",
           taskClass = GameLevelDesignTask::class.java,
           executionConfigClass = GameLevelDesignTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
+            taskSettingsClass = GameLevelDesignTaskTypeConfig::class.java,
           description = "Generate complete game level designs with layout, pacing, and encounters",
           tooltipHtml = """
                         Generates production-ready game level designs with comprehensive documentation.

@@ -19,14 +19,14 @@ class ChainOfThoughtTask(
 
     class ChainOfThoughtTaskExecutionConfigData(
         @Description("The complex problem requiring step-by-step reasoning")
-        val problem_statement: String = "",
+        var problem_statement: String = "",
         @Description("Number of reasoning steps to generate (default: auto)")
-        val reasoning_depth: Int = 10,
+        var reasoning_depth: Int = 10,
         @Description("Whether to validate each step before proceeding")
-        val validate_steps: Boolean = true,
+        var validate_steps: Boolean = true,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val related_files: List<String> = emptyList(),
-        task_dependencies: List<String>? = null,
+        var related_files: List<String> = emptyList(),
+        task_dependencies: MutableList<String>? = null,
         state: TaskState? = TaskState.Pending,
     ) : TaskExecutionConfig(
         task_type = ChainOfThought.name,
@@ -103,29 +103,29 @@ class ChainOfThoughtTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val startTime = System.currentTimeMillis()
-        log.info("Starting ChainOfThoughtTask with problem: '${executionConfig?.problem_statement}'")
         val transcript = task.transcript()
-        val inputFileContent = getInputFileCode()
+      // Create tabbed display for organized output
+      val tabs = TabbedDisplay(task)
+      // Overview tab
+      val overviewTask = tabs.newTask("Overview")
+      val reasoningChain = mutableListOf<ReasoningStep>()
+      val problemStatement = executionConfig?.problem_statement
+      if (problemStatement?.isBlank() != false) {
+        task.complete("CONFIGURATION ERROR: No problem statement specified")
+        resultFn("CONFIGURATION ERROR: No problem statement specified")
+        return@run
+      }
 
-        val problemStatement = executionConfig?.problem_statement
-        if (problemStatement?.isBlank() != false) {
-            log.error("No problem statement specified")
-            task.complete("CONFIGURATION ERROR: No problem statement specified")
-            resultFn("CONFIGURATION ERROR: No problem statement specified")
-            return
-        }
+      val maxSteps = executionConfig.reasoning_depth.coerceIn(1, 20)
+      val validateSteps = executionConfig.validate_steps
 
-        val maxSteps = executionConfig.reasoning_depth.coerceIn(1, 20)
-        val validateSteps = executionConfig.validate_steps
-        log.info("Configuration: maxSteps=$maxSteps, validateSteps=$validateSteps")
+      task.ui.pool.submit {
+        try {
+          val startTime = System.currentTimeMillis()
+          log.info("Starting ChainOfThoughtTask. Problem: ${executionConfig?.problem_statement?.take(50)}...")
 
-        val ui = task.ui
         val api = defaultSmart
-        // Create tabbed display for organized output
-        val tabs = TabbedDisplay(task)
-        // Overview tab
-        val overviewTask = tabs.newTask("Overview")
+          val inputFileContent = getInputFileCode()
 
         val overviewContent = buildString {
             appendLine("# Chain of Thought Reasoning")
@@ -145,7 +145,6 @@ class ChainOfThoughtTask(
         }
 
         transcript?.write(overviewContent.toByteArray())
-        transcript?.flush()
 
         overviewTask.header("Chain of Thought Reasoning")
         overviewTask.add("<b>Problem Statement:</b> $problemStatement")
@@ -153,7 +152,7 @@ class ChainOfThoughtTask(
         overviewTask.add("<b>Validate Steps:</b> ${if (validateSteps) "Yes" else "No"}")
 
         if (inputFileContent.isNotBlank()) {
-            overviewTask.expandable("Input Files", MarkdownUtil.renderMarkdown(inputFileContent, ui = ui))
+          overviewTask.expandable("Input Files", inputFileContent.renderMarkdown())
         }
 
         overviewTask.add(
@@ -168,30 +167,26 @@ class ChainOfThoughtTask(
         task.update()
 
         val priorContext = getPriorCode(agent.executionState)
-        if (priorContext.isNotBlank()) {
-            log.debug("Found prior context from previous tasks: ${priorContext.length} characters")
-        }
 
         val contextFiles = getContextFiles()
-        if (contextFiles.isNotBlank()) {
-            log.debug("Found context files: ${executionConfig.related_files.size} files")
-        }
 
         if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
             val contextTask = tabs.newTask("Context")
             contextTask.header("Context")
             if (priorContext.isNotBlank()) {
-                contextTask.expandable("Previous Tasks", MarkdownUtil.renderMarkdown(priorContext, ui = ui))
+              contextTask.expandable("Previous Tasks", priorContext.renderMarkdown())
             }
             if (contextFiles.isNotBlank()) {
-                contextTask.expandable("Related Files", MarkdownUtil.renderMarkdown(contextFiles, ui = ui))
+              contextTask.expandable("Related Files", contextFiles.renderMarkdown())
             }
 
             // Write context to transcript
-            transcript?.write("\n\n# Context\n\n".toByteArray())
-            if (priorContext.isNotBlank()) transcript?.write("## Previous Tasks\n\n$priorContext\n\n".toByteArray())
-            if (contextFiles.isNotBlank()) transcript?.write("## Related Files\n\n$contextFiles\n\n".toByteArray())
-            transcript?.flush()
+          val contextLog = buildString {
+            appendLine("\n\n# Context")
+            if (priorContext.isNotBlank()) appendLine("\n<details><summary>Previous Tasks</summary>\n\n$priorContext\n</details>")
+            if (contextFiles.isNotBlank()) appendLine("\n<details><summary>Related Files</summary>\n\n$contextFiles\n</details>")
+          }
+          transcript?.write(contextLog.toByteArray())
             task.update()
         }
 
@@ -199,12 +194,10 @@ class ChainOfThoughtTask(
         overviewTask.add("✅ Initialization complete<br/><i>Starting reasoning steps...</i>")
         task.update()
 
-        val reasoningChain = mutableListOf<ReasoningStep>()
         var currentQuestion = problemStatement
         var stepNumber = 1
         val stepTimes = mutableListOf<Long>()
 
-        try {
             while (stepNumber <= maxSteps) {
                 val stepStartTime = System.currentTimeMillis()
                 log.info("Starting reasoning step $stepNumber of $maxSteps")
@@ -218,7 +211,6 @@ class ChainOfThoughtTask(
                 // Write step header to transcript
                 transcript?.write("\n\n# Step $stepNumber of $maxSteps\n\n".toByteArray())
                 transcript?.write("**Question:** $currentQuestion\n\n".toByteArray())
-                transcript?.flush()
 
 
                 val step = generateReasoningStep(
@@ -230,14 +222,12 @@ class ChainOfThoughtTask(
                     stepNumber,
                     api
                 )
-                log.debug("Generated reasoning step $stepNumber: confidence=${step.confidence}")
 
                 if (validateSteps) {
                     stepTask.add("<i>Validating step...</i>")
                     task.update()
 
                     val validation = validateStep(stepTask, step, reasoningChain, api)
-                    log.debug("Validation result for step $stepNumber: valid=${validation.is_valid}")
 
                     if (!validation.is_valid) {
                         log.warn("Step $stepNumber failed validation, attempting to regenerate")
@@ -255,7 +245,6 @@ class ChainOfThoughtTask(
                         transcript?.write("### ⚠️ Validation Failed\n\n".toByteArray())
                         transcript?.write("**Issues**: ${validation.issues?.joinToString(", ")}\n\n".toByteArray())
                         transcript?.write("**Suggestions**: ${validation.suggestions}\n\n".toByteArray())
-                        transcript?.flush()
                         task.update()
 
                         // Attempt to regenerate with validation feedback
@@ -295,7 +284,6 @@ class ChainOfThoughtTask(
                 if (lastStep.next_question != null) {
                     transcript?.write("**Next Question**: ${lastStep.next_question}\n\n".toByteArray())
                 }
-                transcript?.flush()
                 // Mark step as complete
                 stepTask.append("<hr/>")
                 stepTask.add(
@@ -314,13 +302,11 @@ class ChainOfThoughtTask(
                 }
                 overviewTask.add("✅ Step $stepNumber complete (${stepTime / 1000.0}s)<br/>$nextAction")
                 task.update()
-                log.info("Step $stepNumber completed in ${stepTime}ms")
 
                 if (lastStep.next_question.isNullOrBlank() || lastStep.confidence >= 0.9) {
                     // Check if we should continue - only stop if we have high confidence AND no next question
                     // OR if next_question explicitly indicates completion
                     val shouldStop = (lastStep.next_question.isNullOrBlank() && lastStep.confidence >= 0.9) ||
-                            lastStep.next_question?.lowercase()?.contains("complete") == true ||
                             lastStep.next_question?.lowercase()?.contains("no further") == true
 
                     if (shouldStop) {
@@ -348,16 +334,14 @@ class ChainOfThoughtTask(
             task.update()
 
             val summary = generateSummary(summaryTask, reasoningChain, problemStatement, api)
-            log.debug("Summary generated: ${summary.length} characters")
 
             summaryTask.header("Final Summary", level = 2)
-            summaryTask.add(MarkdownUtil.renderMarkdown(summary, ui = ui))
+          summaryTask.add(summary.renderMarkdown())
             summaryTask.append("<hr/>")
             summaryTask.add("<b>Status:</b> ✅ Complete", additionalClasses = "alert alert-success")
 
             // Write summary to transcript
             transcript?.write("\n\n# Final Summary\n\n$summary\n\n".toByteArray())
-            transcript?.flush()
             summaryTask.complete()
             task.update()
 
@@ -386,8 +370,8 @@ class ChainOfThoughtTask(
                 }
             """.trimIndent()
             )
+          log.info("ChainOfThoughtTask completed successfully in ${totalTime}ms")
             task.update()
-            transcript?.close()
 
             task.complete("Completed ${reasoningChain.size} reasoning steps in ${totalTime / 1000}s.")
 
@@ -425,11 +409,14 @@ class ChainOfThoughtTask(
                 }
             }
             resultFn(errorOutput)
-            // Write error to transcript and close
-            transcript?.write("\n\n# Error\n\n${e.message}\n\n".toByteArray())
-            transcript?.write("**Steps Completed:** ${reasoningChain.size} of $maxSteps\n".toByteArray())
+          // Triple Log: Transcript
+          transcript?.write("\n\n# Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+        } finally {
             transcript?.close()
+          task.complete()
         }
+      }
+
     }
 
     private fun generateReasoningStep(
@@ -496,24 +483,21 @@ class ChainOfThoughtTask(
         var step: ReasoningStep? = reasoningAgent.answer(listOf(question)).obj.copy(step_number = stepNumber)
         val finalStep = step!!
 
-        task.add(
-            MarkdownUtil.renderMarkdown(
-                """
-                |### Step $stepNumber
-                |
-                |**Reasoning**: ${finalStep.reasoning}
-                |
-                |**Conclusion**: ${finalStep.conclusion}
-                |
-                |**Confidence**: ${String.format("%.1f%%", finalStep.confidence * 100)}
-                |
-                |${if (finalStep.next_question != null) "**Next Question**: ${finalStep.next_question}" else "**Status**: Reasoning complete"}
-                """.trimMargin(),
-                ui = task.ui
-            )
-        )
+      val stepMarkdown = """
+            |### Step $stepNumber
+            |
+            |**Reasoning**: ${finalStep.reasoning}
+            |
+            |**Conclusion**: ${finalStep.conclusion}
+            |
+            |**Confidence**: ${String.format("%.1f%%", finalStep.confidence * 100)}
+            |
+            |${if (finalStep.next_question != null) "**Next Question**: ${finalStep.next_question}" else "**Status**: Reasoning complete"}
+        """.trimMargin()
+      task.add(stepMarkdown.renderMarkdown())
 
-        return finalStep
+
+      return finalStep
     }
 
     private fun validateStep(
@@ -603,13 +587,13 @@ class ChainOfThoughtTask(
             steps.forEach { step ->
                 append("### Step ${step.step_number}\n")
                 append("**Reasoning**: ${step.reasoning}\n\n")
-                append("**Conclusion**: ${step.conclusion}\n\n")
-                append("**Confidence**: ${String.format("%.1f%%", step.confidence * 100)}\n\n")
-                if (step.next_question != null) {
-                    append("**Next Question**: ${step.next_question}\n\n")
-                }
-                append("---\n\n")
+              append("**Conclusion**: ${step.conclusion}\n")
+              append("**Confidence**: ${String.format("%.1f%%", step.confidence * 100)}\n")
+              if (step.next_question != null) append("**Next Question**: ${step.next_question}\n")
+              append("\n---\n\n")
             }
+          append("\n")
+          append("---\n")
             append("## Final Summary\n\n")
             append(summary)
         }

@@ -10,8 +10,9 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.oneAtATime
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -29,7 +30,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
 
     open class RunCodeTaskTypeConfig(
         task_type: String = RunCode.name,
-        val codeRuntime: CodeRuntimes? = null,
+        var codeRuntime: CodeRuntimes? = null,
         model: ApiChatModel? = null,
         name: String? = task_type,
     ) : TaskTypeConfig(
@@ -43,8 +44,11 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
         var goal: String? = null,
         @Description("The relative file path of the working directory")
         var workingDir: String? = null,
+        @Description("A detailed description of the task's purpose")
         task_description: String? = null,
+        @Description("List of task IDs that must complete before this task starts")
         task_dependencies: List<String>? = null,
+        @Description("The execution state/history of the task")
         state: TaskState? = null,
         task_type: String = RunCode.name
     ) : TaskExecutionConfig(
@@ -58,8 +62,10 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
         val language = typeConfig?.codeRuntime?.name ?: "code"
         return """
         RunCode - Use a $language interpreter to solve and complete the user's request.
-          * Do not directly write code (yet)
-          * Include detailed technical requirements for the needed solution
+          * Useful for data processing, file system operations, or complex calculations.
+          * Provide a clear 'goal' for the code to achieve.
+          * The interpreter has access to the local workspace.
+          * Results and console output will be returned to the context.
         """.trimIndent()
     }
 
@@ -71,11 +77,12 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
         orchestrationConfig: OrchestrationConfig
     ) {
         val autoRunCounter = AtomicInteger(0)
-        val transcript = task.transcript()
         val semaphore = Semaphore(0)
         val typeConfig = typeConfig ?: throw RuntimeException()
         val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
             ?: defaultSmart).getChildClient(task)
+      val transcript = task.transcript()
+      log.info("Starting RunCodeTask for goal: ${executionConfig?.goal?.take(50)}...")
 
         val runtime = typeConfig.codeRuntime ?: CodeRuntimes.GroovyRuntime // Kotlin has issues running within IntelliJ
 
@@ -110,6 +117,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
                 response: CodeAgent.CodeResult
             ) {
                 val formText = StringBuilder()
+              val lang = runtime.name.lowercase().replace("runtime", "")
                 transcript?.write(
                     """
                     ## Code Execution
@@ -135,24 +143,14 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
                     
                     """.trimIndent().toByteArray()
                 )
-                val markdown = """
-                    ### Code
-                    $TRIPLE_TILDE${runtime.name.lowercase().replace("runtime", "")}
-                    ${request.messages}
-                    $TRIPLE_TILDE
-                    ### Result
-                    $TRIPLE_TILDE
-                    ${response.result.resultValue}
-                    $TRIPLE_TILDE
-                    ### Output
-                    $TRIPLE_TILDE
-                    ${response.result.resultOutput}
-                    $TRIPLE_TILDE
-                """.trimIndent()
-                task.expandable("Execution Details", MarkdownUtil.renderMarkdown(markdown, ui = task.ui))
+              val tabs = TabbedDisplay(task)
+              tabs["Code"] = "```$lang\n${response.code}\n```".renderMarkdown()
+              tabs["Result"] = "```\n${response.result.resultValue}\n```".renderMarkdown()
+              tabs["Output"] = "```\n${response.result.resultOutput}\n```".renderMarkdown()
 
 
                 if (orchestrationConfig.autoFix) {
+                  transcript?.write("## Auto-Applying Execution\n".toByteArray())
                     if (autoRunCounter.incrementAndGet() <= 1) {
                         // Auto-fix: Execute immediately
                         responseAction(task, "Running...", null, formText) {
@@ -169,10 +167,10 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
                     buttonsHtml.append(super.playButton(task, request, response, formText) { formHandle!! })
                 }
                 buttonsHtml.append(ui.hrefLink("Continue", "href-link play-button") {
-                    transcript?.write("## User Action: Continue\n\n".toByteArray())
+                  transcript?.write("## User Action: Continue\n".toByteArray())
                     transcript?.flush()
                     val finalOutput =
-                        "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
+                      "## Execution Result\n* Code executed successfully.\n* Result: `${response.result.resultValue}`"
                     resultFn(finalOutput)
                     semaphore.release()
                 })
@@ -202,10 +200,14 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
             ): String {
                 val result = super.execute(task, response)
                 if (orchestrationConfig.autoFix) {
-                    transcript?.write("## Auto-fix Execution\n\n".toByteArray())
+                  transcript?.write("## Auto-fix Execution Completed\n".toByteArray())
                     transcript?.flush()
                     response.let {
-                        "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n"
+                      "## Execution Result\n* Code executed automatically.\n* Result: `${response.result.resultValue}`\n* Output: `${
+                        response.result.resultOutput?.take(
+                          200
+                        )
+                      }`"
                     }.apply { resultFn(this) }
                     semaphore.release()
                 }
@@ -216,22 +218,25 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
         }
 
 
+      try {
         codingAgent.start(
-            codingAgent.codeRequest(
-                messages.map { it to ModelSchema.Role.user } + listOf(
-                    (executionConfig?.goal ?: "") to ModelSchema.Role.user,
-                )
+          codingAgent.codeRequest(
+            messages.map { it to ModelSchema.Role.user } + listOf(
+              (executionConfig?.goal ?: "") to ModelSchema.Role.user,
             )
+          )
         )
-        try {
             semaphore.acquire()
         } catch (e: Throwable) {
+        // Triple Log Rule
             task.error(e)
+        log.error("Error in RunCodeTask: ${e.message}", e)
             transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n\n".toByteArray())
-            log.error("Error in RunCodeTask", e)
+        throw e
         } finally {
             transcript?.write("\n## Task Completed\n".toByteArray())
             transcript?.flush()
+        transcript?.close()
             task.complete()
         }
     }

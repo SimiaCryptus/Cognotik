@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
@@ -10,6 +9,7 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 
@@ -105,10 +105,11 @@ class SubPlanTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        log.info("Starting SubPlanningTask with goal: ${executionConfig?.planning_goal}")
         val transcript = task.transcript()
 
         try {
+          log.info("Starting SubPlanningTask. Goal: ${executionConfig?.planning_goal ?: "N/A"}")
+          transcript?.write("## Sub-Planning Task Initialization\n".toByteArray())
             val typeConfig = this.typeConfig ?: throw RuntimeException()
             // Get the cognitive mode for sub-planning
             val cognitiveMode =
@@ -137,7 +138,7 @@ class SubPlanTask(
             if (typeConfig.purpose.isNotEmpty()) planningGoal += "\n\nPurpose: ${typeConfig.purpose}"
 
             // Build context for the sub-planner
-            val contextMessages = buildContextMessages(messages)
+          val contextMessages = buildContextMessages(agent, messages)
 
             // Append context to the planning goal
             if (contextMessages.isNotEmpty()) {
@@ -219,49 +220,65 @@ class SubPlanTask(
             }
 
             if (orchestrationConfig.autoFix) {
-                val summary = runExecution()
-                resultFn(summary)
-                task.complete()
+              task.ui.pool.submit {
+                try {
+                  val summary = runExecution()
+                  resultFn(summary)
+                  task.complete()
+                } catch (e: Exception) {
+                  handleError(e, task, transcript, resultFn)
+                }
+              }
             } else {
                 val semaphore = java.util.concurrent.Semaphore(0)
-                task.add(task.ui.hrefLink("▶ Run Sub-Plan", "btn btn-primary") {
+              task.add(task.ui.hrefLink("▶ Run Sub-Plan", "btn btn-primary".renderMarkdown) {
                     task.ui.pool.submit {
                         try {
                             val summary = runExecution()
                             val footer = acceptButtonFooter(task.ui) {
                                 resultFn(summary)
                                 semaphore.release()
+                              task.complete()
                             }
-                            task.append(footer)
+                          task.add(footer.renderMarkdown)
                         } catch (e: Exception) {
-                            log.error("Error in manual sub-plan execution", e)
-                            task.error(e)
+                          handleError(e, task, transcript, resultFn)
+                          semaphore.release()
                         }
                     }
                 })
-                task.complete()
                 semaphore.acquire()
             }
 
         } catch (e: Exception) {
-            log.error("Error executing SubPlanningTask", e)
-            transcript?.write("\n\n## Error\n\n".toByteArray())
-            transcript?.write("```\n${e.message}\n${e.stackTraceToString()}\n```\n".toByteArray())
-            task.error(e)
-            resultFn("Error in sub-planning: ${e.message}")
+          handleError(e, task, transcript, resultFn)
         } finally {
-            transcript?.close()
+          transcript?.close()
         }
     }
 
-    private fun buildContextMessages(messages: List<String>): List<String> {
+  private fun handleError(
+    e: Exception,
+    task: SessionTask,
+    transcript: java.io.OutputStream?,
+    resultFn: (String) -> Unit
+  ) {
+    task.error(e)
+    log.error("Error in SubPlanningTask: ${e.message}", e)
+    val errorLog =
+      "\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n"
+    transcript?.write(errorLog.toByteArray())
+    resultFn("Error in sub-planning: ${e.message}")
+    }
+
+  private fun buildContextMessages(agent: TaskOrchestrator, messages: List<String>): List<String> {
         val contextMessages = mutableListOf<String>()
 
         // Add explicit context from execution config
         executionConfig?.context?.let { contextMessages.addAll(it) }
 
         // Add prior task results
-        val priorCode = getPriorCode(null)
+    val priorCode = getPriorCode(agent.executionState)
         if (priorCode.isNotBlank()) {
             contextMessages.add("## Prior Task Results\n\n$priorCode")
         }

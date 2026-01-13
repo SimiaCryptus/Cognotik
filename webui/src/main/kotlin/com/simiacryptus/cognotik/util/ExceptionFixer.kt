@@ -19,7 +19,7 @@ class ExceptionFixer(
       testName = "SmartFixingExceptions",
     ) { harness ->
       try {
-        harness.runTask<FileModificationTask.FileModificationTaskExecutionConfigData, FileModificationTask.FileModificationTypeConfig>(
+        harness.runTask(
           taskType = FileModificationTask.Companion.FileModification,
           typeConfig = TaskTypeConfig(task_type = FileModificationTask.Companion.FileModification.name),
           executionConfig = FileModificationTask.FileModificationTaskExecutionConfigData(
@@ -30,7 +30,7 @@ class ExceptionFixer(
           timeoutMinutes = 5,
           workspace = projectRoot.absoluteFile,
           initSettings = { session ->
-            harness.initSettings<FileModificationTask.FileModificationTaskExecutionConfigData, FileModificationTask.FileModificationTypeConfig>(
+            harness.initSettings(
               session = session,
               workspace = projectRoot.absoluteFile,
               autoFix = true,

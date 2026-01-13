@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -1426,21 +1425,21 @@ class CrawlerAgentTask(
         private val LINK_PATTERN = Pattern.compile("""\[([^]]+)]\(([^)]+)\)""")
         private val VALID_URL_PATTERN = Pattern.compile("^(http|https)://.*")
         val CrawlerAgent = TaskType(
-          name = "CrawlerAgent",
-          category = "Online",
-          taskClass = CrawlerAgentTask::class.java,
-          executionConfigClass = CrawlerTaskExecutionConfigData::class.java,
-          taskSettingsClass = CrawlerTaskTypeConfig::class.java,
-          description = "Search Google, fetch top results, and analyze content",
-          tooltipHtml = """
-                    Searches Google for specified queries and analyzes the top results.
-                    <ul>
-                      <li>Performs Google searches</li>
-                      <li>Fetches top search results</li>
-                      <li>Analyzes content for specific goals</li>
-                      <li>Generates detailed analysis reports</li>
-           </ul>
-                  """,
+            "CrawlerAgent",
+            "Online & Search",
+            CrawlerAgentTask::class.java,
+            CrawlerTaskExecutionConfigData::class.java,
+            CrawlerTaskTypeConfig::class.java,
+            "Search Google, fetch top results, and analyze content",
+            """
+          Searches Google for specified queries and analyzes the top results.
+          <ul>
+            <li>Performs Google searches</li>
+            <li>Fetches top search results</li>
+            <li>Analyzes content for specific goals</li>
+            <li>Generates detailed analysis reports</li>
+ </ul>
+        """,
         )
 
     }

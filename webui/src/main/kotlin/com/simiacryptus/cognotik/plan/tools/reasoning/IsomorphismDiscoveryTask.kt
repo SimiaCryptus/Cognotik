@@ -6,13 +6,12 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.OutputStream
-import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -26,17 +25,17 @@ class IsomorphismDiscoveryTask(
 
     class IsomorphismDiscoveryTaskExecutionConfigData(
         @Description("Description of the source domain (e.g., 'Number Theory')")
-        val source_domain: String? = null,
+        var source_domain: String? = null,
         @Description("Description of the target domain (e.g., 'Geometry')")
-        val target_domain: String? = null,
+        var target_domain: String? = null,
         @Description("Strictness of the mapping: 'loose' (homomorphism) or 'strict' (isomorphism)")
-        val mapping_strictness: String = "strict",
+        var mapping_strictness: String = "strict",
         @Description("Whether to verify that operations are preserved across the map")
-        val verify_operations: Boolean = true,
+        var verify_operations: Boolean = true,
         @Description("Input files to provide context")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         @Description("Additional context files")
-        val related_files: List<String>? = null,
+        var related_files: List<String>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -119,13 +118,12 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        var transcriptStream: OutputStream? = null
+        val transcript = task.transcript()
         try {
-            val startTime = System.currentTimeMillis()
-            log.info("Starting IsomorphismDiscoveryTask with source='${executionConfig?.source_domain}', target='${executionConfig?.target_domain}'")
+            log.info("Starting IsomorphismDiscoveryTask. Source: ${executionConfig?.source_domain}, Target: ${executionConfig?.target_domain}")
 
             executionConfig?.validate()?.let { validationError ->
-                log.error("Configuration validation failed: $validationError")
+                log.error("IsomorphismDiscoveryTask config validation failed: $validationError")
                 task.safeComplete("CONFIGURATION ERROR: $validationError", log)
                 task.error(ValidatedObject.ValidationError(validationError, executionConfig))
                 resultFn("CONFIGURATION ERROR: $validationError")
@@ -137,11 +135,13 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             val strictness = executionConfig?.mapping_strictness ?: "strict"
             val verify = executionConfig?.verify_operations ?: true
 
-            val tabs = TabbedDisplay(task)
-            val api = defaultSmart ?: return
-            transcriptStream = task.newLogStream("Transcript")
 
-            writeTranscriptHeader(transcriptStream, sourceDomain, targetDomain, strictness)
+            task.ui.pool.submit {
+                try {
+                    val startTime = System.currentTimeMillis()
+                    val tabs = TabbedDisplay(task)
+                    val api = defaultSmart ?: throw RuntimeException("No smart model available")
+                    writeTranscriptHeader(transcript, sourceDomain, targetDomain, strictness)
 
             // Overview
             val overviewTask = task.newTask()
@@ -155,7 +155,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
                 appendLine("**Verify Operations:** $verify")
                 appendLine()
                 appendLine("- ⏳ Gathering context...")
-            }.let { MarkdownUtil.renderMarkdown(it) })
+            }.renderMarkdown())
             task.update()
 
             // Context
@@ -164,11 +164,15 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
                 super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
             val relatedFileContent = getRelatedFilesContent()
 
-            writeToTranscript(transcriptStream, "## Context\n\n$inputFileContent\n\n$relatedFileContent\n\n")
 
-            val contextHtml = MarkdownUtil.renderMarkdown("## Context\n\n$inputFileContent\n\n$relatedFileContent")
+                    writeToTranscript(
+                        transcript,
+                        "## Context\n<details><summary>Context Data</summary>\n\n$inputFileContent\n\n$relatedFileContent\n</details>\n\n"
+                    )
+
+                    val contextHtml = "## Context\n\n$inputFileContent\n\n$relatedFileContent".renderMarkdown()
             overviewTask.expandable("Context Data", contextHtml)
-            overviewTask.add(MarkdownUtil.renderMarkdown("- ✓ Context gathered\n- ⏳ Analyzing structures and mappings..."))
+                    overviewTask.add("- ✓ Context gathered\n- ⏳ Analyzing structures and mappings...".renderMarkdown())
             task.update()
 
             // Analysis
@@ -178,7 +182,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
                 appendLine("# Structural Analysis")
                 appendLine()
                 appendLine("Identifying primitives and searching for mappings...")
-            }.let { MarkdownUtil.renderMarkdown(it) })
+            }.renderMarkdown())
             task.update()
 
             val prompt = """
@@ -227,16 +231,20 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             }
 
             // Display Results
-            analysisTask.add(MarkdownUtil.renderMarkdown(formatAnalysisResult(result)))
+
+                    analysisTask.add(formatAnalysisResult(result).renderMarkdown())
             task.update()
 
-            writeToTranscript(transcriptStream, "## Analysis Result\n\n$result\n\n")
+                    writeToTranscript(
+                        transcript,
+                        "## Analysis Result\n<details><summary>Raw Result JSON</summary>\n\n```json\n$result\n```\n</details>\n\n"
+                    )
 
             // Synthesis
             val synthesisTask = task.newTask()
             tabs["Synthesis"] = synthesisTask.placeholder
             val synthesisText = formatSynthesis(result, sourceDomain, targetDomain)
-            synthesisTask.add(MarkdownUtil.renderMarkdown(synthesisText))
+                    synthesisTask.add(synthesisText.renderMarkdown())
             task.update()
 
             // Final Overview
@@ -246,22 +254,30 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
                 appendLine("- **Confidence:** ${String.format("%.1f%%", result.confidence * 100)}")
                 appendLine("- **Mappings:** ${result.mappings.size}")
                 appendLine("- **Verifications:** ${result.verification_cases.count { it.holds }} / ${result.verification_cases.size} passed")
-            }.let { MarkdownUtil.renderMarkdown(it) })
+
+            }.renderMarkdown())
             task.update()
 
-            writeTranscriptFooter(transcriptStream, System.currentTimeMillis() - startTime)
+                    writeTranscriptFooter(transcript, System.currentTimeMillis() - startTime)
 
             task.safeComplete("Isomorphism discovery completed with ${result.mappings.size} mappings.", log)
             resultFn(synthesisText)
 
-        } catch (e: Exception) {
-            log.error("Error in IsomorphismDiscoveryTask", e)
-            transcriptStream?.let { writeToTranscript(it, "## Error\n\n${e.message}\n\n") }
-            task.error(e)
-            task.safeComplete("Failed with error: ${e.message}", log)
-            resultFn("ERROR: ${e.message}")
+                } catch (e: Exception) {
+                    log.error("Error in IsomorphismDiscoveryTask execution", e)
+                    writeToTranscript(
+                        transcript,
+                        "## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n\n"
+                    )
+                    task.error(e)
+                    task.safeComplete("Failed with error: ${e.message}", log)
+                    resultFn("ERROR: ${e.message}")
+                } finally {
+                    transcript?.close()
+                }
+            }
         } finally {
-            transcriptStream?.close()
+            // Transcript is closed inside the async block to ensure it captures all output
         }
     }
 
@@ -341,18 +357,18 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             appendLine("**Date:** ${LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)}")
             appendLine("---")
             appendLine()
-        }.toByteArray(StandardCharsets.UTF_8))
+        }.toByteArray(Charsets.UTF_8))
     }
 
     private fun writeToTranscript(stream: OutputStream?, content: String) {
-        stream?.write(content.toByteArray(StandardCharsets.UTF_8))
+        stream?.write(content.toByteArray(Charsets.UTF_8))
     }
 
     private fun writeTranscriptFooter(stream: OutputStream?, duration: Long) {
         stream?.write(buildString {
             appendLine("---")
             appendLine("**Duration:** ${duration / 1000}s")
-        }.toByteArray(StandardCharsets.UTF_8))
+        }.toByteArray(Charsets.UTF_8))
     }
 
     companion object {

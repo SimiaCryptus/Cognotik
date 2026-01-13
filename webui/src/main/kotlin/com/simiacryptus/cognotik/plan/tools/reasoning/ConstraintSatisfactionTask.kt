@@ -3,12 +3,11 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
@@ -26,20 +25,20 @@ class ConstraintSatisfactionTask(
 ) {
 
     class ConstraintSatisfactionTaskExecutionConfigData(
-        @Description("The problem requiring constraint satisfaction")
-        val problem_description: String? = null,
-        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
-        @Description("Hard constraints that must be satisfied (cannot be violated)")
-        val hard_constraints: List<String>? = null,
-        @Description("Soft constraints to optimize with their relative weights (0.0-1.0)")
-        val soft_constraints: Map<String, Double>? = null,
-        @Description("Search strategy: 'backtracking' (systematic), 'forward' (greedy), 'local' (hill-climbing)")
-        val search_strategy: String = "backtracking",
-        @Description("Maximum search iterations before returning best solution found")
-        val max_iterations: Int = 100,
-        @Description("Additional files for context")
-        val related_files: List<String>? = null,
+      @Description("The problem requiring constraint satisfaction. Be specific about the goals and constraints.")
+      var problem_description: String? = null,
+      @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task.")
+      var input_files: List<String>? = null,
+      @Description("Hard constraints that must be satisfied (cannot be violated).")
+      var hard_constraints: List<String>? = emptyList(),
+      @Description("Soft constraints to optimize with their relative weights (0.0-1.0).")
+      var soft_constraints: Map<String, Double>? = emptyMap(),
+      @Description("Search strategy: 'backtracking' (systematic), 'forward' (greedy), 'local' (hill-climbing).")
+      var search_strategy: String = "backtracking",
+      @Description("Maximum search iterations before returning best solution found.")
+      var max_iterations: Int = 100,
+      @Description("Additional files for context.")
+      var related_files: List<String>? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
     ) : TaskExecutionConfig(
@@ -86,13 +85,14 @@ class ConstraintSatisfactionTask(
 
     override fun promptSegment(): String {
         return """
- ConstraintSatisfaction - Solve problems with multiple competing constraints
-  ** problem_description: The problem requiring constraint satisfaction
-  ** input_files: List of files or glob patterns to use as input
-  ** hard_constraints: List of constraints that must be satisfied
-  ** soft_constraints: Map of constraints to optimize with weights (0.0-1.0)
-  ** search_strategy: 'backtracking', 'forward', or 'local'
-  ** max_iterations: Maximum search iterations
+        ### ConstraintSatisfaction
+        Solves complex problems with multiple competing constraints using various search strategies.
+        - **Use when**: You need to balance hard requirements with weighted soft preferences (e.g., architecture, scheduling).
+        - **Inputs**: Problem description, hard/soft constraints, and optional file context.
+        - **Strategies**: 
+            - `backtracking`: Systematic search for guaranteed satisfaction.
+            - `forward`: Greedy approach for speed.
+            - `local`: Hill-climbing for optimization in large search spaces.
         """.trimIndent()
     }
 
@@ -103,235 +103,185 @@ class ConstraintSatisfactionTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+
+      val transcript = task.transcript()
+      try {
         // Validate configuration before execution
         executionConfig?.validate()?.let { error ->
-            log.error("Configuration validation failed: $error")
-            task.safeComplete("CONFIGURATION ERROR: $error", log)
-            resultFn("CONFIGURATION ERROR: $error")
-            return
+          val msg = "Configuration validation failed: $error"
+          log.error(msg)
+          task.error(Exception(msg))
+          resultFn("CONFIGURATION ERROR: $error")
+          return
         }
 
+
         val startTime = System.currentTimeMillis()
-        var transcriptStream: FileOutputStream? = null
-        try {
-            val problemDescription = executionConfig?.problem_description
-            if (problemDescription.isNullOrBlank()) {
-                log.error("No problem description provided")
-                task.safeComplete("CONFIGURATION ERROR: No problem description provided", log)
-                resultFn("CONFIGURATION ERROR: No problem description provided")
-                return
-            }
+        val problemDescription = executionConfig?.problem_description ?: ""
+        val hardConstraints = executionConfig?.hard_constraints ?: emptyList()
+        val softConstraints = executionConfig?.soft_constraints ?: emptyMap()
+        val searchStrategy = executionConfig?.search_strategy ?: "backtracking"
+        val maxIterations = executionConfig?.max_iterations ?: 100
 
-            val hardConstraints = executionConfig.hard_constraints ?: emptyList()
-            val softConstraints = executionConfig.soft_constraints ?: emptyMap()
-            val searchStrategy = executionConfig.search_strategy
-            val maxIterations = executionConfig.max_iterations
-            // Initialize transcript
-            transcriptStream = task.transcript()
-            transcriptStream?.let { stream ->
-                writeTranscriptHeader(
-                    stream,
-                    problemDescription,
-                    hardConstraints,
-                    softConstraints,
-                    searchStrategy,
-                    maxIterations
-                )
-            }
+        log.info("Starting Constraint Satisfaction Task for problem: ${problemDescription.take(50)}...")
 
+        transcript?.let { stream ->
+          writeTranscriptHeader(
+            stream,
+            problemDescription,
+            hardConstraints,
+            softConstraints,
+            searchStrategy,
+            maxIterations
+          )
+        }
 
-            val toInput = { it: String -> listOf(it) }
-            val api = defaultSmart ?: return
-            log.info(
-                """
-        |Starting Constraint Satisfaction Task:
-        |  Problem: $problemDescription
-        |  Hard Constraints: ${hardConstraints.size}
-        |  Soft Constraints: ${softConstraints.size}
-        |  Strategy: $searchStrategy
-        |  Max Iterations: $maxIterations
-        """.trimMargin()
-            )
+        task.ui.pool.submit {
+          try {
             val tabbedDisplay = TabbedDisplay(task)
-            tabbedDisplay.newTask("Problem Overview").add(MarkdownUtil.renderMarkdown(
-                """
-                |## Constraint Satisfaction Problem
-                |
-                |**Problem**: ${problemDescription.truncateForDisplay()}
-                |
-                |**Hard Constraints** (${hardConstraints.size}):
-                |${hardConstraints.joinToString("\n") { "- $it" }}
-                |
-                |**Soft Constraints** (${softConstraints.size}):
-                |${softConstraints.entries.joinToString("\n") { "- ${it.key} (weight: ${it.value})" }}
-                |
-                |**Strategy**: $searchStrategy (max iterations: $maxIterations)
-                """.trimMargin(),
-                ui = task.ui
-            ))
-            transcriptStream?.write(
-                """
-          |## Constraint Satisfaction Problem
-          |
-          |**Problem**: $problemDescription
-          |
-          |**Hard Constraints** (${hardConstraints.size}):
-          |${hardConstraints.joinToString("\n") { "- $it" }}
-          |
-        """.trimMargin().toByteArray()
+            tabbedDisplay.newTask("Problem Overview").add(
+              """
+                        |## Constraint Satisfaction Problem
+                        |
+                        |**Problem**: ${problemDescription.truncateForDisplay()}
+                        |
+                        |**Hard Constraints** (${hardConstraints.size}):
+                        |${hardConstraints.joinToString("\n") { "- $it" }}
+                        |
+                        |**Soft Constraints** (${softConstraints.size}):
+                        |${softConstraints.entries.joinToString("\n") { "- ${it.key} (weight: ${it.value})" }}
+                        |
+                        |**Strategy**: $searchStrategy (max iterations: $maxIterations)
+                        """.trimMargin().renderMarkdown()
             )
+
             // Step 2: Gather Context
             val contextTask = tabbedDisplay.newTask("Context")
-            contextTask.add(MarkdownUtil.renderMarkdown(
-                "### Gathering context from previous tasks...",
-                ui = task.ui
-            ))
-            transcriptStream?.write(
-                """
-          |
-          |### Gathering Context
-        """.trimMargin().toByteArray()
-            )
-
+            contextTask.add("### Gathering context from previous tasks...".renderMarkdown())
 
             val priorCode = getPriorCode(agent.executionState)
             val inputFileContent =
-                super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
+              super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
 
             val prompt = buildPrompt(
-                problemDescription,
-                hardConstraints,
-                softConstraints,
-                searchStrategy,
-                maxIterations,
-                priorCode,
-                inputFileContent
+              problemDescription, hardConstraints, softConstraints,
+              searchStrategy, maxIterations, priorCode, inputFileContent
             )
-            contextTask.add(MarkdownUtil.renderMarkdown(
-                """
-            |### Context Gathered
-            |✅ Previous task results collected
-            |✅ Prompt constructed
-            """.trimMargin(),
-                ui = task.ui
-            ))
-            transcriptStream?.write(
-                """
-          |
-          |### Context Gathered
-        """.trimMargin().toByteArray()
+
+            transcript?.write(
+              """
+                        |<details>
+                        |<summary>Generated Prompt</summary>
+                        |
+                        |```markdown
+                        |$prompt
+                        |```
+                        |</details>
+                        |
+                    """.trimMargin().toByteArray()
             )
+
+            contextTask.add(
+              """
+                        |### Context Gathered
+                        |✅ Previous task results collected
+                        |✅ Prompt constructed
+                        """.trimMargin().renderMarkdown()
+            )
+
             // Step 3: Generate Solution
             val solutionGenerationTask = tabbedDisplay.newTask("Solution Generation")
-            solutionGenerationTask.add(MarkdownUtil.renderMarkdown(
-                "### Generating constraint satisfaction solution...\n\nThis may take a moment.",
-                ui = task.ui
-            ))
-            transcriptStream?.write(
-                """
-          |
-          |### Generating Solution
-        """.trimMargin().toByteArray()
+            solutionGenerationTask.add("### Generating solution...".renderMarkdown())
+
+            val api = defaultSmart ?: throw IllegalStateException("No smart model configured")
+            val chatAgent = ChatAgent(prompt = prompt, model = api)
+            val answer = chatAgent.answer(listOf(""))
+
+            transcript?.write(
+              """
+                        |<details>
+                        |<summary>Raw LLM Response</summary>
+                        |
+                        |```markdown
+                        |$answer
+                        |```
+                        |</details>
+                        |
+                    """.trimMargin().toByteArray()
             )
 
+            solutionGenerationTask.add("### Solution Generated ✅".renderMarkdown())
 
-            val chatAgent = ChatAgent(
-                prompt = prompt,
-                model = api,
-            )
-
-            var answer: String? = chatAgent.answer(toInput(""))
-            solutionGenerationTask.add(MarkdownUtil.renderMarkdown(
-                """
-            |### Solution Generated
-            |✅ Complete
-            """.trimMargin(),
-                ui = task.ui
-            ))
-            transcriptStream?.write(
-                """
-          |
-          |### Solution Generated
-        """.trimMargin().toByteArray()
-            )
             // Step 4: Display Solution
-
-            val solution = answer
-            tabbedDisplay.newTask("Final Solution").add(MarkdownUtil.renderMarkdown(
-                """
-                |## Solution
-                |
-                |${solution?.truncateForDisplay() ?: "No solution generated."}
-                """.trimMargin(),
-                ui = task.ui
-            ))
-            transcriptStream?.write(
-                """
-          |
-          |## Final Solution
-          |
-          |${solution ?: "No solution generated."}
-        """.trimMargin().toByteArray()
+            tabbedDisplay.newTask("Final Solution").add(
+              """
+                        |## Solution
+                        |
+                        |${answer.truncateForDisplay()}
+                        """.trimMargin().renderMarkdown()
             )
+
             val duration = System.currentTimeMillis() - startTime
             log.info("Constraint Satisfaction Task completed in ${duration}ms")
-            transcriptStream?.write("\n\n---\n**Completed in ${duration}ms**\n".toByteArray())
-
+            transcript?.write("\n\n---\n**Completed in ${duration}ms**\n".toByteArray())
 
             if (orchestrationConfig.autoFix) {
-                val (link, _) = task.createFile("constraint_solution_transcript.md")
-                val summaryMessage = "Constraint satisfaction solution generated. " +
-                        "View detailed transcript: <a href='$link' target='_blank'>markdown</a> " +
-                        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                        "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-                task.safeComplete(summaryMessage, log)
-                resultFn(answer ?: "No solution generated")
+              finalizeTask(task, answer, resultFn)
             } else {
-                task.add(
-                    MarkdownUtil.renderMarkdown(
-                        acceptButtonFooter(task.ui) {
-                            try {
-                                val (link, _) = task.createFile(
-                                  "constraint_solution_transcript.md"
-                                )
-                                val summaryMessage = "Constraint satisfaction solution accepted. " +
-                                        "View detailed transcript: <a href='$link' target='_blank'>markdown</a> " +
-                                        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                                        "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-                                task.complete(summaryMessage)
-                                resultFn(answer ?: "No solution generated")
-                            } catch (e: Exception) {
-                                log.error("Error accepting constraint satisfaction solution", e)
-                                task.error(e)
-                                resultFn("ERROR: ${e.message}")
-                            }
-                        },
-                        ui = task.ui
-                    )
-                )
+              val footer = acceptButtonFooter(task.ui) {
+                finalizeTask(task, answer, resultFn)
+              }
+              task.add(footer.renderMarkdown())
             }
-        } catch (e: Exception) {
-            transcriptStream?.write("\n\n## ❌ Error\n\n${e.message}\n".toByteArray())
-            log.error("Error in Constraint Satisfaction Task", e)
-            task.error(e)
-            task.add(
-                MarkdownUtil.renderMarkdown(
-                    """
-          |## ❌ Error
-          |
-          |An error occurred while solving the constraint satisfaction problem:
-          |```
-          |${e.message}
-          |```
-          """.trimMargin(),
-                    ui = task.ui
-                )
-            )
-            resultFn("ERROR: Failed to generate constraint satisfaction solution - ${e.message}")
-        } finally {
-            transcriptStream?.flush()
-            transcriptStream?.close()
+          } catch (e: Exception) {
+            handleError(e, task, transcript, resultFn)
+          } finally {
+            transcript?.close()
+          }
         }
+      } catch (e: Exception) {
+        handleError(e, task, transcript, resultFn)
+        transcript?.close()
+      }
+    }
+
+  private fun finalizeTask(task: SessionTask, answer: String, resultFn: (String) -> Unit) {
+    try {
+      val (link, _) = task.createFile("constraint_solution_transcript.md")
+      val summaryMessage = """
+                |Constraint satisfaction solution finalized.
+                |View detailed transcript: [markdown]($link) | [html](${link.removeSuffix(".md")}.html) | [pdf](${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf)
+            """.trimMargin().renderMarkdown()
+      task.complete(summaryMessage)
+      resultFn(answer)
+    } catch (e: Exception) {
+      log.error("Error finalizing task", e)
+      task.error(e)
+      resultFn("ERROR: Finalization failed - ${e.message}")
+    }
+  }
+
+  private fun handleError(e: Exception, task: SessionTask, transcript: FileOutputStream?, resultFn: (String) -> Unit) {
+    log.error("Error in Constraint Satisfaction Task: ${e.message}", e)
+    task.error(e)
+    transcript?.write(
+      """
+            |
+            |## ❌ Error
+            |<details>
+            |<summary>Stack Trace</summary>
+            |
+            |```
+            |${e.stackTraceToString()}
+            |```
+            |</details>
+        """.trimMargin().toByteArray()
+    )
+    resultFn("ERROR: Failed to generate constraint satisfaction solution - ${e.message}")
     }
 
     private fun writeTranscriptHeader(

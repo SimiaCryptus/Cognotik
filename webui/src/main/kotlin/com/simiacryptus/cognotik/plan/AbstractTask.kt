@@ -1,14 +1,9 @@
 package com.simiacryptus.cognotik.plan
 
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.input.isDocumentFile
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.set
-import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
@@ -144,15 +139,11 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         return Pair(link, markdownTranscript)
     }
 
-    fun writeToTranscript(stream: FileOutputStream?, content: String) {
-        try {
-            stream?.write(content.toByteArray(Charsets.UTF_8))
-            stream?.flush()
-        } catch (e: Exception) {
-            log.error("Failed to write to transcript", e)
-        }
-    }
     fun createTabbedDisplay(task: SessionTask) = TabbedDisplay(task)
+    open fun writeToTranscript(stream: FileOutputStream, string: String) {
+        stream.write(string.toByteArray())
+        stream.flush()
+    }
 
     companion object {
         val log = LoggerFactory.getLogger(AbstractTask::class.java)

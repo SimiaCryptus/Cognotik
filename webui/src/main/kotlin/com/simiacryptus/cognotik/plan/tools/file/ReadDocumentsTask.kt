@@ -1,14 +1,12 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -41,8 +39,11 @@ class ReadDocumentsTask(
         val inquiry_goal: String? = null,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
         val input_files: List<String>? = null,
+        @Description("A description of the task to be performed")
         task_description: String? = null,
+        @Description("List of task IDs that this task depends on")
         task_dependencies: List<String>? = null,
+        @Description("The current state of the task")
         state: TaskState? = null,
     ) : TaskExecutionConfig(
         task_type = ReadDocuments.name,
@@ -57,15 +58,15 @@ class ReadDocumentsTask(
     }
 
     override fun promptSegment() = (if (!orchestrationConfig.autoFix) """
-  ReadDocuments - Directly answer questions or provide insights using the LLM.
-    * inquiry_questions: Specific questions to address.
-    * inquiry_goal: The goal of the inquiry.
-    * input_files: File patterns (e.g. **/*.kt) to use as input.
+  ReadDocuments - Deeply analyze project files and provide comprehensive technical insights or answers to specific questions.
+    * inquiry_questions: Specific technical questions to address.
+    * inquiry_goal: The high-level goal of the inquiry.
+    * input_files: File patterns (e.g. **/*.kt) to examine.
   """ else """
-  ReadDocuments - Directly answer questions or provide a report using the LLM. Reading files is optional and can be included if relevant to the inquiry.
-    * inquiry_questions: Specific questions to address.
-    * inquiry_goal: The goal of the inquiry.
-    * input_files: Optional file patterns to examine.
+  ReadDocuments - Directly answer questions or provide a report using the LLM. Reading files is optional.
+    * inquiry_questions: Specific technical questions to address.
+    * inquiry_goal: The high-level goal of the inquiry.
+    * input_files: Optional file patterns to examine if relevant.
   """)
 
     override fun run(
@@ -75,63 +76,82 @@ class ReadDocumentsTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val tabs = TabbedDisplay(task)
-        val analysisTask = tabs.newTask("Analysis")
-        val filesTask = tabs.newTask("Files")
-
-        val transcript = task.transcript("transcript")
-        val fileContext = getInputFileCode()
-        filesTask.header("Files Read", level = 3)
-        filesTask.add(MarkdownUtil.renderMarkdown(fileContext, ui = filesTask.ui))
-        filesTask.complete()
 
 
-        val toInput = { it: String ->
-            messages + listOf(
+      val transcript = task.transcript()
+      try {
+        task.ui.pool.submit {
+          try {
+            val tabs = TabbedDisplay(task)
+            val analysisTask = tabs.newTask("Analysis")
+            val filesTask = tabs.newTask("Files")
+
+            log.info("Starting ReadDocumentsTask execution")
+            val fileContext = getInputFileCode()
+
+            transcript?.write("## Files Read\n<details><summary>File Context</summary>\n\n$fileContext\n\n</details>\n".toByteArray())
+
+            filesTask.header("Files Read", level = 3)
+            filesTask.add(fileContext.renderMarkdown())
+            filesTask.complete()
+
+            val toInput = { it: String ->
+              messages + listOf(
                 fileContext,
                 it,
-            ).filter { it.isNotBlank() }
-        }
+              ).filter { it.isNotBlank() }
+            }
 
-        val taskConfig: ReadDocumentsTaskExecutionConfigData? = this.executionConfig
-        val typeConfig = typeConfig ?: throw RuntimeException()
-        val insightActor = ChatAgent(
-            name = "Insight",
-            prompt = """
-                Create code for a new file that fulfills the specified requirements and context.
-                Given a detailed user request, break it down into smaller, actionable tasks suitable for software development.
-                Compile comprehensive information and insights on the specified topic.
-                Provide a comprehensive overview, including key concepts, relevant technologies, best practices, and any potential challenges or considerations.
-                Ensure the information is accurate, up-to-date, and well-organized to facilitate easy understanding.
-                """.trimIndent(),
-            model = (typeConfig.model?.let { this.orchestrationConfig.instance(it) }
+            val taskConfig: ReadDocumentsTaskExecutionConfigData? = this.executionConfig
+            val typeConfig = typeConfig ?: throw RuntimeException("Type configuration is missing")
+            val insightActor = ChatAgent(
+              name = "Insight",
+              prompt = """
+                            Create code for a new file that fulfills the specified requirements and context.
+                            Given a detailed user request, break it down into smaller, actionable tasks suitable for software development.
+                            Compile comprehensive information and insights on the specified topic.
+                            Provide a comprehensive overview, including key concepts, relevant technologies, best practices, and any potential challenges or considerations.
+                            Ensure the information is accurate, up-to-date, and well-organized to facilitate easy understanding.
+                            """.trimIndent(),
+              model = (typeConfig.model?.let { this.orchestrationConfig.instance(it) }
                 ?: defaultSmart).getChildClient(analysisTask),
-            temperature = this.orchestrationConfig.temperature,
-        )
-        val inquiryResult = Discussable(
-            task = analysisTask,
-            heading = "Read Documents",
-            userMessage = {
+              temperature = this.orchestrationConfig.temperature,
+            )
+            val inquiryResult = Discussable(
+              task = analysisTask,
+              heading = "Read Documents",
+              userMessage = {
                 "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
-                    taskConfig?.inquiry_questions?.joinToString("\n")
+                  taskConfig?.inquiry_questions?.joinToString("\n")
                 }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
-            },
-            initialResponse = { prompt ->
+              },
+              initialResponse = { prompt ->
                 val input = toInput(prompt)
                 transcript?.write("# Analysis Request\n\n${input.joinToString("\n\n")}\n\n".toByteArray())
                 insightActor.answer(input)
-            },
-            outputFn = { MarkdownUtil.renderMarkdown(it, ui = analysisTask.ui) },
-            reviseResponse = { history ->
+              },
+              outputFn = { it.renderMarkdown() },
+              reviseResponse = { history ->
                 val contextMessages = (messages + listOf(fileContext))
-                    .filter { it.isNotBlank() }
-                    .map { it to Role.user }
+                  .filter { it.isNotBlank() }
+                  .map { it to Role.user }
                 insightActor.answer((contextMessages + history).map { it.first }.toList())
-            }
-        ).call()
-        analysisTask.complete()
+              }
+            ).call()
+
+            analysisTask.complete()
+            log.info("ReadDocumentsTask completed successfully")
+            resultFn(inquiryResult!!)
+          } catch (e: Exception) {
+            task.error(e)
+            log.error("Error in ReadDocumentsTask: ${e.message}", e)
+            transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+            throw e
+          }
+        }
+      } finally {
         transcript?.close()
-        resultFn(inquiryResult!!)
+      }
     }
 
 

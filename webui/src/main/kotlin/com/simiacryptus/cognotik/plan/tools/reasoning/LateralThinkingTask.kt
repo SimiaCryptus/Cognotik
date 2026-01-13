@@ -2,24 +2,18 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.input.PaginatedDocumentReader
-import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
-import java.io.File
-import java.nio.file.FileSystems
-import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -60,9 +54,9 @@ class LateralThinkingTask(
 
     class LateralThinkingTaskExecutionConfigData(
         @Description("The problem or challenge to approach with lateral thinking")
-        val problem: String? = null,
+        var problem: String? = null,
         @Description("Lateral thinking techniques to apply: reversal, random_stimulus, challenge_assumptions, exaggeration, escape, metaphor, provocation")
-        val techniques: List<String>? = listOf(
+        var techniques: List<String>? = listOf(
             "reversal",
             "random_stimulus",
             "challenge_assumptions",
@@ -70,15 +64,15 @@ class LateralThinkingTask(
             "escape"
         ),
         @Description("Number of alternative solutions to generate per technique")
-        val num_alternatives: Int = 5,
+        var num_alternatives: Int = 5,
         @Description("Whether to evaluate the feasibility of generated ideas")
-        val evaluate_feasibility: Boolean = true,
+        var evaluate_feasibility: Boolean = true,
         @Description("Domain or context to constrain the thinking (optional)")
-        val domain_context: String? = null,
+        var domain_context: String? = null,
         @Description("Additional constraints or requirements to consider")
-        val constraints: List<String>? = null,
+        var constraints: List<String>? = null,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -257,9 +251,10 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        try {
-            val startTime = System.currentTimeMillis()
+        task.ui.pool.submit {
             val transcript = task.transcript()
+            try {
+                val startTime = System.currentTimeMillis()
             log.info("Starting LateralThinkingTask for problem='${executionConfig?.problem?.take(50)}...', techniques=${executionConfig?.techniques}")
 
             val problem = executionConfig?.problem
@@ -268,7 +263,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                 task.safeComplete("CONFIGURATION ERROR: Problem must be specified", log)
                 task.error(RuntimeException("Configuration error: problem is blank"))
                 resultFn("CONFIGURATION ERROR: Problem must be specified")
-                return
+                return@submit
             }
 
             val techniques = executionConfig.techniques ?: listOf(
@@ -285,9 +280,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
             log.info("Configuration: techniques=${techniques.size}, numAlternatives=$numAlternatives, evaluateFeasibility=$evaluateFeasibility")
 
-            val api = defaultSmart ?: return
-
-            val tabs = TabbedDisplay(task)
+                val tabs = TabbedDisplay(task)
 
             // Create overview tab
             val overviewTask = tabs.newTask("Overview")
@@ -330,9 +323,10 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
             log.debug("Gathering prior context")
             val priorContext = getPriorCode(agent.executionState)
-            val fileContext = getInputFileCode(agent.root)
+                val fileContext = getInputFileContent(executionConfig.input_files, agent.root)
             val combinedContext = priorContext + "\n\n" + fileContext
             log.debug("Context gathered: priorContext length=${priorContext.length}, fileContext length=${fileContext.length}")
+                transcript?.write("## Context\n<details>\n<summary>Input Context</summary>\n\n$combinedContext\n</details>\n".toByteArray())
 
             overviewTask.add(buildString {
                 appendLine()
@@ -372,7 +366,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                 val techniqueParser = ParsedAgent(
                     resultClass = TechniqueApplication::class.java,
                     prompt = techniquePrompt,
-                    model = api.getChildClient(task),
+                    model = defaultSmart.getChildClient(task),
                     temperature = 0.8,
                     name = "LateralThinking_${technique}",
                     parsingChatter = defaultFast,
@@ -520,7 +514,7 @@ Provide a comprehensive synthesis.
 
             val synthesisAgent = ChatAgent(
                 prompt = "You are an expert in creative synthesis and innovation strategy.",
-                model = api.getChildClient(task),
+                model = defaultSmart.getChildClient(task),
                 temperature = 0.6
             )
 
@@ -601,7 +595,7 @@ Provide a structured evaluation.
                 val feasibilityParser = ParsedAgent(
                     resultClass = FeasibilityEvaluation::class.java,
                     prompt = feasibilityPrompt,
-                    model = api.getChildClient(task),
+                    model = defaultSmart.getChildClient(task),
                     temperature = 0.4,
                     name = "FeasibilityEvaluation",
                     parsingChatter = defaultFast,
@@ -759,10 +753,8 @@ Provide a structured evaluation.
                 "Completed in ${totalTime / 1000}s with ${allIdeas.size} ideas across ${techniques.size} techniques.",
                 log
             )
-            resultFn(resultText)
-            transcript?.close()
             // Create summary message with transcript link
-            val (transcriptLink, _) = task.createFile("lateral_thinking_summary.md")
+                val transcriptLink = task.saveFile("lateral_thinking_summary.md", resultText.toByteArray())
             val summaryMessage = buildString {
                 appendLine(resultText)
                 appendLine()
@@ -781,19 +773,15 @@ Provide a structured evaluation.
         } catch (e: Exception) {
             log.error("Error during LateralThinkingTask execution", e)
             task.error(e)
-            val errorTask = task.newTask()
-            errorTask.add(buildString {
-                appendLine("# ❌ Error")
-                appendLine()
-                appendLine("An error occurred during lateral thinking:")
-                appendLine("```")
-                appendLine(e.message ?: "Unknown error")
-                appendLine("```")
-            }.renderMarkdown)
+                transcript?.write("\n## Error\n<details>\n<summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
             task.safeComplete("Failed with error: ${e.message}", log)
             resultFn("ERROR: ${e.message}")
+            } finally {
+                transcript?.close()
+        }
         }
     }
+
 
     private fun getTechniqueDescription(technique: String): String {
         return when (technique.lowercase()) {
@@ -1210,80 +1198,9 @@ Generate $numAlternatives ideas using $technique.
         }
     }
 
+
     private fun String.capitalize(): String {
         return this.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-    }
-
-    private fun getInputFileCode(root: Path): String = (executionConfig?.input_files ?: listOf())
-        .flatMap { pattern: String ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            (FileSelectionUtils.filteredWalk(root.toFile()) {
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    matcher.matches(root.relativize(it.toPath())) -> true
-                    it.isDirectory -> true
-                    else -> false
-                }
-            })
-        }.filter { file ->
-            file.isFile && file.exists()
-        }
-        .distinct()
-        .sortedBy { it }
-        .joinToString("\n\n") { relativePath ->
-            val file = root.toFile().resolve(relativePath)
-            try {
-                val content = if (!isTextFile(file)) {
-                    extractDocumentContent(file)
-                } else {
-                    file.readText()
-                }
-                "# $relativePath\n\n```\n$content\n```"
-            } catch (e: Throwable) {
-                log.warn("Error reading file: $relativePath", e)
-                ""
-            }
-        }
-
-    private fun isTextFile(file: File): Boolean {
-        val textExtensions = setOf(
-            "txt",
-            "md",
-            "kt",
-            "java",
-            "js",
-            "ts",
-            "py",
-            "rb",
-            "go",
-            "rs",
-            "c",
-            "cpp",
-            "h",
-            "hpp",
-            "css",
-            "html",
-            "xml",
-            "json",
-            "yaml",
-            "yml",
-            "properties",
-            "gradle",
-            "maven"
-        )
-        return textExtensions.contains(file.extension.lowercase())
-    }
-
-    private fun extractDocumentContent(file: File) = try {
-        file.getDocumentReader().use { reader ->
-            when (reader) {
-                is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
-                else -> reader.getText()
-            }
-        }
-    } catch (e: Exception) {
-        log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
-        file.readText()
     }
 
 }
