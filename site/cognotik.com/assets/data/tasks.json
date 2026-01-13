@@ -1,22 +1,20 @@
-
 {
   "siteName": "Cognotik",
   "navigation": [
     {
-      "label": "IDE",
-      "url": "intellij-plugin.html",
-      "type": "link",
-      "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/intellij"
+      "label": "Host",
+      "type": "dropdown",
+      "src": "host.json"
     },
     {
-      "label": "Modes",
+      "label": "Plan",
       "type": "dropdown",
       "url": "TaskPlanning.html",
-      "src": "modes.json",
+      "src": "plan.json",
       "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan"
     },
     {
-      "label": "Tasks",
+      "label": "Tools",
       "type": "submenu",
       "items":       [ {
         "label" : "Execution",
@@ -54,4 +52,3 @@
     }
   ]
 }
-        

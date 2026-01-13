@@ -1,0 +1,23 @@
+[
+  {
+    "label": "IDE",
+    "url": "intellij-plugin.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/intellij",
+    "description": "Experience collaborative intelligence directly in your IDE. Features agentic tools, BYOK model, voice control, and code generation."
+  },
+  {
+    "label": "Desktop",
+    "url": "desktop.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/daemon",
+    "description": "Run local AI agents with system tray integration, BYOK model, and powerful cognitive modes for autonomous workflows."
+  },
+  {
+    "label": "Embedding",
+    "url": "embedding.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/blob/main/docs/embedding.md",
+    "description": "Integrate 'Headless' AI agents directly into your software lifecycle. Automate refactoring, documentation, and testing within Gradle builds."
+  }
+]
