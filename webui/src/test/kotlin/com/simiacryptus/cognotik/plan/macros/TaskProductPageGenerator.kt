@@ -9,6 +9,7 @@ object TaskProductPageGenerator : com.simiacryptus.cognotik.util.FileGenerator()
       root = File("."),
       folder = File("webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools"),
       targetFile = { File("site/cognotik.com").resolve(it.nameWithoutExtension + ".html") },
+      overwriteMode = OverwriteModes.SkipExisting,
       relatedFiles = {
         listOf(
           it.toString(),
@@ -16,7 +17,6 @@ object TaskProductPageGenerator : com.simiacryptus.cognotik.util.FileGenerator()
           "site/cognotik.com/task_product_page_template.html",
         )
       },
-      overwriteMode = OverwriteModes.SkipExisting,
       generationPrompt = { source, target ->
         "Update the product page HTML file ($target) to reflect the latest implementation in ${source.name}"
       }

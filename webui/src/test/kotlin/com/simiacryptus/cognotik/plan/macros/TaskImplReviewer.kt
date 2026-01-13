@@ -10,7 +10,7 @@ object TaskImplReviewer : FileGenerator() {
     run(
       root = File("."),
       folder = File("webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools"),
-      targetFile = { it },
+      overwriteMode = OverwriteModes.PatchExisting,
       relatedFiles = {
         listOf(
           "docs/task_type_best_practices.md",
@@ -18,7 +18,6 @@ object TaskImplReviewer : FileGenerator() {
           "docs/agentic_io_best_practices.md",
         )
       },
-      overwriteMode = OverwriteModes.PatchExisting,
       generationPrompt = { source, target ->
         "Update implementation file ($target) according to the standards documents"
       }

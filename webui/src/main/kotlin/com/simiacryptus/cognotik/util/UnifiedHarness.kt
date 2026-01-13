@@ -100,6 +100,13 @@ open class UnifiedHarness(
         }
     }
 
+    var session = Session.newGlobalID()
+        private set
+
+    fun resetSession() {
+        session = Session.newGlobalID()
+    }
+
     open fun runPlan(
         prompt: String,
         cognitiveSettings: CognitiveModeConfig,
@@ -116,7 +123,6 @@ open class UnifiedHarness(
         }
     ) {
         val completionLatch = CountDownLatch(1)
-        val session = Session.newGlobalID()
 
         val planApp = object : UnifiedPlanApp(
             path = "/test",
@@ -229,7 +235,6 @@ open class UnifiedHarness(
     ) {
         val completionLatch = CountDownLatch(1)
         var error: Throwable? = null
-        val session = Session.newGlobalID()
 
 
 
