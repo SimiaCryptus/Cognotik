@@ -21,10 +21,7 @@ object TaskProductPageGenerator : com.simiacryptus.cognotik.util.FileGenerator()
         )
       },
       generationPrompt = { source, target ->
-        "Update the product page HTML file ($target) to reflect the latest implementation in ${source.name}.\n" +
-            "In particular: \n" +
-            "* add the browser feature for the test workspace: \n" + getAvailableFiles(File("webui/workspaces/${source.nameWithoutExtension}").toPath()).joinToString("\n") { "      - $it" } + "\n" +
-            "* Add/update details on how to invoke using the embedding doc and test case example.\n"
+        """Update the product page HTML file ($target) to reflect the latest implementation in ${source.name}."""
       }
     )
   }

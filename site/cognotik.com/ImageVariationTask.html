@@ -8,6 +8,11 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -81,7 +86,7 @@
             display: grid;
             grid-template-columns: 1fr 40px 1fr;
             gap: 1rem;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
             align-items: stretch;
         }
 
@@ -91,6 +96,7 @@
             border-radius: 6px;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         .panel-header {
@@ -227,7 +233,7 @@
 
     <!-- 1. HEADER -->
     <header class="page-header">
-        <div class="breadcrumbs">Home > Tasks > File Operations > ImageVariationTask</div>
+        <div class="breadcrumbs">Home > Tasks > Media > ImageVariationTask</div>
         <h1>ImageVariationTask</h1>
         <p class="pitch">
             Generates "Find the Differences" style image variations by decomposing images into regions and applying controlled modifications.
@@ -251,7 +257,8 @@
   "num_subimages": 7,
   "num_variations": 11,
   "num_changes_per_variation": 5,
-  "retarget_subimages": true
+  "retarget_subimages": true,
+  "extension": "png"
 }</code></pre>
         </div>
 
@@ -275,6 +282,15 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the generated patches, manifests, and the interactive game in the task workspace.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -331,6 +347,11 @@
                         <td>String</td>
                         <td>Prefix for generated filenames (Default: "variation").</td>
                     </tr>
+                    <tr>
+                        <td><code>extension</code></td>
+                        <td>String</td>
+                        <td>Output image format (png/jpg). Default: "png".</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -355,6 +376,10 @@
                     <strong style="color: var(--text-main);">Composition:</strong> 
                     Patches are recombined with the base image using feathering and optional retargeting to create the final variations.
                 </li>
+                <li style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-main);">Game Generation:</strong> 
+                    Produces an interactive <code>diff_game.html</code> and JSON manifests for each variation.
+                </li>
             </ol>
         </div>
 
@@ -365,14 +390,29 @@
 * Use for: Game asset generation, data augmentation.
 * Mechanism: Decomposes image, generates N specific sub-image changes, and recombines them into M variations.</code></pre>
 
-            <h3 style="margin-top: 2rem;">Kotlin Boilerplate</h3>
-            <pre><code>val task = ImageVariationTask(
-    orchestrationConfig = config,
-    planTask = ImageVariationConfig(
-        input_file = "scene.png",
-        num_variations = 5
+            <h3 style="margin-top: 2rem;">Embedded Execution (UnifiedHarness)</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">
+                Invoke this task programmatically using the <code>UnifiedHarness</code> for automated asset pipelines.
+            </p>
+            <pre><code>import com.simiacryptus.cognotik.plan.tools.file.ImageVariationTask.Companion.ImageVariation
+import com.simiacryptus.cognotik.plan.tools.file.ImageVariationTask.ImageVariationConfig
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+
+fun generateAssets(harness: UnifiedHarness, projectDir: File) {
+    val config = ImageVariationConfig(
+        input_file = "assets/background.png",
+        num_variations = 10,
+        num_subimages = 5,
+        retarget_subimages = true
     )
-)</code></pre>
+
+    harness.runTask(
+        taskType = ImageVariation,
+        typeConfig = TaskTypeConfig(), // Static tool settings
+        executionConfig = config,      // Runtime parameters
+        workspace = projectDir
+    )
+}</code></pre>
         </div>
     </section>
 
@@ -386,6 +426,10 @@
         document.getElementById('tab-' + tabId).classList.add('active');
         event.currentTarget.classList.add('active');
     }
+</script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/ImageVariation/');
 </script>
 
 </body>

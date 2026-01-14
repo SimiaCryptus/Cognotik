@@ -3,11 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cognotik | TutorialGenerationTask</title>
+    <title>Cognotik | TutorialGeneration</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -186,6 +191,11 @@
             border-bottom: 1px solid var(--border-subtle);
             vertical-align: top;
         }
+        .docs-table code {
+            background: rgba(255,255,255,0.05);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
         .field-name { font-family: var(--font-mono); color: var(--accent-primary); font-weight: bold; }
         .field-type { font-family: var(--font-mono); color: #c678dd; font-size: 0.8rem; }
         .req { color: #e06c75; font-weight: bold; }
@@ -204,15 +214,15 @@
 
     <!-- 1. HEADER AREA -->
     <section class="task-header">
-        <div class="breadcrumbs">Home > Tasks > Writing > TutorialGenerationTask</div>
-        <h1>TutorialGenerationTask</h1>
+        <div class="breadcrumbs">Home > Tasks > Writing > TutorialGeneration</div>
+        <h1>TutorialGeneration</h1>
         <p class="pitch">
             An industrial-grade tutorial engine that transforms complex goals into structured, multi-phase educational content with automated validation and troubleshooting.
         </p>
         <div class="badges">
             <span class="badge">Category: Writing</span>
-            <span class="badge">Output: Markdown / Tabbed UI</span>
-            <span class="badge">Model: GPT-4 Preferred</span>
+            <span class="badge">Output: tutorial.md</span>
+            <span class="badge">Auto-Fix: Supported</span>
         </div>
     </section>
 
@@ -225,12 +235,12 @@
             </div>
             <div class="panel-content">
                 <pre><code>{
-  "goal": "Deploy a React app to AWS Amplify",
-  "target_platform": "AWS / Web",
-  "skill_level": "intermediate",
-  "verbosity": "detailed",
-  "target_step_count": 5,
-  "include_troubleshooting": true
+  "goal": "Setup a CI/CD pipeline with GitHub Actions",
+  "target_platform": "GitHub / Linux",
+  "skill_level": "advanced",
+  "target_step_count": 6,
+  "include_validation_steps": true,
+  "include_next_steps": true
 }</code></pre>
             </div>
         </div>
@@ -249,13 +259,13 @@
                 <div class="mock-tab active">Complete Tutorial</div>
             </div>
             <div class="panel-content tutorial-preview">
-                <h2>Tutorial: Deploying React to AWS</h2>
-                <p><strong>Estimated Time:</strong> 45 minutes</p>
+                <h2>Tutorial: CI/CD with GitHub Actions</h2>
+                <p><strong>Estimated Time:</strong> 60 minutes</p>
                 <div class="step-box">
-                    <strong>Step 1: Initialize Amplify</strong>
-                    <p>Run the following command in your project root:</p>
-                    <pre style="background: #000; padding: 0.5rem; color: #fff;">amplify init</pre>
-                    <p style="font-size: 0.75rem; color: #4ade80;">✓ Validation: Check for amplify/ folder</p>
+                    <strong>Step 1: Create Workflow File</strong>
+                    <p>Create <code>.github/workflows/main.yml</code>:</p>
+                    <pre style="background: #000; padding: 0.5rem; color: #fff;">touch .github/workflows/main.yml</pre>
+                    <p style="font-size: 0.75rem; color: #4ade80;">✓ Validation: File exists in workspace</p>
                 </div>
                 <div class="step-box" style="opacity: 0.6">
                     <strong>Step 2: Add Hosting...</strong>
@@ -263,6 +273,15 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE (Workspace Browser) -->
+    <section class="showcase-section">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore generated artifacts (<code>tutorial.md</code>, <code>transcript.md</code>) in the task workspace.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
 
     <!-- 3. TABBED DETAILS -->
     <section class="task-details">
@@ -285,37 +304,67 @@
                     <tr>
                         <td><span class="field-name">goal</span> <span class="req">*</span></td>
                         <td><span class="field-type">String</span></td>
-                        <td>The final outcome the user should achieve (e.g., 'deploy a web app').</td>
+                        <td>The final outcome the user should achieve (e.g., 'deploy a web app to the cloud').</td>
                     </tr>
                     <tr>
                         <td><span class="field-name">target_platform</span></td>
                         <td><span class="field-type">String</span></td>
-                        <td>Environment context (Windows, Linux, Docker, etc.). Default: "cross-platform".</td>
+                        <td>Environment context (Windows, Linux, Docker, etc.). Default: <code>"cross-platform"</code>.</td>
                     </tr>
                     <tr>
-                        <td><span class="field-name">skill_level</span></td>
-                        <td><span class="field-type">String</span></td>
-                        <td>Target audience level: beginner, intermediate, advanced.</td>
+                        <td><span class="field-name">include_screenshots_placeholders</span></td>
+                        <td><span class="field-type">Boolean</span></td>
+                        <td>Add <code>[Screenshot...]</code> placeholders where visuals are needed. Default: <code>true</code>.</td>
                     </tr>
                     <tr>
                         <td><span class="field-name">verbosity</span></td>
                         <td><span class="field-type">String</span></td>
-                        <td>Level of detail: concise, detailed, verbose.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">target_step_count</span></td>
-                        <td><span class="field-type">Int</span></td>
-                        <td>Number of main steps (3 to 20). Default: 7.</td>
+                        <td>Level of detail: <code>concise</code>, <code>detailed</code>, <code>verbose</code>. Default: <code>"detailed"</code>.</td>
                     </tr>
                     <tr>
                         <td><span class="field-name">include_troubleshooting</span></td>
                         <td><span class="field-type">Boolean</span></td>
-                        <td>Whether to generate a common errors section.</td>
+                        <td>Whether to generate a common errors section. Default: <code>true</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">skill_level</span></td>
+                        <td><span class="field-type">String</span></td>
+                        <td>Target audience level: <code>beginner</code>, <code>intermediate</code>, <code>advanced</code>. Default: <code>"beginner"</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">estimated_duration</span></td>
+                        <td><span class="field-type">Int</span></td>
+                        <td>Estimated time to complete in minutes. Default: <code>30</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">include_code_examples</span></td>
+                        <td><span class="field-type">Boolean</span></td>
+                        <td>Include code blocks and CLI commands. Default: <code>true</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">include_validation_steps</span></td>
+                        <td><span class="field-type">Boolean</span></td>
+                        <td>Include steps to verify success. Default: <code>true</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">include_learning_objectives</span></td>
+                        <td><span class="field-type">Boolean</span></td>
+                        <td>Include a "What You'll Learn" section. Default: <code>true</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">include_next_steps</span></td>
+                        <td><span class="field-type">Boolean</span></td>
+                        <td>Include a "Next Steps" section. Default: <code>true</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="field-name">target_step_count</span></td>
+                        <td><span class="field-type">Int</span></td>
+                        <td>Number of main steps (3 to 20). Default: <code>7</code>.</td>
                     </tr>
                     <tr>
                         <td><span class="field-name">input_files</span></td>
                         <td><span class="field-type">List&lt;String&gt;</span></td>
-                        <td>Optional glob patterns for source code context.</td>
+                        <td>Optional glob patterns for source code context (e.g. <code>**/*.kt</code>).</td>
                     </tr>
                 </tbody>
             </table>
@@ -345,15 +394,40 @@
         </div>
 
         <div id="tab-integration" class="tab-content" style="display:none;">
-            <h3>Orchestration Boilerplate</h3>
+            <h3>Embedded Execution (Headless)</h3>
+            <p>To run this task programmatically using the <code>UnifiedHarness</code>:</p>
             <pre style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-subtle); color: #abb2bf;">
-<span style="color: #c678dd;">val</span> task = TutorialGenerationTask(
-    orchestrationConfig = config,
-    planTask = TutorialGenerationTaskExecutionConfigData(
-        goal = <span style="color: #98c379;">"Setup a CI/CD pipeline"</span>,
-        skill_level = <span style="color: #98c379;">"advanced"</span>
-    )
+<span style="color: #c678dd;">val</span> harness = UnifiedHarness(serverless = <span style="color: #d19a66;">true</span>)
+harness.start()
+
+<span style="color: #c678dd;">val</span> config = TutorialGenerationTaskExecutionConfigData(
+    goal = <span style="color: #98c379;">"Setup a CI/CD pipeline"</span>,
+    skill_level = <span style="color: #98c379;">"advanced"</span>,
+    target_step_count = <span style="color: #d19a66;">5</span>
+)
+
+harness.runTask(
+    taskType = TutorialGenerationTask.TutorialGeneration,
+    executionConfig = config,
+    workspace = File(<span style="color: #98c379;">"./my-project"</span>)
 )</pre>
+
+            <h3 style="margin-top: 2rem;">Test Case Example</h3>
+            <p>Example of a validated configuration for automated testing:</p>
+            <pre style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-subtle); color: #abb2bf;">
+<span style="color: #5c6370;">// Test: Generate a concise Docker tutorial</span>
+<span style="color: #c678dd;">val</span> testConfig = TutorialGenerationTaskExecutionConfigData(
+    goal = <span style="color: #98c379;">"Containerize a Spring Boot app"</span>,
+    target_platform = <span style="color: #98c379;">"Docker"</span>,
+    verbosity = <span style="color: #98c379;">"concise"</span>,
+    include_troubleshooting = <span style="color: #d19a66;">false</span>,
+    input_files = listOf(<span style="color: #98c379;">"pom.xml"</span>, <span style="color: #98c379;">"src/main/resources/application.properties"</span>)
+)
+
+<span style="color: #c678dd;">val</span> validationResult = testConfig.validate()
+<span style="color: #c678dd;">if</span> (validationResult == <span style="color: #d19a66;">null</span>) {
+    <span style="color: #5c6370;">// Proceed with execution</span>
+}</pre>
 
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
             <div style="background: #000; padding: 1rem; font-family: var(--font-mono); font-size: 0.85rem; color: #8b949e; border-radius: 6px;">
@@ -384,6 +458,10 @@
         document.getElementById('tab-' + tabId).style.display = 'block';
         event.currentTarget.classList.add('active');
     }
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    $(document).ready(() => {
+        initFileTree('#file-tree-demo', 'webui/workspaces/TutorialGeneration/');
+    });
 </script>
 
 </body>

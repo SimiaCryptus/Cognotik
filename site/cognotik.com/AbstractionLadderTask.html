@@ -3,11 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cognotik | AbstractionLadderTask</title>
+    <title>Cognotik | AbstractionLadder</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -206,7 +211,7 @@
 
     <!-- Section A: Header -->
     <section class="task-header">
-        <div class="breadcrumbs">Home > Tasks > Reasoning > AbstractionLadderTask</div>
+        <div class="breadcrumbs">Home > Tasks > Reasoning > AbstractionLadder</div>
         <h1>AbstractionLadderTask</h1>
         <p class="pitch" style="font-family: 'Inter', sans-serif; color: var(--text-dim);">
             Traverse abstraction levels to identify patterns, generalizations, and architectural insights from your code or concepts.
@@ -260,6 +265,16 @@
             </div>
         </div>
     </section>
+    <!-- Section B.5: Workspace Showcase -->
+    <section class="showcase-section">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: #fff;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the artifacts generated during the analysis of the test workspace, including the detailed markdown reports and transcripts.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
 
     <!-- Section C: Tabs -->
     <section class="task-details">
@@ -331,19 +346,44 @@
 
         <!-- Tab: Integration -->
         <div id="tab-integration" class="tab-pane">
-            <h3>Kotlin Boilerplate</h3>
+            <h3>Embedded Invocation (Kotlin)</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">
+                Use the <code>UnifiedHarness</code> to run this task programmatically in a headless environment.
+            </p>
             <pre style="background: var(--bg-panel); border-radius: 6px;"><code class="language-kotlin">
-val task = AbstractionLadderTask(
-    orchestrationConfig = config,
-    planTask = AbstractionLadderTaskExecutionConfigData(
-        concrete_concept = "Authentication Middleware",
-        direction = "both",
-        levels = 3,
-        identify_patterns = true
-    )
+import com.simiacryptus.cognotik.plan.tools.reasoning.AbstractionLadderTask.Companion.AbstractionLadder
+import com.simiacryptus.cognotik.plan.tools.reasoning.AbstractionLadderTask.AbstractionLadderTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+
+// 1. Define the execution parameters
+val executionConfig = AbstractionLadderTaskExecutionConfigData(
+    concrete_concept = "Authentication Middleware",
+    direction = "both",
+    levels = 3,
+    identify_patterns = true,
+    input_files = listOf("src/auth/*.kt")
+)
+// 2. Run via the harness
+harness.runTask(
+    taskType = AbstractionLadder,
+    typeConfig = TaskTypeConfig(name = "AuthAnalysis"),
+    executionConfig = executionConfig,
+    workspace = File("./my-project"),
+    autoFix = true
 )
             </code></pre>
-            <h3>Prompt Segment</h3>
+
+            <h3 style="margin-top: 2rem;">CLI / JSON Configuration</h3>
+            <pre style="background: var(--bg-panel); border-radius: 6px;"><code class="language-json">
+{
+  "task_type": "AbstractionLadder",
+  "concrete_concept": "Event-driven architecture",
+  "direction": "up",
+  "levels": 4
+}
+            </code></pre>
+
+            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
             <p>This task injects the following logic into the LLM context:</p>
             <pre style="background: var(--bg-panel); border-radius: 6px; font-size: 0.8rem;"><code class="language-text">
 AbstractionLadder - Traverse abstraction levels to find patterns and design insights
@@ -371,6 +411,11 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         event.currentTarget.classList.add('active');
     }
 </script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/AbstractionLadder/');
+</script>
+
 
 </body>
 </html>

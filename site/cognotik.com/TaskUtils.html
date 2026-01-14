@@ -8,6 +8,11 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -80,7 +85,7 @@
             display: grid;
             grid-template-columns: 1fr 40px 1fr;
             gap: 1rem;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
             align-items: center;
         }
 
@@ -186,7 +191,7 @@
         <div class="breadcrumbs">Home > Tasks > Core > Utilities</div>
         <h1>TaskUtils</h1>
         <p class="pitch">
-            Core extension functions for task lifecycle management, safe completion, and model resolution.
+            Core extension functions for task lifecycle management, safe completion, model resolution, and the "Triple Log Rule".
         </p>
         <div class="badges">
             <span class="badge">Category: Utility</span>
@@ -206,6 +211,9 @@ val displayLog = rawOutput.truncateForDisplay(10000)
 
 // Safe completion with logging
 task.safeComplete("Operation finished", logger)
+// Triple Log Rule: UI, SLF4J, and Transcript
+task.tripleLog(exception, logger, transcript, "Failed to process file")
+
 
 // Resolve API credentials
 val apiModel = chatModel.toApiChatModel() // Resolves keys
@@ -224,14 +232,27 @@ val apiModel = chatModel.toApiChatModel() // Resolves keys
                     <span style="color: #58a6ff;">... (truncated for display, 4200 characters omitted)</span>
                 </div>
                 
-                <div style="color: #8b949e; margin-top: 1rem; margin-bottom: 0.5rem;">// safeComplete log (on failure):</div>
-                <div style="color: #e3b341;">[WARN] Error completing task: Connection reset</div>
+                <div style="color: #8b949e; margin-top: 1rem; margin-bottom: 0.5rem;">// tripleLog Transcript Entry:</div>
+                <div style="background: #1c2128; padding: 0.5rem; border: 1px solid #30363d;">
+                    <strong style="color: #f85149;">## Error: Failed to process file</strong><br>
+                    <strong>Message:</strong> <code>Connection reset</code><br>
+                    <details><summary>Stack Trace</summary>...</details>
+                </div>
 
                 <div style="color: #8b949e; margin-top: 1rem; margin-bottom: 0.5rem;">// toApiChatModel result:</div>
                 <div style="color: #58a6ff;">ApiChatModel(model=GPT-4, provider=OpenAI, key="sk-...", baseUrl="https://api.openai.com/v1")</div>
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the artifacts and logs generated during TaskUtils unit testing.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -261,7 +282,12 @@ val apiModel = chatModel.toApiChatModel() // Resolves keys
                 <tr>
                     <td><code>safeComplete(message, log)</code></td>
                     <td><code>SessionTask</code></td>
-                    <td>Attempts to complete the task; catches and logs exceptions to prevent crash loops.</td>
+                    <td>Attempts to complete the task with Markdown rendering; catches and logs exceptions to prevent crash loops.</td>
+                </tr>
+                <tr>
+                    <td><code>tripleLog(e, log, transcript, context)</code></td>
+                    <td><code>SessionTask</code></td>
+                    <td>Logs to UI (error), SLF4J (error), and Transcript (Markdown with stack trace).</td>
                 </tr>
                 <tr>
                     <td><code>toApiChatModel()</code></td>
@@ -276,25 +302,42 @@ val apiModel = chatModel.toApiChatModel() // Resolves keys
         <div id="tab-process" class="tab-pane" style="display:none;">
             <h3>Lifecycle & Logic</h3>
             <p><strong>Model Resolution:</strong> <code>toApiChatModel</code> performs a lookup against <code>ApplicationServices.fileApplicationServices()</code>. It retrieves the <code>UserSettings</code> and finds the matching <code>ApiData</code> for the model's provider. It calls <code>.validate()</code> on the data before returning the resolved <code>ApiChatModel</code>.</p>
-            <p><strong>Safe Completion:</strong> <code>safeComplete</code> wraps the standard <code>complete(message)</code> call in a try-catch block. If an exception occurs (e.g., session already closed), it logs a warning instead of propagating the error, preventing crash loops in task finalization logic.</p>
+            <p><strong>Safe Completion:</strong> <code>safeComplete</code> wraps the standard <code>complete(message)</code> call in a try-catch block. It first attempts to render the message as Markdown. If an exception occurs (e.g., session already closed or rendering error), it logs a warning and falls back to raw text, ensuring the UI spinner is cleared.</p>
+            <p><strong>Triple Log Rule:</strong> This utility enforces consistent error reporting across three layers: the User Interface (via <code>task.error()</code>), the System Logs (via SLF4J), and the persistent Task Transcript (as a Markdown entry with a collapsible stack trace).</p>
             <p><strong>Display Optimization:</strong> <code>truncateForDisplay</code> ensures that massive log outputs or LLM responses do not crash the browser UI by enforcing a default 10,000 character limit while preserving the start of the content.</p>
         </div>
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
-            <h3>Boilerplate</h3>
+            <h3>Embedded Execution</h3>
+            <p>When using Cognotik as an embedded engine (Headless mode), <code>TaskUtils</code> functions are critical for handling model resolution without a UI.</p>
+            <pre><code class="language-kotlin">
+import com.simiacryptus.cognotik.apps.general.UnifiedHarness
+import com.simiacryptus.cognotik.chat.model.OpenAIModels
+
+val harness = UnifiedHarness(
+    serverless = true,
+    openBrowser = false,
+    smartModel = OpenAIModels.GPT4o,
+    modelInstanceFn = { apiChatModel ->
+        // TaskUtils logic is used internally here to resolve keys
+        val apiKey = System.getenv("OPENAI_API_KEY")
+        apiChatModel.model!!.instance(key = apiKey)
+    }
+)
+
+harness.start()
+            </code></pre>
+            <h3>Custom Task Implementation</h3>
             <pre><code class="language-kotlin">
 import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
-
-class MyCustomTask : SessionTask() {
-    override fun run() {
-        try {
-            val result = performWork()
-            this.safeComplete(result.truncateForDisplay(), logger)
-        } catch (e: Exception) {
-            this.safeComplete("Failed: ${e.message}", logger)
-        }
+import com.simiacryptus.cognotik.plan.tools.tripleLog
+override fun run() {
+    try {
+        val result = doWork()
+        this.safeComplete(result, logger)
+    } catch (e: Exception) {
+        this.tripleLog(e, logger, transcript, "Work failed")
     }
 }
             </code></pre>
@@ -311,6 +354,10 @@ class MyCustomTask : SessionTask() {
         document.getElementById('tab-' + tabId).style.display = 'block';
         event.currentTarget.classList.add('active');
     }
+</script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/TaskUtils/');
 </script>
 
 </body>

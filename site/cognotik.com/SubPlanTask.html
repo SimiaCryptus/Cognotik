@@ -8,6 +8,11 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -272,6 +277,16 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Workspace Explorer</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            View the recursive execution artifacts and generated plans within the <code>SubPlanTask</code> workspace.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -307,6 +322,11 @@
                     <td><code>task_description</code></td>
                     <td><code>String</code></td>
                     <td>Alternative to <code>planning_goal</code>; used if the goal is not explicitly provided.</td>
+                </tr>
+                <tr>
+                    <td><code>task_dependencies</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>List of task IDs that must complete before this sub-plan begins.</td>
                 </tr>
                 </tbody>
             </table>
@@ -361,21 +381,36 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
-            <h3>Kotlin Boilerplate</h3>
+            <h3>Embedded Execution (Kotlin)</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">How to invoke a Sub-Plan agent directly from your code using the <code>UnifiedHarness</code>.</p>
             <div class="panel">
-                <div class="panel-header">OrchestrationConfig.kt</div>
+                <div class="panel-header">SubPlanExample.kt</div>
                 <div class="panel-content">
-                    <pre><code class="language-kotlin">val subPlanConfig = SubPlanTask.SubPlanTaskTypeConfig(
-    purpose = "Specialized UI Refactoring",
-    cognitiveSettings = CognitiveModeType.Adaptive.newSettings(),
-    taskSettings = mutableMapOf(
-        "FileModification" to FileModificationTask.TypeConfig(),
-        "WebSearch" to WebSearchTask.TypeConfig()
-    )
+                    <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.run.SubPlanTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.Companion.SubPlan
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.SubPlanTaskTypeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
+
+// 1. Configure the Strategy for the sub-agent
+val subAgentStrategy = SubPlanTaskTypeConfig(
+    cognitiveSettings = CognitiveModeConfig(type = CognitiveModeType.AdaptivePlanning),
+    purpose = "Research and Implementation"
 )
 
-// Register in your orchestration config
-orchestrationConfig.taskSettings[SubPlanTask.SubPlan.name] = subPlanConfig</code></pre>
+// 2. Define the Goal
+val subAgentJob = SubPlanTaskExecutionConfigData(
+    planning_goal = "Research the best JSON library for Kotlin and implement a wrapper.",
+    context = listOf("Must be compatible with Java 11")
+)
+
+// 3. Execute via Harness
+harness.runTask(
+    taskType = SubPlan,
+    typeConfig = subAgentStrategy,
+    executionConfig = subAgentJob,
+    workspace = projectDir
+)</code></pre>
                 </div>
             </div>
         </div>
@@ -392,6 +427,11 @@ orchestrationConfig.taskSettings[SubPlanTask.SubPlan.name] = subPlanConfig</code
         event.currentTarget.classList.add('active');
     }
 </script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/SubPlan/');
+</script>
+
 
 </body>
 </html>

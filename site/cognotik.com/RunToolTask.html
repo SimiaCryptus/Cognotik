@@ -8,6 +8,11 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -275,6 +280,16 @@ Time:        1.2s
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 4rem;">
+        <h2 style="font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 1rem;">Workspace Artifacts</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.9rem;">
+            The agent maintains a persistent workspace for each task. Below is the live file structure for the <code>RunToolTask</code> test workspace, showing logs and generated outputs.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+    </section>
+
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -392,15 +407,26 @@ Time:        1.2s
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
             <h3 style="font-size: 1.2rem; margin-top: 0;">Kotlin Boilerplate</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">Example of invoking RunToolTask using the <code>UnifiedHarness</code> in an embedded environment:</p>
             <pre><code class="language-kotlin">
-val task = RunToolTask(
-    orchestrationConfig = config,
-    planTask = RunToolTask.RunToolTaskExecutionConfigData(
-        tool = "git",
-        args = listOf("status"),
-        workingDir = ".",
-        task_description = "Check repository status"
-    )
+import com.simiacryptus.cognotik.plan.tools.run.RunToolTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.run.RunToolTask.Companion.RunTool
+
+// 1. Define the Job settings
+val config = RunToolTaskExecutionConfigData(
+    tool = "python", // Must match a configured tool executable
+    args = listOf("scripts/verify_data.py", "--verbose"),
+    workingDir = ".",
+    task_description = "Verify data integrity using python script"
+)
+
+// 2. Execute via Harness
+harness.runTask(
+    taskType = RunTool,
+    typeConfig = RunToolTask.RunToolTaskTypeConfig(),
+    executionConfig = config,
+    workspace = File("./my-project"),
+    autoFix = true // Set to true for headless/CI execution
 )
             </code></pre>
 
@@ -423,6 +449,10 @@ RunTool - Execute a tool with custom arguments
         document.getElementById('tab-' + tabId).style.display = 'block';
         event.currentTarget.classList.add('active');
     }
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    $(document).ready(function() {
+        initFileTree('#file-tree-demo', 'webui/workspaces/RunTool/');
+    });
 </script>
 
 </body>

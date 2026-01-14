@@ -8,6 +8,11 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -81,7 +86,7 @@
             display: grid;
             grid-template-columns: 1fr 40px 1fr;
             gap: 1rem;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
             align-items: center;
         }
 
@@ -90,7 +95,6 @@
             border: 1px solid var(--border-subtle);
             border-radius: 6px;
             overflow: hidden;
-            height: 100%;
         }
 
         .panel-header {
@@ -123,7 +127,6 @@
         .mock-browser {
             padding: 1rem;
             background: #0d1117;
-            height: 100%;
         }
 
         .rendered-table {
@@ -204,6 +207,10 @@
             margin: 0 0 0.5rem 0;
             color: var(--accent-primary);
         }
+        .showcase-section {
+            margin-bottom: 3rem;
+        }
+
 
         @media (max-width: 768px) {
             .reality-check-grid { grid-template-columns: 1fr; }
@@ -279,6 +286,12 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE (Workspace Browser) -->
+    <section class="showcase-section">
+        <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-dim);">Test Workspace Artifacts</h2>
+        <div id="file-tree-demo" class="panel" style="height: 250px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
 
     <!-- 3. TABBED DETAILS -->
     <section class="task-details">
@@ -365,16 +378,27 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
-            <h3>Kotlin Boilerplate</h3>
-            <pre><code class="language-kotlin">val tableTask = TableCompilationTask(
-    orchestrationConfig = config,
-    planTask = TableCompilationTask.TableCompilationTaskExecutionConfigData(
-        rows = listOf("Feature A", "Feature B"),
-        columns = listOf("Product X", "Product Y"),
-        cell_query = "Does {column} support {row}?",
-        task_description = "Feature parity analysis"
+            <h3>Embedded Execution (Headless)</h3>
+            <p>Use the <code>UnifiedHarness</code> to run this task programmatically in CI/CD or CLI tools.</p>
+            <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.tools.reasoning.TableCompilationTask.Companion.TableCompilation
+import com.simiacryptus.cognotik.plan.tools.reasoning.TableCompilationTask.TableCompilationTaskExecutionConfigData
+
+fun generateComparisonTable(harness: UnifiedHarness, projectDir: File) {
+    val config = TableCompilationTaskExecutionConfigData(
+        rows = listOf("Performance", "Security", "Cost"),
+        columns = listOf("Solution A", "Solution B"),
+        cell_query = "Compare {column} against {row} criteria.",
+        task_description = "Vendor Analysis"
     )
-)</code></pre>
+
+    harness.runTask(
+        taskType = TableCompilation,
+        executionConfig = config,
+        workspace = projectDir,
+        autoFix = true
+    )
+}</code></pre>
             <h3>Prompt Segment</h3>
             <p>The following logic is injected into the orchestrator's context:</p>
             <pre><code>TableCompilation - Generate structured tables with AI-computed cell values
@@ -395,6 +419,10 @@
         document.getElementById('tab-' + tabId).style.display = 'block';
         event.target.classList.add('active');
     }
+</script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/TableCompilation/');
 </script>
 
 </body>

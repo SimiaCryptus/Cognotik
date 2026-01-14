@@ -3,11 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cognotik | Task Name</title>
+    <title>Cognotik | FileModificationTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -86,9 +90,10 @@
         <div class="breadcrumbs">Tasks / File Operations</div>
         <h1>FileModificationTask</h1>
         <p class="pitch">
-            Safe, patch-based file editing with built-in syntax validation and rollback capabilities.
+            AI-powered file modification and creation with precise diff-based editing, syntax validation, and git integration.
         </p>
         <div class="badges">
+            <span class="badge">Category: File</span>
             <span class="badge">Side-Effect: Destructive</span>
             <span class="badge">Auto-Fix Supported</span>
         </div>
@@ -101,9 +106,10 @@
             <div class="panel-header">Input Configuration</div>
             <pre><code class="language-json">
 {
-  "target_file": "src/main/App.kt",
-  "instructions": "Add a logging statement to the main loop",
-  "context_lines": 5
+  "files": ["src/main/App.kt"],
+  "modifications": "Add a logging statement to the main loop",
+  "extractContent": true,
+  "includeGitDiff": true
 }
             </code></pre>
         </div>
@@ -123,6 +129,15 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the results of the <code>FileModificationTask</code> test suite.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -145,14 +160,34 @@
                 </thead>
                 <tbody>
                 <tr>
-                    <td><code>target_file</code> <span class="req">*</span></td>
-                    <td>String</td>
-                    <td>Relative path to the file. Must exist in workspace.</td>
+                    <td><code>files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Target files to modify or create.</td>
                 </tr>
                 <tr>
-                    <td><code>instructions</code></td>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Additional files provided as context for the AI.</td>
+                </tr>
+                <tr>
+                    <td><code>modifications</code> <span class="req">*</span></td>
+                    <td>Any</td>
+                    <td>Specific modifications to be made to the files (Prompt).</td>
+                </tr>
+                <tr>
+                    <td><code>extractContent</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to read and provide file content to the AI.</td>
+                </tr>
+                <tr>
+                    <td><code>includeGitDiff</code></td>
+                    <td>Boolean</td>
+                    <td>If true, includes the current git diff with HEAD for context.</td>
+                </tr>
+                <tr>
+                    <td><code>task_description</code></td>
                     <td>String</td>
-                    <td>Natural language description of the edit desired.</td>
+                    <td>High-level goal of the task.</td>
                 </tr>
                 </tbody>
             </table>
@@ -160,12 +195,13 @@
 
         <!-- TAB: PREVIEW (With Presets) -->
         <div id="tab-preview" class="tab-pane" style="display:none;">
-            <div class="preset-bar">
-                <span>Load Scenario:</span>
-                <button class="btn-small">Fix Syntax Error</button>
-                <button class="btn-small">Add Documentation</button>
-            </div>
-            <!-- Simulator UI goes here -->
+            <h3>Task Lifecycle</h3>
+            <ol>
+                <li><strong>Context Preparation:</strong> Gathers content from <code>files</code>, <code>related_files</code>, and git diffs.</li>
+                <li><strong>AI Execution:</strong> Sends instructions to the LLM using a specialized system prompt for diff generation.</li>
+                <li><strong>Instrumentation:</strong> The response is parsed for <code>diff</code> blocks and instrumented with "Apply" links.</li>
+                <li><strong>Review/Apply:</strong> Changes are either auto-applied or presented for manual approval.</li>
+            </ol>
         </div>
 
     </section>
@@ -182,6 +218,11 @@
         event.target.classList.add('active');
     }
 </script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/FileModification/');
+</script>
+
 
 </body>
 </html>
@@ -439,6 +480,22 @@
         </div>
 
         <div id="tab-integration" class="tab-pane" style="display:none;">
+            <h3>Embedded Invocation</h3>
+            <p>Use the <code>UnifiedHarness</code> to run this task programmatically:</p>
+            <pre><code class="language-kotlin">
+val executionConfig = FileModificationTaskExecutionConfigData(
+    files = listOf("README.md"),
+    modifications = "Update the architecture section based on src/main.",
+    extractContent = true,
+    task_description = "Generate Documentation"
+)
+harness.runTask(
+    taskType = TaskType.FileModificationTask,
+    executionConfig = executionConfig,
+    workspace = projectDir,
+    autoFix = true
+)
+            </code></pre>
             <pre><code class="language-kotlin">// Registering the task in OrchestrationConfig
 val config = OrchestrationConfig(
     tasks = listOf(

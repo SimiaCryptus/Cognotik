@@ -2,23 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>InteractiveStoryTask - Cognotik</title>
-</head>
-<body>
-    <h1>InteractiveStoryTask</h1>
-    <p>Generates interactive stories.</p>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | InteractiveStoryTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -92,7 +86,7 @@
             display: grid;
             grid-template-columns: 1fr 40px 1fr;
             gap: 1rem;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
             align-items: center;
         }
 
@@ -209,7 +203,7 @@
         <div class="breadcrumbs">Home > Tasks > Writing > InteractiveStoryTask</div>
         <h1>InteractiveStoryTask</h1>
         <p class="pitch">
-            Generates complete choose-your-own-adventure narratives with branching paths, state tracking, and multiple distinct endings.
+            Generates complete choose-your-own-adventure narratives with branching paths, state tracking, and multiple distinct endings. Ideal for training scenarios, games, and educational content.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect Safe</span>
@@ -258,6 +252,15 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE (Workspace Browser) -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace: InteractiveStoryTask</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the generated story maps, transcripts, and summaries from recent test runs.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -293,6 +296,18 @@
                     <td>Story genre (e.g., sci-fi, mystery, horror).</td>
                 </tr>
                 <tr>
+                    <td><code>target_audience</code></td>
+                    <td>String</td>
+                    <td>"young_adult"</td>
+                    <td>Target demographic (children, adult, etc.).</td>
+                </tr>
+                <tr>
+                    <td><code>tone</code></td>
+                    <td>String</td>
+                    <td>"serious"</td>
+                    <td>Narrative tone (dark, humorous, etc.).</td>
+                </tr>
+                <tr>
                     <td><code>num_decision_points</code></td>
                     <td>Int</td>
                     <td>5</td>
@@ -317,10 +332,28 @@
                     <td>Specific variables to track (e.g., "health", "gold").</td>
                 </tr>
                 <tr>
+                    <td><code>prevent_dead_ends</code></td>
+                    <td>Boolean</td>
+                    <td>true</td>
+                    <td>Ensures all paths lead to a meaningful ending.</td>
+                </tr>
+                <tr>
                     <td><code>num_endings</code></td>
                     <td>Int</td>
                     <td>3</td>
                     <td>Distinct conclusions to generate (Range: 1-10).</td>
+                </tr>
+                <tr>
+                    <td><code>optimize_replay_value</code></td>
+                    <td>Boolean</td>
+                    <td>true</td>
+                    <td>Ensures paths are significantly different.</td>
+                </tr>
+                <tr>
+                    <td><code>segment_word_count</code></td>
+                    <td>Int</td>
+                    <td>300</td>
+                    <td>Target length for each narrative node (100-1000).</td>
                 </tr>
                 <tr>
                     <td><code>writing_style</code></td>
@@ -333,6 +366,12 @@
                     <td>String</td>
                     <td>"second_person"</td>
                     <td>Narrative perspective (first, second, or third).</td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>null</td>
+                    <td>Glob patterns for context files (e.g., world-building docs).</td>
                 </tr>
                 </tbody>
             </table>
@@ -368,7 +407,30 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
-            <h3>Kotlin Integration</h3>
+            <h3>Embedded Usage (UnifiedHarness)</h3>
+            <p>To invoke this task programmatically in a headless environment (CI/CD, CLI):</p>
+            <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.writing.InteractiveStoryTask
+import com.simiacryptus.cognotik.plan.tools.writing.InteractiveStoryTask.Companion.InteractiveStory
+
+// 1. Define the Job
+val executionConfig = InteractiveStoryTask.InteractiveStoryTaskExecutionConfigData(
+    premise = "Escape from a high-security orbital prison",
+    genre = "thriller",
+    num_decision_points = 8,
+    track_state_variables = true,
+    state_variables = listOf("security_alert_level", "oxygen")
+)
+
+// 2. Run via Harness
+harness.runTask(
+    taskType = InteractiveStory,
+    typeConfig = TaskTypeConfig(), // Default settings
+    executionConfig = executionConfig,
+    workspace = File("./my-story-project"),
+    autoFix = true
+)</code></pre>
+
+            <h3 style="margin-top: 2rem;">Orchestration Integration</h3>
             <pre><code class="language-kotlin">// Adding to an OrchestrationConfig
 val storyTask = InteractiveStoryTask.InteractiveStoryTaskExecutionConfigData(
     premise = "Escape from a high-security orbital prison",
@@ -406,6 +468,10 @@ orchestrator.addTask(storyTask)</code></pre>
         document.getElementById('tab-' + tabId).style.display = 'block';
         event.currentTarget.classList.add('active');
     }
+</script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/InteractiveStory/');
 </script>
 
 </body>

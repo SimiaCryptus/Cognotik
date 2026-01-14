@@ -8,6 +8,11 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -256,6 +261,16 @@
             </div>
         </div>
     </section>
+    <!-- Section B.5: Showcase -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the artifacts and logs generated during automated testing of the <code>DiscussionTask</code>.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem; background: var(--bg-panel);"></div>
+    </section>
+
+
 
     <!-- Section C: Tabbed Interface -->
     <section class="task-details">
@@ -341,18 +356,55 @@
 
         <!-- Tab 3: Integration -->
         <div id="integration" class="tab-content">
-            <h3>Kotlin Boilerplate</h3>
+            <h3>Embedded Execution (UnifiedHarness)</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">
+                To run this task programmatically in a headless environment (CI/CD, CLI), use the <code>UnifiedHarness</code>.
+            </p>
             <div class="panel" style="background: #000;">
                 <div class="panel-content">
-                    <pre><code class="language-kotlin">val discussion = DiscussionTask(
-    orchestrationConfig = config,
-    planTask = DiscussionTask.DiscussionTaskExecutionConfigData(
-        inquiry_goal = "Analyze project structure",
-        inquiry_questions = listOf("Is the package naming consistent?"),
-        input_files = listOf("src/main/kotlin/**/*.kt")
-    )
+                    <pre><code class="language-kotlin">// 1. Define the Execution Configuration
+val executionConfig = DiscussionTask.DiscussionTaskExecutionConfigData(
+    inquiry_goal = "Architecture Review",
+    inquiry_questions = listOf("Does the service layer follow the Repository pattern?"),
+    input_files = listOf("src/main/kotlin/services/*.kt", "src/main/kotlin/repositories/*.kt"),
+    task_description = "Reviewing architectural patterns"
+)
+
+// 2. Define the Type Configuration (Optional model override)
+val typeConfig = DiscussionTask.DiscussionTaskTypeConfig(
+    name = "ArchReviewer"
+)
+
+// 3. Run via Harness
+harness.runTask(
+    taskType = DiscussionTask.Discussion,
+    typeConfig = typeConfig,
+    executionConfig = executionConfig,
+    workspace = File("./my-project"),
+    autoFix = true // Set to true for non-interactive CI/CD usage
 )</code></pre>
                 </div>
+            </div>
+            <h3 style="margin-top: 2rem;">Test Case Example</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">Example of a unit test verifying the discussion logic:</p>
+            <div class="panel" style="background: #000; border-color: #444;">
+                <div class="panel-content">
+                    <pre><code class="language-kotlin">@Test
+fun testDiscussionTask() {
+    val harness = UnifiedHarness(serverless = true)
+    harness.start()
+    val result = harness.runTask(
+        taskType = DiscussionTask.Discussion,
+        executionConfig = DiscussionTask.DiscussionTaskExecutionConfigData(
+            inquiry_goal = "Test Inquiry",
+            inquiry_questions = listOf("What is the purpose of this test?"),
+            input_files = listOf("src/test/kotlin/DiscussionTaskTest.kt")
+        ),
+        workspace = tempDir,
+        autoFix = true
+    )
+    assert(result.contains("DiscussionTaskTest"))
+}</code></pre></div>
             </div>
 
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
@@ -383,6 +435,10 @@
         document.getElementById(tabName).classList.add("active");
         evt.currentTarget.classList.add("active");
     }
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    $(document).ready(function() {
+        initFileTree('#file-tree-demo', 'webui/workspaces/Discussion/');
+    });
 </script>
 
 </body>
