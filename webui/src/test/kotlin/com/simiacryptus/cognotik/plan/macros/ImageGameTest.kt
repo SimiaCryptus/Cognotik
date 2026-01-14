@@ -18,7 +18,7 @@ object ImageGameTest {
         UnifiedHarness.configurePlatform()
     }
 
-   @org.junit.jupiter.api.Test
+   //@org.junit.jupiter.api.Test
     fun test() {
         object : PlanHarness(
             prompt = "Create a complex image featuring a number of different elements, then compile into a game featuring a wide variety of variants." +

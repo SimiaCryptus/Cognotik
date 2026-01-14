@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.plan.macros
 
-import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import java.io.File
 
 object TaskProductPageGenerator : com.simiacryptus.cognotik.util.FileGenerator() {

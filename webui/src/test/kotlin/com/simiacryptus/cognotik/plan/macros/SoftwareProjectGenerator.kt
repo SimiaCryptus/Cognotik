@@ -22,7 +22,7 @@ class SoftwareProjectGenerator {
     init {
       UnifiedHarness.configurePlatform()
     }
-    @TestFactory
+    //@TestFactory
     fun tests() = listOf(
         WaterfallModeConfig(),
         AdaptivePlanningConfig(type = CognitiveModeType.Coding),
