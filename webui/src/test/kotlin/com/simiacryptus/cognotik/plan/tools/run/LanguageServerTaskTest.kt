@@ -1,8 +1,7 @@
-package com.simiacryptus.cognotik.plan.tools.code
+package com.simiacryptus.cognotik.plan.tools.run
 
+import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask
 import com.simiacryptus.cognotik.util.TaskHarness
-import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask.LanguageServerTaskExecutionConfigData
-import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask.LanguageServerTaskTypeConfig
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
@@ -21,10 +20,10 @@ object LanguageServerTaskTest {
     fun testHover() {
         val harness = TaskHarness(
             taskType = LanguageServerTask.LanguageServer,
-            typeConfig = LanguageServerTaskTypeConfig(
+            typeConfig = LanguageServerTask.LanguageServerTaskTypeConfig(
                 task_type = LanguageServerTask.LanguageServer.name
             ),
-            executionConfig = LanguageServerTaskExecutionConfigData(
+            executionConfig = LanguageServerTask.LanguageServerTaskExecutionConfigData(
                 action = "hover",
                 file = "Sample.kt",
                 line = 1,
@@ -51,10 +50,10 @@ object LanguageServerTaskTest {
     fun testDiagnostics() {
         val harness = TaskHarness(
             taskType = LanguageServerTask.LanguageServer,
-            typeConfig = LanguageServerTaskTypeConfig(
+            typeConfig = LanguageServerTask.LanguageServerTaskTypeConfig(
                 task_type = LanguageServerTask.LanguageServer.name
             ),
-            executionConfig = LanguageServerTaskExecutionConfigData(
+            executionConfig = LanguageServerTask.LanguageServerTaskExecutionConfigData(
                 action = "diagnostics",
                 file = "Error.kt",
                 task_description = "Check for syntax errors in Error.kt",
