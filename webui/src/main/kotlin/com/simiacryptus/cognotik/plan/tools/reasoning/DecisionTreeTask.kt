@@ -3,9 +3,13 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
@@ -22,13 +26,13 @@ class DecisionTreeTask(
 
     class DecisionTreeTaskExecutionConfigData(
         @Description("The data file to analyze (CSV)")
-        val data_file: String? = null,
+        var data_file: String? = null,
         @Description("The target column name to predict")
-        val target_column: String? = null,
+        var target_column: String? = null,
         @Description("Maximum depth of the tree")
-        val max_depth: Int = 3,
+        var max_depth: Int = 3,
         @Description("Number of candidate rules to generate per node")
-        val candidate_rules: Int = 5,
+        var candidate_rules: Int = 5,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
     ) : TaskExecutionConfig(
@@ -63,104 +67,152 @@ class DecisionTreeTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+
+
+      val transcript = task.transcript()
+      try {
         val config = executionConfig ?: return
         val error = config.validate()
         if (error != null) {
-            task.safeComplete("Configuration Error: $error", log)
-            return
+          val msg = "Configuration Error: $error"
+          task.error(Exception(msg))
+          log.error(msg)
+          transcript?.write("## Error\n$msg\n".toByteArray())
+          task.complete()
+          return
         }
-        task.header("Building Decision Tree")
-        val statusBuffer = task.add("Initializing...")
 
+        val tabs = TabbedDisplay(task)
+        val executionTask = tabs.newTask("Execution")
+        executionTask.header("Building Decision Tree")
+        val statusBuffer = executionTask.add("Initializing...".renderMarkdown())
 
-        val dataFile = root.resolve(config.data_file!!).toFile()
-        if (!dataFile.exists()) {
-            task.safeComplete("Data file not found: ${config.data_file}", log)
-            return
-        }
-        statusBuffer?.setLength(0)
-        task.update()
+        task.ui.pool.submit {
+          try {
+            log.info("Starting DecisionTreeTask for ${config.data_file}")
+            transcript?.write("## Decision Tree Construction Started\n".toByteArray())
 
-        val records = try {
-            if (dataFile.extension.equals("jsonl", ignoreCase = true)) {
-                loadJsonl(dataFile)
-            } else {
-                loadCsv(dataFile)
+            val dataFile = root.resolve(config.data_file!!).toFile()
+            if (!dataFile.exists()) {
+              val msg = "Data file not found: ${config.data_file}"
+              executionTask.error(Exception(msg))
+              log.error(msg)
+              transcript?.write("### Error\n$msg\n".toByteArray())
+              return@submit
             }
-        } catch (e: Exception) {
-            task.safeComplete("Error loading data: ${e.message}", log)
-            return
+
+            val records = try {
+              if (dataFile.extension.equals("jsonl", ignoreCase = true)) {
+                loadJsonl(dataFile)
+              } else {
+                loadCsv(dataFile)
+              }
+            } catch (e: Exception) {
+              executionTask.error(e)
+              log.error("Error loading data", e)
+              transcript?.write("### Error Loading Data\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
+              return@submit
+            }
+
+            if (records.isEmpty()) {
+              executionTask.add("Data file is empty".renderMarkdown())
+              return@submit
+            }
+
+            val headers = records.first().keys
+            if (!headers.contains(config.target_column)) {
+              val msg = "Target column '${config.target_column}' not found. Available: $headers"
+              executionTask.add(msg.renderMarkdown())
+              return@submit
+            }
+
+            statusBuffer?.setLength(0)
+            statusBuffer?.append("Loaded ${records.size} records. Analyzing...".renderMarkdown())
+            executionTask.update()
+
+            val chatAgent = ChatAgent(
+              model = defaultSmart.getChildClient(task),
+              temperature = 0.2,
+              prompt = """
+                            You are a Decision Tree Rule Generator.
+                            Analyze the provided data samples and propose splitting rules to predict the target variable: '${config.target_column}'.
+                            
+                            Output Format:
+                            Provide exactly ${config.candidate_rules} distinct rules.
+                            Each rule must be in the format: `FIELD OPERATOR VALUE`
+                            
+                            Supported Operators:
+                            - `==` (Exact match)
+                            - `!=` (Not equal)
+                            - `>` (Numeric greater than)
+                            - `<` (Numeric less than)
+                            - `contains` (String contains)
+                            - `matches` (Regex match)
+                            
+                            Examples:
+                            age > 25
+                            status == active
+                            description contains error
+                            sku matches ^[A-Z]-123
+                            
+                            Do not include explanations. Just the rules, one per line.
+                        """.trimIndent()
+            )
+
+            tabs["Configuration"] = """
+                        ### Parameters
+                        * **Target:** `${config.target_column}`
+                        * **Data File:** `${config.data_file}`
+                        * **Records:** ${records.size}
+                        * **Max Depth:** ${config.max_depth}
+                    """.trimIndent().renderMarkdown()
+
+            val tree = buildTree(
+              records,
+              config.target_column!!,
+              0,
+              config.max_depth,
+              config.candidate_rules,
+              chatAgent,
+              executionTask
+            )
+            val code = generateCode(tree)
+
+            statusBuffer?.setLength(0)
+            statusBuffer?.append("Tree construction complete.".renderMarkdown())
+            executionTask.update()
+
+            tabs["Generated Code"] = "```kotlin\n$code\n```".renderMarkdown()
+
+            val fileUrl = task.saveFile("DecisionTree.kt", code.toByteArray())
+            executionTask.add("Download: <a href='$fileUrl'>DecisionTree.kt</a>")
+
+            transcript?.write("### Tree Construction Complete\n<details><summary>Generated Code</summary>\n\n```kotlin\n$code\n```\n</details>\n".toByteArray())
+            log.info("DecisionTreeTask completed successfully.")
+
+            resultFn(
+              """
+                        ## Decision Tree Generated
+                        * Target: `${config.target_column}`
+                        * Max Depth: `${config.max_depth}`
+                        * Code saved to: `DecisionTree.kt`
+                    """.trimIndent()
+            )
+          } catch (e: Exception) {
+            executionTask.error(e)
+            log.error("Error in DecisionTreeTask execution", e)
+            transcript?.write("## Execution Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
+          } finally {
+            executionTask.complete()
+            task.complete()
+          }
         }
-        statusBuffer?.append("Loaded ${records.size} records. Analyzing...")
-
-        if (records.isEmpty()) {
-            task.safeComplete("Data file is empty", log)
-            return
-        }
-        val headers = records.first().keys
-        if (!headers.contains(config.target_column)) {
-            task.safeComplete("Target column '${config.target_column}' not found. Available: $headers", log)
-            return
-        }
-
-
-        val chatAgent = ChatAgent(
-            model = defaultSmart.getChildClient(task),
-            temperature = 0.2,
-            prompt = """
-                You are a Decision Tree Rule Generator.
-                Analyze the provided data samples and propose splitting rules to predict the target variable: '${config.target_column}'.
-                
-                Output Format:
-                Provide exactly ${config.candidate_rules} distinct rules.
-                Each rule must be in the format: `FIELD OPERATOR VALUE`
-                
-                Supported Operators:
-                - `==` (Exact match)
-                - `!=` (Not equal)
-                - `>` (Numeric greater than)
-                - `<` (Numeric less than)
-                - `contains` (String contains)
-                - `matches` (Regex match)
-                
-                Examples:
-                age > 25
-                status == active
-                description contains error
-                sku matches ^[A-Z]-123
-                
-                Do not include explanations. Just the rules, one per line.
-            """.trimIndent()
-        )
-
-        task.expandable(
-            "Configuration", """
-            <ul>
-              <li><b>Target:</b> ${config.target_column}</li>
-              <li><b>Data File:</b> ${config.data_file}</li>
-              <li><b>Records:</b> ${records.size}</li>
-              <li><b>Max Depth:</b> ${config.max_depth}</li>
-            </ul>
-        """.trimIndent()
-        )
-
-        val tree =
-            buildTree(records, config.target_column!!, 0, config.max_depth, config.candidate_rules, chatAgent, task)
-
-        val code = generateCode(tree)
-
-        statusBuffer?.setLength(0)
-        statusBuffer?.append("Tree construction complete.")
-        task.update()
-
-        task.header("Generated Decision Tree Code", level = 2)
-        task.add(renderMarkdown("```kotlin\n$code\n```", ui = task.ui))
-
-        val fileUrl = task.saveFile("DecisionTree.kt", code.toByteArray())
-        task.add("Download: <a href='$fileUrl'>DecisionTree.kt</a>")
-
-        task.complete()
-        resultFn(code)
+      } catch (e: Exception) {
+        task.error(e)
+        log.error("Error initializing DecisionTreeTask", e)
+      } finally {
+        transcript?.close()
+      }
     }
 
     private fun loadCsv(file: File): List<Map<String, String>> {

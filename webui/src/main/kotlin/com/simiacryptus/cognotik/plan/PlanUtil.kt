@@ -1,7 +1,8 @@
 package com.simiacryptus.cognotik.plan
 
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.plan.AbstractTask.TaskState
+import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.util.*
@@ -123,9 +124,9 @@ object PlanUtil {
     }
 
     fun getAllDependencies(
-        subPlanTask: TaskExecutionConfig,
-        subTasks: Map<String, TaskExecutionConfig>,
-        visited: MutableSet<String>
+      subPlanTask: TaskExecutionConfig,
+      subTasks: Map<String, TaskExecutionConfig>,
+      visited: MutableSet<String>
     ): List<String> {
         val dependencies = subPlanTask.task_dependencies?.toMutableList() ?: mutableListOf()
         subPlanTask.task_dependencies?.forEach { dep ->

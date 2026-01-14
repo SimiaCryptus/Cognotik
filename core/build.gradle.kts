@@ -48,7 +48,6 @@ dependencies {
     implementation(libs.jackson.jaxrs.json)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.datatype.jdk8)
-    testImplementation(project(":jo-penai"))
 
 
     compileOnly(libs.asm)
@@ -75,6 +74,32 @@ dependencies {
     compileOnly(libs.logback.core) {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
+
+    implementation(platform(libs.aws.bom)) // Use BOM alias
+    implementation(libs.aws.bedrockruntime)
+    implementation(libs.aws.bedrock)
+    implementation(libs.aws.auth)
+    implementation(libs.aws.sso)
+
+    implementation(libs.swagger.annotations)
+    implementation(libs.jsr305)
+    implementation(libs.httpclient5)
+    implementation(libs.jackson.databind.nullable)
+    implementation(libs.jakarta.annotations.api)
+
+    implementation(libs.slf4j.api)
+    testImplementation(libs.logback.classic)
+    testImplementation(libs.logback.core)
+
+    implementation(libs.httpclient5) {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
+    implementation(libs.jackson.kotlin)
+    implementation(libs.guava)
+    implementation(libs.gson)
+    implementation(libs.commons.io)
+
+    implementation("com.google.genai:google-genai:1.32.0")
 
     testImplementation(platform(libs.aws.bom))
     testImplementation(libs.aws.sdk)

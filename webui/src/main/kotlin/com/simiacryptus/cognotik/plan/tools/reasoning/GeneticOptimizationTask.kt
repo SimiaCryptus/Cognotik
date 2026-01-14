@@ -2,16 +2,21 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.ByteArrayOutputStream
+import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -31,13 +36,13 @@ class GeneticOptimizationTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GeneticOptimizationTask::class.java)
         val GeneticOptimization = TaskType(
-          name = "GeneticOptimization",
-          category = "Reasoning",
-          taskClass = GeneticOptimizationTask::class.java,
-          executionConfigClass = GeneticOptimizationTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Iteratively evolve and perfect text through genetic algorithms",
-          tooltipHtml = """
+            name = "GeneticOptimization",
+            category = "Reasoning",
+            taskClass = GeneticOptimizationTask::class.java,
+            executionConfigClass = GeneticOptimizationTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Iteratively evolve and perfect text through genetic algorithms",
+            tooltipHtml = """
                         Uses genetic algorithms to optimize text through iterative evolution.
                         <ul>
                           <li>Generates variations using configurable mutation strategies</li>
@@ -71,24 +76,24 @@ class GeneticOptimizationTask(
 
     class GeneticOptimizationTaskExecutionConfigData(
         @Description("The initial text(s) to optimize (seeds for genetic algorithm) - Include the ENTIRE text(s) to be optimized. Multiple texts will be used as separate seeds in the initial population.")
-        val initial_text: List<String>? = null,
+        var initial_text: List<String>? = null,
         @Description("The optimization goal or criteria (e.g., 'clarity and conciseness', 'persuasiveness', 'technical accuracy')")
-        val optimization_goal: String? = null,
+        var optimization_goal: String? = null,
         @Description("Evaluation criteria weights (e.g., {'clarity': 0.4, 'conciseness': 0.3, 'impact': 0.3})")
-        val evaluation_weights: Map<String, Double>? = null,
+        var evaluation_weights: Map<String, Double>? = null,
         @Description("Additional context or constraints for optimization")
-        val constraints: List<String>? = null,
+        var constraints: List<String>? = null,
 
         @Description("Number of generations to evolve (default: 5)")
-        val num_generations: Int = 5,
+        var num_generations: Int = 5,
         @Description("Population size per generation (default: 6)")
-        val population_size: Int = 6,
+        var population_size: Int = 6,
         @Description("Number of top candidates to keep each generation (default: 2)")
-        val selection_size: Int = 2,
+        var selection_size: Int = 2,
         @Description("Mutation strategies to use (e.g., 'rephrase', 'simplify', 'elaborate', 'restructure')")
-        val mutation_strategies: List<String>? = listOf("rephrase", "simplify", "elaborate"),
+        var mutation_strategies: List<String>? = listOf("rephrase", "simplify", "elaborate"),
         @Description("Whether to enable crossover (combining traits from multiple candidates)")
-        val enable_crossover: Boolean = true,
+        var enable_crossover: Boolean = true,
 
         task_description: String? = null,
         task_dependencies: List<String>? = null,
@@ -103,7 +108,7 @@ class GeneticOptimizationTask(
             if (initial_text.isNullOrEmpty()) {
                 return "initial_text must not be empty"
             }
-            if (initial_text.any { it.isBlank() }) {
+            if (initial_text!!.any { it.isBlank() }) {
                 return "initial_text entries must not be blank"
             }
             if (optimization_goal.isNullOrBlank()) {
@@ -185,19 +190,17 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript()
-        try {
-            val startTime = System.currentTimeMillis()
-            messages.joinToString("\n\n")
-            log.info("Starting GeneticOptimizationTask with ${executionConfig?.initial_text?.size} initial texts, goal='${executionConfig?.optimization_goal}'")
-            // Validate configuration
+        task.ui.pool.submit {
+            val transcript = task.transcript()
+            try {
+                val startTime = System.currentTimeMillis()
+                log.info("Starting GeneticOptimizationTask. Goal: ${executionConfig?.optimization_goal}")
+
+                // Validate configuration
             executionConfig?.validate()?.let { errorMessage ->
-                log.error("Configuration validation failed: $errorMessage")
-                task.complete("VALIDATION ERROR: $errorMessage")
-                task.error(ValidatedObject.ValidationError(errorMessage, executionConfig))
-                transcript?.close()
-                resultFn("VALIDATION ERROR: $errorMessage")
-                return
+                val error = ValidatedObject.ValidationError(errorMessage, executionConfig)
+                handleError(error, task, transcript, resultFn)
+                return@submit
             }
 
 
@@ -217,12 +220,9 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             val constraints = executionConfig?.constraints ?: emptyList()
 
             if (initialText.isNullOrEmpty() || optimizationGoal.isNullOrBlank()) {
-                log.error("Configuration error: initial_text is empty or optimization_goal is blank")
-                task.complete("CONFIGURATION ERROR: Both initial_text (at least one) and optimization_goal must be specified")
-                transcript?.close()
-                task.error(RuntimeException("Configuration error: initial_text is empty or optimization_goal is blank"))
-                resultFn("CONFIGURATION ERROR: Both initial_text (at least one) and optimization_goal must be specified")
-                return
+                val error = RuntimeException("Configuration error: initial_text is empty or optimization_goal is blank")
+                handleError(error, task, transcript, resultFn)
+                return@submit
             }
 
             log.info("Configuration validated: generations=$numGenerations, population=$populationSize, selection=$selectionSize, crossover=$enableCrossover")
@@ -266,9 +266,11 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 }
                 appendLine()
                 appendLine("## Initial Text")
+                initialText.forEachIndexed { i, text ->
+                    appendLine("<details><summary>Seed ${i + 1}</summary>\n\n$TT\n$text\n$TT\n</details>")
+                }
                 appendLine()
-                appendLine(initialText)
-                appendLine("$TT")
+                appendLine("---")
                 appendLine()
                 appendLine("---")
                 appendLine()
@@ -280,9 +282,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             transcript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
 
             // Gather context
-            log.debug("Gathering prior context")
-            val priorContext = getPriorCode(agent.executionState)
-            log.debug("Context gathered: length=${priorContext.length}")
 
             overviewTask.add(buildString {
                 appendLine()
@@ -308,7 +307,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             // Log and display initial evaluations
             transcript?.write("\n\n## Initial Evaluations\n\n".toByteArray(StandardCharsets.UTF_8))
             currentPopulation.forEachIndexed { index, variant ->
-                log.info("Initial text ${index + 1} evaluation: score=${variant.score.overall_score}")
+                log.info("Initial text ${index + 1} evaluated. Score: ${variant.score.overall_score}")
 
                 val evalText = buildString {
                     if (currentPopulation.size > 1) {
@@ -349,7 +348,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
 
             // Evolution loop
             for (generation in 1..numGenerations) {
-                log.info("Starting generation $generation/$numGenerations")
+                log.info("Starting generation $generation of $numGenerations")
 
                 val generationTask = tabs.newTask("Generation $generation")
                 transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
@@ -367,7 +366,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
 
                 // Keep top performers from previous generation
                 val survivors = currentPopulation.sortedByDescending { it.score.overall_score }.take(selectionSize)
-                log.debug("Selected $selectionSize survivors for generation $generation")
                 // Track all texts in current generation to prevent duplicates
                 val existingTexts = survivors.map { it.text }.toMutableSet()
 
@@ -386,7 +384,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
 
                     repeat(mutationsToGenerate) {
                         val strategy = mutationStrategies.random()
-                        log.debug("Generating mutation using strategy: $strategy")
                         newVariants.add(
                             EvaluatedVariant(
                                 score = EvaluationScore(overall_score = 0.0),
@@ -403,7 +400,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                                 strategy,
                                 optimizationGoal,
                                 constraints,
-                                priorContext,
+                                "", // Context handled by agent state
                                 api
                             )
                             if (candidate != null && !existingTexts.contains(candidate.text)) {
@@ -432,7 +429,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 }
 
                 if (enableCrossover && survivors.size >= 2 && newVariants.size < populationSize) {
-                    log.debug("Applying crossover")
 
                     // Try up to 3 times to generate a unique crossover
                     var attempts = 0
@@ -473,7 +469,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 currentPopulation = survivors + newVariants
 
 // Step 2: Evaluate all variants
-                log.info("Evaluating ${currentPopulation.size} variants in generation $generation")
                 currentPopulation = currentPopulation.map { variant ->
                     if (variant.score.overall_score == 0.0) {
                         val evaluation = evaluateVariant(
@@ -494,14 +489,12 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 }
                 // Log diversity statistics
                 val avgDiversity = currentPopulation.map { it.diversityScore }.average()
-                log.debug("Generation $generation diversity: avg=${String.format("%.3f", avgDiversity)}")
 
                 evolutionHistory.add(currentPopulation)
 
                 // Update best variant
                 val generationBest = currentPopulation.maxByOrNull { it.score.overall_score }!!
                 if (generationBest.score.overall_score > bestVariant.score.overall_score) {
-                    log.info("New best variant found in generation $generation: score=${generationBest.score.overall_score}")
                     bestVariant = generationBest
                 }
 
@@ -543,9 +536,9 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                                     )
                                 }/100 (${variant.strategy})"
                             )
-                            appendLine()
-                            appendLine("$TT")
+                            appendLine("<details><summary>View Variant Text</summary>\n\n$TT")
                             appendLine(variant.text)
+                            appendLine("$TT\n</details>")
                             appendLine("$TT")
                             appendLine()
                             appendLine("**Strengths:**")
@@ -583,7 +576,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             }
 
             // Create evolution visualization tab
-            log.info("Creating evolution visualization")
             val evolutionTask = tabs.newTask("Evolution Analysis")
             val evolutionAnalysis = buildString {
                 appendLine("# Evolution Analysis")
@@ -792,9 +784,8 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             overviewTask.add(finalOverview.renderMarkdown)
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))
-            transcript?.close()
 
-            log.info("GeneticOptimizationTask completed successfully: total_time=${totalTime}ms, improvement=${bestVariant.score.overall_score - evolutionHistory[0].maxOf<EvaluatedVariant> { it.score.overall_score }}, generations=$numGenerations")
+
             val initialBestScore = evolutionHistory[0].maxOf { it.score.overall_score }
             log.info("GeneticOptimizationTask completed successfully: total_time=${totalTime}ms, improvement=${bestVariant.score.overall_score - initialBestScore}, generations=$numGenerations")
             task.complete(
@@ -809,11 +800,11 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             val (link, _) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
             val summaryMessage = buildString {
                 appendLine("Final Optimized Text")
-                appendLine()
-                appendLine("$TT")
+                appendLine("---")
+                appendLine("<details><summary>Optimized Content</summary>\n\n$TT")
                 appendLine(bestVariant.text)
-                appendLine("$TT")
-                appendLine()
+                appendLine("$TT\n</details>")
+                appendLine("---")
                 appendLine("**Strengths:**")
                 bestVariant.score.strengths.forEach { appendLine("- $it") }
                 appendLine()
@@ -831,13 +822,28 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             }
             resultFn(summaryMessage)
 
-        } catch (e: Exception) {
-            log.error("Error during GeneticOptimizationTask execution", e)
-            transcript?.close()
-            task.error(e)
-            task.complete("Failed with error: ${e.message}")
-            resultFn("ERROR: ${e.message}")
+            } catch (e: Exception) {
+                handleError(e, task, transcript, resultFn)
+            } finally {
+                transcript?.close()
+            }
         }
+    }
+
+    private fun handleError(e: Exception, task: SessionTask, transcript: OutputStream?, resultFn: (String) -> Unit) {
+        log.error("Error in GeneticOptimizationTask: ${e.message}", e)
+        task.error(e)
+        transcript?.write(
+            """
+            ## Error
+            <details><summary>Stack Trace</summary>
+            ```
+            ${e.stackTraceToString()}
+            ```
+            </details>
+        """.trimIndent().toByteArray(StandardCharsets.UTF_8)
+        )
+        resultFn("ERROR: ${e.message}")
     }
 
     /**

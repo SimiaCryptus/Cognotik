@@ -8,6 +8,11 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -278,8 +283,10 @@
   "number_of_acts": 3,
   "scenes_per_act": 3,
   "writing_style": "cinematic thriller",
+  "tone": "suspenseful",
   "point_of_view": "third person limited",
   "generate_scene_images": true,
+  "generate_cover_image": true,
   "narrative_elements": {
     "theme": "isolation",
     "conflict": "man vs nature"
@@ -314,6 +321,16 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 WORKSPACE BROWSER -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: #fff;">Test Workspace: NarrativeGenerationTask</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the generated artifacts, including <code>narrative_data.json</code>, scene illustrations, and character reference portraits.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 350px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+    </section>
+
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -361,14 +378,34 @@
                     <td>e.g., 'literary', 'thriller', 'technical' (Default: 'literary').</td>
                 </tr>
                 <tr>
+                    <td><code>tone</code></td>
+                    <td>String</td>
+                    <td>e.g., 'dramatic', 'humorous', 'suspenseful' (Default: 'dramatic').</td>
+                </tr>
+                <tr>
                     <td><code>point_of_view</code></td>
                     <td>String</td>
                     <td>e.g., 'first person', 'third person limited'.</td>
                 </tr>
                 <tr>
+                    <td><code>detailed_descriptions</code></td>
+                    <td>Boolean</td>
+                    <td>Include vivid sensory details (Default: true).</td>
+                </tr>
+                <tr>
+                    <td><code>include_dialogue</code></td>
+                    <td>Boolean</td>
+                    <td>Include character dialogue (Default: true).</td>
+                </tr>
+                <tr>
                     <td><code>generate_scene_images</code></td>
                     <td>Boolean</td>
                     <td>If true, uses DALL-E/Midjourney to visualize each scene.</td>
+                </tr>
+                <tr>
+                    <td><code>generate_cover_image</code></td>
+                    <td>Boolean</td>
+                    <td>Generates a visual seed for the entire narrative.</td>
                 </tr>
                 <tr>
                     <td><code>revision_passes</code></td>
@@ -396,29 +433,45 @@
                     <p>Writes scenes one by one. Each scene receives the full context of previous "Key Moments" and "Character States" to ensure continuity. Optional revision passes improve prose quality.</p>
                 </div>
                 <div>
-                    <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">Phase 4: Asset Synthesis</h4>
-                    <p>Generates setting references, character portraits, and scene illustrations using the cover image as a visual seed for stylistic consistency.</p>
+                    <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">Phase 4: Final Assembly & Data Export</h4>
+                    <p>Compiles the full narrative into a single document and exports all metadata, including character arcs and scene statistics, to <code>narrative_data.json</code>.</p>
                 </div>
             </div>
         </div>
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane">
-            <h3>Kotlin Integration</h3>
-            <pre><code class="language-kotlin">// Adding NarrativeGeneration to your Orchestration
-val task = NarrativeGenerationTask(
-    orchestrationConfig = config,
-    planTask = NarrativeGenerationTaskExecutionConfigData(
-        subject = "The Silicon Uprising",
-        target_word_count = 10000,
-        writing_style = "cyberpunk",
-        generate_cover_image = true,
-        revision_passes = 3
-    )
+            <h3>Embedded Execution</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">Invoke the Narrative engine programmatically using the <code>UnifiedHarness</code>.</p>
+            <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTask
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTask.NarrativeGenerationTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTask.Companion.NarrativeGeneration
+
+// 1. Define the Job
+val executionConfig = NarrativeGenerationTaskExecutionConfigData(
+    subject = "The Silicon Uprising",
+    target_word_count = 10000,
+    writing_style = "cyberpunk",
+    tone = "noir",
+    generate_cover_image = true,
+    generate_scene_images = true,
+    revision_passes = 2
 )
-task.run(orchestrator, messages, sessionTask, { result -> 
-    println("Narrative Generated: $result")
-}, config)</code></pre>
+
+// 2. Run via Harness (Headless/Serverless mode)
+harness.runTask(
+    taskType = NarrativeGeneration,
+    typeConfig = TaskTypeConfig(), // Default static config
+    executionConfig = executionConfig,
+    workspace = File("./output/stories"),
+    autoFix = true
+)</code></pre>
+            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(88, 166, 255, 0.1); border-radius: 6px;">
+                <h4 style="margin-top: 0; font-size: 0.9rem;">💡 Pro Tip: Visual Consistency</h4>
+                <p style="font-size: 0.85rem; color: var(--text-dim);">
+                    When <code>generate_cover_image</code> is enabled, the engine uses the generated cover as a <strong>visual seed</strong> for all subsequent character and scene illustrations, ensuring stylistic coherence across the entire narrative.
+                </p>
+            </div>
         </div>
     </section>
 
@@ -432,6 +485,10 @@ task.run(orchestrator, messages, sessionTask, { result ->
         document.getElementById('tab-' + tabId).classList.add('active');
         event.currentTarget.classList.add('active');
     }
+</script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/NarrativeGeneration/');
 </script>
 
 </body>

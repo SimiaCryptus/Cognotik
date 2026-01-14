@@ -212,5 +212,5 @@ object MarkdownUtil {
 }
 
 
-val String.renderMarkdown: String get() = renderMarkdown(true)
+val String.renderMarkdown: String get() = renderMarkdown(tabs=true)
 fun String.renderMarkdown(tabs: Boolean = false): String = MarkdownUtil.renderMarkdown(this, tabs = tabs)

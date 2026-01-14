@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.cognotik.plan.PlanUtil.filterPlan
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
@@ -202,9 +203,9 @@ open class WaterfallMode(
     }
 
     data class TaskBreakdownWithPrompt(
-        val prompt: String,
-        val plan: Map<String, TaskExecutionConfig>,
-        val planText: String
+      val prompt: String,
+      val plan: Map<String, TaskExecutionConfig>,
+      val planText: String
     )
 
     fun render(

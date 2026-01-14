@@ -3,10 +3,10 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getDocumentReader
-import com.simiacryptus.cognotik.plan.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskExecutionConfig
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskExecutionConfig
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -25,9 +25,9 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     abstract class FileTaskExecutionConfig(
         task_type: String? = null,
         task_description: String? = null,
-        @Description("REQUIRED: The files to be generated as output for the task (relative paths)") val files: List<String>? = null,
-        @Description("Additional files used to inform the change, including relevant files created by previous tasks") val related_files: List<String>? = null,
-        @Description("Whether to extract text content from non-text files (PDF, HTML, etc.)") val extractContent: Boolean = false,
+        @Description("REQUIRED: The files to be generated as output for the task (relative paths)") var files: List<String>? = null,
+        @Description("Additional files used to inform the change, including relevant files created by previous tasks") var related_files: List<String>? = null,
+        @Description("Whether to extract text content from non-text files (PDF, HTML, etc.)") var extractContent: Boolean = false,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
     ) : TaskExecutionConfig(
@@ -38,7 +38,7 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     )
 
     protected fun getInputFileCode(
-        fn: (File) -> (CharSequence?) = ::toString
+        fn: (File) -> (CharSequence?) = ::formatFileForLLM
     ) = getInputFiles()
         .mapNotNull { fn(it) }
         .joinToString("\n\n")
@@ -75,7 +75,11 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
         else -> false
     }
 
-    protected open fun toString(relativePath: File): CharSequence? = try {
+    /**
+     * Formats the content of a file for inclusion in the LLM context.
+     * Uses Markdown headers and code blocks.
+     */
+    protected open fun formatFileForLLM(relativePath: File): CharSequence? = try {
         val file = root.toFile().resolve(relativePath)
         val content = if (executionConfig?.extractContent == true && !isTextFile(file)) {
             extractDocumentContent(file)
@@ -110,6 +114,10 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
             "json",
             "yaml",
             "yml",
+            "sh",
+            "bat",
+            "ps1",
+            "sql",
             "properties",
             "gradle",
             "maven"

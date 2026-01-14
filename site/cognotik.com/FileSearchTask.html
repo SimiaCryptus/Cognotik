@@ -15,6 +15,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | FileSearchTask</title>
+    <!-- jQuery & FileTree -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -160,6 +165,16 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the artifacts and search results generated during the <code>FileSearchTask</code> test execution.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -225,13 +240,17 @@
 * List files (incl glob patterns) to be searched</code></pre>
             
             <h3>Kotlin Boilerplate</h3>
-            <pre class="panel" style="padding: 1rem; background: var(--bg-app); color: var(--text-main);"><code>val task = FileSearchTask(
-    orchestrationConfig = config,
-    planTask = FileSearchTask.SearchTaskExecutionConfigData(
-        search_pattern = "TODO",
-        input_files = listOf("src/**")
-    )
-)</code></pre>
+            <pre class="panel" style="padding: 1rem; background: var(--bg-app); color: var(--text-main);"><code>import com.simiacryptus.cognotik.plan.tools.file.FileSearchTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
+
+val config = FileSearchTaskExecutionConfigData(
+    search_pattern = "TODO|FIXME",
+    is_regex = true,
+    input_files = listOf("**/*.kt"),
+    context_lines = 2
+)
+
+harness.runTask(FileSearch, typeConfig, config, workspace)</code></pre>
         </div>
     </section>
 
@@ -244,6 +263,10 @@
         document.getElementById('tab-' + tabId).style.display = 'block';
         event.currentTarget.classList.add('active');
     }
+</script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/FileSearch/');
 </script>
 
 </body>

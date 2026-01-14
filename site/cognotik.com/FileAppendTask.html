@@ -9,6 +9,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
@@ -247,10 +252,10 @@
         <div class="panel">
             <div class="panel-header"><span>⚙️</span> ExecutionConfig.json</div>
             <pre><code class="language-json">{
-  "task_type": "FileAppend",
-  "file": "src/main/resources/app.properties",
-  "append_content": "Add database timeout set to 30s",
-  "related_files": ["src/main/kotlin/Config.kt"]
+    "task_type": "FileAppend",
+    "file": "CHANGELOG.md",
+    "append_content": "## [1.0.1] - Fixed login bug",
+    "related_files": ["src/auth/Login.kt"]
 }</code></pre>
         </div>
 
@@ -272,6 +277,16 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the output and state of the <code>FileAppendTask</code> test workspace.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -339,14 +354,23 @@
   * The target file is NOT provided to the AI; only related context files are.
   * Useful for adding log entries, updating lists, or adding new exports/imports at the end of a file</code></pre>
 
-            <h3 style="margin-top: 2rem;">Kotlin Boilerplate</h3>
-            <pre><code class="language-kotlin">val task = FileAppendTask(
-    orchestrationConfig = config,
-    planTask = FileAppendTaskExecutionConfigData(
-        file = "src/index.ts",
-        append_content = "export * from './newModule';",
-        related_files = listOf("src/newModule.ts")
-    )
+            <h3 style="margin-top: 2rem;">Embedded Invocation (Kotlin)</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">Example of invoking the task using the <code>UnifiedHarness</code> in a serverless environment.</p>
+            <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.file.FileAppendTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileAppendTask.Companion.FileAppend
+
+val config = FileAppendTaskExecutionConfigData(
+    file = "CHANGELOG.md",
+    append_content = "## [1.0.1] - Fixed login bug",
+    related_files = listOf("src/auth/Login.kt") 
+)
+
+harness.runTask(
+    taskType = FileAppend, 
+    typeConfig = TaskTypeConfig(), // Use default settings
+    executionConfig = config, 
+    workspace = projectDir,
+    autoFix = true
 )</code></pre>
         </div>
     </section>
@@ -361,6 +385,10 @@
         document.getElementById('tab-' + tabId).style.display = 'block';
         event.currentTarget.classList.add('active');
     }
+</script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/FileAppend/');
 </script>
 
 </body>

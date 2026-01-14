@@ -8,6 +8,11 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -264,6 +269,16 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE (Workspace Browser) -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-folder-open"></i> Live Results Showcase</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore actual artifacts, logs, and generated patches from the <code>AutoFixTask</code> test workspace.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+    </section>
+
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -356,10 +371,35 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane">
-            <h3>Kotlin Usage</h3>
+            <h3>Embedded Usage (UnifiedHarness)</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
+                Use the <code>UnifiedHarness</code> to run AutoFix as a headless agent in CI/CD pipelines or Gradle tasks.
+            </p>
+            <div class="panel">
+                <pre><code class="language-kotlin">// 1. Define the Execution Configuration
+val executionConfig = AutoFixTaskExecutionConfigData(
+    commands = mutableListOf(
+        CommandWithWorkingDir(
+            command = mutableListOf("./gradlew", "test"),
+            workingDir = "services/api"
+        )
+    ),
+    task_description = "Run API tests and fix failures"
+)
+
+// 2. Run via Harness
+harness.runTask(
+    taskType = AutoFixTask.AutoFix,
+    executionConfig = executionConfig,
+    workspace = File("./project-root"),
+    autoFix = true // Enable autonomous repair
+)</code></pre>
+            </div>
+
+            <h3 style="margin-top: 2rem;">Direct Task Instantiation</h3>
             <div class="panel">
                 <pre><code class="language-kotlin">val task = AutoFixTask(
-    orchestrationConfig = config,
+    orchestrationConfig = orchestrationConfig,
     planTask = AutoFixTaskExecutionConfigData(
         commands = mutableListOf(
             CommandWithWorkingDir(
@@ -395,6 +435,10 @@
         document.getElementById('tab-' + tabId).classList.add('active');
         event.target.classList.add('active');
     }
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    $(document).ready(function() {
+        initFileTree('#file-tree-demo', 'webui/workspaces/AutoFix/');
+    });
 </script>
 
 </body>

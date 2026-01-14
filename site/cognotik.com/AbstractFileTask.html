@@ -8,6 +8,11 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -227,6 +232,16 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Explorer</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Browse the file structure and resolved context from the <code>AbstractFileTask</code> test suite. 
+            This demonstrates how the task handles glob patterns and binary filtering in a real environment.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -289,7 +304,43 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
-            <h3>Extending AbstractFileTask</h3>
+            <h3>Embedded Invocation</h3>
+            <p>To use tasks derived from <code>AbstractFileTask</code> in an automated pipeline, use the <code>UnifiedHarness</code>.</p>
+            
+            <pre><code class="language-kotlin">
+import com.simiacryptus.cognotik.apps.general.UnifiedHarness
+import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTaskExecutionConfigData
+
+val harness = UnifiedHarness(serverless = true).apply { start() }
+
+// Example: Running a FileModificationTask (which extends AbstractFileTask)
+harness.runTask(
+    taskType = TaskType.FileModificationTask,
+    typeConfig = FileModificationTaskTypeConfig(name = "AutoRefactor"),
+    executionConfig = FileModificationTaskExecutionConfigData(
+        files = listOf("src/**/*.kt"),
+        related_files = listOf("docs/architecture.md"),
+        extractContent = true,
+        modifications = "Update copyright headers to 2024"
+    ),
+    workspace = File("./my-project"),
+    autoFix = true
+)
+            </code></pre>
+
+            <h3 style="margin-top: 2rem;">Test Case Example</h3>
+            <p>For unit testing your own tasks, you can mock the <code>OrchestrationConfig</code> and provide a local filesystem root:</p>
+            <pre><code class="language-kotlin">
+val config = OrchestrationConfig(
+    sessionId = "test-session",
+    workingDir = tempDir.absolutePath
+)
+val task = MyFileTask(config, MyExecutionConfig(files = listOf("test.txt")))
+task.run()
+            </code></pre>
+
+            <h3 style="margin-top: 2rem;">Extending the Base Class</h3>
             <pre><code class="language-kotlin">
 class MyCustomFileTask(
     config: OrchestrationConfig,
@@ -314,6 +365,10 @@ class MyCustomFileTask(
         document.getElementById('tab-' + tabId).style.display = 'block';
         event.currentTarget.classList.add('active');
     }
+</script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/AbstractFile/');
 </script>
 
 </body>

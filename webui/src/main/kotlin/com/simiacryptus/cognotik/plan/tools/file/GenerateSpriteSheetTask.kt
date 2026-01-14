@@ -7,13 +7,10 @@ import com.simiacryptus.cognotik.agents.ParsedImageAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -36,7 +33,7 @@ class GenerateSpriteSheetTask(
         @Description("The sprite sheet image file to be created (relative path, must end with .png)")
         files: List<String>? = null,
         @Description("The JSON metadata file to be created (relative path, must end with .json)")
-        val metadata_file: String? = null,
+        var metadata_file: String? = null,
         @Description("Detailed description of the sprites to generate (e.g., 'A pixel art warrior walking animation, 4 frames, side view')")
         task_description: String? = null,
         task_dependencies: List<String>? = null,
@@ -51,30 +48,30 @@ class GenerateSpriteSheetTask(
         override fun validate(): String? {
             if (files.isNullOrEmpty()) return "Sprite sheet image file must be specified"
             if (metadata_file.isNullOrBlank()) return "Metadata JSON file must be specified"
-            if (!files.first().endsWith(".png", ignoreCase = true)) return "Image file must be .png"
-            if (!metadata_file.endsWith(".json", ignoreCase = true)) return "Metadata file must be .json"
+          if (!files!!.first().endsWith(".png", ignoreCase = true)) return "Image file must be .png"
+          if (!metadata_file!!.endsWith(".json", ignoreCase = true)) return "Metadata file must be .json"
             return ValidatedObject.validateFields(this)
         }
     }
 
     data class SpriteLocation(
         @Description("Name or tag of the specific sprite")
-        val name: String = "",
+        var name: String = "",
         @Description("X coordinate of the top-left corner")
-        val x: Int = 0,
+        var x: Int = 0,
         @Description("Y coordinate of the top-left corner")
-        val y: Int = 0,
+        var y: Int = 0,
         @Description("Width of the sprite")
-        val width: Int = 0,
+        var width: Int = 0,
         @Description("Height of the sprite")
-        val height: Int = 0
+        var height: Int = 0
     )
 
     data class SpriteSheetMetadata(
         @Description("List of sprites identified in the sheet")
-        val sprites: List<SpriteLocation> = emptyList(),
+        var sprites: List<SpriteLocation> = emptyList(),
         @Description("General description of the sprite sheet content")
-        val description: String = ""
+        var description: String = ""
     )
 
     override fun promptSegment(): String {
@@ -97,171 +94,186 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
         val metadataFile = executionConfig?.metadata_file ?: return resultFn("No metadata file specified")
         val description = executionConfig?.task_description ?: "Generate a sprite sheet"
 
+      val transcript = task.transcript()
+
+      try {
+
+
+        transcript?.write("## Generating Sprite Sheet: $imageFile\n".toByteArray())
         task.header("Generating Sprite Sheet: $imageFile", level = 2)
 
-        try {
+        task.ui.pool.submit {
+          try {
+            log.info("Starting sprite sheet generation for $imageFile")
             // Step 1: Generate the Image
-            task.header("Step 1: Drawing Sprites...", level = 3)
+            task.add("### Step 1: Drawing Sprites...".renderMarkdown())
 
             val imageGenPrompt = """
-                Create a sprite sheet based on this description: $description.
-                Requirements:
-                - The image is 1:1 aspect ratio, minimum 512x512 pixels.
-                - Arrange sprites in a grid or logical layout.
-                - CRITICAL: Use a solid MAGENTA (Hex #FF00FF) background.
-                - Ensure sprites do not overlap.
-                - Maintain consistent style and scale.
-            """.trimIndent()
+                        Create a sprite sheet based on this description: $description.
+                        Requirements:
+                        - The image is 1:1 aspect ratio, minimum 512x512 pixels.
+                        - Arrange sprites in a grid or logical layout.
+                        - CRITICAL: Use a solid MAGENTA (Hex #FF00FF) background.
+                        - Ensure sprites do not overlap.
+                        - Maintain consistent style and scale.
+                    """.trimIndent()
 
             val imageAgent = ImageProcessingAgent(
-                prompt = "You are a pixel artist and game asset designer.",
-                name = "SpriteGenerator",
-                model = orchestrationConfig.defaultImage.getChildClient(task),
+              prompt = "You are a pixel artist and game asset designer.",
+              name = "SpriteGenerator",
+              model = orchestrationConfig.defaultImage.getChildClient(task),
             )
+
 
             val imageResult = imageAgent.answer(listOf(ImageAndText(imageGenPrompt)))
             var generatedImage = imageResult.image ?: throw RuntimeException("Failed to generate image")
 
-            // Process transparency before saving or analyzing
-            task.header("Processing Transparency...", level = 3)
+            // Process transparency
+            task.add("### Processing Transparency...".renderMarkdown())
             generatedImage = makeTransparent(generatedImage)
 
-            // Save Image
-            val imageOutputPath = root.resolve(imageFile)
-            imageOutputPath.toFile().parentFile?.mkdirs()
-            ImageIO.write(generatedImage, "png", imageOutputPath.toFile())
-
-            val imageLink = task.linkTo(imageFile)
-            task.add("""<a href="$imageLink" target="_blank"><img src="$imageLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>""")
+            // Preview Image
+            val previewUrl = task.saveFile("previews/${File(imageFile).name}", generatedImage.toByteArray())
+            task.add("""<a href="$previewUrl" target="_blank"><img src="$previewUrl" style="max-width: 100%; border: 1px solid #ccc;" /></a>""")
 
             // Step 2: Parse Metadata
-            task.header("Step 2: Analyzing Sprite Locations...", level = 3)
+            task.add("### Step 2: Analyzing Sprite Locations...".renderMarkdown())
 
             val parserAgent = ParsedImageAgent(
-                resultClass = SpriteSheetMetadata::class.java,
-                model = (typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: defaultSmart).getChildClient(
-                    task
-                ),
-                prompt = """
-                    Identify all distinct sprites in this image.
-                    Output coordinates assuming a 1000x1000 image size, regardless of actual aspect ratio.
-                    For each sprite, provide:
-                    1. A descriptive name (e.g., 'walk_frame_1', 'idle_stand').
-                    2. The exact bounding box (x, y, width, height) in pixels.
-                    Ensure bounding boxes are tight around the sprite content.
-                    Ignore the background color.
-                """.trimIndent(),
+              resultClass = SpriteSheetMetadata::class.java,
+              model = (typeConfig?.model?.let { orchestrationConfig.instance(it) }
+                ?: defaultSmart).getChildClient(task),
+              prompt = """
+                            Identify all distinct sprites in this image.
+                            Output coordinates assuming a 1000x1000 image size.
+                            For each sprite, provide:
+                            1. A descriptive name (e.g., 'walk_frame_1').
+                            2. The exact bounding box (x, y, width, height) in pixels.
+                            Ignore the background color.
+                        """.trimIndent(),
             )
 
-            val parseResult = parserAgent.answer(
-                listOf(
-                    ImageAndText(
-                        text = "Extract sprite metadata from this image.",
-                        image = generatedImage
-                    )
-                )
-            )
-
+            val parseResult =
+              parserAgent.answer(listOf(ImageAndText(text = "Extract sprite metadata.", image = generatedImage)))
             val rawMetadata = parseResult.obj
             val metadata = rawMetadata.copy(sprites = rawMetadata.sprites.map { sprite ->
-                val scaledX = (sprite.x * generatedImage.width / 1000.0).toInt().coerceIn(0, generatedImage.width - 1)
-                val scaledY = (sprite.y * generatedImage.height / 1000.0).toInt().coerceIn(0, generatedImage.height - 1)
-                val scaledW = (sprite.width * generatedImage.width / 1000.0).toInt().coerceAtMost(generatedImage.width - scaledX)
-                val scaledH = (sprite.height * generatedImage.height / 1000.0).toInt().coerceAtMost(generatedImage.height - scaledY)
-                sprite.copy(
-                    x = scaledX,
-                    y = scaledY,
-                    width = scaledW,
-                    height = scaledH
-                )
+              val scaledX = (sprite.x * generatedImage.width / 1000.0).toInt().coerceIn(0, generatedImage.width - 1)
+              val scaledY = (sprite.y * generatedImage.height / 1000.0).toInt().coerceIn(0, generatedImage.height - 1)
+              val scaledW =
+                (sprite.width * generatedImage.width / 1000.0).toInt().coerceAtMost(generatedImage.width - scaledX)
+              val scaledH =
+                (sprite.height * generatedImage.height / 1000.0).toInt().coerceAtMost(generatedImage.height - scaledY)
+              sprite.copy(x = scaledX, y = scaledY, width = scaledW, height = scaledH)
             })
 
-            // Save Metadata
-            val jsonOutputPath = root.resolve(metadataFile)
-            val mapper = jacksonObjectMapper().writerWithDefaultPrettyPrinter()
-            jsonOutputPath.toFile().writeText(mapper.writeValueAsString(metadata))
-            // Save Individual Sprites
-            val baseName = File(imageFile).nameWithoutExtension
-            val parentDir = File(imageFile).parent ?: ""
-            val spriteDirRelative = if (parentDir.isEmpty()) baseName else "$parentDir/$baseName"
-            val spriteDir = root.resolve(spriteDirRelative)
-            spriteDir.toFile().mkdirs()
+            transcript?.write(
+              "<details><summary>Raw Sprite Metadata</summary>\n\n```json\n${
+                jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(metadata)
+              }\n```\n</details>\n".toByteArray()
+            )
+
+            // Prepare Debug View
             val debugImage = BufferedImage(generatedImage.width, generatedImage.height, BufferedImage.TYPE_INT_ARGB)
             val g = debugImage.createGraphics()
             g.drawImage(generatedImage, 0, 0, null)
             g.color = Color.RED
             g.stroke = BasicStroke(2f)
             val spriteHtml = StringBuilder()
+            val individualSprites = mutableMapOf<String, BufferedImage>()
+
             metadata.sprites.forEach { sprite ->
-                try {
-                    g.drawRect(sprite.x, sprite.y, sprite.width, sprite.height)
-                    if (sprite.width > 0 && sprite.height > 0) {
-                        val subImage = generatedImage.getSubimage(sprite.x, sprite.y, sprite.width, sprite.height)
-                        val safeName = sprite.name.replace(Regex("[^a-zA-Z0-9.-]"), "_")
-                        val spriteFileName = "$safeName.png"
-                        ImageIO.write(subImage, "png", spriteDir.resolve(spriteFileName).toFile())
-                        val spriteLink = task.linkTo("$spriteDirRelative/$spriteFileName")
-                        spriteHtml.append("""<div style="display:inline-block;margin:2px;border:1px solid #ccc;padding:2px"><img src="$spriteLink" title="${sprite.name}" style="max-height:50px"/></div>""")
-                    }
-                } catch (e: Exception) {
-                    log.warn("Failed to save sprite ${sprite.name}", e)
+              try {
+                g.drawRect(sprite.x, sprite.y, sprite.width, sprite.height)
+                if (sprite.width > 0 && sprite.height > 0) {
+                  val subImage = generatedImage.getSubimage(sprite.x, sprite.y, sprite.width, sprite.height)
+                  val safeName = sprite.name.replace(Regex("[^a-zA-Z0-9.-]"), "_")
+                  individualSprites[safeName] = subImage
+                  val spritePreviewUrl = task.saveFile("previews/sprites/$safeName.png", subImage.toByteArray())
+                  spriteHtml.append("""<div style="display:inline-block;margin:2px;border:1px solid #ccc;padding:2px"><img src="$spritePreviewUrl" title="${sprite.name}" style="max-height:50px"/></div>""")
                 }
+              } catch (e: Exception) {
+                log.warn("Failed to process sprite ${sprite.name}", e)
+              }
             }
             g.dispose()
-            val debugFile = if (parentDir.isEmpty()) "${baseName}_debug.png" else "$parentDir/${baseName}_debug.png"
-            ImageIO.write(debugImage, "png", root.resolve(debugFile).toFile())
-            val debugLink = task.linkTo(debugFile)
+            val debugPreviewUrl = task.saveFile("previews/debug_view.png", debugImage.toByteArray())
 
-
-            // Display Results
-            val metadataLink = task.linkTo(metadataFile)
-
-
+            // Display Results in Tabs
             val tabs = TabbedDisplay(task)
-
-            // Tab 1: Overview
             tabs["Overview"] = """
-                <ul>
-                    <li><b>Image:</b> <a href="$imageLink">$imageFile</a></li>
-                    <li><b>Metadata:</b> <a href="$metadataLink">$metadataFile</a></li>
-                    <li><b>Sprite Count:</b> ${metadata.sprites.size}</li>
-                    <li><b>Sprites Directory:</b> $spriteDirRelative/</li>
-                </ul>
-                <div style="margin-top: 10px;">
-                    <a href="$imageLink" target="_blank"><img src="$imageLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
-                </div>
-            """.trimIndent()
-
-            // Tab 2: Bounding Boxes
-            tabs["Bounding Boxes"] = """
-                <a href="$debugLink" target="_blank"><img src="$debugLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
-            """.trimIndent()
-
-            // Tab 3: Sprites
+                        <ul>
+                            <li><b>Target Image:</b> $imageFile</li>
+                            <li><b>Target Metadata:</b> $metadataFile</li>
+                            <li><b>Sprite Count:</b> ${metadata.sprites.size}</li>
+                        </ul>
+                        <div style="margin-top: 10px;">
+                            <img src="$previewUrl" style="max-width: 100%; border: 1px solid #ccc;" />
+                        </div>
+                    """.trimIndent()
+            tabs["Bounding Boxes"] =
+              """<img src="$debugPreviewUrl" style="max-width: 100%; border: 1px solid #ccc;" />"""
             tabs["Sprites"] = spriteHtml.toString()
-
-            // Tab 4: Data Table
-            val tableRows = metadata.sprites.joinToString("\n") {
-                "| ${it.name} | ${it.x}, ${it.y} | ${it.width}x${it.height} |"
-            }
             tabs["Data"] = MarkdownUtil.renderMarkdown(
-                """
-| Name | Position | Size |
-|------|----------|------|
-$tableRows
-            """.trimIndent(), ui = task.ui
+              "| Name | Position | Size |\n|------|----------|------|\n" +
+                metadata.sprites.joinToString("\n") { "| ${it.name} | ${it.x}, ${it.y} | ${it.width}x${it.height} |" },
+              ui = task.ui
             )
 
-            task.safeComplete("Generated sprite sheet with ${metadata.sprites.size} sprites", log)
-            resultFn("Generated sprite sheet: $imageFile and $metadataFile. Found ${metadata.sprites.size} sprites.")
+            // Commit Action
+            val commitAction = {
+              log.info("Committing sprite sheet assets to disk...")
+              val imageOutputPath = root.resolve(imageFile)
+              imageOutputPath.toFile().parentFile?.mkdirs()
+              ImageIO.write(generatedImage, "png", imageOutputPath.toFile())
 
-        } catch (e: Exception) {
-            log.error("Error generating sprite sheet", e)
+              val jsonOutputPath = root.resolve(metadataFile)
+              jsonOutputPath.toFile()
+                .writeText(jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(metadata))
+
+              val baseName = File(imageFile).nameWithoutExtension
+              val parentDir = File(imageFile).parent ?: ""
+              val spriteDir = root.resolve(if (parentDir.isEmpty()) baseName else "$parentDir/$baseName")
+              spriteDir.toFile().mkdirs()
+              individualSprites.forEach { (name, img) ->
+                ImageIO.write(img, "png", spriteDir.resolve("$name.png").toFile())
+              }
+
+              task.safeComplete("Generated sprite sheet with ${metadata.sprites.size} sprites", log)
+              resultFn("Generated sprite sheet: $imageFile and $metadataFile. Found ${metadata.sprites.size} sprites.")
+            }
+
+            if (orchestrationConfig.autoFix) {
+              commitAction()
+            } else {
+              task.add(acceptButtonFooter(task.ui, commitAction).renderMarkdown())
+            }
+
+          } catch (e: Exception) {
             task.error(e)
+            log.error("Error in GenerateSpriteSheetTask async execution", e)
+            transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
             resultFn("ERROR: ${e.message}")
+          }
+        }
+
+
+      } catch (e: Exception) {
+            task.error(e)
+        log.error("Critical error in GenerateSpriteSheetTask", e)
+        transcript?.write("\n## Critical Error\n```\n${e.message}\n```\n".toByteArray())
+            resultFn("ERROR: ${e.message}")
+      } finally {
+        transcript?.close()
         }
     }
-    private fun makeTransparent(source: BufferedImage): BufferedImage {
+
+  private fun BufferedImage.toByteArray(): ByteArray {
+    val out = java.io.ByteArrayOutputStream()
+    ImageIO.write(this, "png", out)
+    return out.toByteArray()
+  }
+
+  private fun makeTransparent(source: BufferedImage): BufferedImage {
         // 1. Determine Background Color (assume top-left pixel is background)
         val bgRgb = source.getRGB(0, 0)
         val bgColor = Color(bgRgb)

@@ -2,24 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Cognotik | GeneratePresentationTask</title>
-    <link rel="stylesheet" href="assets/styles/main.css">
-</head>
-<body>
-    <h1>GeneratePresentationTask</h1>
-    <p>Creates professional Reveal.js presentations with speaker notes.</p>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | GeneratePresentationTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -148,7 +141,9 @@
   "files": ["strategy_2024.html"],
   "task_description": "Q4 Engineering Strategy",
   "generate_images": true,
-  "max_images": 3
+  "max_images": 3,
+  "image_width": 1024,
+  "image_height": 1024
 }</code></pre>
         </div>
 
@@ -169,6 +164,15 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE (Workspace Browser) -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the generated Reveal.js artifacts, CSS, and AI-generated images in the <code>GeneratePresentationTask</code> workspace.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 350px; overflow: auto; padding: 1rem; background: #000;"></div>
+    </section>
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -191,6 +195,11 @@
                         <td>The HTML presentation file to be created (must end with .html).</td>
                     </tr>
                     <tr>
+                        <td><code>related_files</code></td>
+                        <td>List&lt;String&gt;</td>
+                        <td>Reference materials or existing presentations for context.</td>
+                    </tr>
+                    <tr>
                         <td><code>task_description</code></td>
                         <td>String</td>
                         <td>Topic, key points, target audience, and desired style.</td>
@@ -199,6 +208,11 @@
                         <td><code>generate_images</code></td>
                         <td>Boolean</td>
                         <td>Whether to generate AI images for key slides (Default: false).</td>
+                    </tr>
+                    <tr>
+                        <td><code>image_width</code> / <code>height</code></td>
+                        <td>Int</td>
+                        <td>Dimensions for generated images (256px - 2048px, Default: 1024).</td>
                     </tr>
                     <tr>
                         <td><code>max_images</code></td>
@@ -228,15 +242,26 @@
         </div>
 
         <div id="tab-integration" class="tab-pane" style="display:none;">
-            <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Kotlin Boilerplate</h3>
-            <pre style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; font-size: 0.85rem;"><code class="language-kotlin">
-val task = GeneratePresentationTask(
-    orchestrationConfig = config,
-    planTask = GeneratePresentationTaskExecutionConfigData(
+            <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Embedded Execution (Headless)</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">Invoke this task programmatically using the <code>UnifiedHarness</code> for automated documentation or reporting.</p>
+            <pre style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid var(--border-subtle);"><code class="language-kotlin">
+import com.simiacryptus.cognotik.plan.tools.file.GeneratePresentationTask
+import com.simiacryptus.cognotik.plan.tools.file.GeneratePresentationTask.Companion.GeneratePresentation
+
+val executionConfig = GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData(
         files = listOf("presentation.html"),
         task_description = "Deep dive into Cognotik architecture",
-        generate_images = true
-    )
+        generate_images = true,
+        max_images = 5
+)
+
+// Run via the UnifiedHarness
+harness.runTask(
+    taskType = GeneratePresentation,
+    typeConfig = GeneratePresentationTask.GeneratePresentationTaskTypeConfig(),
+    executionConfig = executionConfig,
+    workspace = File("./docs/presentations"),
+    autoFix = true
 )</code></pre>
         </div>
     </section>
@@ -250,6 +275,11 @@ val task = GeneratePresentationTask(
         event.target.classList.add('active');
     }
 </script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/GeneratePresentation/');
+</script>
+
 
 </body>
 </html>

@@ -5,10 +5,13 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.File
@@ -25,25 +28,24 @@ class FiniteStateMachineTask(
 ) {
     protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
     val maxDescriptionLength = 2000
-    private var transcriptStream: java.io.FileOutputStream? = null
 
     class FiniteStateMachineTaskExecutionConfigData(
         @Description("The concept, system, or process to model as a finite state machine")
-        val concept_to_model: String? = null,
+        var concept_to_model: String? = null,
         @Description("Initial state(s) to consider")
-        val initial_states: List<String>? = null,
+        var initial_states: List<String>? = null,
         @Description("Known events or triggers that cause state transitions")
-        val known_events: List<String>? = null,
+        var known_events: List<String>? = null,
         @Description("Whether to identify edge cases and error states")
-        val identify_edge_cases: Boolean = true,
+        var identify_edge_cases: Boolean = true,
         @Description("Whether to validate state machine properties (determinism, completeness, reachability)")
-        val validate_properties: Boolean = true,
+        var validate_properties: Boolean = true,
         @Description("Whether to generate test scenarios for state transitions")
-        val generate_test_scenarios: Boolean = true,
+        var generate_test_scenarios: Boolean = true,
         @Description("Domain or context for the FSM (e.g., 'authentication system', 'order processing')")
-        val domain_context: String? = null,
+        var domain_context: String? = null,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -80,43 +82,30 @@ FiniteStateMachine - Model concepts using finite state machine analysis
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        log.info("FiniteStateMachineTask.run() called with messages count: ${messages.size}")
-        val startTime = System.currentTimeMillis()
-        log.info("Starting FiniteStateMachineTask for concept: '${executionConfig?.concept_to_model}'")
-        // Initialize transcript
-        transcriptStream = task.transcript()
-        if (transcriptStream == null) {
-            log.error("Failed to initialize transcript stream")
-        }
-        writeToTranscript("# Finite State Machine Analysis\n\n${messages.joinToString("\n\n")}\n\n")
-        writeToTranscript(
-            "**Started:** ${
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-            }\n\n"
-        )
-
         val conceptToModel = executionConfig?.concept_to_model
-        if (conceptToModel.isNullOrBlank()) {
+      val startTime = System.currentTimeMillis()
+
+
+
+
+      task.ui.pool.submit {
+        val transcript = task.transcript()
+        try {
+          log.info("Starting FiniteStateMachineTask for concept: '$conceptToModel'")
+          transcript?.write("# Finite State Machine Analysis\n\n".toByteArray())
+          transcript?.write("**Started:** ${LocalDateTime.now()}\n\n".toByteArray())
+
+          if (conceptToModel.isNullOrBlank()) {
             val errorMsg = "CONFIGURATION ERROR: No concept to model specified"
             log.error(errorMsg)
-            writeToTranscript("## Error\n\n$errorMsg\n\n")
-            closeTranscript()
-            task.safeComplete(errorMsg, log)
+            task.error(Exception(errorMsg))
             resultFn(errorMsg)
-            return
-        }
+            return@submit
+          }
 
-        val ui = task.ui
-        val api = defaultSmart ?: run {
-            log.error("No default chatter available")
-            writeToTranscript("## Error\n\nNo API available\n\n")
-            closeTranscript()
-            task.safeComplete("ERROR: No API available", log)
-            resultFn("ERROR: No API available")
-            return
-        }
+          task.ui
+          val api = defaultSmart ?: throw IllegalStateException("No default chatter available")
 
-        try {
             val domainContext = executionConfig.domain_context ?: "general domain"
             val initialStates = executionConfig.initial_states ?: emptyList()
             val knownEvents = executionConfig.known_events ?: emptyList()
@@ -132,22 +121,15 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             // Overview tab
             val overviewTask = tabs.newTask("Overview")
 
-            writeToTranscript("## Configuration\n\n")
-            writeToTranscript("**Concept:** $conceptToModel\n\n")
-            writeToTranscript(
-                "**Input Files:** ${
-                    if (executionConfig.input_files?.isNotEmpty() == true) executionConfig.input_files.joinToString(
-                        ", "
-                    ) else "None"
-                }\n\n"
-            )
-            writeToTranscript("**Domain:** $domainContext\n\n")
-            writeToTranscript("**Initial States:** ${if (initialStates.isNotEmpty()) initialStates.joinToString(", ") else "To be identified"}\n\n")
-            writeToTranscript("**Known Events:** ${if (knownEvents.isNotEmpty()) knownEvents.joinToString(", ") else "To be identified"}\n\n")
-            writeToTranscript("---\n\n")
+          transcript?.write("## Configuration\n".toByteArray())
+          transcript?.write("<details><summary>Task Parameters</summary>\n\n".toByteArray())
+          transcript?.write("**Concept:** $conceptToModel\n".toByteArray())
+          transcript?.write("**Domain:** $domainContext\n".toByteArray())
+          transcript?.write("**Initial States:** ${initialStates.joinToString(", ")}\n".toByteArray())
+          transcript?.write("**Known Events:** ${knownEvents.joinToString(", ")}\n".toByteArray())
+          transcript?.write("</details>\n\n".toByteArray())
 
             var overviewContent = overviewTask.add(
-                MarkdownUtil.renderMarkdown(
                     """
             |## Finite State Machine Analysis
             |
@@ -164,8 +146,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             |---
             |
             |**Status:** 🔄 Analyzing concept and identifying states...
-          """.trimMargin(), ui = ui
-                )
+          """.trimMargin().renderMarkdown()
             )
             task.update()
 
@@ -178,10 +159,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             val statesTask = tabs.newTask("States")
 
             val statesLoading = statesTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "## State Identification\n\n🔄 Analyzing concept to identify all possible states...",
-                    ui = ui
-                )
+              "## State Identification\n\n🔄 Analyzing concept to identify all possible states...".renderMarkdown()
             )
             task.update()
 
@@ -201,32 +179,25 @@ FiniteStateMachine - Model concepts using finite state machine analysis
 
             log.debug("Requesting state identification from LLM")
             val statesAnalysis = stateAgent.answer(listOf("Identify all possible states for this concept."))
-            writeToTranscript("## Step 1: State Identification\n\n")
-            writeToTranscript("### Prompt\n\n")
-            writeToTranscript("```\n$stateIdentificationPrompt\n```\n\n")
-            writeToTranscript("### Response\n\n")
-            writeToTranscript("$statesAnalysis\n\n")
-            writeToTranscript("---\n\n")
+          transcript?.write("## Step 1: State Identification\n".toByteArray())
+          transcript?.write("<details><summary>Prompt & Response</summary>\n\n### Prompt\n\n```\n$stateIdentificationPrompt\n```\n\n### Response\n\n$statesAnalysis\n</details>\n\n".toByteArray())
             fullReport.append("## 1. State Identification\n\n$statesAnalysis\n\n")
 
             statesLoading?.clear()
             statesTask.add(
-                MarkdownUtil.renderMarkdown(
                     """
             |## Identified States
             |
             |✅ State analysis complete
             |
             |$statesAnalysis
-          """.trimMargin(), ui = ui
-                )
+          """.trimMargin().renderMarkdown()
             )
             task.update()
 
             // Update overview
             overviewContent?.clear()
             overviewContent = overviewTask.add(
-                MarkdownUtil.renderMarkdown(
                     """
             |## Finite State Machine Analysis
             |
@@ -235,8 +206,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             |**Domain:** $domainContext
             |
             |**Status:** 🔄 Identifying transitions and events...
-          """.trimMargin(), ui = ui
-                )
+          """.trimMargin().renderMarkdown()
             )
             task.update()
 
@@ -245,10 +215,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             val transitionsTask = tabs.newTask("Transitions")
 
             val transitionsLoading = transitionsTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "## Transition Analysis\n\n🔄 Identifying events and state transitions...",
-                    ui = ui
-                )
+              "## Transition Analysis\n\n🔄 Identifying events and state transitions...".renderMarkdown()
             )
             task.update()
 
@@ -259,25 +226,19 @@ FiniteStateMachine - Model concepts using finite state machine analysis
 
             log.debug("Requesting transition analysis from LLM")
             val transitionsAnalysis = stateAgent.answer(listOf(transitionPrompt))
-            writeToTranscript("## Step 2: Transition Analysis\n\n")
-            writeToTranscript("### Prompt\n\n")
-            writeToTranscript("```\n$transitionPrompt\n```\n\n")
-            writeToTranscript("### Response\n\n")
-            writeToTranscript("$transitionsAnalysis\n\n")
-            writeToTranscript("---\n\n")
+          transcript?.write("## Step 2: Transition Analysis\n".toByteArray())
+          transcript?.write("<details><summary>Prompt & Response</summary>\n\n### Prompt\n\n```\n$transitionPrompt\n```\n\n### Response\n\n$transitionsAnalysis\n</details>\n\n".toByteArray())
             fullReport.append("## 2. Transition Analysis\n\n$transitionsAnalysis\n\n")
 
             transitionsLoading?.clear()
             transitionsTask.add(
-                MarkdownUtil.renderMarkdown(
                     """
             |## State Transitions
             |
             |✅ Transition analysis complete
             |
             |$transitionsAnalysis
-          """.trimMargin(), ui = ui
-                )
+          """.trimMargin().renderMarkdown()
             )
             task.update()
 
@@ -286,7 +247,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             val diagramTask = tabs.newTask("State Diagram")
 
             val diagramLoading = diagramTask.add(
-                MarkdownUtil.renderMarkdown("## State Diagram\n\n🔄 Generating visual representation...", ui = ui)
+              "## State Diagram\n\n🔄 Generating visual representation...".renderMarkdown()
             )
             task.update()
 
@@ -308,16 +269,14 @@ Generate the Mermaid diagram now:
             log.debug("Requesting state diagram from LLM")
             val diagramResult = stateAgent.answer(listOf(diagramPrompt))
             val mermaidCode = extractMermaidCode(diagramResult)
-            writeToTranscript("## Step 3: State Diagram Generation\n\n")
-            writeToTranscript("### Prompt\n\n")
-            writeToTranscript("```\n$diagramPrompt\n```\n\n")
-            writeToTranscript("### Response\n\n")
+          transcript?.write("## Step 3: State Diagram\n".toByteArray())
+          transcript?.write("<details><summary>Mermaid Source</summary>\n\n".toByteArray())
             if (mermaidCode.isNotEmpty()) {
-                writeToTranscript("```mermaid\n$mermaidCode\n```\n\n")
+              transcript?.write("```mermaid\n$mermaidCode\n```\n".toByteArray())
             } else {
-                writeToTranscript("⚠️ Failed to generate diagram\n\n```\n$diagramResult\n```\n\n")
+              transcript?.write("⚠️ Failed to generate diagram\n".toByteArray())
             }
-            writeToTranscript("---\n\n")
+          transcript?.write("</details>\n\n".toByteArray())
             if (mermaidCode.isNotEmpty()) {
                 fullReport.append("## 3. State Diagram\n\n```mermaid\n$mermaidCode\n```\n\n")
             } else {
@@ -327,7 +286,6 @@ Generate the Mermaid diagram now:
             diagramLoading?.clear()
             if (mermaidCode.isNotEmpty()) {
                 diagramTask.add(
-                    MarkdownUtil.renderMarkdown(
                         """
               |## State Diagram
               |
@@ -336,12 +294,10 @@ Generate the Mermaid diagram now:
               |```mermaid
               |$mermaidCode
               |```
-            """.trimMargin(), ui = ui
-                    )
+            """.trimMargin().renderMarkdown()
                 )
             } else {
                 diagramTask.add(
-                    MarkdownUtil.renderMarkdown(
                         """
               |## State Diagram
               |
@@ -351,8 +307,7 @@ Generate the Mermaid diagram now:
               |```
               |$diagramResult
               |```
-            """.trimMargin(), ui = ui
-                    )
+            """.trimMargin().renderMarkdown()
                 )
             }
             task.update()
@@ -364,10 +319,7 @@ Generate the Mermaid diagram now:
                 val edgeCasesTask = tabs.newTask("Edge Cases")
 
                 val edgeCasesLoading = edgeCasesTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        "## Edge Cases Analysis\n\n🔄 Identifying edge cases and error states...",
-                        ui = ui
-                    )
+                  "## Edge Cases Analysis\n\n🔄 Identifying edge cases and error states...".renderMarkdown()
                 )
                 task.update()
 
@@ -386,25 +338,19 @@ Provide a structured analysis of edge cases and recommendations.
 
                 log.debug("Requesting edge case analysis from LLM")
                 edgeCasesAnalysis = stateAgent.answer(listOf(edgeCasesPrompt))
-                writeToTranscript("## Step 4: Edge Cases Analysis\n\n")
-                writeToTranscript("### Prompt\n\n")
-                writeToTranscript("```\n$edgeCasesPrompt\n```\n\n")
-                writeToTranscript("### Response\n\n")
-                writeToTranscript("$edgeCasesAnalysis\n\n")
-                writeToTranscript("---\n\n")
+              transcript?.write("## Step 4: Edge Cases\n".toByteArray())
+              transcript?.write("<details><summary>Prompt & Response</summary>\n\n### Prompt\n\n```\n$edgeCasesPrompt\n```\n\n### Response\n\n$edgeCasesAnalysis\n</details>\n\n".toByteArray())
                 fullReport.append("## 4. Edge Cases Analysis\n\n$edgeCasesAnalysis\n\n")
 
                 edgeCasesLoading?.clear()
                 edgeCasesTask.add(
-                    MarkdownUtil.renderMarkdown(
                         """
               |## Edge Cases and Error States
               |
               |✅ Edge case analysis complete
               |
               |$edgeCasesAnalysis
-            """.trimMargin(), ui = ui
-                    )
+            """.trimMargin().renderMarkdown()
                 )
                 task.update()
             }
@@ -416,10 +362,7 @@ Provide a structured analysis of edge cases and recommendations.
                 val validationTask = tabs.newTask("Validation")
 
                 val validationLoading = validationTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        "## FSM Validation\n\n🔄 Validating state machine properties...",
-                        ui = ui
-                    )
+                  "## FSM Validation\n\n🔄 Validating state machine properties...".renderMarkdown()
                 )
                 task.update()
 
@@ -444,25 +387,19 @@ Provide a structured validation report.
 
                 log.debug("Requesting FSM validation from LLM")
                 validationAnalysis = stateAgent.answer(listOf(validationPrompt))
-                writeToTranscript("## Step 5: FSM Property Validation\n\n")
-                writeToTranscript("### Prompt\n\n")
-                writeToTranscript("```\n$validationPrompt\n```\n\n")
-                writeToTranscript("### Response\n\n")
-                writeToTranscript("$validationAnalysis\n\n")
-                writeToTranscript("---\n\n")
+              transcript?.write("## Step 5: Validation\n".toByteArray())
+              transcript?.write("<details><summary>Prompt & Response</summary>\n\n### Prompt\n\n```\n$validationPrompt\n```\n\n### Response\n\n$validationAnalysis\n</details>\n\n".toByteArray())
                 fullReport.append("## 5. Property Validation\n\n$validationAnalysis\n\n")
 
                 validationLoading?.clear()
                 validationTask.add(
-                    MarkdownUtil.renderMarkdown(
                         """
               |## FSM Property Validation
               |
               |✅ Validation complete
               |
               |$validationAnalysis
-            """.trimMargin(), ui = ui
-                    )
+            """.trimMargin().renderMarkdown()
                 )
                 task.update()
             }
@@ -474,7 +411,7 @@ Provide a structured validation report.
                 val testScenariosTask = tabs.newTask("Test Scenarios")
 
                 val testScenariosLoading = testScenariosTask.add(
-                    MarkdownUtil.renderMarkdown("## Test Scenario Generation\n\n🔄 Creating test scenarios...", ui = ui)
+                  "## Test Scenario Generation\n\n🔄 Creating test scenarios...".renderMarkdown()
                 )
                 task.update()
 
@@ -500,25 +437,19 @@ Generate at least 5-10 diverse test scenarios.
 
                 log.debug("Requesting test scenario generation from LLM")
                 testScenariosAnalysis = stateAgent.answer(listOf(testScenariosPrompt))
-                writeToTranscript("## Step 6: Test Scenario Generation\n\n")
-                writeToTranscript("### Prompt\n\n")
-                writeToTranscript("```\n$testScenariosPrompt\n```\n\n")
-                writeToTranscript("### Response\n\n")
-                writeToTranscript("$testScenariosAnalysis\n\n")
-                writeToTranscript("---\n\n")
+              transcript?.write("## Step 6: Test Scenarios\n".toByteArray())
+              transcript?.write("<details><summary>Prompt & Response</summary>\n\n### Prompt\n\n```\n$testScenariosPrompt\n```\n\n### Response\n\n$testScenariosAnalysis\n</details>\n\n".toByteArray())
                 fullReport.append("## 6. Test Scenarios\n\n$testScenariosAnalysis\n\n")
 
                 testScenariosLoading?.clear()
                 testScenariosTask.add(
-                    MarkdownUtil.renderMarkdown(
                         """
               |## Test Scenarios
               |
               |✅ Test scenarios generated
               |
               |$testScenariosAnalysis
-            """.trimMargin(), ui = ui
-                    )
+            """.trimMargin().renderMarkdown()
                 )
                 task.update()
             }
@@ -528,7 +459,7 @@ Generate at least 5-10 diverse test scenarios.
             val summaryTask = tabs.newTask("Summary")
 
             val summaryLoading = summaryTask.add(
-                MarkdownUtil.renderMarkdown("## Summary\n\n🔄 Generating comprehensive summary...", ui = ui)
+              "## Summary\n\n🔄 Generating comprehensive summary...".renderMarkdown()
             )
             task.update()
 
@@ -547,25 +478,19 @@ Keep the summary concise but informative.
 
             log.debug("Requesting summary from LLM")
             val summaryAnalysis = stateAgent.answer(listOf(summaryPrompt))
-            writeToTranscript("## Step 7: Summary\n\n")
-            writeToTranscript("### Prompt\n\n")
-            writeToTranscript("```\n$summaryPrompt\n```\n\n")
-            writeToTranscript("### Response\n\n")
-            writeToTranscript("$summaryAnalysis\n\n")
-            writeToTranscript("---\n\n")
+          transcript?.write("## Step 7: Summary\n".toByteArray())
+          transcript?.write("<details><summary>Prompt & Response</summary>\n\n### Prompt\n\n```\n$summaryPrompt\n```\n\n### Response\n\n$summaryAnalysis\n</details>\n\n".toByteArray())
             fullReport.append("## 7. Summary\n\n$summaryAnalysis\n\n")
 
             summaryLoading?.clear()
             summaryTask.add(
-                MarkdownUtil.renderMarkdown(
                     """
             |## Analysis Summary
             |
             |✅ Summary complete
             |
             |$summaryAnalysis
-          """.trimMargin(), ui = ui
-                )
+          """.trimMargin().renderMarkdown()
             )
             task.update()
 
@@ -573,7 +498,6 @@ Keep the summary concise but informative.
             overviewContent?.clear()
             val totalTime = System.currentTimeMillis() - startTime
             overviewTask.add(
-                MarkdownUtil.renderMarkdown(
                     """
             |## Finite State Machine Analysis
             |
@@ -597,8 +521,7 @@ Keep the summary concise but informative.
             |${if (executionConfig.validate_properties) "- ✅ Property validation" else ""}
             |${if (executionConfig.generate_test_scenarios) "- ✅ Test scenario generation" else ""}
             |- ✅ Summary and recommendations
-          """.trimMargin(), ui = ui
-                )
+          """.trimMargin().renderMarkdown()
             )
             task.update()
 
@@ -625,17 +548,11 @@ Keep the summary concise but informative.
             }
 
             log.info("FiniteStateMachineTask completed: concept='$conceptToModel', duration=${totalTime}ms, output_size=${conciseResult.length} chars")
-            writeToTranscript("## Completion\n\n")
-            writeToTranscript(
-                "**Completed:** ${
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                }\n\n"
-            )
-            writeToTranscript("**Duration:** ${totalTime / 1000.0}s\n\n")
-            writeToTranscript("**Status:** ✅ Analysis complete\n\n")
-            closeTranscript()
 
-            val (link, file) = task.createFile("fsm_analysis.md")
+          transcript?.write("## Completion\n\n**Status:** ✅ Analysis complete\n".toByteArray())
+          transcript?.write("**Duration:** ${totalTime / 1000.0}s\n".toByteArray())
+
+          val (link, file) = task.createFile("fsm_analysis.md")
             file?.writeText(fullReport.toString())
 
             var mmdLink = ""
@@ -645,24 +562,22 @@ Keep the summary concise but informative.
                 mmdLink = l
             }
 
-            task.safeComplete(
+          task.complete(
                 "FSM analysis completed for: $conceptToModel. " +
                         "Full analysis written to <a href='$link' target='_blank'>$link</a> " +
-                        (if (mmdLink.isNotEmpty()) " <a href='$mmdLink' target='_blank'>Mermaid Diagram</a>" else ""), log
+                    (if (mmdLink.isNotEmpty()) " <a href='$mmdLink' target='_blank'>Mermaid Diagram</a>" else "")
             )
             resultFn(conciseResult)
 
         } catch (e: Exception) {
             val duration = System.currentTimeMillis() - startTime
             log.error("FiniteStateMachineTask failed after ${duration}ms for concept: $conceptToModel", e)
-            writeToTranscript("## Error\n\n")
-            writeToTranscript("**Failed after:** ${duration}ms\n\n")
-            writeToTranscript("**Error:** ${e.message}\n\n")
-            writeToTranscript("```\n${e.stackTraceToString()}\n```\n\n")
-            closeTranscript()
+          transcript?.write("## Error\n\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
             task.error(e)
-            task.safeComplete("Analysis failed: ${e.message}", log)
             resultFn("ERROR: FSM analysis failed - ${e.message}")
+        } finally {
+          transcript?.close()
+        }
         }
     }
 
@@ -860,23 +775,7 @@ Format as a clear table or structured list.
     }
 
 
-    private fun writeToTranscript(content: String) {
-        try {
-            transcriptStream?.write(content.toByteArray(Charsets.UTF_8))
-            transcriptStream?.flush()
-        } catch (e: Exception) {
-            log.warn("Failed to write to transcript", e)
-        }
-    }
 
-    private fun closeTranscript() {
-        try {
-            transcriptStream?.close()
-            transcriptStream = null
-        } catch (e: Exception) {
-            log.warn("Failed to close transcript", e)
-        }
-    }
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(FiniteStateMachineTask::class.java)

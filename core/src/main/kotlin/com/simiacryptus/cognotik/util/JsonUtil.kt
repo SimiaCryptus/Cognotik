@@ -115,6 +115,10 @@ fun Any.toJson(): String {
     return JsonUtil.toJson(this)
 }
 
+fun <T:Any> T.jsonCopy(): T {
+    return JsonUtil.toJson(this).let { JsonUtil.fromJson<T>(it, this.javaClass) }
+}
+
 inline fun <reified T> Any.jsonCast(): T {
     return JsonUtil.toJson(this).let { JsonUtil.fromJson<T>(it, T::class.java) }
 }

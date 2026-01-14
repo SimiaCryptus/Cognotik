@@ -1,13 +1,17 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource
@@ -18,45 +22,48 @@ import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONReader
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONWriter
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
 import java.io.ByteArrayOutputStream
-import java.io.OutputStreamWriter
+
 
 open class IterativeGraphGenerationTask<T : IterativeGraphGenerationTask.IterativeGraphGenerationTaskExecutionConfigData>(
     orchestrationConfig: OrchestrationConfig,
     planTask: T?
-) : AbstractTask<T, TaskTypeConfig>(
+) : AbstractTask<T, IterativeGraphGenerationTask.IterativeGraphGenerationTaskTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
 
     open class IterativeGraphGenerationTaskExecutionConfigData(
         @Description("The goal or question the graph should answer/represent")
-        val goal_prompt: String? = null,
+        var goal_prompt: String? = null,
 
         @Description("Input text to analyze")
-        val context_data: String? = null,
+        var context_data: String? = null,
 
         @Description("Input files to analyze")
-        val input_files: List<String>? = null,
-        @Description("Optional JSON file to initialize graph from")
-        val initial_graph_file: String? = null,
+        var input_files: List<String>? = null,
 
+        @Description("Optional JSON file to initialize graph from")
+        var initial_graph_file: String? = null,
 
         @Description("Maximum number of iterations")
-        val max_iterations: Int = 20,
+        var max_iterations: Int = 20,
 
         @Description("Maximum number of nodes")
-        val max_nodes: Int = 50,
+        var max_nodes: Int = 50,
 
         @Description("Maximum number of edges")
-        val max_edges: Int = 100,
+        var max_edges: Int = 100,
 
         @Description("Allowed node types (labels)")
-        val node_types: List<String> = listOf("Concept", "Entity"),
+        var node_types: List<String> = listOf("Concept", "Entity"),
 
         @Description("Allowed edge types (labels)")
-        val edge_types: List<String> = listOf("RELATES_TO"),
+        var edge_types: List<String> = listOf("RELATES_TO"),
 
+        @Description("Tasks that must complete before this one")
         task_dependencies: List<String>? = null,
+
+        @Description("The current state of the task")
         state: TaskState? = TaskState.Pending,
     ) : TaskExecutionConfig(
         task_type = IterativeGraphGeneration.name,
@@ -71,27 +78,54 @@ open class IterativeGraphGenerationTask<T : IterativeGraphGenerationTask.Iterati
         }
     }
 
+    class IterativeGraphGenerationTaskTypeConfig(
+        @Description("The prompt template used for each iteration of graph expansion")
+        var iterationPromptTemplate: String = """
+            Goal: {goal_prompt}
+            
+            Schema:
+            Node Types: {node_types}
+            Edge Types: {edge_types}
+            
+            Current Graph State:
+            {graph_view}
+            
+            Context Data ({chunk_index}/{total_chunks}):
+            {current_text}
+            
+            Provide a list of actions to expand the graph based on the context and goal.
+            If the graph is complete, set is_finished to true.
+            
+            For ADD_EDGE, 'from' and 'to' must be maps of properties that uniquely identify existing nodes.
+            For ADD_NODE, provide properties that uniquely identify the node (e.g. name).
+            For MERGE_NODES, provide 'target' (keep) and 'source' (remove) properties to identify nodes.
+        """.trimIndent()
+    ) : TaskTypeConfig()
+
     data class GraphActionList(
-        val reasoning: String = "",
-        val actions: List<GraphAction> = emptyList(),
-        val is_finished: Boolean = false
+        @Description("The reasoning behind the proposed actions")
+        var reasoning: String = "",
+        @Description("The list of graph operations to perform")
+        var actions: List<GraphAction> = emptyList(),
+        @Description("Whether the graph generation is complete")
+        var is_finished: Boolean = false
     ) : ValidatedObject
 
     data class GraphAction(
         @Description("Type of action to perform: ADD_NODE, ADD_EDGE, or MERGE_NODES")
-        val type: String = "ADD_NODE", // ADD_NODE, ADD_EDGE, MERGE_NODES
+        var type: String = "ADD_NODE",
         @Description("Label of the node or edge (REQUIRED for ADD_*)")
-        val label: String = "",
+        var label: String = "",
         @Description("Properties of the node or edge")
-        val properties: Map<String, Any> = emptyMap(),
+        var properties: Map<String, Any> = emptyMap(),
         @Description("For ADD_EDGE: properties to identify the 'from' node")
-        val from: Map<String, Any>? = null,
+        var from: Map<String, Any>? = null,
         @Description("For ADD_EDGE: properties to identify the 'to' node")
-        val to: Map<String, Any>? = null,
+        var to: Map<String, Any>? = null,
         @Description("For MERGE_NODES: The properties of the node to keep")
-        val target: Map<String, Any>? = null,
+        var target: Map<String, Any>? = null,
         @Description("For MERGE_NODES: The properties of the node to remove (merging into target)")
-        val source: Map<String, Any>? = null
+        var source: Map<String, Any>? = null
     ) : ValidatedObject {
         override fun validate(): String? {
             if (type != "ADD_NODE" && type != "ADD_EDGE" && type != "MERGE_NODES") return "Invalid action type: $type"
@@ -126,211 +160,207 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val config = executionConfig!!
-        val logStream = task.newLogStream("GraphGeneration.log")
-        val transcript = OutputStreamWriter(logStream)
-
-        transcript.write("# Iterative Graph Generation\n\n")
-        transcript.write("Goal: ${config.goal_prompt}\n\n")
-        transcript.flush()
-
-        val graph: Graph = TinkerGraph.open()
-        if (!config.initial_graph_file.isNullOrBlank()) {
-            val file = task.resolveUserFile(config.initial_graph_file)
-            if (file?.exists() == true) {
-                try {
-                    GraphSONReader.build().create().readGraph(file.inputStream(), graph)
-                    transcript.write("Loaded initial graph from ${config.initial_graph_file}\n")
-                } catch (e: Exception) {
-                    transcript.write("Error loading initial graph: ${e.message}\n")
-                }
-            }
-        }
-        val g: GraphTraversalSource = graph.traversal()
-
-        val tabs = TabbedDisplay(task)
-        val mainTask = tabs.newTask("Progress")
-
-        // Load context
-        val fileContext = try {
-            super.getInputFileContent(config.input_files, root, treatDocumentsAsText = true)
-        } catch (e: Exception) {
-            log.warn("Failed to load input files", e)
-            ""
-        }
-
-        val fullContext = """
-            ${config.context_data ?: ""}
-            
-            $fileContext
-        """.trimIndent()
-
-        val chunkSize = 4000
-        val contextChunks = fullContext.chunked(chunkSize).ifEmpty { listOf("") }
-        var currentChunkIndex = 0
-
-        var iteration = 0
-        val api = defaultSmart.getChildClient(task)
-
-        while (iteration < config.max_iterations && currentChunkIndex < contextChunks.size) {
-            iteration++
-            val currentText = contextChunks[currentChunkIndex]
-
-            // 1. Serialize State
-            val nodeCount = g.V().count().next()
-            val edgeCount = g.E().count().next()
-
-            if (nodeCount >= config.max_nodes) {
-                transcript.write("Max nodes reached ($nodeCount). Stopping.\n")
-                break
-            }
-            if (edgeCount >= config.max_edges) {
-                transcript.write("Max edges reached ($edgeCount). Stopping.\n")
-                break
-            }
-
-            val graphView = if (nodeCount < 50) {
-                serializeGraphSimple(g)
-            } else {
-                "Graph Summary: $nodeCount nodes, $edgeCount edges. (Too large to display full state)"
-            }
-
-            mainTask.header("Iteration $iteration", 3)
-            mainTask.add("Starting Nodes: $nodeCount, Edges: $edgeCount")
-
-            // 2. Agent Decision
-            val prompt = """
-                Goal: ${config.goal_prompt}
-                
-                Schema:
-                Node Types: ${config.node_types}
-                Edge Types: ${config.edge_types}
-                
-                Current Graph State:
-                $graphView
-                
-                Context Data (${currentChunkIndex + 1}/${contextChunks.size}):
-                $currentText
-                
-                Provide a list of actions to expand the graph based on the context and goal.
-                If the graph is complete, set is_finished to true.
-                
-                For ADD_EDGE, 'from' and 'to' must be maps of properties that uniquely identify existing nodes.
-                For ADD_NODE, provide properties that uniquely identify the node (e.g. name).
-                For MERGE_NODES, provide 'target' (keep) and 'source' (remove) properties to identify nodes.
-            """.trimIndent()
-
-            val agentResponse = ParsedAgent(
-                resultClass = GraphActionList::class.java,
-                prompt = prompt,
-                model = api,
-                temperature = 0.2,
-                parsingChatter = api,
-                singleStage = true
-            ).answer(listOf("Analyze and update graph"))
-
-            val response = agentResponse.obj
-            transcript.write("Reasoning: ${response.reasoning}\n")
-            mainTask.expandable("Reasoning", "<pre>${response.reasoning}</pre>")
-
-            // 3. Apply Actions
-            var actionsApplied = 0
-            response.actions.forEach { action ->
-                try {
-                    when (action.type) {
-                        "ADD_NODE" -> {
-                            // Check if exists
-                            var traversal = g.V().hasLabel(action.label)
-                            action.properties.forEach { (k, v) ->
-                                if (k == "name" || k == "id") traversal = traversal.has(k, v)
-                            }
-                            if (!traversal.hasNext()) {
-                                val v = g.addV(action.label).next()
-                                action.properties.forEach { (k, valObj) ->
-                                    v.property(k, valObj)
-                                }
-                                actionsApplied++
-                            }
-                        }
-
-                        "ADD_EDGE" -> {
-                            val fromV = findVertex(g, action.from)
-                            val toV = findVertex(g, action.to)
-                            if (fromV != null && toV != null) {
-                                // Check if edge exists
-                                if (!g.V(fromV.id()).out(action.label).where(`__`.hasId<Vertex>(toV.id())).hasNext()) {
-                                    val e = g.addE(action.label).from(fromV).to(toV).next()
-                                    action.properties.forEach { (k, valObj) ->
-                                        e.property(k, valObj)
-                                    }
-                                    actionsApplied++
-                                }
-                            }
-                        }
-
-                        "MERGE_NODES" -> {
-                            val keepV = findVertex(g, action.target)
-                            val removeV = findVertex(g, action.source)
-                            if (keepV != null && removeV != null && keepV.id() != removeV.id()) {
-                                // Move outgoing edges
-                                g.V(removeV.id()).outE().forEachRemaining { e ->
-                                    g.addE(e.label()).from(keepV).to(e.inVertex()).next()
-                                }
-                                // Move incoming edges
-                                g.V(removeV.id()).inE().forEachRemaining { e ->
-                                    g.addE(e.label()).from(e.outVertex()).to(keepV).next()
-                                }
-                                // Drop the old node
-                                g.V(removeV.id()).drop().iterate()
-                                transcript.write("Merged node ${removeV.id()} into ${keepV.id()}\n")
-                                actionsApplied++
-                            }
-                        }
 
 
-                        else -> {
-                            transcript.write("Unknown action type: ${action.type}\n")
+        val transcript = task.transcript()
+        task.ui.pool.submit {
+            try {
+                val config = executionConfig!!
+                log.info("Starting IterativeGraphGenerationTask for goal: ${config.goal_prompt}")
+                transcript?.write("## Iterative Graph Generation\n\n".toByteArray())
+                transcript?.write("Goal: **${config.goal_prompt}**\n\n".toByteArray())
+
+                val graph: Graph = TinkerGraph.open()
+                if (!config.initial_graph_file.isNullOrBlank()) {
+                    val file = task.resolveUserFile(config.initial_graph_file!!)
+                    if (file?.exists() == true) {
+                        try {
+                            GraphSONReader.build().create().readGraph(file.inputStream(), graph)
+                            transcript?.write("Loaded initial graph from `${config.initial_graph_file}`\n".toByteArray())
+                        } catch (e: Exception) {
+                            transcript?.write("Error loading initial graph: ${e.message}\n".toByteArray())
                         }
                     }
-                } catch (e: Exception) {
-                    log.warn("Error applying action: $action", e)
-                    transcript.write("Error applying action: $action - ${e.message}\n")
                 }
-            }
-            transcript.write("Applied $actionsApplied actions.\n")
-            transcript.flush()
+                val g: GraphTraversalSource = graph.traversal()
 
-            if (nodeCount > 0) mainTask.add("```mermaid\n${toMermaid(g)}\n```".renderMarkdown)
+                val tabs = TabbedDisplay(task)
+                val mainTask = tabs.newTask("Progress")
 
-            if (response.is_finished) {
-                transcript.write("Agent signaled completion.\n")
-                break
-            }
+                // Load context
+                val fileContext = try {
+                    super.getInputFileContent(config.input_files, root, treatDocumentsAsText = true)
+                } catch (e: Exception) {
+                    log.warn("Failed to load input files: ${e.message}")
+                    ""
+                }
 
-            if (actionsApplied < 2 || iteration % 3 == 0) {
-                currentChunkIndex++
-                transcript.write("Advancing to context chunk ${currentChunkIndex + 1}\n")
+                val fullContext = """
+                    ${config.context_data ?: ""}
+                    
+                    $fileContext
+                """.trimIndent()
+
+                val chunkSize = 4000
+                val contextChunks = fullContext.chunked(chunkSize).ifEmpty { listOf("") }
+                var currentChunkIndex = 0
+
+                var iteration = 0
+                val api = defaultSmart.getChildClient(task)
+
+                while (iteration < config.max_iterations && currentChunkIndex < contextChunks.size) {
+                    iteration++
+                    val currentText = contextChunks[currentChunkIndex]
+
+                    // 1. Serialize State
+                    val nodeCount = g.V().count().next()
+                    val edgeCount = g.E().count().next()
+
+                    if (nodeCount >= config.max_nodes) {
+                        transcript?.write("Max nodes reached ($nodeCount). Stopping.\n".toByteArray())
+                        break
+                    }
+                    if (edgeCount >= config.max_edges) {
+                        transcript?.write("Max edges reached ($edgeCount). Stopping.\n".toByteArray())
+                        break
+                    }
+
+                    val graphView = if (nodeCount < 50) {
+                        serializeGraphSimple(g)
+                    } else {
+                        "Graph Summary: $nodeCount nodes, $edgeCount edges. (Too large to display full state)"
+                    }
+
+                    mainTask.header("Iteration $iteration", 3)
+                    mainTask.add("Starting Nodes: $nodeCount, Edges: $edgeCount".renderMarkdown())
+
+                    // 2. Agent Decision
+                    val prompt = (typeConfig?.iterationPromptTemplate ?: "")
+                        .replace("{goal_prompt}", config.goal_prompt ?: "")
+                        .replace("{node_types}", config.node_types.toString())
+                        .replace("{edge_types}", config.edge_types.toString())
+                        .replace("{graph_view}", graphView)
+                        .replace("{chunk_index}", (currentChunkIndex + 1).toString())
+                        .replace("{total_chunks}", contextChunks.size.toString())
+                        .replace("{current_text}", currentText)
+
+                    val agentResponse = ParsedAgent(
+                        resultClass = GraphActionList::class.java,
+                        prompt = prompt,
+                        model = api,
+                        temperature = 0.2,
+                        parsingChatter = api,
+                        singleStage = true
+                    ).answer(listOf("Analyze and update graph"))
+
+                    val response = agentResponse.obj
+                    transcript?.write("### Iteration $iteration\n".toByteArray())
+                    transcript?.write("<details><summary>Reasoning</summary>\n\n${response.reasoning}\n\n</details>\n".toByteArray())
+                    mainTask.expandable("Reasoning", response.reasoning.renderMarkdown())
+
+                    // 3. Apply Actions
+                    var actionsApplied = 0
+                    response.actions.forEach { action ->
+                        try {
+                            when (action.type) {
+                                "ADD_NODE" -> {
+                                    var traversal = g.V().hasLabel(action.label)
+                                    action.properties.forEach { (k, v) ->
+                                        if (k == "name" || k == "id") traversal = traversal.has(k, v)
+                                    }
+                                    if (!traversal.hasNext()) {
+                                        val v = g.addV(action.label).next()
+                                        action.properties.forEach { (k, valObj) ->
+                                            v.property(k, valObj)
+                                        }
+                                        actionsApplied++
+                                    }
+                                }
+
+                                "ADD_EDGE" -> {
+                                    val fromV = findVertex(g, action.from)
+                                    val toV = findVertex(g, action.to)
+                                    if (fromV != null && toV != null) {
+                                        if (!g.V(fromV.id()).out(action.label).where(`__`.hasId<Vertex>(toV.id()))
+                                                .hasNext()
+                                        ) {
+                                            val e = g.addE(action.label).from(fromV).to(toV).next()
+                                            action.properties.forEach { (k, valObj) ->
+                                                e.property(k, valObj)
+                                            }
+                                            actionsApplied++
+                                        }
+                                    }
+                                }
+
+                                "MERGE_NODES" -> {
+                                    val keepV = findVertex(g, action.target)
+                                    val removeV = findVertex(g, action.source)
+                                    if (keepV != null && removeV != null && keepV.id() != removeV.id()) {
+                                        g.V(removeV.id()).outE().forEachRemaining { e ->
+                                            g.addE(e.label()).from(keepV).to(e.inVertex()).next()
+                                        }
+                                        g.V(removeV.id()).inE().forEachRemaining { e ->
+                                            g.addE(e.label()).from(e.outVertex()).to(keepV).next()
+                                        }
+                                        g.V(removeV.id()).drop().iterate()
+                                        transcript?.write("Merged node `${removeV.id()}` into `${keepV.id()}`\n".toByteArray())
+                                        actionsApplied++
+                                    }
+                                }
+
+                                else -> transcript?.write("Unknown action type: ${action.type}\n".toByteArray())
+                            }
+                        } catch (e: Exception) {
+                            log.warn("Error applying action: $action", e)
+                            transcript?.write("Error applying action: $action - ${e.message}\n".toByteArray())
+                        }
+                    }
+                    transcript?.write("Applied $actionsApplied actions.\n".toByteArray())
+
+                    if (nodeCount > 0) {
+                        val mermaid = toMermaid(g)
+                        mainTask.add("```mermaid\n$mermaid\n```".renderMarkdown())
+                        transcript?.write("<details><summary>Graph Visualization</summary>\n\n```mermaid\n$mermaid\n```\n\n</details>\n".toByteArray())
+                    }
+
+                    if (response.is_finished) {
+                        transcript?.write("Agent signaled completion.\n".toByteArray())
+                        break
+                    }
+
+                    if (actionsApplied < 2 || iteration % 3 == 0) {
+                        currentChunkIndex++
+                        transcript?.write("Advancing to context chunk ${currentChunkIndex + 1}\n".toByteArray())
+                    }
+                }
+
+                // Export
+                val os = ByteArrayOutputStream()
+                GraphSONWriter.build().create().writeGraph(os, graph)
+                val graphJSON = os.toByteArray()
+                val fileUrl = task.saveFile("graph.json", graphJSON)
+
+                val summary = """
+                    ## Graph Generation Complete
+                    * **Nodes:** ${g.V().count().next()}
+                    * **Edges:** ${g.E().count().next()}
+                    * **Artifact:** [Download Graph JSON]($fileUrl)
+                """.trimIndent()
+
+                mainTask.add(summary.renderMarkdown())
+                task.update()
+                task.safeComplete(summary, log)
+                resultFn(summary)
+            } catch (e: Exception) {
+                task.error(e)
+                log.error("Error in IterativeGraphGenerationTask", e)
+                transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                throw e
+            } finally {
+                transcript?.close()
             }
         }
-
-        // Export
-        val os = ByteArrayOutputStream()
-
-        GraphSONWriter.build().create().writeGraph(os, graph)
-
-        val graphJSON = os.toByteArray()
-        val fileUrl = task.saveFile("graph.json", graphJSON)
-
-        val summary = "Graph generation complete. Nodes: ${g.V().count().next()}, Edges: ${
-            g.E().count().next()
-        }."
-        mainTask.add(summary)
-        mainTask.add("<a href='$fileUrl'>Download Graph JSON</a>")
-        task.update()
-
-        task.safeComplete(summary, log)
-        resultFn(summary)
-        transcript.close()
     }
 
     private fun findVertex(g: GraphTraversalSource, props: Map<String, Any>?): Vertex? {
@@ -391,13 +421,13 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
     companion object {
         private val log = LoggerFactory.getLogger(IterativeGraphGenerationTask::class.java)
         val IterativeGraphGeneration = TaskType(
-          name = "IterativeGraphGeneration",
-          category = "Writing",
-          taskClass = IterativeGraphGenerationTask::class.java,
-          executionConfigClass = IterativeGraphGenerationTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Extract structured knowledge from unstructured data by iteratively building an entity-relationship graph.",
-          tooltipHtml = """
+            name = "IterativeGraphGeneration",
+            category = "Writing",
+            taskClass = IterativeGraphGenerationTask::class.java,
+            executionConfigClass = IterativeGraphGenerationTaskExecutionConfigData::class.java,
+            taskSettingsClass = IterativeGraphGenerationTaskTypeConfig::class.java,
+            description = "Extract structured knowledge from unstructured data by iteratively building an entity-relationship graph.",
+            tooltipHtml = """
                       Constructs a knowledge graph by iteratively analyzing context and adding nodes/edges.
                       <ul>
                         <li>Processes large contexts by chunking and iterative refinement</li>

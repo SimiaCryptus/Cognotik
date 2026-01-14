@@ -17,9 +17,9 @@ import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.plan.AbstractTask.TaskState
+import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel
@@ -279,7 +279,7 @@ class FileModificationTaskAction : BaseAction() {
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
                 taskSettings = mutableMapOf(
-                    FileModificationTask.FileModification.name to TaskTypeConfig(task_type = FileModificationTask.FileModification.name)
+                    FileModificationTask.FileModification.name to TaskTypeConfig(task_type = FileModification.name)
                 )
             )
         }

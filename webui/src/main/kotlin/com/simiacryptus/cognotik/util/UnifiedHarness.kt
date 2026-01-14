@@ -6,20 +6,24 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskExecutionConfig
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
+import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.asApiChatModel
+import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.trayIcon
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -96,6 +100,13 @@ open class UnifiedHarness(
         }
     }
 
+    var session = Session.newGlobalID()
+        private set
+
+    fun resetSession() {
+        session = Session.newGlobalID()
+    }
+
     open fun runPlan(
         prompt: String,
         cognitiveSettings: CognitiveModeConfig,
@@ -112,7 +123,6 @@ open class UnifiedHarness(
         }
     ) {
         val completionLatch = CountDownLatch(1)
-        val session = Session.newGlobalID()
 
         val planApp = object : UnifiedPlanApp(
             path = "/test",
@@ -225,7 +235,6 @@ open class UnifiedHarness(
     ) {
         val completionLatch = CountDownLatch(1)
         var error: Throwable? = null
-        val session = Session.newGlobalID()
 
 
 
@@ -400,6 +409,23 @@ open class UnifiedHarness(
         fun time(): String {
             val sdf = SimpleDateFormat("yyyyMMdd_HHmmss")
             return sdf.format(System.currentTimeMillis())
+        }
+
+
+        fun configurePlatform() {
+            initDynamicEnums()
+            ApplicationServices.authenticationManager = object : AuthenticationInterface {
+                override fun getUser(accessToken: String?) = defaultUser
+                override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
+                override fun logout(accessToken: String, user: User) {}
+            }
+            ApplicationServices.authorizationManager = object : AuthorizationManager() {
+                override fun isAuthorized(
+                    applicationClass: Class<*>?,
+                    user: User?,
+                    operationType: AuthorizationInterface.OperationType
+                ): Boolean = true
+            }
         }
     }
 }

@@ -2,6 +2,10 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.extractDocumentContent
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -17,15 +21,15 @@ class FileSearchTask(
     // SearchTaskConfigData remains the same
     class SearchTaskExecutionConfigData(
         @Description("The search pattern (substring or regex) to look for in the files")
-        val search_pattern: String = "",
+        var search_pattern: String = "",
         @Description("Whether the search pattern is a regex (true) or a substring (false)")
-        val is_regex: Boolean = false,
+        var is_regex: Boolean = false,
         @Description("The number of context lines to include before and after each match")
-        val context_lines: Int = 2,
+        var context_lines: Int = 2,
         @Description("The specific files (or file patterns) to be searched")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         @Description("Whether to extract and search text content from non-text files (PDF, HTML, etc.)")
-        val extractContent: Boolean = false,
+        var extractContent: Boolean = false,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -65,45 +69,71 @@ FileSearch - Search for patterns in files and provide results with context
         orchestrationConfig: OrchestrationConfig
     ) {
         renderTaskHeader(task)
-        val searchResults = performSearch()
-        val formattedResults = formatSearchResults(searchResults)
-        val transcript = task.transcript()
-        transcript?.write(formattedResults.toByteArray())
-        transcript?.close()
 
-        if (searchResults.isEmpty()) {
-            task.add("No matches found.")
-        } else {
-            val totalMatches = searchResults.sumOf { it.matches.size }
-            val filesWithMatches = searchResults.distinctBy { it.file }.size
-            val summaryText = "Found $totalMatches match(es) in $filesWithMatches file(s)."
-            task.add(summaryText)
 
-            val tabs = TabbedDisplay(task)
-            tabs["Summary"] = MarkdownUtil.renderMarkdown("# Search Summary\n\n$summaryText\n\n$formattedResults", ui = task.ui)
 
-            val files = searchResults.groupBy { it.file }
-            if (files.size <= 20) {
-                files.forEach { (file, blocks) ->
-                    val fileMarkdown = blocks.joinToString("\n\n") { block ->
-                        val blockEndLine = block.firstLineNumberInFile + block.contextLines.size - 1
-                        val sb = StringBuilder()
-                        sb.append("### Lines ${block.firstLineNumberInFile} - $blockEndLine\n\n")
-                        sb.append("```\n")
-                        block.contextLines.forEachIndexed { indexInBlock, lineContent ->
-                            val actualLineNumber = block.firstLineNumberInFile + indexInBlock
-                            val isMatchedLine = block.matches.any { it.indexInDisplayBlockContext == indexInBlock }
-                            val prefix = if (isMatchedLine) ">" else " "
-                            sb.append("$prefix ${actualLineNumber.toString().padStart(5)}: $lineContent\n")
+        log.info("Starting FileSearchTask with pattern: ${executionConfig?.search_pattern}")
+        task.ui.pool.submit {
+            val transcript = task.transcript()
+            try {
+                val searchResults = performSearch()
+                val formattedResults = formatSearchResults(searchResults)
+
+                transcript?.write("## Search Results\n<details><summary>Raw Results</summary>\n\n$formattedResults\n</details>\n".toByteArray())
+
+                if (searchResults.isEmpty()) {
+                    task.add("No matches found.".renderMarkdown())
+                } else {
+                    val totalMatches = searchResults.sumOf { it.matches.size }
+                    val filesWithMatches = searchResults.distinctBy { it.file }.size
+                    val summaryText = "Found $totalMatches match(es) in $filesWithMatches file(s)."
+                    task.add(summaryText.renderMarkdown())
+
+                    val tabs = TabbedDisplay(task)
+                    tabs["Summary"] = "# Search Summary\n\n$summaryText\n\n$formattedResults".renderMarkdown()
+
+                    val files = searchResults.groupBy { it.file }
+                    if (files.size <= 20) {
+                        files.forEach { (file, blocks) ->
+                            val fileMarkdown = blocks.joinToString("\n\n") { block ->
+                                val blockEndLine = block.firstLineNumberInFile + block.contextLines.size - 1
+                                val sb = StringBuilder()
+                                sb.append("### Lines ${block.firstLineNumberInFile} - $blockEndLine\n\n")
+                                sb.append("```\n")
+                                block.contextLines.forEachIndexed { indexInBlock, lineContent ->
+                                    val actualLineNumber = block.firstLineNumberInFile + indexInBlock
+                                    val isMatchedLine =
+                                        block.matches.any { it.indexInDisplayBlockContext == indexInBlock }
+                                    val prefix = if (isMatchedLine) ">" else " "
+                                    sb.append("$prefix ${actualLineNumber.toString().padStart(5)}: $lineContent\n")
+                                }
+                                sb.append("```")
+                                sb.toString()
+                            }
+                            tabs[file] = fileMarkdown.renderMarkdown()
                         }
-                        sb.append("```")
-                        sb.toString()
                     }
-                    tabs[file] = MarkdownUtil.renderMarkdown(fileMarkdown, ui = task.ui)
                 }
+                log.info("FileSearchTask completed successfully.")
+                resultFn(formattedResults)
+            } catch (e: Exception) {
+                task.error(e)
+                log.error("Error in FileSearchTask", e)
+                transcript?.write(
+                    """
+                    <details>
+                    <summary>Stack Trace</summary>
+                    ```
+                    ${e.stackTraceToString()}
+                    ```
+                    </details>
+                """.trimIndent().toByteArray()
+                )
+            } finally {
+                transcript?.close()
+                task.complete()
             }
         }
-        resultFn(formattedResults)
     }
 
     // Temporary holder for a raw match within a file
@@ -357,13 +387,13 @@ FileSearch - Search for patterns in files and provide results with context
         private val log = LoggerFactory.getLogger(FileSearchTask::class.java)
 
         val FileSearch = TaskType(
-          name = "FileSearch",
-          category = "File",
-          taskClass = FileSearchTask::class.java,
-          executionConfigClass = SearchTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Search project files using patterns with contextual results",
-          tooltipHtml = """
+            name = "FileSearch",
+            category = "File",
+            taskClass = FileSearchTask::class.java,
+            executionConfigClass = SearchTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Search project files using patterns with contextual results",
+            tooltipHtml = """
                                 Performs pattern-based searches across project files with context.
                                 <ul>
                                   <li>Supports both substring and regex search patterns</li>

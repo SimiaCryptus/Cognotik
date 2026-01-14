@@ -1,0 +1,72 @@
+[
+  {
+    "id": "conversational-mode",
+    "label": "Conversational",
+    "url": "ConversationalMode.html",
+    "description": "The Partner. Best for general assistance and interactive debugging. Executes one task at a time while maintaining a continuous history to build on previous results.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/ConversationalMode.kt"
+  },
+  {
+    "id": "coding-mode",
+    "label": "Coding",
+    "url": "CodingMode.html",
+    "description": "The Developer. Best for power users. Provides a direct code execution environment (REPL) to script complex behaviors and interact with system APIs.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/CodingMode.kt"
+  },
+  {
+    "id": "waterfall-mode",
+    "label": "Waterfall",
+    "url": "WaterfallMode.html",
+    "description": "The Architect. Best for well-defined, linear projects. Generates a complete sequential plan for review before execution, ensuring a clear path to the solution.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/WaterfallMode.kt"
+  },
+  {
+    "id": "adaptive-mode",
+    "label": "Adaptive",
+    "url": "AdaptivePlanningMode.html",
+    "description": "The Strategist. Best for complex, 'fuzzy' problems. Uses an iterative 'Think-Act-Reflect' loop to dynamically adjust its strategy based on task results.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/AdaptivePlanningMode.kt"
+  },
+  {
+    "id": "persona-chat-mode",
+    "label": "Persona",
+    "url": "PersonaChatMode.html",
+    "description": "The Roleplayer. Best for specialized consulting. Adopts specific cognitive strategies and maintains an evolving internal persona state throughout the conversation.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/PersonaChatMode.kt"
+  },
+  {
+    "id": "protocol-mode",
+    "label": "Protocol",
+    "url": "ProtocolMode.html",
+    "description": "The Auditor. Best for strict workflows. Enforces methodologies using a state machine and a 'Referee' agent to validate output before moving to the next stage.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/ProtocolMode.kt"
+  },
+  {
+    "id": "council-mode",
+    "label": "Council",
+    "url": "CouncilMode.html",
+    "description": "The Board. Best for high-stakes decisions. Simulates a meeting between specialized AI personas who nominate and vote on tasks to ensure technical feasibility.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/CouncilMode.kt"
+  },
+  {
+    "id": "parallel-mode",
+    "label": "Parallel",
+    "url": "ParallelMode.html",
+    "description": "The Multitasker. Best for batch processing. Runs multiple tasks simultaneously using templates and variables, ideal for automating actions across many files.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/ParallelMode.kt"
+  },
+  {
+    "id": "hierarchical-planning-mode",
+    "label": "Hierarchical",
+    "url": "HierarchicalPlanningMode.html",
+    "description": "The Manager. Best for massive projects with many dependencies. Decomposes requests into a goal tree with real-time visual progress tracking.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/HierarchicalPlanningMode.kt"
+  },
+  {
+    "id": "coding-mode",
+    "label": "Coding",
+    "url": "CodingMode.html",
+    "description": "The Developer. Best for power users. Provides a direct code execution environment (REPL) to script complex behaviors and interact with system APIs.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/CodingMode.kt"
+  }
+]

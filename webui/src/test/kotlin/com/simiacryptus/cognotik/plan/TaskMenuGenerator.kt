@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.util.toJson
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -35,7 +36,7 @@ object TaskMenuGenerator {
                     "description" to buildString {
                         appendLine(task.description ?: "")
                         appendLine()
-                        appendLine(task.tooltipHtml ?: "")
+                        appendLine(task.tooltipHtml?.replace(Regex("<ul>(.*?)</ul>", RegexOption.DOT_MATCHES_ALL), "") ?: "")
                     },
                     "code" to getGitHubLink(task.taskClass)
                 )

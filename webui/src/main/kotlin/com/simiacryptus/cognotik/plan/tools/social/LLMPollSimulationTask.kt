@@ -2,14 +2,17 @@ package com.simiacryptus.cognotik.plan.tools.social
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
@@ -33,25 +36,25 @@ class LLMPollSimulationTask(
 
     class LLMPollSimulationTaskExecutionConfigData(
         @Description("List of survey questions to ask respondents")
-        val questions: List<SurveyQuestion>? = null,
+        var questions: List<SurveyQuestion>? = null,
         @Description("Respondent profile templates defining demographics and characteristics")
-        val respondent_profiles: List<RespondentProfile>? = null,
+        var respondent_profiles: List<RespondentProfile>? = null,
         @Description("Number of simulated respondents to generate per profile")
-        val respondents_per_profile: Int = 10,
+        var respondents_per_profile: Int = 10,
         @Description("Whether to include demographic information in responses")
-        val include_demographics: Boolean = true,
+        var include_demographics: Boolean = true,
         @Description("Demographic dimensions to track (e.g., age, gender, location)")
-        val demographic_dimensions: List<String>? = listOf("age", "gender", "location", "education"),
+        var demographic_dimensions: List<String>? = listOf("age", "gender", "location", "education"),
         @Description("Whether to generate cross-tabulation analysis")
-        val cross_tabulation: Boolean = true,
+        var cross_tabulation: Boolean = true,
         @Description("Whether to perform sentiment analysis on open-ended responses")
-        val sentiment_analysis: Boolean = true,
+        var sentiment_analysis: Boolean = true,
         @Description("Whether to detect response biases and patterns")
-        val bias_detection: Boolean = true,
+        var bias_detection: Boolean = true,
         @Description("Temperature for LLM responses (0.0-1.0, higher = more varied)")
-        val temperature: Double = 0.7,
+        var temperature: Double = 0.7,
         task_dependencies: List<String>? = null,
-        state: TaskState? = TaskState.Pending,
+        state: TaskState? = TaskState.Pending
     ) : TaskExecutionConfig(
         task_type = LLMPollSimulation.name,
         task_description = "Simulate poll with ${respondent_profiles?.size ?: 0} profiles",
@@ -62,7 +65,7 @@ class LLMPollSimulationTask(
             if (questions.isNullOrEmpty()) {
                 return "questions cannot be null or empty"
             }
-            if (questions.any { it.text.isBlank() }) {
+            if (questions!!.any { it.text.isBlank() }) {
                 return "questions cannot contain blank text"
             }
             if (respondent_profiles.isNullOrEmpty()) {
@@ -75,7 +78,7 @@ class LLMPollSimulationTask(
                 return "temperature must be between 0.0 and 1.0, got: $temperature"
             }
             // Validate question types and options
-            questions.forEach { question ->
+            questions!!.forEach { question ->
                 when (question.type) {
                     QuestionType.MULTIPLE_CHOICE, QuestionType.SINGLE_CHOICE, QuestionType.RANKING -> {
                         if (question.options.isNullOrEmpty()) {
@@ -186,18 +189,28 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
         orchestrationConfig: OrchestrationConfig
     ) {
         val startTime = System.currentTimeMillis()
-        log.info("Starting LLMPollSimulationTask")
+        log.info("Starting LLMPollSimulationTask execution")
+        val transcript = task.transcript()
 
-        // Validate configuration
-        executionConfig?.validate()?.let { error ->
-            log.error("Configuration validation failed: $error")
-            task.safeComplete("CONFIGURATION ERROR: $error", log)
-            resultFn("CONFIGURATION ERROR: $error")
-            return
-        }
+        // Create tabbed display
+        val tabs = TabbedDisplay(task)
 
-        val questions = executionConfig?.questions ?: listOf()
-        val profiles = executionConfig?.respondent_profiles ?: listOf()
+        // Overview tab
+        val overviewTask = tabs.newTask("Overview")
+
+        try {
+            // Validate configuration
+            executionConfig?.validate()?.let { error ->
+                val msg = "Configuration validation failed: $error"
+                log.error(msg)
+                task.error(Exception(msg))
+                transcript?.write("## Configuration Error\n$msg\n".toByteArray())
+                resultFn(msg)
+                return
+            }
+
+            val questions = executionConfig?.questions ?: listOf()
+            val profiles = executionConfig?.respondent_profiles ?: listOf()
         val respondentsPerProfile = executionConfig?.respondents_per_profile ?: 10
         val temperature = executionConfig?.temperature ?: 0.7
         val api = defaultSmart.getChildClient(task)
@@ -223,12 +236,11 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
             write("\n---\n\n")
             flush()
         }
+            transcript?.write("## Survey Design\n- Questions: ${questions.size}\n- Profiles: ${profiles.size}\n- Total Respondents: ${profiles.size * respondentsPerProfile}\n\n".toByteArray())
+            transcript?.write("<details><summary>Question Details</summary>\n\n".toByteArray())
+            questions.forEach { q -> transcript?.write("- **${q.id}**: ${q.text}\n".toByteArray()) }
+            transcript?.write("\n</details>\n\n".toByteArray())
 
-        // Create tabbed display
-        val tabs = TabbedDisplay(task)
-
-        // Overview tab
-        val overviewTask = tabs.newTask("Overview")
 
         overviewTask.add(
             buildString {
@@ -248,7 +260,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
             }.renderMarkdown()
         )
 
-        try {
             // Generate respondents
             log.info("Generating ${profiles.size * respondentsPerProfile} simulated respondents")
             val respondents = generateRespondents(profiles, respondentsPerProfile)
@@ -275,6 +286,11 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                 write("\n---\n\n")
                 flush()
             }
+            transcript?.write("## Respondent Profiles\n".toByteArray())
+            profiles.forEach { profile ->
+                transcript?.write("- ${profile.description} (${profile.demographics})\n".toByteArray())
+            }
+            transcript?.write("\n".toByteArray())
 
             // Progress tab
             val progressTask = tabs.newTask("Progress")
@@ -315,7 +331,8 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         log.debug("Survey completed for respondent ${respondent.id}")
                     } catch (e: Exception) {
                         failedCount.incrementAndGet()
-                        log.error("Error conducting survey for respondent ${respondent.id}", e)
+                        log.error("Error conducting survey for respondent ${respondent.id}: ${e.message}")
+                        transcript?.write("<details><summary>Error: Respondent ${respondent.id}</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
                     }
                 }
             }
@@ -350,17 +367,19 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
             // Write responses to transcript
             transcriptWriter?.apply {
                 write("## Survey Responses\n\n")
-                write("**Successful Responses:** ${successfulResponses.size}\n")
-                write("**Failed Responses:** ${failedCount.get()}\n\n")
-                successfulResponses.take(5).forEach { response ->
-                    write("### Sample Response: ${response.respondent_id}\n\n")
-                    write("**Demographics:** ${response.demographics}\n\n")
-                    write("**Answers:**\n")
-                    response.answers.forEach { (qId, answer) ->
-                        write("- $qId: $answer\n")
-                    }
-                    write("\n")
+            }
+            transcript?.write("## Survey Results\n- Successful: ${successfulResponses.size}\n- Failed: ${failedCount.get()}\n\n".toByteArray())
+            transcript?.write("<details><summary>Sample Responses</summary>\n\n".toByteArray())
+            successfulResponses.take(5).forEach { response ->
+                transcript?.write("### Respondent: ${response.respondent_id}\n".toByteArray())
+                transcript?.write("Demographics: ${response.demographics}\n".toByteArray())
+                response.answers.forEach { (qId, answer) ->
+                    transcript?.write("- $qId: $answer\n".toByteArray())
                 }
+                transcript?.write("\n".toByteArray())
+            }
+            transcript?.write("</details>\n\n".toByteArray())
+            transcriptWriter?.apply {
                 write("\n---\n\n")
                 flush()
             }
@@ -588,7 +607,6 @@ Be specific and reference the data provided.
                     }\n\n"
                 )
                 write("**Total Time:** ${totalTime / 1000.0}s | **Responses:** ${successfulResponses.size}/$totalRespondents\n")
-                flush()
                 close()
             }
 
@@ -616,7 +634,7 @@ Be specific and reference the data provided.
 
             log.info("LLMPollSimulationTask completed: responses=${successfulResponses.size}/$totalRespondents, time=${totalTime}ms")
 
-            task.complete("Completed poll simulation with ${successfulResponses.size} responses in ${totalTime / 1000}s")
+            task.complete("Completed poll simulation with ${successfulResponses.size} responses in ${totalTime / 1000}s".renderMarkdown())
 
             val finalMessage = buildString {
                 appendLine(summary)
@@ -628,19 +646,19 @@ Be specific and reference the data provided.
                         transcriptLink.removeSuffix(
                             ".md"
                         )
-                    }.html' target='_blank'>html</a>"
+                    }.html' target='_blank'>html</a>".renderMarkdown()
                 )
             }
             resultFn(finalMessage)
 
         } catch (e: Exception) {
-            log.error("Error during poll simulation", e)
+            log.error("Error during poll simulation: ${e.message}")
             task.error(e)
+            transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
 
-            transcriptWriter?.apply {
-                write("\n\n---\n\n## ❌ Error Occurred\n\n")
-                write("**Error:** ${e.message}\n\n")
-                flush()
+            transcript?.apply {
+                write("\n\n---\n\n## ❌ Error Occurred\n\n".toByteArray())
+                write("**Error:** ${e.message}\n\n".toByteArray())
                 close()
             }
 
@@ -656,6 +674,8 @@ Be specific and reference the data provided.
             )
 
             resultFn("Error in poll simulation: ${e.message}")
+        } finally {
+            transcript?.close()
         }
     }
 
@@ -1314,13 +1334,13 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
     }
 
     private fun createTranscriptFile(task: SessionTask): Pair<String, FileOutputStream?> {
-        val transcriptFile = "poll_simulation_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
+        val reportFile = "poll_simulation_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val (link, file) = Pair(task.linkTo(reportFile), task.resolveUserFile(reportFile))
+        val outputStream = file?.outputStream()
         task.add(
-            "Writing poll report to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a>"
+            "Writing poll report to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a>".renderMarkdown()
         )
-        return Pair(link, markdownTranscript)
+        return Pair(link, outputStream)
     }
     private val contextVariations = listOf(
         "You are taking this survey quickly during a short break.",
@@ -1337,13 +1357,13 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
     companion object {
         private val log: Logger = LoggerFactory.getLogger(LLMPollSimulationTask::class.java)
         val LLMPollSimulation = TaskType(
-          name = "LLMPollSimulation",
-          category = "Social",
-          taskClass = LLMPollSimulationTask::class.java,
-          executionConfigClass = LLMPollSimulationTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Simulate polls and surveys with AI personas",
-          tooltipHtml = """
+            name = "LLMPollSimulation",
+            category = "Social",
+            taskClass = LLMPollSimulationTask::class.java,
+            executionConfigClass = LLMPollSimulationTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Simulate polls and surveys with AI personas",
+            tooltipHtml = """
                         Simulates polls and surveys using LLMs to model diverse respondent personas.
                         <ul>
                           <li>Define survey questions with multiple types (choice, Likert, open-ended)</li>

@@ -6,8 +6,8 @@ import com.simiacryptus.cognotik.agents.ParsedImageAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -30,21 +30,21 @@ class ImageVariationTask(
 
   class ImageVariationConfig(
     @Description("The input image file path")
-    val input_file: String? = null,
+    var input_file: String? = null,
     @Description("Number of distinct regions to modify")
-    val num_subimages: Int = 7,
+    var num_subimages: Int = 7,
     @Description("Number of alternate versions per region")
-    val num_subimage_alternates: Int = 2,
+    var num_subimage_alternates: Int = 2,
     @Description("Number of changes to apply per variation")
-    val num_changes_per_variation: Int = 5,
+    var num_changes_per_variation: Int = 5,
     @Description("Number of alternative images to produce (M)")
-    val num_variations: Int = 11,
+    var num_variations: Int = 11,
     @Description("Output filename prefix")
-    val output_prefix: String = "variation",
+    var output_prefix: String = "variation",
     @Description("Output image format (png/jpg)")
-    val extension: String = "png",
+    var extension: String = "png",
     @Description("Whether to use image patch localization to align the generated variation with the original image")
-    val retarget_subimages: Boolean = false,
+    var retarget_subimages: Boolean = false,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : ValidatedObject, FileTaskExecutionConfig(
@@ -121,232 +121,292 @@ ImageVariation - Creates 'Find the Differences' style image sets.
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val inputFile = executionConfig?.input_file ?: return resultFn("No input file")
-    val numSubimages = executionConfig.num_subimages
-    val numSubimageAlternates = executionConfig.num_subimage_alternates
-    val numChangesPerVariation = executionConfig.num_changes_per_variation
-    val numVariations = executionConfig.num_variations
-    val prefix = executionConfig.output_prefix
-    val ext = executionConfig.extension
 
-    val analysisModel = orchestrationConfig.defaultSmart.getChildClient(task)
-    val imageModel = orchestrationConfig.defaultImage.getChildClient(task)
 
     val transcript = task.transcript()
-    val tabs = TabbedDisplay(task)
-    val logTab = tabs.newTask("Progress")
-
-    try {
-      task.header("Starting Image Variation Task", level = 2)
-
-      // 1. Load Base Image
-      logTab.add("Loading base image: $inputFile".renderMarkdown())
-      val baseFile = root.resolve(inputFile).toFile()
-      if (!baseFile.exists()) throw RuntimeException("Input file not found")
-      val baseImage = ImageIO.read(baseFile)
-      val baseLink = task.linkTo(inputFile)
-      tabs["Base Image"] = """<img src="$baseLink" style="max-width: 100%;" />"""
-
-      // 2. Analyze Structure (Decomposition)
-      logTab.add("Analyzing image structure...".renderMarkdown())
-      val imageAgent = ParsedImageAgent(
-        resultClass = RegionAnalysis::class.java,
-        model = analysisModel,
-        prompt = """
-            Analyze this image to identify distinct objects or regions that could be modified for a "Find the Differences" game.
-            Identify at least ${numSubimages + 2} distinct regions.
-            Avoid overlapping regions if possible.
-            Output coordinates on a 0-1000 scale.
-          """.trimIndent()
-      )
-      val answer = imageAgent.answer(listOf(ImageAndText(text = "", image = baseImage)))
-      val analysis = answer.obj
-
-      transcript?.write(buildString {
-        appendLine("## Structural Analysis")
-        appendLine("Found ${analysis.regions.size} regions.")
-        appendLine("```json")
-        appendLine(analysis.toJson())
-        appendLine("```")
-      }.toByteArray())
-
-      // Draw debug map
-      val debugImg = BufferedImage(baseImage.width, baseImage.height, BufferedImage.TYPE_INT_ARGB)
-      val gDebug = debugImg.createGraphics()
-      gDebug.drawImage(baseImage, 0, 0, null)
-      gDebug.stroke = BasicStroke(3f)
-      analysis.regions.forEach { r ->
-        val x = (r.x * baseImage.width / 1000.0).toInt()
-        val y = (r.y * baseImage.height / 1000.0).toInt()
-        val w = (r.width * baseImage.width / 1000.0).toInt()
-        val h = (r.height * baseImage.height / 1000.0).toInt()
-        gDebug.color = Color.CYAN
-        gDebug.drawRect(x, y, w, h)
-        gDebug.color = Color.BLACK
-        gDebug.drawString(r.label, x, y - 5)
-        gDebug.color = Color.WHITE
-        gDebug.drawString(r.label, x - 1, y - 6)
-      }
-      gDebug.dispose()
-      val debugLink = saveImage(debugImg, "${prefix}_analysis.$ext", task)
-      tabs["Analysis Map"] = """<img src="$debugLink" style="max-width: 100%;" />"""
-
-      // 3. Generate N Changes
-      val generatedChanges = mutableListOf<AppliedChange>()
-      val regionsToProcess = analysis.regions.shuffled().take(numSubimages)
-
-      regionsToProcess.forEachIndexed { regionIdx, region ->
-        logTab.add("Processing region ${regionIdx + 1}/$numSubimages: **${region.label}**".renderMarkdown())
-
-        // Crop
-        val rx = (region.x * baseImage.width / 1000.0).toInt()
-        val ry = (region.y * baseImage.height / 1000.0).toInt()
-        val rw = (region.width * baseImage.width / 1000.0).toInt().coerceAtLeast(64)
-        val rh = (region.height * baseImage.height / 1000.0).toInt().coerceAtLeast(64)
-
-        // Safety check for bounds
-        if (rx + rw > baseImage.width || ry + rh > baseImage.height) return@forEachIndexed
-
-        val crop = baseImage.getSubimage(rx, ry, rw, rh)
-
-        for (altIdx in 1..numSubimageAlternates) {
-          // Plan Change
-          val proposal = ParsedImageAgent(
-            resultClass = ChangeProposal::class.java,
-            model = analysisModel,
-            prompt = """
-                Suggest a single, distinct visual change for this image region (Label: ${region.label}).
-                This is variation $altIdx of $numSubimageAlternates.
-                This is for a "Find the Differences" game.
-                Examples: Change color, remove object, change facial expression, rotate object.
-                The change should be visible but retain the same lighting and style.
-              """.trimIndent()
-          ).answer(listOf(ImageAndText(text = "", image = crop))).obj
 
 
-          // Render Change
-          val renderAgent = ImageProcessingAgent(
-            prompt = "Apply the requested change",
-            model = imageModel
-          )
 
 
-          val prompt = "Modify this image: ${proposal.change_instruction}. Maintain style and background."
-          val result = renderAgent.answer(listOf(ImageAndText(text = prompt, image = crop)))
 
-          if (result.image != null) {
-            val changeId = "change_${regionIdx}_${altIdx}_${region.label.replace(" ", "_")}"
-            val changeFilename = "${prefix}_$changeId.$ext"
-            saveImage(result.image!!, changeFilename, task)
 
-            generatedChanges.add(
-              AppliedChange(
-                id = changeId,
-                region = region,
-                instruction = proposal.change_instruction,
-                description = proposal.result_description,
-                imagePath = changeFilename,
-                image = result.image
-              )
-            )
 
-            transcript?.write(buildString {
-              appendLine("### Change: ${region.label} ($altIdx/$numSubimageAlternates)")
-              appendLine("**Instruction:** ${proposal.change_instruction}")
-              appendLine("![Original](${task.linkTo(changeFilename)})") // Note: this links the changed one, logic simplification
-            }.toByteArray())
-          }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    task.ui.pool.submit {
+      try {
+        val inputFile = executionConfig?.input_file ?: return@submit resultFn("No input file")
+        val numSubimages = executionConfig.num_subimages
+        val numSubimageAlternates = executionConfig.num_subimage_alternates
+        val numChangesPerVariation = executionConfig.num_changes_per_variation
+        val numVariations = executionConfig.num_variations
+        val prefix = executionConfig.output_prefix
+        val ext = executionConfig.extension
+
+        val analysisModel = orchestrationConfig.defaultSmart.getChildClient(task)
+        val imageModel = orchestrationConfig.defaultImage.getChildClient(task)
+
+        val tabs = TabbedDisplay(task)
+        val logTab = tabs.newTask("Progress")
+
+        log.info("Starting Image Variation Task for $inputFile")
+        task.header("Starting Image Variation Task", level = 2)
+
+        // 1. Load Base Image
+        logTab.add("Loading base image: $inputFile".renderMarkdown())
+        val baseFile = root.resolve(inputFile).toFile()
+        if (!baseFile.exists()) throw RuntimeException("Input file not found: $inputFile")
+        val baseImage = ImageIO.read(baseFile)
+        val baseLink = task.linkTo(inputFile)
+        tabs["Base Image"] = """<img src="$baseLink" style="max-width: 100%;" />"""
+
+        // 2. Analyze Structure (Decomposition)
+        logTab.add("Analyzing image structure...".renderMarkdown())
+        val imageAgent = ParsedImageAgent(
+          resultClass = RegionAnalysis::class.java,
+          model = analysisModel,
+          prompt = """
+              Analyze this image to identify distinct objects or regions that could be modified for a "Find the Differences" game.
+              Identify at least ${numSubimages + 2} distinct regions.
+              Avoid overlapping regions if possible.
+              Output coordinates on a 0-1000 scale.
+            """.trimIndent()
+        )
+        val answer = imageAgent.answer(listOf(ImageAndText(text = "", image = baseImage)))
+        val analysis = answer.obj
+
+        transcript?.write(buildString {
+          appendLine("## Structural Analysis")
+          appendLine("Found ${analysis.regions.size} regions.")
+          appendLine("<details><summary>Raw Analysis JSON</summary>\n\n```json")
+          appendLine(analysis.toJson())
+          appendLine("```\n</details>")
+        }.toByteArray())
+
+        // Draw debug map
+        val debugImg = BufferedImage(baseImage.width, baseImage.height, BufferedImage.TYPE_INT_ARGB)
+        val gDebug = debugImg.createGraphics()
+        gDebug.drawImage(baseImage, 0, 0, null)
+        gDebug.stroke = BasicStroke(3f)
+        analysis.regions.forEach { r ->
+          val x = (r.x * baseImage.width / 1000.0).toInt()
+          val y = (r.y * baseImage.height / 1000.0).toInt()
+          val w = (r.width * baseImage.width / 1000.0).toInt()
+          val h = (r.height * baseImage.height / 1000.0).toInt()
+          gDebug.color = Color.CYAN
+          gDebug.drawRect(x, y, w, h)
+          gDebug.color = Color.BLACK
+          gDebug.drawString(r.label, x, y - 5)
+          gDebug.color = Color.WHITE
+          gDebug.drawString(r.label, x - 1, y - 6)
         }
-      }
+        gDebug.dispose()
+        val debugLink = saveImage(debugImg, "${prefix}_analysis.$ext", task)
+        tabs["Analysis Map"] = """<img src="$debugLink" style="max-width: 100%;" />"""
 
-      // 4. Generate M Variations
-      logTab.add("Composing $numVariations variations...".renderMarkdown())
+        // 3. Generate N Changes
+        val generatedChanges = mutableListOf<AppliedChange>()
+        val regionsToProcess = analysis.regions.shuffled().take(numSubimages)
 
-      val variations = (1..numVariations).map { varIdx ->
-        val canvas = BufferedImage(baseImage.width, baseImage.height, BufferedImage.TYPE_INT_ARGB)
-        val g = canvas.createGraphics()
-        g.drawImage(baseImage, 0, 0, null)
+        regionsToProcess.forEachIndexed { regionIdx, region ->
+          logTab.add("Processing region ${regionIdx + 1}/$numSubimages: **${region.label}**".renderMarkdown())
 
-        // Randomly select subset of changes (e.g., 1 to N changes)
-        val changesToApply = generatedChanges
-          .groupBy { it.region }
-          .values
-          .shuffled()
-          .take(numChangesPerVariation)
-          .map { it.random() }
-        val appliedDescriptions = mutableListOf<ChangeDescription>()
+          // Crop
+          val rx = (region.x * baseImage.width / 1000.0).toInt()
+          val ry = (region.y * baseImage.height / 1000.0).toInt()
+          val rw = (region.width * baseImage.width / 1000.0).toInt().coerceAtLeast(64)
+          val rh = (region.height * baseImage.height / 1000.0).toInt().coerceAtLeast(64)
 
-        changesToApply.forEach { change ->
-          val r = change.region
-          val rx = (r.x * baseImage.width / 1000.0).toInt()
-          val ry = (r.y * baseImage.height / 1000.0).toInt()
-          val rw = (r.width * baseImage.width / 1000.0).toInt()
-          val rh = (r.height * baseImage.height / 1000.0).toInt()
+          // Safety check for bounds
+          if (rx + rw > baseImage.width || ry + rh > baseImage.height) return@forEachIndexed
+
+          val crop = baseImage.getSubimage(rx, ry, rw, rh)
+
+          for (altIdx in 1..numSubimageAlternates) {
+            // Plan Change
+            val proposal = ParsedImageAgent(
+              resultClass = ChangeProposal::class.java,
+              model = analysisModel,
+              prompt = """
+                  Suggest a single, distinct visual change for this image region (Label: ${region.label}).
+                  This is variation $altIdx of $numSubimageAlternates.
+                  This is for a "Find the Differences" game.
+                  Examples: Change color, remove object, change facial expression, rotate object.
+                  The change should be visible but retain the same lighting and style.
+                """.trimIndent()
+            ).answer(listOf(ImageAndText(text = "", image = crop))).obj
 
 
-          var patch = change.image!!
-          if (executionConfig.retarget_subimages) {
-            val originalCrop = baseImage.getSubimage(rx, ry, rw, rh)
-            val bounds = ImagePatchLocalization.findBounds(
-              patch,
-              originalCrop,
-              ImagePatchLocalization.SubImageBounds(0, 0, patch.width, patch.height, 0.0)
+            // Render Change
+            val renderAgent = ImageProcessingAgent(
+              prompt = "Apply the requested change",
+              model = imageModel
             )
-            val bx = bounds.x.coerceIn(0, patch.width)
-            val by = bounds.y.coerceIn(0, patch.height)
-            val bw = bounds.width.coerceAtMost(patch.width - bx)
-            val bh = bounds.height.coerceAtMost(patch.height - by)
-            if (bw > 0 && bh > 0) {
-              patch = patch.getSubimage(bx, by, bw, bh)
+
+
+            val prompt = "Modify this image: ${proposal.change_instruction}. Maintain style and background."
+            val result = renderAgent.answer(listOf(ImageAndText(text = prompt, image = crop)))
+
+            if (result.image != null) {
+              val changeId = "change_${regionIdx}_${altIdx}_${region.label.replace(" ", "_")}"
+              val changeFilename = "${prefix}_$changeId.$ext"
+              saveImage(result.image!!, changeFilename, task)
+
+              generatedChanges.add(
+                AppliedChange(
+                  id = changeId,
+                  region = region,
+                  instruction = proposal.change_instruction,
+                  description = proposal.result_description,
+                  imagePath = changeFilename,
+                  image = result.image
+                )
+              )
+
+              transcript?.write(buildString {
+                appendLine("### Change: ${region.label} ($altIdx/$numSubimageAlternates)")
+                appendLine("**Instruction:** ${proposal.change_instruction}")
+                appendLine("![Original](${task.linkTo(changeFilename)})")
+              }.toByteArray())
             }
           }
-
-          // Feathering
-          val featherSize = (Math.min(rw, rh) * 0.1).toInt().coerceAtLeast(1)
-          val featheredPatch = featherImage(patch, featherSize)
-
-          // Resize patch if dimensions drifted slightly (though they shouldn't with standard img2img)
-          g.drawImage(featheredPatch, rx, ry, rw, rh, null)
-
-          appliedDescriptions.add(
-            ChangeDescription(
-              region_label = change.region.label,
-              description = change.description,
-              bounds = listOf(rx, ry, rw, rh),
-              changeId = change.id
-            )
-          )
         }
-        g.dispose()
 
-        val varFilename = "${prefix}_v${varIdx}.$ext"
-        val varLink = saveImage(canvas, varFilename, task)
+        // 4. Generate M Variations
+        logTab.add("Composing $numVariations variations...".renderMarkdown())
 
-        // Save JSON Manifest
-        val manifest = VariationManifest(inputFile, appliedDescriptions)
-        val jsonFile = root.resolve("${prefix}_v${varIdx}.json").toFile()
-        jsonFile.writeText(manifest.toJson())
+        val variations = (1..numVariations).map { varIdx ->
+          val canvas = BufferedImage(baseImage.width, baseImage.height, BufferedImage.TYPE_INT_ARGB)
+          val g = canvas.createGraphics()
+          g.drawImage(baseImage, 0, 0, null)
 
-        tabs["Variation $varIdx"] = """
-            <p><b>Changes:</b> ${appliedDescriptions.joinToString { it.region_label }}</p>
-            <a href="$varLink" target="_blank"><img src="$varLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
-            <br/><a href="${task.linkTo(jsonFile.name)}">View JSON Manifest</a>
-          """.trimIndent()
+          // Randomly select subset of changes (e.g., 1 to N changes)
+          val changesToApply = generatedChanges
+            .groupBy { it.region }
+            .values
+            .shuffled()
+            .take(numChangesPerVariation)
+            .map { it.random() }
+          val appliedDescriptions = mutableListOf<ChangeDescription>()
 
-        varFilename to manifest
+          changesToApply.forEach { change ->
+            val r = change.region
+            val rx = (r.x * baseImage.width / 1000.0).toInt()
+            val ry = (r.y * baseImage.height / 1000.0).toInt()
+            val rw = (r.width * baseImage.width / 1000.0).toInt()
+            val rh = (r.height * baseImage.height / 1000.0).toInt()
+
+
+            var patch = change.image!!
+            if (executionConfig.retarget_subimages) {
+              val originalCrop = baseImage.getSubimage(rx, ry, rw, rh)
+              val bounds = ImagePatchLocalization.findBounds(
+                patch,
+                originalCrop,
+                ImagePatchLocalization.SubImageBounds(0, 0, patch.width, patch.height, 0.0)
+              )
+              val bx = bounds.x.coerceIn(0, patch.width)
+              val by = bounds.y.coerceIn(0, patch.height)
+              val bw = bounds.width.coerceAtMost(patch.width - bx)
+              val bh = bounds.height.coerceAtMost(patch.height - by)
+              if (bw > 0 && bh > 0) {
+                patch = patch.getSubimage(bx, by, bw, bh)
+              }
+            }
+
+            // Feathering
+            val featherSize = (Math.min(rw, rh) * 0.1).toInt().coerceAtLeast(1)
+            val featheredPatch = featherImage(patch, featherSize)
+
+            // Resize patch if dimensions drifted slightly (though they shouldn't with standard img2img)
+            g.drawImage(featheredPatch, rx, ry, rw, rh, null)
+
+            appliedDescriptions.add(
+              ChangeDescription(
+                region_label = change.region.label,
+                description = change.description,
+                bounds = listOf(rx, ry, rw, rh),
+                changeId = change.id
+              )
+            )
+          }
+          g.dispose()
+
+          val varFilename = "${prefix}_v${varIdx}.$ext"
+          val varLink = saveImage(canvas, varFilename, task)
+
+          // Save JSON Manifest
+          val manifest = VariationManifest(inputFile, appliedDescriptions)
+          val jsonFile = root.resolve("${prefix}_v${varIdx}.json").toFile()
+          jsonFile.writeText(manifest.toJson())
+
+          tabs["Variation $varIdx"] = """
+              <p><b>Changes:</b> ${appliedDescriptions.joinToString { it.region_label }}</p>
+              <a href="$varLink" target="_blank"><img src="$varLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
+              <br/><a href="${task.linkTo(jsonFile.name)}">View JSON Manifest</a>
+            """.trimIndent()
+
+          varFilename to manifest
+        }
+        generateGame(inputFile, variations, prefix, task)
+
+        val completionMsg =
+          "Generated ${variations.size} variations based on ${generatedChanges.size} unique modifications."
+        if (orchestrationConfig.autoFix) {
+          task.safeComplete(completionMsg.renderMarkdown(), log)
+          resultFn(completionMsg)
+        } else {
+          val footer = acceptButtonFooter(task.ui) {
+            task.safeComplete(completionMsg.renderMarkdown(), log)
+            resultFn(completionMsg)
+          }
+          task.add(footer)
+        }
+
+      } catch (e: Throwable) {
+        log.error("Error in ImageVariationTask: ${e.message}", e)
+        task.error(e)
+        transcript?.write(
+          """
+          ## Error
+          <details>
+          <summary>Stack Trace</summary>
+
+          ```
+          ${e.stackTraceToString()}
+          ```
+          </details>
+        """.trimIndent().toByteArray()
+        )
+        resultFn("Error: ${e.message}")
+      } finally {
+        transcript?.close()
       }
-      generateGame(inputFile, variations, prefix, task)
-
-
-      task.safeComplete("Generated ${variations.size} variations.", log)
-      resultFn("Completed. Generated ${variations.size} variations based on ${generatedChanges.size} unique modifications.")
-
-    } catch (e: Throwable) {
-      log.error("Error in ImageVariationTask", e)
-      task.error(e)
-      resultFn("Error: ${e.message}")
-    } finally {
-      transcript?.close()
     }
   }
 

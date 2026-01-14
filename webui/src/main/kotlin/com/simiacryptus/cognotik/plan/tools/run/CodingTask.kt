@@ -58,8 +58,23 @@ open class CodingTask<T : CodeRuntime>(
                     displayCode(innerTask, codeRequest)
                     statusSB?.clear()
                 } catch (e: Throwable) {
-                    log.warn("Error", e)
+                  log.error("Error in CodingTask start (retryable)", e)
                     innerTask.error(e)
+                  val transcript = innerTask.transcript()
+                  try {
+                    transcript?.write(
+                      """
+                            # Error
+                            <details><summary>Stack Trace</summary>
+                            ```text
+                            ${e.stackTraceToString()}
+                            ```
+                            </details>
+                        """.trimIndent().toByteArray()
+                    )
+                  } finally {
+                    transcript?.close()
+                  }
                 } finally {
                     innerTask.complete()
                 }
@@ -73,8 +88,23 @@ open class CodingTask<T : CodeRuntime>(
                     statusSB?.clear()
                     subTask.update()
                 } catch (e: Throwable) {
-                    log.warn("Error", e)
+                  log.error("Error in CodingTask start", e)
                     subTask.error(e)
+                  val transcript = subTask.transcript()
+                  try {
+                    transcript?.write(
+                      """
+                            # Error
+                            <details><summary>Stack Trace</summary>
+                            ```text
+                            ${e.stackTraceToString()}
+                            ```
+                            </details>
+                        """.trimIndent().toByteArray()
+                    )
+                  } finally {
+                    transcript?.close()
+                  }
                 } finally {
                     subTask.complete()
                 }
@@ -86,12 +116,12 @@ open class CodingTask<T : CodeRuntime>(
         val relativePath = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(System.currentTimeMillis())}.md"
         val (link, file) = Pair(linkTo(relativePath), resolveUserFile(relativePath))
         val markdownTranscript = file?.outputStream()
-        complete(
+      add(
             "Writing $name to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
                 link.removeSuffix(
                     ".md"
                 )
-            }.pdf' target='_blank'>pdf</a>",
+            }.pdf' target='_blank'>pdf</a>".renderMarkdown(),
             additionalClasses = "verbose"
         )
         return markdownTranscript
@@ -124,7 +154,24 @@ open class CodingTask<T : CodeRuntime>(
             }
             displayCodeAndFeedback(task, codeRequest, codeResponse, codeAgent.language)
         } catch (e: Throwable) {
-            log.warn("Error", e)
+          log.error("Error in displayCode", e)
+          task.error(e)
+          val transcript = task.transcript()
+          try {
+            transcript?.write(
+              """
+                    # Error in displayCode
+                    <details><summary>Stack Trace</summary>
+                    
+                    ```text
+                    ${e.stackTraceToString()}
+                    ```
+                    </details>
+                """.trimIndent().toByteArray()
+            )
+          } finally {
+            transcript?.close()
+          }
         }
     }
 
@@ -142,7 +189,12 @@ open class CodingTask<T : CodeRuntime>(
             val string = response.renderedResponse
                 ?: "\n```${language.lowercase(getDefault())}\n${response.code.trim()}\n```\n"
             task.expanded("Code", string.renderMarkdown)
-            task.transcript()?.write("# Generated Code\n$string\n".toByteArray())
+          val transcript = task.transcript()
+          try {
+            transcript?.write("# Generated Code\n$string\n".toByteArray())
+          } finally {
+            transcript?.close()
+          }
             if (autoFix && canPlay) {
                 execute(task, response, codeRequest)
             } else {
@@ -154,8 +206,24 @@ open class CodingTask<T : CodeRuntime>(
                 )
             }
         } catch (e: Throwable) {
+          log.error("Error in displayCodeAndFeedback", e)
             task.error(e)
-            log.warn("Error", e)
+          val transcript = task.transcript()
+          try {
+            transcript?.write(
+              """
+                    # Error in displayCodeAndFeedback
+                    <details><summary>Stack Trace</summary>
+                    
+                    ```text
+                    ${e.stackTraceToString()}
+                    ```
+                    </details>
+                """.trimIndent().toByteArray()
+            )
+          } finally {
+            transcript?.close()
+          }
         }
     }
 
@@ -225,7 +293,7 @@ open class CodingTask<T : CodeRuntime>(
                     ).filter { it.first.isNotBlank() }.map { it.first to it.second }), task = task
             )
         } catch (e: Throwable) {
-            log.warn("Error", e)
+          log.error("Error in feedback", e)
             task.error(e)
         }
     }
@@ -244,12 +312,29 @@ open class CodingTask<T : CodeRuntime>(
                     ).filter { it.first.isNotBlank() }), response
             )
         } catch (e: Throwable) {
-            val message = when {
+          log.error("Execution failed", e)
+          task.error(e)
+          val transcript = task.transcript()
+          try {
+            transcript?.write(
+              """
+                    # Execution Error
+                    <details><summary>Stack Trace</summary>
+                    ```text
+                    ${e.stackTraceToString()}
+                    ```
+                    </details>
+                """.trimIndent().toByteArray()
+            )
+          } finally {
+            transcript?.close()
+          }
+
+          val message = when {
                 e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
                 e is FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
                 else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
             }
-            task.add(message, true, "div", "error")
             displayCode(
                 task, CodeRequest(
                     messages = request.messages + listOf(
@@ -264,30 +349,35 @@ open class CodingTask<T : CodeRuntime>(
         task: SessionTask, response: CodeAgent.CodeResult
     ): String {
         val transcript = task.transcript()
+
+      try {
         val resultValue = response.result.resultValue
         val resultOutput = response.result.resultOutput
         transcript?.write(
-            """
-            # Execution Result
-            <details><summary>Output & Value</summary>
-            
-            ## Output
-            ```text
-            $resultOutput
-            ```
-            ## Value
-            ```text
-            $resultValue
-            ```
-            </details>
-            """.trimIndent().toByteArray()
+          """
+                # Execution Result
+                <details><summary>Output & Value</summary>
+                
+                ## Output
+                ```text
+                $resultOutput
+                ```
+                ## Value
+                ```text
+                $resultValue
+                ```
+                </details>
+                """.trimIndent().toByteArray()
         )
         val tabs = TabbedDisplay(task)
         tabs["Result"] = "```text\n$resultValue\n```".renderMarkdown()
         tabs["Output"] = "```text\n$resultOutput\n```".renderMarkdown()
         return when {
-            resultValue.isBlank() || resultValue.trim().lowercase() == "null" -> "# Output\n```text\n$resultOutput\n```"
-            else -> "# Result\n```\n$resultValue\n```\n\n# Output\n```text\n$resultOutput\n```"
+          resultValue.isBlank() || resultValue.trim().lowercase() == "null" -> "# Output\n```text\n$resultOutput\n```"
+          else -> "# Result\n```\n$resultValue\n```\n\n# Output\n```text\n$resultOutput\n```"
+        }
+      } finally {
+        transcript?.close()
         }
 
     }

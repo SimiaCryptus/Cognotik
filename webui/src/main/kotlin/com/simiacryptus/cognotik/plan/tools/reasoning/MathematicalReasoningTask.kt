@@ -4,11 +4,14 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.charset.StandardCharsets
@@ -19,7 +22,8 @@ import java.util.*
 class MathematicalReasoningTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: MathematicalReasoningTaskExecutionConfigData?
-) : AbstractTask<MathematicalReasoningTask.MathematicalReasoningTaskExecutionConfigData, TaskTypeConfig>(
+) :
+  AbstractTask<MathematicalReasoningTask.MathematicalReasoningTaskExecutionConfigData, MathematicalReasoningTask.MathematicalReasoningTaskTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
@@ -30,7 +34,7 @@ class MathematicalReasoningTask(
           category = "Reasoning",
           taskClass = MathematicalReasoningTask::class.java,
           executionConfigClass = MathematicalReasoningTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
+          taskSettingsClass = MathematicalReasoningTaskTypeConfig::class.java,
           description = "Solve mathematical problems through step-by-step logical reasoning with verifiable steps",
           tooltipHtml = """
                           Uses path search to solve mathematical problems through rigorous step-by-step reasoning.
@@ -38,7 +42,7 @@ class MathematicalReasoningTask(
                               <li>Breaks down complex problems into verifiable atomic steps</li>
                               <li>Each step includes justification and verification</li>
                               <li>Explores multiple solution paths when needed</li>
-                              <li>Backtracks when encountering dead ends</li>
+                             <li>Backtracking when encountering dead ends</li>
                               <li>Provides detailed proof trail with MathJax notation</li>
                               <li>Supports algebra, calculus, number theory, and more</li>
                               <li>Validates intermediate results for correctness</li>
@@ -48,23 +52,143 @@ class MathematicalReasoningTask(
         )
     }
 
-    class MathematicalReasoningTaskExecutionConfigData(
+  class MathematicalReasoningTaskTypeConfig(
+    var promptTemplate: String = """
+            MathematicalReasoning - Solve mathematical problems through step-by-step logical reasoning
+              ** Specify the problem statement clearly
+              ** Define the goal (prove, solve, simplify, etc.)
+              ** Provide any given information or constraints
+              ** Specify the mathematical domain if relevant
+              ** Configure search parameters (depth, alternatives)
+              ** The task will:
+                 - Break down the problem into atomic steps
+                 - Verify each step's mathematical validity
+                 - Explore alternative solution paths
+                 - Backtrack from dead ends
+                 - Generate a complete proof trail
+                 - Output results in MathJax/LaTeX format
+              ** Useful for:
+                 - Solving algebraic equations
+                 - Proving mathematical theorems
+                 - Simplifying complex expressions
+                 - Step-by-step calculus problems
+                 - Number theory proofs
+                 - Geometric proofs
+        """.trimIndent(),
+    var initialStatePrompt: String = """
+            You are a mathematical reasoning expert. Analyze the initial state of a mathematical problem.
+            ## Problem Statement
+            {{problem_statement}}
+            ## Goal
+            {{goal}}
+            ## Given Information
+            {{given_info}}
+            ## Domain
+            {{domain}}
+            ## Instructions
+            Create the initial reasoning step that captures the starting state of the problem.
+            - Restate the problem in precise mathematical terms
+            - Identify the key variables and relationships
+            - Express the initial state in LaTeX notation
+            - Set step_type to "initial"
+            - Set step_id to "S0"
+        """.trimIndent(),
+    var stepGeneratorPrompt: String = """
+            You are a mathematical reasoning expert. Generate the next logical step in solving a problem.
+            ## Problem Statement
+            {{problem_statement}}
+            ## Goal
+            {{goal}}
+            ## Given Information
+            {{given_info}}
+            ## Domain
+            {{domain}}
+            ## Current Progress
+            {{current_progress}}
+            ## Instructions
+            Generate the next logical step that moves us closer to the goal.
+            Requirements:
+            1. The step must be mathematically valid and follow from previous steps
+            2. Provide clear justification (cite theorem, rule, or operation used)
+            3. Include proper LaTeX notation
+            4. Choose appropriate step_type: 'algebraic', 'substitution', 'simplification', 'theorem', 'inference', 'definition'
+            5. Estimate confidence (0-100) based on how certain the step is
+            6. Keep steps atomic - one transformation at a time
+            7. Detail level: {{detail_level}}
+            Focus on making progress toward: {{goal}}
+        """.trimIndent(),
+    var stepVerifierPrompt: String = """
+            You are a mathematical verification expert. Verify if a reasoning step is valid.
+            ## Domain
+            {{domain}}
+            ## Previous Steps
+            {{previous_steps}}
+            ## Step to Verify
+            Statement: {{statement}}
+            LaTeX: {{latex}}
+            Justification: {{justification}}
+            Type: {{step_type}}
+            ## Instructions
+            Verify this step is mathematically valid:
+            1. Check if it follows logically from previous steps
+            2. Verify the mathematical operations are correct
+            3. Confirm the justification is appropriate
+            4. Look for any errors in algebra, logic, or notation
+            Be rigorous but fair - minor notation issues are acceptable if the mathematics is sound.
+        """.trimIndent(),
+    var goalCheckerPrompt: String = """
+            You are a mathematical reasoning expert. Check if the goal has been reached.
+            ## Goal
+            {{goal}}
+            ## Current State
+            {{current_state}}
+            ## Full Progress
+            {{full_progress}}
+            ## Instructions
+            Determine if the goal has been achieved:
+            1. Compare the current state to the goal
+            2. Estimate progress (0-100%)
+            3. If not complete, describe what remains
+            4. Be precise about whether the goal is fully achieved
+        """.trimIndent(),
+    var alternativeGeneratorPrompt: String = """
+            You are a mathematical reasoning expert. Generate alternative approaches.
+            ## Problem
+            {{problem_statement}}
+            ## Goal
+            {{goal}}
+            ## Domain
+            {{domain}}
+            ## Current Path (last 3 steps)
+            {{current_path}}
+            ## Instructions
+            Generate 2-3 alternative next steps that could be taken from the current state.
+            Each alternative should:
+            1. Be a valid mathematical operation
+            2. Take a different approach than the current path
+            3. Have potential to reach the goal
+            Rank them by likelihood of success.
+        """.trimIndent()
+  ) : TaskTypeConfig()
+
+
+  class MathematicalReasoningTaskExecutionConfigData(
         @Description("The mathematical problem or theorem to solve/prove")
-        val problem_statement: String? = null,
+        var problem_statement: String? = null,
         @Description("The goal or target result (e.g., 'prove equality', 'find x', 'simplify expression')")
-        val goal: String? = null,
+        var goal: String? = null,
         @Description("Known facts, axioms, or given information")
-        val given_information: List<String>? = null,
+        var given_information: List<String>? = null,
         @Description("Mathematical domain (e.g., 'algebra', 'calculus', 'number_theory', 'geometry', 'linear_algebra')")
-        val domain: String? = "general",
+        var domain: String? = "general",
         @Description("Maximum depth of reasoning steps (default: 20)")
-        val max_depth: Int = 20,
+        var max_depth: Int = 20,
         @Description("Maximum number of alternative paths to explore (default: 3)")
-        val max_alternatives: Int = 3,
+        var max_alternatives: Int = 3,
         @Description("Whether to show all explored paths or just the successful one")
-        val show_all_paths: Boolean = false,
+        var show_all_paths: Boolean = false,
         @Description("Level of detail in explanations ('brief', 'standard', 'detailed')")
-        val detail_level: String = "standard",
+        var detail_level: String = "standard",
 
         task_description: String? = null,
         task_dependencies: List<String>? = null,
@@ -160,28 +284,7 @@ class MathematicalReasoningTask(
     )
 
     override fun promptSegment(): String {
-        return """
-MathematicalReasoning - Solve mathematical problems through step-by-step logical reasoning
-  ** Specify the problem statement clearly
-  ** Define the goal (prove, solve, simplify, etc.)
-  ** Provide any given information or constraints
-  ** Specify the mathematical domain if relevant
-  ** Configure search parameters (depth, alternatives)
-  ** The task will:
-     - Break down the problem into atomic steps
-     - Verify each step's mathematical validity
-     - Explore alternative solution paths
-     - Backtrack from dead ends
-     - Generate a complete proof trail
-     - Output results in MathJax/LaTeX format
-  ** Useful for:
-     - Solving algebraic equations
-     - Proving mathematical theorems
-     - Simplifying complex expressions
-     - Step-by-step calculus problems
-     - Number theory proofs
-     - Geometric proofs
-        """.trimIndent()
+      return typeConfig?.promptTemplate ?: ""
     }
 
     override fun run(
@@ -192,18 +295,18 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
         orchestrationConfig: OrchestrationConfig
     ) {
         val transcript = task.transcript()
+      task.ui.pool.submit {
         try {
             val startTime = System.currentTimeMillis()
-            log.info("Starting MathematicalReasoningTask with problem: ${executionConfig?.problem_statement?.take(100)}")
+          log.info("MathematicalReasoningTask started. Problem: ${executionConfig?.problem_statement?.take(50)}...")
 
             // Validate configuration
             executionConfig?.validate()?.let { errorMessage ->
-                log.error("Configuration validation failed: $errorMessage")
-                task.safeComplete("VALIDATION ERROR: $errorMessage", log)
+              log.error("MathematicalReasoningTask validation failed: $errorMessage")
                 task.error(ValidatedObject.ValidationError(errorMessage, executionConfig))
-                transcript?.close()
+              transcript?.write("## Validation Error\n$errorMessage".toByteArray(StandardCharsets.UTF_8))
                 resultFn("VALIDATION ERROR: $errorMessage")
-                return
+              return@submit
             }
 
             val problemStatement = executionConfig?.problem_statement ?: ""
@@ -258,8 +361,16 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
                 appendLine()
                 appendLine("- ⏳ Analyzing problem...")
             }
-            overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent, ui = task.ui))
-            transcript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
+          overviewTask.add(overviewContent.renderMarkdown())
+          transcript?.write(
+            """
+                <details>
+                <summary>Task Configuration & Context</summary>
+                
+                $overviewContent
+                </details>
+            """.trimIndent().toByteArray(StandardCharsets.UTF_8)
+          )
 
             // Gather context
             val priorContext = getPriorCode(agent.executionState)
@@ -283,14 +394,10 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
                 val (currentPath, priority) = pathQueue.poll()
                 pathsExplored++
 
-                log.info("Exploring path $pathsExplored with ${currentPath.size} steps, priority=$priority")
 
-                overviewTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        "\n- 🔍 Exploring path $pathsExplored (${currentPath.size} steps)...",
-                        ui = task.ui
-                    )
-                )
+              log.info("Exploring path $pathsExplored. Steps: ${currentPath.size}, Priority: $priority")
+
+              overviewTask.add("\n- 🔍 Exploring path $pathsExplored (${currentPath.size} steps)...".renderMarkdown())
 
                 // Explore this path
                 val result = explorePath(
@@ -311,7 +418,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
 
                 if (result.reached_goal) {
                     successfulPath = result
-                    log.info("Found successful path with ${result.steps.size} steps")
+                  log.info("MathematicalReasoningTask found solution in ${result.steps.size} steps.")
                 } else if (result.steps.size < maxDepth) {
                     // Generate alternative branches from the last valid step
                     val alternatives = generateAlternatives(
@@ -334,7 +441,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
             if (successfulPath != null) {
                 val proofTask = tabs.newTask("Formal Proof")
                 val proofContent = generateFormalProof(successfulPath, problemStatement, goal, detailLevel)
-                proofTask.add(MarkdownUtil.renderMarkdown(proofContent, ui = task.ui))
+              proofTask.add(proofContent.renderMarkdown())
                 proofTask.complete()
                 transcript?.write("\n\n---\n\n# Formal Proof\n\n".toByteArray(StandardCharsets.UTF_8))
                 transcript?.write(proofContent.toByteArray(StandardCharsets.UTF_8))
@@ -366,8 +473,16 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
                         appendLine()
                     }
                 }
-                pathsTask.add(MarkdownUtil.renderMarkdown(pathsContent, ui = task.ui))
+              pathsTask.add(pathsContent.renderMarkdown())
                 pathsTask.complete()
+              transcript?.write(
+                """
+                    <details>
+                    <summary>All Explored Reasoning Paths</summary>
+                    $pathsContent
+                    </details>
+                """.trimIndent().toByteArray(StandardCharsets.UTF_8)
+              )
             }
 
             // Final summary
@@ -397,11 +512,10 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
                         }")
                 }
             }
-            overviewTask.add(MarkdownUtil.renderMarkdown(finalOverview, ui = task.ui))
+          overviewTask.add(finalOverview.renderMarkdown())
             overviewTask.complete()
             solutionTask.complete()
             transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))
-            transcript?.close()
 
             // Generate result
             val resultMessage = if (successfulPath != null) {
@@ -436,15 +550,27 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
                 "Unable to find a complete solution after exploring $pathsExplored paths. See the Solution tab for partial progress."
             }
 
-            task.safeComplete("Mathematical reasoning complete in ${totalTime / 1000}s", log)
+          task.complete("Mathematical reasoning complete in ${totalTime / 1000}s".renderMarkdown())
             resultFn(resultMessage)
 
         } catch (e: Exception) {
-            log.error("Error during MathematicalReasoningTask execution", e)
-            transcript?.close()
             task.error(e)
-            task.safeComplete("Failed with error: ${e.message}", log)
+          log.error("MathematicalReasoningTask failed: ${e.message}", e)
+          transcript?.write(
+            """
+                <details>
+                <summary>Error Stack Trace</summary>
+                
+                ```
+                ${e.stackTraceToString()}
+                ```
+                </details>
+            """.trimIndent().toByteArray(StandardCharsets.UTF_8)
+          )
             resultFn("ERROR: ${e.message}")
+        } finally {
+          transcript?.close()
+        }
         }
     }
 
@@ -456,31 +582,16 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
         api: ChatInterface
     ): ReasoningStep {
         return try {
+          val prompt = typeConfig?.initialStatePrompt
+            ?.replace("{{problem_statement}}", problemStatement)
+            ?.replace("{{goal}}", goal)
+            ?.replace("{{given_info}}", givenInfo.joinToString("\n") { "- $it" }.ifEmpty { "None specified" })
+            ?.replace("{{domain}}", domain) ?: ""
             ParsedAgent(
                 resultClass = ReasoningStep::class.java,
-                prompt = """
-You are a mathematical reasoning expert. Analyze the initial state of a mathematical problem.
 
-## Problem Statement
-$problemStatement
 
-## Goal
-$goal
-
-## Given Information
-${givenInfo.joinToString("\n") { "- $it" }.ifEmpty { "None specified" }}
-
-## Domain
-$domain
-
-## Instructions
-Create the initial reasoning step that captures the starting state of the problem.
-- Restate the problem in precise mathematical terms
-- Identify the key variables and relationships
-- Express the initial state in LaTeX notation
-- Set step_type to "initial"
-- Set step_id to "S0"
-                """.trimIndent(),
+              prompt = prompt,
                 model = api,
                 temperature = 0.3,
                 name = "InitialStateAnalyzer",
@@ -532,18 +643,13 @@ Create the initial reasoning step that captures the starting state of the proble
             }
             appendLine("---")
             appendLine()
-        }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
+        }.renderMarkdown())
 
         while (depth < maxDepth) {
             // Check if we've reached the goal
             val goalCheck = checkGoal(steps, goal, api)
             if (goalCheck.goal_reached) {
-                solutionTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        "\n✅ **Goal Reached!**\n\n${goalCheck.explanation}\n",
-                        ui = task.ui
-                    )
-                )
+              solutionTask.add("\n✅ **Goal Reached!**\n\n${goalCheck.explanation}\n".renderMarkdown())
                 return ReasoningPath(
                     steps = steps,
                     reached_goal = true,
@@ -556,7 +662,7 @@ Create the initial reasoning step that captures the starting state of the proble
             val nextStep = generateNextStep(steps, problemStatement, goal, givenInfo, domain, detailLevel, api)
 
             if (nextStep == null || nextStep.statement.isBlank()) {
-                solutionTask.add(MarkdownUtil.renderMarkdown("\n⚠️ **No valid next step found**\n", ui = task.ui))
+              solutionTask.add("\n⚠️ **No valid next step found**\n".renderMarkdown())
                 return ReasoningPath(
                     steps = steps,
                     reached_goal = false,
@@ -576,7 +682,7 @@ Create the initial reasoning step that captures the starting state of the proble
                     appendLine()
                     verification.errors.forEach { appendLine("- ❌ $it") }
                     appendLine()
-                }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
+                }.renderMarkdown())
 
                 // Try to recover with suggestions
                 if (verification.suggestions.isNotEmpty()) {
@@ -617,7 +723,7 @@ Create the initial reasoning step that captures the starting state of the proble
                     appendLine("*Note:* ${verifiedStep.notes}")
                 }
                 appendLine()
-            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
+            }.renderMarkdown())
         }
 
         return ReasoningPath(
@@ -638,44 +744,21 @@ Create the initial reasoning step that captures the starting state of the proble
         api: ChatInterface
     ): ReasoningStep? {
         return try {
-            ParsedAgent(
-                resultClass = ReasoningStep::class.java,
-                prompt = """
-You are a mathematical reasoning expert. Generate the next logical step in solving a problem.
+          val progress = currentSteps.mapIndexed { i, step ->
+            "Step $i: ${step.statement}\n  LaTeX: ${step.latex}\n  Justification: ${step.justification}"
+          }.joinToString("\n\n")
+          val prompt = typeConfig?.stepGeneratorPrompt
+            ?.replace("{{problem_statement}}", problemStatement)
+            ?.replace("{{goal}}", goal)
+            ?.replace("{{given_info}}", givenInfo.joinToString("\n") { "- $it" }.ifEmpty { "None specified" })
+            ?.replace("{{domain}}", domain)
+            ?.replace("{{current_progress}}", progress)
+            ?.replace("{{detail_level}}", detailLevel) ?: ""
+          ParsedAgent(
+            resultClass = ReasoningStep::class.java,
 
-## Problem Statement
-$problemStatement
 
-## Goal
-$goal
-
-## Given Information
-${givenInfo.joinToString("\n") { "- $it" }.ifEmpty { "None specified" }}
-
-## Domain
-$domain
-
-## Current Progress
-${
-                    currentSteps.mapIndexed { i, step ->
-                        "Step $i: ${step.statement}\n  LaTeX: ${step.latex}\n  Justification: ${step.justification}"
-                    }.joinToString("\n\n")
-                }
-
-## Instructions
-Generate the next logical step that moves us closer to the goal.
-
-Requirements:
-1. The step must be mathematically valid and follow from previous steps
-2. Provide clear justification (cite theorem, rule, or operation used)
-3. Include proper LaTeX notation
-4. Choose appropriate step_type: 'algebraic', 'substitution', 'simplification', 'theorem', 'inference', 'definition'
-5. Estimate confidence (0-100) based on how certain the step is
-6. Keep steps atomic - one transformation at a time
-7. Detail level: $detailLevel
-
-Focus on making progress toward: $goal
-                """.trimIndent(),
+            prompt = prompt,
                 model = api,
                 temperature = 0.4,
                 name = "StepGenerator",
@@ -694,36 +777,21 @@ Focus on making progress toward: $goal
         api: ChatInterface
     ): StepVerification {
         return try {
+          val prev = previousSteps.takeLast(3).mapIndexed { i, s ->
+            "Step ${previousSteps.size - 3 + i}: ${s.statement}\n  LaTeX: ${s.latex}"
+          }.joinToString("\n\n")
+          val prompt = typeConfig?.stepVerifierPrompt
+            ?.replace("{{domain}}", domain)
+            ?.replace("{{previous_steps}}", prev)
+            ?.replace("{{statement}}", step.statement)
+            ?.replace("{{latex}}", step.latex)
+            ?.replace("{{justification}}", step.justification)
+            ?.replace("{{step_type}}", step.step_type) ?: ""
             ParsedAgent(
                 resultClass = StepVerification::class.java,
-                prompt = """
-You are a mathematical verification expert. Verify if a reasoning step is valid.
 
-## Domain
-$domain
 
-## Previous Steps
-${
-                    previousSteps.takeLast(3).mapIndexed { i, s ->
-                        "Step ${previousSteps.size - 3 + i}: ${s.statement}\n  LaTeX: ${s.latex}"
-                    }.joinToString("\n\n")
-                }
-
-## Step to Verify
-Statement: ${step.statement}
-LaTeX: ${step.latex}
-Justification: ${step.justification}
-Type: ${step.step_type}
-
-## Instructions
-Verify this step is mathematically valid:
-1. Check if it follows logically from previous steps
-2. Verify the mathematical operations are correct
-3. Confirm the justification is appropriate
-4. Look for any errors in algebra, logic, or notation
-
-Be rigorous but fair - minor notation issues are acceptable if the mathematics is sound.
-                """.trimIndent(),
+              prompt = prompt,
                 model = api,
                 temperature = 0.2,
                 name = "StepVerifier",
@@ -746,31 +814,17 @@ Be rigorous but fair - minor notation issues are acceptable if the mathematics i
         api: ChatInterface
     ): GoalCheck {
         return try {
+          val latest = steps.lastOrNull()?.let { "Latest step: ${it.statement}\nLaTeX: ${it.latex}" } ?: "No steps yet"
+          val full = steps.takeLast(5).mapIndexed { i, s -> "${i + 1}. ${s.statement}" }.joinToString("\n")
+          val prompt = typeConfig?.goalCheckerPrompt
+            ?.replace("{{goal}}", goal)
+            ?.replace("{{current_state}}", latest)
+            ?.replace("{{full_progress}}", full) ?: ""
             ParsedAgent(
                 resultClass = GoalCheck::class.java,
-                prompt = """
-You are a mathematical reasoning expert. Check if the goal has been reached.
 
-## Goal
-$goal
 
-## Current State
-${
-                    steps.lastOrNull()?.let {
-                        "Latest step: ${it.statement}\nLaTeX: ${it.latex}"
-                    } ?: "No steps yet"
-                }
-
-## Full Progress
-${steps.takeLast(5).mapIndexed { i, s -> "${i + 1}. ${s.statement}" }.joinToString("\n")}
-
-## Instructions
-Determine if the goal has been achieved:
-1. Compare the current state to the goal
-2. Estimate progress (0-100%)
-3. If not complete, describe what remains
-4. Be precise about whether the goal is fully achieved
-                """.trimIndent(),
+              prompt = prompt,
                 model = api,
                 temperature = 0.2,
                 name = "GoalChecker",
@@ -795,36 +849,18 @@ Determine if the goal has been achieved:
         api: ChatInterface
     ): NextStepOptions {
         return try {
+          val path = currentPath.takeLast(3).mapIndexed { i, s -> "Step ${currentPath.size - 3 + i}: ${s.statement}" }
+            .joinToString("\n")
+          val prompt = typeConfig?.alternativeGeneratorPrompt
+            ?.replace("{{problem_statement}}", problemStatement)
+            ?.replace("{{goal}}", goal)
+            ?.replace("{{domain}}", domain)
+            ?.replace("{{current_path}}", path) ?: ""
             ParsedAgent(
                 resultClass = NextStepOptions::class.java,
-                prompt = """
-You are a mathematical reasoning expert. Generate alternative approaches.
 
-## Problem
-$problemStatement
 
-## Goal
-$goal
-
-## Domain
-$domain
-
-## Current Path (last 3 steps)
-${
-                    currentPath.takeLast(3).mapIndexed { i, s ->
-                        "Step ${currentPath.size - 3 + i}: ${s.statement}"
-                    }.joinToString("\n")
-                }
-
-## Instructions
-Generate 2-3 alternative next steps that could be taken from the current state.
-Each alternative should:
-1. Be a valid mathematical operation
-2. Take a different approach than the current path
-3. Have potential to reach the goal
-
-Rank them by likelihood of success.
-                """.trimIndent(),
+              prompt = prompt,
                 model = api,
                 temperature = 0.6,
                 name = "AlternativeGenerator",

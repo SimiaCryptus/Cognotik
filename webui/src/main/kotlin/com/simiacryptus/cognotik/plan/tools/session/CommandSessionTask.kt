@@ -1,10 +1,14 @@
 package com.simiacryptus.cognotik.plan.tools.session
 
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -80,15 +84,18 @@ class CommandSessionTask(
 
 
     class CommandSessionTaskExecutionConfigData(
-        @Description("The command to start the interactive session") val command: List<String> = listOf("bash", "-i"),
-        @Description("Commands to send to the interactive session") val inputs: List<String> = listOf(),
-        @Description("Session ID for reusing existing sessions") val sessionId: String? = null,
-        @Description("Timeout in milliseconds for commands to finish") val timeout: Long = TIMEOUT_MS,
-        @Description("Timeout in milliseconds for output to finish") val idle_timeout: Long = 2000,
-        @Description("Whether to use a pseudo-terminal (requires pty4j)") val tty: Boolean = false,
-        task_description: String? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = null,
+      @Description("The command to start the interactive session (e.g. ['bash', '-i'] or ['python3', '-i'])") var command: List<String> = listOf(
+        "bash",
+        "-i"
+      ),
+      @Description("List of strings to send to the session's standard input") var inputs: List<String> = listOf(),
+      @Description("Optional ID to reuse an existing session across multiple tasks") var sessionId: String? = null,
+      @Description("Maximum time in milliseconds to wait for all commands to complete") var timeout: Long = TIMEOUT_MS,
+      @Description("Maximum time in milliseconds to wait for output after a command is sent") var idle_timeout: Long = 2000,
+      @Description("Whether to allocate a pseudo-terminal (useful for interactive tools or colored output)") var tty: Boolean = false,
+      @Description("A description of what this specific task instance is intended to achieve") task_description: String? = null,
+      @Description("IDs of tasks that must complete before this one") task_dependencies: List<String>? = null,
+      @Description("Internal state tracking for the task") state: TaskState? = null,
     ) : TaskExecutionConfig(
         task_type = CommandSession.name,
         task_description = task_description,
@@ -106,10 +113,11 @@ class CommandSessionTask(
             "  ** Session $id ($pendingBytes bytes pending output, alive=$alive)"
         }
         return """
-           CommandSession - Create and manage a stateful interactive terminal session
-           ** Specify the command to start an interactive session, or sessionId to reuse an existing one
-           ** Provide inputs to send to the session
-           ** Session persists between commands for stateful interactions
+           CommandSession - Create and manage a stateful interactive terminal session.
+           - Use this for running shell commands, interactive scripts (Python, Node), or managing long-running processes.
+           - Specify 'command' to start a new session (e.g., ["python3", "-i"]).
+           - Provide 'inputs' as a list of strings to send to the session's stdin.
+           - Use 'sessionId' to maintain state (variables, directory) across multiple task calls.
            
            System Information:
            - OS: ${System.getProperty("os.name")} ${System.getProperty("os.version")} (${System.getProperty("os.arch")})
@@ -127,11 +135,11 @@ class CommandSessionTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        executionConfig ?: throw IllegalStateException("Execution config is null")
+      val executionConfig = executionConfig ?: throw IllegalStateException("Execution config is null")
 
 
         val resultBuffer = StringBuffer()
-        val execute: (Boolean) -> Unit = { shouldComplete ->
+      val executeAction: (Boolean) -> Unit = { shouldComplete ->
             task.ui.pool.submit {
                 task.header("Command Session Results")
                 val initialText = buildString {
@@ -150,7 +158,7 @@ class CommandSessionTask(
                     }
 
                     sessionState = executionConfig.sessionId?.let { id -> activeSessions[id] } ?: run {
-                        val command = executionConfig!!.command
+                      val command = executionConfig.command
                         val executable = command.firstOrNull()
                         val resolvedCommand = if (executable != null) {
                             val tools =
@@ -194,10 +202,10 @@ class CommandSessionTask(
                     executionConfig.inputs.forEachIndexed { index, input ->
                         val inputHeader = "\n### Input ${index + 1}"
                         val inputBlock = "```\n$input\n```"
-                        val text = "$inputHeader\n$inputBlock"
-                        transcript?.write(text.toByteArray())
-                        task.add(text.renderMarkdown())
-                        resultBuffer.appendLine(text)
+                      val inputText = "$inputHeader\n$inputBlock"
+                      transcript?.write("## Executing Command\n$inputText\n".toByteArray())
+                      task.add(inputText.renderMarkdown())
+                      resultBuffer.appendLine(inputText)
                         val output = try {
                             writer.println(input)
                             writer.flush()
@@ -208,13 +216,21 @@ class CommandSessionTask(
                         } finally {
                             log.info("Completed input: $input")
                         }
-                        val outputHeader = "Output:"
                         val outputContent = output.take(10000)
                         val outputBlock = "```\n$outputContent\n```"
-                        val value = "\n\n$outputHeader\n$outputBlock"
-                        transcript?.write(value.toByteArray())
-                        task.add(value.renderMarkdown())
-                        resultBuffer.appendLine(value)
+
+                      val transcriptOutput = """
+                            <details>
+                            <summary>Output for Input ${index + 1}</summary>
+                            
+                            $outputBlock
+                            </details>
+                        """.trimIndent()
+                      transcript?.write(transcriptOutput.toByteArray())
+
+                      val uiOutput = "\n\nOutput:\n$outputBlock"
+                      task.add(uiOutput.renderMarkdown())
+                      resultBuffer.appendLine(uiOutput)
                     }
                     if (shouldComplete) {
                         task.complete("Command session finished successfully.")
@@ -227,15 +243,18 @@ class CommandSessionTask(
                     resultBuffer.appendLine(errorResult)
                     log.error("Error in CommandSessionTask", e)
                     task.error(e)
+                  transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
                     if (shouldComplete) {
                         resultFn(resultBuffer.toString())
                     }
+                } finally {
+                  transcript?.close()
                 }
             }
         }
 
         if (orchestrationConfig.autoFix) {
-            execute(true)
+          executeAction(true)
         } else {
             task.header("Command Session Plan")
             val plan = buildString {
@@ -247,7 +266,7 @@ class CommandSessionTask(
             task.add(plan.renderMarkdown())
 
             task.add(task.ui.hrefLink("Run Commands", "btn btn-primary") {
-                execute(false)
+              executeAction(false)
             })
 
             task.add(acceptButtonFooter(task.ui) {

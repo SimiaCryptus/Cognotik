@@ -6,8 +6,8 @@ import com.simiacryptus.cognotik.agents.ParsedImageAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -19,6 +19,7 @@ import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
+import java.util.concurrent.Semaphore
 import javax.imageio.ImageIO
 
 class SegmentedImageGenerationTask(
@@ -31,24 +32,25 @@ class SegmentedImageGenerationTask(
 
   class SegmentedImageGenerationConfig(
     @Description("The output file path for the final high-res image")
-    val output_file: String? = "",
+    var output_file: String? = "",
     @Description("List of prompts, one for each level of detail. The first is for the base image.")
-    val prompts: List<String>? = null,
+    var prompts: List<String>? = null,
     @Description("Optional input file path to use as the base image instead of generating one.")
-    val input_file: String? = null,
+    var input_file: String? = null,
     @Description("Upscale factor per level (e.g., 2.0 for 2x size, 4.0 for 4x size)")
-    val upscale_factor: Double = 2.0,
+    var upscale_factor: Double = 2.0,
     @Description("Minimum width/height (in pixels) of a region to trigger refinement.")
-    val min_region_size: Int = 128,
+    var min_region_size: Int = 128,
     @Description("Maximum aspect ratio for regions (e.g., 3.0 means max 3:1 or 1:3).")
-    val max_aspect_ratio: Double = 3.0,
+    var max_aspect_ratio: Double = 3.0,
     @Description("Output image file extension (e.g., 'jpg', 'png').")
-    val extension: String = "png",
+    var extension: String = "png",
     @Description("Overlap between tiles as a fraction of tile size (0.0-1.0). Defaults to 0.15.")
-    val tile_overlap: Double = 0.15,
+    var tile_overlap: Double = 0.15,
+    @Description("Whether to attempt to re-align sub-images to the base image to prevent drift.")
+    var retarget_subimages: Boolean = true,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
-    val retarget_subimages: Boolean = true,
   ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = SegmentedImageGeneration.name,
     task_description = prompts?.firstOrNull(),
@@ -111,6 +113,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
     val transcript = task.transcript()
     val tabs = TabbedDisplay(task)
     val logTab = tabs.newTask("Progress")
+    val semaphore = Semaphore(0)
 
     task.ui.pool.submit {
       try {
@@ -123,6 +126,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
           appendLine("* **Max Depth:** $maxDepth")
           appendLine("* **Upscale Factor:** $upscaleFactor")
           appendLine("* **Min Region Size:** $minSize")
+          appendLine("* **Retarget Sub-images:** ${executionConfig.retarget_subimages}")
         }
         logTab.add(configInfo.renderMarkdown())
         transcript?.write("# Segmented Image Generation\n\n$configInfo\n\n".toByteArray())
@@ -415,13 +419,25 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
           appendLine("![Final Image]($finalLink)")
         }.toByteArray())
 
-        task.safeComplete("Generated high-res image: ${finalImage.width}x${finalImage.height}", log)
-        resultFn("Generated ultra-high-resolution image saved to $outputFile. Final dimensions: ${finalImage.width}x${finalImage.height}.")
+        val completionMsg =
+          "Generated ultra-high-resolution image saved to $outputFile. Final dimensions: ${finalImage.width}x${finalImage.height}."
+        if (orchestrationConfig.autoFix) {
+          task.safeComplete(completionMsg.renderMarkdown(), log)
+          resultFn(completionMsg)
+        } else {
+          val footer = acceptButtonFooter(task.ui) {
+            task.complete()
+            semaphore.release()
+          }
+          task.add(footer)
+          semaphore.acquire()
+          resultFn(completionMsg)
+        }
 
       } catch (e: Exception) {
-        log.error("Error in SegmentedImageGeneration", e)
         task.error(e)
-        transcript?.write("\n## Error\n${e.message}\n".toByteArray())
+        log.error("Error in SegmentedImageGeneration", e)
+        transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
         resultFn("Error generating image: ${e.message}")
       } finally {
         transcript?.close()

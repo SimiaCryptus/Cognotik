@@ -1,17 +1,20 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -26,45 +29,45 @@ class TutorialGenerationTask(
 
     class TutorialGenerationTaskExecutionConfigData(
         @Description("The final outcome the user should achieve (e.g., 'deploy a web app to the cloud', 'train a simple machine learning model')")
-        val goal: String? = null,
+        var goal: String? = null,
 
         @Description("The environment the tutorial is for (e.g., 'Windows', 'Linux', 'macOS', 'VS Code', 'Docker')")
-        val target_platform: String = "cross-platform",
+        var target_platform: String = "cross-platform",
 
         @Description("Whether to add placeholders like '[Screenshot of the successful output]' where visuals would be needed")
-        val include_screenshots_placeholders: Boolean = true,
+        var include_screenshots_placeholders: Boolean = true,
 
         @Description("Controls how much explanatory text is included with each step ('concise', 'detailed', 'verbose')")
-        val verbosity: String = "detailed",
+        var verbosity: String = "detailed",
 
         @Description("Whether to add a common errors and troubleshooting section")
-        val include_troubleshooting: Boolean = true,
+        var include_troubleshooting: Boolean = true,
 
         @Description("Target audience skill level (e.g., 'beginner', 'intermediate', 'advanced')")
-        val skill_level: String = "beginner",
+        var skill_level: String = "beginner",
 
         @Description("Estimated time to complete the tutorial in minutes")
-        val estimated_duration: Int = 30,
+        var estimated_duration: Int = 30,
 
         @Description("Whether to include code examples and commands")
-        val include_code_examples: Boolean = true,
+        var include_code_examples: Boolean = true,
 
         @Description("Whether to include validation steps to verify success")
-        val include_validation_steps: Boolean = true,
+        var include_validation_steps: Boolean = true,
 
         @Description("Whether to include a 'What You'll Learn' section")
-        val include_learning_objectives: Boolean = true,
+        var include_learning_objectives: Boolean = true,
 
         @Description("Whether to include a 'Next Steps' section for further learning")
-        val include_next_steps: Boolean = true,
+        var include_next_steps: Boolean = true,
 
         @Description("Number of main steps to break the tutorial into")
-        val target_step_count: Int = 7,
+        var target_step_count: Int = 7,
 
         @Description("Related files or documentation to reference")
-        val related_files: List<String>? = null,
+        var related_files: List<String>? = null,
         @Description("Optional input files to use as context (supports glob patterns, e.g. **/*.kt)")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
 
 
         task_description: String? = null,
@@ -257,10 +260,10 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val startTime = System.currentTimeMillis()
-        log.info("Starting TutorialGenerationTask for goal: '${executionConfig?.goal}'")
-        val transcript = task.transcript()
-        val tutorialOutputFile = createTutorialOutputFile(task)
+        task.ui.pool.submit {
+            val startTime = System.currentTimeMillis()
+            log.info("Starting TutorialGenerationTask for goal: '${executionConfig?.goal}'")
+            val transcript = task.transcript()
 
         // Validate configuration
         executionConfig?.validate()?.let { validationError ->
@@ -268,7 +271,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
             task.safeComplete("CONFIGURATION ERROR: $validationError", log)
             task.error(ValidatedObject.ValidationError(validationError, executionConfig))
             resultFn("CONFIGURATION ERROR: $validationError")
-            return
+            return@submit
         }
 
         val goal = executionConfig?.goal
@@ -276,10 +279,11 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
             log.error("No goal specified for tutorial generation")
             task.safeComplete("CONFIGURATION ERROR: No goal specified", log)
             resultFn("CONFIGURATION ERROR: No goal specified")
-            return
+            return@submit
         }
 
-        val api = defaultSmart ?: return
+            val api = defaultSmart ?: return@submit
+            try {
 
         val tabs = TabbedDisplay(task)
 
@@ -330,11 +334,10 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
         try {
             // Gather context
             val priorContext = getPriorCode(agent.executionState)
-            val contextFiles = getContextFiles()
-            val inputFileContent = getInputFileCode()
+            val contextFiles = getInputFileContent(executionConfig.related_files, root)
+            val inputFileContent = getInputFileContent(executionConfig.input_files, root)
             // Combine all context
             buildString {
-                if (inputFileContent.isNotBlank()) appendLine(inputFileContent)
                 if (contextFiles.isNotBlank()) appendLine(contextFiles)
             }
 
@@ -345,20 +348,18 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
                     buildString {
                         appendLine("# Context & Resources")
                         appendLine()
+                        appendLine("<details><summary>Raw Context Data</summary>")
                         if (inputFileContent.isNotBlank()) {
                             appendLine("## Input Files")
-                            appendLine(inputFileContent.truncateForDisplay(2000))
+                            appendLine(inputFileContent)
                             appendLine()
                         }
                         if (priorContext.isNotBlank()) {
                             appendLine("## Prior Context")
-                            appendLine(priorContext.truncateForDisplay(2000))
+                            appendLine(priorContext)
                             appendLine()
                         }
-                        if (contextFiles.isNotBlank()) {
-                            appendLine("## Related Files")
-                            appendLine(contextFiles.truncateForDisplay(2000))
-                        }
+                        appendLine("</details>")
                     }.renderMarkdown
                 )
                 contextTask.update()
@@ -445,7 +446,7 @@ Ensure the outline:
                 outlineTask.error(ValidatedObject.ValidationError(validationError, outline))
                 task.safeComplete("Outline validation failed: $validationError", log)
                 resultFn("ERROR: Outline validation failed: $validationError")
-                return
+                return@submit
             }
 
             log.info("Generated outline: ${outline.steps.size} steps, ${outline.prerequisites.size} prerequisites")
@@ -1094,7 +1095,7 @@ Make suggestions:
             }
 
             finalTask.add(finalTutorial.renderMarkdown)
-            tutorialOutputFile?.write(finalTutorial.toByteArray(Charsets.UTF_8))
+            val tutorialUrl = task.saveFile("tutorial.md", finalTutorial.toByteArray(Charsets.UTF_8))
             finalTask.update()
             finalTask.complete()
 
@@ -1114,7 +1115,6 @@ Make suggestions:
                 }\n".toByteArray()
             )
             transcript?.flush()
-            transcript?.close()
 
 
             overviewTask.add(
@@ -1125,7 +1125,7 @@ Make suggestions:
                     appendLine("## ✅ Generation Complete")
                     appendLine()
                     appendLine("**Output Files:**")
-                    appendLine("- [Complete Tutorial](tutorial.md)")
+                    appendLine("- [Complete Tutorial]($tutorialUrl)")
                     appendLine("- [Transcript](transcript.md)")
                     appendLine()
                     appendLine("**Statistics:**")
@@ -1149,9 +1149,6 @@ Make suggestions:
             overviewTask.update()
             overviewTask.complete()
 
-            // Write final tutorial to file
-            tutorialOutputFile?.flush()
-            tutorialOutputFile?.close()
 
             // Concise summary for resultFn
             val finalResult = buildString {
@@ -1177,7 +1174,7 @@ Make suggestions:
                 appendLine()
                 appendLine("## Output Files")
                 appendLine()
-                appendLine("- **Complete Tutorial:** [tutorial.md](tutorial.md)")
+                appendLine("- **Complete Tutorial:** [tutorial.md]($tutorialUrl)")
                 appendLine("- **Transcript:** [transcript.md](transcript.md)")
                 appendLine()
                 appendLine("**Generation Time:** ${totalTime / 1000.0}s")
@@ -1189,12 +1186,10 @@ Make suggestions:
             resultFn(finalResult)
 
         } catch (e: Exception) {
-            log.error("Error during tutorial generation", e)
+            log.error("Error during tutorial generation: ${e.message}")
             task.error(e)
             transcript?.write("\n## Error Occurred\n\n".toByteArray())
-            transcript?.write("**Error:** ${e.message}\n\n".toByteArray())
-            transcript?.flush()
-            transcript?.close()
+            transcript?.write("<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
 
             overviewTask.add(
                 buildString {
@@ -1210,7 +1205,6 @@ Make suggestions:
             )
             overviewTask.update()
             task.update()
-            tutorialOutputFile?.close()
 
             val errorOutput = buildString {
                 appendLine("# Error in Tutorial Generation")
@@ -1227,71 +1221,10 @@ Make suggestions:
             }
             resultFn(errorOutput)
         }
-    }
-
-    private fun createTutorialOutputFile(task: SessionTask): FileOutputStream? {
-        return try {
-            val (link, file) = task.createFile("tutorial.md")
-            log.info("Created tutorial output file: $link")
-            file?.outputStream()
-        } catch (e: Exception) {
-            log.error("Failed to create tutorial output file", e)
-            null
-        }
-    }
 
 
-    private fun getContextFiles(): String {
-        val relatedFiles = executionConfig?.related_files ?: return ""
-        if (relatedFiles.isEmpty()) return ""
-        log.debug("Loading ${relatedFiles.size} related context files")
-
-        return buildString {
-            appendLine("## Related Documentation Files")
-            appendLine()
-            relatedFiles.forEach { file ->
-                try {
-                    val filePath = root.resolve(file)
-                    if (filePath.toFile().exists()) {
-                        log.debug("Successfully loaded context file: $file")
-                        appendLine("### $file")
-                        appendLine("```")
-                        appendLine(filePath.toFile().readText().truncateForDisplay(1500))
-                        appendLine("```")
-                        appendLine()
-                    } else {
-                        log.warn("Context file not found: $file")
-                    }
-                } catch (e: Exception) {
-                    log.warn("Error reading file: $file", e)
-                }
-            }
-        }
-    }
-
-    private fun getInputFileCode(): String {
-        val inputFiles = executionConfig?.input_files ?: return ""
-        if (inputFiles.isEmpty()) return ""
-        log.debug("Loading ${inputFiles.size} input files")
-        return buildString {
-            appendLine("## Input Files Context")
-            appendLine()
-            inputFiles.forEach { pattern ->
-                try {
-                    val filePath = root.resolve(pattern)
-                    if (filePath.toFile().exists()) {
-                        log.debug("Successfully loaded input file: $pattern")
-                        appendLine("### $pattern")
-                        appendLine("```")
-                        appendLine(filePath.toFile().readText().truncateForDisplay(2000))
-                        appendLine("```")
-                        appendLine()
-                    } else {
-                        log.warn("Input file not found: $pattern")
-                    }
-                } catch (e: Exception) {
-                    log.warn("Error reading input file: $pattern", e)
-                }
+            } finally {
+                transcript?.close()
             }
         }
     }
@@ -1299,13 +1232,13 @@ Make suggestions:
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TutorialGenerationTask::class.java)
         val TutorialGeneration = TaskType(
-          name = "TutorialGeneration",
-          category = "Writing",
-          taskClass = TutorialGenerationTask::class.java,
-          executionConfigClass = TutorialGenerationTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Create complete, step-by-step tutorials for processes and projects",
-          tooltipHtml = """
+            name = "TutorialGeneration",
+            category = "Writing",
+            taskClass = TutorialGenerationTask::class.java,
+            executionConfigClass = TutorialGenerationTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Create complete, step-by-step tutorials for processes and projects",
+            tooltipHtml = """
                         Generates comprehensive tutorials with clear, actionable steps.
                         <ul>
                           <li>Creates detailed outline with prerequisites and learning objectives</li>

@@ -8,6 +8,11 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
     <link rel="stylesheet" href="assets/styles/variables.css">
 
     <link rel="stylesheet" href="assets/styles/main.css">
@@ -285,6 +290,15 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore actual artifacts, logs, and generated variants from the <code>PoliticalOptimizationTask</code> workspace.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 400px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+    </section>
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -374,16 +388,49 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane">
-            <h3>Kotlin Boilerplate</h3>
+            <h3>Embedded Execution (Headless)</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
+                Use the <code>UnifiedHarness</code> to run this task in CI/CD or automated scripts without a UI.
+            </p>
             <div class="panel">
-                <pre><code>val task = PoliticalOptimizationTask(
-    orchestrationConfig = config,
-    planTask = PoliticalOptimizationTaskExecutionConfigData(
-        initial_text = "...",
-        optimization_goal = "maximize consensus",
-        consensus_mode = "maximize"
-    )
+                <pre><code class="language-kotlin">import com.simiacryptus.cognotik.apps.general.UnifiedHarness
+import com.simiacryptus.cognotik.plan.tools.social.PoliticalOptimizationTask
+import com.simiacryptus.cognotik.plan.tools.social.PoliticalOptimizationTask.PoliticalOptimization
+
+val harness = UnifiedHarness(serverless = true, openBrowser = false)
+harness.start()
+
+val config = PoliticalOptimizationTask.PoliticalOptimizationTaskExecutionConfigData(
+    initial_text = "Universal basic income should be funded by a land value tax.",
+    optimization_goal = "maximize consensus",
+    perspectives = listOf("progressive", "conservative", "libertarian"),
+    consensus_mode = "maximize",
+    num_generations = 3
+)
+
+harness.runTask(
+    taskType = PoliticalOptimization,
+    executionConfig = config,
+    workspace = File("./political-analysis")
 )</code></pre>
+            </div>
+            <h3 style="margin-top: 2rem;">Gradle Dependency</h3>
+            <div class="panel">
+                <pre><code class="language-kotlin">dependencies {
+    implementation("com.cognotik:webapp:2.0.39")
+}</code></pre>
+            </div>
+            <h3 style="margin-top: 2rem;">CLI / GitHub Action Example</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
+                Run as a standalone tool to generate a consensus report.
+            </p>
+            <div class="panel" style="background: #000;">
+                <pre style="color: #4ade80;"><code># Run via Cognotik CLI
+java -jar cognotik-cli.jar \
+  --task PoliticalOptimization \
+  --initial_text "Carbon taxes are the most efficient way to reach net zero." \
+  --optimization_goal "identify wedge issues" \
+  --consensus_mode "minimize"</code></pre>
             </div>
 
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
@@ -415,6 +462,11 @@
         document.getElementById('tab-' + tabId).classList.add('active');
         event.currentTarget.classList.add('active');
     }
+</script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    // Initialize the browser for the PoliticalOptimizationTask workspace
+    initFileTree('#file-tree-demo', 'webui/workspaces/PoliticalOptimization/');
 </script>
 
 </body>

@@ -8,6 +8,10 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -276,6 +280,16 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore generated dialectical reports and analysis artifacts in the task workspace.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem; background: var(--bg-panel);"></div>
+    </section>
+
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -355,16 +369,46 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane">
-            <h3>Kotlin Boilerplate</h3>
+            <h3>Embedded Execution</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
+                Invoke this task programmatically using the <code>UnifiedHarness</code> in serverless mode.
+            </p>
             <div class="panel">
-                <pre><code>val task = DialecticalReasoningTask(
-    orchestrationConfig,
-    DialecticalReasoningTaskExecutionConfigData(
-        thesis = "Use NoSQL for horizontal write scaling",
-        antithesis = "Use SQL for ACID compliance and complex joins",
-        synthesis_levels = 2
-    )
+                <pre><code>import com.simiacryptus.cognotik.plan.tools.social.DialecticalReasoningTask
+import com.simiacryptus.cognotik.plan.tools.social.DialecticalReasoningTask.Companion.DialecticalReasoning
+
+// 1. Define the Job Configuration
+val config = DialecticalReasoningTask.DialecticalReasoningTaskExecutionConfigData(
+    thesis = "Strict microservices for scale",
+    antithesis = "Monolithic simplicity",
+    context = "E-commerce Platform Migration",
+    synthesis_levels = 3,
+    preserve_strengths = true,
+    input_files = listOf("src/main/kotlin/architecture/*.kt")
+)
+
+// 2. Run via Harness
+harness.runTask(
+    taskType = DialecticalReasoning,
+    typeConfig = TaskTypeConfig(name = "ArchReview"),
+    executionConfig = config,
+    workspace = File("./project-root"),
+    autoFix = true
 )</code></pre>
+            </div>
+
+            <h3 style="margin-top: 2rem;">CLI / CI Integration</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">Example GitHub Action step for automated reasoning:</p>
+            <div class="panel" style="background: #000;">
+                <pre style="color: #c9d1d9;">- name: Run Dialectical Analysis
+  run: |
+    java -jar cognotik-cli.jar \
+      --task DialecticalReasoning \
+      --thesis "Implement custom auth" \
+      --antithesis "Use Auth0 provider" \
+      --workspace .
+  env:
+    OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}</pre>
             </div>
 
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
@@ -375,7 +419,11 @@
   ** Provide context to ground the dialectical analysis
   ** Configure synthesis_levels (1-5) to iterate toward higher understanding
   ** Set preserve_strengths=true to maintain valuable aspects of both sides
-  ** Related files can provide additional context</pre>
+ ** Related files can provide additional context
+  ** Explores contradictions and tensions between positions
+  ** Generates synthesis that transcends opposition
+  ** Iterates to progressively higher levels of understanding
+  ** Produces structured dialectical analysis with final synthesis</pre>
             </div>
         </div>
     </section>
@@ -389,6 +437,10 @@
         document.getElementById('tab-' + tabId).classList.add('active');
         event.currentTarget.classList.add('active');
     }
+</script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/DialecticalReasoning/');
 </script>
 
 </body>

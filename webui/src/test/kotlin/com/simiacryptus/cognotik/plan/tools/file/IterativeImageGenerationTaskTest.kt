@@ -1,11 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.util.PlanHarness
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.TaskHarness
+import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
 
@@ -15,7 +14,7 @@ class IterativeImageGenerationTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-      PlanHarness.Companion.configurePlatform()
+      UnifiedHarness.configurePlatform()
     }
   }
 

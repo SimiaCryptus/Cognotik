@@ -21,13 +21,6 @@ repositories {
 }
 
 dependencies {
-
-    implementation(project(":jo-penai")) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.jetbrains.kotlinx")
-        exclude(group = "org.slf4j")
-        exclude(group = "com.fasterxml.jackson.core")
-    }
     implementation(project(":core")) {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains.kotlinx")

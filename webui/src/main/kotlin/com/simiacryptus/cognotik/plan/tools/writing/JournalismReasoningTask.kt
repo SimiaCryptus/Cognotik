@@ -2,14 +2,18 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.charset.StandardCharsets
@@ -31,13 +35,13 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     companion object {
         private val log: Logger = LoggerFactory.getLogger(JournalismReasoningTask::class.java)
         val JournalismReasoning = TaskType(
-          name = "JournalismReasoning",
-          category = "Writing",
-          taskClass = JournalismReasoningTask::class.java,
-          executionConfigClass = JournalismReasoningTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Investigate stories through journalistic principles and methods",
-          tooltipHtml = """
+            name = "JournalismReasoning",
+            category = "Writing",
+            taskClass = JournalismReasoningTask::class.java,
+            executionConfigClass = JournalismReasoningTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Investigate stories through journalistic principles and methods",
+            tooltipHtml = """
                         Analyzes stories using professional journalism standards and practices.
                         <ul>
                           <li>Verifies facts and checks claims against evidence</li>
@@ -56,36 +60,38 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
 
     open class JournalismReasoningTaskExecutionConfigData(
         @Description("The story topic or event to investigate")
-        val story_topic: String? = null,
+        var story_topic: String? = null,
 
         @Description("Input files or documents to inform the investigation (glob patterns)")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
 
         @Description("Journalism elements to consider (who, what, when, where, why, how)")
-        val journalism_elements: Map<String, Any>? = null,
+        var journalism_elements: Map<String, Any>? = null,
 
         @Description("Whether to identify and verify key facts")
-        val verify_facts: Boolean = true,
+        var verify_facts: Boolean = true,
 
         @Description("Whether to identify multiple perspectives and sources")
-        val identify_perspectives: Boolean = true,
+        var identify_perspectives: Boolean = true,
 
         @Description("Whether to analyze context and background")
-        val analyze_context: Boolean = true,
+        var analyze_context: Boolean = true,
 
         @Description("Whether to identify potential biases and conflicts of interest")
-        val identify_biases: Boolean = true,
+        var identify_biases: Boolean = true,
 
         @Description("Whether to check for missing information or unanswered questions")
-        val find_gaps: Boolean = true,
+        var find_gaps: Boolean = true,
 
         @Description("Number of alternative angles to explore")
-        val alternative_angles: Int = 3,
+        var alternative_angles: Int = 3,
 
         @Description("Whether to assess newsworthiness and public interest")
-        val assess_newsworthiness: Boolean = true,
+        var assess_newsworthiness: Boolean = true,
+        @Description("List of task IDs that this task depends on")
 
         task_dependencies: List<String>? = null,
+        @Description("The current state of the task")
         state: TaskState? = TaskState.Pending,
     ) : TaskExecutionConfig(
         task_type = JournalismReasoning.name,
@@ -245,29 +251,29 @@ JournalismReasoning - Investigate stories through journalistic principles and me
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val startTime = System.currentTimeMillis()
-        log.info("Starting JournalismReasoningTask for story: '${executionConfig?.story_topic}'")
-        // Initialize detailed output file
-        val transcriptStream = task.transcript()
-        val transcript = transcriptStream?.bufferedWriter()
-        transcript?.let { writer ->
 
-            val storyTopic = executionConfig?.story_topic
+        val transcript = task.transcript()
+        task.ui.pool.submit {
+            val startTime = System.currentTimeMillis()
+            val config = executionConfig ?: return@submit
+            val storyTopic = config.story_topic
             if (storyTopic.isNullOrBlank()) {
+                log.error("No story topic specified for journalism reasoning")
                 log.error("No story topic specified for journalism reasoning")
                 task.safeComplete("CONFIGURATION ERROR: No story topic specified", log)
                 resultFn("CONFIGURATION ERROR: No story topic specified")
-                return
+                return@submit
             }
 
-            val journalismElements = executionConfig.journalism_elements ?: emptyMap()
-            val verifyFacts = executionConfig.verify_facts
-            val identifyPerspectives = executionConfig.identify_perspectives
-            val analyzeContext = executionConfig.analyze_context
-            val identifyBiases = executionConfig.identify_biases
-            val findGaps = executionConfig.find_gaps
-            val alternativeAngles = executionConfig.alternative_angles.coerceIn(1, 10)
-            val assessNewsworthiness = executionConfig.assess_newsworthiness
+            val journalismElements = config.journalism_elements ?: emptyMap()
+            val verifyFacts = config.verify_facts
+            val identifyPerspectives = config.identify_perspectives
+            val analyzeContext = config.analyze_context
+            val identifyBiases = config.identify_biases
+            val findGaps = config.find_gaps
+            val alternativeAngles = config.alternative_angles.coerceIn(1, 10)
+            val assessNewsworthiness = config.assess_newsworthiness
+            log.info("Starting JournalismReasoningTask for story: '$storyTopic'")
 
             log.info(
                 "Configuration: verifyFacts=$verifyFacts, identifyPerspectives=$identifyPerspectives, " +
@@ -275,7 +281,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
                         "alternativeAngles=$alternativeAngles, assessNewsworthiness=$assessNewsworthiness"
             )
 
-            val api = defaultSmart ?: return
+            val api = defaultSmart ?: return@submit
 
             val tabs = TabbedDisplay(task)
 
@@ -313,25 +319,30 @@ JournalismReasoning - Investigate stories through journalistic principles and me
                 appendLine()
                 appendLine("*Initializing investigation...*")
             }
-            // Write to transcript
-            writer.appendLine("# Journalism Investigation Transcript")
-            writer.appendLine()
-            writer.appendLine("**Story Topic:** $storyTopic")
-            writer.appendLine(
-                "**Started:** ${
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                }"
+
+            transcript?.write(
+                """
+                # Journalism Investigation Transcript
+                
+                **Story Topic:** $storyTopic
+                **Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
+                
+            """.trimIndent().toByteArray()
             )
-            writer.appendLine()
-            writer.flush()
+
             // Include file content if requested
-            val fileContent = super.getInputFileContent(executionConfig.input_files, root, treatDocumentsAsText = true)
+            val fileContent = super.getInputFileContent(config.input_files, root, treatDocumentsAsText = true)
             if (fileContent.isNotBlank()) {
-                writer.appendLine("## Input Files")
-                writer.appendLine()
-                writer.appendLine(fileContent)
-                writer.appendLine()
-                writer.flush()
+                transcript?.write(
+                    """
+                    <details>
+                    <summary>Input Files Content</summary>
+                    
+                    $fileContent
+                    </details>
+                    
+                """.trimIndent().toByteArray()
+                )
             }
 
             overviewTask.add(overviewContent.renderMarkdown)
@@ -368,10 +379,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
                             appendLine()
                         }.renderMarkdown
                     )
-                    // Write to transcript
-                    writer.appendLine("## Step 1: Fact Verification")
-                    writer.appendLine()
-                    writer.flush()
+                    transcript?.write("## Step 1: Fact Verification\n\n".toByteArray())
 
                     val factAgent = ParsedAgent(
                         resultClass = FactChecks::class.java,
@@ -451,16 +459,17 @@ Apply rigorous journalistic standards. Be skeptical but fair.
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
                     }
-                    // Write facts to transcript
-                    writer.appendLine("### Verified Facts (${factChecks.size} total)")
-                    writer.appendLine()
-                    factChecks.forEach { fact ->
-                        writer.appendLine("- **${fact.verification_status}**: ${fact.claim}")
-                        writer.appendLine("  - Source: ${fact.source}")
-                        writer.appendLine("  - Confidence: ${fact.confidence_level}")
-                        writer.appendLine()
-                    }
-                    writer.flush()
+
+                    transcript?.write(
+                        """
+                        <details>
+                        <summary>Verified Facts (${factChecks.size})</summary>
+                        
+                        ${factChecks.joinToString("\n") { "- **${it.verification_status}**: ${it.claim} (Source: ${it.source})" }}
+                        </details>
+                        
+                    """.trimIndent().toByteArray()
+                    )
 
                     factsTask.add(factsContent.renderMarkdown)
 
@@ -492,10 +501,7 @@ Apply rigorous journalistic standards. Be skeptical but fair.
                             appendLine()
                         }.renderMarkdown
                     )
-                    // Write to transcript
-                    writer.appendLine("## Step 2: Source Perspectives")
-                    writer.appendLine()
-                    writer.flush()
+                    transcript?.write("## Step 2: Source Perspectives\n\n".toByteArray())
 
                     val perspectiveAgent = ParsedAgent(
                         resultClass = SourcePerspectives::class.java,
@@ -558,15 +564,17 @@ Ensure balanced representation of different viewpoints.
                         }
                         appendLine("**Status:** ✅ Complete")
                     }
-                    // Write perspectives to transcript
-                    writer.appendLine("### Source Perspectives (${perspectives.size} total)")
-                    writer.appendLine()
-                    perspectives.forEach { source ->
-                        writer.appendLine("- **${source.source_name}** (${source.role})")
-                        writer.appendLine("  - ${source.perspective}")
-                        writer.appendLine()
-                    }
-                    writer.flush()
+
+                    transcript?.write(
+                        """
+                        <details>
+                        <summary>Source Perspectives (${perspectives.size})</summary>
+                        
+                        ${perspectives.joinToString("\n") { "- **${it.source_name}** (${it.role}): ${it.perspective}" }}
+                        </details>
+                        
+                    """.trimIndent().toByteArray()
+                    )
 
                     perspectivesTask.add(perspectivesContent.renderMarkdown)
 
@@ -599,10 +607,7 @@ Ensure balanced representation of different viewpoints.
                             appendLine()
                         }.renderMarkdown
                     )
-                    // Write to transcript
-                    writer.appendLine("## Step 3: Context Analysis")
-                    writer.appendLine()
-                    writer.flush()
+                    transcript?.write("## Step 3: Context Analysis\n\n".toByteArray())
 
                     val contextAgent = ParsedAgent(
                         resultClass = ContextAnalysis::class.java,
@@ -659,11 +664,17 @@ Help readers understand why this story matters and how it fits into the bigger p
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
                     }
-                    // Write context to transcript
-                    writer.appendLine("### Historical Background")
-                    writer.appendLine(context.historical_background)
-                    writer.appendLine()
-                    writer.flush()
+
+                    transcript?.write(
+                        """
+                        <details>
+                        <summary>Context Analysis Summary</summary>
+                        
+                        ${context.historical_background}
+                        </details>
+                        
+                    """.trimIndent().toByteArray()
+                    )
 
                     contextTask.add(contextContent.renderMarkdown)
 
@@ -688,10 +699,7 @@ Help readers understand why this story matters and how it fits into the bigger p
                             appendLine()
                         }.renderMarkdown
                     )
-                    // Write to transcript
-                    writer.appendLine("## Step 4: Bias Analysis")
-                    writer.appendLine()
-                    writer.flush()
+                    transcript?.write("## Step 4: Bias Analysis\n\n".toByteArray())
 
                     val biasAgent = ParsedAgent(
                         resultClass = BiasAnalysis::class.java,
@@ -756,11 +764,17 @@ Be thorough but fair. Distinguish between legitimate perspective and problematic
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
                     }
-                    // Write bias analysis to transcript
-                    writer.appendLine("### Balance Assessment")
-                    writer.appendLine(biasAnalysis.balance_assessment)
-                    writer.appendLine()
-                    writer.flush()
+
+                    transcript?.write(
+                        """
+                        <details>
+                        <summary>Bias and Balance Assessment</summary>
+                        
+                        ${biasAnalysis.balance_assessment}
+                        </details>
+                        
+                    """.trimIndent().toByteArray()
+                    )
 
                     biasTask.add(biasContent.renderMarkdown)
 
@@ -785,10 +799,7 @@ Be thorough but fair. Distinguish between legitimate perspective and problematic
                             appendLine()
                         }.renderMarkdown
                     )
-                    // Write to transcript
-                    writer.appendLine("## Step 5: Alternative Story Angles")
-                    writer.appendLine()
-                    writer.flush()
+                    transcript?.write("## Step 5: Alternative Story Angles\n\n".toByteArray())
 
                     val anglesAgent = ParsedAgent(
                         resultClass = StoryAngles::class.java,
@@ -856,22 +867,17 @@ Consider angles that:
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
                     }
-                    // Write angles to transcript
-                    writer.appendLine("### Story Angles (${angles.size} total)")
-                    writer.appendLine()
-                    angles.sortedByDescending { it.newsworthiness_score }.forEach { angle ->
-                        writer.appendLine(
-                            "- **${angle.angle_title}** (${
-                                String.format(
-                                    "%.1f%%",
-                                    angle.newsworthiness_score * 100
-                                )
-                            })"
-                        )
-                        writer.appendLine("  - ${angle.focus}")
-                        writer.appendLine()
-                    }
-                    writer.flush()
+
+                    transcript?.write(
+                        """
+                        <details>
+                        <summary>Alternative Story Angles (${angles.size})</summary>
+                        
+                        ${angles.joinToString("\n") { "- **${it.angle_title}**: ${it.focus}" }}
+                        </details>
+                        
+                    """.trimIndent().toByteArray()
+                    )
 
                     anglesTask.add(anglesContent.renderMarkdown)
 
@@ -904,10 +910,7 @@ Consider angles that:
                             appendLine()
                         }.renderMarkdown
                     )
-                    // Write to transcript
-                    writer.appendLine("## Step 6: Information Gaps")
-                    writer.appendLine()
-                    writer.flush()
+                    transcript?.write("## Step 6: Information Gaps\n\n".toByteArray())
 
                     val gapsAgent = ParsedAgent(
                         resultClass = InformationGaps::class.java,
@@ -984,18 +987,17 @@ Prioritize gaps that are most important for understanding the full story.
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
                     }
-                    // Write gaps to transcript
-                    if (gaps.isEmpty()) {
-                        writer.appendLine("### No significant information gaps identified")
-                    } else {
-                        writer.appendLine("### Information Gaps (${gaps.size} total)")
-                        writer.appendLine()
-                        gaps.forEach { gap ->
-                            writer.appendLine("- **${gap.importance.uppercase()}**: ${gap.question}")
-                            writer.appendLine()
-                        }
-                    }
-                    writer.flush()
+
+                    transcript?.write(
+                        """
+                        <details>
+                        <summary>Information Gaps (${gaps.size})</summary>
+                        
+                        ${if (gaps.isEmpty()) "No significant gaps identified." else gaps.joinToString("\n") { "- **${it.importance.uppercase()}**: ${it.question}" }}
+                        </details>
+                        
+                    """.trimIndent().toByteArray()
+                    )
 
                     gapsTask.add(gapsContent.renderMarkdown)
 
@@ -1030,10 +1032,7 @@ Prioritize gaps that are most important for understanding the full story.
                         appendLine()
                     }.renderMarkdown
                 )
-                // Write to transcript
-                writer.appendLine("## Step 7: Editorial Synthesis")
-                writer.appendLine()
-                writer.flush()
+                transcript?.write("## Step 7: Editorial Synthesis\n\n".toByteArray())
 
                 val synthesisAgent = ChatAgent(
                     prompt = """
@@ -1058,10 +1057,16 @@ Be concise, authoritative, and focused on journalistic value.
 
                 val synthesis = synthesisAgent.answer(listOf("Generate synthesis"))
                 log.debug("Synthesis generated: ${synthesis.length} characters")
-                // Write synthesis to transcript
-                writer.appendLine(synthesis)
-                writer.appendLine()
-                writer.flush()
+
+                transcript?.write(
+                    """
+                    <details>
+                    <summary>Editorial Synthesis Content</summary>
+                    
+                    $synthesis
+                    </details>
+                """.trimIndent().toByteArray()
+                )
 
 
                 synthesisTask.add(
@@ -1085,16 +1090,15 @@ Be concise, authoritative, and focused on journalistic value.
                 resultBuilder.append("---\n\n")
                 resultBuilder.append("**Investigation Time:** ${totalTime / 1000}s | ")
                 resultBuilder.append("**Story:** $storyTopic\n")
-                // Write final statistics to transcript
-                writer.appendLine("---")
-                writer.appendLine()
-                writer.appendLine("**Investigation completed in ${totalTime / 1000.0}s**")
-                writer.appendLine(
-                    "**Completed:** ${
-                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                    }"
+
+                transcript?.write(
+                    """
+                    ---
+                    **Investigation completed in ${totalTime / 1000.0}s**
+                    **Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
+                    
+                """.trimIndent().toByteArray()
                 )
-                writer.flush()
 
                 overviewTask.add(
                     buildString {
@@ -1116,61 +1120,51 @@ Be concise, authoritative, and focused on journalistic value.
                 val finalResult = resultBuilder.toString()
                 log.info("JournalismReasoningTask completed: total_time=${totalTime}ms, output_size=${finalResult.length} chars")
 
-                // Write full analysis to file
-                val transcriptFile = "journalism_analysis_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-                val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-                file?.writeText(finalResult, StandardCharsets.UTF_8)
 
-                val summaryMessage = buildString {
-                    appendLine("✅ Journalism investigation complete in ${totalTime / 1000}s")
-                    appendLine()
-                    appendLine("📄 Full analysis: <a href='$link' target='_blank'>$link</a>")
-                    appendLine("📊 Transcript: <a href='${link.removeSuffix(".md")}_transcript.md' target='_blank'>transcript</a>")
-                }
+                val reportPath = "journalism_analysis_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+                val reportUrl = task.saveFile(reportPath, finalResult.toByteArray(StandardCharsets.UTF_8))
 
-                task.safeComplete(summaryMessage, log)
-                resultFn(summaryMessage)
+                val uiMessage = """
+                    ✅ Journalism investigation complete in ${totalTime / 1000}s
+                    
+                    📄 Full analysis: <a href='$reportUrl' target='_blank'>Download Report</a>
+                """.trimIndent()
+
+                val llmSummary = """
+                    ## Journalism Investigation Complete: $storyTopic
+                    - **Total Time:** ${totalTime / 1000.0}s
+                    - **Report Saved to:** `$reportPath`
+                    
+                    ### Editorial Synthesis
+                    ${synthesis.truncateForDisplay(500)}
+                """.trimIndent()
+
+                task.safeComplete(uiMessage, log)
+                resultFn(llmSummary)
 
             } catch (e: Exception) {
-                log.error("Error during journalism reasoning", e)
+                // Triple Log Rule
+                log.error("Error during journalism reasoning for story: '$storyTopic'", e)
                 task.error(e)
 
-                overviewTask.add(
-                    buildString {
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("## ❌ Error Occurred")
-                        appendLine()
-                        appendLine("**Error:** ${e.message}")
-                        appendLine()
-                        appendLine("**Type:** ${e.javaClass.simpleName}")
-                    }.renderMarkdown
-                )
-                // Write error to transcript
-                writer.appendLine()
-                writer.appendLine("---")
-                writer.appendLine("## ❌ Error Occurred")
-                writer.appendLine("**Error:** ${e.message}")
-                writer.flush()
 
-                val errorOutput = buildString {
-                    appendLine("# Error in Journalism Investigation")
-                    appendLine()
-                    appendLine("**Story:** $storyTopic")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    if (resultBuilder.isNotEmpty()) {
-                        appendLine("## Partial Results")
-                        appendLine()
-                        appendLine(resultBuilder.toString())
-                    }
-                }
-                resultFn(errorOutput)
+                transcript?.write(
+                    """
+                    <details>
+                    <summary>Stack Trace</summary>
+                    
+                    ```
+                    ${e.stackTraceToString()}
+                    ```
+                    </details>
+                """.trimIndent().toByteArray()
+                )
+
+                resultFn("Error in Journalism Investigation: ${e.message}")
+            } finally {
+                transcript?.close()
             }
-        } // Close writer.use
-        transcriptStream?.close()
+        }
     }
 
 }

@@ -6,17 +6,14 @@ import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveSchemaStrategy
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.AuthorizationManager
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.awt.*
 import java.awt.image.BufferedImage
 import java.io.File
@@ -113,23 +110,7 @@ open class PlanHarness(
     companion object {
         fun configurePlatform(session: Session) {
             OrchestrationConfig.instanceFn = instanceFn(session)
-            configurePlatform()
-        }
-
-        fun configurePlatform() {
-            initDynamicEnums()
-            ApplicationServices.authenticationManager = object : AuthenticationInterface {
-                override fun getUser(accessToken: String?) = defaultUser
-                override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-                override fun logout(accessToken: String, user: User) {}
-            }
-            ApplicationServices.authorizationManager = object : AuthorizationManager() {
-                override fun isAuthorized(
-                    applicationClass: Class<*>?,
-                    user: User?,
-                    operationType: AuthorizationInterface.OperationType
-                ): Boolean = true
-            }
+            UnifiedHarness.configurePlatform()
         }
 
         fun instanceFn(session: Session): (ApiChatModel) -> ChatInterface = { model ->

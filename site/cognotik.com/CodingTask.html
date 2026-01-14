@@ -8,6 +8,10 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -217,16 +221,18 @@
         <div class="panel">
             <div class="panel-header"><span>⚙️</span> CodingTask Config</div>
             <pre><code class="language-kotlin">
-CodingTask(
-  codeRuntime = KotlinRuntime(),
-  symbols = mapOf("api" to client),
-  model = gpt4Model,
-  temperature = 0.1,
-  autoFix = false,
-  retryable = true,
-  mainTask = sessionTask
+val task = CodingTask(
+    dataStorage = storage,
+    session = session,
+    user = currentUser,
+    ui = socketManager,
+    codeRuntime = KotlinRuntime(),
+    symbols = mapOf("api" to apiClient),
+    model = openAIModel,
+    mainTask = parentTask,
+    autoFix = true
 ).start(CodeRequest(listOf(
-  "Fetch user profile for ID 123" to Role.user
+    "Fetch user profile for ID 123" to Role.user
 )))
             </code></pre>
         </div>
@@ -254,6 +260,16 @@ CodingTask(
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Workspace Explorer</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Browse generated transcripts and execution artifacts in the <code>CodingTask</code> test workspace.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -310,6 +326,16 @@ CodingTask(
                     <td><code>Double</code></td>
                     <td>LLM sampling temperature. Defaults to <code>0.1</code> for precision.</td>
                 </tr>
+                <tr>
+                    <td><code>details</code></td>
+                    <td><code>String?</code></td>
+                    <td>Additional context or system instructions for the code agent.</td>
+                </tr>
+                <tr>
+                    <td><code>describer</code></td>
+                    <td><code>TypeDescriber</code></td>
+                    <td>Handles reflection-based documentation of the <code>symbols</code> provided to the LLM.</td>
+                </tr>
                 </tbody>
             </table>
 
@@ -351,23 +377,37 @@ CodingTask(
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
-            <h3>Boilerplate Implementation</h3>
+            <h3>Embedded Execution (Headless)</h3>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">
+                Use the <code>UnifiedHarness</code> to invoke coding tasks programmatically in CI/CD or CLI tools.
+            </p>
             <pre><code class="language-kotlin">
-// Adding CodingTask to a Session
-val codingTask = CodingTask(
-    dataStorage = storage,
-    session = session,
-    user = user,
-    ui = socketManager,
-    codeRuntime = KotlinRuntime(),
-    symbols = mapOf("db" to database),
-    model = chatModel,
-    mainTask = parentTask,
-    autoFix = false,
-    retryable = true
+val harness = UnifiedHarness(serverless = true)
+harness.start()
+
+harness.runTask(
+    taskType = TaskType.CodingTask,
+    workspace = File("./project"),
+    autoFix = true,
+    executionConfig = CodingTaskExecutionConfig(
+        instruction = "Generate a unit test for the AuthService class",
+        runtime = "kotlin"
+    )
 )
 
-codingTask.start(CodeRequest(listOf("Fetch latest logs" to Role.user)))
+            </code></pre>
+            
+            <h3 style="margin-top: 2rem;">Direct Instantiation</h3>
+            <pre><code class="language-kotlin">
+val codingTask = CodingTask(
+    dataStorage = storage, session = session, user = user, ui = ui,
+    codeRuntime = PythonRuntime(),
+    symbols = mapOf("data" to dataFrame),
+    model = OpenAIModels.GPT4o.instance(apiKey),
+    mainTask = session.rootTask
+)
+
+codingTask.start(CodeRequest(listOf("Plot a histogram of 'age'" to Role.user)))
             </code></pre>
         </div>
     </section>
@@ -383,6 +423,11 @@ codingTask.start(CodeRequest(listOf("Fetch latest logs" to Role.user)))
         event.currentTarget.classList.add('active');
     }
 </script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/Coding/');
+</script>
+
 
 </body>
 </html>

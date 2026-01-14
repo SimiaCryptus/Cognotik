@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Cognotik Embedding - Headless AI Agents</title>
+    <meta content="Embed Cognotik AI agents directly into your build process, CI/CD pipelines, or custom applications. Headless execution for automated coding tasks."
+          name="description">
+    <meta content="Cognotik, Embedding, Headless AI, CI/CD, Gradle Plugin, Automated Coding, Agentic AI, SimiaCryptus"
+          name="keywords">
+    <link href="https://cognotik.com/embedding.html" hreflang="en" rel="alternate">
+    <meta content="SimiaCryptus" name="author">
+    <meta content="Cognotik Embedding - Headless AI Agents" property="og:title">
+    <meta content="Embed Cognotik AI agents directly into your build process, CI/CD pipelines, or custom applications."
+          property="og:description">
+    <meta content="https://cognotik.com/assets/og-image.png" property="og:image">
+    <meta content="website" property="og:type">
+    <meta content="https://cognotik.com/embedding.html" property="og:url">
+    <meta content="summary_large_image" name="twitter:card">
+    <meta content="Cognotik Embedding - Headless AI Agents" name="twitter:title">
+    <meta content="Embed Cognotik AI agents directly into your build process, CI/CD pipelines, or custom applications."
+          name="twitter:description">
+    <meta content="https://cognotik.com/assets/og-image.png" name="twitter:image">
+    <link href="https://cognotik.com/embedding.html" rel="canonical">
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
+    <link href="assets/styles/styles.css" rel="stylesheet">
+    <link href="styles/responsive.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+<main>
+    <cognotik-header current-page="embedding"></cognotik-header>
+    <section class="hero-section fade-in" style="padding-top:3em;padding-bottom:2em;">
+        <div class="container">
+            <div class="hero-content" style="flex-flow: row;">
+                <div class="hero-text fade-in delay-1">
+                    <h1>Cognotik Embedded</h1>
+                    <p style="font-size:1.2em;max-width:650px;">
+                        Integrate "Headless" AI agents directly into your software lifecycle.
+                        Automate refactoring, documentation, and testing within Gradle builds, GitHub Actions, or custom CLI tools.
+                    </p>
+                    <div class="download-ui-simple" style="margin-top: 1em;">
+                        <a class="btn btn-primary" href="https://github.com/SimiaCryptus/Cognotik/blob/main/docs/embedding.md" rel="noopener" target="_blank">
+                            <i class="fab fa-github"></i> View Documentation
+                        </a>
+                    </div>
+                </div>
+                <div class="hero-image fade-in delay-2">
+                    <div style="border-radius: var(--border-radius-lg); width: 300px; height: 250px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--text-light); font-style: italic; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                        <i class="fas fa-code" style="font-size: 5em; opacity: 0.5;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="features-section">
+        <div class="container">
+            <h2>Key Capabilities</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-terminal"></i></div>
+                    <h3>Headless Execution</h3>
+                    <p>Run agents without a UI. Perfect for background jobs, scripts, and server-side processing.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-sync"></i></div>
+                    <h3>CI/CD Integration</h3>
+                    <p>Embed agents in GitHub Actions or Jenkins to perform code reviews, auto-fixes, or test generation on every push.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-cubes"></i></div>
+                    <h3>Gradle Plugin</h3>
+                    <p>Wrap agent tasks in Gradle to automate boilerplate generation or architectural validation as part of your build.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                    <h3>Unified Harness</h3>
+                    <p>A simple API to configure models, tools, and cognitive strategies programmatically.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container container-narrow">
+            <h2>Getting Started</h2>
+            <h3>Installation</h3>
+            <p>Add the dependency to your `build.gradle.kts`:</p>
+            <pre><code class="language-kotlin">dependencies {
+    implementation("com.cognotik:webapp:2.0.39")
+    implementation("org.slf4j:slf4j-simple:2.0.9")
+}</code></pre>
+
+            <h3>Basic Usage</h3>
+            <p>Initialize the `UnifiedHarness` in serverless mode:</p>
+            <pre><code class="language-kotlin">val harness = UnifiedHarness(
+    serverless = true,
+    openBrowser = false,
+    smartModel = OpenAIModels.GPT4o,
+    modelInstanceFn = { /* Inject API Keys */ }
+)
+harness.start()</code></pre>
+
+            <h3>Running a Plan</h3>
+            <p>Execute a high-level goal using a cognitive strategy:</p>
+            <pre><code class="language-kotlin">harness.runPlan(
+    prompt = "Refactor the database layer.",
+    cognitiveSettings = CognitiveModeConfig(type = CognitiveModeType.Waterfall),
+    workspace = File("./my-project"),
+    autoFix = true
+)</code></pre>
+            
+            <p>For detailed documentation on task configurations and advanced usage, refer to the <a href="https://github.com/SimiaCryptus/Cognotik/blob/main/docs/embedding.md">Embedding Guide on GitHub</a>.</p>
+        </div>
+    </section>
+</main>
+<footer>
+    <div class="container">
+        <div class="footer-content">
+            <p>© 2025 Cognotik by <a href="https://simia.net/" rel="noopener" target="_blank">SimiaCryptus</a>. All
+                rights reserved.</p>
+            <ul class="footer-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="intellij-plugin.html">IntelliJ Plugin</a></li>
+                <li><a href="desktop.html">Desktop</a></li>
+                <li><a href="embedding.html">Embedding</a></li>
+                <li><a href="contribute.html">Contribute</a></li>
+                <li><a href="monetization.html">Invest</a></li>
+                <li><a href="https://github.com/SimiaCryptus/Cognotik" rel="noopener" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</footer>
+<script src="scripts/logo-animation.js"></script>
+<script src="scripts/main.js"></script>
+</body>
+</html>

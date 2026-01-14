@@ -4,16 +4,21 @@ import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.awt.image.BufferedImage
 import java.nio.file.Path
+import java.util.concurrent.Semaphore
 import javax.imageio.ImageIO
 
 class ImageTableTask(
@@ -25,17 +30,17 @@ class ImageTableTask(
 
     class ImageTableTaskExecutionConfigData(
         @Description("Row labels for the image table (these can be descriptive text or image file paths)")
-        val rows: List<String>? = null,
+        var rows: List<String>? = null,
         @Description("Column labels for the image table (these can be descriptive text or image file paths)")
-        val columns: List<String>? = null,
+        var columns: List<String>? = null,
         @Description("Prompt template for generating each image. Use {row} and {column} as placeholders.")
-        val image_prompt_template: String? = null,
+        var image_prompt_template: String? = null,
         @Description("Base style or context to apply to all generated images")
-        val base_style: String? = null,
+        var base_style: String? = null,
         @Description("Output directory for generated images (relative path)")
-        val output_directory: String? = "generated_images",
+        var output_directory: String? = "generated_images",
         @Description("Image format: 'png', 'jpg', or 'jpeg'")
-        val image_format: String = "png",
+        var image_format: String = "png",
         @Description("Overall description of the image table purpose")
         task_description: String? = null,
         task_dependencies: List<String>? = null,
@@ -66,11 +71,11 @@ class ImageTableTask(
     class ImageTableTaskTypeConfig(
         task_type: String? = ImageTable.name,
         @Description("Maximum number of images to generate in parallel")
-        val parallel_generation: Int = 2,
+        var parallel_generation: Int = 2,
         @Description("Image width in pixels")
-        val image_width: Int = 512,
+        var image_width: Int = 512,
         @Description("Image height in pixels")
-        val image_height: Int = 512,
+        var image_height: Int = 512,
     ) : TaskTypeConfig(task_type = task_type), ValidatedObject {
         override fun validate(): String? {
             if (parallel_generation < 1 || parallel_generation > 10) {
@@ -116,21 +121,29 @@ ImageTable - Generate a table/grid of AI-generated images
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        executionConfig?.validate()?.let { errorMessage ->
+
+
+      val transcript = task.transcript()
+      log.info("Starting ImageTableTask execution.")
+      task.ui.pool.submit {
+        try {
+          executionConfig?.validate()?.let { errorMessage ->
             resultFn("VALIDATION ERROR: $errorMessage")
-            return
-        }
+            return@submit
+          }
 
-        val rows = executionConfig?.rows ?: emptyList()
-        val columns = executionConfig?.columns ?: emptyList()
-        val promptTemplate = executionConfig?.image_prompt_template ?: ""
-        val baseStyle = executionConfig?.base_style ?: ""
-        val outputDir = executionConfig?.output_directory ?: "generated_images"
-        val imageFormat = executionConfig?.image_format ?: "png"
+          val rows = executionConfig?.rows ?: emptyList()
+          val columns = executionConfig?.columns ?: emptyList()
+          val promptTemplate = executionConfig?.image_prompt_template ?: ""
+          val baseStyle = executionConfig?.base_style ?: ""
+          val outputDir = executionConfig?.output_directory ?: "generated_images"
+          val imageFormat = executionConfig?.image_format ?: "png"
 
-        val tabs = TabbedDisplay(task)
-        val configTab = tabs.newTask("Configuration")
-        configTab.add(buildString {
+          transcript?.write("## Image Table Generation Intent\nGenerating a ${rows.size}x${columns.size} grid.\n".toByteArray())
+
+          val tabs = TabbedDisplay(task)
+          val configTab = tabs.newTask("Configuration")
+          configTab.add(buildString {
             appendLine("# Image Table Configuration")
             appendLine("- **Rows:** ${rows.size}")
             appendLine("- **Columns:** ${columns.size}")
@@ -138,124 +151,146 @@ ImageTable - Generate a table/grid of AI-generated images
             appendLine("- **Prompt Template:** `$promptTemplate`")
             appendLine("- **Base Style:** `${baseStyle.ifBlank { "None" }}`")
             appendLine("- **Output Directory:** `$outputDir`")
-        }.renderMarkdown)
+          }.renderMarkdown)
 
-        val progressTab = tabs.newTask("Generation Progress")
+          val progressTab = tabs.newTask("Generation Progress")
 
-        // Create output directory
-        val outputPath = task.resolveUserFile(outputDir)
-        outputPath?.mkdirs()
+          // Create output directory
+          val outputPath = task.resolveUserFile(outputDir)
+          outputPath?.mkdirs()
 
-        // Initialize the results table to store image paths
-        val imageResults = Array(rows.size) { Array(columns.size) { "" } }
-        val totalImages = rows.size * columns.size
-        var completedImages = 0
+          // Initialize the results table to store image paths
+          val imageResults = Array(rows.size) { Array(columns.size) { "" } }
+          val totalImages = rows.size * columns.size
+          var completedImages = 0
 
-        // Create the image generation agent
-        val imageChatChatter = orchestrationConfig.defaultImage.getChildClient(task)
-        val imageAgent = ImageProcessingAgent(
+          // Create the image generation agent
+          val imageChatChatter = orchestrationConfig.defaultImage.getChildClient(task)
+          val imageAgent = ImageProcessingAgent(
             prompt = "Transform the user request into an image. Generate exactly what is described.",
             name = "ImageTableGenerator",
             model = imageChatChatter,
-        )
+          )
 
-        // Process each cell
-        for (rowIdx in rows.indices) {
+          val parallelSemaphore = Semaphore(typeConfig?.parallel_generation ?: 2)
+
+          // Process each cell
+          for (rowIdx in rows.indices) {
             for (colIdx in columns.indices) {
+              parallelSemaphore.acquire()
+              try {
                 completedImages++
                 val rowLabel = rows[rowIdx]
                 val colLabel = columns[colIdx]
 
                 progressTab.add(buildString {
-                    appendLine("### Generating $completedImages/$totalImages")
-                    appendLine("- **Row:** $rowLabel")
-                    appendLine("- **Column:** $colLabel")
+                  appendLine("### Generating $completedImages/$totalImages")
+                  appendLine("- **Row:** $rowLabel")
+                  appendLine("- **Column:** $colLabel")
                 }.renderMarkdown)
                 progressTab.update()
-
 
                 // Build the prompt for this cell
                 var prompt = promptTemplate.replace("{row}", rowLabel).replace("{column}", colLabel)
                 prompt = if (baseStyle.isNotBlank()) {
-                    "$prompt. Style: $baseStyle"
+                  "$prompt. Style: $baseStyle"
                 } else {
-                    prompt
+                  prompt
                 }
                 val imagePrompt = mutableListOf(ImageAndText(prompt))
                 when (rowLabel.split('.').last()) {
-                    "jpg", "jpeg", "png" -> {
-                        val imagePath = agent.root.resolve(rowLabel)
-                        if (imagePath.toFile().exists()) {
-                            imagePrompt.add(ImageAndText(imagePath.toUri().toString(), image = imagePath.loadImage()))
-                        } else {
-                            log.warn("Image file for row label not found: $imagePath")
-                        }
+                  "jpg", "jpeg", "png" -> {
+                    val imagePath = agent.root.resolve(rowLabel)
+                    if (imagePath.toFile().exists()) {
+                      imagePrompt.add(ImageAndText(imagePath.toUri().toString(), image = imagePath.loadImage()))
+                    } else {
+                      log.warn("Image file for row label not found: $imagePath")
                     }
+                  }
                 }
                 when (colLabel.split('.').last()) {
-                    "jpg", "jpeg", "png" -> {
-                        val imagePath = agent.root.resolve(colLabel)
-                        if (imagePath.toFile().exists()) {
-                            imagePrompt.add(ImageAndText(imagePath.toUri().toString(), image = imagePath.loadImage()))
-                        } else {
-                            log.warn("Image file for column label not found: $imagePath")
-                        }
+                  "jpg", "jpeg", "png" -> {
+                    val imagePath = agent.root.resolve(colLabel)
+                    if (imagePath.toFile().exists()) {
+                      imagePrompt.add(ImageAndText(imagePath.toUri().toString(), image = imagePath.loadImage()))
+                    } else {
+                      log.warn("Image file for column label not found: $imagePath")
                     }
+                  }
                 }
-
-
 
                 try {
-                    // Generate the image
-                    val result = imageAgent.answer(imagePrompt)
-                    val generatedImage = result.image
+                  // Generate the image
+                  val result = imageAgent.answer(imagePrompt)
+                  val generatedImage = result.image
 
-                    // Create filename
-                    val safeRowLabel = sanitizeFilename(rowLabel)
-                    val safeColLabel = sanitizeFilename(colLabel)
-                    val filename = "${safeRowLabel}_${safeColLabel}.$imageFormat"
-                    val imagePath = outputPath?.resolve(filename)
+                  // Create filename
+                  val safeRowLabel = sanitizeFilename(rowLabel)
+                  val safeColLabel = sanitizeFilename(colLabel)
+                  val filename = "${safeRowLabel}_${safeColLabel}.$imageFormat"
+                  val imagePath = outputPath?.resolve(filename)
 
-                    // Save the image
-                    ImageIO.write(generatedImage, imageFormat, imagePath)
+                  // Save the image
+                  ImageIO.write(generatedImage, imageFormat, imagePath)
 
-                    // Store the relative path
-                    val relativePath = "$outputDir/$filename"
-                    imageResults[rowIdx][colIdx] = relativePath
+                  // Store the relative path
+                  val relativePath = "$outputDir/$filename"
+                  imageResults[rowIdx][colIdx] = relativePath
 
-                    // Show preview
-                    progressTab.image(generatedImage!!)
-                    progressTab.update()
+                  // Show preview
+                  progressTab.image(generatedImage!!)
+                  progressTab.update()
 
                 } catch (e: Exception) {
-                    log.error("Error generating image for row='$rowLabel', column='$colLabel'", e)
-                    imageResults[rowIdx][colIdx] = "ERROR"
-                    progressTab.error(e)
+                  log.error("Error generating image for row='$rowLabel', column='$colLabel'", e)
+                  imageResults[rowIdx][colIdx] = "ERROR"
+                  progressTab.error(e)
                 }
+              } finally {
+                parallelSemaphore.release()
+              }
             }
-        }
+          }
 
-        // Generate the HTML table output
-        val galleryTab = tabs.newTask("Gallery")
-        val htmlTable = formatAsHtmlTable(rows, columns, imageResults, task)
-        galleryTab.add(htmlTable)
 
-        // Generate markdown summary
-        val markdownSummary = formatAsMarkdownSummary(rows, columns, imageResults)
+          // Generate the HTML table output
+          val galleryTab = tabs.newTask("Gallery")
+          val htmlTable = formatAsHtmlTable(rows, columns, imageResults, task)
+          galleryTab.add(htmlTable)
 
-        // Save the HTML table to a file
-        val htmlFilename = "image_table.html"
-        val htmlPath = outputPath?.resolve(htmlFilename)
-        htmlPath?.writeText(generateStandaloneHtml(rows, columns, imageResults))
+          // Save the HTML table to a file
+          val htmlFilename = "image_table.html"
+          val htmlPath = outputPath?.resolve(htmlFilename)
+          val standaloneHtml = generateStandaloneHtml(rows, columns, imageResults)
+          htmlPath?.writeText(standaloneHtml)
 
-        val summary = buildString {
+          transcript?.write("\n### Generation Results\n<details><summary>HTML Table Source</summary>\n\n```html\n$standaloneHtml\n```\n</details>\n".toByteArray())
+
+          val summary = buildString {
             appendLine("Successfully generated ${rows.size}x${columns.size} image table.")
-            appendLine("Images saved to: $outputDir/")
-            appendLine("HTML table saved to: $outputDir/$htmlFilename")
-        }
+            appendLine("Images saved to: `$outputDir/`")
+            appendLine("HTML table saved to: `$outputDir/$htmlFilename`")
+          }
 
-        task.complete(summary)
-        resultFn(summary)
+          if (orchestrationConfig.autoFix) {
+            task.complete(summary.renderMarkdown)
+            resultFn(summary)
+          } else {
+            val footer = acceptButtonFooter(task.ui) {
+              task.complete(summary.renderMarkdown)
+              resultFn(summary)
+            }
+            task.add(summary.renderMarkdown + footer)
+          }
+          log.info("ImageTableTask completed successfully.")
+        } catch (e: Exception) {
+          task.error(e)
+          log.error("Error in ImageTableTask", e)
+          transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+        } finally {
+          transcript?.close()
+        }
+      }
     }
 
     private fun Path.loadImage(): BufferedImage? {

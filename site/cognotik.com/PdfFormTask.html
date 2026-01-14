@@ -8,6 +8,10 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -248,6 +252,16 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Test Workspace Browser</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore generated PDF artifacts and templates within the <code>PdfFormTask</code> workspace.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem; background: #090c10;"></div>
+    </section>
+
+
 
     <!-- 3. TABBED INTERFACE -->
     <section class="task-details">
@@ -269,6 +283,11 @@
                         <td><code>template_file</code><span class="req">*</span></td>
                         <td>String</td>
                         <td>Path to the PDF template file used for all executions of this task type.</td>
+                    </tr>
+                    <tr>
+                        <td><code>resultTemplate</code></td>
+                        <td>String</td>
+                        <td>Template for the success message. Supports <code>{output_file}</code> and <code>{count}</code>.</td>
                     </tr>
                 </tbody>
             </table>
@@ -313,21 +332,49 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
-            <h3>Boilerplate Registration</h3>
+            <h3>Embedded Execution (UnifiedHarness)</h3>
+            <p>To invoke this task programmatically using the Cognotik engine:</p>
             <pre><code class="language-kotlin">
-// Registering the task in OrchestrationConfig
-val config = OrchestrationConfig(
-    tasks = listOf(
-        PdfFormTask.PdfForm.apply {
-            settings = PdfFormTask.PdfFormTypeConfig(
-                template_file = "templates/invoice_template.pdf"
-            )
-        }
-    )
+import com.simiacryptus.cognotik.apps.general.UnifiedHarness
+import com.simiacryptus.cognotik.plan.tools.file.PdfFormTask
+import java.io.File
+
+val harness = UnifiedHarness(serverless = true).apply { start() }
+
+val typeConfig = PdfFormTask.PdfFormTypeConfig(
+    template_file = "templates/nda_template.pdf"
+)
+
+val executionConfig = PdfFormTask.PdfFormExecutionConfig(
+    output_file = "output/signed_contract.pdf",
+    fields = mapOf("SignerName" to "John Doe"),
+    flatten = true
+)
+
+harness.runTask(
+    taskType = PdfFormTask.PdfForm,
+    typeConfig = typeConfig,
+    executionConfig = executionConfig,
+    workspace = File("./my-project")
 )
             </code></pre>
 
-            <h3>LLM Prompt Segment</h3>
+            <h3>Test Case Example</h3>
+            <p>Example of how the agent uses this task during a planning phase:</p>
+            <pre><code class="language-json">
+{
+  "plan": [
+    {
+      "task_type": "PdfForm",
+      "task_description": "Generate the final report PDF",
+      "output_file": "reports/final.pdf",
+      "fields": { "Status": "Approved" }
+    }
+  ]
+}
+            </code></pre>
+
+            <h3>Dynamic Prompt Injection</h3>
             <p>The following instructions are injected into the LLM context to help it understand how to use this tool:</p>
             <pre><code class="language-text">
 PdfForm - Fill out a PDF form template.
@@ -352,6 +399,10 @@ Available Fields:
         document.getElementById('tab-' + tabId).style.display = 'block';
         event.currentTarget.classList.add('active');
     }
+</script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/PdfForm/');
 </script>
 
 </body>

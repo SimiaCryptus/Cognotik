@@ -1,20 +1,19 @@
 package com.simiacryptus.cognotik.plan.tools.games
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.BufferedWriter
-import java.io.FileOutputStream
-import java.nio.file.FileSystems
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -30,27 +29,27 @@ class GameMechanicsDesignTask(
 
     class GameMechanicsDesignTaskExecutionConfigData(
         @Description("High-level game concept (e.g., 'Tower defense with resource management')")
-        val game_concept: String? = null,
+        var game_concept: String? = null,
         @Description("Target audience: 'casual', 'hardcore', 'family', 'competitive'")
-        val target_audience: String? = "casual",
+        var target_audience: String? = "casual",
         @Description("Core gameplay loop duration (e.g., '5 minutes', '30 minutes', '2 hours')")
-        val core_loop_duration: String? = "15 minutes",
+        var core_loop_duration: String? = "15 minutes",
         @Description("Number of core mechanics to design (3-8 recommended)")
-        val num_mechanics: Int = 5,
+        var num_mechanics: Int = 5,
         @Description("Whether to include progression system design")
-        val include_progression_system: Boolean = true,
+        var include_progression_system: Boolean = true,
         @Description("Whether to include economy system design")
-        val include_economy_system: Boolean = true,
+        var include_economy_system: Boolean = true,
         @Description("Whether to include difficulty scaling analysis")
-        val include_difficulty_scaling: Boolean = true,
+        var include_difficulty_scaling: Boolean = true,
         @Description("Balance focus: 'skill', 'luck', 'strategy', 'mixed'")
-        val balance_focus: String? = "mixed",
+        var balance_focus: String? = "mixed",
         @Description("Number of simulated playtesting scenarios to run")
-        val playtesting_scenarios: Int = 3,
+        var playtesting_scenarios: Int = 3,
         @Description("Whether to generate detailed tuning guide")
-        val generate_tuning_guide: Boolean = true,
+        var generate_tuning_guide: Boolean = true,
         @Description("Optional input files for context (e.g., design docs, reference games)")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -84,28 +83,28 @@ class GameMechanicsDesignTask(
     // Non-generic wrapper classes for parser compatibility
     data class GameMechanicsList(
         @Description("List of game mechanics")
-        val mechanics: List<GameMechanic> = emptyList()
+        var mechanics: List<GameMechanic> = emptyList()
     ) : ValidatedObject {
         override fun validate(): String? = ValidatedObject.validateFields(this)
     }
 
     data class MechanicInteractionsList(
         @Description("List of mechanic interactions")
-        val interactions: List<MechanicInteraction> = emptyList()
+        var interactions: List<MechanicInteraction> = emptyList()
     ) : ValidatedObject {
         override fun validate(): String? = ValidatedObject.validateFields(this)
     }
 
     data class ProgressionCurveList(
         @Description("List of progression levels")
-        val levels: List<ProgressionCurve> = emptyList()
+        var levels: List<ProgressionCurve> = emptyList()
     ) : ValidatedObject {
         override fun validate(): String? = ValidatedObject.validateFields(this)
     }
 
     data class PlaytestingPredictionsList(
         @Description("List of playtesting predictions")
-        val predictions: List<PlaytestingPrediction> = emptyList()
+        var predictions: List<PlaytestingPrediction> = emptyList()
     ) : ValidatedObject {
         override fun validate(): String? = ValidatedObject.validateFields(this)
     }
@@ -113,21 +112,21 @@ class GameMechanicsDesignTask(
 
     data class GameMechanic(
         @Description("Name of the mechanic")
-        val name: String = "",
+        var name: String = "",
         @Description("Detailed description of how the mechanic works")
-        val description: String = "",
+        var description: String = "",
         @Description("List of actions players can take with this mechanic")
-        val player_actions: List<String> = emptyList(),
+        var player_actions: List<String> = emptyList(),
         @Description("How the game system responds to player actions")
-        val system_response: String = "",
+        var system_response: String = "",
         @Description("Type of feedback: 'immediate', 'delayed', 'cumulative'")
-        val feedback_type: String = "immediate",
+        var feedback_type: String = "immediate",
         @Description("Level of skill expression: 'high', 'medium', 'low'")
-        val skill_expression: String = "medium",
+        var skill_expression: String = "medium",
         @Description("Luck factor from 0.0 (no luck) to 1.0 (pure luck)")
-        val luck_factor: Double = 0.0,
+        var luck_factor: Double = 0.0,
         @Description("How this mechanic interacts with others")
-        val interactions: List<MechanicInteraction> = emptyList()
+        var interactions: List<MechanicInteraction> = emptyList()
     ) : ValidatedObject {
         override fun validate(): String? {
             if (name.isBlank()) return "name must not be blank"
@@ -149,15 +148,15 @@ class GameMechanicsDesignTask(
 
     data class MechanicInteraction(
         @Description("First mechanic in the interaction")
-        val mechanic_a: String = "",
+        var mechanic_a: String = "",
         @Description("Second mechanic in the interaction")
-        val mechanic_b: String = "",
+        var mechanic_b: String = "",
         @Description("Type of interaction: 'synergy', 'conflict', 'neutral'")
-        val interaction_type: String = "neutral",
+        var interaction_type: String = "neutral",
         @Description("Description of how the mechanics interact")
-        val description: String = "",
+        var description: String = "",
         @Description("Any balance concerns from this interaction")
-        val balance_concern: String? = null
+        var balance_concern: String? = null
     ) : ValidatedObject {
         override fun validate(): String? {
             if (mechanic_a.isBlank()) return "mechanic_a must not be blank"
@@ -172,15 +171,15 @@ class GameMechanicsDesignTask(
 
     data class ProgressionCurve(
         @Description("Level number")
-        val level: Int = 1,
+        var level: Int = 1,
         @Description("Experience points required to reach this level")
-        val experience_required: Int = 0,
+        var experience_required: Int = 0,
         @Description("Features, abilities, or content unlocked at this level")
-        val unlocks: List<String> = emptyList(),
+        var unlocks: List<String> = emptyList(),
         @Description("Difficulty multiplier at this level (1.0 = baseline)")
-        val difficulty_multiplier: Double = 1.0,
+        var difficulty_multiplier: Double = 1.0,
         @Description("Estimated hours of gameplay to reach this level")
-        val estimated_playtime_hours: Double = 0.0
+        var estimated_playtime_hours: Double = 0.0
     ) : ValidatedObject {
         override fun validate(): String? {
             if (level < 1) return "level must be at least 1"
@@ -193,13 +192,13 @@ class GameMechanicsDesignTask(
 
     data class EconomySystem(
         @Description("List of resource types in the game")
-        val resource_types: List<ResourceType> = emptyList(),
+        var resource_types: List<ResourceType> = emptyList(),
         @Description("How resources flow through the economy")
-        val flow_analysis: String = "",
+        var flow_analysis: String = "",
         @Description("Mechanisms to remove resources from circulation")
-        val sink_mechanisms: List<String> = emptyList(),
+        var sink_mechanisms: List<String> = emptyList(),
         @Description("Balance assessment of the economy")
-        val balance_assessment: String = ""
+        var balance_assessment: String = ""
     ) : ValidatedObject {
         override fun validate(): String? {
             if (resource_types.isEmpty()) return "resource_types must not be empty"
@@ -212,15 +211,15 @@ class GameMechanicsDesignTask(
 
     data class ResourceType(
         @Description("Name of the resource")
-        val name: String = "",
+        var name: String = "",
         @Description("How players generate this resource")
-        val generation_methods: List<String> = emptyList(),
+        var generation_methods: List<String> = emptyList(),
         @Description("Rate of generation (per minute/hour)")
-        val generation_rate: String = "",
+        var generation_rate: String = "",
         @Description("What this resource is used for")
-        val consumption_uses: List<String> = emptyList(),
+        var consumption_uses: List<String> = emptyList(),
         @Description("Rate of consumption")
-        val consumption_rate: String = ""
+        var consumption_rate: String = ""
     ) : ValidatedObject {
         override fun validate(): String? {
             if (name.isBlank()) return "name must not be blank"
@@ -234,19 +233,19 @@ class GameMechanicsDesignTask(
 
     data class BalanceMetrics(
         @Description("Variance in win rates (lower is better, 0.0-1.0)")
-        val win_rate_variance: Double = 0.0,
+        var win_rate_variance: Double = 0.0,
         @Description("Diversity of viable strategies (higher is better, 0.0-1.0)")
-        val strategy_diversity: Double = 0.0,
+        var strategy_diversity: Double = 0.0,
         @Description("How much skill affects outcomes (0-100)")
-        val skill_expression_score: Double = 0.0,
+        var skill_expression_score: Double = 0.0,
         @Description("How much luck affects outcomes (0-100)")
-        val luck_factor_score: Double = 0.0,
+        var luck_factor_score: Double = 0.0,
         @Description("Strategies that are too powerful")
-        val dominant_strategies: List<String> = emptyList(),
+        var dominant_strategies: List<String> = emptyList(),
         @Description("Number of viable alternative strategies")
-        val viable_alternatives: Int = 0,
+        var viable_alternatives: Int = 0,
         @Description("Estimated skill ceiling: 'low', 'medium', 'high'")
-        val estimated_skill_ceiling: String = "medium"
+        var estimated_skill_ceiling: String = "medium"
     ) : ValidatedObject {
         override fun validate(): String? {
             if (win_rate_variance < 0.0 || win_rate_variance > 1.0) {
@@ -271,17 +270,17 @@ class GameMechanicsDesignTask(
 
     data class PlaytestingPrediction(
         @Description("Scenario name or description")
-        val scenario: String = "",
+        var scenario: String = "",
         @Description("Predicted engagement curve over time")
-        val engagement_curve: String = "",
+        var engagement_curve: String = "",
         @Description("Key moments that keep players engaged")
-        val retention_points: List<String> = emptyList(),
+        var retention_points: List<String> = emptyList(),
         @Description("Potential sources of player frustration")
-        val frustration_triggers: List<String> = emptyList(),
+        var frustration_triggers: List<String> = emptyList(),
         @Description("Factors that encourage replay")
-        val replayability_factors: List<String> = emptyList(),
+        var replayability_factors: List<String> = emptyList(),
         @Description("Overall assessment of this scenario")
-        val assessment: String = ""
+        var assessment: String = ""
     ) : ValidatedObject {
         override fun validate(): String? {
             if (scenario.isBlank()) return "scenario must not be blank"
@@ -293,15 +292,15 @@ class GameMechanicsDesignTask(
 
     data class TuningParameters(
         @Description("Recommended difficulty settings")
-        val difficulty_settings: Map<String, String> = emptyMap(),
+        var difficulty_settings: Map<String, String> = emptyMap(),
         @Description("Reward multipliers for different scenarios")
-        val reward_multipliers: Map<String, Double> = emptyMap(),
+        var reward_multipliers: Map<String, Double> = emptyMap(),
         @Description("Progression speed adjustments")
-        val progression_speed: String = "",
+        var progression_speed: String = "",
         @Description("Economy balance adjustments")
-        val economy_adjustments: List<String> = emptyList(),
+        var economy_adjustments: List<String> = emptyList(),
         @Description("Additional tuning recommendations")
-        val recommendations: List<String> = emptyList()
+        var recommendations: List<String> = emptyList()
     ) : ValidatedObject {
         override fun validate(): String? {
             if (difficulty_settings.isEmpty()) return "difficulty_settings must not be empty"
@@ -313,25 +312,15 @@ class GameMechanicsDesignTask(
 
     override fun promptSegment(): String {
         return """
-GameMechanicsDesign - Generate comprehensive game mechanics with balance analysis
-  ** Specify the game concept (e.g., "Tower defense with resource management")
-  ** Define target audience (casual, hardcore, family, competitive)
-  ** Set core gameplay loop duration
-  ** Configure number of mechanics to design (3-8)
-  ** Choose balance focus (skill, luck, strategy, mixed)
-  ** The task will:
-     - Generate core gameplay mechanics
-     - Analyze mechanic interactions
-     - Design progression systems
-     - Create economy systems
-     - Evaluate balance and fairness
-     - Simulate playtesting scenarios
-     - Provide tuning parameters
-  ** Useful for:
-     - Game design prototyping
-     - Balancing existing games
-     - Competitive game design
-     - Educational game mechanics
+        GameMechanicsDesign - Generates comprehensive game mechanics with balance analysis.
+          ** Specify `game_concept` (e.g., "Tower defense with resource management")
+          ** Configure `target_audience`, `num_mechanics`, and `balance_focus`.
+          ** Use this to:
+             - Design core gameplay loops and mechanics.
+             - Analyze synergies and conflicts between mechanics.
+             - Create progression and economy systems.
+             - Evaluate balance and simulate playtesting engagement.
+             - Generate actionable tuning guides.
         """.trimIndent()
     }
 
@@ -342,24 +331,24 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val startTime = System.currentTimeMillis()
-        log.info("Starting GameMechanicsDesignTask for concept: '${executionConfig?.game_concept}'")
-        var transcriptWriter: BufferedWriter? = null
 
         val gameConcept = executionConfig?.game_concept
         if (gameConcept.isNullOrBlank()) {
             val errorMsg = "CONFIGURATION ERROR: No game concept specified"
             log.error(errorMsg)
-            task.safeComplete(errorMsg, log)
+          task.error(Exception(errorMsg))
             resultFn(errorMsg)
             return
         }
+      val startTime = System.currentTimeMillis()
+      log.info("Starting GameMechanicsDesignTask for concept: '${gameConcept.take(50)}'")
 
-        // Validate configuration
+
+      // Validate configuration
         executionConfig.validate()?.let { errorMessage ->
             log.error("Configuration validation failed: $errorMessage")
-            task.safeComplete("VALIDATION ERROR: $errorMessage", log)
             task.error(ValidatedObject.ValidationError(errorMessage, executionConfig))
+          task.complete("VALIDATION ERROR: $errorMessage".renderMarkdown)
             resultFn("VALIDATION ERROR: $errorMessage")
             return
         }
@@ -368,11 +357,10 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)
-        val transcriptStream = task.transcript()
-        transcriptWriter = transcriptStream?.bufferedWriter()
+      val transcript = task.transcript()
 
+      task.ui.pool.submit {
         val overviewTask = task.newTask()
-        try {
             tabs["Overview"] = overviewTask.placeholder
 
             val targetAudience = executionConfig.target_audience ?: "casual"
@@ -380,6 +368,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             val numMechanics = executionConfig.num_mechanics
             val balanceFocus = executionConfig.balance_focus ?: "mixed"
             val playtestingScenarios = executionConfig.playtesting_scenarios
+        try {
 
             overviewTask.add(
                 buildString {
@@ -414,12 +403,11 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine("**Status:** 🔄 Gathering context...")
                 }.renderMarkdown
             )
-            transcriptWriter?.write(
+          transcript?.write(
                 "# Game Mechanics Design\n\n**Game Concept:** $gameConcept\n\n**Started:** ${
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                }\n\n---\n\n"
+                }\n\n---\n\n".toByteArray()
             )
-            transcriptWriter?.flush()
 
             // Gather context
             log.debug("Gathering context from prior tasks and input files")
@@ -427,8 +415,23 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             val inputFileContext = getInputFileContent(executionConfig?.input_files, root)
 
             if (priorContext.isNotBlank() || inputFileContext.isNotBlank()) {
-                transcriptWriter?.write("## Context\n\n$priorContext\n\n$inputFileContext\n\n---\n\n")
-                transcriptWriter?.flush()
+              transcript?.write(
+                """
+                    ## Context
+                    <details>
+                    <summary>Context Data</summary>
+                    
+                    ### Prior Tasks
+                    $priorContext
+                    
+                    ### Input Files
+                    $inputFileContext
+                    </details>
+                    
+                    ---
+                    
+                    """.trimIndent().toByteArray()
+              )
                 val contextTask = task.newTask()
                 tabs["Context"] = contextTask.placeholder
                 contextTask.add(
@@ -535,7 +538,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     }
                 }.renderMarkdown
             )
-            transcriptStream?.write(buildString {
+          transcript?.write(buildString {
                 appendLine("## Core Mechanics")
                 appendLine()
                 mechanics.forEachIndexed { index, mechanic ->
@@ -564,7 +567,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine()
                 }
             }.toByteArray())
-            transcriptWriter?.flush()
             mechanicsTask.complete()
 
             // Step 2: Analyze Mechanic Interactions
@@ -643,7 +645,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     }
                 }.renderMarkdown
             )
-            transcriptStream?.write(buildString {
+          transcript?.write(buildString {
                 appendLine("## Mechanic Interactions")
                 appendLine()
                 val synergies = interactions.filter { it.interaction_type == "synergy" }
@@ -692,7 +694,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 appendLine("---")
                 appendLine()
             }.toByteArray())
-            transcriptWriter?.flush()
             interactionsTask.complete()
 
             // Step 3: Progression System (if enabled)
@@ -781,7 +782,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                         }
                     }.renderMarkdown
                 )
-                transcriptWriter?.write(buildString {
+              transcript?.write(buildString {
                     appendLine("## Progression System")
                     appendLine()
                     appendLine("**Summary:** ${progression.size} levels designed")
@@ -823,8 +824,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     }
                     appendLine("---")
                     appendLine()
-                })
-                transcriptWriter?.flush()
+              }.toByteArray())
                 progressionTask.complete()
             }
 
@@ -907,7 +907,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                         appendLine(economy.balance_assessment)
                     }.renderMarkdown
                 )
-                transcriptWriter?.write(buildString {
+              transcript?.write(buildString {
                     appendLine("## Economy System")
                     appendLine()
                     appendLine("**Summary:** ${economy.resource_types.size} resource types designed")
@@ -940,8 +940,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine()
                     appendLine("---")
                     appendLine()
-                })
-                transcriptWriter?.flush()
+              }.toByteArray())
                 economyTask.complete()
             }
 
@@ -1045,7 +1044,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     }
                 }.renderMarkdown
             )
-            transcriptStream?.write(buildString {
+          transcript?.write(buildString {
                 appendLine("## Balance Analysis")
                 appendLine()
                 appendLine("### Metrics")
@@ -1091,7 +1090,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 appendLine("---")
                 appendLine()
             }.toByteArray())
-            transcriptWriter?.flush()
             balanceTask.complete()
 
             // Step 6: Playtesting Predictions
@@ -1170,7 +1168,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     }
                 }.renderMarkdown
             )
-            transcriptWriter?.write(buildString {
+          transcript?.write(buildString {
                 appendLine("## Playtesting Predictions")
                 appendLine()
                 appendLine("**Summary:** ${playtesting.size} scenarios simulated")
@@ -1202,8 +1200,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine("---")
                     appendLine()
                 }
-            })
-            transcriptWriter?.flush()
+          }.toByteArray())
             playtestingTask.complete()
 
             // Step 7: Tuning Guide (if enabled)
@@ -1281,7 +1278,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                         }
                     }.renderMarkdown
                 )
-                transcriptStream?.write(buildString {
+              transcript?.write(buildString {
                     appendLine("## Tuning Guide")
                     appendLine()
                     appendLine("### Difficulty Settings")
@@ -1315,7 +1312,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine("---")
                     appendLine()
                 }.toByteArray())
-                transcriptWriter?.flush()
                 tuningTask.complete()
             }
 
@@ -1381,30 +1377,45 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     )
                 }.renderMarkdown
             )
-            transcriptWriter?.write(
+          transcript?.write(
                 "\n\n## Design Complete\n\n**Total Time:** ${duration / 1000.0}s\n\n**Completed:** ${
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                }\n"
+                }\n".toByteArray()
             )
-            transcriptWriter?.flush()
             overviewTask.complete()
 
             val relativePath = "game_mechanics_design_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
             val (transcriptLink, _) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
-            task.safeComplete(
-                "Game mechanics design completed in ${duration / 1000}s. " +
+          task.complete(
+            ("Game mechanics design completed in ${duration / 1000}s. " +
                         "View detailed design: <a href='$transcriptLink' target='_blank'>markdown</a> " +
                         "<a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                        "<a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>",
-                log
+                "<a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>").renderMarkdown
             )
-            resultFn(finalResult.toString())
+          resultFn(
+            """
+                ## Game Design Complete: $gameConcept
+                * Mechanics: ${mechanics.size}
+                * Balance: ${String.format("%.0f", balance.skill_expression_score)}% Skill / ${
+              String.format(
+                "%.0f",
+                balance.luck_factor_score
+              )
+            }% Luck
+                * Strategy Diversity: ${String.format("%.1f", balance.strategy_diversity * 100)}%
+                * Full report saved to: `$relativePath`
+            """.trimIndent()
+          )
 
         } catch (e: Exception) {
-            val duration = System.currentTimeMillis() - startTime
-            transcriptWriter?.write("\n\n## Error Occurred\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n")
-            log.error("GameMechanicsDesignTask failed after ${duration}ms for concept: $gameConcept", e)
-            task.error(e)
+          val duration = System.currentTimeMillis() - startTime
+          // Triple Log Rule
+          task.error(e)
+          log.error("GameMechanicsDesignTask failed after ${duration}ms for concept: $gameConcept", e)
+          transcript?.write(
+            "\n\n## Error Occurred\n\n**Error:** ${e.message}\n\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n"
+              .toByteArray()
+          )
 
             overviewTask.add(
                 buildString {
@@ -1429,66 +1440,22 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             }
             resultFn(errorOutput.toString())
         } finally {
-            transcriptStream?.flush()
-            transcriptStream?.close()
+          transcript?.close()
+        }
         }
     }
 
-    private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
-        .flatMap { pattern: String ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            (FileSelectionUtils.filteredWalk(root.toFile()) {
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    matcher.matches(root.relativize(it.toPath())) -> true
-                    it.isDirectory -> true
-                    else -> false
-                }
-            })
-        }.filter { file ->
-            file.isFile && file.exists()
-        }
-        .distinct()
-        .sortedBy { it }
-        .joinToString("\n\n") { relativePath ->
-            val file = root.toFile().resolve(relativePath)
-            try {
-                val content = file.readText()
-                "# $relativePath\n\n```\n$content\n```"
-            } catch (e: Throwable) {
-                log.warn("Error reading file: $relativePath", e)
-                ""
-            }
-        }
 
-    private fun initializeTranscript(task: SessionTask): FileOutputStream? {
-        return try {
-            val relativePath = "game_mechanics_design_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-            val (link, file) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
-            val transcriptStream = file?.outputStream()
-            task.complete(
-                "Writing design to <a href='$link' target='_blank'>$link</a> " +
-                        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                        "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-            )
-            log.info("Initialized transcript file: $link")
-            transcriptStream
-        } catch (e: Exception) {
-            log.error("Failed to initialize transcript", e)
-            null
-        }
-    }
-
-    companion object {
+  companion object {
         private val log: Logger = LoggerFactory.getLogger(GameMechanicsDesignTask::class.java)
         val GameMechanicsDesign = TaskType(
-          name = "GameMechanicsDesign",
-          category = "Games",
-          taskClass = GameMechanicsDesignTask::class.java,
-          executionConfigClass = GameMechanicsDesignTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Generate comprehensive game mechanics with balance analysis",
-          tooltipHtml = """
+            name = "GameMechanicsDesign",
+            category = "Games",
+            taskClass = GameMechanicsDesignTask::class.java,
+            executionConfigClass = GameMechanicsDesignTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Generate comprehensive game mechanics with balance analysis",
+            tooltipHtml = """
                         Designs complete game mechanics systems with detailed analysis.
                         <ul>
                           <li>Generates core gameplay mechanics from high-level concepts</li>

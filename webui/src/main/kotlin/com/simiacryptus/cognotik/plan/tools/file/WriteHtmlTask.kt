@@ -4,7 +4,10 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -15,9 +18,9 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
-import javax.imageio.ImageIO
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.imageio.ImageIO
 
 class WriteHtmlTask(
     orchestrationConfig: OrchestrationConfig,
@@ -52,7 +55,7 @@ class WriteHtmlTask(
             }
 
             // Validate that the file has .html extension
-            val htmlFile = files.first()
+          val htmlFile = files!!.first()
             if (!htmlFile.endsWith(".html", ignoreCase = true)) {
                 return "WriteHtmlTaskExecutionConfigData: file must have .html extension, got: $htmlFile"
             }

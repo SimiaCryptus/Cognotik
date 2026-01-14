@@ -3,19 +3,20 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 class SystemsThinkingTask(
     orchestrationConfig: OrchestrationConfig,
@@ -29,31 +30,34 @@ class SystemsThinkingTask(
 
     class SystemsThinkingTaskExecutionConfigData(
         @Description("Description of the system to analyze")
-        val system_description: String? = null,
+        var system_description: String? = null,
         @Description("Whether to identify feedback loops (reinforcing and balancing)")
-        val identify_feedback_loops: Boolean = true,
+        var identify_feedback_loops: Boolean = true,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         @Description("Whether to map delays and accumulations in the system")
-        val map_delays: Boolean = true,
+        var map_delays: Boolean = true,
         @Description("Whether to find leverage points for intervention")
-        val find_leverage_points: Boolean = true,
+        var find_leverage_points: Boolean = true,
         @Description("List of potential interventions to simulate (e.g., 'Implement caching layer', 'Add rate limiting'). Leave empty or null to skip intervention simulation.")
-        val simulate_interventions: List<String>? = null,
+        var simulate_interventions: List<String>? = null,
         @Description("Time horizon for analysis (e.g., '6 months', '1 year')")
-        val time_horizon: String? = "6 months",
+        var time_horizon: String? = "6 months",
         @Description("Whether to identify system archetypes")
-        val identify_archetypes: Boolean = true,
+        var identify_archetypes: Boolean = true,
         @Description("Whether to analyze emergent behavior")
-        val analyze_emergent_behavior: Boolean = true,
+        var analyze_emergent_behavior: Boolean = true,
         @Description("Additional files for context")
-        val related_files: List<String>? = null,
+        var related_files: List<String>? = null,
         @Description("Focus areas or subsystems to prioritize in the analysis")
-        val focus_areas: List<String>? = null,
+        var focus_areas: List<String>? = null,
         @Description("Specific questions to answer about the system")
-        val analysis_questions: List<String>? = null,
+        var analysis_questions: List<String>? = null,
+        @Description("Description of the task")
         task_description: String? = null,
-        task_dependencies: List<String>? = null,
+        @Description("List of task IDs this task depends on")
+        task_dependencies: MutableList<String>? = null,
+        @Description("The current state of the task")
         state: TaskState? = TaskState.Pending,
     ) : TaskExecutionConfig(
         task_type = SystemsThinking.name,
@@ -93,8 +97,8 @@ class SystemsThinkingTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         val startTime = System.currentTimeMillis()
-        log.info("Starting SystemsThinkingTask for system: '${executionConfig?.system_description}'")
-        var transcriptStream: FileOutputStream? = null
+      log.info("Starting SystemsThinkingTask for system: '${executionConfig?.system_description?.take(100)}'")
+      val transcript = task.transcript()
 
         val systemDescription = executionConfig?.system_description
         if (systemDescription.isNullOrBlank()) {
@@ -109,7 +113,6 @@ class SystemsThinkingTask(
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)
-        transcriptStream = initializeTranscript(task)
 
         // Overview tab
         val overviewTask = tabs.newTask("Overview")
@@ -121,8 +124,7 @@ class SystemsThinkingTask(
             val analysisQuestions = executionConfig.analysis_questions ?: emptyList()
             overviewTask.header("Systems Thinking Analysis", level = 1)
 
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+          val overviewMarkdown = buildString {
                     appendLine("**System:** $systemDescription")
                     appendLine()
                     appendLine("**Time Horizon:** $timeHorizon")
@@ -154,14 +156,14 @@ class SystemsThinkingTask(
                     appendLine("---")
                     appendLine()
                     appendLine("**Status:** 🔄 Gathering context...")
-                }, ui = task.ui)
-            )
-            transcriptStream?.write(
+          }.renderMarkdown()
+          overviewTask.add(overviewMarkdown)
+
+          transcript?.write(
                 "# Systems Thinking Analysis\n\n**System:** $systemDescription\n\n**Time Horizon:** $timeHorizon\n\n**Started:** ${
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                 }\n\n---\n\n".toByteArray()
             )
-            task.update()
 
             // Gather context
             log.debug("Gathering context from prior tasks and related files")
@@ -170,32 +172,41 @@ class SystemsThinkingTask(
             val relatedContext = gatherRelatedFiles()
 
             if (priorContext.isNotBlank() || inputFileContext.isNotBlank() || relatedContext.isNotBlank()) {
-                transcriptStream?.write("## Context\n\n$priorContext\n\n$inputFileContext\n\n$relatedContext\n\n---\n\n".toByteArray())
-                val contextTask = tabs.newTask("Context")
+              transcript?.write(
+                """
+                    <details>
+                    <summary>Analysis Context (Prior Tasks & Files)</summary>
+                    
+                    ### Prior Context
+                    $priorContext
+                    
+                    ### Input Files
+                    $inputFileContext
+                    
+                    ### Related Files
+                    $relatedContext
+                    </details>
+                    
+                    ---
+                """.trimIndent().toByteArray()
+              )
+
+              val contextTask = tabs.newTask("Context")
                 contextTask.header("Context", level = 1)
 
                 if (priorContext.isNotBlank()) {
-                    contextTask.expandable(
-                        "Prior Task Results",
-                        MarkdownUtil.renderMarkdown(priorContext.truncateForDisplay(), ui = task.ui)
-                    )
+                  contextTask.expandable("Prior Task Results", priorContext.truncateForDisplay().renderMarkdown())
                 }
                 if (inputFileContext.isNotBlank()) {
-                    contextTask.expandable(
-                        "Input Files",
-                        MarkdownUtil.renderMarkdown(inputFileContext.truncateForDisplay(), ui = task.ui)
-                    )
+                  contextTask.expandable("Input Files", inputFileContext.truncateForDisplay().renderMarkdown())
                 }
                 if (relatedContext.isNotBlank()) {
-                    contextTask.expandable(
-                        "Related Files",
-                        MarkdownUtil.renderMarkdown(relatedContext.truncateForDisplay(), ui = task.ui)
-                    )
+
+                  contextTask.expandable("Related Files", relatedContext.truncateForDisplay().renderMarkdown())
                 }
-                task.update()
             }
 
-// Initialize analysis agent
+          // Initialize analysis agent
             log.info("Initializing systems thinking analysis agent")
             val analysisAgent = ChatAgent(
                 prompt = buildSystemsThinkingPrompt(
@@ -210,23 +221,19 @@ class SystemsThinkingTask(
                 temperature = 0.6
             )
 
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+          overviewTask.add(buildString {
                     appendLine()
                     appendLine("✅ Context gathered")
                     appendLine()
                     appendLine("**Status:** 🔄 Analyzing system structure...")
-                }, ui = task.ui)
-            )
-            task.update()
+          }.renderMarkdown())
 
             // Step 1: System Structure Analysis
             log.debug("Analyzing system structure and components")
             val structureTask = tabs.newTask("System Structure")
 
             structureTask.header("System Structure", level = 2)
-            structureTask.add(MarkdownUtil.renderMarkdown("🔄 Analyzing components and relationships...", ui = task.ui))
-            task.update()
+          structureTask.add("🔄 Analyzing components and relationships...".renderMarkdown())
 
             val structureAnalysis = analysisAgent.answer(
                 listOf(
@@ -242,15 +249,12 @@ Provide a clear, structured analysis.
                 )
             )
 
-            structureTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+          structureTask.add(buildString {
                     appendLine("✅ Analysis complete")
                     appendLine()
                     appendLine(structureAnalysis)
-                }, ui = task.ui)
-            )
-            transcriptStream?.write("## System Structure\n\n$structureAnalysis\n\n---\n\n".toByteArray())
-            task.update()
+          }.renderMarkdown())
+          transcript?.write("## System Structure\n\n$structureAnalysis\n\n---\n\n".toByteArray())
 
             // Step 2: Feedback Loops
             if (executionConfig.identify_feedback_loops) {
@@ -258,13 +262,7 @@ Provide a clear, structured analysis.
                 val loopsTask = tabs.newTask("Feedback Loops")
 
                 loopsTask.header("Feedback Loops", level = 2)
-                loopsTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        "🔄 Identifying reinforcing and balancing loops...",
-                        ui = task.ui
-                    )
-                )
-                task.update()
+              loopsTask.add("🔄 Identifying reinforcing and balancing loops...".renderMarkdown())
 
                 val loopsAnalysis = analysisAgent.answer(
                     listOf(
@@ -290,15 +288,12 @@ Provide the analysis and diagram.
                     )
                 )
 
-                transcriptStream?.write("## Feedback Loops\n\n$loopsAnalysis\n\n---\n\n".toByteArray())
-                loopsTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+              transcript?.write("## Feedback Loops\n\n$loopsAnalysis\n\n---\n\n".toByteArray())
+              loopsTask.add(buildString {
                         appendLine("✅ Analysis complete")
                         appendLine()
                         appendLine(loopsAnalysis)
-                    }, ui = task.ui)
-                )
-                task.update()
+              }.renderMarkdown())
             }
 
             // Step 3: Delays and Accumulations
@@ -307,8 +302,7 @@ Provide the analysis and diagram.
                 val delaysTask = tabs.newTask("Delays & Accumulations")
 
                 delaysTask.header("Delays & Accumulations", level = 2)
-                delaysTask.add(MarkdownUtil.renderMarkdown("🔄 Analyzing time lags and stocks...", ui = task.ui))
-                task.update()
+              delaysTask.add("🔄 Analyzing time lags and stocks...".renderMarkdown())
 
                 val delaysAnalysis = analysisAgent.answer(
                     listOf(
@@ -329,15 +323,12 @@ Provide specific examples with estimated time scales.
                     )
                 )
 
-                delaysTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+              delaysTask.add(buildString {
                         appendLine("✅ Analysis complete")
                         appendLine()
                         appendLine(delaysAnalysis)
-                    }, ui = task.ui)
-                )
-                transcriptStream?.write("## Delays & Accumulations\n\n$delaysAnalysis\n\n---\n\n".toByteArray())
-                task.update()
+              }.renderMarkdown())
+              transcript?.write("## Delays & Accumulations\n\n$delaysAnalysis\n\n---\n\n".toByteArray())
             }
 
             // Step 4: System Archetypes
@@ -346,8 +337,7 @@ Provide specific examples with estimated time scales.
                 val archetypesTask = tabs.newTask("System Archetypes")
 
                 archetypesTask.header("System Archetypes", level = 2)
-                archetypesTask.add(MarkdownUtil.renderMarkdown("🔄 Identifying common patterns...", ui = task.ui))
-                task.update()
+              archetypesTask.add("🔄 Identifying common patterns...".renderMarkdown())
 
                 val archetypesAnalysis = analysisAgent.answer(
                     listOf(
@@ -373,15 +363,12 @@ Focus on the most relevant archetypes.
                     )
                 )
 
-                archetypesTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+              archetypesTask.add(buildString {
                         appendLine("✅ Analysis complete")
                         appendLine()
                         appendLine(archetypesAnalysis)
-                    }, ui = task.ui)
-                )
-                transcriptStream?.write("## System Archetypes\n\n$archetypesAnalysis\n\n---\n\n".toByteArray())
-                task.update()
+              }.renderMarkdown())
+              transcript?.write("## System Archetypes\n\n$archetypesAnalysis\n\n---\n\n".toByteArray())
             }
 
             // Step 5: Emergent Behavior
@@ -390,8 +377,7 @@ Focus on the most relevant archetypes.
                 val emergentTask = tabs.newTask("Emergent Behavior")
 
                 emergentTask.header("Emergent Behavior", level = 2)
-                emergentTask.add(MarkdownUtil.renderMarkdown("🔄 Predicting system-level patterns...", ui = task.ui))
-                task.update()
+              emergentTask.add("🔄 Predicting system-level patterns...".renderMarkdown())
 
                 val emergentAnalysis = analysisAgent.answer(
                     listOf(
@@ -408,15 +394,12 @@ Consider both positive and negative emergent behaviors.
                     )
                 )
 
-                emergentTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+              emergentTask.add(buildString {
                         appendLine("✅ Analysis complete")
                         appendLine()
                         appendLine(emergentAnalysis)
-                    }, ui = task.ui)
-                )
-                transcriptStream?.write("## Emergent Behavior\n\n$emergentAnalysis\n\n---\n\n".toByteArray())
-                task.update()
+              }.renderMarkdown())
+              transcript?.write("## Emergent Behavior\n\n$emergentAnalysis\n\n---\n\n".toByteArray())
             }
 
             // Step 6: Leverage Points
@@ -425,13 +408,7 @@ Consider both positive and negative emergent behaviors.
                 val leverageTask = tabs.newTask("Leverage Points")
 
                 leverageTask.header("Leverage Points", level = 2)
-                leverageTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        "🔄 Identifying high-impact intervention points...",
-                        ui = task.ui
-                    )
-                )
-                task.update()
+              leverageTask.add("🔄 Identifying high-impact intervention points...".renderMarkdown())
 
                 val leverageAnalysis = analysisAgent.answer(
                     listOf(
@@ -460,15 +437,12 @@ Focus on the most impactful leverage points.
                     )
                 )
 
-                leverageTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+              leverageTask.add(buildString {
                         appendLine("✅ Analysis complete")
                         appendLine()
                         appendLine(leverageAnalysis)
-                    }, ui = task.ui)
-                )
-                transcriptStream?.write("## Leverage Points\n\n$leverageAnalysis\n\n---\n\n".toByteArray())
-                task.update()
+              }.renderMarkdown())
+              transcript?.write("## Leverage Points\n\n$leverageAnalysis\n\n---\n\n".toByteArray())
             }
 
             // Step 7: Intervention Simulation
@@ -477,15 +451,12 @@ Focus on the most impactful leverage points.
                 val simulationTask = tabs.newTask("Intervention Simulation")
                 simulationTask.header("Intervention Simulation", level = 2)
 
-                simulationTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+              simulationTask.add(buildString {
                         appendLine("🔄 Simulating ${interventions.size} intervention scenarios...")
                         appendLine()
                         appendLine("**Interventions:**")
                         interventions.forEach { appendLine("- $it") }
-                    }, ui = task.ui)
-                )
-                task.update()
+              }.renderMarkdown())
 
                 val simulationResults = mutableListOf<String>()
                 interventions.forEachIndexed { index, intervention ->
@@ -520,18 +491,16 @@ $simulationAnalysis
                     simulationResults.add(resultMarkdown)
 
                     // Stream result to UI
-                    simulationTask.add(MarkdownUtil.renderMarkdown(resultMarkdown, ui = task.ui))
-                    task.update()
 
-                    transcriptStream?.write(resultMarkdown.toByteArray())
+
+                  simulationTask.add(resultMarkdown.renderMarkdown())
+
+                  transcript?.write(resultMarkdown.toByteArray())
                 }
 
-                simulationTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+              simulationTask.add(buildString {
                         appendLine("✅ Simulation complete")
-                    }, ui = task.ui)
-                )
-                task.update()
+              }.renderMarkdown())
             }
 
             // Step 8: Synthesis and Recommendations
@@ -539,8 +508,7 @@ $simulationAnalysis
             val synthesisTask = tabs.newTask("Synthesis")
 
             synthesisTask.header("Synthesis & Recommendations", level = 2)
-            synthesisTask.add(MarkdownUtil.renderMarkdown("🔄 Generating comprehensive synthesis...", ui = task.ui))
-            task.update()
+          synthesisTask.add("🔄 Generating comprehensive synthesis...".renderMarkdown())
 
             val synthesisPrompt = buildString {
                 appendLine("Provide a comprehensive synthesis of the systems thinking analysis:")
@@ -561,15 +529,12 @@ $simulationAnalysis
 
             val synthesis = analysisAgent.answer(listOf(synthesisPrompt.toString()))
 
-            synthesisTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+          synthesisTask.add(buildString {
                     appendLine("✅ Analysis complete")
                     appendLine()
                     appendLine(synthesis)
-                }, ui = task.ui)
-            )
-            transcriptStream?.write("## Synthesis & Recommendations\n\n$synthesis\n\n---\n\n".toByteArray())
-            task.update()
+          }.renderMarkdown())
+          transcript?.write("## Synthesis & Recommendations\n\n$synthesis\n\n---\n\n".toByteArray())
 
             // Build concise final result
             val finalResult = buildString {
@@ -604,8 +569,7 @@ $simulationAnalysis
                         "output_size=${finalResult.length} chars"
             )
 
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+          overviewTask.add(buildString {
                     appendLine()
                     appendLine("---")
                     appendLine()
@@ -635,47 +599,49 @@ $simulationAnalysis
                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         }"
                     )
-                }, ui = task.ui)
-            )
-            transcriptStream?.write(
+          }.renderMarkdown())
+          transcript?.write(
                 "\n\n## Analysis Complete\n\n**Total Time:** ${duration / 1000.0}s\n\n**Completed:** ${
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                 }\n".toByteArray()
             )
-            task.update()
 
-            val relativePath = "systems_thinking_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-            val (transcriptLink, _) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
-            task.safeComplete(
-                "Systems thinking analysis completed in ${duration / 1000}s. " +
-                        "View detailed transcript: <a href='$transcriptLink' target='_blank'>markdown</a> " +
-                        "<a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                        "<a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>",
-                log
-            )
+
+          task.complete("Systems thinking analysis completed in ${duration / 1000}s.".renderMarkdown())
             resultFn(finalResult.toString())
 
         } catch (e: Exception) {
             val duration = System.currentTimeMillis() - startTime
-            transcriptStream?.write("\n\n## Error Occurred\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n".toByteArray())
-            log.error("SystemsThinkingTask failed after ${duration}ms for system: $systemDescription", e)
+          transcript?.write(
+            """
+                <details>
+                <summary>Error Occurred: ${e.message}</summary>
+                
+                ```
+                ${e.stackTraceToString()}
+                ```
+                </details>
+            """.trimIndent().toByteArray()
+          )
+
+          log.error("SystemsThinkingTask failed after ${duration}ms for system: $systemDescription", e)
             task.error(e)
 
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+          overviewTask.add(buildString {
                     appendLine()
                     appendLine("---")
                     appendLine()
                     appendLine("## ❌ Error Occurred")
                     appendLine()
-                    appendLine("**Error:** ${e.message}")
+            appendLine("**Error:** ${e.message?.take(200)}")
                     appendLine()
                     appendLine("**Type:** ${e.javaClass.simpleName}")
-                }, ui = task.ui)
-            )
-            task.update()
+          }.renderMarkdown())
 
             val errorOutput = buildString {
+              appendLine("## Analysis Failed")
+              appendLine()
+              appendLine("The systems thinking analysis encountered an error.")
                 appendLine("# Error in Systems Thinking Analysis")
                 appendLine()
                 appendLine("**System:** $systemDescription")
@@ -684,8 +650,7 @@ $simulationAnalysis
             }
             resultFn(errorOutput.toString())
         } finally {
-            transcriptStream?.flush()
-            transcriptStream?.close()
+          transcript?.close()
         }
     }
 
@@ -795,23 +760,6 @@ Provide clear, actionable insights grounded in systems thinking principles.
         }
 
 
-    private fun initializeTranscript(task: SessionTask): FileOutputStream? {
-        return try {
-            val relativePath = "systems_thinking_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-            val (link, file) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
-            val transcriptStream = file?.outputStream()
-            task.add(
-                "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
-                        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                        "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-            )
-            log.info("Initialized transcript file: $link")
-            transcriptStream
-        } catch (e: Exception) {
-            log.error("Failed to initialize transcript", e)
-            null
-        }
-    }
 
 
     companion object {

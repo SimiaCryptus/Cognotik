@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -29,26 +29,29 @@ class TiledImageGenerationTask(
 
   class TiledImageGenerationConfig(
     @Description("The output file path for the final high-res image")
-    val output_file: String? = "",
+    var output_file: String? = "",
     @Description("List of prompts, one for each level of detail. The first is for the base image.")
-    val prompts: List<String>? = null,
+    var prompts: List<String>? = null,
     @Description("Optional input file path to use as the base image instead of generating one.")
-    val input_file: String? = null,
+    var input_file: String? = null,
     @Description("Upscale factor per level (e.g., 2.0 for 2x size, 4.0 for 4x size)")
-    val upscale_factor: Double = 2.0,
+    var upscale_factor: Double = 2.0,
     @Description("Minimum width/height (in pixels) of a region to trigger refinement.")
-    val min_region_size: Int = 128,
+    var min_region_size: Int = 128,
     @Description("Maximum aspect ratio for regions (e.g., 3.0 means max 3:1 or 1:3).")
-    val max_aspect_ratio: Double = 3.0,
+    var max_aspect_ratio: Double = 3.0,
     @Description("Output image file extension (e.g., 'jpg', 'png').")
-    val extension: String = "png",
+    var extension: String = "png",
     @Description("Grid schedule (e.g. ['2x2', '3x3']). Defaults to alternating.")
-    val grid_schedule: List<Int>? = null,
+    var grid_schedule: List<Int>? = null,
     @Description("Overlap between tiles as a fraction of tile size (0.0-1.0). Defaults to 0.15.")
-    val tile_overlap: Double = 0.15,
+    var tile_overlap: Double = 0.15,
+    @Description("Task dependencies")
     task_dependencies: List<String>? = null,
+    @Description("Task state")
     state: TaskState? = TaskState.Pending,
-    val retarget_subimages: Boolean = true,
+    @Description("Whether to retarget sub-images for better alignment")
+    var retarget_subimages: Boolean = true,
   ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = TiledImageGeneration.name,
     task_description = prompts?.firstOrNull(),
@@ -84,10 +87,11 @@ class TiledImageGenerationTask(
   )
 
   override fun promptSegment() = """
-IterativeImageGeneration - Generates ultra-high-resolution images via recursive upscaling
-* Use for: Creating posters, maps, or detailed scenes where standard generation lacks resolution.
-* Mechanism: Generates a base image, identifies regions, upscales them, and uses AI to refine details recursively.
-      """.trimIndent()
+    ### TiledImageGeneration
+    Generates ultra-high-resolution images via recursive upscaling and refinement.
+    * **Use when:** You need posters, detailed maps, or scenes where standard generation lacks resolution.
+    * **Mechanism:** Generates a base image, tiles it, and uses AI to refine each tile at higher resolution recursively.
+  """.trimIndent()
 
   override fun run(
     agent: TaskOrchestrator,
@@ -108,13 +112,13 @@ IterativeImageGeneration - Generates ultra-high-resolution images via recursive 
 
     val writeModel = orchestrationConfig.defaultImage.getChildClient(task)
 
-    val transcript = task.transcript()
-    val tabs = TabbedDisplay(task)
-    val logTab = tabs.newTask("Progress")
 
     task.ui.pool.submit {
+      val transcript = task.transcript()
+      val tabs = TabbedDisplay(task)
+      val logTab = tabs.newTask("Progress")
       try {
-        task.header("Starting Iterative Generation: $outputFile", level = 2)
+        log.info("Starting Iterative Generation for $outputFile")
         val configInfo = buildString {
           appendLine("**Configuration**")
           appendLine("* **Output File:** $outputFile")
@@ -125,6 +129,7 @@ IterativeImageGeneration - Generates ultra-high-resolution images via recursive 
           appendLine("* **Min Region Size:** $minSize")
           appendLine("* **Tile Overlap:** $tileOverlap")
         }
+        task.header("Iterative Generation: $outputFile", level = 2)
         logTab.add(configInfo.renderMarkdown())
         transcript?.write("# Iterative Image Generation\n\n$configInfo\n\n".toByteArray())
 
@@ -438,19 +443,41 @@ IterativeImageGeneration - Generates ultra-high-resolution images via recursive 
         }.toByteArray())
 
 
-        task.safeComplete("Generated high-res image: ${finalImage.width}x${finalImage.height}", log)
-        resultFn("Generated ultra-high-resolution image saved to $outputFile. Final dimensions: ${finalImage.width}x${finalImage.height}.")
+        val completionMsg =
+          "Generated ultra-high-resolution image saved to $outputFile. Final dimensions: ${finalImage.width}x${finalImage.height}."
+        if (orchestrationConfig.autoFix) {
+          task.safeComplete(completionMsg.renderMarkdown(), log)
+          resultFn(completionMsg)
+        } else {
+          val footer = acceptButtonFooter(task.ui) {
+            task.safeComplete(completionMsg.renderMarkdown(), log)
+            resultFn(completionMsg)
+          }
+          task.add(footer.renderMarkdown())
+        }
 
       } catch (e: Exception) {
-        log.error("Error in IterativeImageGeneration", e)
+        // Triple Log Rule
         task.error(e)
-        transcript?.write("\n## Error\n${e.message}\n".toByteArray())
+        log.error("Error in TiledImageGenerationTask: ${e.message}")
+        transcript?.write(
+          """
+          <details>
+          <summary>Stack Trace</summary>
+
+          ```
+          ${e.stackTraceToString()}
+          ```
+          </details>
+        """.trimIndent().toByteArray()
+        )
         resultFn("Error generating image: ${e.message}")
       } finally {
         transcript?.close()
       }
     }
   }
+
 
   private fun saveImage(image: BufferedImage, name: String, task: SessionTask): String {
     val file = root.resolve(name)

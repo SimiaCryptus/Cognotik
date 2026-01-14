@@ -2,18 +2,18 @@
   "id" : "crawleragent",
   "label" : "Crawler Agent",
   "url" : "CrawlerAgentTask.html",
-  "description" : "Search Google, fetch top results, and analyze content\n\n\n                    Searches Google for specified queries and analyzes the top results.\n                    <ul>\n                      <li>Performs Google searches</li>\n                      <li>Fetches top search results</li>\n                      <li>Analyzes content for specific goals</li>\n                      <li>Generates detailed analysis reports</li>\n           </ul>\n                  \n",
+  "description" : "Search Google, fetch top results, and analyze content\n\n\n                    Searches Google for specified queries and analyzes the top results.\n                    \n                  \n",
   "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/CrawlerAgentTask.kt"
 }, {
   "id" : "githubsearch",
   "label" : "Git Hub Search",
   "url" : "GitHubSearchTask.html",
-  "description" : "Search GitHub repositories, code, issues and users\n\n\n                    Performs comprehensive searches across GitHub's content.\n                    <ul>\n                      <li>Searches repositories, code, and issues</li>\n                      <li>Supports advanced search queries</li>\n                      <li>Filters results by various criteria</li>\n                      <li>Formats results with relevant details</li>\n                      <li>Handles API rate limiting</li>\n                    </ul>\n                  \n",
+  "description" : "Search GitHub repositories, code, issues and users\n\n\n                    Performs comprehensive searches across GitHub's content.\n                    \n                  \n",
   "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/GitHubSearchTask.kt"
 }, {
   "id" : "mcptool",
   "label" : "MCPTool",
   "url" : "MCPToolTask.html",
-  "description" : "Execute tools from Model Context Protocol servers\n\n\n                        Executes tools from MCP (Model Context Protocol) servers.\n                        <ul>\n                          <li>Connect to MCP servers via various transports</li>\n                          <li>Execute tools with custom arguments</li>\n                          <li>Configurable timeouts and retry logic</li>\n                          <li>Support for multiple MCP server integrations</li>\n                          <li>Structured result handling</li>\n                          <li>Automatic tool discovery and validation</li>\n                          <li>Exponential backoff retry strategy</li>\n                        </ul>\n                      \n",
+  "description" : "Execute tools from Model Context Protocol servers\n\n\n                        Executes tools from MCP (Model Context Protocol) servers.\n                        \n                      \n",
   "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/MCPToolTask.kt"
 } ]

@@ -1,13 +1,17 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.charset.StandardCharsets
@@ -24,13 +28,13 @@ class NeuralNetworkLayerTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(NeuralNetworkLayerTask::class.java)
         val NeuralNetworkLayer = TaskType(
-          name = "NeuralNetworkLayer",
-          category = "Writing",
-          taskClass = NeuralNetworkLayerTask::class.java,
-          executionConfigClass = NeuralNetworkLayerTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Design and analyze neural network layers with formal mathematical definitions and intuitive explanations",
-          tooltipHtml = """
+            name = "NeuralNetworkLayer",
+            category = "Writing",
+            taskClass = NeuralNetworkLayerTask::class.java,
+            executionConfigClass = NeuralNetworkLayerTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Design and analyze neural network layers with formal mathematical definitions and intuitive explanations",
+            tooltipHtml = """
                           Comprehensive neural network layer design and analysis tool with both rigorous mathematics and intuitive explanations.
                           <ul>
                               <li>Executive summary with key insights</li>
@@ -55,31 +59,31 @@ class NeuralNetworkLayerTask(
 
     class NeuralNetworkLayerTaskExecutionConfigData(
         @Description("Name of the layer type (e.g., 'Attention', 'Convolution', 'BatchNorm', 'Custom')")
-        val layer_name: String? = null,
+        var layer_name: String? = null,
         @Description("Mathematical description of the layer's forward function")
-        val forward_function_description: String? = null,
+        var forward_function_description: String? = null,
         @Description("Input tensor shape specification (e.g., '[batch, channels, height, width]')")
-        val input_shape: String? = null,
+        var input_shape: String? = null,
         @Description("Output tensor shape specification")
-        val output_shape: String? = null,
+        var output_shape: String? = null,
         @Description("List of learnable parameters with their shapes")
-        val parameters: List<String>? = null,
+        var parameters: List<String>? = null,
         @Description("Activation function if applicable (e.g., 'relu', 'sigmoid', 'tanh', 'none')")
-        val activation: String? = "none",
+        var activation: String? = "none",
         @Description("Whether to include higher-order derivative analysis")
-        val include_higher_order: Boolean = true,
+        var include_higher_order: Boolean = true,
         @Description("Whether to include Lyapunov stability analysis")
-        val include_lyapunov: Boolean = true,
+        var include_lyapunov: Boolean = true,
         @Description("Whether to include Lipschitz analysis")
-        val include_lipschitz: Boolean = true,
+        var include_lipschitz: Boolean = true,
         @Description("Target implementation languages, e.g. 'tensorflow.js', 'pseudocode'")
-        val implementation_languages: List<String>? = listOf("tensorflow.js"),
+        var implementation_languages: List<String>? = listOf("tensorflow.js"),
         @Description("Whether to include numerical stability analysis")
-        val include_numerical_stability: Boolean = true,
+        var include_numerical_stability: Boolean = true,
         @Description("Whether to generate test cases")
-        val generate_tests: Boolean = true,
+        var generate_tests: Boolean = true,
         @Description("Analysis depth: 'basic', 'standard', 'comprehensive'")
-        val analysis_depth: String = "standard",
+        var analysis_depth: String = "standard",
 
         task_description: String? = null,
         task_dependencies: List<String>? = null,
@@ -356,18 +360,17 @@ class NeuralNetworkLayerTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript()
-        try {
+        task.ui.pool.submit {
+            val transcript = task.transcript()
+            try {
             val startTime = System.currentTimeMillis()
-            log.info("Starting NeuralNetworkLayerTask for: ${executionConfig?.layer_name}")
+                log.info("Starting NeuralNetworkLayerTask for layer: ${executionConfig?.layer_name}")
 
             executionConfig?.validate()?.let { errorMessage ->
-                log.error("Configuration validation failed: $errorMessage")
-                task.complete("VALIDATION ERROR: $errorMessage")
+                log.error("NeuralNetworkLayerTask configuration validation failed: $errorMessage")
                 task.error(ValidatedObject.ValidationError(errorMessage, executionConfig))
-                transcript?.close()
                 resultFn("VALIDATION ERROR: $errorMessage")
-                return
+                return@submit
             }
 
             val layerName = executionConfig?.layer_name ?: ""
@@ -427,7 +430,7 @@ class NeuralNetworkLayerTask(
             }
             overviewTask.add(overviewContent.renderMarkdown)
             task.update()
-            transcript?.write("$overviewContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("## Layer Specification\n$overviewContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate executive summary first
             val summaryTask = task.newTask()
@@ -470,7 +473,7 @@ class NeuralNetworkLayerTask(
             task.update()
             overviewTask.add("\n- ✅ Executive summary complete".renderMarkdown)
             overviewTask.add("\n- ⏳ Generating intuitive explanation...".renderMarkdown)
-            transcript?.write("\n---\n\n$summaryContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Executive Summary\n$summaryContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate intuitive explanation
             val intuitiveTask = task.newTask()
@@ -517,7 +520,7 @@ class NeuralNetworkLayerTask(
             task.update()
             overviewTask.add("\n- ✅ Intuitive explanation complete".renderMarkdown)
             overviewTask.add("\n- ⏳ Creating conceptual diagram...".renderMarkdown)
-            transcript?.write("\n---\n\n$intuitiveContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Intuitive Explanation\n$intuitiveContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate conceptual diagram
             val diagramTask = task.newTask()
@@ -559,7 +562,7 @@ class NeuralNetworkLayerTask(
             task.update()
             overviewTask.add("\n- ✅ Conceptual diagram complete".renderMarkdown)
             overviewTask.add("\n- ⏳ Generating formal definition...".renderMarkdown)
-            transcript?.write("\n---\n\n$diagramContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Conceptual Diagram\n$diagramContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate formal definition
             val definitionTask = task.newTask()
@@ -590,7 +593,7 @@ class NeuralNetworkLayerTask(
             definitionTask.add(definitionContent.renderMarkdown)
             task.update()
             overviewTask.add("\n- ✅ Formal definition complete".renderMarkdown)
-            transcript?.write("\n---\n\n$definitionContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Formal Definition\n$definitionContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate gradient derivation
             overviewTask.add("\n- ⏳ Deriving gradients...".renderMarkdown)
@@ -630,7 +633,7 @@ class NeuralNetworkLayerTask(
             gradientTask.add(gradientContent.renderMarkdown)
             task.update()
             overviewTask.add("\n- ✅ Gradient derivation complete".renderMarkdown)
-            transcript?.write("\n---\n\n$gradientContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Gradient Derivation\n$gradientContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Higher-order analysis
             if (includeHigherOrder && analysisDepth != "basic") {
@@ -677,7 +680,7 @@ class NeuralNetworkLayerTask(
                 higherOrderTask.add(higherOrderContent.renderMarkdown)
                 task.update()
                 overviewTask.add("\n- ✅ Higher-order analysis complete".renderMarkdown)
-                transcript?.write("\n---\n\n$higherOrderContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Higher-Order Analysis\n$higherOrderContent\n".toByteArray(StandardCharsets.UTF_8))
             }
 
             // Lyapunov stability analysis
@@ -719,7 +722,7 @@ class NeuralNetworkLayerTask(
                 stabilityTask.add(stabilityContent.renderMarkdown)
                 task.update()
                 overviewTask.add("\n- ✅ Stability analysis complete".renderMarkdown)
-                transcript?.write("\n---\n\n$stabilityContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Stability Analysis\n$stabilityContent\n".toByteArray(StandardCharsets.UTF_8))
             }
 
             // Lipschitz analysis
@@ -755,7 +758,7 @@ class NeuralNetworkLayerTask(
                 lipschitzTask.add(lipschitzContent.renderMarkdown)
                 task.update()
                 overviewTask.add("\n- ✅ Lipschitz analysis complete".renderMarkdown)
-                transcript?.write("\n---\n\n$lipschitzContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Lipschitz Analysis\n$lipschitzContent\n".toByteArray(StandardCharsets.UTF_8))
             }
 
             // Numerical stability
@@ -791,7 +794,7 @@ class NeuralNetworkLayerTask(
                 numericalTask.add(numericalContent.renderMarkdown)
                 task.update()
                 overviewTask.add("\n- ✅ Numerical stability analysis complete".renderMarkdown)
-                transcript?.write("\n---\n\n$numericalContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Numerical Stability\n$numericalContent\n".toByteArray(StandardCharsets.UTF_8))
             }
 
             // Generate implementations
@@ -841,7 +844,7 @@ class NeuralNetworkLayerTask(
             implTask.add(implContent.renderMarkdown)
             task.update()
             overviewTask.add("\n- ✅ Implementations generated".renderMarkdown)
-            transcript?.write("\n---\n\n$implContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Implementations\n$implContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Complexity analysis
             val complexityTask = task.newTask()
@@ -871,7 +874,7 @@ class NeuralNetworkLayerTask(
             }
             complexityTask.add(complexityContent.renderMarkdown)
             task.update()
-            transcript?.write("\n---\n\n$complexityContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Complexity Analysis\n$complexityContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Originality analysis
             overviewTask.add("\n- ⏳ Analyzing originality...".renderMarkdown)
@@ -925,7 +928,7 @@ class NeuralNetworkLayerTask(
             originalityTask.add(originalityContent.renderMarkdown)
             task.update()
             overviewTask.add("\n- ✅ Originality analysis complete".renderMarkdown)
-            transcript?.write("\n---\n\n$originalityContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Originality Analysis\n$originalityContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Use case analysis
             overviewTask.add("\n- ⏳ Analyzing use cases...".renderMarkdown)
@@ -1004,7 +1007,7 @@ class NeuralNetworkLayerTask(
             useCaseTask.add(useCaseContent.renderMarkdown)
             task.update()
             overviewTask.add("\n- ✅ Use case analysis complete".renderMarkdown)
-            transcript?.write("\n---\n\n$useCaseContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Use Case Analysis\n$useCaseContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Practical guidance
             overviewTask.add("\n- ⏳ Generating practical guidance...".renderMarkdown)
@@ -1077,7 +1080,7 @@ class NeuralNetworkLayerTask(
             guidanceTask.add(guidanceContent.renderMarkdown)
             task.update()
             overviewTask.add("\n- ✅ Practical guidance complete".renderMarkdown)
-            transcript?.write("\n---\n\n$guidanceContent\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("\n## Practical Guidance\n$guidanceContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Final summary
             val totalTime = System.currentTimeMillis() - startTime
@@ -1110,9 +1113,7 @@ class NeuralNetworkLayerTask(
             }
             overviewTask.add(finalOverview.renderMarkdown)
             task.update()
-            transcript?.write("\n---\n\n$finalOverview\n".toByteArray(StandardCharsets.UTF_8))
-            transcript?.flush()
-            transcript?.close()
+                transcript?.write("\n## Final Summary\n$finalOverview\n".toByteArray(StandardCharsets.UTF_8))
 
             val resultMessage = buildString {
                 appendLine("# $layerName Layer Analysis Complete")
@@ -1148,12 +1149,18 @@ class NeuralNetworkLayerTask(
             task.complete("Neural network layer analysis complete in ${totalTime / 1000}s")
             resultFn(resultMessage)
 
-        } catch (e: Exception) {
-            log.error("Error during NeuralNetworkLayerTask execution", e)
-            transcript?.close()
-            task.error(e)
-            task.complete("Failed with error: ${e.message}")
-            resultFn("ERROR: ${e.message}")
+            } catch (e: Exception) {
+                task.error(e)
+                log.error("Error during NeuralNetworkLayerTask execution for layer: ${executionConfig?.layer_name}", e)
+                transcript?.write(
+                    "\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray(
+                        StandardCharsets.UTF_8
+                    )
+                )
+                resultFn("ERROR: ${e.message}")
+            } finally {
+                transcript?.close()
+            }
         }
     }
 

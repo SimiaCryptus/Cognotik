@@ -2,23 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Cognotik | ImageGenerationTask</title>
-</head>
-<body>
-    <h1>ImageGenerationTask</h1>
-    <p>This task generates images based on descriptions.</p>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cognotik | ImageGenerationTask</title>
+    <title>Cognotik | GenerateImage Task</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Showcase -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -213,15 +207,15 @@
 
     <!-- 1. HEADER -->
     <header class="page-header">
-        <div class="breadcrumbs">Home > Tasks > Writing > ImageGenerationTask</div>
-        <h1>ImageGenerationTask</h1>
+        <div class="breadcrumbs">Home > Tasks > Writing > GenerateImage</div>
+        <h1>GenerateImage</h1>
         <p class="pitch">
-            Creates high-fidelity images from text descriptions using AI models. Supports context-aware generation using reference files and previous task outputs.
+            High-fidelity image synthesis using AI models (DALL-E/Image-Gen). Supports context-aware generation using reference images, style guides, and previous task outputs.
         </p>
         <div class="badges">
             <span class="badge">Category: Writing</span>
-            <span class="badge">Model: DALL-E / Image-Gen</span>
-            <span class="badge">Side-Effect: File Creation</span>
+            <span class="badge">Model: Image-Gen / DALL-E 3</span>
+            <span class="badge">Side-Effect: Destructive (File Creation)</span>
         </div>
     </header>
 
@@ -229,7 +223,7 @@
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
-            <div class="panel-header"><span>🎨</span> GenerateImageTask.json</div>
+            <div class="panel-header"><span>⚙️</span> TaskConfig.json</div>
             <pre><code class="language-json">{
   "files": ["assets/hero.png"],
   "task_description": "A futuristic city 
@@ -245,16 +239,33 @@
         <div class="panel">
             <div class="panel-header"><span>👁️</span> Session Preview</div>
             <div class="mock-ui-content">
-                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Generating Image: assets/hero.png</div>
-                <div style="background: #000; border-radius: 4px; padding: 1rem; text-align: center; border: 1px solid #30363d;">
-                    <div style="width: 100%; aspect-ratio: 16/9; background: linear-gradient(45deg, #1e1e2e, #313244); display: flex; align-items: center; justify-content: center; color: #58a6ff; font-size: 0.8rem;">
-                        [ Generated Image Preview ]
+                <div class="tabs-nav" style="font-size: 0.7rem; margin-bottom: 0.5rem;">
+                    <button class="active" style="padding: 0.2rem 0.5rem;">Preview</button>
+                    <button style="padding: 0.2rem 0.5rem;">Prompt</button>
+                </div>
+                <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem;">Generating Image: assets/hero.png</div>
+                <div style="background: #000; border-radius: 4px; padding: 0.5rem; text-align: center; border: 1px solid #30363d;">
+                    <div style="width: 100%; aspect-ratio: 16/9; background: linear-gradient(45deg, #1e1e2e, #313244); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #58a6ff; font-size: 0.7rem;">
+                        <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">🖼️</span>
+                        [ Synthwave Cityscape Preview ]
                     </div>
                 </div>
                 <div style="color: #4ade80; font-size: 0.75rem; margin-top: 0.5rem;">✔ Successfully generated and saved image.</div>
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <div class="panel">
+            <div class="panel-header"><span>📂</span> Test Workspace: ImageGenerationTask</div>
+            <div id="file-tree-demo" style="height: 250px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+        </div>
+        <p style="color: var(--text-dim); font-size: 0.85rem; margin-top: 0.5rem;">
+            Live view of the <code>webui/workspaces/ImageGenerationTask/</code> directory containing generated assets and logs.
+        </p>
+    </section>
+
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -315,18 +326,40 @@
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
             <h3>Kotlin Usage</h3>
-            <pre><code class="language-kotlin">// Adding to OrchestrationConfig
-val config = OrchestrationConfig(
-    tasks = listOf(
-        ImageGenerationTask.GenerateImage.create(
-            files = listOf("output/logo.png"),
-            task_description = "Minimalist tech logo, vector style"
-        )
-    )
+            <p style="color: var(--text-dim); font-size: 0.9rem;">Invoke via <code>UnifiedHarness</code> for headless automation:</p>
+            <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.file.ImageGenerationTask.Companion.GenerateImage
+import com.simiacryptus.cognotik.plan.tools.file.ImageGenerationTask.GenerateImageTaskExecutionConfigData
+
+harness.runTask(
+    taskType = GenerateImage,
+    typeConfig = TaskTypeConfig(),
+    executionConfig = GenerateImageTaskExecutionConfigData(
+        files = listOf("output/branding/logo_v1.png"),
+        task_description = "Minimalist tech logo, vector style, blue and silver",
+        related_files = listOf("docs/brand_guidelines.pdf")
+    ),
+    workspace = File("./project-assets"),
+    autoFix = true
 )</code></pre>
+
+            <h3 style="margin-top: 1.5rem;">Test Case Example</h3>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">Example of a self-healing UI asset generation loop:</p>
+            <pre><code class="language-kotlin">// 1. Generate the asset
+// 2. Run a visual regression test
+// 3. If test fails, the agent uses the error log as context to regenerate
+val config = GenerateImageTaskExecutionConfigData(
+    files = listOf("src/main/resources/icon.png"),
+    task_description = "App icon, 512x512, flat design",
+    task_dependencies = listOf("ui_spec_analysis")
+)</code></pre>
+
             <h3 style="margin-top: 1.5rem;">Prompt Segment</h3>
             <p style="color: var(--text-dim); font-size: 0.9rem;">The following instruction is provided to the orchestrator:</p>
-            <pre><code class="language-text">GenerateImage - Create images using AI image generation models</code></pre>
+            <pre><code class="language-text">GenerateImage - Create high-quality images using AI generation models.
+  * Specify a single output file path (png, jpg, or jpeg).
+  * Provide a detailed task_description covering style, composition, and mood.
+  * Use related_files to provide visual context or style references.
+  * Useful for UI mockups, illustrations, and visual assets.</code></pre>
         </div>
     </section>
 
@@ -341,6 +374,11 @@ val config = OrchestrationConfig(
         event.currentTarget.classList.add('active');
     }
 </script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/ImageGeneration/');
+</script>
+
 
 </body>
 </html>

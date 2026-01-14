@@ -3,11 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cognotik | AdversarialReasoningTask</title>
+    <title>Cognotik | AdversarialReasoning</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree for Workspace Browser -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -167,7 +172,12 @@
             display: none;
         }
         .tab-pane.active {
-            display: block;
+            display: block !important;
+        }
+
+        .showcase-section {
+            margin-top: 3rem;
+            margin-bottom: 3rem;
         }
 
         /* Tables */
@@ -207,8 +217,8 @@
 
     <!-- 1. HEADER -->
     <header class="page-header">
-        <div class="breadcrumbs">Home / Tasks / Reasoning / AdversarialReasoningTask</div>
-        <h1>AdversarialReasoningTask</h1>
+        <div class="breadcrumbs">Home / Tasks / Reasoning / AdversarialReasoning</div>
+        <h1>AdversarialReasoning</h1>
         <p class="pitch">
             Automated red-team analysis to identify vulnerabilities, challenge architectural assumptions, and simulate sophisticated attack vectors against systems and designs.
         </p>
@@ -262,6 +272,16 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE (Workspace Browser) -->
+    <section class="showcase-section">
+        <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Explorer</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.9rem;">
+            Browse the live output directory for this task, including generated Markdown transcripts, HTML reports, and raw analysis logs.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 400px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+    </section>
+
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -356,18 +376,54 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane">
-            <h3>Kotlin Boilerplate</h3>
-            <pre style="background: #000; border-radius: 6px;"><code>val task = AdversarialReasoningTask(
+            <h3>Embedded Execution (Scenario B)</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
+                Use the <code>UnifiedHarness</code> to run this task programmatically in a headless environment (CI/CD, CLI tools).
+            </p>
+            <pre style="background: #000; border-radius: 6px;"><code class="language-kotlin">// 1. Define the Execution Configuration
+val executionConfig = AdversarialReasoningTask.AdversarialReasoningTaskExecutionConfigData(
+    target_system = "Payment Gateway API",
+    attack_vectors = listOf("security", "compliance"),
+    adversary_capability = "advanced",
+    input_files = listOf("src/main/kotlin/com/pay/**"),
+    generate_exploits = true,
+    suggest_mitigations = true
+)
+
+// 2. Run via Harness
+harness.runTask(
+    taskType = AdversarialReasoningTask.AdversarialReasoning,
+    typeConfig = TaskTypeConfig(), // Use default static config
+    executionConfig = executionConfig,
+    workspace = File("./project-dir"),
+    autoFix = true
+)</code></pre>
+
+            <h3 style="margin-top: 2rem;">Direct Instantiation</h3>
+            <pre style="background: #000; border-radius: 6px;"><code class="language-kotlin">val task = AdversarialReasoningTask(
     orchestrationConfig = config,
     planTask = AdversarialReasoningTaskExecutionConfigData(
         target_system = "Payment Gateway API",
         attack_vectors = listOf("security", "compliance"),
-        adversary_capability = "advanced",
-        input_files = listOf("docs/api-spec.md", "src/main/kotlin/com/pay/**"),
-        challenge_assumptions = listOf("Database is isolated")
+        adversary_capability = "advanced"
     )
 )</code></pre>
-            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+
+            <h3 style="margin-top: 2rem;">JSON Configuration</h3>
+            <pre style="background: #000; border-radius: 6px;"><code class="language-json">{
+  "task_type": "AdversarialReasoning",
+  "target_system": "Internal Auth Provider",
+  "attack_vectors": ["logic", "privacy"],
+  "adversary_capability": "nation-state",
+  "input_files": ["docs/architecture/*.md"],
+  "challenge_assumptions": [
+    "Admin network is physically segmented",
+    "Logs cannot be tampered with"
+  ],
+  "max_vulnerabilities_per_vector": 10
+}</code></pre>
+
+            <h3 style="margin-top: 2rem;">LLM Prompt Segment</h3>
             <p style="font-size: 0.85rem; color: var(--text-dim);">The following instructions are injected into the LLM context:</p>
             <pre style="background: #1c2128; font-size: 0.8rem; border: 1px solid var(--border-subtle);"><code>AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknesses
   ** Specify target_system: the system, design, or argument to analyze
@@ -395,6 +451,11 @@
         event.target.classList.add('active');
     }
 </script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    initFileTree('#file-tree-demo', 'webui/workspaces/AdversarialReasoning/');
+</script>
+
 
 </body>
 </html>

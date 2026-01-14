@@ -2,12 +2,12 @@
   "id" : "commandsession",
   "label" : "Command Session",
   "url" : "CommandSessionTask.html",
-  "description" : "Execute commands in a stateful, interactive session\n\n\n                          Creates and manages a persistent command-line session (e.g., bash, python).\n                          This allows for stateful interactions where commands can build on the results of previous ones.\n                          <ul>\n                              <li><b>Start any interactive process:</b> Specify the command to run</li>\n                              <li><b>Send inputs:</b> Provide a list of commands to be executed sequentially in the session.</li>\n                              <li><b>Stateful Sessions:</b> Reuse sessions by providing a `sessionId`. The environment (variables, current directory) persists between tasks using the same ID.</li>\n                              <li><b>Manage Session Lifecycle:</b> Sessions can be explicitly closed or will be cleaned up automatically.</li>\n                              <li><b>TTY Support:</b> Set `tty` to true to allocate a pseudo-terminal (requires pty4j), enabling UI applications and TTY-dependent tools.</li>\n                          </ul>\n                      \n",
+  "description" : "Execute commands in a stateful, interactive session\n\n\n                          Creates and manages a persistent command-line session (e.g., bash, python).\n                          This allows for stateful interactions where commands can build on the results of previous ones.\n                          \n                      \n",
   "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/session/CommandSessionTask.kt"
 }, {
   "id" : "jdbcsession",
   "label" : "Jdbc Session",
   "url" : "JdbcSessionTask.html",
-  "description" : "Execute SQL queries via JDBC\n\n\n                          Executes SQL statements against a database using JDBC.\n                          <ul>\n                              <li><b>Connection:</b> Requires `url`. Optional `user`, `password`, and `driver`.</li>\n                              <li><b>Stateful:</b> Use `sessionId` to keep connections open across multiple tasks (useful for transactions or temp tables).</li>\n                              <li><b>Output:</b> Returns results as Markdown tables.</li>\n                          </ul>\n                      \n",
+  "description" : "Execute SQL queries via JDBC\n\n\n                          Executes SQL statements against a database using JDBC.\n                          \n                      \n",
   "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/session/JdbcSessionTask.kt"
 } ]

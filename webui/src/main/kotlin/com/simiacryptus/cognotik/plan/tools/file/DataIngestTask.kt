@@ -1,14 +1,20 @@
-package com.simiacryptus.cognotik.plan.tools.data
+package com.simiacryptus.cognotik.plan.tools.file
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
@@ -50,13 +56,13 @@ class DataIngestTask(
 
     class DataIngestTaskExecutionConfigData(
         @Description("File patterns to ingest (e.g. **/*.log)")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         @Description("Number of lines to sample for pattern discovery")
-        val sample_size: Int = 1000,
+        var sample_size: Int = 1000,
         @Description("Maximum number of discovery iterations")
-        val max_iterations: Int = 10,
+        var max_iterations: Int = 10,
         @Description("Stop discovery when this percentage of the sample is covered (0.0 - 1.0)")
-        val coverage_threshold: Double = 0.95,
+        var coverage_threshold: Double = 0.95,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending
@@ -92,15 +98,22 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
         val ui = task.ui
         val tabs = TabbedDisplay(task)
         val logTask = task.newTask()
+        val transcript = task.transcript()
         tabs["Log"] = logTask.placeholder
 
         fun log(msg: String) {
-            logTask.add(MarkdownUtil.renderMarkdown(msg, ui = ui))
+            logTask.add(msg.renderMarkdown())
             logTask.update()
         }
 
-        try {
-            // 1. Identify Files
+        task.ui.pool.submit {
+            try {
+                log.info("DataIngestTask started for patterns: ${executionConfig?.input_files}")
+                transcript?.write("## Data Ingest Task Started\n".toByteArray())
+                val priorContext = getPriorCode(agent.executionState)
+                transcript?.write("### Prior Context\n<details><summary>Upstream Data</summary>\n\n$priorContext\n</details>\n".toByteArray())
+
+                // 1. Identify Files
             val files = resolveFiles(executionConfig?.input_files ?: emptyList())
             if (files.isEmpty()) {
                 throw RuntimeException("No files found matching patterns: ${executionConfig?.input_files}")
@@ -136,7 +149,6 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
             val discoveryTask = task.newTask()
             tabs["Discovery"] = discoveryTask.placeholder
             val statusBuffer = discoveryTask.add("Initializing discovery...")
-            discoveryTask.update()
 
 
             var iteration = 0
@@ -144,12 +156,9 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
                 val coverage = 1.0 - (unparsedSample.size.toDouble() / sampleLines.size.toDouble())
                 statusBuffer?.setLength(0)
                 statusBuffer?.append(
-                    MarkdownUtil.renderMarkdown(
-                        "**Iteration ${iteration + 1}** | Coverage: ${(coverage * 100).toInt()}% | Residuals: ${unparsedSample.size}",
-                        ui = ui
-                    )
+                    "**Iteration ${iteration + 1}** | Coverage: ${(coverage * 100).toInt()}% | Residuals: ${unparsedSample.size}".renderMarkdown()
                 )
-                discoveryTask.update()
+                task.update()
 
                 if (coverage >= (executionConfig?.coverage_threshold ?: 0.95) || unparsedSample.isEmpty()) {
                     log("Coverage threshold reached.")
@@ -216,11 +225,11 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
                 iteration++
             }
             statusBuffer?.setLength(0)
-            statusBuffer?.append("<strong>Discovery Complete</strong>")
-            discoveryTask.update()
+                statusBuffer?.append("Discovery Complete".renderMarkdown())
+                task.update()
 
             // 4. Bulk Extraction
-            logTask.header("Phase 3: Bulk Extraction", level = 2)
+                log("### Phase 3: Bulk Extraction")
             logTask.update()
             val (dataFileLink, dataFile) = task.createFile("data.jsonl")
             val (dataCsvLink, dataCsvFile) = task.createFile("data.csv")
@@ -231,6 +240,17 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
 
             // Save Patterns
             patternsFile?.writeText(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(registry))
+                transcript?.write(
+                    """
+                ### Discovered Patterns
+                <details>
+                <summary>Pattern Registry JSON</summary>
+                ```json
+                ${mapper.writerWithDefaultPrettyPrinter().writeValueAsString(registry)}
+                ```
+                </details>
+            """.trimIndent().toByteArray()
+                )
 
             var totalExtracted = 0
             var totalBytes = 0L
@@ -304,11 +324,13 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
                     }
                 }
             }
-            val summaryTask = tabs.newTask("Summary")
+                val summaryTask = task.newTask()
+                tabs["Summary"] = summaryTask.placeholder
             summaryTask.header("Ingestion Summary")
-            summaryTask.add("**Total Extracted Records:** $totalExtracted")
-            summaryTask.add("**Patterns Discovered:** ${registry.size}")
+                summaryTask.add("**Total Extracted Records:** $totalExtracted".renderMarkdown())
+                summaryTask.add("**Patterns Discovered:** ${registry.size}".renderMarkdown())
             summaryTask.complete()
+                log.info("DataIngestTask completed: $totalExtracted records processed.")
 
 
             // Final Report
@@ -331,13 +353,29 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
             }
             logTask.complete()
             discoveryTask.complete()
-            task.safeComplete("Ingested $totalExtracted records using ${registry.size} patterns.", log)
-            resultFn(summary)
 
-        } catch (e: Exception) {
-            log.error("DataIngestTask failed", e)
-            task.error(e)
-            resultFn("Error: ${e.message}")
+                task.complete()
+                resultFn("Successfully ingested $totalExtracted records from ${files.size} files using ${registry.size} patterns. Artifacts: data.jsonl, data.csv, patterns.json, index.csv.")
+
+            } catch (e: Exception) {
+                task.error(e)
+                log.error("DataIngestTask failed: ${e.message}", e)
+                transcript?.write(
+                    """
+                    ## Error
+                    <details>
+                    <summary>Stack Trace</summary>
+                    
+                    ```
+                    ${e.stackTraceToString()}
+                    ```
+                    </details>
+                """.trimIndent().toByteArray()
+                )
+                resultFn("Error during data ingestion: ${e.message}")
+            } finally {
+                transcript?.close()
+            }
         }
     }
 
@@ -353,15 +391,15 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
     }
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(DataIngestTask::class.java)
+        private val log = LoggerFactory.getLogger(DataIngestTask::class.java)
         val DataIngest = TaskType(
-          name = "DataIngest",
-          category = "File",
-          taskClass = DataIngestTask::class.java,
-          executionConfigClass = DataIngestTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Iteratively parse unstructured logs into structured data",
-          tooltipHtml = """
+            name = "DataIngest",
+            category = "File",
+            taskClass = DataIngestTask::class.java,
+            executionConfigClass = DataIngestTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Iteratively parse unstructured logs into structured data",
+            tooltipHtml = """
                         Automates the creation of regex parsers for log files.
                         <ul>
                           <li>Samples data to discover patterns using LLM</li>

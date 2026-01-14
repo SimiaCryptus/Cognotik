@@ -4,10 +4,12 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
@@ -28,17 +30,17 @@ class CounterfactualAnalysisTask(
 
     class CounterfactualAnalysisTaskExecutionConfigData(
         @Description("The actual scenario or decision to analyze")
-        val actual_scenario: String? = null,
+        var actual_scenario: String? = null,
         @Description("Alternative conditions to explore (what-if scenarios)")
-        val counterfactuals: List<String>? = null,
+        var counterfactuals: List<String>? = null,
         @Description("Whether to compare outcomes across scenarios")
-        val compare_outcomes: Boolean = true,
+        var compare_outcomes: Boolean = true,
         @Description("Factors to hold constant across scenarios")
-        val control_factors: List<String>? = null,
+        var control_factors: List<String>? = null,
         @Description("Additional files for context (e.g., historical data, related analyses)")
-        val related_files: List<String>? = null,
+        var related_files: List<String>? = null,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         @Description("Detailed description of the analysis objectives")
         task_description: String? = null,
         task_dependencies: List<String>? = null,
@@ -85,160 +87,178 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val startTime = System.currentTimeMillis()
-        log.info("Starting CounterfactualAnalysis task for scenario: ${executionConfig?.actual_scenario}")
 
-        val actualScenario = executionConfig?.actual_scenario
-        val counterfactuals = executionConfig?.counterfactuals ?: emptyList()
 
-        if (actualScenario.isNullOrBlank()) {
-            log.error("No actual scenario specified")
-            task.safeComplete("CONFIGURATION ERROR: No actual scenario specified", log)
-            resultFn("CONFIGURATION ERROR: No actual scenario specified")
-            return
-        }
-
-        if (counterfactuals.isEmpty()) {
-            log.error("No counterfactual scenarios specified")
-            task.safeComplete("CONFIGURATION ERROR: No counterfactual scenarios specified", log)
-            resultFn("CONFIGURATION ERROR: No counterfactual scenarios specified")
-            return
-        }
-
-        val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
         val transcript = task.transcript()
-        transcript?.write("# Counterfactual Analysis Transcript\n\n".toByteArray())
-        val api = defaultSmart ?: return
 
-        val tabs = TabbedDisplay(task)
-        try {
-            val overviewTask = tabs.newTask("Overview")
 
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(
+
+
+
+
+
+
+
+
+        task.ui.pool.submit {
+            try {
+                log.info("Starting CounterfactualAnalysis task.")
+
+                val actualScenario = executionConfig?.actual_scenario
+                val counterfactuals = executionConfig?.counterfactuals ?: emptyList()
+
+                if (actualScenario.isNullOrBlank()) {
+                    val err = "CONFIGURATION ERROR: No actual scenario specified"
+                    log.error(err)
+                    task.error(Exception(err))
+                    resultFn(err)
+                    return@submit
+                }
+
+                if (counterfactuals.isEmpty()) {
+                    val err = "CONFIGURATION ERROR: No counterfactual scenarios specified"
+                    log.error(err)
+                    task.error(Exception(err))
+                    resultFn(err)
+                    return@submit
+                }
+
+                val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
+                transcript?.write("# Counterfactual Analysis Transcript\n\n".toByteArray())
+                val api = defaultSmart ?: return@submit
+
+                val tabs = TabbedDisplay(task)
+                val overviewTask = tabs.newTask("Overview")
+
+                overviewTask.add(
                     """
-          |## Counterfactual Analysis
-          |
-          |**Actual Scenario:** ${actualScenario.truncateForDisplay(maxDescriptionLength)}
-          |
-          |**Counterfactuals:** ${counterfactuals.size}
-          |
-          |**Status:** 🔄 Starting analysis...
-          """.trimMargin(),
-                    ui = task.ui
+                    |## Counterfactual Analysis
+                    |
+                    |**Actual Scenario:** ${actualScenario.truncateForDisplay(maxDescriptionLength)}
+                    |
+                    |**Counterfactuals:** ${counterfactuals.size}
+                    |
+                    |**Status:** 🔄 Starting analysis...
+                    """.trimMargin().renderMarkdown()
                 )
-            )
-            transcript?.write(
-                """
-        |## Counterfactual Analysis
-        |
-        |**Actual Scenario:** ${actualScenario.truncateForDisplay(maxDescriptionLength)}
-        |
-        |**Counterfactuals:** ${counterfactuals.size}
-        |
-        |**Status:** 🔄 Starting analysis...
-        |
-        """.trimMargin().toByteArray()
-            )
-        } catch (e: Exception) {
-            log.warn("Failed to create overview tab", e)
-        }
+                transcript?.write(
+                    """
+                    |## Counterfactual Analysis
+                    |
+                    |**Actual Scenario:** ${actualScenario.truncateForDisplay(maxDescriptionLength)}
+                    |
+                    |**Counterfactuals:** ${counterfactuals.size}
+                    |
+                    |**Status:** 🔄 Starting analysis...
+                    |
+                    """.trimMargin().toByteArray()
+                )
 
-        val contextFiles = getContextFiles()
-        val priorCode = getPriorCode(agent.executionState)
-        val actualTab = tabs.newTask("Actual Scenario")
+                val contextFiles = getContextFiles()
+                val priorCode = getPriorCode(agent.executionState)
+                val actualTab = tabs.newTask("Actual Scenario")
 
-        // Analyze actual scenario
-        val actualAnalysis = analyzeScenario(
-            "Actual Scenario",
-            actualScenario,
-            contextFiles,
-            priorCode,
-            api,
-            actualTab,
-            toInput,
-            transcript
-        )
-        transcript?.write("\n## Actual Scenario Analysis\n\n".toByteArray())
-        transcript?.write("**Scenario:** $actualScenario\n\n".toByteArray())
-        transcript?.write("**Analysis:**\n\n$actualAnalysis\n\n".toByteArray())
-        val counterfactualTab = tabs.newTask("Counterfactuals")
-        // Analyze counterfactual scenarios
-        val counterfactualAnalyses = counterfactuals.mapIndexed { index, counterfactual ->
-            transcript?.write("\n## Counterfactual Scenario ${index + 1}\n\n".toByteArray())
-            transcript?.write("**Scenario:** $counterfactual\n\n".toByteArray())
-            val analysis = analyzeScenario(
-                "Counterfactual ${index + 1}",
-                counterfactual,
-                contextFiles,
-                priorCode,
-                api,
-                counterfactualTab,
-                toInput,
-                transcript
-            )
-            transcript?.write("**Analysis:**\n\n$analysis\n\n".toByteArray())
-            analysis
-        }
+                // Analyze actual scenario
+                val actualAnalysis = analyzeScenario(
+                    "Actual Scenario",
+                    actualScenario,
+                    contextFiles,
+                    priorCode,
+                    api,
+                    actualTab,
+                    toInput,
+                    transcript
+                )
+                transcript?.write("\n## Actual Scenario Analysis\n\n".toByteArray())
+                transcript?.write("**Scenario:** $actualScenario\n\n".toByteArray())
+                transcript?.write("**Analysis:**\n\n$actualAnalysis\n\n".toByteArray())
+                val counterfactualTab = tabs.newTask("Counterfactuals")
+                // Analyze counterfactual scenarios
+                val counterfactualAnalyses = counterfactuals.mapIndexed { index, counterfactual ->
+                    transcript?.write("\n## Counterfactual Scenario ${index + 1}\n\n".toByteArray())
+                    transcript?.write("**Scenario:** $counterfactual\n\n".toByteArray())
+                    val analysis = analyzeScenario(
+                        "Counterfactual ${index + 1}",
+                        counterfactual,
+                        contextFiles,
+                        priorCode,
+                        api,
+                        counterfactualTab,
+                        toInput,
+                        transcript
+                    )
+                    transcript?.write("**Analysis:**\n\n$analysis\n\n".toByteArray())
+                    analysis
+                }
 
-        // Compare outcomes if requested
-        val comparisonAnalysis = if (executionConfig?.compare_outcomes == true) {
-            val comparisonTab = tabs.newTask("Comparison")
-            transcript?.write("\n## Comparative Analysis\n\n".toByteArray())
-            val comparison = compareScenarios(
-                actualScenario = actualScenario,
-                actualAnalysisTokens = actualAnalysis.split("\\s+"),
-                counterfactuals = counterfactuals,
-                counterfactualAnalyses = counterfactualAnalyses,
-                controlFactors = executionConfig.control_factors,
-                contextFiles = contextFiles,
-                priorCode = priorCode,
-                api = api,
-                comparisonTab,
-                toInput = toInput,
-                transcript = transcript
-            )
-            transcript?.write(comparison.toByteArray())
-            comparison
-        } else {
-            ""
-        }
+                // Compare outcomes if requested
+                val comparisonAnalysis = if (executionConfig?.compare_outcomes == true) {
+                    val comparisonTab = tabs.newTask("Comparison")
+                    transcript?.write("\n## Comparative Analysis\n\n".toByteArray())
+                    val comparison = compareScenarios(
+                        actualScenario = actualScenario,
+                        actualAnalysisTokens = actualAnalysis.split("\\s+"),
+                        counterfactuals = counterfactuals,
+                        counterfactualAnalyses = counterfactualAnalyses,
+                        controlFactors = executionConfig.control_factors,
+                        contextFiles = contextFiles,
+                        priorCode = priorCode,
+                        api = api,
+                        comparisonTab,
+                        toInput = toInput,
+                        transcript = transcript
+                    )
+                    transcript?.write(comparison.toByteArray())
+                    comparison
+                } else {
+                    ""
+                }
 
-        val fullReport = buildString {
-            appendLine("# Counterfactual Analysis Results")
-            appendLine()
-            appendLine("## Actual Scenario")
-            appendLine(actualScenario)
-            appendLine()
-            appendLine("### Analysis")
-            appendLine(actualAnalysis)
-            appendLine()
+                val fullReport = buildString {
+                    appendLine("# Counterfactual Analysis Results")
+                    appendLine()
+                    appendLine("## Actual Scenario")
+                    appendLine(actualScenario)
+                    appendLine()
+                    appendLine("### Analysis")
+                    appendLine(actualAnalysis)
+                    appendLine()
 
-            counterfactuals.forEachIndexed { index, counterfactual ->
-                appendLine("## Counterfactual Scenario ${index + 1}")
-                appendLine(counterfactual)
-                appendLine()
-                appendLine("### Analysis")
-                appendLine(counterfactualAnalyses[index])
-                appendLine()
+                    counterfactuals.forEachIndexed { index, counterfactual ->
+                        appendLine("## Counterfactual Scenario ${index + 1}")
+                        appendLine(counterfactual)
+                        appendLine()
+                        appendLine("### Analysis")
+                        appendLine(counterfactualAnalyses[index])
+                        appendLine()
+                    }
+
+                    if (comparisonAnalysis.isNotBlank()) {
+                        appendLine("## Comparative Analysis")
+                        appendLine(comparisonAnalysis)
+                    }
+                }
+                transcript?.write("\n---\n\n**Analysis Complete**\n".toByteArray())
+
+                val (link, file) = task.createFile("analysis_results.md")
+                file?.writeText(fullReport)
+                task.complete("Analysis complete. Full results written to <a href='$link' target='_blank'>$link</a>")
+
+                val summaryMessage = """
+                    ## Counterfactual Analysis Complete
+                    * **Scenario:** `${actualScenario.truncateForDisplay(50)}`
+                    * **Alternatives Analyzed:** ${counterfactuals.size}
+                    * **Report:** [Download Analysis Results]($link)
+                """.trimIndent()
+                resultFn(summaryMessage)
+            } catch (e: Exception) {
+                task.error(e)
+                log.error("Error in CounterfactualAnalysisTask", e)
+                transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+            } finally {
+                transcript?.close()
             }
-
-            if (comparisonAnalysis.isNotBlank()) {
-                appendLine("## Comparative Analysis")
-                appendLine(comparisonAnalysis)
-            }
         }
-        transcript?.write("\n---\n\n**Analysis Complete**\n".toByteArray())
-        transcript?.close()
-
-        val (link, file) = task.createFile("analysis_results.md")
-        file?.writeText(fullReport)
-        task.complete("Analysis complete. Full results written to <a href='$link' target='_blank'>$link</a>")
-
-        val summaryMessage =
-            "Counterfactual analysis completed for: '${actualScenario.truncateForDisplay(50)}'. Analyzed ${counterfactuals.size} alternative scenarios. Detailed report saved to $link."
-        task.safeComplete("Analysis complete", log)
-        resultFn(summaryMessage)
     }
 
     private fun analyzeScenario(
@@ -275,8 +295,7 @@ ${executionConfig?.control_factors?.joinToString("\n") { "- $it" } ?: "None spec
 6. Highlight any assumptions or uncertainties
 7. Provide insights on causal relationships
         """.trimIndent()
-        transcript?.write("\n### Prompt for $scenarioName\n\n".toByteArray())
-        transcript?.write("```\n$prompt\n```\n\n".toByteArray())
+        transcript?.write("\n<details><summary>Prompt for $scenarioName</summary>\n\n```\n$prompt\n```\n</details>\n\n".toByteArray())
 
 
         val chatAgent = ChatAgent(
@@ -285,8 +304,7 @@ ${executionConfig?.control_factors?.joinToString("\n") { "- $it" } ?: "None spec
         )
 
         var result: String? = chatAgent.answer(listOf("Provide a comprehensive analysis"))
-        transcript?.write("### Response for $scenarioName\n\n".toByteArray())
-        transcript?.write("${result ?: "(No response)"}\n\n".toByteArray())
+        transcript?.write("<details><summary>Response for $scenarioName</summary>\n\n${result ?: "(No response)"}\n\n</details>\n\n".toByteArray())
         tab.add("## $scenarioName\n\n${result ?: "No analysis generated."}".renderMarkdown)
         tab.update()
         return result ?: ""
@@ -343,8 +361,7 @@ $priorCode
 8. Provide recommendations based on the analysis
 
         """.trimIndent()
-        transcript?.write("\n### Comparison Prompt\n\n".toByteArray())
-        transcript?.write("```\n$prompt\n```\n\n".toByteArray())
+        transcript?.write("\n<details><summary>Comparison Prompt</summary>\n\n```\n$prompt\n```\n</details>\n\n".toByteArray())
 
 
         val chatAgent = ChatAgent(
@@ -353,8 +370,7 @@ $priorCode
         )
 
         var result: String? = chatAgent.answer(listOf("Provide a comprehensive comparative analysis"))
-        transcript?.write("### Comparison Response\n\n".toByteArray())
-        transcript?.write("${result ?: "(No response)"}\n\n".toByteArray())
+        transcript?.write("<details><summary>Comparison Response</summary>\n\n${result ?: "(No response)"}\n\n</details>\n\n".toByteArray())
         tab.add("## Comparative Analysis\n\n${result ?: "No comparison generated."}".renderMarkdown)
         tab.update()
         return result ?: ""
@@ -429,13 +445,13 @@ $priorCode
     companion object {
         private val log: Logger = LoggerFactory.getLogger(CounterfactualAnalysisTask::class.java)
         val CounterfactualAnalysis = TaskType(
-          name = "CounterfactualAnalysis",
-          category = "Reasoning",
-          taskClass = CounterfactualAnalysisTask::class.java,
-          executionConfigClass = CounterfactualAnalysisTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Explore what-if scenarios to understand causal relationships and decision impacts",
-          tooltipHtml = """
+            name = "CounterfactualAnalysis",
+            category = "Reasoning",
+            taskClass = CounterfactualAnalysisTask::class.java,
+            executionConfigClass = CounterfactualAnalysisTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Explore what-if scenarios to understand causal relationships and decision impacts",
+            tooltipHtml = """
                         Performs counterfactual analysis to explore alternative scenarios and outcomes.
                         <ul>
                           <li>Analyzes actual scenarios and alternative conditions</li>

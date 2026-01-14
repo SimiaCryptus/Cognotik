@@ -3,16 +3,20 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import java.io.FileOutputStream
+import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-import java.util.concurrent.Semaphore
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.Semaphore
 
 class ProbabilisticReasoningTask(
     orchestrationConfig: OrchestrationConfig,
@@ -27,21 +31,21 @@ class ProbabilisticReasoningTask(
 
     class ProbabilisticReasoningTaskExecutionConfigData(
         @Description("Map of hypotheses to their prior probabilities (must sum to 1.0)")
-        val hypotheses: Map<String, Double>? = null,
+        var hypotheses: Map<String, Double>? = null,
         @Description("List of observed evidence to update beliefs")
-        val evidence: List<String>? = null,
+        var evidence: List<String>? = null,
         @Description("Whether to calculate expected values and risks")
-        val calculate_expected_value: Boolean = true,
+        var calculate_expected_value: Boolean = true,
         @Description("Whether to identify key uncertainties that need resolution")
-        val identify_key_uncertainties: Boolean = true,
+        var identify_key_uncertainties: Boolean = true,
         @Description("Whether to suggest experiments to reduce uncertainty")
-        val suggest_experiments: Boolean = true,
+        var suggest_experiments: Boolean = true,
         @Description("Risk tolerance level (low/medium/high)")
-        val risk_tolerance: String = "medium",
+        var risk_tolerance: String = "medium",
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         @Description("Decision context or problem statement")
-        val decision_context: String? = null,
+        var decision_context: String? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -59,14 +63,14 @@ class ProbabilisticReasoningTask(
             }
 
             // Validate that all probabilities are between 0 and 1
-            hypotheses.forEach { (hypothesis, probability) ->
+          hypotheses!!.forEach { (hypothesis, probability) ->
                 if (probability < 0.0 || probability > 1.0) {
                     return "Probability for hypothesis '$hypothesis' must be between 0.0 and 1.0, got: $probability"
                 }
             }
 
             // Validate that probabilities sum to approximately 1.0
-            val probabilitySum = hypotheses.values.sum()
+          val probabilitySum = hypotheses!!.values.sum()
             if (probabilitySum < 0.99 || probabilitySum > 1.01) {
                 return "Prior probabilities must sum to 1.0 (current sum: $probabilitySum)"
             }
@@ -117,11 +121,11 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val startTime = System.currentTimeMillis()
-        log.info("Starting ProbabilisticReasoningTask with ${executionConfig?.hypotheses?.size ?: 0} hypotheses")
-        // Validate configuration
+      log.info("Starting ProbabilisticReasoningTask. Hypotheses: ${executionConfig?.hypotheses?.size ?: 0}")
+
+      // Validate configuration
         executionConfig?.validate()?.let { errorMsg ->
-            log.error("Configuration validation failed: $errorMsg")
+          log.error("ProbabilisticReasoningTask config validation failed: $errorMsg")
             task.safeComplete(errorMsg, log)
             resultFn(errorMsg)
             return
@@ -141,14 +145,13 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
         val evidence = executionConfig.evidence ?: emptyList()
         val decisionContext = executionConfig.decision_context ?: "General probabilistic reasoning"
 
-        log.info("Configuration: hypotheses=${hypotheses.size}, evidence=${evidence.size}, context=$decisionContext")
 
         val api = defaultSmart ?: return
 
-        val ui = task.ui
         val tabs = TabbedDisplay(task)
         val semaphore = Semaphore(0)
-        // Create transcript file
+      val resultBuilder = StringBuilder()
+      val startTime = System.currentTimeMillis()
         val transcript = task.transcript()
         transcript?.let { stream ->
             stream.write("# Probabilistic Reasoning Analysis Transcript\n\n".toByteArray())
@@ -187,14 +190,14 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
             appendLine()
             appendLine("*Initializing Bayesian analysis...*")
         }
-        overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent, ui = ui))
+      overviewTask.add(overviewContent.renderMarkdown())
 
         val inputFileContent = getInputFileCode(agent)
         if (inputFileContent.isNotBlank()) {
             log.debug("Found input files: ${inputFileContent.length} characters")
             val filesTask = tabs.newTask("Input Files")
             filesTask.add(
-                MarkdownUtil.renderMarkdown("# Input Files\n\n$inputFileContent", ui = ui)
+              ("# Input Files\n\n$inputFileContent").renderMarkdown()
             )
             filesTask.complete()
         }
@@ -204,20 +207,17 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
             log.debug("Found prior context: ${priorContext.length} characters")
             val contextTask = tabs.newTask("Context")
             contextTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
+              """
         # Prior Context
         The following context was inherited from previous tasks:
         ```
         ${priorContext.truncateForDisplay()}
         ```
-        """.trimIndent(), ui = ui
-                )
+        """.trimIndent().renderMarkdown()
             )
             contextTask.complete()
         }
-        val resultBuilder = StringBuilder()
-        transcript
+      task.ui.pool.submit {
 
         try {
             // Prior Probabilities tab
@@ -236,16 +236,16 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
                 appendLine()
                 appendLine("**Total:** ${String.format("%.3f", hypotheses.values.sum())}")
             }
-            priorTask.add(MarkdownUtil.renderMarkdown(priorContent, ui = ui))
+          priorTask.add(priorContent.renderMarkdown())
             priorTask.complete()
 
             overviewTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+              (buildString {
                     appendLine()
                     appendLine("✅ Prior probabilities loaded")
                     appendLine()
                     appendLine("*Analyzing evidence...*")
-                }, ui = ui)
+              }).renderMarkdown()
             )
 
             // Create Bayesian reasoning agent
@@ -271,12 +271,12 @@ Consider both the strength of evidence and its reliability.
             val updateTask = tabs.newTask("Bayesian Update")
 
             updateTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+              (buildString {
                     appendLine("# Bayesian Update")
                     appendLine()
                     appendLine("**Status:** Calculating posterior probabilities...")
                     appendLine()
-                }, ui = ui)
+              }).renderMarkdown()
             )
 
             val updatePrompt = buildBayesianUpdatePrompt(
@@ -286,11 +286,11 @@ Consider both the strength of evidence and its reliability.
                 priorContext
             )
 
-            log.debug("Requesting Bayesian update from LLM")
+          log.info("Requesting Bayesian update from LLM")
             var stepStartTime = System.currentTimeMillis()
             val updateResult = bayesianAgent.answer(listOf(updatePrompt))
             var stepTime = System.currentTimeMillis() - stepStartTime
-            log.debug("Bayesian update completed in ${stepTime}ms: ${updateResult.length} characters")
+          log.info("Bayesian update completed in ${stepTime}ms")
             // Write to transcript
             transcript?.write("""
                 ## Bayesian Update
@@ -303,7 +303,7 @@ Consider both the strength of evidence and its reliability.
 
 
             updateTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+              (buildString {
                     appendLine("## Analysis Results")
                     appendLine()
                     appendLine(updateResult)
@@ -311,17 +311,17 @@ Consider both the strength of evidence and its reliability.
                     appendLine("---")
                     appendLine()
                     appendLine("**Status:** ✅ Complete")
-                }, ui = ui)
+              }).renderMarkdown()
             )
             updateTask.complete()
 
             overviewTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+              (buildString {
                     appendLine()
                     appendLine("✅ Bayesian update complete (${stepTime / 1000.0}s)")
                     appendLine()
                     appendLine("*Generating additional analyses...*")
-                }, ui = ui)
+              }).renderMarkdown()
             )
 
             resultBuilder.append("# Probabilistic Reasoning Analysis\n\n")
@@ -333,16 +333,16 @@ Consider both the strength of evidence and its reliability.
 
             // Expected Value Analysis (if requested)
             if (executionConfig.calculate_expected_value) {
-                log.debug("Calculating expected values")
+              log.info("Calculating expected values")
                 val evTask = tabs.newTask("Expected Value")
 
                 evTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                  (buildString {
                         appendLine("# Expected Value Analysis")
                         appendLine()
                         appendLine("**Status:** Calculating expected values and risks...")
                         appendLine()
-                    }, ui = ui)
+                  }).renderMarkdown()
                 )
 
                 val evPrompt = buildExpectedValuePrompt(
@@ -353,7 +353,7 @@ Consider both the strength of evidence and its reliability.
                 stepStartTime = System.currentTimeMillis()
 
                 val evResult = bayesianAgent.answer(listOf(evPrompt))
-               var stepTime = System.currentTimeMillis() - stepStartTime
+              stepTime = System.currentTimeMillis() - stepStartTime
                 log.debug("Expected value analysis completed in ${stepTime}ms: ${evResult.length} characters")
                 // Write to transcript
                 transcript?.write("""
@@ -367,7 +367,7 @@ Consider both the strength of evidence and its reliability.
 
 
                 evTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                  (buildString {
                         appendLine("## Expected Value & Risk Analysis")
                         appendLine()
                         appendLine(evResult)
@@ -375,35 +375,35 @@ Consider both the strength of evidence and its reliability.
                         appendLine("---")
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
-                    }, ui = ui)
+                  }).renderMarkdown()
                 )
                 evTask.complete()
 
                 resultBuilder.append("## Expected Value Analysis\n\n")
                 resultBuilder.append(evResult.take(maxDescriptionLength))
-                if (evResult.length > maxDescriptionLength) resultBuilder.append("\n... (see full analysis in UI)")
+              if (evResult.length > maxDescriptionLength) resultBuilder.append("\n... (truncated)")
                 resultBuilder.append("\n\n")
 
                 overviewTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                  (buildString {
                         appendLine()
                         appendLine("✅ Expected value analysis complete (${stepTime / 1000.0}s)")
-                    }, ui = ui)
+                  }).renderMarkdown()
                 )
             }
 
             // Key Uncertainties (if requested)
             if (executionConfig.identify_key_uncertainties) {
-                log.debug("Identifying key uncertainties")
+              log.info("Identifying key uncertainties")
                 val uncertaintyTask = tabs.newTask("Key Uncertainties")
 
                 uncertaintyTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                  (buildString {
                         appendLine("# Key Uncertainties")
                         appendLine()
                         appendLine("**Status:** Identifying critical uncertainties...")
                         appendLine()
-                    }, ui = ui)
+                  }).renderMarkdown()
                 )
 
                 val uncertaintyPrompt = buildUncertaintyPrompt(
@@ -414,7 +414,7 @@ Consider both the strength of evidence and its reliability.
                 stepStartTime = System.currentTimeMillis()
 
                 val uncertaintyResult = bayesianAgent.answer(listOf(uncertaintyPrompt))
-               var stepTime = System.currentTimeMillis() - stepStartTime
+              stepTime = System.currentTimeMillis() - stepStartTime
                 log.debug("Uncertainty analysis completed in ${stepTime}ms: ${uncertaintyResult.length} characters")
                 // Write to transcript
                 transcript?.write("""
@@ -428,7 +428,7 @@ Consider both the strength of evidence and its reliability.
 
 
                 uncertaintyTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                  (buildString {
                         appendLine("## Critical Uncertainties")
                         appendLine()
                         appendLine(uncertaintyResult)
@@ -436,35 +436,35 @@ Consider both the strength of evidence and its reliability.
                         appendLine("---")
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
-                    }, ui = ui)
+                  }).renderMarkdown()
                 )
                 uncertaintyTask.complete()
 
                 resultBuilder.append("## Key Uncertainties\n\n")
                 resultBuilder.append(uncertaintyResult.take(maxDescriptionLength))
-                if (uncertaintyResult.length > maxDescriptionLength) resultBuilder.append("\n... (see full analysis in UI)")
+              if (uncertaintyResult.length > maxDescriptionLength) resultBuilder.append("\n... (truncated)")
                 resultBuilder.append("\n\n")
 
                 overviewTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                  (buildString {
                         appendLine()
                         appendLine("✅ Key uncertainties identified (${stepTime / 1000.0}s)")
-                    }, ui = ui)
+                  }).renderMarkdown()
                 )
             }
 
             // Experiment Suggestions (if requested)
             if (executionConfig.suggest_experiments) {
-                log.debug("Suggesting experiments")
+              log.info("Suggesting experiments")
                 val experimentTask = tabs.newTask("Suggested Experiments")
 
                 experimentTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                  (buildString {
                         appendLine("# Suggested Experiments")
                         appendLine()
                         appendLine("**Status:** Generating experiment recommendations...")
                         appendLine()
-                    }, ui = ui)
+                  }).renderMarkdown()
                 )
 
                 val experimentPrompt = buildExperimentPrompt(
@@ -475,7 +475,7 @@ Consider both the strength of evidence and its reliability.
                 stepStartTime = System.currentTimeMillis()
 
                 val experimentResult = bayesianAgent.answer(listOf(experimentPrompt))
-               var stepTime = System.currentTimeMillis() - stepStartTime
+              stepTime = System.currentTimeMillis() - stepStartTime
                 log.debug("Experiment suggestions completed in ${stepTime}ms: ${experimentResult.length} characters")
                 // Write to transcript
                 transcript?.write("""
@@ -489,7 +489,7 @@ Consider both the strength of evidence and its reliability.
 
 
                 experimentTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                  (buildString {
                         appendLine("## Recommended Experiments")
                         appendLine()
                         appendLine(experimentResult)
@@ -497,25 +497,25 @@ Consider both the strength of evidence and its reliability.
                         appendLine("---")
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
-                    }, ui = ui)
+                  }).renderMarkdown()
                 )
                 experimentTask.complete()
 
                 resultBuilder.append("## Suggested Experiments\n\n")
                 resultBuilder.append(experimentResult.take(maxDescriptionLength))
-                if (experimentResult.length > maxDescriptionLength) resultBuilder.append("\n... (see full analysis in UI)")
+              if (experimentResult.length > maxDescriptionLength) resultBuilder.append("\n... (truncated)")
                 resultBuilder.append("\n\n")
 
                 overviewTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                  (buildString {
                         appendLine()
                         appendLine("✅ Experiment suggestions generated (${stepTime / 1000.0}s)")
-                    }, ui = ui)
+                  }).renderMarkdown()
                 )
             }
 
             val totalTime = System.currentTimeMillis() - startTime
-            log.info("ProbabilisticReasoningTask completed: total_time=${totalTime}ms, hypotheses=${hypotheses.size}, evidence=${evidence.size}")
+          log.info("ProbabilisticReasoningTask logic completed in ${totalTime}ms")
             // Write final summary to transcript
             transcript?.write("\n---\n\n".toByteArray())
             transcript?.write("## Analysis Complete\n\n".toByteArray())
@@ -530,7 +530,7 @@ Consider both the strength of evidence and its reliability.
 
             // Final overview update
             overviewTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+              (buildString {
                     appendLine()
                     appendLine("---")
                     appendLine()
@@ -547,7 +547,7 @@ Consider both the strength of evidence and its reliability.
                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         }"
                     )
-                }, ui = ui)
+              }).renderMarkdown()
             )
             overviewTask.complete()
             // Best Practice: Use acceptButtonFooter for manual review
@@ -559,31 +559,33 @@ Consider both the strength of evidence and its reliability.
 
             val finalResult = resultBuilder.toString()
             task.complete()
-            log.info("Completed Bayesian analysis of ${hypotheses.size} hypotheses in ${totalTime / 1000.0}s")
             resultFn(finalResult)
-            transcript?.close()
 
         } catch (e: Exception) {
-            log.error("Error during probabilistic reasoning", e)
+          log.error("Error in ProbabilisticReasoningTask", e)
             task.error(e)
-            // Write error to transcript
+          // Triple Log: Transcript entry with details
             transcript?.write("\n---\n\n".toByteArray())
             transcript?.write("## Error Occurred\n\n".toByteArray())
             transcript?.write("**Error:** ${e.message}\n\n".toByteArray())
-            transcript?.write("**Type:** ${e.javaClass.simpleName}\n\n".toByteArray())
-            transcript?.close()
+          transcript?.write(
+            """
+                <details>
+                <summary>Stack Trace</summary>
+                
+                ```
+                ${e.stackTraceToString()}
+                ```
+                </details>
+            """.trimIndent().toByteArray()
+          )
 
             overviewTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }, ui = ui)
+              """
+                ---
+                ## ❌ Error Occurred
+                **Error:** ${e.message}
+                """.trimIndent().renderMarkdown()
             )
             overviewTask.complete()
 
@@ -602,6 +604,7 @@ Consider both the strength of evidence and its reliability.
             }
             resultFn(errorOutput)
         }
+      }
     }
 
     private fun getInputFileCode(agent: TaskOrchestrator): String {
@@ -633,7 +636,7 @@ Consider both the strength of evidence and its reliability.
             }
     }
 
-    private fun writeInputFilesSection(stream: FileOutputStream, agent: TaskOrchestrator) {
+  private fun writeInputFilesSection(stream: OutputStream, agent: TaskOrchestrator) {
         try {
             val inputFileContent = getInputFileCode(agent)
             if (inputFileContent.isNotBlank()) {

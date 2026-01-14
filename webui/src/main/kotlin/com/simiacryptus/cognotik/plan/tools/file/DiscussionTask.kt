@@ -8,6 +8,10 @@ import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
@@ -39,13 +43,16 @@ class DiscussionTask(
 
     class DiscussionTaskExecutionConfigData(
         @Description("The specific questions or topics to be addressed in the inquiry")
-        val inquiry_questions: List<String>? = null,
+        var inquiry_questions: List<String>? = null,
         @Description("The goal or purpose of the inquiry")
-        val inquiry_goal: String? = null,
+        var inquiry_goal: String? = null,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
+        @Description("A description of the task")
         task_description: String? = null,
+        @Description("List of task IDs this task depends on")
         task_dependencies: List<String>? = null,
+        @Description("The current state of the task")
         state: TaskState? = null,
     ) : TaskExecutionConfig(
         task_type = Discussion.name,
@@ -72,80 +79,118 @@ class DiscussionTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val (_, transcript) = initializeTranscript(task)
 
-        val toInput = { it: String ->
-            messages + listOf(
-                getInputFileCode(),
-                it,
-            ).filter { it.isNotBlank() }
-        }
 
-        val taskConfig: DiscussionTaskExecutionConfigData? = this.executionConfig
-        val typeConfig = typeConfig ?: throw RuntimeException()
-        val insightActor = ChatAgent(
-            name = "Insight",
-            prompt = """
-                Create code for a new file that fulfills the specified requirements and context.
-                Given a detailed user request, break it down into smaller, actionable tasks suitable for software development.
-                Compile comprehensive information and insights on the specified topic.
-                Provide a comprehensive overview, including key concepts, relevant technologies, best practices, and any potential challenges or considerations.
-                Ensure the information is accurate, up-to-date, and well-organized to facilitate easy understanding.
-                """.trimIndent(),
-            model = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
-                ?: defaultSmart).getChildClient(task),
-            temperature = this.orchestrationConfig.temperature,
-        )
-        val inquiryResult = if (orchestrationConfig.autoFix) {
-            val input = toInput(
-                "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
-                    taskConfig?.inquiry_questions?.joinToString(
-                        "\n"
-                    )
-                }\nGoal: ${taskConfig?.inquiry_goal}\n\n${JsonUtil.toJson(executionConfig)}"
-            )
-            transcript?.write("# Analysis Request\n\n${input.joinToString("\n\n")}\n\n".toByteArray())
-            insightActor.answer(input)
-        } else
-            Discussable(
-                task = task,
-                userMessage = {
-                    "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
-                        taskConfig?.inquiry_questions?.joinToString(
-                            "\n"
-                        )
-                    }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
-                },
-                heading = taskConfig?.task_description ?: "Discussion",
-                initialResponse = { it: String ->
-                    transcript?.write("# Initial Request\n\n$it\n\n".toByteArray())
-                    insightActor.answer(toInput(it)).also { response ->
-                        transcript?.write("# Initial Response\n\n$response\n\n".toByteArray())
-                    }
-                },
-                outputFn = { design: String ->
-                    MarkdownUtil.renderMarkdown(design, ui = task.ui)
-                },
-                reviseResponse = { usermessages: List<Pair<String, Role>> ->
-                    val inStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
+        val transcript = task.transcript()
+        task.ui.pool.submit {
+            try {
+                log.info("Starting DiscussionTask: ${executionConfig?.task_description ?: "Unnamed"}")
+                task.add("### Initializing Discussion\nGathering context and preparing inquiry...".renderMarkdown())
+
+                val toInput = { it: String ->
+                    messages + listOf(
+                        getInputFileCode(),
+                        it,
+                    ).filter { it.isNotBlank() }
+                }
+
+                val taskConfig: DiscussionTaskExecutionConfigData? = this.executionConfig
+                val typeConfig = typeConfig ?: throw RuntimeException("Task configuration is missing")
+                val insightActor = ChatAgent(
+                    name = "Insight",
+                    prompt = """
+                        Create code for a new file that fulfills the specified requirements and context.
+                        Given a detailed user request, break it down into smaller, actionable tasks suitable for software development.
+                        Compile comprehensive information and insights on the specified topic.
+                        Provide a comprehensive overview, including key concepts, relevant technologies, best practices, and any potential challenges or considerations.
+                        Ensure the information is accurate, up-to-date, and well-organized to facilitate easy understanding.
+                        """.trimIndent(),
+                    model = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+                        ?: defaultSmart).getChildClient(task),
+                    temperature = this.orchestrationConfig.temperature,
+                )
+
+                transcript?.write(
+                    """
+                    # Discussion Task Flow
+                    ```mermaid
+                    graph TD
+                        Start((Start)) --> Context[Gather Context]
+                        Context --> Mode{AutoFix?}
+                        Mode -- Yes --> Direct[Direct LLM Answer]
+                        Mode -- No --> Interactive[Interactive Discussion]
+                        Direct --> End((End))
+                        Interactive --> End
+                    ```
+                """.trimIndent().toByteArray()
+                )
+
+                val inquiryResult = if (orchestrationConfig.autoFix) {
+                    task.add("Processing inquiry automatically...".renderMarkdown())
+                    val inputStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
                         taskConfig?.inquiry_questions?.joinToString("\n")
-                    }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
-                    val messages = usermessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
-                        .toTypedArray<ModelSchema.ChatMessage>()
-                    transcript?.write("# Revision Request\n\n${usermessages.joinToString("\n") { "${it.second}: ${it.first}" }}\n\n".toByteArray())
-                    insightActor.respond(
-                        messages = messages,
-                        input = toInput(inStr),
-                    ).also { response ->
-                        transcript?.write("# Revision Response\n\n$response\n\n".toByteArray())
-                    }
-                },
-                atomicRef = AtomicReference(),
-                semaphore = Semaphore(0),
-            ).call()
-        transcript?.close()
-        task.complete()
-        resultFn(inquiryResult ?: "(no response)")
+                    }\nGoal: ${taskConfig?.inquiry_goal}\n\n${JsonUtil.toJson(executionConfig)}"
+                    val input = toInput(inputStr)
+
+                    transcript?.write(
+                        "# Analysis Request\n<details><summary>Input Context</summary>\n\n${
+                            input.joinToString(
+                                "\n\n"
+                            )
+                        }\n\n</details>\n".toByteArray()
+                    )
+                    insightActor.answer(input)
+                } else {
+                    task.add("Opening interactive discussion...".renderMarkdown())
+                    Discussable(
+                        task = task,
+                        userMessage = {
+                            "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
+                                taskConfig?.inquiry_questions?.joinToString("\n")
+                            }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
+                        },
+                        heading = taskConfig?.task_description ?: "Discussion",
+                        initialResponse = { it: String ->
+                            transcript?.write("# Initial Request\n\n$it\n\n".toByteArray())
+                            insightActor.answer(toInput(it)).also { response ->
+                                transcript?.write("# Initial Response\n\n$response\n\n".toByteArray())
+                            }
+                        },
+                        outputFn = { design: String ->
+                            design.renderMarkdown()
+                        },
+                        reviseResponse = { usermessages: List<Pair<String, Role>> ->
+                            val inStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
+                                taskConfig?.inquiry_questions?.joinToString("\n")
+                            }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
+                            val chatMessages =
+                                usermessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
+                                    .toTypedArray<ModelSchema.ChatMessage>()
+                            transcript?.write("# Revision Request\n\n${usermessages.joinToString("\n") { "${it.second}: ${it.first}" }}\n\n".toByteArray())
+                            insightActor.respond(
+                                messages = chatMessages,
+                                input = toInput(inStr),
+                            ).also { response ->
+                                transcript?.write("# Revision Response\n\n$response\n\n".toByteArray())
+                            }
+                        },
+                        atomicRef = AtomicReference(),
+                        semaphore = Semaphore(0),
+                    ).call()
+                }
+
+                log.info("DiscussionTask completed successfully.")
+                task.complete()
+                resultFn(inquiryResult ?: "(no response)")
+            } catch (e: Exception) {
+                task.error(e)
+                log.error("Error in DiscussionTask: ${e.message}", e)
+                transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                resultFn("Error: ${e.message}")
+            } finally {
+                transcript?.close()
+            }
+        }
     }
 
 
@@ -184,13 +229,13 @@ class DiscussionTask(
     companion object {
         private val log = LoggerFactory.getLogger(DiscussionTask::class.java)
         val Discussion = TaskType(
-          name = "Discussion",
-          category = "File",
-          taskClass = DiscussionTask::class.java,
-          executionConfigClass = DiscussionTaskExecutionConfigData::class.java,
-          taskSettingsClass = DiscussionTaskTypeConfig::class.java,
-          description = "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
-          tooltipHtml = """
+            name = "Discussion",
+            category = "File",
+            taskClass = DiscussionTask::class.java,
+            executionConfigClass = DiscussionTaskExecutionConfigData::class.java,
+            taskSettingsClass = DiscussionTaskTypeConfig::class.java,
+            description = "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
+            tooltipHtml = """
                       Provides direct answers and insights using the LLM, optionally referencing project files.
                       <ul>
                         <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>

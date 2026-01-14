@@ -4,20 +4,24 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.io.ByteArrayOutputStream
-import java.io.OutputStreamWriter
+import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -32,9 +36,9 @@ class PersuasiveEssayTask(
 ) {
     class PersuasiveEssayTaskTypeConfig(
         @Description("Whether to generate images for the essay")
-        val generate_images: Boolean = true,
+        var generate_images: Boolean = true,
         @Description("Whether to generate a cover image for the essay")
-        val generate_cover_image: Boolean = true,
+        var generate_cover_image: Boolean = true,
     ) : TaskTypeConfig(
         task_type = PersuasiveEssay.name,
         name = "Persuasive Essay Task"
@@ -42,43 +46,43 @@ class PersuasiveEssayTask(
 
     class PersuasiveEssayTaskExecutionConfigData(
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
 
         @Description("The thesis statement or position to argue for")
-        val thesis: String? = null,
+        var thesis: String? = null,
 
         @Description("The target audience (e.g., 'general public', 'academics', 'policymakers', 'business leaders')")
-        val target_audience: String = "general public",
+        var target_audience: String = "general public",
 
         @Description("The tone of the essay (e.g., 'formal', 'conversational', 'passionate', 'analytical')")
-        val tone: String = "formal",
+        var tone: String = "formal",
 
         @Description("Target word count for the complete essay")
-        val target_word_count: Int = 1500,
+        var target_word_count: Int = 1500,
 
         @Description("Number of main arguments to develop")
-        val num_arguments: Int = 3,
+        var num_arguments: Int = 3,
 
         @Description("Whether to include counterarguments and rebuttals")
-        val include_counterarguments: Boolean = true,
+        var include_counterarguments: Boolean = true,
 
         @Description("Whether to use rhetorical devices (ethos, pathos, logos)")
-        val use_rhetorical_devices: Boolean = true,
+        var use_rhetorical_devices: Boolean = true,
 
         @Description("Whether to include statistical evidence and citations")
-        val include_evidence: Boolean = true,
+        var include_evidence: Boolean = true,
 
         @Description("Whether to use analogies and examples")
-        val use_analogies: Boolean = true,
+        var use_analogies: Boolean = true,
 
         @Description("Call to action type (MUST BE one of: 'strong', 'moderate', 'reflective', 'none')")
-        val call_to_action: String = "strong",
+        var call_to_action: String = "strong",
 
         @Description("Number of revision passes for quality improvement")
-        val revision_passes: Int = 1,
+        var revision_passes: Int = 1,
 
         @Description("Related files or research to incorporate")
-        val related_files: List<String>? = null,
+        var related_files: List<String>? = null,
 
         task_description: String? = null,
         task_dependencies: List<String>? = null,
@@ -202,30 +206,28 @@ class PersuasiveEssayTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val startTime = System.currentTimeMillis()
-        log.info("Starting PersuasiveEssayTask for thesis: '${executionConfig?.thesis}', input_files: ${executionConfig?.input_files?.size ?: 0}")
-        // Create transcript file
-        val transcript = task.transcript()?.let { OutputStreamWriter(it) }
-        transcript?.let { stream ->
-            stream.appendLine("# Persuasive Essay Generation Transcript\n\n")
-            stream.appendLine(
-                "**Started:** ${
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                }\n\n"
-            )
-            stream.appendLine("**Thesis:** ${executionConfig?.thesis}\n\n")
-            stream.appendLine("---\n\n")
-            stream.flush()
-        }
 
 
-        // Validate configuration
+        task.ui.pool.submit {
+            val startTime = System.currentTimeMillis()
+            log.info("Starting PersuasiveEssayTask for thesis: '${executionConfig?.thesis}'")
+            val transcript = task.transcript()
+            try {
+                transcript?.write("# Persuasive Essay Generation Transcript\n\n".toByteArray())
+                transcript?.write(
+                    "**Started:** ${
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                    }\n\n".toByteArray()
+                )
+                transcript?.write("**Thesis:** ${executionConfig?.thesis}\n\n---\n\n".toByteArray())
+
+                // Validate configuration
         executionConfig?.validate()?.let { validationError ->
             log.error("Configuration validation failed: $validationError")
             task.safeComplete("CONFIGURATION ERROR: $validationError", log)
             task.error(ValidatedObject.ValidationError(validationError, executionConfig))
             resultFn("CONFIGURATION ERROR: $validationError")
-            return
+            return@submit
         }
 
         val thesis = executionConfig?.thesis
@@ -233,10 +235,10 @@ class PersuasiveEssayTask(
             log.error("No thesis specified for persuasive essay")
             task.safeComplete("CONFIGURATION ERROR: No thesis specified", log)
             resultFn("CONFIGURATION ERROR: No thesis specified")
-            return
+            return@submit
         }
 
-        val api = defaultSmart ?: return
+                val api = defaultSmart ?: return@submit
 
         val tabs = TabbedDisplay(task)
         // Generate cover image if enabled
@@ -247,7 +249,7 @@ class PersuasiveEssayTask(
                 title = thesis,
                 audience = executionConfig.target_audience,
                 tone = executionConfig.tone,
-                transcriptWriter = transcript,
+                transcript = transcript,
                 orchestrationConfig = orchestrationConfig
             )
         }
@@ -282,12 +284,9 @@ class PersuasiveEssayTask(
         }
         overviewTask.add(overviewContent.renderMarkdown)
         overviewTask.update()
-        transcript?.let { stream ->
-            stream.write("## Configuration\n\n")
-            stream.write(overviewContent)
-            stream.write("\n\n")
-            stream.flush()
-        }
+                transcript?.write("## Configuration\n\n".toByteArray())
+                transcript?.write(overviewContent.toByteArray())
+                transcript?.write("\n\n".toByteArray())
 
         val resultBuilder = StringBuilder()
         resultBuilder.append("# Persuasive Essay: $thesis\n\n")
@@ -323,6 +322,16 @@ class PersuasiveEssayTask(
                     }.renderMarkdown
                 )
                 contextTask.complete()
+                transcript?.write(
+                    """
+                            <details>
+                            <summary>Research Context</summary>
+                            $priorContext
+                            $inputFileContent
+                            $contextFiles
+                            </details>
+                        """.trimIndent().toByteArray()
+                )
             }
 
             // Phase 1: Create outline
@@ -394,7 +403,7 @@ Ensure the outline:
                 outlineTask.error(ValidatedObject.ValidationError(validationError, outline))
                 task.safeComplete("Outline validation failed: $validationError", log)
                 resultFn("ERROR: Outline validation failed: $validationError")
-                return
+                return@submit
             }
 
             log.info("Generated outline: ${outline.arguments.size} arguments, ${outline.counterarguments.size} counterarguments")
@@ -453,12 +462,9 @@ Ensure the outline:
             }
             outlineTask.add(outlineContent.renderMarkdown)
             outlineTask.complete()
-            transcript?.let { stream ->
-                stream.write("## Essay Outline\n\n")
-                stream.write(outlineContent)
-                stream.write("\n\n")
-                stream.flush()
-            }
+            transcript?.write("## Essay Outline\n\n".toByteArray())
+            transcript?.write(outlineContent.toByteArray())
+            transcript?.write("\n\n".toByteArray())
 
             overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown)
             overviewTask.add("\n### Phase 2: Introduction\n*Writing compelling introduction...*\n".renderMarkdown)
@@ -470,7 +476,7 @@ Ensure the outline:
                     tabs = tabs,
                     title = outline.title,
                     outline = outline,
-                    transcriptWriter = transcript,
+                    transcript = transcript,
                     orchestrationConfig = orchestrationConfig
                 )
             }
@@ -539,12 +545,9 @@ Speak directly to the ${executionConfig.target_audience}.
                 }.renderMarkdown
             )
             introTask.complete()
-            transcript?.let { stream ->
-                stream.write("## Introduction\n\n")
-                stream.write(introduction.content)
-                stream.write("\n\n**Word Count:** ${introduction.word_count}\n\n")
-                stream.flush()
-            }
+            transcript?.write("## Introduction\n\n".toByteArray())
+            transcript?.write(introduction.content.toByteArray())
+            transcript?.write("\n\n**Word Count:** ${introduction.word_count}\n\n".toByteArray())
 
 
             resultBuilder.append(introduction.content)
@@ -652,12 +655,9 @@ Aim for approximately ${argOutline.estimated_word_count} words.
                     }.renderMarkdown
                 )
                 argTask.complete()
-                transcript?.let { stream ->
-                    stream.write("## Argument ${index + 1}: ${argOutline.claim}\n\n")
-                    stream.write(argumentSection.content)
-                    stream.write("\n\n**Word Count:** ${argumentSection.word_count}\n\n")
-                    stream.flush()
-                }
+                transcript?.write("## Argument ${index + 1}: ${argOutline.claim}\n\n".toByteArray())
+                transcript?.write(argumentSection.content.toByteArray())
+                transcript?.write("\n\n**Word Count:** ${argumentSection.word_count}\n\n".toByteArray())
 
 
                 resultBuilder.append(argumentSection.content)
@@ -670,7 +670,7 @@ Aim for approximately ${argOutline.estimated_word_count} words.
                         argumentNumber = index + 1,
                         claim = argOutline.claim,
                         content = argumentSection.content,
-                        transcriptWriter = transcript,
+                        transcript = transcript,
                         orchestrationConfig = orchestrationConfig
                     )
                 }
@@ -744,12 +744,9 @@ Aim for approximately $counterargumentWords words.
                     }.renderMarkdown
                 )
                 counterTask.complete()
-                transcript?.let { stream ->
-                    stream.write("## Counterarguments & Rebuttals\n\n")
-                    stream.write(counterSection.content)
-                    stream.write("\n\n**Word Count:** ${counterSection.word_count}\n\n")
-                    stream.flush()
-                }
+                transcript?.write("## Counterarguments & Rebuttals\n\n".toByteArray())
+                transcript?.write(counterSection.content.toByteArray())
+                transcript?.write("\n\n**Word Count:** ${counterSection.word_count}\n\n".toByteArray())
 
                 resultBuilder.append(counterSection.content)
                 resultBuilder.append("\n\n")
@@ -759,7 +756,7 @@ Aim for approximately $counterargumentWords words.
                         task = task,
                         tabs = tabs,
                         content = counterSection.content,
-                        transcriptWriter = transcript,
+                        transcript = transcript,
                         orchestrationConfig = orchestrationConfig
                     )
                 }
@@ -851,12 +848,9 @@ End on a strong note that reinforces your position.
                 }.renderMarkdown
             )
             conclusionTask.complete()
-            transcript?.let { stream ->
-                stream.write("## Conclusion\n\n")
-                stream.write(conclusion.content)
-                stream.write("\n\n**Word Count:** ${conclusion.word_count}\n\n")
-                stream.flush()
-            }
+            transcript?.write("## Conclusion\n\n".toByteArray())
+            transcript?.write(conclusion.content.toByteArray())
+            transcript?.write("\n\n**Word Count:** ${conclusion.word_count}\n\n".toByteArray())
 
 
             resultBuilder.append(conclusion.content)
@@ -928,11 +922,8 @@ Provide the complete revised essay.
                         }.renderMarkdown
                     )
                     revisionTask.update()
-                    transcript?.let { stream ->
-                        stream.write("### Revision Pass ${passNum + 1}\n\n")
-                        stream.write("Completed revision pass ${passNum + 1} of ${executionConfig.revision_passes}\n\n")
-                        stream.flush()
-                    }
+                    transcript?.write("### Revision Pass ${passNum + 1}\n\n".toByteArray())
+                    transcript?.write("Completed revision pass ${passNum + 1} of ${executionConfig.revision_passes}\n\n".toByteArray())
                 }
                 revisionTask.complete()
 
@@ -966,13 +957,9 @@ Provide the complete revised essay.
 
             finalTask.add(finalEssay.renderMarkdown)
             finalTask.complete()
-            // Update transcript with final essay
-            transcript?.let { stream ->
-                stream.write("## Complete Essay\n\n")
-                stream.write(finalEssay)
-                stream.write("\n\n")
-                stream.flush()
-            }
+            transcript?.write("## Complete Essay\n\n".toByteArray())
+            transcript?.write(finalEssay.toByteArray())
+            transcript?.write("\n\n".toByteArray())
 
 
             // Final statistics
@@ -1002,22 +989,19 @@ Provide the complete revised essay.
                 }.renderMarkdown
             )
             overviewTask.complete()
-            transcript?.let { stream ->
-                stream.write("---\n\n")
-                stream.write("## Generation Complete\n\n")
-                stream.write("**Total Word Count:** $cumulativeWordCount\n\n")
-                stream.write("**Total Time:** ${totalTime / 1000.0}s\n\n")
-                stream.write(
-                    "**Completed:** ${
-                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                    }\n\n"
-                )
-                stream.flush()
-            }
 
 
-            // Close transcript and get link
-            transcript?.close()
+            transcript?.write("---\n\n".toByteArray())
+            transcript?.write("## Generation Complete\n\n".toByteArray())
+            transcript?.write("**Total Word Count:** $cumulativeWordCount\n\n".toByteArray())
+            transcript?.write("**Total Time:** ${totalTime / 1000.0}s\n\n".toByteArray())
+            transcript?.write(
+                "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                }\n\n".toByteArray()
+            )
+
+
             val (transcriptLink, _) = task.createFile("transcript.md")
 
             // Concise summary for resultFn with file links
@@ -1053,11 +1037,18 @@ Provide the complete revised essay.
                 "Persuasive essay generation complete: $cumulativeWordCount words in ${totalTime / 1000}s",
                 log
             )
-            resultFn(finalResult)
+
+            if (orchestrationConfig.autoFix) {
+                resultFn(finalResult)
+            } else {
+                val footer = acceptButtonFooter(task.ui) {
+                    resultFn(finalResult)
+                }
+                task.add(footer)
+            }
 
         } catch (e: Exception) {
-            log.error("Error during persuasive essay generation", e)
-            task.error(e)
+            log.error("Error during persuasive essay generation: ${e.message}", e)
 
             overviewTask.add(
                 buildString {
@@ -1072,13 +1063,17 @@ Provide the complete revised essay.
                 }.renderMarkdown
             )
             overviewTask.complete()
-            transcript?.let { stream ->
-                stream.write("---\n\n")
-                stream.write("## Error Occurred\n\n")
-                stream.write("**Error:** ${e.message}\n\n")
-                stream.flush()
-            }
-            transcript?.close()
+            task.error(e)
+            transcript?.write(
+                """
+                        <details>
+                        <summary>Error: ${e.message}</summary>
+                        ```
+                        ${e.stackTraceToString()}
+                        ```
+                        </details>
+                    """.trimIndent().toByteArray()
+            )
 
 
             val errorOutput = buildString {
@@ -1096,6 +1091,11 @@ Provide the complete revised essay.
             }
             resultFn(errorOutput)
         }
+            } finally {
+                transcript?.close()
+            }
+
+        }
     }
 
 
@@ -1105,7 +1105,7 @@ Provide the complete revised essay.
         title: String,
         audience: String,
         tone: String,
-        transcriptWriter: java.io.Writer?,
+        transcript: OutputStream?,
         orchestrationConfig: OrchestrationConfig
     ) {
         try {
@@ -1151,20 +1151,22 @@ Provide the complete revised essay.
             imageTask.add(imageHtml.renderMarkdown)
             imageTask.update()
 
-            transcriptWriter?.appendLine("## Cover Image")
-            transcriptWriter?.appendLine()
-            transcriptWriter?.appendLine("**Prompt:** ${result.text}")
-            transcriptWriter?.appendLine()
-            transcriptWriter?.appendLine("![Cover Image]($link)".transcriptFilter())
-            transcriptWriter?.appendLine()
-            transcriptWriter?.flush()
+            transcript?.write("## Cover Image\n\n".toByteArray())
+            transcript?.write("**Prompt:** ${result.text}\n\n".toByteArray())
+            transcript?.write("![Cover Image]($link)\n\n".transcriptFilter().toByteArray())
 
             imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
             imageTask.complete()
         } catch (e: Exception) {
-            log.error("Failed to generate cover image", e)
-            transcriptWriter?.appendLine("**Cover Image Generation Failed:** ${e.message}")
-            transcriptWriter?.appendLine()
+            log.error("Failed to generate cover image: ${e.message}")
+            transcript?.write(
+                """
+                <details>
+                <summary>Cover Image Generation Failed</summary>
+                ${e.message}
+                </details>
+            """.trimIndent().toByteArray()
+            )
         }
     }
 
@@ -1173,7 +1175,7 @@ Provide the complete revised essay.
         tabs: TabbedDisplay,
         title: String,
         outline: EssayOutline,
-        transcriptWriter: java.io.Writer?,
+        transcript: OutputStream?,
         orchestrationConfig: OrchestrationConfig
     ) {
         try {
@@ -1226,20 +1228,22 @@ Provide the complete revised essay.
             imageTask.add(imageHtml.renderMarkdown)
             imageTask.update()
 
-            transcriptWriter?.appendLine("## Outline Visualization")
-            transcriptWriter?.appendLine()
-            transcriptWriter?.appendLine("**Prompt:** ${result.text}")
-            transcriptWriter?.appendLine()
-            transcriptWriter?.appendLine("![Outline]($link)".transcriptFilter())
-            transcriptWriter?.appendLine()
-            transcriptWriter?.flush()
+            transcript?.write("## Outline Visualization\n\n".toByteArray())
+            transcript?.write("**Prompt:** ${result.text}\n\n".toByteArray())
+            transcript?.write("![Outline]($link)\n\n".transcriptFilter().toByteArray())
 
             imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
             imageTask.complete()
         } catch (e: Exception) {
-            log.error("Failed to generate outline visualization", e)
-            transcriptWriter?.appendLine("**Outline Image Generation Failed:** ${e.message}")
-            transcriptWriter?.appendLine()
+            log.error("Failed to generate outline visualization: ${e.message}")
+            transcript?.write(
+                """
+                <details>
+                <summary>Outline Image Generation Failed</summary>
+                ${e.message}
+                </details>
+            """.trimIndent().toByteArray()
+            )
         }
     }
 
@@ -1249,7 +1253,7 @@ Provide the complete revised essay.
         argumentNumber: Int,
         claim: String,
         content: String,
-        transcriptWriter: java.io.Writer?,
+        transcript: OutputStream?,
         orchestrationConfig: OrchestrationConfig
     ) {
         try {
@@ -1298,20 +1302,22 @@ Provide the complete revised essay.
             imageTask.add(imageHtml.renderMarkdown)
             imageTask.update()
 
-            transcriptWriter?.appendLine("#### Argument $argumentNumber Image")
-            transcriptWriter?.appendLine()
-            transcriptWriter?.appendLine("**Prompt:** ${result.text}")
-            transcriptWriter?.appendLine()
-            transcriptWriter?.appendLine("![Argument $argumentNumber]($link)".transcriptFilter())
-            transcriptWriter?.appendLine()
-            transcriptWriter?.flush()
+            transcript?.write("#### Argument $argumentNumber Image\n\n".toByteArray())
+            transcript?.write("**Prompt:** ${result.text}\n\n".toByteArray())
+            transcript?.write("![Argument $argumentNumber]($link)\n\n".transcriptFilter().toByteArray())
 
             imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
             imageTask.complete()
         } catch (e: Exception) {
-            log.error("Failed to generate argument $argumentNumber image", e)
-            transcriptWriter?.appendLine("**Argument $argumentNumber Image Generation Failed:** ${e.message}")
-            transcriptWriter?.appendLine()
+            log.error("Failed to generate argument $argumentNumber image: ${e.message}")
+            transcript?.write(
+                """
+                <details>
+                <summary>Argument $argumentNumber Image Generation Failed</summary>
+                ${e.message}
+                </details>
+            """.trimIndent().toByteArray()
+            )
         }
     }
 
@@ -1319,7 +1325,7 @@ Provide the complete revised essay.
         task: SessionTask,
         tabs: TabbedDisplay,
         content: String,
-        transcriptWriter: java.io.Writer?,
+        transcript: OutputStream?,
         orchestrationConfig: OrchestrationConfig
     ) {
         try {
@@ -1368,20 +1374,22 @@ Provide the complete revised essay.
             imageTask.add(imageHtml.renderMarkdown)
             imageTask.update()
 
-            transcriptWriter?.appendLine("## Counterargument Visualization")
-            transcriptWriter?.appendLine()
-            transcriptWriter?.appendLine("**Prompt:** ${result.text}")
-            transcriptWriter?.appendLine()
-            transcriptWriter?.appendLine("![Counterarguments]($link)".transcriptFilter())
-            transcriptWriter?.appendLine()
-            transcriptWriter?.flush()
+            transcript?.write("## Counterargument Visualization\n\n".toByteArray())
+            transcript?.write("**Prompt:** ${result.text}\n\n".toByteArray())
+            transcript?.write("![Counterarguments]($link)\n\n".transcriptFilter().toByteArray())
 
             imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
             imageTask.complete()
         } catch (e: Exception) {
-            log.error("Failed to generate counterargument image", e)
-            transcriptWriter?.appendLine("**Counterargument Image Generation Failed:** ${e.message}")
-            transcriptWriter?.appendLine()
+            log.error("Failed to generate counterargument image: ${e.message}")
+            transcript?.write(
+                """
+                <details>
+                <summary>Counterargument Image Generation Failed</summary>
+                ${e.message}
+                </details>
+            """.trimIndent().toByteArray()
+            )
         }
     }
 
@@ -1418,13 +1426,13 @@ Provide the complete revised essay.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PersuasiveEssayTask::class.java)
         val PersuasiveEssay = TaskType(
-          name = "PersuasiveEssay",
-          category = "Writing",
-          taskClass = PersuasiveEssayTask::class.java,
-          executionConfigClass = PersuasiveEssayTaskExecutionConfigData::class.java,
-          taskSettingsClass = PersuasiveEssayTaskTypeConfig::class.java,
-          description = "Generate compelling persuasive essays with structured arguments",
-          tooltipHtml = """
+            name = "PersuasiveEssay",
+            category = "Writing",
+            taskClass = PersuasiveEssayTask::class.java,
+            executionConfigClass = PersuasiveEssayTaskExecutionConfigData::class.java,
+            taskSettingsClass = PersuasiveEssayTaskTypeConfig::class.java,
+            description = "Generate compelling persuasive essays with structured arguments",
+            tooltipHtml = """
                         Generates complete, well-structured persuasive essays using rhetorical techniques.
                         <ul>
                           <li>Creates detailed outline with thesis, arguments, and counterarguments</li>

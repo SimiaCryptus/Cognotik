@@ -29,7 +29,6 @@ dependencies {
     }
     implementation(libs.jsoup)
 
-    implementation(project(":jo-penai"))
     implementation(project(":core"))
 
     implementation(libs.monte.media.screenrecorder)

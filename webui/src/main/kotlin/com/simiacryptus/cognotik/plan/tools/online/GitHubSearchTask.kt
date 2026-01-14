@@ -5,6 +5,10 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -231,22 +235,22 @@ class GitHubSearchTask(
 
     companion object {
         val GitHubSearch = TaskType(
-          name = "GitHubSearch",
-          category = "Online",
-          taskClass = GitHubSearchTask::class.java,
-          executionConfigClass = GitHubSearchTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Search GitHub repositories, code, issues and users",
-          tooltipHtml = """
-                    Performs comprehensive searches across GitHub's content.
-                    <ul>
-                      <li>Searches repositories, code, and issues</li>
-                      <li>Supports advanced search queries</li>
-                      <li>Filters results by various criteria</li>
-                      <li>Formats results with relevant details</li>
-                      <li>Handles API rate limiting</li>
-                    </ul>
-                  """,
+            "GitHubSearch",
+            "Online & Search",
+            GitHubSearchTask::class.java,
+            GitHubSearchTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Search GitHub repositories, code, issues and users",
+            """
+          Performs comprehensive searches across GitHub's content.
+          <ul>
+            <li>Searches repositories, code, and issues</li>
+            <li>Supports advanced search queries</li>
+            <li>Filters results by various criteria</li>
+            <li>Formats results with relevant details</li>
+            <li>Handles API rate limiting</li>
+          </ul>
+        """,
         )
 
     }

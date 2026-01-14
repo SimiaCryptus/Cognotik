@@ -2,9 +2,15 @@ package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 import java.util.concurrent.Semaphore
@@ -20,7 +26,7 @@ class RunToolTask(
     class RunToolTaskTypeConfig(
         task_type: String = RunTool.name,
         model: ApiChatModel? = null,
-        name: String? = task_type,
+        name: String? = RunTool.name,
     ) : TaskTypeConfig(
         task_type = task_type,
         name = name,
@@ -34,8 +40,11 @@ class RunToolTask(
         var args: List<String>? = null,
         @Description("The relative file path of the working directory")
         var workingDir: String? = null,
+        @Description("A description of the task's purpose")
         task_description: String? = null,
+        @Description("List of task IDs this task depends on")
         task_dependencies: List<String>? = null,
+        @Description("The current state of the task")
         state: TaskState? = null
     ) : TaskExecutionConfig(
         task_type = RunTool.name,
@@ -45,9 +54,7 @@ class RunToolTask(
     ) {
         val executable: File?
             get() {
-
                 val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
-
                 return tools.find { it.provider?.getExecutables()?.contains(tool) == true }?.let { toolData ->
                     if (toolData.path != null) {
                         toolData.provider!!.resolve(toolData.path).forEach { resolved ->
@@ -69,8 +76,12 @@ class RunToolTask(
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
                 .tools.flatMap { it.component1()?.getExecutables() ?: emptyList() }.distinct().sorted()
 
-        return "RunTool - Execute a tool with custom arguments\n" +
-                "  * Available tools: ${executables?.joinToString(", ") ?: "None"}\n"
+        return """
+            RunTool - Execute external CLI tools with custom arguments.
+            * **Use when:** You need to run compilers, linters, search tools, or custom scripts.
+            * **Available tools:** ${executables?.joinToString(", ") ?: "None"}
+            * **Inputs:** Specify the `tool` name and a list of `args`.
+        """.trimIndent()
     }
 
     override fun run(
@@ -81,15 +92,14 @@ class RunToolTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         val transcript = task.transcript()
-
-
-
-
-
         task.ui.pool.submit {
             try {
+                log.info("Starting RunToolTask for tool: ${executionConfig?.tool}")
+                val tabs = TabbedDisplay(task)
+
                 val context = getPriorCode(agent.executionState)
                 if (context.isNotBlank()) {
+                    tabs["Context"] = "```\n$context\n```".renderMarkdown()
                     transcript?.write("# Context\n<details><summary>Prior Code</summary>\n\n```\n$context\n```\n</details>\n".toByteArray())
                 }
 
@@ -101,10 +111,12 @@ class RunToolTask(
                     ?: throw IllegalArgumentException("Executable for tool '$tool' not found")
                 val command = listOf(executable) + args
                 val commandStr = command.joinToString(" ")
+                tabs["Command"] = "```bash\n$commandStr\n```".renderMarkdown()
 
                 transcript?.write("## Command\n```bash\n$commandStr\n```\n\n".toByteArray())
 
-                fun execute(): String {
+                fun execute(outputTask: SessionTask): String {
+                    val status = outputTask.add("Executing process...".renderMarkdown())
                     val process = ProcessBuilder(command)
                         .directory(workingDir)
                         .redirectErrorStream(true)
@@ -112,32 +124,37 @@ class RunToolTask(
 
                     val output = process.inputStream.bufferedReader().readText()
                     val exitCode = process.waitFor()
+                    status?.setLength(0)
+                    status?.append("**Execution Complete** (Exit Code: $exitCode)".renderMarkdown())
+                    outputTask.update()
+                    outputTask.add("#### Output\n```\n$output\n```".renderMarkdown())
 
                     transcript?.write("## Output\n<details><summary>Process Output</summary>\n\n```\n$output\n```\n</details>\n\n".toByteArray())
 
                     return if (exitCode == 0) {
-                        "Tool execution successful.\nOutput:\n$output"
+                        "### Tool execution successful\n**Tool:** `$tool`\n\n#### Output\n$output"
                     } else {
-                        "Tool execution failed with exit code $exitCode.\nOutput:\n$output"
+                        "### Tool execution failed (Exit Code: $exitCode)\n**Tool:** `$tool`\n\n#### Output\n$output"
                     }
                 }
+
                 if (orchestrationConfig.autoFix) {
-                    task.header("Executing tool: $tool", level = 3)
-                    resultFn(execute())
+                    val outputTask = tabs.newTask("Output")
+                    resultFn(execute(outputTask))
+                    outputTask.complete()
                     task.complete()
                 } else {
-                    task.header("Proposed command to run", level = 3)
-                    task.add("<pre>$commandStr</pre>")
                     val semaphore = Semaphore(0)
                     var result = "Skipped"
-                    task.add(task.ui.hrefLink("Run Tool") {
+
+                    task.add("### Approval Required\nReview the command in the **Command** tab before running.".renderMarkdown())
+
+                    task.add(task.ui.hrefLink("▶ Run Tool", "btn btn-primary") {
                         try {
-                            val statusBuffer = task.add("Running...")
-                            result = execute()
-                            statusBuffer?.setLength(0)
-                            statusBuffer?.append("<b>Execution Complete</b>")
-                            task.update()
-                            task.expandable("Output", "<pre>${result.replace("<", "&lt;")}</pre>")
+                            val outputTask = tabs.newTask("Output")
+                            result = execute(outputTask)
+                            outputTask.complete()
+
                             task.add(acceptButtonFooter(task.ui) {
                                 semaphore.release()
                             })
@@ -147,6 +164,7 @@ class RunToolTask(
                             transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
                         }
                     })
+
                     semaphore.acquire()
                     resultFn(result)
                     task.complete()
@@ -165,15 +183,20 @@ class RunToolTask(
     companion object {
         private val log = LoggerFactory.getLogger(RunToolTask::class.java)
         val RunTool = TaskType(
-          name = "RunTool",
-          category = "Execution",
-          taskClass = RunToolTask::class.java,
-          executionConfigClass = RunToolTaskExecutionConfigData::class.java,
-          taskSettingsClass = RunToolTaskTypeConfig::class.java,
-          description = "Execute external tools",
-          tooltipHtml = """
-                    Executes configured external tools.
-                  """,
+            name = "RunTool",
+            category = "Execution",
+            taskClass = RunToolTask::class.java,
+            executionConfigClass = RunToolTaskExecutionConfigData::class.java,
+            taskSettingsClass = RunToolTaskTypeConfig::class.java,
+            description = "Execute external tools",
+            tooltipHtml = """
+                <p>Executes configured external tools and scripts.</p>
+                <ul>
+                    <li>Supports custom arguments and working directories.</li>
+                    <li>Captures stdout and stderr.</li>
+                    <li>Requires manual approval for side effects unless auto-fix is enabled.</li>
+                </ul>
+            """,
         )
     }
 }

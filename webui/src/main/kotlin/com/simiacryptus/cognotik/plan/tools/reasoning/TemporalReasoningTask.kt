@@ -4,12 +4,16 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.file.FileSystems
@@ -28,27 +32,27 @@ class TemporalReasoningTask(
 
     class TemporalReasoningTaskExecutionConfigData(
         @Description("The subject or system to analyze over time")
-        val subject: String? = null,
+        var subject: String? = null,
         @Description("Time range to analyze (e.g., '2023-01-01 to 2024-01-01')")
-        val time_range: String? = null,
+        var time_range: String? = null,
         @Description("Granularity of analysis: daily, weekly, monthly, quarterly, yearly")
-        val granularity: String = "weekly",
+        var granularity: String = "weekly",
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         @Description("Whether to identify temporal patterns and cycles")
-        val identify_patterns: Boolean = true,
+        var identify_patterns: Boolean = true,
         @Description("Whether to predict future states")
-        val predict_future: Boolean = true,
+        var predict_future: Boolean = true,
         @Description("How far into the future to predict (e.g., '3 months', '6 weeks')")
-        val prediction_horizon: String? = "3 months",
+        var prediction_horizon: String? = "3 months",
         @Description("Critical events to highlight in the timeline")
-        val critical_events: List<String>? = null,
+        var critical_events: List<String>? = null,
         @Description("Related files containing temporal data (logs, metrics, etc.)")
-        val related_files: List<String>? = null,
+        var related_files: List<String>? = null,
         @Description("Whether to analyze rate of change and acceleration")
-        val analyze_rate_of_change: Boolean = true,
+        var analyze_rate_of_change: Boolean = true,
         @Description("Whether to identify critical transition points")
-        val identify_transitions: Boolean = true,
+        var identify_transitions: Boolean = true,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -117,12 +121,12 @@ TemporalReasoning - Analyze system evolution and predict future states.
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val startTime = System.currentTimeMillis()
-        log.info("Starting TemporalReasoning task for subject: ${executionConfig?.subject}")
 
         val subject = executionConfig?.subject
         if (subject.isNullOrBlank()) {
-            val errorMsg = "CONFIGURATION ERROR: No subject specified for temporal analysis"
+          log.info("Starting TemporalReasoning task for subject: ${executionConfig?.subject}")
+
+          val errorMsg = "CONFIGURATION ERROR: No subject specified for temporal analysis"
             log.error(errorMsg)
             task.safeComplete(errorMsg, log)
             resultFn(errorMsg)
@@ -142,15 +146,17 @@ TemporalReasoning - Analyze system evolution and predict future states.
         val ui = task.ui
         val transcript = task.transcript()
 
+      task.ui.pool.submit {
+        val startTime = System.currentTimeMillis()
         try {
+          log.info("TemporalReasoning started for subject: $subject")
             // Create tabbed display for organized output
             val tabs = TabbedDisplay(task)
 
             // Overview tab
             val overviewTask = tabs.newTask("Overview")
-            val overviewStatus = overviewTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
+          val overviewStatus = overviewTask.add(
+            """
             |## Temporal Reasoning Analysis
             |
             |**Subject:** $subject
@@ -160,8 +166,7 @@ TemporalReasoning - Analyze system evolution and predict future states.
             |**Granularity:** ${executionConfig.granularity}
             |
             |**Status:** 🔄 Gathering temporal data...
-        """.trimMargin(), ui = ui
-                )
+        """.trimMargin().renderMarkdown()
             )
             transcript?.write(
                 """
@@ -186,9 +191,7 @@ TemporalReasoning - Analyze system evolution and predict future states.
             // Gather temporal data from files
             log.debug("Gathering temporal data from ${executionConfig?.related_files?.size ?: 0} file patterns")
             val dataTask = tabs.newTask("Temporal Data")
-            val dataLoading = dataTask.add(
-                MarkdownUtil.renderMarkdown("## Temporal Data Sources\n\n🔄 Loading temporal data...", ui = ui)
-            )
+          val dataLoading = dataTask.add("## Temporal Data Sources\n\n🔄 Loading temporal data...".renderMarkdown())
             task.update()
 
             val temporalData = gatherTemporalData()
@@ -199,15 +202,18 @@ TemporalReasoning - Analyze system evolution and predict future states.
             |
             |### Data Sources Processed: ${executionConfig?.related_files?.size ?: 0}
             |
-            |${temporalData.truncateForDisplay(maxOutputLength)}
+            |<details>
+            |<summary>Raw Temporal Data</summary>
+            |
+            |${temporalData}
+            |</details>
             |
             |---
             |
         """.trimMargin().toByteArray()
             )
-            dataTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
+          dataTask.add(
+            """
             |## Temporal Data Sources
             |
             |✅ Data gathered successfully
@@ -217,17 +223,14 @@ TemporalReasoning - Analyze system evolution and predict future states.
             |**Time Range:** $timeRange
             |
             |**Granularity:** ${executionConfig.granularity}
-        """.trimMargin(), ui = ui
-                )
+        """.trimMargin().renderMarkdown()
             )
             dataTask.expandable(
-                "Temporal Data Context", MarkdownUtil.renderMarkdown(
-                    """
+              "Temporal Data Context", """
                 |```
                 |${temporalData.truncateForDisplay(maxOutputLength)}
                 |```
-                """.trimMargin(), ui = ui
-                )
+                """.trimMargin()
             )
             task.update()
 
@@ -237,9 +240,8 @@ TemporalReasoning - Analyze system evolution and predict future states.
 
             // Update overview
             overviewStatus?.setLength(0)
-            overviewStatus?.append(
-                MarkdownUtil.renderMarkdown(
-                    """
+          overviewStatus?.append(
+            """
             |## Temporal Reasoning Analysis
             |
             |**Subject:** $subject
@@ -249,20 +251,15 @@ TemporalReasoning - Analyze system evolution and predict future states.
             |**Granularity:** ${executionConfig.granularity}
             |
             |**Status:** 🔄 Constructing timeline...
-        """.trimMargin(), ui = ui
-                )
+        """.trimMargin().renderMarkdown()
             )
             task.update()
 
             // Step 1: Construct timeline
             log.debug("Constructing timeline of events")
             val timelineTask = tabs.newTask("Timeline")
-            val timelineLoading = timelineTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "## Timeline Construction\n\n🔄 Analyzing temporal data and constructing timeline...",
-                    ui = ui
-                )
-            )
+          val timelineLoading =
+            timelineTask.add("## Timeline Construction\n\n🔄 Analyzing temporal data and constructing timeline...".renderMarkdown())
             task.update()
 
             val timelinePrompt = buildTimelinePrompt(subject, timeRange, temporalData, priorContext)
@@ -288,9 +285,8 @@ TemporalReasoning - Analyze system evolution and predict future states.
             )
 
             timelineLoading?.clear()
-            timelineTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
+          timelineTask.add(
+            """
             |## Timeline of Events
             |
             |✅ Timeline constructed successfully
@@ -298,8 +294,7 @@ TemporalReasoning - Analyze system evolution and predict future states.
             |**Events Identified:** ${timelineAnalysis.timeline_events.size}
             |
             |${formatTimeline(timelineAnalysis.timeline_events)}
-        """.trimMargin(), ui = ui
-                )
+        """.trimMargin().renderMarkdown()
             )
             task.update()
 
@@ -317,9 +312,8 @@ TemporalReasoning - Analyze system evolution and predict future states.
             |${formatPatterns(timelineAnalysis.patterns)}
         """.trimMargin().toByteArray()
                 )
-                patternsTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
+              patternsTask.add(
+                """
               |## Temporal Patterns
               |
               |✅ Patterns identified
@@ -327,8 +321,7 @@ TemporalReasoning - Analyze system evolution and predict future states.
               |**Patterns Found:** ${timelineAnalysis.patterns.size}
               |
               |${formatPatterns(timelineAnalysis.patterns)}
-          """.trimMargin(), ui = ui
-                    )
+              """.trimMargin().renderMarkdown()
                 )
                 task.update()
             }
@@ -346,16 +339,14 @@ TemporalReasoning - Analyze system evolution and predict future states.
             |
         """.trimMargin().toByteArray()
                 )
-                rateTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
+              rateTask.add(
+                """
               |## Rate of Change Analysis
               |
               |✅ Analysis complete
               |
               |${timelineAnalysis.rate_of_change_analysis}
-          """.trimMargin(), ui = ui
-                    )
+              """.trimMargin().renderMarkdown()
                 )
                 task.update()
             }
@@ -372,9 +363,8 @@ TemporalReasoning - Analyze system evolution and predict future states.
             |${formatTransitions(timelineAnalysis.transition_points)}
         """.trimMargin().toByteArray()
                 )
-                transitionsTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
+              transitionsTask.add(
+                """
               |## Critical Transition Points
               |
               |✅ Transitions identified
@@ -382,8 +372,7 @@ TemporalReasoning - Analyze system evolution and predict future states.
               |**Transitions Found:** ${timelineAnalysis.transition_points.size}
               |
               |${formatTransitions(timelineAnalysis.transition_points)}
-          """.trimMargin(), ui = ui
-                    )
+              """.trimMargin().renderMarkdown()
                 )
                 task.update()
             }
@@ -400,9 +389,8 @@ TemporalReasoning - Analyze system evolution and predict future states.
             |${formatPredictions(timelineAnalysis.future_predictions)}
         """.trimMargin().toByteArray()
                 )
-                predictionsTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
+              predictionsTask.add(
+                """
               |## Future State Predictions
               |
               |✅ Predictions generated
@@ -410,8 +398,7 @@ TemporalReasoning - Analyze system evolution and predict future states.
               |**Prediction Horizon:** ${executionConfig.prediction_horizon}
               |
               |${formatPredictions(timelineAnalysis.future_predictions)}
-          """.trimMargin(), ui = ui
-                    )
+              """.trimMargin().renderMarkdown()
                 )
                 task.update()
             }
@@ -419,9 +406,7 @@ TemporalReasoning - Analyze system evolution and predict future states.
             // Step 6: Generate visualization
             log.debug("Generating timeline visualization")
             val vizTask = tabs.newTask("Visualization")
-            val vizLoading = vizTask.add(
-                MarkdownUtil.renderMarkdown("## Timeline Visualization\n\n🔄 Generating Mermaid diagram...", ui = ui)
-            )
+          val vizLoading = vizTask.add("## Timeline Visualization\n\n🔄 Generating Mermaid diagram...".renderMarkdown())
             task.update()
 
             val vizPrompt = buildVisualizationPrompt(timelineAnalysis, subject, timeRange)
@@ -447,9 +432,8 @@ TemporalReasoning - Analyze system evolution and predict future states.
             |
         """.trimMargin().toByteArray()
                 )
-                vizTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
+              vizTask.add(
+                """
               |## Timeline Visualization
               |
               |✅ Visualization generated
@@ -457,20 +441,17 @@ TemporalReasoning - Analyze system evolution and predict future states.
               |```mermaid
               |$mermaidCode
               |```
-          """.trimMargin(), ui = ui
-                    )
+              """.trimMargin().renderMarkdown()
                 )
             } else {
-                vizTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
+              vizTask.add(
+                """
               |## Timeline Visualization
               |
               |⚠️ Could not generate visualization
               |
               |The analysis did not produce a valid Mermaid diagram.
-          """.trimMargin(), ui = ui
-                    )
+              """.trimMargin().renderMarkdown()
                 )
             }
             task.update()
@@ -491,9 +472,8 @@ TemporalReasoning - Analyze system evolution and predict future states.
 
             // Update overview with completion
             overviewStatus?.setLength(0)
-            overviewStatus?.append(
-                MarkdownUtil.renderMarkdown(
-                    """
+          overviewStatus?.append(
+            """
             |## Temporal Reasoning Analysis
             |
             |**Subject:** $subject
@@ -509,34 +489,41 @@ TemporalReasoning - Analyze system evolution and predict future states.
             |### Summary
             |
             |$summary
-        """.trimMargin(), ui = ui
-                )
+        """.trimMargin().renderMarkdown()
             )
             task.update()
 
             val duration = System.currentTimeMillis() - startTime
             val completionMsg = "Temporal analysis completed for '$subject' over $timeRange"
             log.info("$completionMsg (duration: ${duration}ms, events: ${timelineAnalysis.timeline_events.size}, patterns: ${timelineAnalysis.patterns?.size ?: 0})")
-            transcript?.close()
 
             task.safeComplete(completionMsg, log)
             resultFn(summary)
 
         } catch (e: Exception) {
             val duration = System.currentTimeMillis() - startTime
-            log.error("TemporalReasoning task failed after ${duration}ms for subject: $subject", e)
-            transcript?.close()
-            task.error(e)
 
-            val errorTask = task.newTask()
-            errorTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "## ❌ Error\n\nAn error occurred during temporal reasoning analysis:\n\n```\n${e.message}\n```",
-                    ui = ui
-                )
-            )
-            task.safeComplete("Analysis failed: ${e.message}", log)
+          // Triple Log Rule
+          task.error(e)
+          log.error("TemporalReasoning failed for subject: $subject", e)
+          transcript?.write(
+            """
+                    |## ❌ Error
+                    |<details>
+                    |<summary>Stack Trace</summary>
+                    |
+                    |```
+                    |${e.stackTraceToString()}
+                    |```
+                    |</details>
+                """.trimMargin().toByteArray()
+          )
+
+          task.safeComplete("Analysis failed: ${e.message}", log)
             resultFn("ERROR: Temporal reasoning analysis failed - ${e.message}")
+        } finally {
+          transcript?.close()
+        }
         }
     }
 

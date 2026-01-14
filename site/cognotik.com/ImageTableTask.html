@@ -8,6 +8,11 @@
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <!-- jQuery & FileTree -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
+
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -300,6 +305,15 @@
             </div>
         </div>
     </section>
+    <!-- 2.5 SHOWCASE -->
+    <section class="showcase-section" style="margin-bottom: 3rem;">
+        <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin-bottom: 1rem;">Workspace Artifacts</h2>
+        <p style="color: var(--text-dim); margin-bottom: 1rem;">
+            Explore the generated images and HTML reports directly from the task workspace.
+        </p>
+        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+    </section>
+
 
     <!-- 3. TABS -->
     <section class="details-tabs">
@@ -396,16 +410,32 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane">
-            <h3>Kotlin Boilerplate</h3>
-            <pre><code>val task = ImageTableTask(
-    orchestrationConfig = config,
-    planTask = ImageTableTask.ImageTableTaskExecutionConfigData(
-        rows = listOf("Cat", "Dog"),
-        columns = listOf("Cyberpunk", "Oil Painting"),
-        image_prompt_template = "A {row} in {column} style",
-        base_style = "vibrant colors"
+            <h3>Embedded Execution (UnifiedHarness)</h3>
+            <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
+                Use the <code>UnifiedHarness</code> to run this task programmatically in headless environments or CI/CD pipelines.
+            </p>
+            <pre><code>import com.simiacryptus.cognotik.plan.tools.file.ImageTableTask
+import com.simiacryptus.cognotik.plan.tools.file.ImageTableTask.*
+
+fun generateComparisonGrid(harness: UnifiedHarness, projectDir: File) {
+    // 1. Define Runtime Input
+    val executionConfig = ImageTableTaskExecutionConfigData(
+        rows = listOf("Astronaut", "Robot"),
+        columns = listOf("Impressionist", "Synthwave"),
+        image_prompt_template = "A portrait of an {row}, {column} style",
+        base_style = "cinematic lighting",
+        output_directory = "style_comparison"
     )
-)</code></pre>
+
+    // 2. Run Task
+    harness.runTask(
+        taskType = ImageTableTask.ImageTable,
+        typeConfig = ImageTableTaskTypeConfig(parallel_generation = 4),
+        executionConfig = executionConfig,
+        workspace = projectDir,
+        autoFix = true
+    )
+}</code></pre>
 
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
             <p style="font-size: 0.9rem; color: var(--text-dim);">The following instructions are injected into the LLM context:</p>
@@ -428,6 +458,11 @@
         document.getElementById('tab-' + tabId).classList.add('active');
         event.target.classList.add('active');
     }
+</script>
+<script type="module">
+    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+    // Points to the standard test workspace for this task
+    initFileTree('#file-tree-demo', 'webui/workspaces/ImageTable/');
 </script>
 
 </body>
