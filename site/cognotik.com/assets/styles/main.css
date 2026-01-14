@@ -346,4 +346,9 @@ input:focus, textarea:focus, select:focus {
     .sim-controls { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
 }
 
+/* FileTree Dark Mode Overrides */
+.jqueryFileTree { font-family: var(--font-mono); font-size: 0.9rem; }
+.jqueryFileTree li a { color: var(--text-main); text-decoration: none; }
+.jqueryFileTree li a:hover { color: var(--accent-primary); font-weight: bold; }
+.jqueryFileTree .directory a { color: var(--text-dim); }
 

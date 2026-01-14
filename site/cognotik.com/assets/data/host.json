@@ -10,7 +10,7 @@
     "label": "Desktop",
     "url": "desktop.html",
     "type": "link",
-    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/daemon",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/desktop",
     "description": "Run local AI agents with system tray integration, BYOK model, and powerful cognitive modes for autonomous workflows."
   },
   {

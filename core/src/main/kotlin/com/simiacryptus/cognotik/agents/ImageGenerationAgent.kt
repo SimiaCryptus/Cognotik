@@ -8,8 +8,8 @@ import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
 import com.simiacryptus.cognotik.models.ModelSchema.ImageGenerationRequest
 import com.simiacryptus.cognotik.util.toChatMessage
 import com.simiacryptus.cognotik.util.toContentList
-import okio.ByteString.Companion.decodeBase64
 import java.awt.image.BufferedImage
+import java.io.Serializable
 import java.net.URL
 import javax.imageio.ImageIO
 
@@ -54,7 +54,7 @@ open class ImageGenerationAgent(
         val first = data.first()
         return when {
             first.url != null -> ImageIO.read(URL(first.url))
-            first.b64_json != null -> ImageIO.read(first.b64_json?.decodeBase64()?.toByteArray()?.inputStream())
+            first.b64_json != null -> ImageIO.read(first.b64_json?.decodeBase64()?.inputStream())
             else -> throw RuntimeException("No image data returned")
         }
     }
@@ -95,5 +95,13 @@ open class ImageGenerationAgent(
         height = height,
     )
 
+}
+
+private fun String?.decodeBase64(): ByteArray? {
+    return if (this == null) {
+        null
+    } else {
+        java.util.Base64.getDecoder().decode(this)
+    }
 }
 
