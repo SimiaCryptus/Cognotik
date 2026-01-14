@@ -99,6 +99,8 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.commons.io)
 
+    implementation("com.google.genai:google-genai:1.32.0")
+
     testImplementation(platform(libs.aws.bom))
     testImplementation(libs.aws.sdk)
     testImplementation(libs.logback.classic) {
