@@ -411,6 +411,7 @@ open class UnifiedHarness(
         }
 
 
+        @JvmStatic
         fun configurePlatform() {
             initDynamicEnums()
             ApplicationServices.authenticationManager = object : AuthenticationInterface {

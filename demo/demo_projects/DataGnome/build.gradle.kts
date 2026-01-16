@@ -31,7 +31,7 @@ val jupiter_version = "5.10.1"
 val logback_version = "1.4.11"
 dependencies {
     implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jackson_version)
-    implementation(group = "com.fasterxml.jackson.core", name = "jackson-annotations", version = jackson_version)
+    //implementation(group = "com.fasterxml.jackson.core", name = "jackson-annotations", version = jackson_version)
     implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version = jackson_version)
 
     implementation(kotlin("stdlib"))

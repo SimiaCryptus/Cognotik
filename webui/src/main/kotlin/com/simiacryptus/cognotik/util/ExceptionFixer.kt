@@ -42,9 +42,12 @@ class ExceptionFixer(
           }
         )
       } catch (e: Exception) {
-        FileGenerator.Companion.log.error("Error running task", e)
+        log.error("Error running task", e)
       }
     }
+  }
+  companion object {
+    private val log = org.slf4j.LoggerFactory.getLogger(ExceptionFixer::class.java)
   }
 }
 
