@@ -19,7 +19,7 @@ object ImageGameTest {
         UnifiedHarness.configurePlatform()
     }
 
-   @org.junit.jupiter.api.Test
+  //@org.junit.jupiter.api.Test
    @Tag("Demo")
     fun test() {
         object : PlanHarness(

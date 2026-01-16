@@ -223,11 +223,7 @@ signing {
     }
 
 }
-tasks.test {
-    useJUnitPlatform {
-        excludeTags("demo", "integration", "research")
-    }
-}
+
 
 
 tasks.javadoc {

@@ -23,6 +23,7 @@ import java.io.FileWriter
 import javax.swing.*
 import javax.swing.filechooser.FileNameExtensionFilter
 import javax.swing.table.DefaultTableModel
+import javax.swing.table.DefaultTableCellRenderer
 
 class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     override fun apply() {
@@ -432,6 +433,20 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.shellCommand.text = settings.shellCommand
             component.showWelcomeScreen.isSelected = settings.showWelcomeScreen
             component.patchProcessor.selectedItem = settings.processor.label
+            // Refresh API table with current user settings
+            val tableModel = component.apis.model as DefaultTableModel
+            tableModel.rowCount = 0
+            val userSettings = ApplicationServices.fileApplicationServices(
+                AppSettingsState.pluginHome
+            ).userSettingsManager.getUserSettings()
+            userSettings.apis.forEach { api ->
+                val providerName = api.provider?.name ?: ""
+                val name = api.name ?: api.provider?.name ?: ""
+                val key = api.key?.decrypt ?: ""
+                val url = api.baseUrl
+                tableModel.addRow(arrayOf(providerName, name, key, url))
+            }
+            
             log.debug("Successfully wrote settings to UI components")
         } catch (e: Exception) {
             log.error("Failed to write settings to UI components", e)

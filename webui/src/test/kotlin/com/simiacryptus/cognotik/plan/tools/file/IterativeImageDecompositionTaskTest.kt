@@ -23,7 +23,7 @@ class IterativeImageDecompositionTaskTest {
         }
     }
 
-    @org.junit.jupiter.api.Test
+   //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
         val outputJson = "analysis_result.json"

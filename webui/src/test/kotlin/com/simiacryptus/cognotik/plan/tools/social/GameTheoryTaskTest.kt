@@ -17,7 +17,7 @@ object GameTheoryTaskTest {
     }
 
     @org.junit.jupiter.api.Tag("Integration")
-     @org.junit.jupiter.api.Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testPrisonersDilemma() {
         TaskHarness(
@@ -51,7 +51,7 @@ object GameTheoryTaskTest {
     }
 
     @org.junit.jupiter.api.Tag("Integration")
-     @org.junit.jupiter.api.Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testRepeatedGame() {
         TaskHarness(

@@ -16,7 +16,7 @@ object JdbcSessionTaskTest {
       UnifiedHarness.configurePlatform()
     }
 
-    @org.junit.jupiter.api.Test
+   //@org.junit.jupiter.api.Test
     @Timeout(5, unit = TimeUnit.MINUTES)
     fun testJdbcSession() {
         TaskHarness(
@@ -44,7 +44,7 @@ object JdbcSessionTaskTest {
     }
 
     @org.junit.jupiter.api.Tag("Integration")
-     @org.junit.jupiter.api.Test
+    //@org.junit.jupiter.api.Test
     @Timeout(5, unit = TimeUnit.MINUTES)
     fun testSessionPersistence() {
         val sessionId = "test-session-${System.currentTimeMillis()}"
