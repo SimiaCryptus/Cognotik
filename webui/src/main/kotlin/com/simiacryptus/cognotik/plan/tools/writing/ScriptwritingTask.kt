@@ -1150,7 +1150,7 @@ Provide the complete revised script with all formatting intact.
             "Error reading file: ${e.message}"
         }
 
-        val Scriptwriting = TaskType(
+        @JvmStatic val Scriptwriting = TaskType(
           name = "Scriptwriting",
           category = "Writing",
           taskClass = ScriptwritingTask::class.java,

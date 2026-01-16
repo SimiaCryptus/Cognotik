@@ -1,8 +1,0 @@
-{
-  "filename" : "hello.py",
-  "originalCode" : "print(\"Hello from CouncilMode\")",
-  "diff" : "-\"\"\"\n-A simple script to greet the Council.\n-\"\"\"\n print(\"Hello from CouncilMode\")",
-  "newCode" : "print(\"Hello from CouncilMode\")",
-  "isValid" : true,
-  "errors" : ""
-}

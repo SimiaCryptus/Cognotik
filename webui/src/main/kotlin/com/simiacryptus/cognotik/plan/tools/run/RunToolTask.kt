@@ -182,7 +182,7 @@ class RunToolTask(
 
     companion object {
         private val log = LoggerFactory.getLogger(RunToolTask::class.java)
-        val RunTool = TaskType(
+        @JvmStatic val RunTool = TaskType(
             name = "RunTool",
             category = "Execution",
             taskClass = RunToolTask::class.java,

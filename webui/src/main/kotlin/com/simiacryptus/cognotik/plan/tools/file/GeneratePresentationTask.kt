@@ -525,7 +525,7 @@ Style: Clean, modern, professional presentation aesthetic
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GeneratePresentationTask::class.java)
-        val GeneratePresentation = TaskType(
+        @JvmStatic val GeneratePresentation = TaskType(
             "GeneratePresentation",
             "Writing",
             GeneratePresentationTask::class.java,

@@ -401,7 +401,7 @@ class DecisionTreeTask(
 
     companion object {
         private val log = LoggerFactory.getLogger(DecisionTreeTask::class.java)
-        val DecisionTree = TaskType(
+        @JvmStatic val DecisionTree = TaskType(
           name = "DecisionTree",
           category = "Reasoning",
           taskClass = DecisionTreeTask::class.java,

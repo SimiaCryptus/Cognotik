@@ -651,7 +651,7 @@ class ChainOfThoughtTask(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ChainOfThoughtTask::class.java)
-        val ChainOfThought = TaskType(
+        @JvmStatic val ChainOfThought = TaskType(
           name = "ChainOfThought",
           category = "Reasoning",
           taskClass = ChainOfThoughtTask::class.java,

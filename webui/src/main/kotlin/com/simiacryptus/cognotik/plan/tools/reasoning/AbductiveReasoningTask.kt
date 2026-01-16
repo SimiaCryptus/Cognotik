@@ -928,7 +928,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbductiveReasoningTask::class.java)
-        val AbductiveReasoning = TaskType(
+        @JvmStatic val AbductiveReasoning = TaskType(
           name = "AbductiveReasoning",
           category = "Reasoning",
           taskClass = AbductiveReasoningTask::class.java,

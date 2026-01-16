@@ -660,7 +660,7 @@ Be thorough yet concise in your final integration.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(DialecticalReasoningTask::class.java)
-        val DialecticalReasoning = TaskType(
+        @JvmStatic val DialecticalReasoning = TaskType(
           name = "DialecticalReasoning",
           category = "Reasoning",
           taskClass = DialecticalReasoningTask::class.java,

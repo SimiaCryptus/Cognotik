@@ -61,7 +61,7 @@ open class PlanHarness(
         smartModel = smartModel,
         imageModel = imageModel
     ) {
-        override fun createTempDirectory(prefix: String) = createWorkspace()
+        override fun createTempDirectory(prefix: String) = createTempDirectory()
     }
 
     fun run() {
@@ -101,7 +101,7 @@ open class PlanHarness(
         cognitiveSettings = cognitiveSettings,
     )
 
-    open fun createWorkspace(): File = File(".").resolve("workspaces/${cognitiveSettings.type!!.name}/test-${now()}")
+    open fun createTempDirectory(): File = File(".").resolve("workspaces/${cognitiveSettings.type!!.name}/test-${now()}")
         .apply {
             mkdirs()
             log.debug("Created temp directory: ${this.absolutePath}")

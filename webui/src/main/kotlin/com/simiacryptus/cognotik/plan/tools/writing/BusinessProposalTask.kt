@@ -1650,7 +1650,7 @@ Provide the complete revised proposal.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(BusinessProposalTask::class.java)
-        val BusinessProposal = TaskType(
+        @JvmStatic val BusinessProposal = TaskType(
           name = "BusinessProposal",
           category = "Writing",
           taskClass = BusinessProposalTask::class.java,

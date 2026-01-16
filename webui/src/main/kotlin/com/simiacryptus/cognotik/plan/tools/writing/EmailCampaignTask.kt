@@ -1039,7 +1039,7 @@ Provide the complete revised email body only.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(EmailCampaignTask::class.java)
-        val EmailCampaign = TaskType(
+        @JvmStatic val EmailCampaign = TaskType(
             name = "EmailCampaign",
             category = "Writing",
             taskClass = EmailCampaignTask::class.java,

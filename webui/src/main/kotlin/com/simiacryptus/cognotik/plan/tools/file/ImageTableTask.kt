@@ -433,7 +433,7 @@ ImageTable - Generate a table/grid of AI-generated images
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ImageTableTask::class.java)
-        val ImageTable = TaskType(
+        @JvmStatic val ImageTable = TaskType(
           name = "ImageTable",
           category = "File",
           taskClass = ImageTableTask::class.java,

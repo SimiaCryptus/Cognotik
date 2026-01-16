@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.plan.tools.file.ImageVariationTask.Companion.Im
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
 import java.io.File
 
 object ImageGameTest {
@@ -18,7 +19,8 @@ object ImageGameTest {
         UnifiedHarness.configurePlatform()
     }
 
-   //@org.junit.jupiter.api.Test
+   @org.junit.jupiter.api.Test
+   @Tag("Demo")
     fun test() {
         object : PlanHarness(
             prompt = "Create a complex image featuring a number of different elements, then compile into a game featuring a wide variety of variants." +

@@ -251,7 +251,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
 
     companion object {
         private val log = LoggerFactory.getLogger(RunCodeTask::class.java)
-        val RunCode = TaskType(
+        @JvmStatic val RunCode = TaskType(
           name = "RunCode",
           category = "Execution",
           taskClass = RunCodeTask::class.java,

@@ -742,7 +742,7 @@ Provide a brief validation assessment.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AnalogicalReasoningTask::class.java)
-        val AnalogicalReasoning = TaskType(
+        @JvmStatic val AnalogicalReasoning = TaskType(
           name = "AnalogicalReasoning",
           category = "Reasoning",
           taskClass = AnalogicalReasoningTask::class.java,

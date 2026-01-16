@@ -266,7 +266,7 @@ class MultiPerspectiveAnalysisTask(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(MultiPerspectiveAnalysisTask::class.java)
-        val MultiPerspectiveAnalysis = TaskType(
+        @JvmStatic val MultiPerspectiveAnalysis = TaskType(
           name = "MultiPerspectiveAnalysis",
           category = "Social",
           taskClass = MultiPerspectiveAnalysisTask::class.java,

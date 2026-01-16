@@ -1,0 +1,78 @@
+{
+  "sessionId" : "G-20260115-1lzb",
+  "defaultSmartModel" : {
+    "model" : {
+      "name" : "GeminiFlash_30_Preview",
+      "modelName" : "gemini-3-flash-preview",
+      "maxTotalTokens" : 1048576,
+      "maxOutTokens" : 65536,
+      "provider" : "Gemini",
+      "inputTokenPricePerK" : 1.5E-4,
+      "outputTokenPricePerK" : 6.0E-4
+    },
+    "provider" : {
+      "name" : "Gemini",
+      "key" : "SECURE::m1e+kNmor/vNb4NpoL+Fchy5eUlKW60YNufp6V6k4oiTXO9Gd+B4OESDRYkw9k7cFQcXui3mF7xGmYvJk5m00s1R+g==",
+      "baseUrl" : "https://generativelanguage.googleapis.com",
+      "provider" : "Gemini"
+    }
+  },
+  "defaultFastModel" : {
+    "model" : {
+      "name" : "GeminiFlash_30_Preview",
+      "modelName" : "gemini-3-flash-preview",
+      "maxTotalTokens" : 1048576,
+      "maxOutTokens" : 65536,
+      "provider" : "Gemini",
+      "inputTokenPricePerK" : 1.5E-4,
+      "outputTokenPricePerK" : 6.0E-4
+    },
+    "provider" : {
+      "name" : "Gemini",
+      "key" : "SECURE::m1e+kNmor/vNb4NpoL+Fchy5eUlKW60YNufp6V6k4oiTXO9Gd+B4OESDRYkw9k7cFQcXui3mF7xGmYvJk5m00s1R+g==",
+      "baseUrl" : "https://generativelanguage.googleapis.com",
+      "provider" : "Gemini"
+    }
+  },
+  "defaultImageModel" : {
+    "model" : {
+      "name" : "GeminiFlash_20_Preview_Image_Generation",
+      "modelName" : "gemini-2.5-flash-image-preview",
+      "maxTotalTokens" : 1048576,
+      "maxOutTokens" : 8192,
+      "provider" : "Gemini",
+      "inputTokenPricePerK" : 1.0E-4,
+      "outputTokenPricePerK" : 4.0E-4
+    },
+    "provider" : {
+      "name" : "Gemini",
+      "key" : "SECURE::m1e+kNmor/vNb4NpoL+Fchy5eUlKW60YNufp6V6k4oiTXO9Gd+B4OESDRYkw9k7cFQcXui3mF7xGmYvJk5m00s1R+g==",
+      "baseUrl" : "https://generativelanguage.googleapis.com",
+      "provider" : "Gemini"
+    }
+  },
+  "shellCmd" : [ "bash" ],
+  "temperature" : 0.0,
+  "budget" : 2.0,
+  "taskSettings" : {
+    "SubPlan" : {
+      "cognitiveSettings" : {
+        "variables" : { },
+        "type" : "Waterfall"
+      },
+      "taskSettings" : {
+        "FileModification" : {
+          "task_type" : "FileModification",
+          "name" : "FileModification"
+        }
+      },
+      "purpose" : "Testing recursive sub-planning capabilities",
+      "summaryPrompt" : "Create a comprehensive summary of the sub-planning results below.\n\nOriginal Goal: {goal}\n\nThe summary should:\n- Highlight key findings and accomplishments\n- Identify any issues or blockers encountered\n- Provide actionable next steps if applicable\n- Be concise but complete\n\nUse markdown formatting with headers and bullet points.",
+      "name" : "SubPlan",
+      "task_type" : "SubPlan",
+      "cognitiveMode" : "Waterfall"
+    }
+  },
+  "autoFix" : true,
+  "workingDir" : "/home/andrew/code/Cognotik/webui/./workspaces/SubPlan/test-20260115_131830"
+}

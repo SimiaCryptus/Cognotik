@@ -1029,7 +1029,7 @@ Provide the complete revised explanation.
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(TechnicalExplanationTask::class.java)
-    val TechnicalExplanation = TaskType(
+    @JvmStatic val TechnicalExplanation = TaskType(
         name = "TechnicalExplanation",
         category = "Writing",
         taskClass = TechnicalExplanationTask::class.java,

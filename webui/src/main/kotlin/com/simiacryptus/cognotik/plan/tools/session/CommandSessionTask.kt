@@ -277,7 +277,7 @@ class CommandSessionTask(
     }
 
     companion object {
-        val CommandSession = TaskType(
+        @JvmStatic val CommandSession = TaskType(
           name = "CommandSession",
           category = "Session",
           taskClass = CommandSessionTask::class.java,

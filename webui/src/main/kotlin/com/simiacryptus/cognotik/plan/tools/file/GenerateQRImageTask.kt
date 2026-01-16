@@ -517,7 +517,7 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GenerateQRImageTask::class.java)
-        val GenerateQRImage = TaskType(
+        @JvmStatic val GenerateQRImage = TaskType(
             "GenerateQRImage",
             "Writing",
             GenerateQRImageTask::class.java,

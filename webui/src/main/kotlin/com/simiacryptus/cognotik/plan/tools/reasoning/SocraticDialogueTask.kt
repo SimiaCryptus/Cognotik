@@ -590,7 +590,7 @@ Provide a structured synthesis.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SocraticDialogueTask::class.java)
-        val SocraticDialogue = TaskType(
+        @JvmStatic val SocraticDialogue = TaskType(
           name = "SocraticDialogue",
           category = "Reasoning",
           taskClass = SocraticDialogueTask::class.java,

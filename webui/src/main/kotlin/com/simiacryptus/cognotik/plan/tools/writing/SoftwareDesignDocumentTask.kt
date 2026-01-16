@@ -1421,7 +1421,7 @@ Provide comprehensive, production-ready documentation.
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(SoftwareDesignDocumentTask::class.java)
-    val SoftwareDesignDocument = TaskType(
+    @JvmStatic val SoftwareDesignDocument = TaskType(
         name = "SoftwareDesignDocument",
         category = "Writing",
         taskClass = SoftwareDesignDocumentTask::class.java,

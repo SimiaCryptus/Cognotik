@@ -91,13 +91,13 @@ class BrainstormingTask(
     class BrainstormingTaskExecutionConfigData(
         @Description("The problem or question to brainstorm solutions for")
         val problem_statement: String? = null,
-        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+        @Description("A list of specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
         val input_files: List<String>? = null,
         @Description("Number of options to generate (default: 5-10)")
         val target_option_count: Int = 7,
-        @Description("Categories or domains to consider (optional)")
+        @Description("A list of categories or domains to consider (optional)")
         val categories: List<String>? = null,
-        @Description("Constraints or requirements to consider")
+        @Description("A list of constraints or requirements to consider")
         val constraints: List<String>? = null,
         @Description("Whether to include creative/unconventional options")
         val include_creative_options: Boolean = true,
@@ -178,7 +178,7 @@ Brainstorming - Generate and analyze multiple solution options
             // Initialize transcript
             transcriptStream = task.transcript()
             transcriptStream?.write("# Brainstorming Session Transcript\n\n".toByteArray())
-            transcriptStream?.write("**Input Files:** ${executionConfig?.input_files?.joinToString(", ") ?: "none"}\n\n".toByteArray())
+            transcriptStream?.write("**Input Files:** ${executionConfig.input_files?.joinToString(", ") ?: "none"}\n\n".toByteArray())
             transcriptStream?.write("**Problem Statement:** $problemStatement\n\n".toByteArray())
             transcriptStream?.write(
                 "**Started:** ${
@@ -908,7 +908,7 @@ Select the best option and summarize the findings now.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(BrainstormingTask::class.java)
-        val Brainstorming = TaskType(
+      @JvmStatic val Brainstorming = TaskType(
           name = "Brainstorming",
           category = "Reasoning",
           taskClass = BrainstormingTask::class.java,

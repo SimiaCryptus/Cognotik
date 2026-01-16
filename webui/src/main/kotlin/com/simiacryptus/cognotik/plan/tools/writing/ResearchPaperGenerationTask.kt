@@ -1248,7 +1248,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ResearchPaperGenerationTask::class.java)
-        val ResearchPaperGeneration = TaskType(
+        @JvmStatic val ResearchPaperGeneration = TaskType(
             name = "ResearchPaperGeneration",
             category = "Writing",
             taskClass = ResearchPaperGenerationTask::class.java,

@@ -293,7 +293,7 @@ ${fieldList.lines().take(10).joinToString("\n")}${if (fieldList.lines().size > 1
     companion object {
         private val log = LoggerFactory.getLogger(PdfFormTask::class.java)
 
-        val PdfForm = TaskType(
+        @JvmStatic val PdfForm = TaskType(
           name = "PdfForm",
           category = "File",
           taskClass = PdfFormTask::class.java,

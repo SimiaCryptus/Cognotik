@@ -1385,7 +1385,7 @@ Provide the revised scene content only.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(NarrativeGenerationTask::class.java)
-        val NarrativeGeneration = TaskType(
+        @JvmStatic val NarrativeGeneration = TaskType(
           name = "NarrativeGeneration",
           category = "Writing",
           taskClass = NarrativeGenerationTask::class.java,

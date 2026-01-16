@@ -1,6 +1,0 @@
-{
-  "filename" : "hello_waterfall.py",
-  "code" : "def main():\n    print('Hello from WaterfallMode')\n\nif __name__ == \"__main__\":\n    main()",
-  "header" : "hello_waterfall.py",
-  "language" : "python"
-}

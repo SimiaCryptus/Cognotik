@@ -183,7 +183,7 @@ FileAppend - Append content to the end of an existing file
     companion object {
         private val log = LoggerFactory.getLogger(FileAppendTask::class.java)
 
-        val FileAppend = TaskType(
+        @JvmStatic val FileAppend = TaskType(
           name = "FileAppend",
           category = "File",
           taskClass = FileAppendTask::class.java,

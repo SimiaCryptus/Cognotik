@@ -1425,7 +1425,7 @@ Provide the complete revised essay.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PersuasiveEssayTask::class.java)
-        val PersuasiveEssay = TaskType(
+        @JvmStatic val PersuasiveEssay = TaskType(
             name = "PersuasiveEssay",
             category = "Writing",
             taskClass = PersuasiveEssayTask::class.java,

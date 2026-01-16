@@ -1,0 +1,6 @@
+message_id,pattern_id,source_file,source_offset_start,source_offset_end,data_offset
+1275dae7-5ed7-4afa-ba46-eb12fa6ae369,0385c8cf-93f3-4609-9475-f6134f15f2fe,sample.log,0,53,0
+0e506f14-8d5e-4983-add7-728f94fb3537,0385c8cf-93f3-4609-9475-f6134f15f2fe,sample.log,54,117,100
+4ae503fd-d25c-48d8-9cae-eadcbd0f5f41,0385c8cf-93f3-4609-9475-f6134f15f2fe,sample.log,118,185,211
+945383d6-2f01-4234-a21b-5088e1888434,0385c8cf-93f3-4609-9475-f6134f15f2fe,sample.log,186,256,325
+4f88ce19-1526-4815-823a-1eda041e3976,0385c8cf-93f3-4609-9475-f6134f15f2fe,sample.log,257,307,443

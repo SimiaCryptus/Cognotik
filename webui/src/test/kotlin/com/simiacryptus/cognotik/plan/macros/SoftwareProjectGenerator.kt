@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.TestFactory
 import java.io.File
 
@@ -22,7 +23,9 @@ class SoftwareProjectGenerator {
     init {
       UnifiedHarness.configurePlatform()
     }
-    //@TestFactory
+
+    @TestFactory
+    @Tag("Research")
     fun tests() = listOf(
         WaterfallModeConfig(),
         AdaptivePlanningConfig(type = CognitiveModeType.Coding),
@@ -82,5 +85,5 @@ class ProjectGenerator(
             taskSettings = tasks
         )
     }
-    override fun createWorkspace() = File(".").resolve("workspaces/$testName/test-${now()}").apply { mkdirs() }
+    override fun createTempDirectory() = File(".").resolve("workspaces/$testName/test-${now()}").apply { mkdirs() }
 }

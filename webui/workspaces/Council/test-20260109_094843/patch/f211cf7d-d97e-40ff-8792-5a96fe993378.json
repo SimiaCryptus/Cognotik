@@ -1,8 +1,0 @@
-{
-  "filename" : "hello.py",
-  "originalCode" : "print(\"Hello from CouncilMode\")",
-  "diff" : "## The Invocation\nTo bridge the gap between your intent and the system's response, execute the initiation script. Ensure your environment is prepared and the Python interpreter is standing by.\n\nRun the following command in your terminal:",
-  "newCode" : "print(\"Hello from CouncilMode\")",
-  "isValid" : true,
-  "errors" : ""
-}

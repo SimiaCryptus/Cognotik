@@ -416,7 +416,7 @@ Generate the constraint satisfaction solution now:
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ConstraintSatisfactionTask::class.java)
-        val ConstraintSatisfaction = TaskType(
+        @JvmStatic val ConstraintSatisfaction = TaskType(
           name = "ConstraintSatisfaction",
           category = "Reasoning",
           taskClass = ConstraintSatisfactionTask::class.java,

@@ -1231,7 +1231,7 @@ Make suggestions:
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TutorialGenerationTask::class.java)
-        val TutorialGeneration = TaskType(
+        @JvmStatic val TutorialGeneration = TaskType(
             name = "TutorialGeneration",
             category = "Writing",
             taskClass = TutorialGenerationTask::class.java,

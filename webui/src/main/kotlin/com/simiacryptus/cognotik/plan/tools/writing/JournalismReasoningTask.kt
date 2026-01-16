@@ -34,7 +34,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(JournalismReasoningTask::class.java)
-        val JournalismReasoning = TaskType(
+        @JvmStatic val JournalismReasoning = TaskType(
             name = "JournalismReasoning",
             category = "Writing",
             taskClass = JournalismReasoningTask::class.java,

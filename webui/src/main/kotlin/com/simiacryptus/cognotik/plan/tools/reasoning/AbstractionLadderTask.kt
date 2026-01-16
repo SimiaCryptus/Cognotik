@@ -517,7 +517,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractionLadderTask::class.java)
-        val AbstractionLadder = TaskType(
+        @JvmStatic val AbstractionLadder = TaskType(
           name = "AbstractionLadder",
           category = "Reasoning",
           taskClass = AbstractionLadderTask::class.java,

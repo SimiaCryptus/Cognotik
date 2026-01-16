@@ -306,7 +306,7 @@ ${e.stackTraceToString()}
     companion object {
         private val log = LoggerFactory.getLogger(FileModificationTask::class.java)
 
-        val FileModification = TaskType(
+        @JvmStatic val FileModification = TaskType(
             "FileModification",
             "File",
             FileModificationTask::class.java,

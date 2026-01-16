@@ -55,12 +55,17 @@ open class WaterfallMode(
     override fun contextData(): List<String> = emptyList()
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
-        log.debug("Handling user message: $userMessage")
-        transcriptStream?.let { stream ->
-            stream.write("\n## User Message\n\n$userMessage\n\n".toByteArray())
-            stream.flush()
+        try {
+            log.debug("Handling user message: $userMessage")
+            transcriptStream?.let { stream ->
+                stream.write("\n## User Message\n\n$userMessage\n\n".toByteArray())
+                stream.flush()
+            }
+            execute(userMessage, task)
+        } catch (e: Throwable) {
+            log.error("Error in handleUserMessage", e)
+            task.error(e)
         }
-        execute(userMessage, task)
     }
 
     private fun execute(userMessage: String, task: SessionTask) {

@@ -31,7 +31,7 @@ class LateralThinkingTask(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(LateralThinkingTask::class.java)
 
-        val LateralThinking = TaskType(
+        @JvmStatic val LateralThinking = TaskType(
             name = "LateralThinking",
             category = "Reasoning",
             taskClass = LateralThinkingTask::class.java,

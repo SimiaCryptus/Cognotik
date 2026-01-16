@@ -223,6 +223,12 @@ signing {
     }
 
 }
+tasks.test {
+    useJUnitPlatform {
+        excludeTags("demo", "integration", "research")
+    }
+}
+
 
 tasks.javadoc {
     if (JavaVersion.current().isJava9Compatible) {

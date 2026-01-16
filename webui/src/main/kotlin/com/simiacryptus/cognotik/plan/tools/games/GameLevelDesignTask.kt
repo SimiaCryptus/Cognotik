@@ -1488,7 +1488,7 @@ Ensure variants maintain the core level design while adjusting challenge.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GameLevelDesignTask::class.java)
 
-        val GameLevelDesign = TaskType(
+        @JvmStatic val GameLevelDesign = TaskType(
             name = "GameLevelDesign",
             category = "Games",
             taskClass = GameLevelDesignTask::class.java,

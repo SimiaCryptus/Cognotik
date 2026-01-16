@@ -34,7 +34,7 @@ class SeleniumSessionTask(
 
         private const val MAX_SESSIONS = 10
 
-        val SeleniumSession = TaskType(
+        @JvmStatic val SeleniumSession = TaskType(
           name = "SeleniumSession",
           category = "Session",
           taskClass = SeleniumSessionTask::class.java,

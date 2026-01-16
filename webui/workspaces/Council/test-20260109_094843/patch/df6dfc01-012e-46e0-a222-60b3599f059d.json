@@ -1,8 +1,0 @@
-{
-  "filename" : "hello.py",
-  "originalCode" : "\"\"\"A simple implementation of the CouncilMode greeting.\"\"\"\nprint('Hello from CouncilMode')",
-  "diff" : "## Narrative Context\n\n### The Call to Order\nYou stand at the threshold of a new architecture. The silence of the terminal is not an absence of life, but a waiting state. To proceed is to acknowledge the shift from isolated execution to integrated presence. You are here to awaken the Council.\n\n### The Council’s Response\nUpon successful execution, the system will shed its dormant state. The output is more than a string of characters; it is a confirmation of your successful handshake with the core logic.\n\n**Expected Output:**\n`Hello from CouncilMode`",
-  "newCode" : "\"\"\"A simple implementation of the CouncilMode greeting.\"\"\"\nprint('Hello from CouncilMode')",
-  "isValid" : true,
-  "errors" : ""
-}

@@ -27,7 +27,7 @@ class DecompositionSynthesisTask(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(DecompositionSynthesisTask::class.java)
-        val DecompositionSynthesis: TaskType<DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig> = TaskType(
+        @JvmStatic val DecompositionSynthesis: TaskType<DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig> = TaskType(
             name = "DecompositionSynthesis",
             category = "Reasoning",
             taskClass = DecompositionSynthesisTask::class.java,

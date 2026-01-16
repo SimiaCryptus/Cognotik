@@ -1322,7 +1322,7 @@ Be specific and reference the data provided.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(LLMExperimentTask::class.java)
-        val LLMExperiment = TaskType(
+        @JvmStatic val LLMExperiment = TaskType(
           name = "LLMExperiment",
           category = "Social",
           taskClass = LLMExperimentTask::class.java,

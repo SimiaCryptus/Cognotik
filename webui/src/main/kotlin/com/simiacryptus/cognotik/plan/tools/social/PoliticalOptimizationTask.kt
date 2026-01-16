@@ -32,7 +32,7 @@ class PoliticalOptimizationTask(
 ) {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PoliticalOptimizationTask::class.java)
-        val PoliticalOptimization = TaskType(
+        @JvmStatic val PoliticalOptimization = TaskType(
           name = "PoliticalOptimization",
           category = "Social",
           taskClass = PoliticalOptimizationTask::class.java,

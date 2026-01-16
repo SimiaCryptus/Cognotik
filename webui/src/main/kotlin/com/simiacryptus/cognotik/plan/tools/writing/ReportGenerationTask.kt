@@ -1271,7 +1271,7 @@ Provide the complete revised report.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ReportGenerationTask::class.java)
-        val ReportGeneration = TaskType(
+        @JvmStatic val ReportGeneration = TaskType(
             name = "ReportGeneration",
             category = "Writing",
             taskClass = ReportGenerationTask::class.java,

@@ -511,7 +511,7 @@ Generate the causal analysis now:
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(CausalInferenceTask::class.java)
-        val CausalInference = TaskType(
+        @JvmStatic val CausalInference = TaskType(
           name = "CausalInference",
           category = "Reasoning",
           taskClass = CausalInferenceTask::class.java,

@@ -123,7 +123,7 @@ open class UnifiedHarness(
         }
     ) {
         val completionLatch = CountDownLatch(1)
-
+        val session = this.session
         val planApp = object : UnifiedPlanApp(
             path = "/test",
             applicationName = "Plan Test App",
@@ -235,8 +235,7 @@ open class UnifiedHarness(
     ) {
         val completionLatch = CountDownLatch(1)
         var error: Throwable? = null
-
-
+        val session = this.session
 
         val singleTaskApp = object : SingleTaskApp(
             path = "/test",

@@ -16,7 +16,8 @@ object ArticleGenerationTaskTest {
       UnifiedHarness.configurePlatform()
     }
 
-    //@org.junit.jupiter.api.Test
+    @org.junit.jupiter.api.Tag("Integration")
+     @org.junit.jupiter.api.Test
     @Timeout(15, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         val harness = TaskHarness(

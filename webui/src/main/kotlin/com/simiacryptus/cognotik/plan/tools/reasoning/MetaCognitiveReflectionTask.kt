@@ -581,7 +581,7 @@ Begin your meta-cognitive reflection now:
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(MetaCognitiveReflectionTask::class.java)
-        val MetaCognitiveReflection = TaskType(
+        @JvmStatic val MetaCognitiveReflection = TaskType(
           name = "MetaCognitiveReflection",
           category = "Reasoning",
           taskClass = MetaCognitiveReflectionTask::class.java,

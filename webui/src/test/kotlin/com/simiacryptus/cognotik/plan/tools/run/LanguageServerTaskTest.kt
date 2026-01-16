@@ -15,7 +15,8 @@ object LanguageServerTaskTest {
       UnifiedHarness.configurePlatform()
     }
 
-    //@org.junit.jupiter.api.Test
+    @org.junit.jupiter.api.Tag("Integration")
+     @org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testHover() {
         val harness = TaskHarness(
@@ -45,7 +46,8 @@ object LanguageServerTaskTest {
         harness.run()
     }
 
-    //@org.junit.jupiter.api.Test
+    @org.junit.jupiter.api.Tag("Integration")
+     @org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testDiagnostics() {
         val harness = TaskHarness(

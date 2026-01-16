@@ -1,0 +1,52 @@
+[ {
+  "figures" : [ {
+    "name" : "Fig. 1: Cross-sectional view of a submerged pipe joint at an angle",
+    "x" : 100,
+    "y" : 480,
+    "width" : 450,
+    "height" : 370
+  }, {
+    "name" : "Fig. 2: Cross-sectional view of a submerged pipe joint in a straight position",
+    "x" : 90,
+    "y" : 190,
+    "width" : 460,
+    "height" : 250
+  }, {
+    "name" : "Fig. 3: Diagram of a submerged pipe being laid underwater",
+    "x" : 530,
+    "y" : 180,
+    "width" : 270,
+    "height" : 670
+  } ],
+  "metadata" : {
+    "Patent Number" : "486,986",
+    "Inventor" : "Max G. Schinke",
+    "Title" : "SUBMERGED PIPE",
+    "Date" : "Nov. 29, 1892",
+    "Witnesses" : "Geo. W. Young, N. E. Oliphant",
+    "Attorney" : "H. G. Underwood",
+    "Model Status" : "(No Model.)"
+  }
+}, {
+  "figures" : [ ],
+  "metadata" : {
+    "Patent Office" : "UNITED STATES PATENT OFFICE.",
+    "Inventor" : "MAX G. SCHINKE",
+    "Residence" : "MILWAUKEE, WISCONSIN",
+    "Title" : "SUBMERGED PIPE.",
+    "Patent Number" : "486,986",
+    "Patent Date" : "November 29, 1892",
+    "Application Date" : "July 27, 1892",
+    "Serial Number" : "441,376",
+    "Model Status" : "No model"
+  }
+}, {
+  "figures" : [ ],
+  "metadata" : {
+    "patent_number" : "486,986",
+    "page_number" : "2",
+    "inventor" : "MAX G. SCHINKE",
+    "witnesses" : "N. E. OLIPHANT, JOHN E. WILES",
+    "location" : "Milwaukee, Milwaukee County, Wisconsin"
+  }
+} ]

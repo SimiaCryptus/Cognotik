@@ -24,7 +24,7 @@ class FunctorialMappingTask(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(FunctorialMappingTask::class.java)
-        val FunctorialMapping = TaskType(
+        @JvmStatic val FunctorialMapping = TaskType(
           name = "FunctorialMapping",
           category = "Reasoning",
           taskClass = FunctorialMappingTask::class.java,

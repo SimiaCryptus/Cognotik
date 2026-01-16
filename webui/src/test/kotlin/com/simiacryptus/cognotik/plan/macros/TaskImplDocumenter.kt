@@ -22,7 +22,7 @@ object TaskImplDocumenter {
             this.temperature = 0.0
             taskSettings[FileAppend.name] = TaskTypeConfig(task_type = FileAppend.name,)
           }
-        override fun createWorkspace() = File(".").resolve("workspaces/$testName/test-${now()}").apply { mkdirs() }
+        override fun createTempDirectory() = File(".").resolve("workspaces/$testName/test-${now()}").apply { mkdirs() }
       }.run()
     }
 }

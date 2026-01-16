@@ -836,7 +836,7 @@ Generate the experiment recommendations now:
 
     companion object {
       private val log = LoggerFactory.getLogger(ProbabilisticReasoningTask::class.java)
-        val ProbabilisticReasoning = TaskType(
+        @JvmStatic val ProbabilisticReasoning = TaskType(
           name = "ProbabilisticReasoning",
           category = "Reasoning",
           taskClass = ProbabilisticReasoningTask::class.java,

@@ -444,7 +444,7 @@ $priorCode
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(CounterfactualAnalysisTask::class.java)
-        val CounterfactualAnalysis = TaskType(
+        @JvmStatic val CounterfactualAnalysis = TaskType(
             name = "CounterfactualAnalysis",
             category = "Reasoning",
             taskClass = CounterfactualAnalysisTask::class.java,

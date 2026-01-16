@@ -770,7 +770,7 @@ Make each snippet:
             "maven"
         )
 
-        val ArticleGeneration = TaskType(
+        @JvmStatic val ArticleGeneration = TaskType(
           name = "ArticleGeneration",
           category = "Writing",
           taskClass = ArticleGenerationTask::class.java,

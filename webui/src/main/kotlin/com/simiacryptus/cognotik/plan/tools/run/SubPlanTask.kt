@@ -182,13 +182,6 @@ class SubPlanTask(
             planningTask.add(planningInfo.renderMarkdown)
             planningTask.complete()
 
-
-
-
-
-
-
-
             fun runExecution(): String {
                 // Execute the sub-plan using the cognitive mode
                 val executionTask = task.newTask()
@@ -253,11 +246,8 @@ class SubPlanTask(
                 })
                 semaphore.acquire()
             }
-
         } catch (e: Exception) {
           handleError(e, task, transcript, resultFn)
-        } finally {
-          transcript?.close()
         }
     }
 
@@ -365,7 +355,7 @@ class SubPlanTask(
     companion object {
         private val log = LoggerFactory.getLogger(SubPlanTask::class.java)
 
-        val SubPlan = TaskType(
+        @JvmStatic val SubPlan = TaskType(
           name = "SubPlan",
           category = "Execution",
           taskClass = SubPlanTask::class.java,

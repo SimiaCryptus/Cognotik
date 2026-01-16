@@ -386,7 +386,7 @@ FileSearch - Search for patterns in files and provide results with context
     companion object {
         private val log = LoggerFactory.getLogger(FileSearchTask::class.java)
 
-        val FileSearch = TaskType(
+        @JvmStatic val FileSearch = TaskType(
             name = "FileSearch",
             category = "File",
             taskClass = FileSearchTask::class.java,

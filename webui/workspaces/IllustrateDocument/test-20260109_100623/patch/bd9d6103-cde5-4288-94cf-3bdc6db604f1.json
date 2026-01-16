@@ -1,6 +1,0 @@
-{
-  "filename" : "system_architecture_overview.md",
-  "code" : "This document describes the high-level architecture of the Cognotik platform. \n The system is designed to be modular and extensible, allowing for various task types.\n+\n+![Figure 1: High-level data flow and component interaction within the Cognotik platform.](cognotik_platform_architecture_flow.png)\n \n ## Core Components\n \n The platform consists of several key components:",
-  "header" : "system_architecture_overview.md",
-  "language" : "diff"
-}

@@ -35,7 +35,7 @@ class GeneticOptimizationTask(
 ) {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GeneticOptimizationTask::class.java)
-        val GeneticOptimization = TaskType(
+        @JvmStatic val GeneticOptimization = TaskType(
             name = "GeneticOptimization",
             category = "Reasoning",
             taskClass = GeneticOptimizationTask::class.java,

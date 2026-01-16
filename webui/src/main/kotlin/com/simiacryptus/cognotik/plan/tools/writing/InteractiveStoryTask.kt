@@ -1233,7 +1233,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(InteractiveStoryTask::class.java)
-        val InteractiveStory = TaskType(
+        @JvmStatic val InteractiveStory = TaskType(
           name = "InteractiveStory",
           category = "Writing",
           taskClass = InteractiveStoryTask::class.java,

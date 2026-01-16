@@ -30,7 +30,7 @@ class EthicalReasoningTask(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(EthicalReasoningTask::class.java)
-        val EthicalReasoning = TaskType(
+        @JvmStatic val EthicalReasoning = TaskType(
           name = "EthicalReasoning",
           category = "Reasoning",
           taskClass = EthicalReasoningTask::class.java,

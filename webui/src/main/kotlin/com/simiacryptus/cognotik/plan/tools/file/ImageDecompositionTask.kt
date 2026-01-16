@@ -470,7 +470,7 @@ If a region looks like it contains smaller details (text, faces, objects) that a
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ImageDecompositionTask::class.java)
-    val ImageDecomposition = TaskType(
+    @JvmStatic val ImageDecomposition = TaskType(
       name = "ImageDecomposition",
       category = "File",
       taskClass = ImageDecompositionTask::class.java,

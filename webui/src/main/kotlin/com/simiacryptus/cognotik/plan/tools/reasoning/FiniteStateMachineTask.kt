@@ -780,7 +780,7 @@ Format as a clear table or structured list.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(FiniteStateMachineTask::class.java)
 
-        val FiniteStateMachine = TaskType(
+        @JvmStatic val FiniteStateMachine = TaskType(
           name = "FiniteStateMachine",
           category = "Reasoning",
           taskClass = FiniteStateMachineTask::class.java,

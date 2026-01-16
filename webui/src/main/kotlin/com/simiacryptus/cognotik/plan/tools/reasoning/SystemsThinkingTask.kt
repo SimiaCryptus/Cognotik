@@ -764,7 +764,7 @@ Provide clear, actionable insights grounded in systems thinking principles.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SystemsThinkingTask::class.java)
-        val SystemsThinking = TaskType(
+        @JvmStatic val SystemsThinking = TaskType(
           name = "SystemsThinking",
           category = "Reasoning",
           taskClass = SystemsThinkingTask::class.java,

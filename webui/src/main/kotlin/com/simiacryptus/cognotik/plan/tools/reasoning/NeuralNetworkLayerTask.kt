@@ -27,7 +27,7 @@ class NeuralNetworkLayerTask(
 ) {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(NeuralNetworkLayerTask::class.java)
-        val NeuralNetworkLayer = TaskType(
+        @JvmStatic val NeuralNetworkLayer = TaskType(
             name = "NeuralNetworkLayer",
             category = "Writing",
             taskClass = NeuralNetworkLayerTask::class.java,

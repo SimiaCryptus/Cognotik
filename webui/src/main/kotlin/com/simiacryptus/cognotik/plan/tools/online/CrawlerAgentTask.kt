@@ -1429,7 +1429,7 @@ class CrawlerAgentTask(
         private val log = LoggerFactory.getLogger(CrawlerAgentTask::class.java)
         private val LINK_PATTERN = Pattern.compile("""\[([^]]+)]\(([^)]+)\)""")
         private val VALID_URL_PATTERN = Pattern.compile("^(http|https)://.*")
-        val CrawlerAgent = TaskType(
+        @JvmStatic val CrawlerAgent = TaskType(
             "CrawlerAgent",
             "Online & Search",
             CrawlerAgentTask::class.java,

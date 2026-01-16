@@ -569,7 +569,7 @@ Provide the complete updated HTML structure within a code block:
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(WriteHtmlTask::class.java)
-        val WriteHtml = TaskType(
+        @JvmStatic val WriteHtml = TaskType(
           name = "WriteHtml",
           category = "Writing",
           taskClass = WriteHtmlTask::class.java,

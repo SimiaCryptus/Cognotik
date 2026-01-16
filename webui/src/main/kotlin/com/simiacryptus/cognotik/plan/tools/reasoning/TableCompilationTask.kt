@@ -373,7 +373,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TableCompilationTask::class.java)
-        val TableCompilation = TaskType(
+        @JvmStatic val TableCompilation = TaskType(
             name = "TableCompilation",
             category = "Reasoning",
             taskClass = TableCompilationTask::class.java,

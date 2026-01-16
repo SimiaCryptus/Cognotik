@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 
-abstract class FileGenerator {
+open class FileGenerator {
   fun run(
     root: File,
     folder: File,
@@ -118,7 +118,7 @@ abstract class FileGenerator {
   }
 
   companion object {
-    val log = LoggerFactory.getLogger(FileGenerator::class.java)
+    private val log = LoggerFactory.getLogger(FileGenerator::class.java)
     fun File.lastModified(
       relatedFiles: List<File>,
     ): Long = maxOf(this.lastModified(), relatedFiles.maxOfOrNull { it.lastModified() } ?: 0L)

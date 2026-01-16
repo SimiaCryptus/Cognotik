@@ -992,7 +992,7 @@ Consider both immediate fixes and long-term architectural improvements.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AdversarialReasoningTask::class.java)
-        val AdversarialReasoning = TaskType(
+        @JvmStatic val AdversarialReasoning = TaskType(
           name = "AdversarialReasoning",
           category = "Reasoning",
           taskClass = AdversarialReasoningTask::class.java,

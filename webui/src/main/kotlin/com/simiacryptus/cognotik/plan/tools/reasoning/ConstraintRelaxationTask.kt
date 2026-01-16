@@ -819,7 +819,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ConstraintRelaxationTask::class.java)
-        val ConstraintRelaxation = TaskType(
+        @JvmStatic val ConstraintRelaxation = TaskType(
           name = "ConstraintRelaxation",
           category = "Reasoning",
           taskClass = ConstraintRelaxationTask::class.java,

@@ -225,7 +225,7 @@ class ImageGenerationTask(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ImageGenerationTask::class.java)
-        val GenerateImage = TaskType(
+        @JvmStatic val GenerateImage = TaskType(
           name = "GenerateImage",
           category = "Writing",
           taskClass = ImageGenerationTask::class.java,

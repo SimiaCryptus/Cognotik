@@ -22,7 +22,7 @@ class SymbolsDbCodeTask(
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-        val SymbolsDbCode = TaskType(
+        @JvmStatic val SymbolsDbCode = TaskType(
             name = "SymbolsDbCodeTask",
             category = "Execution",
             taskClass = SymbolsDbCodeTask::class.java,

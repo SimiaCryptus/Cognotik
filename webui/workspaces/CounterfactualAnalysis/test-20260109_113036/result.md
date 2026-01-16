@@ -1,2 +1,0 @@
-Counterfactual analysis completed for: 'The team decided to use a monolithic architecture 
-... (truncated for display, 64 characters omitted)'. Analyzed 2 alternative scenarios. Detailed report saved to fileIndex/G-20260109-GPTV/analysis_results.md.

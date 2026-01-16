@@ -1438,7 +1438,7 @@ Provide specific examples and recommendations for improvement.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GameNarrativeDesignTask::class.java)
 
-        val GameNarrativeDesign = TaskType(
+        @JvmStatic val GameNarrativeDesign = TaskType(
             name = "GameNarrativeDesign",
             category = "Games",
             taskClass = GameNarrativeDesignTask::class.java,

@@ -1,8 +1,0 @@
-{
-  "filename" : "test_hello.py",
-  "originalCode" : "import unittest\nimport subprocess\nimport sys\nimport os\nclass TestCouncilGreeting(unittest.TestCase):\n    EXPECTED_OUTPUT = \"Hello from CouncilMode\"\n    def test_hello_output(self):\n        \"\"\"Verify that hello.py prints the correct greeting.\"\"\"\n        script_path = 'hello.py'\n        # Ensure the script exists\n        self.assertTrue(os.path.exists(script_path), f\"{script_path} does not exist\")\n        # Run the script and capture output\n        result = subprocess.run([sys.executable, script_path], capture_output=True, text=True)\n        output = result.stdout.strip()\n        # Check if output matches expected string\n        self.assertEqual(output, self.EXPECTED_OUTPUT)\nif __name__ == '__main__':\n    unittest.main()",
-  "diff" : "--- test_hello.py\n+++ test_hello.py\n@@ -1,1 +0,0 @@\n-",
-  "newCode" : "import unittest\nimport subprocess\nimport sys\nimport os\nclass TestCouncilGreeting(unittest.TestCase):\n    EXPECTED_OUTPUT = \"Hello from CouncilMode\"\n    def test_hello_output(self):\n        \"\"\"Verify that hello.py prints the correct greeting.\"\"\"\n        script_path = 'hello.py'\n        # Ensure the script exists\n        self.assertTrue(os.path.exists(script_path), f\"{script_path} does not exist\")\n        # Run the script and capture output\n        result = subprocess.run([sys.executable, script_path], capture_output=True, text=True)\n        output = result.stdout.strip()\n        # Check if output matches expected string\n        self.assertEqual(output, self.EXPECTED_OUTPUT)\nif __name__ == '__main__':\n    unittest.main()",
-  "isValid" : true,
-  "errors" : ""
-}

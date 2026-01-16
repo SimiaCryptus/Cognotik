@@ -516,7 +516,7 @@ class TiledImageGenerationTask(
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(TiledImageGenerationTask::class.java)
-    val TiledImageGeneration = TaskType(
+    @JvmStatic val TiledImageGeneration = TaskType(
       name = "TiledImageGeneration",
       category = "Writing",
       taskClass = TiledImageGenerationTask::class.java,

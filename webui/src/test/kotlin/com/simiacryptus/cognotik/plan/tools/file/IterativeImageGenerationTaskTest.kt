@@ -18,7 +18,7 @@ class IterativeImageGenerationTaskTest {
     }
   }
 
- //@org.junit.jupiter.api.Test
+  @org.junit.jupiter.api.Test
   @Timeout(30, unit = TimeUnit.MINUTES)
   fun test() {
     val output_file = "image.png"
