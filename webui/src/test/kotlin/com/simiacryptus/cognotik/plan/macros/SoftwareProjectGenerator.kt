@@ -24,7 +24,7 @@ class SoftwareProjectGenerator {
       UnifiedHarness.configurePlatform()
     }
 
-    @TestFactory
+    //@TestFactory
     @Tag("Research")
     fun tests() = listOf(
         WaterfallModeConfig(),

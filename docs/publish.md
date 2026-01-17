@@ -28,6 +28,8 @@ curl -u `decrypt_aws 'AQICAHidpAxjUnec2+y6zMst5ZAtSqAHG3cILsI2tm2DVIIvlAFZUxBH2Z
 # Example usage to promote a staging repository in Sonatype OSSRH
 ```bash
 curl -u `decrypt_aws 'AQICAHidpAxjUnec2+y6zMst5ZAtSqAHG3cILsI2tm2DVIIvlAFZUxBH2ZJcW+Bzc/rHoJh/AAAAhzCBhAYJKoZIhvcNAQcGoHcwdQIBADBwBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDHPtV625FyskyHYbqQIBEIBDtT8Ic17uo9CTG0vNOPAsocpEv35T4sDmJMS4aMmfrgEX0l701yjHIpEx4rzzrUsVDtwkS75BvRx9UxMrwJs+33tkoA=='` -X POST \
-  'https://ossrh-staging-api.central.sonatype.com/manual/upload/repository/HyHqQM/any/com.cognotik--577b5d82-e77a-4320-b538-8e88cdb31032' \
+  'https://ossrh-staging-api.central.sonatype.com/manual/upload/repository/HyHqQM/any/com.cognotik--bf62e895-f490-4fc2-a52a-ca6cb6f731b1' \
   -H 'Content-Type: application/json' -d '{"data": {"description": "Promote from CI build"}}'
+
+
 ```
