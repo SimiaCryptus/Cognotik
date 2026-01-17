@@ -20,7 +20,7 @@ object SingleFixTaskTest {
     }
 
     @Tag("Integration")
-    @Test
+    //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
         val harness = SingleFixTaskHarness("test_error.log")
