@@ -37,7 +37,7 @@ class GeminiChatClient(
         modelsCache[apiBase]?.let { return it }
 
         return try {
-            val responseBody = get("${apiBase}/v1beta/models?key=$apiKey")
+            val responseBody = get("${apiBase}/v1beta/models?key=${apiKey.decrypt}")
             checkError(responseBody)
             log.debug("Fetched models from Google API: $responseBody")
             val listResponse = JsonUtil.fromJson<ModelsListResponse>(responseBody, ModelsListResponse::class.java)
@@ -90,7 +90,7 @@ class GeminiChatClient(
             .writeValueAsString(geminiChatRequest)
 
         val responseBody = post(
-            "${apiBase}/v1beta/models/${model.modelName}:generateContent?key=$apiKey",
+            "${apiBase}/v1beta/models/${model.modelName}:generateContent?key=${apiKey.decrypt}",
             json,
             APIProvider.Gemini
         )

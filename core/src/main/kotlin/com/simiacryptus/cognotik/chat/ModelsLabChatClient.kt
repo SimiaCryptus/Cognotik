@@ -93,16 +93,15 @@ class ModelsLabChatClient(
                     val seconds = response?.eta ?: 1
                     client.log(Level.INFO, "Chat response is still processing; waiting ${seconds}s and trying again.")
                     Thread.sleep(seconds * 1000L)
-                    val postCheck = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(
-                        mapOf(
-                            "chat_id" to (response.meta?.chat_id ?: response.chat_id),
-                            "key" to client.apiKey
-                        )
-                    )
                     fromModelsLab(
                         client.post(
                             "${client.apiBase}/llm/get_queued_response",
-                            postCheck,
+                            JsonUtil.objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(
+                                mapOf(
+                                    "chat_id" to (response.meta?.chat_id ?: response.chat_id),
+                                    "key" to client.apiKey.decrypt
+                                )
+                            ),
                             APIProvider.ModelsLab,
                         ),
                         client

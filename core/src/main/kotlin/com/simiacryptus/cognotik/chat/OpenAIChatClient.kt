@@ -31,7 +31,7 @@ class OpenAIChatClient(
     ) {
         request.addHeader("Content-Type", "application/json")
         request.addHeader("Accept", "application/json")
-        request.addHeader("Authorization", "Bearer $apiKey")
+        request.addHeader("Authorization", "Bearer ${apiKey.decrypt}")
     }
 
     override fun chat(

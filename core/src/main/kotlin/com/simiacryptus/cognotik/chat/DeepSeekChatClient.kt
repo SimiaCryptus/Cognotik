@@ -34,7 +34,7 @@ class DeepSeekChatClient(
     ) {
         request.addHeader(HEADER_CONTENT_TYPE, APPLICATION_JSON)
         request.addHeader(HEADER_ACCEPT, APPLICATION_JSON)
-        request.addHeader(HEADER_AUTHORIZATION, "Bearer $apiKey")
+        request.addHeader(HEADER_AUTHORIZATION, "Bearer ${apiKey.decrypt}")
     }
 
     override fun chat(
