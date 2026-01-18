@@ -165,34 +165,34 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         log.info("Configuration: maxHypotheses=$maxHypotheses, criteria=$evaluateCriteria, suggestTests=$suggestTests")
 
         overviewTask.add(
-            buildString {
-                writeToTranscript(transcript, this)
-                appendLine("# Abductive Reasoning Analysis")
-                appendLine()
-                appendLine("**Purpose:** Generate and evaluate explanatory hypotheses")
-                appendLine()
-                appendLine("**Observations to Explain:** ${observations.size}")
-                appendLine()
-                appendLine("**Max Hypotheses:** $maxHypotheses")
-                appendLine()
-                appendLine("**Evaluation Criteria:** ${evaluateCriteria.joinToString(", ")}")
-                appendLine()
-                appendLine("**Domain Context:** $domainContext")
-                appendLine()
-                appendLine(
-                    "**Started:** ${
-                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                    }"
-                )
-                appendLine()
-                appendLine("**Input Context:** ${inputContext.size} sections provided")
-                appendLine()
-                appendLine("---")
-                appendLine()
-                appendLine("## Progress")
-                appendLine()
-                appendLine("*Analyzing observations...*")
-            }.renderMarkdown
+          buildString {
+            writeToTranscript(transcript, this)
+            appendLine("# Abductive Reasoning Analysis")
+            appendLine()
+            appendLine("**Purpose:** Generate and evaluate explanatory hypotheses")
+            appendLine()
+            appendLine("**Observations to Explain:** ${observations.size}")
+            appendLine()
+            appendLine("**Max Hypotheses:** $maxHypotheses")
+            appendLine()
+            appendLine("**Evaluation Criteria:** ${evaluateCriteria.joinToString(", ")}")
+            appendLine()
+            appendLine("**Domain Context:** $domainContext")
+            appendLine()
+            appendLine(
+              "**Started:** ${
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+              }"
+            )
+            appendLine()
+            appendLine("**Input Context:** ${inputContext.size} sections provided")
+            appendLine()
+            appendLine("---")
+            appendLine()
+            appendLine("## Progress")
+            appendLine()
+            appendLine("*Analyzing observations...*")
+          }.renderMarkdown(true)
         )
 
         try {
@@ -200,20 +200,20 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             val observationsTask = tabs.newTask("Observations")
             task.header("Step 1: Documenting Observations", level = 3)
             observationsTask.add(
-                buildString {
-                    writeToTranscript(transcript, this)
-                    appendLine("# Observations")
-                    appendLine()
-                    appendLine("The following observations need explanation:")
-                    appendLine()
-                    observations.forEachIndexed { index, obs ->
-                        appendLine("${index + 1}. $obs")
-                    }
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Status:** ✅ Observations documented")
-                }.renderMarkdown
+              buildString {
+                writeToTranscript(transcript, this)
+                appendLine("# Observations")
+                appendLine()
+                appendLine("The following observations need explanation:")
+                appendLine()
+                observations.forEachIndexed { index, obs ->
+                  appendLine("${index + 1}. $obs")
+                }
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("**Status:** ✅ Observations documented")
+              }.renderMarkdown(true)
             )
             observationsTask.complete()
 
@@ -224,37 +224,37 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                 log.debug("Found prior context: ${priorContext.length} characters")
                 val contextTask = tabs.newTask("Context")
                 contextTask.add(
-                    buildString {
-                        writeToTranscript(transcript, this)
-                        appendLine("# Context from Previous Tasks")
-                        appendLine()
-                        appendLine(priorContext.truncateForDisplay())
-                    }.renderMarkdown
+                  buildString {
+                    writeToTranscript(transcript, this)
+                    appendLine("# Context from Previous Tasks")
+                    appendLine()
+                    appendLine(priorContext.truncateForDisplay())
+                  }.renderMarkdown(true)
                 )
                 contextTask.complete()
             }
 
             // Update overview
             overviewTask.add(
-                buildString {
-                    writeToTranscript(transcript, this)
-                    appendLine()
-                    appendLine("✅ Observations documented")
-                    appendLine()
-                    appendLine("*Generating hypotheses...*")
-                }.renderMarkdown
+              buildString {
+                writeToTranscript(transcript, this)
+                appendLine()
+                appendLine("✅ Observations documented")
+                appendLine()
+                appendLine("*Generating hypotheses...*")
+              }.renderMarkdown(true)
             )
 
             // Generate or use existing hypotheses
             val hypothesesTask = tabs.newTask("Hypotheses")
             task.header("Step 2: Generating Hypotheses", level = 3)
             hypothesesTask.add(
-                buildString {
-                    writeToTranscript(transcript, this)
-                    appendLine("# Hypothesis Generation")
-                    appendLine()
-                    appendLine("**Status:** 🔄 Generating hypotheses...")
-                }.renderMarkdown
+              buildString {
+                writeToTranscript(transcript, this)
+                appendLine("# Hypothesis Generation")
+                appendLine()
+                appendLine("**Status:** 🔄 Generating hypotheses...")
+              }.renderMarkdown(true)
             )
 
             val hypotheses = if (executionConfig.generate_hypotheses) {
@@ -286,74 +286,74 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
             // Display hypotheses
             hypothesesTask.add(
-                buildString {
-                    writeToTranscript(transcript, this)
+              buildString {
+                writeToTranscript(transcript, this)
+                appendLine()
+                appendLine("## Generated Hypotheses")
+                appendLine()
+                appendLine("**Count:** ${hypotheses.size}")
+                appendLine()
+                appendLine("---")
+                appendLine()
+                hypotheses.sortedByDescending { it.overall_score }.forEachIndexed { index, hyp ->
+                  appendLine("### Hypothesis ${index + 1}: ${hyp.description}")
+                  appendLine()
+                  appendLine("**Overall Score:** ${String.format("%.2f", hyp.overall_score)}")
+                  appendLine()
+                  appendLine("**Explanation:**")
+                  appendLine()
+                  appendLine(hyp.explanation)
+                  appendLine()
+                  appendLine("**Evaluation Metrics:**")
+                  appendLine("- Explanatory Power: ${String.format("%.2f", hyp.explanatory_power)}")
+                  appendLine("- Simplicity: ${String.format("%.2f", hyp.simplicity)}")
+                  appendLine("- Testability: ${String.format("%.2f", hyp.testability)}")
+                  appendLine("- Prior Probability: ${String.format("%.2f", hyp.prior_probability)}")
+                  appendLine()
+                  if (hyp.supporting_evidence.isNotEmpty()) {
+                    appendLine("**Supporting Evidence:**")
+                    hyp.supporting_evidence.forEach { appendLine("- $it") }
                     appendLine()
-                    appendLine("## Generated Hypotheses")
+                  }
+                  if (hyp.contradicting_evidence.isNotEmpty()) {
+                    appendLine("**Contradicting Evidence:**")
+                    hyp.contradicting_evidence.forEach { appendLine("- $it") }
                     appendLine()
-                    appendLine("**Count:** ${hypotheses.size}")
+                  }
+                  if (hyp.testable_predictions.isNotEmpty()) {
+                    appendLine("**Testable Predictions:**")
+                    hyp.testable_predictions.forEach { appendLine("- $it") }
                     appendLine()
-                    appendLine("---")
-                    appendLine()
-                    hypotheses.sortedByDescending { it.overall_score }.forEachIndexed { index, hyp ->
-                        appendLine("### Hypothesis ${index + 1}: ${hyp.description}")
-                        appendLine()
-                        appendLine("**Overall Score:** ${String.format("%.2f", hyp.overall_score)}")
-                        appendLine()
-                        appendLine("**Explanation:**")
-                        appendLine()
-                        appendLine(hyp.explanation)
-                        appendLine()
-                        appendLine("**Evaluation Metrics:**")
-                        appendLine("- Explanatory Power: ${String.format("%.2f", hyp.explanatory_power)}")
-                        appendLine("- Simplicity: ${String.format("%.2f", hyp.simplicity)}")
-                        appendLine("- Testability: ${String.format("%.2f", hyp.testability)}")
-                        appendLine("- Prior Probability: ${String.format("%.2f", hyp.prior_probability)}")
-                        appendLine()
-                        if (hyp.supporting_evidence.isNotEmpty()) {
-                            appendLine("**Supporting Evidence:**")
-                            hyp.supporting_evidence.forEach { appendLine("- $it") }
-                            appendLine()
-                        }
-                        if (hyp.contradicting_evidence.isNotEmpty()) {
-                            appendLine("**Contradicting Evidence:**")
-                            hyp.contradicting_evidence.forEach { appendLine("- $it") }
-                            appendLine()
-                        }
-                        if (hyp.testable_predictions.isNotEmpty()) {
-                            appendLine("**Testable Predictions:**")
-                            hyp.testable_predictions.forEach { appendLine("- $it") }
-                            appendLine()
-                        }
-                        appendLine("---")
-                        appendLine()
-                    }
-                    appendLine("**Status:** ✅ Hypotheses generated and evaluated")
-                }.renderMarkdown
+                  }
+                  appendLine("---")
+                  appendLine()
+                }
+                appendLine("**Status:** ✅ Hypotheses generated and evaluated")
+              }.renderMarkdown(true)
             )
             hypothesesTask.complete()
 
             // Update overview
             overviewTask.add(
-                buildString {
-                    writeToTranscript(transcript, this)
-                    appendLine()
-                    appendLine("✅ Hypotheses generated: ${hypotheses.size} (${hypothesesTime}s)")
-                    appendLine()
-                    appendLine("*Performing comparative analysis...*")
-                }.renderMarkdown
+              buildString {
+                writeToTranscript(transcript, this)
+                appendLine()
+                appendLine("✅ Hypotheses generated: ${hypotheses.size} (${hypothesesTime}s)")
+                appendLine()
+                appendLine("*Performing comparative analysis...*")
+              }.renderMarkdown(true)
             )
 
             // Comparative analysis
             val analysisTask = tabs.newTask("Analysis")
             task.header("Step 3: Comparative Analysis", level = 3)
             analysisTask.add(
-                buildString {
-                    writeToTranscript(transcript, this)
-                    appendLine("# Comparative Analysis")
-                    appendLine()
-                    appendLine("**Status:** 🔄 Analyzing hypotheses...")
-                }.renderMarkdown
+              buildString {
+                writeToTranscript(transcript, this)
+                appendLine("# Comparative Analysis")
+                appendLine()
+                appendLine("**Status:** 🔄 Analyzing hypotheses...")
+              }.renderMarkdown(true)
             )
 
             val analysis = performComparativeAnalysis(
@@ -368,31 +368,31 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             log.info("Comparative analysis completed in ${analysisTime}s (${analysis.length} chars)")
 
             analysisTask.add(
-                buildString {
-                    writeToTranscript(transcript, this)
-                    appendLine()
-                    appendLine("## Comparative Analysis Results")
-                    appendLine()
-                    appendLine(analysis)
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Status:** ✅ Analysis complete")
-                }.renderMarkdown
+              buildString {
+                writeToTranscript(transcript, this)
+                appendLine()
+                appendLine("## Comparative Analysis Results")
+                appendLine()
+                appendLine(analysis)
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("**Status:** ✅ Analysis complete")
+              }.renderMarkdown(true)
             )
             analysisTask.complete()
 
             // Update overview
             overviewTask.add(
-                buildString {
-                    writeToTranscript(transcript, this)
-                    appendLine()
-                    appendLine("✅ Comparative analysis complete (${analysisTime}s)")
-                    if (suggestTests) {
-                        appendLine()
-                        appendLine("*Generating validation tests...*")
-                    }
-                }.renderMarkdown
+              buildString {
+                writeToTranscript(transcript, this)
+                appendLine()
+                appendLine("✅ Comparative analysis complete (${analysisTime}s)")
+                if (suggestTests) {
+                  appendLine()
+                  appendLine("*Generating validation tests...*")
+                }
+              }.renderMarkdown(true)
             )
 
             // Generate validation tests if requested
@@ -401,12 +401,12 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                 val testsTask = tabs.newTask("Validation Tests")
                 task.header("Step 4: Validation Tests", level = 3)
                 testsTask.add(
-                    buildString {
-                        writeToTranscript(transcript, this)
-                        appendLine("# Validation Tests")
-                        appendLine()
-                        appendLine("**Status:** 🔄 Generating test suggestions...")
-                    }.renderMarkdown
+                  buildString {
+                    writeToTranscript(transcript, this)
+                    appendLine("# Validation Tests")
+                    appendLine()
+                    appendLine("**Status:** 🔄 Generating test suggestions...")
+                  }.renderMarkdown(true)
                 )
 
                 testSuggestions = generateValidationTests(
@@ -421,26 +421,26 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                 log.info("Validation tests generated in ${testsTime}s (${testSuggestions.length} chars)")
 
                 testsTask.add(
-                    buildString {
-                        writeToTranscript(transcript, this)
-                        appendLine()
-                        appendLine("## Suggested Validation Tests")
-                        appendLine()
-                        appendLine(testSuggestions)
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("**Status:** ✅ Test suggestions complete")
-                    }.renderMarkdown
+                  buildString {
+                    writeToTranscript(transcript, this)
+                    appendLine()
+                    appendLine("## Suggested Validation Tests")
+                    appendLine()
+                    appendLine(testSuggestions)
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Status:** ✅ Test suggestions complete")
+                  }.renderMarkdown(true)
                 )
                 testsTask.complete()
 
                 overviewTask.add(
-                    buildString {
-                        writeToTranscript(transcript, this)
-                        appendLine()
-                        appendLine("✅ Validation tests generated (${testsTime}s)")
-                    }.renderMarkdown
+                  buildString {
+                    writeToTranscript(transcript, this)
+                    appendLine()
+                    appendLine("✅ Validation tests generated (${testsTime}s)")
+                  }.renderMarkdown(true)
                 )
             }
 
@@ -449,69 +449,69 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             val summaryTask = tabs.newTask("Best Explanation")
             task.header("Final Inference", level = 3)
             summaryTask.add(
-                buildString {
-                    writeToTranscript(transcript, this)
-                    appendLine("# Best Explanation (Inference to Best Explanation)")
+              buildString {
+                writeToTranscript(transcript, this)
+                appendLine("# Best Explanation (Inference to Best Explanation)")
+                appendLine()
+                if (bestHypothesis != null) {
+                  appendLine("## ${bestHypothesis.description}")
+                  appendLine()
+                  appendLine("**Overall Score:** ${String.format("%.2f", bestHypothesis.overall_score)}")
+                  appendLine()
+                  appendLine("### Why This is the Best Explanation")
+                  appendLine()
+                  appendLine(bestHypothesis.explanation)
+                  appendLine()
+                  appendLine("### Key Strengths")
+                  appendLine()
+                  appendLine(
+                    "- **Explanatory Power:** ${
+                      String.format(
+                        "%.2f",
+                        bestHypothesis.explanatory_power
+                      )
+                    } - ${getStrengthDescription(bestHypothesis.explanatory_power)}"
+                  )
+                  appendLine(
+                    "- **Simplicity:** ${
+                      String.format(
+                        "%.2f",
+                        bestHypothesis.simplicity
+                      )
+                    } - ${getSimplicityDescription(bestHypothesis.simplicity)}"
+                  )
+                  appendLine(
+                    "- **Testability:** ${
+                      String.format(
+                        "%.2f",
+                        bestHypothesis.testability
+                      )
+                    } - ${getTestabilityDescription(bestHypothesis.testability)}"
+                  )
+                  appendLine(
+                    "- **Prior Probability:** ${
+                      String.format(
+                        "%.2f",
+                        bestHypothesis.prior_probability
+                      )
+                    } - ${getProbabilityDescription(bestHypothesis.prior_probability)}"
+                  )
+                  appendLine()
+                  if (bestHypothesis.testable_predictions.isNotEmpty()) {
+                    appendLine("### Next Steps: Validate This Hypothesis")
                     appendLine()
-                    if (bestHypothesis != null) {
-                        appendLine("## ${bestHypothesis.description}")
-                        appendLine()
-                        appendLine("**Overall Score:** ${String.format("%.2f", bestHypothesis.overall_score)}")
-                        appendLine()
-                        appendLine("### Why This is the Best Explanation")
-                        appendLine()
-                        appendLine(bestHypothesis.explanation)
-                        appendLine()
-                        appendLine("### Key Strengths")
-                        appendLine()
-                        appendLine(
-                            "- **Explanatory Power:** ${
-                                String.format(
-                                    "%.2f",
-                                    bestHypothesis.explanatory_power
-                                )
-                            } - ${getStrengthDescription(bestHypothesis.explanatory_power)}"
-                        )
-                        appendLine(
-                            "- **Simplicity:** ${
-                                String.format(
-                                    "%.2f",
-                                    bestHypothesis.simplicity
-                                )
-                            } - ${getSimplicityDescription(bestHypothesis.simplicity)}"
-                        )
-                        appendLine(
-                            "- **Testability:** ${
-                                String.format(
-                                    "%.2f",
-                                    bestHypothesis.testability
-                                )
-                            } - ${getTestabilityDescription(bestHypothesis.testability)}"
-                        )
-                        appendLine(
-                            "- **Prior Probability:** ${
-                                String.format(
-                                    "%.2f",
-                                    bestHypothesis.prior_probability
-                                )
-                            } - ${getProbabilityDescription(bestHypothesis.prior_probability)}"
-                        )
-                        appendLine()
-                        if (bestHypothesis.testable_predictions.isNotEmpty()) {
-                            appendLine("### Next Steps: Validate This Hypothesis")
-                            appendLine()
-                            bestHypothesis.testable_predictions.forEach { pred ->
-                                appendLine("- [ ] $pred")
-                            }
-                            appendLine()
-                        }
-                    } else {
-                        appendLine("No hypotheses were generated.")
+                    bestHypothesis.testable_predictions.forEach { pred ->
+                      appendLine("- [ ] $pred")
                     }
-                    appendLine("---")
                     appendLine()
-                    appendLine("**Status:** ✅ Best explanation identified")
-                }.renderMarkdown
+                  }
+                } else {
+                  appendLine("No hypotheses were generated.")
+                }
+                appendLine("---")
+                appendLine()
+                appendLine("**Status:** ✅ Best explanation identified")
+              }.renderMarkdown(true)
             )
             summaryTask.complete()
             // Final summary
@@ -561,25 +561,25 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             log.info("AbductiveReasoningTask completed: total_time=${totalTime}ms, observations=${observations.size}, hypotheses=${hypotheses.size}, best_score=${bestHypothesis?.overall_score}")
 
             overviewTask.add(
-                buildString {
-                    writeToTranscript(transcript, this)
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ✅ Analysis Complete")
-                    appendLine()
-                    appendLine("**Total Time:** ${totalTime / 1000.0}s")
-                    appendLine()
-                    appendLine("**Hypotheses Evaluated:** ${hypotheses.size}")
-                    appendLine()
-                    appendLine("**Best Explanation:** ${bestHypothesis?.description ?: "None"}")
-                    appendLine()
-                    appendLine(
-                        "**Completed:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                }.renderMarkdown
+              buildString {
+                writeToTranscript(transcript, this)
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ✅ Analysis Complete")
+                appendLine()
+                appendLine("**Total Time:** ${totalTime / 1000.0}s")
+                appendLine()
+                appendLine("**Hypotheses Evaluated:** ${hypotheses.size}")
+                appendLine()
+                appendLine("**Best Explanation:** ${bestHypothesis?.description ?: "None"}")
+                appendLine()
+                appendLine(
+                  "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                  }"
+                )
+              }.renderMarkdown(true)
             )
             overviewTask.complete()
             transcript?.close()
@@ -596,17 +596,17 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             task.error(e)
 
             overviewTask.add(
-                buildString {
-                    writeToTranscript(transcript, this)
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
+              buildString {
+                writeToTranscript(transcript, this)
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ❌ Error Occurred")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                appendLine()
+                appendLine("**Type:** ${e.javaClass.simpleName}")
+              }.renderMarkdown(true)
             )
             overviewTask.complete()
 

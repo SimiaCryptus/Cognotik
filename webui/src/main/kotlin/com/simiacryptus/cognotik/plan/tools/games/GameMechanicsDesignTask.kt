@@ -348,7 +348,7 @@ class GameMechanicsDesignTask(
         executionConfig.validate()?.let { errorMessage ->
             log.error("Configuration validation failed: $errorMessage")
             task.error(ValidatedObject.ValidationError(errorMessage, executionConfig))
-          task.complete("VALIDATION ERROR: $errorMessage".renderMarkdown)
+          task.complete("VALIDATION ERROR: $errorMessage".renderMarkdown(true))
             resultFn("VALIDATION ERROR: $errorMessage")
             return
         }
@@ -371,37 +371,37 @@ class GameMechanicsDesignTask(
         try {
 
             overviewTask.add(
-                buildString {
-                    appendLine("# Game Mechanics Design")
-                    appendLine()
-                    appendLine("**Game Concept:** $gameConcept")
-                    appendLine()
-                    appendLine("**Configuration:**")
-                    appendLine("- Target Audience: $targetAudience")
-                    appendLine("- Core Loop Duration: $coreLoopDuration")
-                    appendLine("- Number of Mechanics: $numMechanics")
-                    appendLine("- Balance Focus: $balanceFocus")
-                    appendLine("- Playtesting Scenarios: $playtestingScenarios")
-                    appendLine()
-                    appendLine("**Design Components:**")
-                    appendLine("- ✅ Core Mechanics")
-                    if (executionConfig.include_progression_system) appendLine("- ✅ Progression System")
-                    if (executionConfig.include_economy_system) appendLine("- ✅ Economy System")
-                    if (executionConfig.include_difficulty_scaling) appendLine("- ✅ Difficulty Scaling")
-                    appendLine("- ✅ Balance Analysis")
-                    appendLine("- ✅ Playtesting Predictions")
-                    if (executionConfig.generate_tuning_guide) appendLine("- ✅ Tuning Guide")
-                    appendLine()
-                    appendLine(
-                        "**Started:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Status:** 🔄 Gathering context...")
-                }.renderMarkdown
+              buildString {
+                appendLine("# Game Mechanics Design")
+                appendLine()
+                appendLine("**Game Concept:** $gameConcept")
+                appendLine()
+                appendLine("**Configuration:**")
+                appendLine("- Target Audience: $targetAudience")
+                appendLine("- Core Loop Duration: $coreLoopDuration")
+                appendLine("- Number of Mechanics: $numMechanics")
+                appendLine("- Balance Focus: $balanceFocus")
+                appendLine("- Playtesting Scenarios: $playtestingScenarios")
+                appendLine()
+                appendLine("**Design Components:**")
+                appendLine("- ✅ Core Mechanics")
+                if (executionConfig.include_progression_system) appendLine("- ✅ Progression System")
+                if (executionConfig.include_economy_system) appendLine("- ✅ Economy System")
+                if (executionConfig.include_difficulty_scaling) appendLine("- ✅ Difficulty Scaling")
+                appendLine("- ✅ Balance Analysis")
+                appendLine("- ✅ Playtesting Predictions")
+                if (executionConfig.generate_tuning_guide) appendLine("- ✅ Tuning Guide")
+                appendLine()
+                appendLine(
+                  "**Started:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                  }"
+                )
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("**Status:** 🔄 Gathering context...")
+              }.renderMarkdown(true)
             )
           transcript?.write(
                 "# Game Mechanics Design\n\n**Game Concept:** $gameConcept\n\n**Started:** ${
@@ -435,32 +435,32 @@ class GameMechanicsDesignTask(
                 val contextTask = task.newTask()
                 tabs["Context"] = contextTask.placeholder
                 contextTask.add(
-                    buildString {
-                        appendLine("# Context")
-                        appendLine()
-                        if (inputFileContext.isNotBlank()) {
-                            appendLine("## Input Files")
-                            appendLine()
-                            appendLine(inputFileContext.truncateForDisplay())
-                            appendLine()
-                        }
-                        if (priorContext.isNotBlank()) {
-                            appendLine("## Prior Task Results")
-                            appendLine()
-                            appendLine(priorContext.truncateForDisplay())
-                        }
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Context")
+                    appendLine()
+                    if (inputFileContext.isNotBlank()) {
+                      appendLine("## Input Files")
+                      appendLine()
+                      appendLine(inputFileContext.truncateForDisplay())
+                      appendLine()
+                    }
+                    if (priorContext.isNotBlank()) {
+                      appendLine("## Prior Task Results")
+                      appendLine()
+                      appendLine(priorContext.truncateForDisplay())
+                    }
+                  }.renderMarkdown(true)
                 )
                 contextTask.complete()
             }
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("✅ Context gathered")
-                    appendLine()
-                    appendLine("**Status:** 🔄 Designing core mechanics...")
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("✅ Context gathered")
+                appendLine()
+                appendLine("**Status:** 🔄 Designing core mechanics...")
+              }.renderMarkdown(true)
             )
 
             // Step 1: Generate Core Mechanics
@@ -468,7 +468,7 @@ class GameMechanicsDesignTask(
             val mechanicsTask = task.newTask()
             tabs["Core Mechanics"] = mechanicsTask.placeholder
 
-            mechanicsTask.add("## Core Mechanics\n\n🔄 Generating mechanics...".renderMarkdown)
+            mechanicsTask.add("## Core Mechanics\n\n🔄 Generating mechanics...".renderMarkdown(true))
 
             val mechanicsPrompt = buildString {
                 appendLine("Design $numMechanics core gameplay mechanics for this game:")
@@ -513,30 +513,30 @@ class GameMechanicsDesignTask(
             log.info("Generated ${mechanics.size} mechanics")
 
             mechanicsTask.add(
-                buildString {
-                    appendLine("## Core Mechanics")
-                    appendLine()
-                    appendLine("✅ Generated ${mechanics.size} mechanics")
-                    appendLine()
-                    mechanics.forEachIndexed { index, mechanic ->
-                        appendLine("### ${index + 1}. ${mechanic.name}")
-                        appendLine()
-                        appendLine("**Description:** ${mechanic.description}")
-                        appendLine()
-                        appendLine("**Player Actions:**")
-                        mechanic.player_actions.forEach { appendLine("- $it") }
-                        appendLine()
-                        appendLine("**System Response:** ${mechanic.system_response}")
-                        appendLine()
-                        appendLine("**Properties:**")
-                        appendLine("- Feedback Type: ${mechanic.feedback_type}")
-                        appendLine("- Skill Expression: ${mechanic.skill_expression}")
-                        appendLine("- Luck Factor: ${String.format("%.1f", mechanic.luck_factor * 100)}%")
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                    }
-                }.renderMarkdown
+              buildString {
+                appendLine("## Core Mechanics")
+                appendLine()
+                appendLine("✅ Generated ${mechanics.size} mechanics")
+                appendLine()
+                mechanics.forEachIndexed { index, mechanic ->
+                  appendLine("### ${index + 1}. ${mechanic.name}")
+                  appendLine()
+                  appendLine("**Description:** ${mechanic.description}")
+                  appendLine()
+                  appendLine("**Player Actions:**")
+                  mechanic.player_actions.forEach { appendLine("- $it") }
+                  appendLine()
+                  appendLine("**System Response:** ${mechanic.system_response}")
+                  appendLine()
+                  appendLine("**Properties:**")
+                  appendLine("- Feedback Type: ${mechanic.feedback_type}")
+                  appendLine("- Skill Expression: ${mechanic.skill_expression}")
+                  appendLine("- Luck Factor: ${String.format("%.1f", mechanic.luck_factor * 100)}%")
+                  appendLine()
+                  appendLine("---")
+                  appendLine()
+                }
+              }.renderMarkdown(true)
             )
           transcript?.write(buildString {
                 appendLine("## Core Mechanics")
@@ -574,7 +574,7 @@ class GameMechanicsDesignTask(
             val interactionsTask = task.newTask()
             tabs["Interaction Matrix"] = interactionsTask.placeholder
 
-            interactionsTask.add("## Mechanic Interactions\n\n🔄 Analyzing interactions...".renderMarkdown)
+            interactionsTask.add("## Mechanic Interactions\n\n🔄 Analyzing interactions...".renderMarkdown(true))
 
             val interactionsPrompt = buildString {
                 appendLine("Analyze how these mechanics interact with each other:")
@@ -603,47 +603,47 @@ class GameMechanicsDesignTask(
             val interactions = interactionsParser.answer(listOf(interactionsPrompt.toString())).obj.interactions
 
             interactionsTask.add(
-                buildString {
-                    appendLine("## Mechanic Interactions")
-                    appendLine()
-                    appendLine("✅ Analyzed ${interactions.size} interactions")
-                    appendLine()
-                    appendLine("### Interaction Matrix")
-                    appendLine()
-                    val synergies = interactions.filter { it.interaction_type == "synergy" }
-                    val conflicts = interactions.filter { it.interaction_type == "conflict" }
-                    val neutral = interactions.filter { it.interaction_type == "neutral" }
-                    appendLine("- **Synergies:** ${synergies.size}")
-                    appendLine("- **Conflicts:** ${conflicts.size}")
-                    appendLine("- **Neutral:** ${neutral.size}")
-                    appendLine()
-                    if (synergies.isNotEmpty()) {
-                        appendLine("### Synergies")
-                        appendLine()
-                        synergies.forEach { interaction ->
-                            appendLine("#### ${interaction.mechanic_a} ↔ ${interaction.mechanic_b}")
-                            appendLine(interaction.description)
-                            if (interaction.balance_concern != null) {
-                                appendLine()
-                                appendLine("⚠️ **Balance Concern:** ${interaction.balance_concern}")
-                            }
-                            appendLine()
-                        }
+              buildString {
+                appendLine("## Mechanic Interactions")
+                appendLine()
+                appendLine("✅ Analyzed ${interactions.size} interactions")
+                appendLine()
+                appendLine("### Interaction Matrix")
+                appendLine()
+                val synergies = interactions.filter { it.interaction_type == "synergy" }
+                val conflicts = interactions.filter { it.interaction_type == "conflict" }
+                val neutral = interactions.filter { it.interaction_type == "neutral" }
+                appendLine("- **Synergies:** ${synergies.size}")
+                appendLine("- **Conflicts:** ${conflicts.size}")
+                appendLine("- **Neutral:** ${neutral.size}")
+                appendLine()
+                if (synergies.isNotEmpty()) {
+                  appendLine("### Synergies")
+                  appendLine()
+                  synergies.forEach { interaction ->
+                    appendLine("#### ${interaction.mechanic_a} ↔ ${interaction.mechanic_b}")
+                    appendLine(interaction.description)
+                    if (interaction.balance_concern != null) {
+                      appendLine()
+                      appendLine("⚠️ **Balance Concern:** ${interaction.balance_concern}")
                     }
-                    if (conflicts.isNotEmpty()) {
-                        appendLine("### Conflicts")
-                        appendLine()
-                        conflicts.forEach { interaction ->
-                            appendLine("#### ${interaction.mechanic_a} ⚔ ${interaction.mechanic_b}")
-                            appendLine(interaction.description)
-                            if (interaction.balance_concern != null) {
-                                appendLine()
-                                appendLine("⚠️ **Balance Concern:** ${interaction.balance_concern}")
-                            }
-                            appendLine()
-                        }
+                    appendLine()
+                  }
+                }
+                if (conflicts.isNotEmpty()) {
+                  appendLine("### Conflicts")
+                  appendLine()
+                  conflicts.forEach { interaction ->
+                    appendLine("#### ${interaction.mechanic_a} ⚔ ${interaction.mechanic_b}")
+                    appendLine(interaction.description)
+                    if (interaction.balance_concern != null) {
+                      appendLine()
+                      appendLine("⚠️ **Balance Concern:** ${interaction.balance_concern}")
                     }
-                }.renderMarkdown
+                    appendLine()
+                  }
+                }
+              }.renderMarkdown(true)
             )
           transcript?.write(buildString {
                 appendLine("## Mechanic Interactions")
@@ -702,7 +702,7 @@ class GameMechanicsDesignTask(
                 val progressionTask = task.newTask()
                 tabs["Progression System"] = progressionTask.placeholder
 
-                progressionTask.add("## Progression System\n\n🔄 Designing progression curve...".renderMarkdown)
+                progressionTask.add("## Progression System\n\n🔄 Designing progression curve...".renderMarkdown(true))
 
                 val progressionPrompt = buildString {
                     appendLine("Design a progression system for this game:")
@@ -740,47 +740,47 @@ class GameMechanicsDesignTask(
                 val progression = progressionParser.answer(listOf(progressionPrompt.toString())).obj.levels
 
                 progressionTask.add(
-                    buildString {
-                        appendLine("## Progression System")
+                  buildString {
+                    appendLine("## Progression System")
+                    appendLine()
+                    appendLine("✅ Designed ${progression.size} levels")
+                    appendLine()
+                    appendLine("| Level | XP Required | Difficulty | Playtime | Unlocks |")
+                    appendLine("|-------|-------------|------------|----------|---------|")
+                    progression.forEach { level ->
+                      appendLine(
+                        "| ${level.level} | ${level.experience_required} | ${
+                          String.format(
+                            "%.1fx",
+                            level.difficulty_multiplier
+                          )
+                        } | ${String.format("%.1fh", level.estimated_playtime_hours)} | ${level.unlocks.size} |"
+                      )
+                    }
+                    appendLine()
+                    appendLine("### Detailed Progression")
+                    appendLine()
+                    progression.forEach { level ->
+                      appendLine("#### Level ${level.level}")
+                      appendLine()
+                      appendLine("- **XP Required:** ${level.experience_required}")
+                      appendLine("- **Difficulty:** ${String.format("%.1fx", level.difficulty_multiplier)}")
+                      appendLine(
+                        "- **Estimated Playtime:** ${
+                          String.format(
+                            "%.1f",
+                            level.estimated_playtime_hours
+                          )
+                        } hours"
+                      )
+                      appendLine()
+                      if (level.unlocks.isNotEmpty()) {
+                        appendLine("**Unlocks:**")
+                        level.unlocks.forEach { appendLine("- $it") }
                         appendLine()
-                        appendLine("✅ Designed ${progression.size} levels")
-                        appendLine()
-                        appendLine("| Level | XP Required | Difficulty | Playtime | Unlocks |")
-                        appendLine("|-------|-------------|------------|----------|---------|")
-                        progression.forEach { level ->
-                            appendLine(
-                                "| ${level.level} | ${level.experience_required} | ${
-                                    String.format(
-                                        "%.1fx",
-                                        level.difficulty_multiplier
-                                    )
-                                } | ${String.format("%.1fh", level.estimated_playtime_hours)} | ${level.unlocks.size} |"
-                            )
-                        }
-                        appendLine()
-                        appendLine("### Detailed Progression")
-                        appendLine()
-                        progression.forEach { level ->
-                            appendLine("#### Level ${level.level}")
-                            appendLine()
-                            appendLine("- **XP Required:** ${level.experience_required}")
-                            appendLine("- **Difficulty:** ${String.format("%.1fx", level.difficulty_multiplier)}")
-                            appendLine(
-                                "- **Estimated Playtime:** ${
-                                    String.format(
-                                        "%.1f",
-                                        level.estimated_playtime_hours
-                                    )
-                                } hours"
-                            )
-                            appendLine()
-                            if (level.unlocks.isNotEmpty()) {
-                                appendLine("**Unlocks:**")
-                                level.unlocks.forEach { appendLine("- $it") }
-                                appendLine()
-                            }
-                        }
-                    }.renderMarkdown
+                      }
+                    }
+                  }.renderMarkdown(true)
                 )
               transcript?.write(buildString {
                     appendLine("## Progression System")
@@ -834,7 +834,7 @@ class GameMechanicsDesignTask(
                 val economyTask = task.newTask()
                 tabs["Economy System"] = economyTask.placeholder
 
-                economyTask.add("## Economy System\n\n🔄 Designing resource economy...".renderMarkdown)
+                economyTask.add("## Economy System\n\n🔄 Designing resource economy...".renderMarkdown(true))
 
                 val economyPrompt = buildString {
                     appendLine("Design an economy system for this game:")
@@ -875,37 +875,37 @@ class GameMechanicsDesignTask(
                 val economy = economyParser.answer(listOf(economyPrompt.toString())).obj
 
                 economyTask.add(
-                    buildString {
-                        appendLine("## Economy System")
-                        appendLine()
-                        appendLine("✅ Designed ${economy.resource_types.size} resource types")
-                        appendLine()
-                        appendLine("### Resources")
-                        appendLine()
-                        economy.resource_types.forEach { resource ->
-                            appendLine("#### ${resource.name}")
-                            appendLine()
-                            appendLine("**Generation:**")
-                            resource.generation_methods.forEach { appendLine("- $it") }
-                            appendLine("- Rate: ${resource.generation_rate}")
-                            appendLine()
-                            appendLine("**Consumption:**")
-                            resource.consumption_uses.forEach { appendLine("- $it") }
-                            appendLine("- Rate: ${resource.consumption_rate}")
-                            appendLine()
-                        }
-                        appendLine("### Flow Analysis")
-                        appendLine()
-                        appendLine(economy.flow_analysis)
-                        appendLine()
-                        appendLine("### Sink Mechanisms")
-                        appendLine()
-                        economy.sink_mechanisms.forEach { appendLine("- $it") }
-                        appendLine()
-                        appendLine("### Balance Assessment")
-                        appendLine()
-                        appendLine(economy.balance_assessment)
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("## Economy System")
+                    appendLine()
+                    appendLine("✅ Designed ${economy.resource_types.size} resource types")
+                    appendLine()
+                    appendLine("### Resources")
+                    appendLine()
+                    economy.resource_types.forEach { resource ->
+                      appendLine("#### ${resource.name}")
+                      appendLine()
+                      appendLine("**Generation:**")
+                      resource.generation_methods.forEach { appendLine("- $it") }
+                      appendLine("- Rate: ${resource.generation_rate}")
+                      appendLine()
+                      appendLine("**Consumption:**")
+                      resource.consumption_uses.forEach { appendLine("- $it") }
+                      appendLine("- Rate: ${resource.consumption_rate}")
+                      appendLine()
+                    }
+                    appendLine("### Flow Analysis")
+                    appendLine()
+                    appendLine(economy.flow_analysis)
+                    appendLine()
+                    appendLine("### Sink Mechanisms")
+                    appendLine()
+                    economy.sink_mechanisms.forEach { appendLine("- $it") }
+                    appendLine()
+                    appendLine("### Balance Assessment")
+                    appendLine()
+                    appendLine(economy.balance_assessment)
+                  }.renderMarkdown(true)
                 )
               transcript?.write(buildString {
                     appendLine("## Economy System")
@@ -949,7 +949,7 @@ class GameMechanicsDesignTask(
             val balanceTask = task.newTask()
             tabs["Balance Analysis"] = balanceTask.placeholder
 
-            balanceTask.add("## Balance Analysis\n\n🔄 Analyzing game balance...".renderMarkdown)
+            balanceTask.add("## Balance Analysis\n\n🔄 Analyzing game balance...".renderMarkdown(true))
 
             val balancePrompt = buildString {
                 appendLine("Perform a comprehensive balance analysis:")
@@ -991,58 +991,58 @@ class GameMechanicsDesignTask(
             val balance = balanceParser.answer(listOf(balancePrompt.toString())).obj
 
             balanceTask.add(
-                buildString {
-                    appendLine("## Balance Analysis")
-                    appendLine()
-                    appendLine("✅ Analysis complete")
-                    appendLine()
-                    appendLine("### Metrics")
-                    appendLine()
-                    appendLine("| Metric | Value | Assessment |")
-                    appendLine("|--------|-------|------------|")
-                    appendLine(
-                        "| Win Rate Variance | ${String.format("%.2f", balance.win_rate_variance)} | ${
-                            if (balance.win_rate_variance < 0.2) "✅ Good" else if (balance.win_rate_variance < 0.4) "⚠️ Fair" else "❌ Poor"
-                        } |"
+              buildString {
+                appendLine("## Balance Analysis")
+                appendLine()
+                appendLine("✅ Analysis complete")
+                appendLine()
+                appendLine("### Metrics")
+                appendLine()
+                appendLine("| Metric | Value | Assessment |")
+                appendLine("|--------|-------|------------|")
+                appendLine(
+                  "| Win Rate Variance | ${String.format("%.2f", balance.win_rate_variance)} | ${
+                    if (balance.win_rate_variance < 0.2) "✅ Good" else if (balance.win_rate_variance < 0.4) "⚠️ Fair" else "❌ Poor"
+                  } |"
+                )
+                appendLine(
+                  "| Strategy Diversity | ${String.format("%.2f", balance.strategy_diversity)} | ${
+                    if (balance.strategy_diversity > 0.7) "✅ Excellent" else if (balance.strategy_diversity > 0.5) "⚠️ Good" else "❌ Limited"
+                  } |"
+                )
+                appendLine(
+                  "| Skill Expression | ${
+                    String.format(
+                      "%.0f",
+                      balance.skill_expression_score
                     )
-                    appendLine(
-                        "| Strategy Diversity | ${String.format("%.2f", balance.strategy_diversity)} | ${
-                            if (balance.strategy_diversity > 0.7) "✅ Excellent" else if (balance.strategy_diversity > 0.5) "⚠️ Good" else "❌ Limited"
-                        } |"
-                    )
-                    appendLine(
-                        "| Skill Expression | ${
-                            String.format(
-                                "%.0f",
-                                balance.skill_expression_score
-                            )
-                        }/100 | - |"
-                    )
-                    appendLine("| Luck Factor | ${String.format("%.0f", balance.luck_factor_score)}/100 | - |")
-                    appendLine("| Viable Strategies | ${balance.viable_alternatives} | - |")
-                    appendLine("| Skill Ceiling | ${balance.estimated_skill_ceiling} | - |")
-                    appendLine()
-                    if (balance.dominant_strategies.isNotEmpty()) {
-                        appendLine("### ⚠️ Dominant Strategies")
-                        appendLine()
-                        balance.dominant_strategies.forEach { appendLine("- $it") }
-                        appendLine()
-                    }
-                    appendLine("### Recommendations")
-                    appendLine()
-                    if (balance.win_rate_variance > 0.3) {
-                        appendLine("- ⚠️ High win rate variance suggests balance issues")
-                    }
-                    if (balance.strategy_diversity < 0.5) {
-                        appendLine("- ⚠️ Low strategy diversity may lead to stale gameplay")
-                    }
-                    if (balance.dominant_strategies.isNotEmpty()) {
-                        appendLine("- ⚠️ Address dominant strategies to improve balance")
-                    }
-                    if (balance.viable_alternatives < 3) {
-                        appendLine("- ⚠️ Consider adding more viable strategic options")
-                    }
-                }.renderMarkdown
+                  }/100 | - |"
+                )
+                appendLine("| Luck Factor | ${String.format("%.0f", balance.luck_factor_score)}/100 | - |")
+                appendLine("| Viable Strategies | ${balance.viable_alternatives} | - |")
+                appendLine("| Skill Ceiling | ${balance.estimated_skill_ceiling} | - |")
+                appendLine()
+                if (balance.dominant_strategies.isNotEmpty()) {
+                  appendLine("### ⚠️ Dominant Strategies")
+                  appendLine()
+                  balance.dominant_strategies.forEach { appendLine("- $it") }
+                  appendLine()
+                }
+                appendLine("### Recommendations")
+                appendLine()
+                if (balance.win_rate_variance > 0.3) {
+                  appendLine("- ⚠️ High win rate variance suggests balance issues")
+                }
+                if (balance.strategy_diversity < 0.5) {
+                  appendLine("- ⚠️ Low strategy diversity may lead to stale gameplay")
+                }
+                if (balance.dominant_strategies.isNotEmpty()) {
+                  appendLine("- ⚠️ Address dominant strategies to improve balance")
+                }
+                if (balance.viable_alternatives < 3) {
+                  appendLine("- ⚠️ Consider adding more viable strategic options")
+                }
+              }.renderMarkdown(true)
             )
           transcript?.write(buildString {
                 appendLine("## Balance Analysis")
@@ -1097,7 +1097,7 @@ class GameMechanicsDesignTask(
             val playtestingTask = task.newTask()
             tabs["Playtesting"] = playtestingTask.placeholder
 
-            playtestingTask.add("## Playtesting Predictions\n\n🔄 Simulating player scenarios...".renderMarkdown)
+            playtestingTask.add("## Playtesting Predictions\n\n🔄 Simulating player scenarios...".renderMarkdown(true))
 
             val playtestingPrompt = buildString {
                 appendLine("Predict player behavior and engagement for $playtestingScenarios different scenarios:")
@@ -1134,39 +1134,39 @@ class GameMechanicsDesignTask(
             val playtesting = playtestingParser.answer(listOf(playtestingPrompt.toString())).obj.predictions
 
             playtestingTask.add(
-                buildString {
-                    appendLine("## Playtesting Predictions")
+              buildString {
+                appendLine("## Playtesting Predictions")
+                appendLine()
+                appendLine("✅ Simulated ${playtesting.size} scenarios")
+                appendLine()
+                playtesting.forEach { prediction ->
+                  appendLine("### ${prediction.scenario}")
+                  appendLine()
+                  appendLine("**Engagement Curve:**")
+                  appendLine(prediction.engagement_curve)
+                  appendLine()
+                  if (prediction.retention_points.isNotEmpty()) {
+                    appendLine("**Retention Points:**")
+                    prediction.retention_points.forEach { appendLine("- ✅ $it") }
                     appendLine()
-                    appendLine("✅ Simulated ${playtesting.size} scenarios")
+                  }
+                  if (prediction.frustration_triggers.isNotEmpty()) {
+                    appendLine("**Frustration Triggers:**")
+                    prediction.frustration_triggers.forEach { appendLine("- ⚠️ $it") }
                     appendLine()
-                    playtesting.forEach { prediction ->
-                        appendLine("### ${prediction.scenario}")
-                        appendLine()
-                        appendLine("**Engagement Curve:**")
-                        appendLine(prediction.engagement_curve)
-                        appendLine()
-                        if (prediction.retention_points.isNotEmpty()) {
-                            appendLine("**Retention Points:**")
-                            prediction.retention_points.forEach { appendLine("- ✅ $it") }
-                            appendLine()
-                        }
-                        if (prediction.frustration_triggers.isNotEmpty()) {
-                            appendLine("**Frustration Triggers:**")
-                            prediction.frustration_triggers.forEach { appendLine("- ⚠️ $it") }
-                            appendLine()
-                        }
-                        if (prediction.replayability_factors.isNotEmpty()) {
-                            appendLine("**Replayability Factors:**")
-                            prediction.replayability_factors.forEach { appendLine("- 🔄 $it") }
-                            appendLine()
-                        }
-                        appendLine("**Assessment:**")
-                        appendLine(prediction.assessment)
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                    }
-                }.renderMarkdown
+                  }
+                  if (prediction.replayability_factors.isNotEmpty()) {
+                    appendLine("**Replayability Factors:**")
+                    prediction.replayability_factors.forEach { appendLine("- 🔄 $it") }
+                    appendLine()
+                  }
+                  appendLine("**Assessment:**")
+                  appendLine(prediction.assessment)
+                  appendLine()
+                  appendLine("---")
+                  appendLine()
+                }
+              }.renderMarkdown(true)
             )
           transcript?.write(buildString {
                 appendLine("## Playtesting Predictions")
@@ -1209,7 +1209,7 @@ class GameMechanicsDesignTask(
                 val tuningTask = task.newTask()
                 tabs["Tuning Guide"] = tuningTask.placeholder
 
-                tuningTask.add("## Tuning Guide\n\n🔄 Generating tuning parameters...".renderMarkdown)
+                tuningTask.add("## Tuning Guide\n\n🔄 Generating tuning parameters...".renderMarkdown(true))
 
                 val tuningPrompt = buildString {
                     appendLine("Generate a comprehensive tuning guide:")
@@ -1244,39 +1244,39 @@ class GameMechanicsDesignTask(
                 val tuning = tuningParser.answer(listOf(tuningPrompt.toString())).obj
 
                 tuningTask.add(
-                    buildString {
-                        appendLine("## Tuning Guide")
-                        appendLine()
-                        appendLine("✅ Guide generated")
-                        appendLine()
-                        appendLine("### Difficulty Settings")
-                        appendLine()
-                        tuning.difficulty_settings.forEach { (level, setting) ->
-                            appendLine("- **$level:** $setting")
-                        }
-                        appendLine()
-                        appendLine("### Reward Multipliers")
-                        appendLine()
-                        tuning.reward_multipliers.forEach { (scenario, multiplier) ->
-                            appendLine("- **$scenario:** ${String.format("%.2fx", multiplier)}")
-                        }
-                        appendLine()
-                        appendLine("### Progression Speed")
-                        appendLine()
-                        appendLine(tuning.progression_speed)
-                        appendLine()
-                        if (tuning.economy_adjustments.isNotEmpty()) {
-                            appendLine("### Economy Adjustments")
-                            appendLine()
-                            tuning.economy_adjustments.forEach { appendLine("- $it") }
-                            appendLine()
-                        }
-                        if (tuning.recommendations.isNotEmpty()) {
-                            appendLine("### Additional Recommendations")
-                            appendLine()
-                            tuning.recommendations.forEach { appendLine("- $it") }
-                        }
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("## Tuning Guide")
+                    appendLine()
+                    appendLine("✅ Guide generated")
+                    appendLine()
+                    appendLine("### Difficulty Settings")
+                    appendLine()
+                    tuning.difficulty_settings.forEach { (level, setting) ->
+                      appendLine("- **$level:** $setting")
+                    }
+                    appendLine()
+                    appendLine("### Reward Multipliers")
+                    appendLine()
+                    tuning.reward_multipliers.forEach { (scenario, multiplier) ->
+                      appendLine("- **$scenario:** ${String.format("%.2fx", multiplier)}")
+                    }
+                    appendLine()
+                    appendLine("### Progression Speed")
+                    appendLine()
+                    appendLine(tuning.progression_speed)
+                    appendLine()
+                    if (tuning.economy_adjustments.isNotEmpty()) {
+                      appendLine("### Economy Adjustments")
+                      appendLine()
+                      tuning.economy_adjustments.forEach { appendLine("- $it") }
+                      appendLine()
+                    }
+                    if (tuning.recommendations.isNotEmpty()) {
+                      appendLine("### Additional Recommendations")
+                      appendLine()
+                      tuning.recommendations.forEach { appendLine("- $it") }
+                    }
+                  }.renderMarkdown(true)
                 )
               transcript?.write(buildString {
                     appendLine("## Tuning Guide")
@@ -1353,29 +1353,29 @@ class GameMechanicsDesignTask(
             )
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ✅ Design Complete")
-                    appendLine()
-                    appendLine("**Total Time:** ${duration / 1000.0}s")
-                    appendLine()
-                    appendLine("**Components Generated:**")
-                    appendLine("- Core Mechanics: ${mechanics.size}")
-                    appendLine("- Interactions: ${interactions.size}")
-                    if (executionConfig.include_progression_system) appendLine("- Progression Levels: Designed")
-                    if (executionConfig.include_economy_system) appendLine("- Economy System: Designed")
-                    appendLine("- Balance Analysis: Complete")
-                    appendLine("- Playtesting: ${playtesting.size} scenarios")
-                    if (executionConfig.generate_tuning_guide) appendLine("- Tuning Guide: Generated")
-                    appendLine()
-                    appendLine(
-                        "**Completed:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ✅ Design Complete")
+                appendLine()
+                appendLine("**Total Time:** ${duration / 1000.0}s")
+                appendLine()
+                appendLine("**Components Generated:**")
+                appendLine("- Core Mechanics: ${mechanics.size}")
+                appendLine("- Interactions: ${interactions.size}")
+                if (executionConfig.include_progression_system) appendLine("- Progression Levels: Designed")
+                if (executionConfig.include_economy_system) appendLine("- Economy System: Designed")
+                appendLine("- Balance Analysis: Complete")
+                appendLine("- Playtesting: ${playtesting.size} scenarios")
+                if (executionConfig.generate_tuning_guide) appendLine("- Tuning Guide: Generated")
+                appendLine()
+                appendLine(
+                  "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                  }"
+                )
+              }.renderMarkdown(true)
             )
           transcript?.write(
                 "\n\n## Design Complete\n\n**Total Time:** ${duration / 1000.0}s\n\n**Completed:** ${
@@ -1388,9 +1388,9 @@ class GameMechanicsDesignTask(
             val (transcriptLink, _) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
           task.complete(
             ("Game mechanics design completed in ${duration / 1000}s. " +
-                        "View detailed design: <a href='$transcriptLink' target='_blank'>markdown</a> " +
-                        "<a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                "<a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>").renderMarkdown
+                "View detailed design: <a href='$transcriptLink' target='_blank'>markdown</a> " +
+                "<a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+                            "<a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>").renderMarkdown(true)
             )
           resultFn(
             """
@@ -1418,16 +1418,16 @@ class GameMechanicsDesignTask(
           )
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ❌ Error Occurred")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                appendLine()
+                appendLine("**Type:** ${e.javaClass.simpleName}")
+              }.renderMarkdown(true)
             )
             overviewTask.complete()
 

@@ -428,7 +428,7 @@ class NeuralNetworkLayerTask(
                 appendLine()
                 appendLine("- ⏳ Generating executive summary...")
             }
-            overviewTask.add(overviewContent.renderMarkdown)
+            overviewTask.add(overviewContent.renderMarkdown(true))
             task.update()
                 transcript?.write("## Layer Specification\n$overviewContent\n".toByteArray(StandardCharsets.UTF_8))
 
@@ -469,10 +469,10 @@ class NeuralNetworkLayerTask(
                 appendLine()
                 appendLine(summary.when_not_to_use)
             }
-            summaryTask.add(summaryContent.renderMarkdown)
+            summaryTask.add(summaryContent.renderMarkdown(true))
             task.update()
-            overviewTask.add("\n- ✅ Executive summary complete".renderMarkdown)
-            overviewTask.add("\n- ⏳ Generating intuitive explanation...".renderMarkdown)
+            overviewTask.add("\n- ✅ Executive summary complete".renderMarkdown(true))
+            overviewTask.add("\n- ⏳ Generating intuitive explanation...".renderMarkdown(true))
                 transcript?.write("\n## Executive Summary\n$summaryContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate intuitive explanation
@@ -516,10 +516,10 @@ class NeuralNetworkLayerTask(
                     intuitive.common_misconceptions.forEach { appendLine("- $it") }
                 }
             }
-            intuitiveTask.add(intuitiveContent.renderMarkdown)
+            intuitiveTask.add(intuitiveContent.renderMarkdown(true))
             task.update()
-            overviewTask.add("\n- ✅ Intuitive explanation complete".renderMarkdown)
-            overviewTask.add("\n- ⏳ Creating conceptual diagram...".renderMarkdown)
+            overviewTask.add("\n- ✅ Intuitive explanation complete".renderMarkdown(true))
+            overviewTask.add("\n- ⏳ Creating conceptual diagram...".renderMarkdown(true))
                 transcript?.write("\n## Intuitive Explanation\n$intuitiveContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate conceptual diagram
@@ -558,10 +558,10 @@ class NeuralNetworkLayerTask(
                     }
                 }
             }
-            diagramTask.add(diagramContent.renderMarkdown)
+            diagramTask.add(diagramContent.renderMarkdown(true))
             task.update()
-            overviewTask.add("\n- ✅ Conceptual diagram complete".renderMarkdown)
-            overviewTask.add("\n- ⏳ Generating formal definition...".renderMarkdown)
+            overviewTask.add("\n- ✅ Conceptual diagram complete".renderMarkdown(true))
+            overviewTask.add("\n- ⏳ Generating formal definition...".renderMarkdown(true))
                 transcript?.write("\n## Conceptual Diagram\n$diagramContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate formal definition
@@ -590,13 +590,13 @@ class NeuralNetworkLayerTask(
                 appendLine()
                 definition.initialization_recommendations.forEach { appendLine("- $it") }
             }
-            definitionTask.add(definitionContent.renderMarkdown)
+            definitionTask.add(definitionContent.renderMarkdown(true))
             task.update()
-            overviewTask.add("\n- ✅ Formal definition complete".renderMarkdown)
+            overviewTask.add("\n- ✅ Formal definition complete".renderMarkdown(true))
                 transcript?.write("\n## Formal Definition\n$definitionContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate gradient derivation
-            overviewTask.add("\n- ⏳ Deriving gradients...".renderMarkdown)
+            overviewTask.add("\n- ⏳ Deriving gradients...".renderMarkdown(true))
             task.update()
             val gradientTask = task.newTask()
             tabs["Gradients"] = gradientTask.placeholder
@@ -630,14 +630,14 @@ class NeuralNetworkLayerTask(
                 appendLine(gradients.computational_graph)
                 appendLine("```")
             }
-            gradientTask.add(gradientContent.renderMarkdown)
+            gradientTask.add(gradientContent.renderMarkdown(true))
             task.update()
-            overviewTask.add("\n- ✅ Gradient derivation complete".renderMarkdown)
+            overviewTask.add("\n- ✅ Gradient derivation complete".renderMarkdown(true))
                 transcript?.write("\n## Gradient Derivation\n$gradientContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Higher-order analysis
             if (includeHigherOrder && analysisDepth != "basic") {
-                overviewTask.add("\n- ⏳ Analyzing higher-order derivatives...".renderMarkdown)
+                overviewTask.add("\n- ⏳ Analyzing higher-order derivatives...".renderMarkdown(true))
                 task.update()
                 val higherOrderTask = task.newTask()
                 tabs["Higher-Order Analysis"] = higherOrderTask.placeholder
@@ -677,15 +677,15 @@ class NeuralNetworkLayerTask(
                         appendLine(higherOrder.natural_gradient_notes)
                     }
                 }
-                higherOrderTask.add(higherOrderContent.renderMarkdown)
+                higherOrderTask.add(higherOrderContent.renderMarkdown(true))
                 task.update()
-                overviewTask.add("\n- ✅ Higher-order analysis complete".renderMarkdown)
+                overviewTask.add("\n- ✅ Higher-order analysis complete".renderMarkdown(true))
                 transcript?.write("\n## Higher-Order Analysis\n$higherOrderContent\n".toByteArray(StandardCharsets.UTF_8))
             }
 
             // Lyapunov stability analysis
             if (includeLyapunov && analysisDepth != "basic") {
-                overviewTask.add("\n- ⏳ Performing Lyapunov stability analysis...".renderMarkdown)
+                overviewTask.add("\n- ⏳ Performing Lyapunov stability analysis...".renderMarkdown(true))
                 task.update()
                 val stabilityTask = task.newTask()
                 tabs["Stability Analysis"] = stabilityTask.placeholder
@@ -719,15 +719,15 @@ class NeuralNetworkLayerTask(
                         stability.instability_modes.forEach { appendLine("- ⚠️ $it") }
                     }
                 }
-                stabilityTask.add(stabilityContent.renderMarkdown)
+                stabilityTask.add(stabilityContent.renderMarkdown(true))
                 task.update()
-                overviewTask.add("\n- ✅ Stability analysis complete".renderMarkdown)
+                overviewTask.add("\n- ✅ Stability analysis complete".renderMarkdown(true))
                 transcript?.write("\n## Stability Analysis\n$stabilityContent\n".toByteArray(StandardCharsets.UTF_8))
             }
 
             // Lipschitz analysis
             if (includeLipschitz) {
-                overviewTask.add("\n- ⏳ Analyzing Lipschitz properties...".renderMarkdown)
+                overviewTask.add("\n- ⏳ Analyzing Lipschitz properties...".renderMarkdown(true))
                 task.update()
                 val lipschitzTask = task.newTask()
                 tabs["Lipschitz Analysis"] = lipschitzTask.placeholder
@@ -755,15 +755,15 @@ class NeuralNetworkLayerTask(
                     appendLine()
                     lipschitz.smoothness_properties.forEach { appendLine("- $it") }
                 }
-                lipschitzTask.add(lipschitzContent.renderMarkdown)
+                lipschitzTask.add(lipschitzContent.renderMarkdown(true))
                 task.update()
-                overviewTask.add("\n- ✅ Lipschitz analysis complete".renderMarkdown)
+                overviewTask.add("\n- ✅ Lipschitz analysis complete".renderMarkdown(true))
                 transcript?.write("\n## Lipschitz Analysis\n$lipschitzContent\n".toByteArray(StandardCharsets.UTF_8))
             }
 
             // Numerical stability
             if (includeNumerical) {
-                overviewTask.add("\n- ⏳ Analyzing numerical stability...".renderMarkdown)
+                overviewTask.add("\n- ⏳ Analyzing numerical stability...".renderMarkdown(true))
                 task.update()
                 val numericalTask = task.newTask()
                 tabs["Numerical Stability"] = numericalTask.placeholder
@@ -791,14 +791,14 @@ class NeuralNetworkLayerTask(
                     appendLine()
                     appendLine(numerical.gradient_clipping)
                 }
-                numericalTask.add(numericalContent.renderMarkdown)
+                numericalTask.add(numericalContent.renderMarkdown(true))
                 task.update()
-                overviewTask.add("\n- ✅ Numerical stability analysis complete".renderMarkdown)
+                overviewTask.add("\n- ✅ Numerical stability analysis complete".renderMarkdown(true))
                 transcript?.write("\n## Numerical Stability\n$numericalContent\n".toByteArray(StandardCharsets.UTF_8))
             }
 
             // Generate implementations
-            overviewTask.add("\n- ⏳ Generating implementations...".renderMarkdown)
+            overviewTask.add("\n- ⏳ Generating implementations...".renderMarkdown(true))
             task.update()
             val implTask = task.newTask()
             tabs["Implementations"] = implTask.placeholder
@@ -841,9 +841,9 @@ class NeuralNetworkLayerTask(
                     appendLine()
                 }
             }
-            implTask.add(implContent.renderMarkdown)
+            implTask.add(implContent.renderMarkdown(true))
             task.update()
-            overviewTask.add("\n- ✅ Implementations generated".renderMarkdown)
+            overviewTask.add("\n- ✅ Implementations generated".renderMarkdown(true))
                 transcript?.write("\n## Implementations\n$implContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Complexity analysis
@@ -872,12 +872,12 @@ class NeuralNetworkLayerTask(
                 appendLine()
                 appendLine(complexity.parallelization_notes)
             }
-            complexityTask.add(complexityContent.renderMarkdown)
+            complexityTask.add(complexityContent.renderMarkdown(true))
             task.update()
                 transcript?.write("\n## Complexity Analysis\n$complexityContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Originality analysis
-            overviewTask.add("\n- ⏳ Analyzing originality...".renderMarkdown)
+            overviewTask.add("\n- ⏳ Analyzing originality...".renderMarkdown(true))
             task.update()
             val originalityTask = task.newTask()
             tabs["Originality"] = originalityTask.placeholder
@@ -925,13 +925,13 @@ class NeuralNetworkLayerTask(
                     appendLine("No significant limitations identified.")
                 }
             }
-            originalityTask.add(originalityContent.renderMarkdown)
+            originalityTask.add(originalityContent.renderMarkdown(true))
             task.update()
-            overviewTask.add("\n- ✅ Originality analysis complete".renderMarkdown)
+            overviewTask.add("\n- ✅ Originality analysis complete".renderMarkdown(true))
                 transcript?.write("\n## Originality Analysis\n$originalityContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Use case analysis
-            overviewTask.add("\n- ⏳ Analyzing use cases...".renderMarkdown)
+            overviewTask.add("\n- ⏳ Analyzing use cases...".renderMarkdown(true))
             task.update()
             val useCaseTask = task.newTask()
             tabs["Use Cases"] = useCaseTask.placeholder
@@ -1004,13 +1004,13 @@ class NeuralNetworkLayerTask(
                     appendLine("Applicable across various industries using deep learning.")
                 }
             }
-            useCaseTask.add(useCaseContent.renderMarkdown)
+            useCaseTask.add(useCaseContent.renderMarkdown(true))
             task.update()
-            overviewTask.add("\n- ✅ Use case analysis complete".renderMarkdown)
+            overviewTask.add("\n- ✅ Use case analysis complete".renderMarkdown(true))
                 transcript?.write("\n## Use Case Analysis\n$useCaseContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Practical guidance
-            overviewTask.add("\n- ⏳ Generating practical guidance...".renderMarkdown)
+            overviewTask.add("\n- ⏳ Generating practical guidance...".renderMarkdown(true))
             task.update()
             val guidanceTask = task.newTask()
             tabs["Practical Guidance"] = guidanceTask.placeholder
@@ -1077,9 +1077,9 @@ class NeuralNetworkLayerTask(
                     appendLine("Follow standard ML deployment practices: versioning, monitoring, A/B testing.")
                 }
             }
-            guidanceTask.add(guidanceContent.renderMarkdown)
+            guidanceTask.add(guidanceContent.renderMarkdown(true))
             task.update()
-            overviewTask.add("\n- ✅ Practical guidance complete".renderMarkdown)
+            overviewTask.add("\n- ✅ Practical guidance complete".renderMarkdown(true))
                 transcript?.write("\n## Practical Guidance\n$guidanceContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Final summary
@@ -1111,7 +1111,7 @@ class NeuralNetworkLayerTask(
                 appendLine("| Numerical Stability | $includeNumerical |")
                 appendLine("| Generate Tests | $generateTests |")
             }
-            overviewTask.add(finalOverview.renderMarkdown)
+            overviewTask.add(finalOverview.renderMarkdown(true))
             task.update()
                 transcript?.write("\n## Final Summary\n$finalOverview\n".toByteArray(StandardCharsets.UTF_8))
 

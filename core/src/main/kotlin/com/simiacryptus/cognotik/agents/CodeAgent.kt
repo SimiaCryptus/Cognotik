@@ -407,7 +407,7 @@ ${details ?: ""}
                         Role.assistant,
                         """
 $TT${language.lowercase()}
-${previousCode.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }}
+${previousCode}
 ${TT}
 """.trim().toContentList()
                     ),
@@ -417,7 +417,7 @@ ${TT}
 The previous code failed with the following error:
 
 $TT
-${error.message?.trim() ?: "".let { /*escapeHtml4*/(it)/*.indent("  ")*/ }}
+${error.message?.trim() ?: ""}
 ${TT}
 
 Correct the code and try again.
@@ -503,9 +503,9 @@ Correct the code and try again.
         fun getRenderedResponse(respondWithCode: List<Pair<String, String>>, defaultLanguage: String = "") =
             respondWithCode.joinToString("\n") {
                 when (it.first) {
-                    "code" -> "$TT$defaultLanguage\n${it.second.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }}\n${TT}"
-                    "text" -> it.second.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }.toString()
-                    else -> "$TT${it.first}\n${it.second.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }}\n${TT}"
+                    "code" -> "$TT$defaultLanguage\n${it.second}\n${TT}"
+                    "text" -> it.second.toString()
+                    else -> "$TT${it.first}\n${it.second}\n${TT}"
                 }
             }
 

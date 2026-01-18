@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTask
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -480,12 +481,12 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
                 tabs["Game Structure"] = gameStructureTask.placeholder
 
                 gameStructureTask.add(
-                    buildString {
-                        appendLine("# Game Narrative Structure")
-                        appendLine()
-                        appendLine("**Status:** Analyzing narrative for game mechanics...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Game Narrative Structure")
+                    appendLine()
+                    appendLine("**Status:** Analyzing narrative for game mechanics...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -617,12 +618,12 @@ Ensure the structure supports ${gameConfig.player_agency_level} player agency wi
                     val mechanicsTask = task.newTask()
                     tabs["Mechanics"] = mechanicsTask.placeholder
                     mechanicsTask.add(
-                        buildString {
-                            appendLine("# Game Mechanics")
-                            appendLine()
-                            appendLine("**Status:** Designing systems to support the narrative...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Game Mechanics")
+                        appendLine()
+                        appendLine("**Status:** Designing systems to support the narrative...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     task.update()
                     val mechanicsAgent = ParsedAgent(
@@ -698,12 +699,12 @@ Ensure mechanics fit the '${gameConfig.genre}' genre and '${gameConfig.tone}' to
                 tabs["Branching Map"] = branchingMapTask.placeholder
 
                 branchingMapTask.add(
-                    buildString {
-                        appendLine("# Branching Narrative Map")
-                        appendLine()
-                        appendLine("**Status:** Generating decision points and consequences...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Branching Narrative Map")
+                    appendLine()
+                    appendLine("**Status:** Generating decision points and consequences...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -777,12 +778,12 @@ Ensure mechanics fit the '${gameConfig.genre}' genre and '${gameConfig.tone}' to
                     tabs["Dialogue Trees"] = dialogueTask.placeholder
 
                     dialogueTask.add(
-                        buildString {
-                            appendLine("# Dialogue Trees")
-                            appendLine()
-                            appendLine("**Status:** Generating branching conversations...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Dialogue Trees")
+                        appendLine()
+                        appendLine("**Status:** Generating branching conversations...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     task.update()
 
@@ -893,12 +894,12 @@ Ensure each character's dialogue matches their established style.
                 tabs["Endings"] = endingsTask.placeholder
 
                 endingsTask.add(
-                    buildString {
-                        appendLine("# Multiple Endings")
-                        appendLine()
-                        appendLine("**Status:** Generating ending variations...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Multiple Endings")
+                    appendLine()
+                    appendLine("**Status:** Generating ending variations...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -959,12 +960,12 @@ Ensure each character's dialogue matches their established style.
                     tabs["Side Quests"] = sideQuestsTask.placeholder
 
                     sideQuestsTask.add(
-                        buildString {
-                            appendLine("# Side Quests")
-                            appendLine()
-                            appendLine("**Status:** Generating optional narrative content...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Side Quests")
+                        appendLine()
+                        appendLine("**Status:** Generating optional narrative content...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     task.update()
 
@@ -1058,12 +1059,12 @@ Make quests feel meaningful, not just filler content.
                 tabs["Player Agency"] = agencyTask.placeholder
 
                 agencyTask.add(
-                    buildString {
-                        appendLine("# Player Agency Analysis")
-                        appendLine()
-                        appendLine("**Status:** Analyzing choice impact and replayability...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Player Agency Analysis")
+                    appendLine()
+                    appendLine("**Status:** Analyzing choice impact and replayability...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 

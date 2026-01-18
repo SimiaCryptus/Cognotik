@@ -278,14 +278,14 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 appendLine()
                 appendLine("- ⏳ Initializing population...")
             }
-            overviewTask.add(overviewContent.renderMarkdown)
+            overviewTask.add(overviewContent.renderMarkdown(true))
             transcript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
 
             // Gather context
 
             overviewTask.add(buildString {
-                appendLine()
-            }.renderMarkdown)
+              appendLine()
+                        }.renderMarkdown(true))
             // Initialize population with the seed texts
             log.info("Evaluating ${initialText.size} initial texts")
             var currentPopulation = initialText.mapIndexed { index, text ->
@@ -329,17 +329,17 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             // Update overview with initial scores
             val initialScores = currentPopulation.map { it.score.overall_score }
             overviewTask.add(buildString {
-                appendLine()
-                if (currentPopulation.size == 1) {
-                    appendLine("- ✓ Initial evaluation: **${String.format("%.1f", initialScores[0])}/100**")
-                } else {
-                    appendLine("- ✓ Initial evaluations:")
-                    appendLine("  - Best: **${String.format("%.1f", initialScores.maxOrNull() ?: 0.0)}/100**")
-                    appendLine("  - Average: **${String.format("%.1f", initialScores.average())}/100**")
-                    appendLine("  - Worst: **${String.format("%.1f", initialScores.minOrNull() ?: 0.0)}/100**")
-                }
-                appendLine("- ⏳ Starting evolution...")
-            }.renderMarkdown)
+              appendLine()
+              if (currentPopulation.size == 1) {
+                appendLine("- ✓ Initial evaluation: **${String.format("%.1f", initialScores[0])}/100**")
+              } else {
+                appendLine("- ✓ Initial evaluations:")
+                appendLine("  - Best: **${String.format("%.1f", initialScores.maxOrNull() ?: 0.0)}/100**")
+                appendLine("  - Average: **${String.format("%.1f", initialScores.average())}/100**")
+                appendLine("  - Worst: **${String.format("%.1f", initialScores.minOrNull() ?: 0.0)}/100**")
+              }
+              appendLine("- ⏳ Starting evolution...")
+                        }.renderMarkdown(true))
 
             // Track best variant across all generations
             var bestVariant = currentPopulation[0]
@@ -354,12 +354,12 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
                 transcript?.write("# Generation $generation\n\n".toByteArray(StandardCharsets.UTF_8))
                 generationTask.add(buildString {
-                    appendLine("# Generation $generation")
-                    appendLine()
-                    appendLine("**Status:** In Progress")
-                    appendLine()
-                    appendLine("Generating $populationSize variants...")
-                }.renderMarkdown)
+                  appendLine("# Generation $generation")
+                  appendLine()
+                  appendLine("**Status:** In Progress")
+                  appendLine()
+                  appendLine("Generating $populationSize variants...")
+                                }.renderMarkdown(true))
 
 // Step 1: Generate new variants
                 val newVariants = mutableListOf<EvaluatedVariant>()
@@ -558,21 +558,21 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                             appendLine()
                         }
                 }
-                generationTask.add(generationResults.renderMarkdown)
+                generationTask.add(generationResults.renderMarkdown(true))
                 transcript?.write(generationResults.toByteArray(StandardCharsets.UTF_8))
 
                 // Update overview
                 overviewTask.add(buildString {
-                    appendLine()
-                    appendLine(
-                        "- ✓ Generation $generation: Best=${
-                            String.format(
-                                "%.1f",
-                                generationBest.score.overall_score
-                            )
-                        }, Avg=${String.format("%.1f", currentPopulation.map { it.score.overall_score }.average())}"
-                    )
-                }.renderMarkdown)
+                  appendLine()
+                  appendLine(
+                    "- ✓ Generation $generation: Best=${
+                      String.format(
+                        "%.1f",
+                        generationBest.score.overall_score
+                      )
+                    }, Avg=${String.format("%.1f", currentPopulation.map { it.score.overall_score }.average())}"
+                  )
+                                }.renderMarkdown(true))
             }
 
             // Create evolution visualization tab
@@ -714,7 +714,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 appendLine("**Justification:**")
                 appendLine(bestVariant.score.justification)
             }
-            evolutionTask.add(evolutionAnalysis.renderMarkdown)
+            evolutionTask.add(evolutionAnalysis.renderMarkdown(true))
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(evolutionAnalysis.toByteArray(StandardCharsets.UTF_8))
 
@@ -781,7 +781,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 appendLine()
                 appendLine("**Status:** ✓ Complete")
             }
-            overviewTask.add(finalOverview.renderMarkdown)
+            overviewTask.add(finalOverview.renderMarkdown(true))
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))
 

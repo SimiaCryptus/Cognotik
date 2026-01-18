@@ -168,7 +168,7 @@ class SocraticDialogueTask(
             appendLine()
             appendLine("*Initializing dialogue agents...*")
         }
-        overviewTask.add(overviewContent.renderMarkdown)
+        overviewTask.add(overviewContent.renderMarkdown(true))
 
         val priorContext = getPriorCode(agent.executionState)
         if (priorContext.isNotBlank()) {
@@ -253,21 +253,21 @@ Provide substantive, well-reasoned responses that advance the dialogue.
             // Add context tab
             val contextTask = tabs.newTask("Context")
             contextTask.add(
-                buildString {
-                    appendLine("# Context from Previous Tasks")
-                    appendLine()
-                    appendLine(combinedContext)
-                }.renderMarkdown
+              buildString {
+                appendLine("# Context from Previous Tasks")
+                appendLine()
+                appendLine(combinedContext)
+              }.renderMarkdown(true)
             )
         }
         // Update overview with agent initialization complete
         overviewTask.add(
-            buildString {
-                appendLine()
-                appendLine("✅ Dialogue agents initialized")
-                appendLine()
-                appendLine("*Starting dialogue exchanges...*")
-            }.renderMarkdown
+          buildString {
+            appendLine()
+            appendLine("✅ Dialogue agents initialized")
+            appendLine()
+            appendLine("*Starting dialogue exchanges...*")
+          }.renderMarkdown(true)
         )
 
         var currentQuestion = initialQuestion ?: ""
@@ -283,14 +283,14 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                 val exchangeTask = tabs.newTask("Exchange $depth")
 
                 exchangeTask.add(
-                    buildString {
-                        appendLine("# Exchange $depth of $maxDepth")
-                        appendLine()
-                        appendLine("**Status:** Processing...")
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Exchange $depth of $maxDepth")
+                    appendLine()
+                    appendLine("**Status:** Processing...")
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
 
                 // Get response to current question
@@ -301,14 +301,14 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                 }
                 log.debug("Generating response for exchange $depth")
                 exchangeTask.add(
-                    buildString {
-                        appendLine("## Question")
-                        appendLine()
-                        appendLine("> $currentQuestion")
-                        appendLine()
-                        appendLine("*Generating response...*")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("## Question")
+                    appendLine()
+                    appendLine("> $currentQuestion")
+                    appendLine()
+                    appendLine("*Generating response...*")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
 
                 currentResponse = responderAgent.answer(listOf(responsePrompt))
@@ -335,22 +335,22 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                 }
 
                 exchangeTask.add(
-                    buildString {
-                        appendLine("## Response")
-                        appendLine()
-                        appendLine(currentResponse)
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("## Response")
+                    appendLine()
+                    appendLine(currentResponse)
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
 
                 // Generate next question if not at max depth
                 if (depth < maxDepth) {
                     log.debug("Generating next question for exchange ${depth + 1}")
                     exchangeTask.add(
-                        buildString {
-                            appendLine("*Generating next question...*")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("*Generating next question...*")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
 
                     val nextQuestionPrompt = """
@@ -372,12 +372,12 @@ Provide only the question, without preamble.
                         "What are the implications of this understanding?"
                     log.debug("Next question generated: $currentQuestion")
                     exchangeTask.add(
-                        buildString {
-                            appendLine("## Next Question")
-                            appendLine()
-                            appendLine("> $currentQuestion")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("## Next Question")
+                        appendLine()
+                        appendLine("> $currentQuestion")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     transcriptWriter?.apply {
                         write("**Next Question:** $currentQuestion\n\n")
@@ -389,24 +389,24 @@ Provide only the question, without preamble.
                 exchangeTimes.add(exchangeTime)
                 // Mark exchange as complete
                 exchangeTask.add(
-                    buildString {
-                        appendLine("---")
-                        appendLine()
-                        appendLine("**Status:** ✅ Complete")
-                        appendLine()
-                        appendLine("**Processing Time:** ${exchangeTime / 1000.0}s")
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete")
+                    appendLine()
+                    appendLine("**Processing Time:** ${exchangeTime / 1000.0}s")
+                  }.renderMarkdown(true)
                 )
                 // Update overview with progress
                 overviewTask.add(
-                    buildString {
-                        appendLine()
-                        appendLine("✅ Exchange $depth complete (${exchangeTime / 1000.0}s)")
-                        if (depth < maxDepth) {
-                            appendLine()
-                            appendLine("*Processing exchange ${depth + 1}...*")
-                        }
-                    }.renderMarkdown
+                  buildString {
+                    appendLine()
+                    appendLine("✅ Exchange $depth complete (${exchangeTime / 1000.0}s)")
+                    if (depth < maxDepth) {
+                      appendLine()
+                      appendLine("*Processing exchange ${depth + 1}...*")
+                    }
+                  }.renderMarkdown(true)
                 )
                 log.info("Exchange $depth completed in ${exchangeTime}ms")
             }
@@ -415,12 +415,12 @@ Provide only the question, without preamble.
             val synthesisTask = tabs.newTask("Synthesis")
 
             synthesisTask.add(
-                buildString {
-                    appendLine("# Synthesis")
-                    appendLine()
-                    appendLine("**Status:** Generating comprehensive synthesis...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Synthesis")
+                appendLine()
+                appendLine("**Status:** Generating comprehensive synthesis...")
+                appendLine()
+              }.renderMarkdown(true)
             )
 
             val synthesisPrompt = """
@@ -459,15 +459,15 @@ Provide a structured synthesis.
             dialogueBuilder.append("**Time:** ${(System.currentTimeMillis() - startTime) / 1000}s\n")
 
             synthesisTask.add(
-                buildString {
-                    appendLine("## Key Insights")
-                    appendLine()
-                    appendLine(synthesis)
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Status:** ✅ Complete")
-                }.renderMarkdown
+              buildString {
+                appendLine("## Key Insights")
+                appendLine()
+                appendLine(synthesis)
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("**Status:** ✅ Complete")
+              }.renderMarkdown(true)
             )
 
             val finalResult = dialogueBuilder.toString()
@@ -490,26 +490,26 @@ Provide a structured synthesis.
 
             // Update overview with completion stats
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ✅ Dialogue Complete")
-                    appendLine()
-                    appendLine("**Total Time:** ${totalTime / 1000.0}s")
-                    appendLine()
-                    appendLine("**Exchanges Completed:** $maxDepth")
-                    appendLine()
-                    appendLine("**Average Exchange Time:** ${avgExchangeTime / 1000.0}s")
-                    appendLine()
-                    appendLine("**Total Characters Generated:** ${finalResult.length}")
-                    appendLine()
-                    appendLine(
-                        "**Completed:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ✅ Dialogue Complete")
+                appendLine()
+                appendLine("**Total Time:** ${totalTime / 1000.0}s")
+                appendLine()
+                appendLine("**Exchanges Completed:** $maxDepth")
+                appendLine()
+                appendLine("**Average Exchange Time:** ${avgExchangeTime / 1000.0}s")
+                appendLine()
+                appendLine("**Total Characters Generated:** ${finalResult.length}")
+                appendLine()
+                appendLine(
+                  "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                  }"
+                )
+              }.renderMarkdown(true)
             )
 
             task.complete("Completed $maxDepth exchanges in ${totalTime / 1000}s. Concise analysis: ${finalResult.length} chars.")
@@ -544,16 +544,16 @@ Provide a structured synthesis.
 
             // Update overview with error
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ❌ Error Occurred")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                appendLine()
+                appendLine("**Type:** ${e.javaClass.simpleName}")
+              }.renderMarkdown(true)
             )
 
             val errorOutput = buildString {

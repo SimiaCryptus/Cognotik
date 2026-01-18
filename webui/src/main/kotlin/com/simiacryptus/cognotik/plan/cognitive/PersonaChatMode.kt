@@ -15,7 +15,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -81,7 +80,7 @@ open class PersonaChatMode(
             isProcessing = true
         }
 
-        task.echo(userMessage.renderMarkdown)
+        task.echo(userMessage.renderMarkdown(true))
         writeToTranscript("## User\n\n$userMessage\n\n")
         task.ui.pool.submit {
             try {
@@ -187,7 +186,8 @@ open class PersonaChatMode(
                 )
                 val stateTask = task.newTask()
                 task.add(stateTask.placeholder)
-                stateTask.complete(renderMarkdown("### Initial Persona State\n" + config.cognitiveStrategy.formatState(s)))
+                stateTask.complete(
+                  "### Initial Persona State\n" + config.cognitiveStrategy.formatState(s).renderMarkdown())
                 s
             } else {
                 state
@@ -304,7 +304,7 @@ open class PersonaChatMode(
 
         task.newTask().apply {
             tabs["State"] = placeholder
-            complete(renderMarkdown("### Updated Persona State\n" + config.cognitiveStrategy.formatState(newState)))
+            complete("### Updated Persona State\n" + config.cognitiveStrategy.formatState(newState).renderMarkdown())
         }
 
         task.complete()

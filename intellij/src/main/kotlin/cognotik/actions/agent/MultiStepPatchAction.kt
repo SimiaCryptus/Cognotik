@@ -194,8 +194,8 @@ class MultiStepPatchAction : BaseAction() {
 
                     AgentPatterns.displayMapInTabs(
                         mapOf(
-                            "Text" to design.text.renderMarkdown,
-                            "JSON" to "```json\n${toJson(design.obj)/*.indent("  ")*/}\n```".renderMarkdown,
+                          "Text" to design.text.renderMarkdown(true),
+                          "JSON" to "```json\n${toJson(design.obj)}\n```".renderMarkdown(true),
                         )
                     )
                 },
@@ -251,7 +251,7 @@ class MultiStepPatchAction : BaseAction() {
                                                 filter.joinToString("\n\n") {
                                                     "# ${it}\n```${
                                                         it.toString().split('.').last()
-                                                            .let { /*escapeHtml4*/it/*.indent("  ")*/ }
+                                                            .let { it }
                                                     }\n${root.resolve(it).toFile().readText()}\n```"
                                                 },
                                                 architectureResponse.text,

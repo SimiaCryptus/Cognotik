@@ -83,8 +83,7 @@ class CreateImageAction : BaseAction() {
                 }.associateWith { rootRef.get()?.resolve(it)?.toFile()?.readText(Charsets.UTF_8) }.entries.joinToString(
                     "\n\n"
                 ) { (path, code) ->
-                    val extension =
-                        path.toString().split('.').lastOrNull()?.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }
+                    val extension = path.toString().split('.').lastOrNull()
                     "# $path\n```$extension\n${code}\n```"
                 }
 

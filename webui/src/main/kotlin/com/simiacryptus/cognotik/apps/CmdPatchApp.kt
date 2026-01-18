@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -137,7 +138,11 @@ class CmdPatchApp(
                             log.debug("Updating output display (buffer size: ${buffer.length})")
                             val extraInfo =
                                 "[Verbose Info] - Updated at: ${Instant.now()} | Buffer size: ${buffer.length} chars"
-                            taskOutput?.set("```\n${truncate(buffer.toString()).indent("  ")}\n\n${extraInfo}\n```".renderMarkdown)
+                            taskOutput?.set(
+                              "```\n${truncate(buffer.toString()).indent("  ")}\n\n${extraInfo}\n```".renderMarkdown(
+                                true
+                              )
+                            )
                             task.update()
                         }
                     }
@@ -188,7 +193,11 @@ class CmdPatchApp(
                             log.info("JVM Memory - Total: ${runtime.totalMemory() / 1024 / 1024}MB, Free: ${runtime.freeMemory() / 1024 / 1024}MB")
 
                             // Add diagnostic info to the task output
-                            taskOutput?.set("```\n${truncate(buffer.toString()).indent("  ")}\n\n[Process Status] - Running for ${(System.currentTimeMillis() - startTime) / 1000}s | PID: $pid | Alive: ${process.isAlive}\n```".renderMarkdown)
+                            taskOutput?.set(
+                              "```\n${truncate(buffer.toString()).indent("  ")}\n\n[Process Status] - Running for ${(System.currentTimeMillis() - startTime) / 1000}s | PID: $pid | Alive: ${process.isAlive}\n```".renderMarkdown(
+                                true
+                              )
+                            )
                             task.update()
                         } catch (e: Exception) {
                             log.warn("Failed to get process diagnostics", e)

@@ -64,7 +64,9 @@ class TaskOrchestrator(
             val diagramTask = tabs.newTask("Plan")
             executePlan(
                 diagramBuffer = diagramTask.add(
-                    "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown,
+                    "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown(
+                        true
+                    ),
                     additionalClasses = "flow-chart"
                 ),
                 subTasks = planProcessingState.subTasks,
@@ -108,7 +110,9 @@ class TaskOrchestrator(
         ) {
             override fun renderTabButtons(): String {
                 diagramBuffer?.set(
-                    "\n## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(subTasks)}\n$TRIPLE_TILDE".renderMarkdown
+                    "\n## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(subTasks)}\n$TRIPLE_TILDE".renderMarkdown(
+                        true
+                    )
                 )
                 task.complete()
                 return buildString {
@@ -167,7 +171,9 @@ class TaskOrchestrator(
                 val task = executionState.uitaskMap[taskId] ?: taskTabs.newTask(taskId)
                 task.add(
                     ("\n## Task `" + taskId + "`" + (subTask.task_description ?: "") + "\n" +
-                            TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE + "\n").renderMarkdown
+                        TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE + "\n").renderMarkdown(
+                        true
+                    )
                 )
                 try {
                     val dependencies = subTask.task_dependencies?.toMutableSet() ?: mutableSetOf()
@@ -176,7 +182,7 @@ class TaskOrchestrator(
                         subTasks = executionState.subTasks,
                         visited = mutableSetOf()
                     )
-                    task.add(("\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }).renderMarkdown)
+                    task.add(("\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }).renderMarkdown(true))
                     val impl = orchestrationConfig.getImpl(subTask)
                     val messages = listOf(
                         userMessage,

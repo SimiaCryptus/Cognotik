@@ -153,8 +153,7 @@ open class ModifyFilesAction(
         private fun codeSummary(): String {
             return getCodeFiles().associateWith { root.toPath().resolve(it).toFile().readText(Charsets.UTF_8) }
                 .entries.joinToString("\n\n") { (path, code) ->
-                    val extension =
-                        path.toString().split('.').lastOrNull()?.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }
+                    val extension = path.toString().split('.').lastOrNull()
                     if (showLineNumbers) {
                         val lines = code.lines()
                         val lineNumberWidth = lines.size.toString().length
@@ -168,7 +167,7 @@ open class ModifyFilesAction(
                 }
         }
 
-        override fun renderResponse(response: String, task: SessionTask) = renderMarkdown(response) { html ->
+        override fun renderResponse(response: String, task: SessionTask) = renderMarkdown(response, tabs=true) { html ->
             AddApplyFileDiffLinks.instrumentFileDiffs(
                 this,
                 root = root.toPath(),

@@ -25,10 +25,10 @@ open class ParsedActorTestApp<T : Any>(
     ) {
         val message = ui.newTask()
         try {
-            message.echo(userMessage.renderMarkdown)
+            message.echo(userMessage.renderMarkdown(true))
             val response = actor.answer(listOf(userMessage))
             message.complete(
-                "${response.text}\n```\n${JsonUtil.toJson(response.obj)}\n```".trim().renderMarkdown
+              "${response.text}\n```\n${JsonUtil.toJson(response.obj)}\n```".trim().renderMarkdown(true)
             )
         } catch (e: Throwable) {
             log.warn("Error", e)

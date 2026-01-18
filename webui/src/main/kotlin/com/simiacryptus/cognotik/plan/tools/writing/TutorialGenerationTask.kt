@@ -325,7 +325,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
             appendLine("### Phase 1: Planning & Outline")
             appendLine("*Creating tutorial structure...*")
         }
-        overviewTask.add(overviewContent.renderMarkdown)
+        overviewTask.add(overviewContent.renderMarkdown(true))
         overviewTask.update()
 
         val resultBuilder = StringBuilder()
@@ -345,22 +345,22 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
                 val contextTask = tabs.newTask("Context")
                 contextTask.add(
-                    buildString {
-                        appendLine("# Context & Resources")
-                        appendLine()
-                        appendLine("<details><summary>Raw Context Data</summary>")
-                        if (inputFileContent.isNotBlank()) {
-                            appendLine("## Input Files")
-                            appendLine(inputFileContent)
-                            appendLine()
-                        }
-                        if (priorContext.isNotBlank()) {
-                            appendLine("## Prior Context")
-                            appendLine(priorContext)
-                            appendLine()
-                        }
-                        appendLine("</details>")
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Context & Resources")
+                    appendLine()
+                    appendLine("<details><summary>Raw Context Data</summary>")
+                    if (inputFileContent.isNotBlank()) {
+                      appendLine("## Input Files")
+                      appendLine(inputFileContent)
+                      appendLine()
+                    }
+                    if (priorContext.isNotBlank()) {
+                      appendLine("## Prior Context")
+                      appendLine(priorContext)
+                      appendLine()
+                    }
+                    appendLine("</details>")
+                  }.renderMarkdown(true)
                 )
                 contextTask.update()
                 contextTask.complete()
@@ -376,12 +376,12 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
             transcript?.write("- Skill Level: ${executionConfig.skill_level}\n\n".toByteArray())
 
             outlineTask.add(
-                buildString {
-                    appendLine("# Tutorial Outline")
-                    appendLine()
-                    appendLine("**Status:** Creating structured outline...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Tutorial Outline")
+                appendLine()
+                appendLine("**Status:** Creating structured outline...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             outlineTask.update()
 
@@ -538,12 +538,16 @@ Ensure the outline:
                 }
                 appendLine("**Status:** ✅ Complete")
             }
-            outlineTask.add(outlineContent.renderMarkdown)
+            outlineTask.add(outlineContent.renderMarkdown(true))
             outlineTask.update()
             outlineTask.complete()
 
-            overviewTask.add("✅ Phase 1 Complete: Outline created (${outline.steps.size} steps)\n".renderMarkdown)
-            overviewTask.add("\n### Phase 2: Writing Steps\n*Developing detailed step-by-step instructions...*\n".renderMarkdown)
+            overviewTask.add("✅ Phase 1 Complete: Outline created (${outline.steps.size} steps)\n".renderMarkdown(true))
+            overviewTask.add(
+              "\n### Phase 2: Writing Steps\n*Developing detailed step-by-step instructions...*\n".renderMarkdown(
+                true
+              )
+            )
             overviewTask.update()
             transcript?.write("## Phase 2: Writing Steps\n\n".toByteArray())
             transcript?.write("Input Context:\n".toByteArray())
@@ -567,7 +571,7 @@ Ensure the outline:
             outline.steps.forEachIndexed { index, stepOutline ->
                 log.info("Writing step ${index + 1}/${outline.steps.size}: ${stepOutline.title}")
 
-                overviewTask.add("- Step ${index + 1}: ${stepOutline.title.truncateForDisplay(50)} ".renderMarkdown)
+                overviewTask.add("- Step ${index + 1}: ${stepOutline.title.truncateForDisplay(50)} ".renderMarkdown(true))
                 overviewTask.update()
                 transcript?.write("### Step ${index + 1}: ${stepOutline.title}\n\n".toByteArray())
                 transcript?.write("Writing detailed instructions...\n\n".toByteArray())
@@ -576,12 +580,12 @@ Ensure the outline:
                 val stepTask = tabs.newTask("Step ${index + 1}")
 
                 stepTask.add(
-                    buildString {
-                        appendLine("# Step ${index + 1}: ${stepOutline.title}")
-                        appendLine()
-                        appendLine("**Status:** Writing detailed instructions...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Step ${index + 1}: ${stepOutline.title}")
+                    appendLine()
+                    appendLine("**Status:** Writing detailed instructions...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 stepTask.update()
 
@@ -704,20 +708,24 @@ Guidelines:
                     appendLine()
                     appendLine("**Status:** ✅ Complete")
                 }
-                stepTask.add(stepContent.renderMarkdown)
+                stepTask.add(stepContent.renderMarkdown(true))
                 stepTask.update()
                 stepTask.complete()
 
-                overviewTask.add("✅\n".renderMarkdown)
+                overviewTask.add("✅\n".renderMarkdown(true))
                 overviewTask.update()
             }
 
-            overviewTask.add("✅ Phase 2 Complete: All steps written\n".renderMarkdown)
+            overviewTask.add("✅ Phase 2 Complete: All steps written\n".renderMarkdown(true))
 
             // Phase 3: Troubleshooting section (if enabled)
             var troubleshootingSection: TroubleshootingSection? = null
             if (executionConfig.include_troubleshooting) {
-                overviewTask.add("\n### Phase 3: Troubleshooting\n*Compiling common issues and solutions...*\n".renderMarkdown)
+                overviewTask.add(
+                  "\n### Phase 3: Troubleshooting\n*Compiling common issues and solutions...*\n".renderMarkdown(
+                    true
+                  )
+                )
                 overviewTask.update()
                 transcript?.write("## Phase 3: Troubleshooting\n\n".toByteArray())
                 transcript?.write("Compiling common issues and solutions...\n\n".toByteArray())
@@ -727,12 +735,12 @@ Guidelines:
                 val troubleshootingTask = tabs.newTask("Troubleshooting")
 
                 troubleshootingTask.add(
-                    buildString {
-                        appendLine("# Troubleshooting")
-                        appendLine()
-                        appendLine("**Status:** Identifying common problems...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Troubleshooting")
+                    appendLine()
+                    appendLine("**Status:** Identifying common problems...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 troubleshootingTask.update()
 
@@ -818,17 +826,21 @@ Focus on issues that:
                     appendLine()
                     appendLine("**Status:** ✅ Complete")
                 }
-                troubleshootingTask.add(troubleshootingContent.renderMarkdown)
+                troubleshootingTask.add(troubleshootingContent.renderMarkdown(true))
                 troubleshootingTask.update()
                 troubleshootingTask.complete()
 
-                overviewTask.add("✅ Phase 3 Complete: Troubleshooting section added\n".renderMarkdown)
+                overviewTask.add("✅ Phase 3 Complete: Troubleshooting section added\n".renderMarkdown(true))
             }
 
             // Phase 4: Next Steps (if enabled)
             var nextSteps: NextSteps? = null
             if (executionConfig.include_next_steps) {
-                overviewTask.add("\n### Phase 4: Next Steps\n*Suggesting further learning paths...*\n".renderMarkdown)
+                overviewTask.add(
+                  "\n### Phase 4: Next Steps\n*Suggesting further learning paths...*\n".renderMarkdown(
+                    true
+                  )
+                )
                 overviewTask.update()
                 transcript?.write("## Phase 4: Next Steps\n\n".toByteArray())
                 transcript?.write("Suggesting further learning paths...\n\n".toByteArray())
@@ -838,12 +850,12 @@ Focus on issues that:
                 val nextStepsTask = tabs.newTask("Next Steps")
 
                 nextStepsTask.add(
-                    buildString {
-                        appendLine("# Next Steps")
-                        appendLine()
-                        appendLine("**Status:** Generating recommendations...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Next Steps")
+                    appendLine()
+                    appendLine("**Status:** Generating recommendations...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 nextStepsTask.update()
 
@@ -906,15 +918,15 @@ Make suggestions:
                     }
                     appendLine("**Status:** ✅ Complete")
                 }
-                nextStepsTask.add(nextStepsContent.renderMarkdown)
+                nextStepsTask.add(nextStepsContent.renderMarkdown(true))
                 nextStepsTask.update()
                 nextStepsTask.complete()
 
-                overviewTask.add("✅ Phase 4 Complete: Next steps added\n".renderMarkdown)
+                overviewTask.add("✅ Phase 4 Complete: Next steps added\n".renderMarkdown(true))
             }
 
             // Phase 5: Final Assembly
-            overviewTask.add("\n### Phase 5: Final Assembly\n*Compiling complete tutorial...*\n".renderMarkdown)
+            overviewTask.add("\n### Phase 5: Final Assembly\n*Compiling complete tutorial...*\n".renderMarkdown(true))
             overviewTask.update()
             transcript?.write("## Phase 5: Final Assembly\n\n".toByteArray())
             transcript?.write("Compiling complete tutorial...\n\n".toByteArray())
@@ -1094,7 +1106,7 @@ Make suggestions:
                 }
             }
 
-            finalTask.add(finalTutorial.renderMarkdown)
+            finalTask.add(finalTutorial.renderMarkdown(true))
             val tutorialUrl = task.saveFile("tutorial.md", finalTutorial.toByteArray(Charsets.UTF_8))
             finalTask.update()
             finalTask.complete()
@@ -1118,33 +1130,33 @@ Make suggestions:
 
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ✅ Generation Complete")
-                    appendLine()
-                    appendLine("**Output Files:**")
-                    appendLine("- [Complete Tutorial]($tutorialUrl)")
-                    appendLine("- [Transcript](transcript.md)")
-                    appendLine()
-                    appendLine("**Statistics:**")
-                    appendLine("- Total Steps: ${tutorialSteps.size}")
-                    appendLine("- Prerequisites: ${outline.prerequisites.size}")
-                    appendLine("- Estimated Duration: ${outline.estimated_time} minutes")
-                    appendLine("- Word Count: $totalWords")
-                    appendLine("- Code Blocks: ${tutorialSteps.sumOf { it.code_blocks.size }}")
-                    if (troubleshootingSection != null) {
-                        appendLine("- Troubleshooting Issues: ${troubleshootingSection.issues.size}")
-                    }
-                    appendLine("- Total Time: ${totalTime / 1000.0}s")
-                    appendLine()
-                    appendLine(
-                        "**Completed:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ✅ Generation Complete")
+                appendLine()
+                appendLine("**Output Files:**")
+                appendLine("- [Complete Tutorial]($tutorialUrl)")
+                appendLine("- [Transcript](transcript.md)")
+                appendLine()
+                appendLine("**Statistics:**")
+                appendLine("- Total Steps: ${tutorialSteps.size}")
+                appendLine("- Prerequisites: ${outline.prerequisites.size}")
+                appendLine("- Estimated Duration: ${outline.estimated_time} minutes")
+                appendLine("- Word Count: $totalWords")
+                appendLine("- Code Blocks: ${tutorialSteps.sumOf { it.code_blocks.size }}")
+                if (troubleshootingSection != null) {
+                  appendLine("- Troubleshooting Issues: ${troubleshootingSection.issues.size}")
+                }
+                appendLine("- Total Time: ${totalTime / 1000.0}s")
+                appendLine()
+                appendLine(
+                  "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                  }"
+                )
+              }.renderMarkdown(true)
             )
             overviewTask.update()
             overviewTask.complete()
@@ -1192,16 +1204,16 @@ Make suggestions:
             transcript?.write("<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ❌ Error Occurred")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                appendLine()
+                appendLine("**Type:** ${e.javaClass.simpleName}")
+              }.renderMarkdown(true)
             )
             overviewTask.update()
             task.update()

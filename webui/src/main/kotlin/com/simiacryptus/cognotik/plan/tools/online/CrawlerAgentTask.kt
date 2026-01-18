@@ -21,6 +21,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -344,7 +345,7 @@ class CrawlerAgentTask(
                     appendLine()
                 }
             }
-            seedLinksTask.add(seedLinksContent.renderMarkdown)
+            seedLinksTask.add(seedLinksContent.renderMarkdown(true))
             seedLinksTask.complete()
             // Log seed links to transcript
             transcriptStream?.let { stream ->
@@ -834,7 +835,7 @@ class CrawlerAgentTask(
             try {
                 val url = link
                 val title = page.title
-                task.add("## ${currentIndex}. [${title}]($url)".renderMarkdown)
+                task.add("## ${currentIndex}. [${title}]($url)".renderMarkdown(true))
                 val statusBuffer = task.add("Fetching content...", additionalClasses = "text-muted")
 
                 val processPageResult = buildString {
@@ -883,7 +884,11 @@ class CrawlerAgentTask(
                                 metadata = mapOf("content_length" to content.length)
                             )
                             allPageResults[currentIndex] = pageResult
-                            task.add("*Content too short (${content.length} chars), skipping this result*".renderMarkdown)
+                            task.add(
+                              "*Content too short (${content.length} chars), skipping this result*".renderMarkdown(
+                                true
+                              )
+                            )
                             statusBuffer?.setLength(0); task.update()
                             return@buildString
                         }
@@ -904,7 +909,11 @@ class CrawlerAgentTask(
                                 pageResult,
                                 currentIndex
                             )
-                            task.add("*Error processing this result: ${pageResult.metadata["error"]}*".renderMarkdown)
+                            task.add(
+                              "*Error processing this result: ${pageResult.metadata["error"]}*".renderMarkdown(
+                                true
+                              )
+                            )
                             statusBuffer?.setLength(0); task.update()
                             return@buildString
                         }
@@ -919,14 +928,14 @@ class CrawlerAgentTask(
                                 pageResult,
                                 currentIndex
                             )
-                            task.add("*Irrelevant content, skipping this result*".renderMarkdown)
+                            task.add("*Irrelevant content, skipping this result*".renderMarkdown(true))
                             statusBuffer?.setLength(0); task.update()
                             return@buildString
                         }
 
                         saveStrategyResult(webSearchDir, url, pageResult, currentIndex)
                         statusBuffer?.setLength(0); task.update()
-                        task.add(pageResult.content.renderMarkdown)
+                        task.add(pageResult.content.renderMarkdown(true))
 
                         this.appendLine(pageResult.content)
                         this.appendLine()
@@ -937,7 +946,7 @@ class CrawlerAgentTask(
                             this.appendLine("---")
                             this.appendLine()
                             this.appendLine("**Crawling terminated:** ${pageResult.terminationReason}")
-                            task.add("\n\n**Crawling terminated:** ${pageResult.terminationReason}".renderMarkdown)
+                            task.add("\n\n**Crawling terminated:** ${pageResult.terminationReason}".renderMarkdown(true))
                             this.appendLine()
                         }
 
@@ -956,7 +965,7 @@ class CrawlerAgentTask(
                             if (linkData.isNotEmpty()) {
                                 this.appendLine()
                                 this.appendLine("### Extracted Links (${linkData.size} found)")
-                                task.add("### Extracted Links (${linkData.size} found)".renderMarkdown)
+                                task.add("### Extracted Links (${linkData.size} found)".renderMarkdown(true))
                                 this.appendLine()
                             }
 
@@ -1009,10 +1018,10 @@ class CrawlerAgentTask(
                                     appendLine("</details>")
                                 }
                                 this.append(skippedBlock)
-                                task.add(skippedBlock.renderMarkdown)
+                                task.add(skippedBlock.renderMarkdown(true))
                                 this.appendLine()
                             }
-                            if (addedLinksBuffer.isNotEmpty()) task.add(addedLinksBuffer.toString().renderMarkdown)
+                            if (addedLinksBuffer.isNotEmpty()) task.add(addedLinksBuffer.toString().renderMarkdown(true))
 
                             log.info("Added $addedCount new links to queue from '$url' (filtered from ${linkData.size} total)")
                             // Add summary
@@ -1286,7 +1295,7 @@ class CrawlerAgentTask(
                     appendLine()
                 }
             }
-            queueDetailsTask.complete(queueDetails.renderMarkdown)
+            queueDetailsTask.complete(queueDetails.renderMarkdown(true))
             log.info("Added page queue details tab with statistics")
         } catch (e: Exception) {
             log.error("Failed to create page queue details tab", e)

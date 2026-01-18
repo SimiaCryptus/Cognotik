@@ -119,7 +119,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
 
             val prompt = buildPrompt(subject, transformations, format, inputFileContent, priorCode)
             tabbedDisplay.newTask("Prompt").apply {
-                expandable("Full Prompt", "<pre>${prompt.replace("<", "&lt;")}</pre>")
+                expandable("Full Prompt", "<pre>${prompt}</pre>")
             }
 
 

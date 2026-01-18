@@ -11,6 +11,8 @@ import java.nio.file.Files
 import java.util.*
 
 object MarkdownUtil {
+    private const val RENDERED_MARKER = "<!-- markdown-rendered -->"
+    
     fun renderMarkdown(
         rawMarkdown: String,
         options: MutableDataSet = defaultOptions(),
@@ -26,25 +28,45 @@ object MarkdownUtil {
         markdownEditor: (String) -> String,
     ): String {
         if (rawMarkdown.isBlank()) return ""
+        // Check if already rendered
+        if (rawMarkdown.contains(RENDERED_MARKER)) {
+            return rawMarkdown
+        }
+        
         val markdown = markdownEditor(rawMarkdown)
-        val asHtml = markdown.markdownToHtml(options).let { renderMermaid(it, ui, tabs) }
+        val asHtml = renderMermaid(markdown.markdownToHtml(options), ui, tabs)
         return when {
             markdown.isBlank() -> ""
             asHtml == rawMarkdown -> asHtml
             tabs -> {
                 displayMapInTabs(
                     mapOf(
-                        "HTML" to asHtml,
+                        "HTML" to "$RENDERED_MARKER\n${stackTrace()}\n$asHtml",
                         "Markdown" to """<pre><code class="language-markdown">${
-                            rawMarkdown.replace(Regex("<"), "&lt;").replace(Regex(">"), "&gt;")
+                            rawMarkdown
                         }</code></pre>""",
                         "Hide" to "",
                     ), ui = ui
                 )
             }
 
-            else -> asHtml
+            else -> "$RENDERED_MARKER\n${stackTrace()}\n$asHtml"
         }
+    }
+
+    var includeStacks = false
+
+    private fun stackTrace(): String {
+        @Suppress("KotlinConstantConditions") if(!includeStacks) return "" // Disable stack trace inclusion
+        val stackTrace = Thread.currentThread().stackTrace
+        val filteredStack = stackTrace.filter {
+            !it.className.startsWith("com.simiacryptus.cognotik.util.MarkdownUtil") &&
+                    !it.className.startsWith("java.lang.Thread")
+        }
+        val formattedStack = filteredStack.joinToString(separator = "\n") { element ->
+            "at ${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})"
+        }
+        return "<!--\n$formattedStack\n-->"
     }
 
     fun String.markdownToHtml(options: MutableDataSet = defaultOptions()): String =
@@ -212,5 +234,4 @@ object MarkdownUtil {
 }
 
 
-val String.renderMarkdown: String get() = renderMarkdown(tabs=true)
 fun String.renderMarkdown(tabs: Boolean = false): String = MarkdownUtil.renderMarkdown(this, tabs = tabs)

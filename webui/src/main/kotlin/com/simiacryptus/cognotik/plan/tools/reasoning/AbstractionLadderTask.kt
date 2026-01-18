@@ -350,7 +350,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         task.add("Analyzing upward abstractions...", additionalClasses = "text-info")
 
         return chatAgent.answer(listOf(prompt)).apply {
-            task.add(this.renderMarkdown)
+            task.add(renderMarkdown(true))
         }
     }
 
@@ -414,7 +414,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         task.add("Analyzing downward concretizations...", additionalClasses = "text-info")
 
         return chatAgent.answer(listOf(prompt)).apply {
-            task.add(this.renderMarkdown)
+            task.add(renderMarkdown(true))
         }
     }
 
@@ -457,7 +457,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         )
         task.add("Generating pattern summary and recommendations...", additionalClasses = "text-info")
         return chatAgent.answer(listOf(prompt)).apply {
-            task.add(this.renderMarkdown)
+            task.add(renderMarkdown(true))
         }
     }
 

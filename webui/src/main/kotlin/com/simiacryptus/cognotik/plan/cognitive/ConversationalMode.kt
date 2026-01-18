@@ -93,7 +93,7 @@ open class ConversationalMode(
             isProcessing = true
         }
 
-        task.echo(userMessage.renderMarkdown)
+        task.echo(userMessage.renderMarkdown(true))
         writeToTranscript("## User\n\n$userMessage\n\n")
         task.ui.pool.submit {
             try {

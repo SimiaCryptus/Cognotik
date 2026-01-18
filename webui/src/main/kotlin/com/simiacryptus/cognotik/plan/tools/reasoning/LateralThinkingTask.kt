@@ -323,7 +323,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                 appendLine()
                 appendLine("- ⏳ Gathering context...")
             }
-            overviewTask.add(overviewContent.renderMarkdown)
+            overviewTask.add(overviewContent.renderMarkdown(true))
 
             log.debug("Gathering prior context")
             val priorContext = getPriorCode(agent.executionState)
@@ -333,11 +333,11 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                 transcript?.write("## Context\n<details>\n<summary>Input Context</summary>\n\n$combinedContext\n</details>\n".toByteArray())
 
             overviewTask.add(buildString {
-                appendLine()
-                transcript?.write("\n- ✓ Context gathered\n- ⏳ Applying lateral thinking techniques...\n".toByteArray())
-                appendLine("- ✓ Context gathered")
-                appendLine("- ⏳ Applying lateral thinking techniques...")
-            }.renderMarkdown)
+              appendLine()
+              transcript?.write("\n- ✓ Context gathered\n- ⏳ Applying lateral thinking techniques...\n".toByteArray())
+              appendLine("- ✓ Context gathered")
+              appendLine("- ⏳ Applying lateral thinking techniques...")
+                        }.renderMarkdown(true))
 
             // Step 1: Apply each technique
             log.info("Starting technique application phase")
@@ -350,13 +350,13 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                 val techniqueTask = tabs.newTask("${index + 1}. ${technique.capitalize()}")
 
                 techniqueTask.add(buildString {
-                    appendLine("# ${technique.capitalize()} Technique")
-                    appendLine()
-                    transcript?.write("# ${technique.capitalize()} Technique\n\n**Status:** ⏳ Generating ideas...\n\n".toByteArray())
-                    appendLine("**Status:** ⏳ Generating ideas...")
-                    appendLine()
-                    appendLine(getTechniqueDescription(technique))
-                }.renderMarkdown)
+                  appendLine("# ${technique.capitalize()} Technique")
+                  appendLine()
+                  transcript?.write("# ${technique.capitalize()} Technique\n\n**Status:** ⏳ Generating ideas...\n\n".toByteArray())
+                  appendLine("**Status:** ⏳ Generating ideas...")
+                  appendLine()
+                  appendLine(getTechniqueDescription(technique))
+                                }.renderMarkdown(true))
 
                 val techniquePrompt = buildTechniquePrompt(
                     technique,
@@ -385,98 +385,98 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
                     // Display technique results
                     techniqueTask.add(buildString {
-                        transcript?.write("\n---\n\n## Results\n\n**Status:** ✓ Complete\n\n".toByteArray())
+                      transcript?.write("\n---\n\n## Results\n\n**Status:** ✓ Complete\n\n".toByteArray())
+                      appendLine()
+                      appendLine("---")
+                      appendLine()
+                      appendLine("## Results")
+                      appendLine()
+                      appendLine("**Status:** ✓ Complete")
+                      appendLine()
+                      appendLine("### Provocation")
+                      appendLine()
+                      appendLine("> ${application.provocation}")
+                      appendLine()
+                      appendLine("### Application")
+                      appendLine()
+                      appendLine(application.application_description)
+                      appendLine()
+                      appendLine("### Generated Ideas (${application.ideas.size})")
+                      appendLine()
+                      application.ideas.forEachIndexed { ideaIndex, idea ->
+                        appendLine("#### ${ideaIndex + 1}. ${idea.title}")
                         appendLine()
+                        appendLine(
+                          "**Novelty:** ${String.format("%.1f%%", idea.novelty_score * 100)} | **Feasibility:** ${
+                            String.format(
+                              "%.1f%%",
+                              idea.feasibility_score * 100
+                            )
+                          }"
+                        )
+                        appendLine()
+                        appendLine(idea.description)
+                        appendLine()
+                        appendLine("**Breakthrough Aspect:** ${idea.breakthrough_aspect}")
+                        appendLine()
+                        if (idea.benefits.isNotEmpty()) {
+                          appendLine("**Benefits:**")
+                          idea.benefits.take(3).forEach { appendLine("- $it") }
+                          if (idea.benefits.size > 3) appendLine("- *...and ${idea.benefits.size - 3} more*")
+                          appendLine()
+                        }
+                        if (idea.challenges.isNotEmpty()) {
+                          appendLine("**Challenges:**")
+                          idea.challenges.take(3).forEach { appendLine("- $it") }
+                          if (idea.challenges.size > 3) appendLine("- *...and ${idea.challenges.size - 3} more*")
+                          appendLine()
+                        }
                         appendLine("---")
                         appendLine()
-                        appendLine("## Results")
+                      }
+                      transcript?.write(this.toString().toByteArray())
+                      if (application.insights.isNotEmpty()) {
+                        appendLine("### Key Insights")
                         appendLine()
-                        appendLine("**Status:** ✓ Complete")
-                        appendLine()
-                        appendLine("### Provocation")
-                        appendLine()
-                        appendLine("> ${application.provocation}")
-                        appendLine()
-                        appendLine("### Application")
-                        appendLine()
-                        appendLine(application.application_description)
-                        appendLine()
-                        appendLine("### Generated Ideas (${application.ideas.size})")
-                        appendLine()
-                        application.ideas.forEachIndexed { ideaIndex, idea ->
-                            appendLine("#### ${ideaIndex + 1}. ${idea.title}")
-                            appendLine()
-                            appendLine(
-                                "**Novelty:** ${String.format("%.1f%%", idea.novelty_score * 100)} | **Feasibility:** ${
-                                    String.format(
-                                        "%.1f%%",
-                                        idea.feasibility_score * 100
-                                    )
-                                }"
-                            )
-                            appendLine()
-                            appendLine(idea.description)
-                            appendLine()
-                            appendLine("**Breakthrough Aspect:** ${idea.breakthrough_aspect}")
-                            appendLine()
-                            if (idea.benefits.isNotEmpty()) {
-                                appendLine("**Benefits:**")
-                                idea.benefits.take(3).forEach { appendLine("- $it") }
-                                if (idea.benefits.size > 3) appendLine("- *...and ${idea.benefits.size - 3} more*")
-                                appendLine()
-                            }
-                            if (idea.challenges.isNotEmpty()) {
-                                appendLine("**Challenges:**")
-                                idea.challenges.take(3).forEach { appendLine("- $it") }
-                                if (idea.challenges.size > 3) appendLine("- *...and ${idea.challenges.size - 3} more*")
-                                appendLine()
-                            }
-                            appendLine("---")
-                            appendLine()
-                        }
-                        transcript?.write(this.toString().toByteArray())
-                        if (application.insights.isNotEmpty()) {
-                            appendLine("### Key Insights")
-                            appendLine()
-                            application.insights.forEach { appendLine("- $it") }
-                        }
-                    }.renderMarkdown)
+                        application.insights.forEach { appendLine("- $it") }
+                      }
+                                        }.renderMarkdown(true))
                 } else {
                     log.warn("Failed to generate ideas for technique: $technique")
                     transcript?.write("\n**Status:** ⚠️ Failed to generate ideas\n".toByteArray())
                     techniqueTask.add(buildString {
-                        appendLine()
-                        appendLine("**Status:** ⚠️ Failed to generate ideas")
-                    }.renderMarkdown)
+                      appendLine()
+                      appendLine("**Status:** ⚠️ Failed to generate ideas")
+                                        }.renderMarkdown(true))
                 }
                 techniqueTask.complete()
 
                 overviewTask.add(buildString {
-                    appendLine()
-                    transcript?.write("\n- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)\n".toByteArray())
-                    appendLine("- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)")
-                }.renderMarkdown)
+                  appendLine()
+                  transcript?.write("\n- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)\n".toByteArray())
+                  appendLine("- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)")
+                                }.renderMarkdown(true))
             }
 
             log.info("All techniques applied. Total ideas generated: ${allIdeas.size}")
 
             overviewTask.add(buildString {
-                appendLine()
-                transcript?.write("\n- ✓ All techniques applied (${allIdeas.size} total ideas)\n- ⏳ Synthesizing insights...\n".toByteArray())
-                appendLine("- ✓ All techniques applied (${allIdeas.size} total ideas)")
-                appendLine("- ⏳ Synthesizing insights...")
-            }.renderMarkdown)
+              appendLine()
+              transcript?.write("\n- ✓ All techniques applied (${allIdeas.size} total ideas)\n- ⏳ Synthesizing insights...\n".toByteArray())
+              appendLine("- ✓ All techniques applied (${allIdeas.size} total ideas)")
+              appendLine("- ⏳ Synthesizing insights...")
+                        }.renderMarkdown(true))
 
             // Step 2: Synthesize insights
             log.info("Starting synthesis phase")
             val synthesisTask = tabs.newTask("Synthesis")
 
             synthesisTask.add(buildString {
-                appendLine("# Cross-Technique Synthesis")
-                transcript?.write("\n# Cross-Technique Synthesis\n\n**Status:** ⏳ Analyzing patterns and insights...\n".toByteArray())
-                appendLine()
-                appendLine("**Status:** ⏳ Analyzing patterns and insights...")
-            }.renderMarkdown)
+              appendLine("# Cross-Technique Synthesis")
+              transcript?.write("\n# Cross-Technique Synthesis\n\n**Status:** ⏳ Analyzing patterns and insights...\n".toByteArray())
+              appendLine()
+              appendLine("**Status:** ⏳ Analyzing patterns and insights...")
+                        }.renderMarkdown(true))
 
             val synthesisPrompt = """
 You are an expert in creative problem-solving and innovation.
@@ -525,29 +525,29 @@ Provide a comprehensive synthesis.
             val synthesisText = synthesisAgent.answer(listOf(synthesisPrompt))
 
             synthesisTask.add(buildString {
-                appendLine()
-                transcript?.write("\n---\n\n## Synthesis Results\n\n**Status:** ✓ Complete\n\n${synthesisText}\n".toByteArray())
-                appendLine("---")
-                appendLine()
-                appendLine("## Synthesis Results")
-                appendLine()
-                appendLine("**Status:** ✓ Complete")
-                appendLine()
-                appendLine(synthesisText)
-            }.renderMarkdown)
+              appendLine()
+              transcript?.write("\n---\n\n## Synthesis Results\n\n**Status:** ✓ Complete\n\n${synthesisText}\n".toByteArray())
+              appendLine("---")
+              appendLine()
+              appendLine("## Synthesis Results")
+              appendLine()
+              appendLine("**Status:** ✓ Complete")
+              appendLine()
+              appendLine(synthesisText)
+                        }.renderMarkdown(true))
             synthesisTask.complete()
 
             // Extract recommended approaches from synthesis
             val recommendedApproaches = extractRecommendedApproaches(synthesisText)
 
             overviewTask.add(buildString {
-                appendLine()
-                transcript?.write("\n- ✓ Synthesis complete\n".toByteArray())
-                appendLine("- ✓ Synthesis complete")
-                if (evaluateFeasibility) {
-                    appendLine("- ⏳ Evaluating feasibility...")
-                }
-            }.renderMarkdown)
+              appendLine()
+              transcript?.write("\n- ✓ Synthesis complete\n".toByteArray())
+              appendLine("- ✓ Synthesis complete")
+              if (evaluateFeasibility) {
+                appendLine("- ⏳ Evaluating feasibility...")
+              }
+                        }.renderMarkdown(true))
 
             // Step 3: Feasibility evaluation (if requested)
             var feasibilityEvaluation: FeasibilityEvaluation? = null
@@ -556,11 +556,11 @@ Provide a comprehensive synthesis.
                 val feasibilityTask = tabs.newTask("Feasibility")
 
                 feasibilityTask.add(buildString {
-                    appendLine("# Feasibility Evaluation")
-                    transcript?.write("\n# Feasibility Evaluation\n\n**Status:** ⏳ Evaluating ${allIdeas.size} ideas...\n".toByteArray())
-                    appendLine()
-                    appendLine("**Status:** ⏳ Evaluating ${allIdeas.size} ideas...")
-                }.renderMarkdown)
+                  appendLine("# Feasibility Evaluation")
+                  transcript?.write("\n# Feasibility Evaluation\n\n**Status:** ⏳ Evaluating ${allIdeas.size} ideas...\n".toByteArray())
+                  appendLine()
+                  appendLine("**Status:** ⏳ Evaluating ${allIdeas.size} ideas...")
+                                }.renderMarkdown(true))
 
                 val feasibilityPrompt = """
 You are an expert in evaluating the practical feasibility of innovative ideas.
@@ -609,42 +609,42 @@ Provide a structured evaluation.
 
                 if (feasibilityEvaluation != null) {
                     feasibilityTask.add(buildString {
-                        transcript?.write("\n---\n\n## Evaluation Results\n\n**Status:** ✓ Complete\n\n".toByteArray())
+                      transcript?.write("\n---\n\n## Evaluation Results\n\n**Status:** ✓ Complete\n\n".toByteArray())
+                      appendLine()
+                      appendLine("---")
+                      appendLine()
+                      appendLine("## Evaluation Results")
+                      appendLine()
+                      appendLine("**Status:** ✓ Complete")
+                      appendLine()
+                      appendLine("### Overall Assessment")
+                      appendLine()
+                      appendLine(feasibilityEvaluation.overall_assessment)
+                      appendLine()
+                      appendLine("### Top Ideas by Feasibility")
+                      appendLine()
+                      feasibilityEvaluation.top_ideas.forEachIndexed { idx, idea ->
+                        appendLine("${idx + 1}. $idea")
+                      }
+                      appendLine()
+                      appendLine("### Ideas for Further Exploration")
+                      appendLine()
+                      feasibilityEvaluation.ideas_for_exploration.forEach { appendLine("- $it") }
+                      appendLine()
+                      if (feasibilityEvaluation.hybrid_approaches.isNotEmpty()) {
+                        appendLine("### Hybrid Approaches")
                         appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("## Evaluation Results")
-                        appendLine()
-                        appendLine("**Status:** ✓ Complete")
-                        appendLine()
-                        appendLine("### Overall Assessment")
-                        appendLine()
-                        appendLine(feasibilityEvaluation.overall_assessment)
-                        appendLine()
-                        appendLine("### Top Ideas by Feasibility")
-                        appendLine()
-                        feasibilityEvaluation.top_ideas.forEachIndexed { idx, idea ->
-                            appendLine("${idx + 1}. $idea")
-                        }
-                        appendLine()
-                        appendLine("### Ideas for Further Exploration")
-                        appendLine()
-                        feasibilityEvaluation.ideas_for_exploration.forEach { appendLine("- $it") }
-                        appendLine()
-                        if (feasibilityEvaluation.hybrid_approaches.isNotEmpty()) {
-                            appendLine("### Hybrid Approaches")
-                            appendLine()
-                            feasibilityEvaluation.hybrid_approaches.forEach { appendLine("- $it") }
-                        }
-                    }.renderMarkdown)
+                        feasibilityEvaluation.hybrid_approaches.forEach { appendLine("- $it") }
+                      }
+                                        }.renderMarkdown(true))
                     transcript?.write(this.toString().toByteArray())
                 }
 
                 overviewTask.add(buildString {
-                    transcript?.write("\n- ✓ Feasibility evaluation complete\n".toByteArray())
-                    appendLine()
-                    appendLine("- ✓ Feasibility evaluation complete")
-                }.renderMarkdown)
+                  transcript?.write("\n- ✓ Feasibility evaluation complete\n".toByteArray())
+                  appendLine()
+                  appendLine("- ✓ Feasibility evaluation complete")
+                                }.renderMarkdown(true))
                 feasibilityTask.complete()
             }
 
@@ -662,7 +662,7 @@ Provide a structured evaluation.
             val summaryTask = tabs.newTask("Summary")
 
             val summaryContent = formatSummary(result, problem, techniques)
-            summaryTask.add(summaryContent.renderMarkdown)
+            summaryTask.add(summaryContent.renderMarkdown(true))
             transcript?.write("\n${summaryContent}\n".toByteArray())
             summaryTask.complete()
 
@@ -716,36 +716,36 @@ Provide a structured evaluation.
             // Final overview update
             val totalTime = System.currentTimeMillis() - startTime
             overviewTask.add(buildString {
-                appendLine()
-                appendLine("---")
-                appendLine()
-                appendLine("## ✓ Task Complete")
-                appendLine()
-                appendLine("| Metric | Value |")
-                appendLine("|--------|-------|")
-                appendLine("| Techniques Applied | ${techniques.size} |")
-                appendLine("| Total Ideas | ${allIdeas.size} |")
-                appendLine(
-                    "| Avg Novelty | ${
-                        String.format(
-                            "%.1f%%",
-                            allIdeas.map { it.novelty_score }.average() * 100
-                        )
-                    } |"
-                )
-                appendLine(
-                    "| Avg Feasibility | ${
-                        String.format(
-                            "%.1f%%",
-                            allIdeas.map { it.feasibility_score }.average() * 100
-                        )
-                    } |"
-                )
-                appendLine("| Total Time | ${totalTime / 1000}s |")
-                appendLine()
-                appendLine("**Status:** ✓ Complete")
-                transcript?.write(this.toString().toByteArray())
-            }.renderMarkdown)
+              appendLine()
+              appendLine("---")
+              appendLine()
+              appendLine("## ✓ Task Complete")
+              appendLine()
+              appendLine("| Metric | Value |")
+              appendLine("|--------|-------|")
+              appendLine("| Techniques Applied | ${techniques.size} |")
+              appendLine("| Total Ideas | ${allIdeas.size} |")
+              appendLine(
+                "| Avg Novelty | ${
+                  String.format(
+                    "%.1f%%",
+                    allIdeas.map { it.novelty_score }.average() * 100
+                  )
+                } |"
+              )
+              appendLine(
+                "| Avg Feasibility | ${
+                  String.format(
+                    "%.1f%%",
+                    allIdeas.map { it.feasibility_score }.average() * 100
+                  )
+                } |"
+              )
+              appendLine("| Total Time | ${totalTime / 1000}s |")
+              appendLine()
+              appendLine("**Status:** ✓ Complete")
+              transcript?.write(this.toString().toByteArray())
+                        }.renderMarkdown(true))
             overviewTask.complete()
 
             log.info(

@@ -26,9 +26,6 @@ object JsonUtil {
             }
         }
 
-            .enable(JsonParser.Feature.ALLOW_COMMENTS)
-            .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
-            .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
             .disable(MapperFeature.REQUIRE_HANDLERS_FOR_JAVA8_OPTIONALS)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .disable(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES)
@@ -36,6 +33,9 @@ object JsonUtil {
             .disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
 
 
+            .enable(JsonParser.Feature.ALLOW_COMMENTS)
+            .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
+            .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
             .enable(JsonReadFeature.ALLOW_JAVA_COMMENTS.mappedFeature())
             .enable(JsonReadFeature.ALLOW_YAML_COMMENTS.mappedFeature())
             .enable(JsonReadFeature.ALLOW_TRAILING_COMMA.mappedFeature())

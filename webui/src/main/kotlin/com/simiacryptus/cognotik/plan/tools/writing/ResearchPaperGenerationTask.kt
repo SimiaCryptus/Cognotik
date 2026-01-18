@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
@@ -445,7 +446,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             <details><summary>Initial Configuration</summary>$overviewContent</details>
         """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
         )
-        overviewTask.add(overviewContent.renderMarkdown)
+        overviewTask.add(overviewContent.renderMarkdown(true))
         task.update()
 
         val resultBuilder = StringBuilder()
@@ -461,13 +462,13 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 val contextTask = tabs.newTask("Sources")
                 contextTask.header("Research Sources & Context")
                 if (fullContext.isNotBlank()) {
-                    contextTask.expandable("Input Context", fullContext.truncateForDisplay(3000).renderMarkdown)
+                    contextTask.expandable("Input Context", fullContext.truncateForDisplay(3000).renderMarkdown(true))
                 }
                 if (priorContext.isNotBlank()) {
-                    contextTask.expandable("Prior Context", priorContext.truncateForDisplay(2000).renderMarkdown)
+                    contextTask.expandable("Prior Context", priorContext.truncateForDisplay(2000).renderMarkdown(true))
                 }
                 if (contextFiles.isNotBlank()) {
-                    contextTask.expandable("Related Files", contextFiles.truncateForDisplay(2000).renderMarkdown)
+                    contextTask.expandable("Related Files", contextFiles.truncateForDisplay(2000).renderMarkdown(true))
                 }
                 val contextContent = buildString {
                     appendLine("# Research Sources & Context")
@@ -501,12 +502,12 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             val analysisTask = tabs.newTask("Analysis")
 
             val analysisBuffer = analysisTask.add(
-                buildString {
-                    appendLine("# Research Analysis")
-                    appendLine()
-                    appendLine("**Status:** Analyzing sources and identifying gaps...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Research Analysis")
+                appendLine()
+                appendLine("**Status:** Analyzing sources and identifying gaps...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             task.update()
             val analysisContextStr = listOfNotNull(
@@ -544,11 +545,11 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
             )
             analysisBuffer?.setLength(0)
-            analysisBuffer?.append(analysisContent.renderMarkdown)
+            analysisBuffer?.append(analysisContent.renderMarkdown(true))
             task.update()
 
-            overviewTask.add("✅ Phase 1 Complete: Research analyzed\n".renderMarkdown)
-            overviewTask.add("\n### Phase 2: Outline Generation\n*Creating paper structure...*\n".renderMarkdown)
+            overviewTask.add("✅ Phase 1 Complete: Research analyzed\n".renderMarkdown(true))
+            overviewTask.add("\n### Phase 2: Outline Generation\n*Creating paper structure...*\n".renderMarkdown(true))
             task.update()
 
             // Phase 2: Create Paper Outline
@@ -556,12 +557,12 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             val outlineTask = tabs.newTask("Outline")
 
             val outlineBuffer = outlineTask.add(
-                buildString {
-                    appendLine("# Paper Outline")
-                    appendLine()
-                    appendLine("**Status:** Structuring paper sections...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Paper Outline")
+                appendLine()
+                appendLine("**Status:** Structuring paper sections...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             task.update()
 
@@ -630,14 +631,18 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 <details><summary>Paper Outline</summary>$outlineContent</details>
             """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
             )
-            outlineBuffer?.append(outlineContent.renderMarkdown)
+            outlineBuffer?.append(outlineContent.renderMarkdown(true))
             task.update()
 
             resultBuilder.append("## ${outline.title}\n\n")
             resultBuilder.append("**Thesis:** ${outline.thesis_statement}\n\n")
 
-            overviewTask.add("✅ Phase 2 Complete: Outline created (${outline.sections.size} sections)\n".renderMarkdown)
-            overviewTask.add("\n### Phase 3: Content Generation\n*Writing paper sections...*\n".renderMarkdown)
+            overviewTask.add(
+              "✅ Phase 2 Complete: Outline created (${outline.sections.size} sections)\n".renderMarkdown(
+                true
+              )
+            )
+            overviewTask.add("\n### Phase 3: Content Generation\n*Writing paper sections...*\n".renderMarkdown(true))
             task.update()
 
             // Phase 3: Generate Each Section
@@ -649,18 +654,22 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             outline.sections.forEachIndexed { index, sectionOutline ->
                 log.info("Generating section ${index + 1}/${outline.sections.size}: ${sectionOutline.title}")
 
-                overviewTask.add("- Section ${sectionOutline.section_number}: ${sectionOutline.title} ".renderMarkdown)
+                overviewTask.add(
+                  "- Section ${sectionOutline.section_number}: ${sectionOutline.title} ".renderMarkdown(
+                    true
+                  )
+                )
                 task.update()
 
                 val sectionTask = tabs.newTask("Section ${sectionOutline.section_number}")
 
                 val sectionBuffer = sectionTask.add(
-                    buildString {
-                        appendLine("# Section ${sectionOutline.section_number}: ${sectionOutline.title}")
-                        appendLine()
-                        appendLine("**Status:** Writing section...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Section ${sectionOutline.section_number}: ${sectionOutline.title}")
+                    appendLine()
+                    appendLine("**Status:** Writing section...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -730,7 +739,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                         appendLine("**Status:** ✅ Complete")
                     }
                 sectionBuffer?.setLength(0)
-                sectionBuffer?.append(sectionContent.renderMarkdown)
+                sectionBuffer?.append(sectionContent.renderMarkdown(true))
                 markdownTranscript?.write(
                     """
                     ### Section ${sectionOutline.section_number}: ${sectionOutline.title}
@@ -743,26 +752,26 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 resultBuilder.append(generatedSection.content)
                 resultBuilder.append("\n\n")
 
-                overviewTask.add("✅ (${generatedSection.word_count} words)\n".renderMarkdown)
+                overviewTask.add("✅ (${generatedSection.word_count} words)\n".renderMarkdown(true))
                 task.update()
             }
 
-            overviewTask.add("✅ Phase 3 Complete: All sections written\n".renderMarkdown)
+            overviewTask.add("✅ Phase 3 Complete: All sections written\n".renderMarkdown(true))
 
             // Phase 4: Generate Bibliography
             log.info("Phase 4: Generating bibliography")
-            overviewTask.add("\n### Phase 4: Bibliography Generation\n*Compiling citations...*\n".renderMarkdown)
+            overviewTask.add("\n### Phase 4: Bibliography Generation\n*Compiling citations...*\n".renderMarkdown(true))
             task.update()
 
             val bibliographyTask = tabs.newTask("Bibliography")
 
             val bibBuffer = bibliographyTask.add(
-                buildString {
-                    appendLine("# Bibliography")
-                    appendLine()
-                    appendLine("**Status:** Generating bibliography...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Bibliography")
+                appendLine()
+                appendLine("**Status:** Generating bibliography...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             task.update()
 
@@ -810,7 +819,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 appendLine("**Status:** ✅ Complete")
             }
             bibBuffer?.setLength(0)
-            bibBuffer?.append(bibliographyContent.renderMarkdown)
+            bibBuffer?.append(bibliographyContent.renderMarkdown(true))
             markdownTranscript?.write(
                 """
                 ## Phase 4: Bibliography Generation Complete
@@ -825,23 +834,27 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             }
             resultBuilder.append("\n")
 
-            overviewTask.add("✅ Phase 4 Complete: Bibliography generated (${bibliography.size} citations)\n".renderMarkdown)
+            overviewTask.add(
+              "✅ Phase 4 Complete: Bibliography generated (${bibliography.size} citations)\n".renderMarkdown(
+                true
+              )
+            )
 
             // Phase 5: Peer Review (if enabled)
             if (executionConfig.include_peer_review) {
-                overviewTask.add("\n### Phase 5: Peer Review\n*Simulating peer review process...*\n".renderMarkdown)
+                overviewTask.add("\n### Phase 5: Peer Review\n*Simulating peer review process...*\n".renderMarkdown(true))
                 task.update()
 
                 log.info("Phase 5: Generating peer review")
                 val reviewTask = tabs.newTask("Peer Review")
 
                 val reviewBuffer = reviewTask.add(
-                    buildString {
-                        appendLine("# Peer Review")
-                        appendLine()
-                        appendLine("**Status:** Simulating peer review...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Peer Review")
+                    appendLine()
+                    appendLine("**Status:** Simulating peer review...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -888,7 +901,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                     appendLine("**Status:** ✅ Complete")
                 }
                 reviewBuffer?.setLength(0)
-                reviewBuffer?.append(reviewContent.renderMarkdown)
+                reviewBuffer?.append(reviewContent.renderMarkdown(true))
                 markdownTranscript?.write(
                     """
                     ## Phase 5: Peer Review Complete
@@ -905,24 +918,24 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 review.weaknesses.forEach { resultBuilder.append("- $it\n") }
                 resultBuilder.append("\n")
 
-                overviewTask.add("✅ Phase 5 Complete: Peer review completed\n".renderMarkdown)
+                overviewTask.add("✅ Phase 5 Complete: Peer review completed\n".renderMarkdown(true))
             }
 
             // Phase 6: Final Revision (if enabled)
             if (executionConfig.revision_passes > 0) {
-                overviewTask.add("\n### Phase 6: Revision\n*Refining paper...*\n".renderMarkdown)
+                overviewTask.add("\n### Phase 6: Revision\n*Refining paper...*\n".renderMarkdown(true))
                 task.update()
 
                 log.info("Phase 6: Performing ${executionConfig.revision_passes} revision pass(es)")
                 val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
-                    buildString {
-                        appendLine("# Revision Process")
-                        appendLine()
-                        appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Revision Process")
+                    appendLine()
+                    appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -947,12 +960,12 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                     resultBuilder.append(revisedPaper)
 
                     revisionTask.add(
-                        buildString {
-                            appendLine("## Revision Pass ${passNum + 1}")
-                            appendLine()
-                            appendLine("✅ Complete")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("## Revision Pass ${passNum + 1}")
+                        appendLine()
+                        appendLine("✅ Complete")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     markdownTranscript?.write(
                         """
@@ -963,11 +976,15 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                     task.update()
                 }
 
-                overviewTask.add("✅ Phase 6 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
+                overviewTask.add(
+                  "✅ Phase 6 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown(
+                    true
+                  )
+                )
             }
 
             // Phase 7: Final Assembly
-            overviewTask.add("\n### Phase 7: Final Assembly\n*Compiling complete paper...*\n".renderMarkdown)
+            overviewTask.add("\n### Phase 7: Final Assembly\n*Compiling complete paper...*\n".renderMarkdown(true))
             task.update()
 
             log.info("Phase 7: Assembling final paper")
@@ -1005,7 +1022,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 )
             }
 
-            finalTask.add(finalPaper.renderMarkdown)
+            finalTask.add(finalPaper.renderMarkdown(true))
             val filename = "Research_Paper_${System.currentTimeMillis()}.md"
             val fileUrl = task.saveFile(filename, finalPaper.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             finalTask.add("<div class='mt-3'><a href='$fileUrl' class='btn btn-primary' target='_blank'>Download Markdown</a></div>")
@@ -1022,27 +1039,27 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             val totalTime = System.currentTimeMillis() - startTime
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ✅ Generation Complete")
-                    appendLine()
-                    appendLine("**Statistics:**")
-                    appendLine("- Total Word Count: $cumulativeWordCount")
-                    appendLine("- Target Word Count: ${executionConfig.target_word_count}")
-                    appendLine("- Completion: ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
-                    appendLine("- Number of Sections: ${generatedSections.size}")
-                    appendLine("- Citations: ${bibliography.size}")
-                    appendLine("- Revision Passes: ${executionConfig.revision_passes}")
-                    appendLine("- Total Time: ${totalTime / 1000.0}s")
-                    appendLine()
-                    appendLine(
-                        "**Completed:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ✅ Generation Complete")
+                appendLine()
+                appendLine("**Statistics:**")
+                appendLine("- Total Word Count: $cumulativeWordCount")
+                appendLine("- Target Word Count: ${executionConfig.target_word_count}")
+                appendLine("- Completion: ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
+                appendLine("- Number of Sections: ${generatedSections.size}")
+                appendLine("- Citations: ${bibliography.size}")
+                appendLine("- Revision Passes: ${executionConfig.revision_passes}")
+                appendLine("- Total Time: ${totalTime / 1000.0}s")
+                appendLine()
+                appendLine(
+                  "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                  }"
+                )
+              }.renderMarkdown(true)
             )
             markdownTranscript?.write(
                 """
@@ -1120,16 +1137,16 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             )
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ❌ Error Occurred")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                appendLine()
+                appendLine("**Type:** ${e.javaClass.simpleName}")
+              }.renderMarkdown(true)
             )
             task.update()
 

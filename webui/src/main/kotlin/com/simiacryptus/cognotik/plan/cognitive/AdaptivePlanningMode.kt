@@ -64,14 +64,14 @@ open class AdaptivePlanningMode(
             startAutoPlanChat(task, userMessage)
         } else {
             log.debug("Injecting user message into ongoing chat")
-            task.echo("User: $userMessage".renderMarkdown)
+            task.echo("User: $userMessage".renderMarkdown(true))
             currentUserMessage.set(userMessage)
         }
     }
 
     private fun startAutoPlanChat(task : SessionTask, userMessage: String) {
         log.debug("Starting auto plan chat with initial message: $userMessage")
-        task.echo(renderMarkdown(userMessage))
+        task.echo(userMessage.renderMarkdown())
         transcriptStream = task.transcript()
 
         val continueLoop = true
@@ -125,12 +125,12 @@ open class AdaptivePlanningMode(
                         }
                         formatEvalRecords().forEachIndexed { index, it ->
                             inputTabs.newTask("Task ${index + 1}").apply {
-                                complete(renderMarkdown(it))
+                                complete(it.renderMarkdown())
                             }
-                            complete(renderMarkdown(it))
+                            complete(it.renderMarkdown())
                         }
                         inputTabs.newTask("Thinking Status").apply {
-                            complete(renderMarkdown(config.cognitiveStrategy.formatState(currentThinkingStatus)))
+                            complete(config.cognitiveStrategy.formatState(currentThinkingStatus).renderMarkdown())
                         }
                     }
 
@@ -144,13 +144,13 @@ open class AdaptivePlanningMode(
                         }
                     } catch (e: Exception) {
                         log.error("Error choosing next task", e)
-                        iterationTabbedDisplay["Errors"]?.append(renderMarkdown("Error choosing next task: ${e.message}"))
+                        iterationTabbedDisplay["Errors"]?.append("Error choosing next task: ${e.message}".renderMarkdown())
                         break
                     }
 
                     if (nextTask?.isEmpty() != false) {
                         log.debug("No more tasks to execute")
-                        task.add(renderMarkdown("No more tasks to execute. Finishing Auto Plan Chat."))
+                        task.add("No more tasks to execute. Finishing Auto Plan Chat.".renderMarkdown())
                         break
                     }
                     log.debug("Retrieved next tasks: ${nextTask.size}")
@@ -164,18 +164,18 @@ open class AdaptivePlanningMode(
                         val taskConfig = currentTask.task.tasks?.get(index)
                         val taskDescription =
                             taskConfig?.task_description ?: "No description provided for this task item."
-                        taskExecutionTask.add("\n```json\n${taskConfig?.toJson()}\n```\n".renderMarkdown)
+                        taskExecutionTask.add("\n```json\n${taskConfig?.toJson()}\n```\n".renderMarkdown(true))
                         writeToTranscript("**Description:** $taskDescription\n\n```json\n${JsonUtil.toJson(taskConfig)}\n```\n\n")
                         taskExecutionTask.expandable(
                             "Task Configuration",
 
-                            """
- Executing task: `$currentTaskId` - $taskDescription
-Full TaskData JSON:
-```json
-${JsonUtil.toJson(taskConfig)}
-```
-""".trimIndent().renderMarkdown
+                          """
+                           Executing task: `$currentTaskId` - $taskDescription
+                          Full TaskData JSON:
+                          ```json
+                          ${JsonUtil.toJson(taskConfig)}
+                          ```
+                          """.trimIndent().renderMarkdown(true)
                         )
                         iterationTabbedDisplay["Task Execution $currentTaskId"] = taskExecutionTask.placeholder
 
@@ -232,17 +232,15 @@ ${JsonUtil.toJson(taskConfig)}
                         reasoningState.set(updatedStatus)
                         log.debug("Updated thinking status")
                         thinkingStatusTask.complete(
-                            renderMarkdown(
-                                "Updated Thinking Status:\n${
-                                    config.cognitiveStrategy.formatState(updatedStatus)
-                                }"
-                            )
+                          "Updated Thinking Status:\n${
+                            config.cognitiveStrategy.formatState(updatedStatus)
+                          }".renderMarkdown()
                         )
                         writeToTranscript("```json\n${JsonUtil.toJson(updatedStatus)}\n```\n\n")
                     } catch (e: Exception) {
                         log.error("Error updating thinking status", e)
                         thinkingStatusTask.error(e)
-                        iterationTabbedDisplay["Errors"]?.append(renderMarkdown("Error updating thinking status: ${e.message}"))
+                        iterationTabbedDisplay["Errors"]?.append("Error updating thinking status: ${e.message}".renderMarkdown())
                     }
                 }
 
@@ -256,12 +254,11 @@ ${JsonUtil.toJson(taskConfig)}
                 isRunning = false
                 val summaryTask = tabbedDisplay.newTask("Summary")
                 summaryTask.add(
-                    renderMarkdown(
-                        "Auto Plan Chat completed. Final thinking status:\n${
-                            reasoningState.get()?.let {
-                                config.cognitiveStrategy.formatState(it)
-                            } ?: "null"
-                        }")
+                  "Auto Plan Chat completed. Final thinking status:\n${
+                    reasoningState.get()?.let {
+                      config.cognitiveStrategy.formatState(it)
+                    } ?: "null"
+                  }".renderMarkdown()
                 )
                 writeToTranscript("\n## Summary\n\nAuto Plan Chat completed.\n\n")
                 transcriptStream?.flush()

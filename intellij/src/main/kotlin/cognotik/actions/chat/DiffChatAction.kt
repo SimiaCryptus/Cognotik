@@ -125,7 +125,7 @@ class DiffChatAction : BaseAction() {
                 """.trimIndent() + AppSettingsState.instance.processor.patchFormatPrompt
 
             override fun renderResponse(response: String, task: SessionTask): String = """<div>${
-                renderMarkdown(
+                renderMarkdown(response, tabs=true) {
                     addApplyDiffLinks(
                         this,
                         code = {
@@ -141,7 +141,7 @@ class DiffChatAction : BaseAction() {
                         task = task,
                         processor = AppSettingsState.instance.processor
                     )
-                )
+                }                
             }</div>"""
         }
     }

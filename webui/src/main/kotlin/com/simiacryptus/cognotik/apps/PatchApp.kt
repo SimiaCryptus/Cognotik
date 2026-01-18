@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -337,9 +338,11 @@ abstract class PatchApp(
             fixTask.add(
                 AgentPatterns.displayMapInTabs(
                     mapOf(
-                        "Text" to plan.text.renderMarkdown,
-                        "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(parsedErrors)}\n$tripleTilde".renderMarkdown,
-                        "Process Details" to "Exit Code: ${outputResult.exitCode}\nCommand Output:\n$tripleTilde\n${outputResult.output}\n$tripleTilde".renderMarkdown
+                      "Text" to plan.text.renderMarkdown(true),
+                      "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(parsedErrors)}\n$tripleTilde".renderMarkdown(true),
+                      "Process Details" to "Exit Code: ${outputResult.exitCode}\nCommand Output:\n$tripleTilde\n${outputResult.output}\n$tripleTilde".renderMarkdown(
+                        true
+                      )
                     ).filter { it.value.isNotBlank() },
                 )
             )
@@ -643,7 +646,7 @@ abstract class PatchApp(
                     }
                 }", tabs = false, ui = task.ui))
         log.info("Fix process completed for error: ${error.message}")
-        task.complete("<div>${renderMarkdown(markdown)}</div>")
+        task.complete("<div>${markdown.renderMarkdown()}</div>")
     }
 
 }

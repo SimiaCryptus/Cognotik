@@ -268,10 +268,7 @@ class SeleniumSessionTask(
                     """.trimIndent().renderMarkdown()
 
             tabs["Page Source"] = "<details open><summary>Scrubbed HTML</summary><pre><code class=\"language-html\">${
-              pageSource.replace(
-                "<",
-                "&lt;"
-              ).take(50000)
+              pageSource.take(50000)
             }</code></pre></details>"
 
             transcriptStream?.write("## Final State\n**URL:** ${selenium.getCurrentUrl()}\n\n".toByteArray())

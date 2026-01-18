@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.FileOutputStream
@@ -188,7 +189,7 @@ open class CodingTask<T : CodeRuntime>(
         try {
             val string = response.renderedResponse
                 ?: "\n```${language.lowercase(getDefault())}\n${response.code.trim()}\n```\n"
-            task.expanded("Code", string.renderMarkdown)
+            task.expanded("Code", string.renderMarkdown(true))
           val transcript = task.transcript()
           try {
             transcript?.write("# Generated Code\n$string\n".toByteArray())
@@ -284,7 +285,7 @@ open class CodingTask<T : CodeRuntime>(
         task: SessionTask, feedback: String, request: CodeRequest, response: CodeAgent.CodeResult
     ) {
         try {
-            task.echo(feedback.renderMarkdown)
+            task.echo(feedback.renderMarkdown(true))
             start(
                 codeRequest = codeRequest(
                     messages = request.messages + listOf(
@@ -331,9 +332,9 @@ open class CodingTask<T : CodeRuntime>(
           }
 
           val message = when {
-                e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
-                e is FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
-                else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
+                e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown(true)
+            e is FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown(true)
+            else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown(true)
             }
             displayCode(
                 task, CodeRequest(

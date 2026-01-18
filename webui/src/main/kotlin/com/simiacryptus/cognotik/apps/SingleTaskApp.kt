@@ -113,7 +113,7 @@ abstract class SingleTaskApp(
                 messages = listOf(taskConfig.task_description ?: "Execute task"),
                 task = task,
                 resultFn = { result ->
-                    task.complete(result.renderMarkdown)
+                    task.complete(result.renderMarkdown(true))
                     onTaskComplete(result, task)
                 },
                 orchestrationConfig = orchestrationConfig

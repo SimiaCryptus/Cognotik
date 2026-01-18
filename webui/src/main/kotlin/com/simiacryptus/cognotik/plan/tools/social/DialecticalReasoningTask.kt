@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.file.FileSystems
@@ -119,15 +120,15 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
             val api = defaultSmart ?: return@submit
             overviewTask.add(
               """
-                    **Context:** $context
-                    **Synthesis Levels:** $synthesisLevels
-                    **Preserve Strengths:** ${if (preserveStrengths) "Yes" else "No"}
-                    **Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
-                    
-                    ---
-                    ## Progress
-                    *Initializing dialectical analysis...*
-                    """.trimIndent().renderMarkdown
+                                  **Context:** $context
+                                  **Synthesis Levels:** $synthesisLevels
+                                  **Preserve Strengths:** ${if (preserveStrengths) "Yes" else "No"}
+                                  **Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
+                                  
+                                  ---
+                                  ## Progress
+                                  *Initializing dialectical analysis...*
+                                  """.trimIndent().renderMarkdown(true)
             )
 
             transcript?.write(
@@ -156,10 +157,10 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
               val contextTask = tabs.newTask("Context")
               contextTask.header("Context Information", level = 1)
               if (priorContext.isNotBlank()) {
-                contextTask.expandable("Prior Task Results", priorContext.truncateForDisplay().renderMarkdown)
+                contextTask.expandable("Prior Task Results", priorContext.truncateForDisplay().renderMarkdown(true))
               }
               if (relatedFilesContent.isNotBlank()) {
-                contextTask.expandable("Related Files", relatedFilesContent.truncateForDisplay().renderMarkdown)
+                contextTask.expandable("Related Files", relatedFilesContent.truncateForDisplay().renderMarkdown(true))
               }
 
               transcript?.write(
@@ -209,7 +210,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
             log.info("Analyzing thesis")
             val thesisTask = tabs.newTask("Thesis")
             thesisTask.header("Thesis Analysis", level = 1)
-            thesisTask.add("**Statement:** $thesis\n\n*Analyzing...*".renderMarkdown)
+            thesisTask.add("**Statement:** $thesis\n\n*Analyzing...*".renderMarkdown(true))
 
             val thesisAgent = ChatAgent(
               prompt = """
@@ -252,16 +253,16 @@ Be thorough and objective in your analysis.
             resultBuilder.append("## Thesis Analysis\n\n**Statement:** $thesis\n\n$thesisAnalysis\n\n")
 
             thesisTask.header("Analysis", level = 2)
-            thesisTask.add(thesisAnalysis.renderMarkdown)
-            thesisTask.add("<hr/>\n**Status:** ✅ Complete (${thesisTime / 1000.0}s)".renderMarkdown)
+            thesisTask.add(thesisAnalysis.renderMarkdown(true))
+            thesisTask.add("<hr/>\n**Status:** ✅ Complete (${thesisTime / 1000.0}s)".renderMarkdown(true))
 
-            overviewTask.add("\n✅ Thesis analysis complete\n\n*Analyzing antithesis...*".renderMarkdown)
+            overviewTask.add("\n✅ Thesis analysis complete\n\n*Analyzing antithesis...*".renderMarkdown(true))
 
             // Step 2: Analyze Antithesis
             log.info("Analyzing antithesis")
             val antithesisTask = tabs.newTask("Antithesis")
             antithesisTask.header("Antithesis Analysis", level = 1)
-            antithesisTask.add("**Statement:** $antithesis\n\n*Analyzing...*".renderMarkdown)
+            antithesisTask.add("**Statement:** $antithesis\n\n*Analyzing...*".renderMarkdown(true))
 
             val antithesisAgent = ChatAgent(
               prompt = """
@@ -312,16 +313,16 @@ Be thorough and objective in your analysis.
             resultBuilder.append("## Antithesis Analysis\n\n**Statement:** $antithesis\n\n$antithesisAnalysis\n\n")
 
             antithesisTask.header("Analysis", level = 2)
-            antithesisTask.add(antithesisAnalysis.renderMarkdown)
-            antithesisTask.add("<hr/>\n**Status:** ✅ Complete (${antithesisTime / 1000.0}s)".renderMarkdown)
+            antithesisTask.add(antithesisAnalysis.renderMarkdown(true))
+            antithesisTask.add("<hr/>\n**Status:** ✅ Complete (${antithesisTime / 1000.0}s)".renderMarkdown(true))
 
-            overviewTask.add("\n✅ Antithesis analysis complete\n\n*Exploring contradictions...*".renderMarkdown)
+            overviewTask.add("\n✅ Antithesis analysis complete\n\n*Exploring contradictions...*".renderMarkdown(true))
 
             // Step 3: Explore Contradictions
             log.info("Exploring contradictions and tensions")
             val contradictionsTask = tabs.newTask("Contradictions")
             contradictionsTask.header("Contradictions & Tensions", level = 1)
-            contradictionsTask.add("*Analyzing...*".renderMarkdown)
+            contradictionsTask.add("*Analyzing...*".renderMarkdown(true))
 
             val contradictionsAgent = ChatAgent(
               prompt = """
@@ -370,10 +371,10 @@ Be thorough in exploring the dialectical tension.
             resultBuilder.append("## Contradictions & Tensions\n\n$contradictionsAnalysis\n\n")
 
             contradictionsTask.header("Analysis", level = 2)
-            contradictionsTask.add(contradictionsAnalysis.renderMarkdown)
-            contradictionsTask.add("<hr/>\n**Status:** ✅ Complete (${contradictionsTime / 1000.0}s)".renderMarkdown)
+            contradictionsTask.add(contradictionsAnalysis.renderMarkdown(true))
+            contradictionsTask.add("<hr/>\n**Status:** ✅ Complete (${contradictionsTime / 1000.0}s)".renderMarkdown(true))
 
-            overviewTask.add("\n✅ Contradictions explored\n\n*Generating synthesis (Level 1)...*".renderMarkdown)
+            overviewTask.add("\n✅ Contradictions explored\n\n*Generating synthesis (Level 1)...*".renderMarkdown(true))
 
             // Step 4: Iterative Synthesis
             var currentThesis = thesis
@@ -387,7 +388,7 @@ Be thorough in exploring the dialectical tension.
               log.info("Generating synthesis level $level")
               val synthesisTask = tabs.newTask("Synthesis L$level")
               synthesisTask.header("Synthesis - Level $level", level = 1)
-              synthesisTask.add("*Generating higher-level synthesis...*".renderMarkdown)
+              synthesisTask.add("*Generating higher-level synthesis...*".renderMarkdown(true))
 
               val synthesisPrompt = if (level == 1) {
                 """
@@ -482,12 +483,12 @@ Aim for progressively deeper insight and integration.
 
               resultBuilder.append("## Synthesis Level $level\n\n$synthesis\n\n")
               synthesisTask.header("Result", level = 2)
-              synthesisTask.add(synthesis.renderMarkdown)
-              synthesisTask.add("<hr/>\n**Status:** ✅ Complete (${synthesisTime / 1000.0}s)".renderMarkdown)
+              synthesisTask.add(synthesis.renderMarkdown(true))
+              synthesisTask.add("<hr/>\n**Status:** ✅ Complete (${synthesisTime / 1000.0}s)".renderMarkdown(true))
 
-              overviewTask.add("\n✅ Synthesis Level $level complete".renderMarkdown)
+              overviewTask.add("\n✅ Synthesis Level $level complete".renderMarkdown(true))
               if (level < synthesisLevels) {
-                overviewTask.add("\n*Generating synthesis (Level ${level + 1})...*".renderMarkdown)
+                overviewTask.add("\n*Generating synthesis (Level ${level + 1})...*".renderMarkdown(true))
               }
             }
 
@@ -495,7 +496,7 @@ Aim for progressively deeper insight and integration.
             log.info("Generating final integration")
             val integrationTask = tabs.newTask("Final Integration")
             integrationTask.header("Final Integration", level = 1)
-            integrationTask.add("*Synthesizing all levels...*".renderMarkdown)
+            integrationTask.add("*Synthesizing all levels...*".renderMarkdown(true))
 
             val integrationAgent = ChatAgent(
               prompt = """
@@ -545,20 +546,20 @@ Be thorough yet concise in your final integration.
             resultBuilder.append("## Final Integration\n\n$finalIntegration")
 
             integrationTask.header("Result", level = 2)
-            integrationTask.add(finalIntegration.renderMarkdown)
-            integrationTask.add("<hr/>\n**Status:** ✅ Complete (${integrationTime / 1000.0}s)".renderMarkdown)
+            integrationTask.add(finalIntegration.renderMarkdown(true))
+            integrationTask.add("<hr/>\n**Status:** ✅ Complete (${integrationTime / 1000.0}s)".renderMarkdown(true))
 
             val totalTime = System.currentTimeMillis() - startTime
             log.info("DialecticalReasoningTask completed in ${totalTime}ms")
 
             overviewTask.add(
               """
-                    ---
-                    ## ✅ Dialectical Analysis Complete
-                    **Total Time:** ${totalTime / 1000.0}s
-                    **Synthesis Levels:** $synthesisLevels
-                    **Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
-                    """.trimIndent().renderMarkdown
+                                  ---
+                                  ## ✅ Dialectical Analysis Complete
+                                  **Total Time:** ${totalTime / 1000.0}s
+                                  **Synthesis Levels:** $synthesisLevels
+                                  **Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
+                                  """.trimIndent().renderMarkdown(true)
             )
 
             transcript?.write(
@@ -600,7 +601,7 @@ Be thorough yet concise in your final integration.
                     """.trimIndent().toByteArray()
             )
 
-            overviewTask.add("\n--- \n## ❌ Error Occurred\n**Error:** ${e.message}".renderMarkdown)
+            overviewTask.add("\n--- \n## ❌ Error Occurred\n**Error:** ${e.message}".renderMarkdown(true))
             resultFn("Error during dialectical reasoning: ${e.message}")
           } finally {
             transcript?.close()

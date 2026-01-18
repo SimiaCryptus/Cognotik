@@ -55,7 +55,7 @@ open class ParallelMode(
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         val transcript = task.transcript()
         try {
-            task.echo(userMessage.renderMarkdown)
+            task.echo(userMessage.renderMarkdown(true))
 
             transcript?.write("User Message: $userMessage\n".toByteArray())
 

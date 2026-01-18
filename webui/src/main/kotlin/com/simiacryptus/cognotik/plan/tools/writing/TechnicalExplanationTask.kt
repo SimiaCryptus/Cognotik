@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.charset.StandardCharsets
@@ -198,7 +199,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
           log.error(msg)
           task.error(ValidatedObject.ValidationError(validationError, config))
           transcript?.write("## Configuration Error\n$msg\n".toByteArray(StandardCharsets.UTF_8))
-          task.complete(msg.renderMarkdown)
+          task.complete(msg.renderMarkdown(true))
           resultFn("CONFIGURATION ERROR: $validationError")
           return@submit
         }
@@ -207,7 +208,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
         if (topic.isNullOrBlank()) {
           val msg = "No topic specified for technical explanation"
           log.error(msg)
-          task.complete(msg.renderMarkdown)
+          task.complete(msg.renderMarkdown(true))
           resultFn("CONFIGURATION ERROR: No topic specified")
           return@submit
         }
@@ -223,11 +224,11 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
           val inputFilesTask = tabs.newTask("Input Files")
           inputFilesTask.add(
             buildString {
-              appendLine("# Input Files")
-              appendLine()
-              appendLine(inputFileContent.truncateForDisplay(3000))
-              appendLine()
-            }.renderMarkdown
+                          appendLine("# Input Files")
+                          appendLine()
+                          appendLine(inputFileContent.truncateForDisplay(3000))
+                          appendLine()
+                        }.renderMarkdown(true)
           )
           transcript?.write(
             """
@@ -264,7 +265,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
             appendLine()
           }
         }
-        overviewTask.add(overviewContent.renderMarkdown)
+        overviewTask.add(overviewContent.renderMarkdown(true))
         transcript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
 
         val configContent = buildString {
@@ -286,14 +287,14 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
           appendLine("---")
           appendLine()
         }
-        overviewTask.add(configContent.renderMarkdown)
+        overviewTask.add(configContent.renderMarkdown(true))
         transcript?.write(configContent.toByteArray(StandardCharsets.UTF_8))
 
         val phase1Content = buildString {
           appendLine("### Phase 1: Analysis & Outline")
           appendLine("*Analyzing topic and creating explanation structure...*")
         }
-        overviewTask.add(phase1Content.renderMarkdown)
+        overviewTask.add(phase1Content.renderMarkdown(true))
         transcript?.write(phase1Content.toByteArray(StandardCharsets.UTF_8))
         overviewTask.update()
         resultBuilder.append("# Technical Explanation: $topic\n\n")
@@ -307,18 +308,18 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
           val contextTask = tabs.newTask("Reference Context")
           contextTask.add(
             buildString {
-              appendLine("# Reference Context")
-              appendLine()
-              if (priorContext.isNotBlank()) {
-                appendLine("## Prior Context")
-                appendLine(priorContext.truncateForDisplay(2000))
-                appendLine()
-              }
-              if (contextFiles.isNotBlank()) {
-                appendLine("## Related Files")
-                appendLine(contextFiles.truncateForDisplay(2000))
-              }
-            }.renderMarkdown
+                          appendLine("# Reference Context")
+                          appendLine()
+                          if (priorContext.isNotBlank()) {
+                            appendLine("## Prior Context")
+                            appendLine(priorContext.truncateForDisplay(2000))
+                            appendLine()
+                          }
+                          if (contextFiles.isNotBlank()) {
+                            appendLine("## Related Files")
+                            appendLine(contextFiles.truncateForDisplay(2000))
+                          }
+                        }.renderMarkdown(true)
           )
           contextTask.update()
           transcript?.write(
@@ -343,11 +344,11 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
 
         outlineTask.add(
           buildString {
-            appendLine("# Explanation Outline")
-            appendLine()
-            appendLine("**Status:** Creating structured outline...")
-            appendLine()
-          }.renderMarkdown
+                      appendLine("# Explanation Outline")
+                      appendLine()
+                      appendLine("**Status:** Creating structured outline...")
+                      appendLine()
+                    }.renderMarkdown(true)
         )
         transcript?.write("\n# Explanation Outline\n\n".toByteArray(StandardCharsets.UTF_8))
         transcript?.write("**Status:** Creating structured outline...\n\n".toByteArray(StandardCharsets.UTF_8))
@@ -419,7 +420,7 @@ Ensure the outline:
         outline.validate()?.let { validationError ->
           log.error("Outline validation failed: $validationError")
           outlineTask.error(ValidatedObject.ValidationError(validationError, outline))
-          task.complete("Outline validation failed: $validationError".renderMarkdown)
+          task.complete("Outline validation failed: $validationError".renderMarkdown(true))
           resultFn("CONFIGURATION ERROR: Outline validation failed: $validationError")
           return@submit
         }
@@ -498,12 +499,12 @@ Ensure the outline:
           }
           appendLine("**Status:** ✅ Complete")
         }
-        outlineTask.add(outlineContent.renderMarkdown)
+        outlineTask.add(outlineContent.renderMarkdown(true))
         outlineTask.update()
         transcript?.write(outlineContent.toByteArray(StandardCharsets.UTF_8))
 
-        overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown)
-        overviewTask.add("\n### Phase 2: Content Generation\n*Writing explanation sections...*\n".renderMarkdown)
+        overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown(true))
+        overviewTask.add("\n### Phase 2: Content Generation\n*Writing explanation sections...*\n".renderMarkdown(true))
         overviewTask.update()
 
         // Phase 2: Generate content for each concept
@@ -513,18 +514,22 @@ Ensure the outline:
         outline.key_concepts.forEachIndexed { index, conceptOutline ->
           log.info("Writing section ${index + 1}/${outline.key_concepts.size}: ${conceptOutline.concept}")
 
-          overviewTask.add("- Section ${index + 1}: ${conceptOutline.concept.truncateForDisplay(50)} ".renderMarkdown)
+          overviewTask.add(
+            "- Section ${index + 1}: ${conceptOutline.concept.truncateForDisplay(50)} ".renderMarkdown(
+              true
+            )
+          )
           overviewTask.update()
 
           val sectionTask = tabs.newTask("Section ${index + 1}")
 
           sectionTask.add(
             buildString {
-              appendLine("# ${conceptOutline.concept}")
-              appendLine()
-              appendLine("**Status:** Writing section...")
-              appendLine()
-            }.renderMarkdown
+                          appendLine("# ${conceptOutline.concept}")
+                          appendLine()
+                          appendLine("**Status:** Writing section...")
+                          appendLine()
+                        }.renderMarkdown(true)
           )
           transcript?.write("\n# ${conceptOutline.concept}\n\n".toByteArray(StandardCharsets.UTF_8))
           transcript?.write("**Status:** Writing section...\n\n".toByteArray(StandardCharsets.UTF_8))
@@ -650,7 +655,7 @@ ${
             }
             appendLine("**Status:** ✅ Complete")
           }
-          sectionTask.add(sectionContent.renderMarkdown)
+          sectionTask.add(sectionContent.renderMarkdown(true))
           sectionTask.update()
           transcript?.write(sectionContent.toByteArray(StandardCharsets.UTF_8))
 
@@ -667,15 +672,19 @@ ${
             }
           }
 
-          overviewTask.add("✅\n".renderMarkdown)
+          overviewTask.add("✅\n".renderMarkdown(true))
           overviewTask.update()
         }
 
-        overviewTask.add("✅ Phase 2 Complete: All sections written\n".renderMarkdown)
+        overviewTask.add("✅ Phase 2 Complete: All sections written\n".renderMarkdown(true))
 
         // Phase 3: Add comparisons if enabled
         if (config.include_comparisons) {
-          overviewTask.add("\n### Phase 3: Comparisons\n*Adding comparisons with related concepts...*\n".renderMarkdown)
+          overviewTask.add(
+            "\n### Phase 3: Comparisons\n*Adding comparisons with related concepts...*\n".renderMarkdown(
+              true
+            )
+          )
           overviewTask.update()
 
           log.info("Phase 3: Generating comparisons")
@@ -683,11 +692,11 @@ ${
 
           comparisonTask.add(
             buildString {
-              appendLine("# Comparisons")
-              appendLine()
-              appendLine("**Status:** Comparing with related concepts...")
-              appendLine()
-            }.renderMarkdown
+                          appendLine("# Comparisons")
+                          appendLine()
+                          appendLine("**Status:** Comparing with related concepts...")
+                          appendLine()
+                        }.renderMarkdown(true)
           )
           transcript?.write("\n# Comparisons\n\n".toByteArray(StandardCharsets.UTF_8))
           transcript?.write(
@@ -722,12 +731,12 @@ Make comparisons clear and helpful for ${config.target_audience}.
 
           comparisonTask.add(
             buildString {
-              appendLine("## Related Concepts")
-              appendLine()
-              appendLine(comparisons)
-              appendLine()
-              appendLine("**Status:** ✅ Complete")
-            }.renderMarkdown
+                          appendLine("## Related Concepts")
+                          appendLine()
+                          appendLine(comparisons)
+                          appendLine()
+                          appendLine("**Status:** ✅ Complete")
+                        }.renderMarkdown(true)
           )
           comparisonTask.update()
           transcript?.write("\n## Related Concepts\n\n${comparisons}\n\n".toByteArray(StandardCharsets.UTF_8))
@@ -736,12 +745,12 @@ Make comparisons clear and helpful for ${config.target_audience}.
           resultBuilder.append(comparisons)
           resultBuilder.append("\n\n")
 
-          overviewTask.add("✅ Phase 3 Complete: Comparisons added\n".renderMarkdown)
+          overviewTask.add("✅ Phase 3 Complete: Comparisons added\n".renderMarkdown(true))
         }
 
         // Phase 4: Revision (if enabled)
         if (config.revision_passes > 0) {
-          overviewTask.add("\n### Phase 4: Revision\n*Refining for clarity...*\n".renderMarkdown)
+          overviewTask.add("\n### Phase 4: Revision\n*Refining for clarity...*\n".renderMarkdown(true))
           overviewTask.update()
 
           log.info("Phase 4: Performing ${config.revision_passes} revision pass(es)")
@@ -749,11 +758,11 @@ Make comparisons clear and helpful for ${config.target_audience}.
 
           revisionTask.add(
             buildString {
-              appendLine("# Revision Process")
-              appendLine()
-              appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
-              appendLine()
-            }.renderMarkdown
+                          appendLine("# Revision Process")
+                          appendLine()
+                          appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
+                          appendLine()
+                        }.renderMarkdown(true)
           )
           transcript?.write("\n# Revision Process\n\n".toByteArray(StandardCharsets.UTF_8))
           transcript?.write(
@@ -804,11 +813,11 @@ Provide the complete revised explanation.
 
             revisionTask.add(
               buildString {
-                appendLine("## Revision Pass ${passNum + 1}")
-                appendLine()
-                appendLine("✅ Complete")
-                appendLine()
-              }.renderMarkdown
+                              appendLine("## Revision Pass ${passNum + 1}")
+                              appendLine()
+                              appendLine("✅ Complete")
+                              appendLine()
+                            }.renderMarkdown(true)
             )
             revisionTask.update()
             transcript?.write(
@@ -818,11 +827,15 @@ Provide the complete revised explanation.
             )
           }
 
-          overviewTask.add("✅ Phase 4 Complete: ${config.revision_passes} revision pass(es) completed\n".renderMarkdown)
+          overviewTask.add(
+            "✅ Phase 4 Complete: ${config.revision_passes} revision pass(es) completed\n".renderMarkdown(
+              true
+            )
+          )
         }
 
         // Phase 5: Final Assembly
-        overviewTask.add("\n### Phase 5: Final Assembly\n*Compiling complete explanation...*\n".renderMarkdown)
+        overviewTask.add("\n### Phase 5: Final Assembly\n*Compiling complete explanation...*\n".renderMarkdown(true))
         overviewTask.update()
 
         log.info("Phase 5: Assembling final explanation")
@@ -866,7 +879,7 @@ Provide the complete revised explanation.
           }
         }
 
-        finalTask.add(finalExplanation.renderMarkdown)
+        finalTask.add(finalExplanation.renderMarkdown(true))
         finalTask.update()
         transcript?.write(
           """
@@ -906,7 +919,7 @@ Provide the complete revised explanation.
           )
         }
         overviewTask.add(
-          statsContent.renderMarkdown
+          statsContent.renderMarkdown(true)
         )
         transcript?.write(statsContent.toByteArray(StandardCharsets.UTF_8))
         overviewTask.update()
@@ -923,7 +936,11 @@ Provide the complete revised explanation.
         log.info("TechnicalExplanationTask completed: sections=${sections.size}, words=$wordCount, time=${totalTime}ms")
 
 
-        task.complete("Technical explanation generation complete: $wordCount words in ${totalTime / 1000}s".renderMarkdown)
+        task.complete(
+          "Technical explanation generation complete: $wordCount words in ${totalTime / 1000}s".renderMarkdown(
+            true
+          )
+        )
         resultFn(finalResult)
 
       } catch (e: Exception) {
@@ -932,15 +949,15 @@ Provide the complete revised explanation.
 
         overviewTask.add(
           buildString {
-            appendLine()
-            appendLine("---")
-            appendLine()
-            appendLine("## ❌ Error Occurred")
-            appendLine()
-            appendLine("**Error:** ${e.message}")
-            appendLine()
-            appendLine("**Type:** ${e.javaClass.simpleName}")
-          }.renderMarkdown
+                      appendLine()
+                      appendLine("---")
+                      appendLine()
+                      appendLine("## ❌ Error Occurred")
+                      appendLine()
+                      appendLine("**Error:** ${e.message}")
+                      appendLine()
+                      appendLine("**Type:** ${e.javaClass.simpleName}")
+                    }.renderMarkdown(true)
         )
         overviewTask.update()
         transcript?.write(

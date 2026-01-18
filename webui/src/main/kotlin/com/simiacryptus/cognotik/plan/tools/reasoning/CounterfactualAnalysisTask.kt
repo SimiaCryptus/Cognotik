@@ -305,7 +305,7 @@ ${executionConfig?.control_factors?.joinToString("\n") { "- $it" } ?: "None spec
 
         var result: String? = chatAgent.answer(listOf("Provide a comprehensive analysis"))
         transcript?.write("<details><summary>Response for $scenarioName</summary>\n\n${result ?: "(No response)"}\n\n</details>\n\n".toByteArray())
-        tab.add("## $scenarioName\n\n${result ?: "No analysis generated."}".renderMarkdown)
+        tab.add("## $scenarioName\n\n${result ?: "No analysis generated."}".renderMarkdown(true))
         tab.update()
         return result ?: ""
     }
@@ -371,7 +371,7 @@ $priorCode
 
         var result: String? = chatAgent.answer(listOf("Provide a comprehensive comparative analysis"))
         transcript?.write("<details><summary>Comparison Response</summary>\n\n${result ?: "(No response)"}\n\n</details>\n\n".toByteArray())
-        tab.add("## Comparative Analysis\n\n${result ?: "No comparison generated."}".renderMarkdown)
+        tab.add("## Comparative Analysis\n\n${result ?: "No comparison generated."}".renderMarkdown(true))
         tab.update()
         return result ?: ""
     }

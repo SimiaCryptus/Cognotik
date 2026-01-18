@@ -733,19 +733,19 @@ class CustomFileSetPatchServer(
         if (design.isNotBlank()) {
             task.add(
                 AddApplyFileDiffLinks.instrumentFileDiffs(
-                    self = socketManager,
-                    root = _root ?: throw IllegalStateException("Root directory is not set"),
-                    response = design,
-                    handle = { newCodeMap ->
-                        newCodeMap.forEach { (path, _) ->
-                            task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                        }
-                    },
-                    shouldAutoApply = { autoApply },
-                    model = AppSettingsState.instance.fastChatClient,
-                    defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
-                        ?: "",
-                    processor = processor).renderMarkdown)
+                                    self = socketManager,
+                                    root = _root ?: throw IllegalStateException("Root directory is not set"),
+                                    response = design,
+                                    handle = { newCodeMap ->
+                                        newCodeMap.forEach { (path, _) ->
+                                            task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                                        }
+                                    },
+                                    shouldAutoApply = { autoApply },
+                                    model = AppSettingsState.instance.fastChatClient,
+                                    defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
+                                        ?: "",
+                                    processor = processor).renderMarkdown(true))
         } else {
             task.complete("No changes suggested.")
         }

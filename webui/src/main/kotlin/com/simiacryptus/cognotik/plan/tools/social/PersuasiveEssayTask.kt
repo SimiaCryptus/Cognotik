@@ -282,7 +282,7 @@ class PersuasiveEssayTask(
             appendLine("### Phase 1: Research & Outline")
             appendLine("*Analyzing thesis and creating essay structure...*")
         }
-        overviewTask.add(overviewContent.renderMarkdown)
+        overviewTask.add(overviewContent.renderMarkdown(true))
         overviewTask.update()
                 transcript?.write("## Configuration\n\n".toByteArray())
                 transcript?.write(overviewContent.toByteArray())
@@ -302,24 +302,24 @@ class PersuasiveEssayTask(
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
                 val contextTask = tabs.newTask("Research Context")
                 contextTask.add(
-                    buildString {
-                        appendLine("# Research Context")
-                        appendLine()
-                        if (priorContext.isNotBlank()) {
-                            appendLine("## Prior Context")
-                            appendLine(priorContext.truncateForDisplay(2000))
-                            appendLine()
-                        }
-                        if (inputFileContent.isNotBlank()) {
-                            appendLine("## Input Files")
-                            appendLine(inputFileContent.truncateForDisplay(3000))
-                            appendLine()
-                        }
-                        if (contextFiles.isNotBlank()) {
-                            appendLine("## Related Files")
-                            appendLine(contextFiles.truncateForDisplay(2000))
-                        }
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Research Context")
+                    appendLine()
+                    if (priorContext.isNotBlank()) {
+                      appendLine("## Prior Context")
+                      appendLine(priorContext.truncateForDisplay(2000))
+                      appendLine()
+                    }
+                    if (inputFileContent.isNotBlank()) {
+                      appendLine("## Input Files")
+                      appendLine(inputFileContent.truncateForDisplay(3000))
+                      appendLine()
+                    }
+                    if (contextFiles.isNotBlank()) {
+                      appendLine("## Related Files")
+                      appendLine(contextFiles.truncateForDisplay(2000))
+                    }
+                  }.renderMarkdown(true)
                 )
                 contextTask.complete()
                 transcript?.write(
@@ -339,12 +339,12 @@ class PersuasiveEssayTask(
             val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
-                buildString {
-                    appendLine("# Essay Outline")
-                    appendLine()
-                    appendLine("**Status:** Creating structured outline...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Essay Outline")
+                appendLine()
+                appendLine("**Status:** Creating structured outline...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             outlineTask.update()
 
@@ -460,14 +460,14 @@ Ensure the outline:
                 appendLine()
                 appendLine("**Status:** ✅ Complete")
             }
-            outlineTask.add(outlineContent.renderMarkdown)
+            outlineTask.add(outlineContent.renderMarkdown(true))
             outlineTask.complete()
             transcript?.write("## Essay Outline\n\n".toByteArray())
             transcript?.write(outlineContent.toByteArray())
             transcript?.write("\n\n".toByteArray())
 
-            overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown)
-            overviewTask.add("\n### Phase 2: Introduction\n*Writing compelling introduction...*\n".renderMarkdown)
+            overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown(true))
+            overviewTask.add("\n### Phase 2: Introduction\n*Writing compelling introduction...*\n".renderMarkdown(true))
             overviewTask.update()
             // Generate outline visualization image if enabled
             if (typeConfig!!.generate_images) {
@@ -486,12 +486,12 @@ Ensure the outline:
             val introTask = tabs.newTask("Introduction")
 
             introTask.add(
-                buildString {
-                    appendLine("# Introduction")
-                    appendLine()
-                    appendLine("**Status:** Writing introduction...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Introduction")
+                appendLine()
+                appendLine("**Status:** Writing introduction...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             introTask.update()
 
@@ -528,21 +528,21 @@ Speak directly to the ${executionConfig.target_audience}.
             var introduction = introAgent.answer(listOf("Write introduction")).obj
 
             introTask.add(
-                buildString {
-                    appendLine("## Introduction")
-                    appendLine()
-                    appendLine(introduction.content)
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Word Count:** ${introduction.word_count}")
-                    if (introduction.rhetorical_devices.isNotEmpty()) {
-                        appendLine()
-                        appendLine("**Rhetorical Devices:** ${introduction.rhetorical_devices.joinToString(", ")}")
-                    }
-                    appendLine()
-                    appendLine("**Status:** ✅ Complete")
-                }.renderMarkdown
+              buildString {
+                appendLine("## Introduction")
+                appendLine()
+                appendLine(introduction.content)
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("**Word Count:** ${introduction.word_count}")
+                if (introduction.rhetorical_devices.isNotEmpty()) {
+                  appendLine()
+                  appendLine("**Rhetorical Devices:** ${introduction.rhetorical_devices.joinToString(", ")}")
+                }
+                appendLine()
+                appendLine("**Status:** ✅ Complete")
+              }.renderMarkdown(true)
             )
             introTask.complete()
             transcript?.write("## Introduction\n\n".toByteArray())
@@ -553,8 +553,12 @@ Speak directly to the ${executionConfig.target_audience}.
             resultBuilder.append(introduction.content)
             resultBuilder.append("\n\n")
 
-            overviewTask.add("✅ Phase 2 Complete: Introduction written (${introduction.word_count} words)\n".renderMarkdown)
-            overviewTask.add("\n### Phase 3: Body Arguments\n*Developing main arguments...*\n".renderMarkdown)
+            overviewTask.add(
+              "✅ Phase 2 Complete: Introduction written (${introduction.word_count} words)\n".renderMarkdown(
+                true
+              )
+            )
+            overviewTask.add("\n### Phase 3: Body Arguments\n*Developing main arguments...*\n".renderMarkdown(true))
             overviewTask.update()
 
             // Phase 3: Write each argument
@@ -565,18 +569,22 @@ Speak directly to the ${executionConfig.target_audience}.
             outline.arguments.forEachIndexed { index, argOutline ->
                 log.info("Writing argument ${index + 1}/${outline.arguments.size}: ${argOutline.claim}")
 
-                overviewTask.add("- Argument ${index + 1}: ${argOutline.claim.truncateForDisplay(50)} ".renderMarkdown)
+                overviewTask.add(
+                  "- Argument ${index + 1}: ${argOutline.claim.truncateForDisplay(50)} ".renderMarkdown(
+                    true
+                  )
+                )
                 overviewTask.update()
 
                 val argTask = tabs.newTask("Argument ${index + 1}")
 
                 argTask.add(
-                    buildString {
-                        appendLine("# Argument ${index + 1}")
-                        appendLine()
-                        appendLine("**Status:** Writing argument...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Argument ${index + 1}")
+                    appendLine()
+                    appendLine("**Status:** Writing argument...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 argTask.update()
 
@@ -634,25 +642,25 @@ Aim for approximately ${argOutline.estimated_word_count} words.
                 cumulativeWordCount += argumentSection.word_count
 
                 argTask.add(
-                    buildString {
-                        appendLine("## ${argOutline.claim}")
-                        appendLine()
-                        appendLine(argumentSection.content)
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("**Word Count:** ${argumentSection.word_count}")
-                        if (argumentSection.rhetorical_devices.isNotEmpty()) {
-                            appendLine()
-                            appendLine("**Rhetorical Devices:** ${argumentSection.rhetorical_devices.joinToString(", ")}")
-                        }
-                        if (argumentSection.persuasive_elements.isNotEmpty()) {
-                            appendLine()
-                            appendLine("**Persuasive Elements:** ${argumentSection.persuasive_elements.joinToString(", ")}")
-                        }
-                        appendLine()
-                        appendLine("**Status:** ✅ Complete")
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("## ${argOutline.claim}")
+                    appendLine()
+                    appendLine(argumentSection.content)
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Word Count:** ${argumentSection.word_count}")
+                    if (argumentSection.rhetorical_devices.isNotEmpty()) {
+                      appendLine()
+                      appendLine("**Rhetorical Devices:** ${argumentSection.rhetorical_devices.joinToString(", ")}")
+                    }
+                    if (argumentSection.persuasive_elements.isNotEmpty()) {
+                      appendLine()
+                      appendLine("**Persuasive Elements:** ${argumentSection.persuasive_elements.joinToString(", ")}")
+                    }
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete")
+                  }.renderMarkdown(true)
                 )
                 argTask.complete()
                 transcript?.write("## Argument ${index + 1}: ${argOutline.claim}\n\n".toByteArray())
@@ -675,27 +683,27 @@ Aim for approximately ${argOutline.estimated_word_count} words.
                     )
                 }
 
-                overviewTask.add("✅ (${argumentSection.word_count} words)\n".renderMarkdown)
+                overviewTask.add("✅ (${argumentSection.word_count} words)\n".renderMarkdown(true))
                 overviewTask.update()
             }
 
-            overviewTask.add("✅ Phase 3 Complete: All arguments written\n".renderMarkdown)
+            overviewTask.add("✅ Phase 3 Complete: All arguments written\n".renderMarkdown(true))
 
             // Phase 4: Counterarguments (if enabled)
             if (executionConfig.include_counterarguments && outline.counterarguments.isNotEmpty()) {
-                overviewTask.add("\n### Phase 4: Counterarguments\n*Addressing opposing views...*\n".renderMarkdown)
+                overviewTask.add("\n### Phase 4: Counterarguments\n*Addressing opposing views...*\n".renderMarkdown(true))
                 overviewTask.update()
 
                 log.info("Phase 4: Writing counterarguments and rebuttals")
                 val counterTask = tabs.newTask("Counterarguments")
 
                 counterTask.add(
-                    buildString {
-                        appendLine("# Counterarguments & Rebuttals")
-                        appendLine()
-                        appendLine("**Status:** Writing counterarguments...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Counterarguments & Rebuttals")
+                    appendLine()
+                    appendLine("**Status:** Writing counterarguments...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 counterTask.update()
 
@@ -731,17 +739,17 @@ Aim for approximately $counterargumentWords words.
                 cumulativeWordCount += counterSection.word_count
 
                 counterTask.add(
-                    buildString {
-                        appendLine("## Addressing Opposing Views")
-                        appendLine()
-                        appendLine(counterSection.content)
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("**Word Count:** ${counterSection.word_count}")
-                        appendLine()
-                        appendLine("**Status:** ✅ Complete")
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("## Addressing Opposing Views")
+                    appendLine()
+                    appendLine(counterSection.content)
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Word Count:** ${counterSection.word_count}")
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete")
+                  }.renderMarkdown(true)
                 )
                 counterTask.complete()
                 transcript?.write("## Counterarguments & Rebuttals\n\n".toByteArray())
@@ -761,23 +769,27 @@ Aim for approximately $counterargumentWords words.
                     )
                 }
 
-                overviewTask.add("✅ Phase 4 Complete: Counterarguments addressed (${counterSection.word_count} words)\n".renderMarkdown)
+                overviewTask.add(
+                  "✅ Phase 4 Complete: Counterarguments addressed (${counterSection.word_count} words)\n".renderMarkdown(
+                    true
+                  )
+                )
             }
 
             // Phase 5: Conclusion
-            overviewTask.add("\n### Phase 5: Conclusion\n*Writing powerful conclusion...*\n".renderMarkdown)
+            overviewTask.add("\n### Phase 5: Conclusion\n*Writing powerful conclusion...*\n".renderMarkdown(true))
             overviewTask.update()
 
             log.info("Phase 5: Writing conclusion")
             val conclusionTask = tabs.newTask("Conclusion")
 
             conclusionTask.add(
-                buildString {
-                    appendLine("# Conclusion")
-                    appendLine()
-                    appendLine("**Status:** Writing conclusion...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Conclusion")
+                appendLine()
+                appendLine("**Status:** Writing conclusion...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             conclusionTask.update()
 
@@ -831,21 +843,21 @@ End on a strong note that reinforces your position.
             cumulativeWordCount += conclusion.word_count
 
             conclusionTask.add(
-                buildString {
-                    appendLine("## Conclusion")
-                    appendLine()
-                    appendLine(conclusion.content)
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Word Count:** ${conclusion.word_count}")
-                    if (conclusion.rhetorical_devices.isNotEmpty()) {
-                        appendLine()
-                        appendLine("**Rhetorical Devices:** ${conclusion.rhetorical_devices.joinToString(", ")}")
-                    }
-                    appendLine()
-                    appendLine("**Status:** ✅ Complete")
-                }.renderMarkdown
+              buildString {
+                appendLine("## Conclusion")
+                appendLine()
+                appendLine(conclusion.content)
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("**Word Count:** ${conclusion.word_count}")
+                if (conclusion.rhetorical_devices.isNotEmpty()) {
+                  appendLine()
+                  appendLine("**Rhetorical Devices:** ${conclusion.rhetorical_devices.joinToString(", ")}")
+                }
+                appendLine()
+                appendLine("**Status:** ✅ Complete")
+              }.renderMarkdown(true)
             )
             conclusionTask.complete()
             transcript?.write("## Conclusion\n\n".toByteArray())
@@ -856,23 +868,27 @@ End on a strong note that reinforces your position.
             resultBuilder.append(conclusion.content)
             resultBuilder.append("\n\n")
 
-            overviewTask.add("✅ Phase 5 Complete: Conclusion written (${conclusion.word_count} words)\n".renderMarkdown)
+            overviewTask.add(
+              "✅ Phase 5 Complete: Conclusion written (${conclusion.word_count} words)\n".renderMarkdown(
+                true
+              )
+            )
 
             // Phase 6: Revision (if enabled)
             if (executionConfig.revision_passes > 0) {
-                overviewTask.add("\n### Phase 6: Revision\n*Refining and polishing...*\n".renderMarkdown)
+                overviewTask.add("\n### Phase 6: Revision\n*Refining and polishing...*\n".renderMarkdown(true))
                 overviewTask.update()
 
                 log.info("Phase 6: Performing ${executionConfig.revision_passes} revision pass(es)")
                 val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
-                    buildString {
-                        appendLine("# Revision Process")
-                        appendLine()
-                        appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Revision Process")
+                    appendLine()
+                    appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 revisionTask.update()
 
@@ -914,12 +930,12 @@ Provide the complete revised essay.
                     resultBuilder.append(revisedEssay)
 
                     revisionTask.add(
-                        buildString {
-                            appendLine("## Revision Pass ${passNum + 1}")
-                            appendLine()
-                            appendLine("✅ Complete")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("## Revision Pass ${passNum + 1}")
+                        appendLine()
+                        appendLine("✅ Complete")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     revisionTask.update()
                     transcript?.write("### Revision Pass ${passNum + 1}\n\n".toByteArray())
@@ -927,11 +943,15 @@ Provide the complete revised essay.
                 }
                 revisionTask.complete()
 
-                overviewTask.add("✅ Phase 6 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
+                overviewTask.add(
+                  "✅ Phase 6 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown(
+                    true
+                  )
+                )
             }
 
             // Phase 7: Final Assembly
-            overviewTask.add("\n### Phase 7: Final Assembly\n*Compiling complete essay...*\n".renderMarkdown)
+            overviewTask.add("\n### Phase 7: Final Assembly\n*Compiling complete essay...*\n".renderMarkdown(true))
             overviewTask.update()
 
             log.info("Phase 7: Assembling final essay")
@@ -955,7 +975,7 @@ Provide the complete revised essay.
             log.info("Saved complete essay to: $essayLink")
 
 
-            finalTask.add(finalEssay.renderMarkdown)
+            finalTask.add(finalEssay.renderMarkdown(true))
             finalTask.complete()
             transcript?.write("## Complete Essay\n\n".toByteArray())
             transcript?.write(finalEssay.toByteArray())
@@ -966,27 +986,27 @@ Provide the complete revised essay.
             val totalTime = System.currentTimeMillis() - startTime
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ✅ Generation Complete")
-                    appendLine()
-                    appendLine("**Statistics:**")
-                    appendLine("- Total Word Count: $cumulativeWordCount")
-                    appendLine("- Target Word Count: ${executionConfig.target_word_count}")
-                    appendLine("- Completion: ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
-                    appendLine("- Number of Arguments: ${argumentSections.size}")
-                    appendLine("- Counterarguments: ${if (executionConfig.include_counterarguments) "✓ Included" else "✗ Not included"}")
-                    appendLine("- Revision Passes: ${executionConfig.revision_passes}")
-                    appendLine("- Total Time: ${totalTime / 1000.0}s")
-                    appendLine()
-                    appendLine(
-                        "**Completed:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ✅ Generation Complete")
+                appendLine()
+                appendLine("**Statistics:**")
+                appendLine("- Total Word Count: $cumulativeWordCount")
+                appendLine("- Target Word Count: ${executionConfig.target_word_count}")
+                appendLine("- Completion: ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
+                appendLine("- Number of Arguments: ${argumentSections.size}")
+                appendLine("- Counterarguments: ${if (executionConfig.include_counterarguments) "✓ Included" else "✗ Not included"}")
+                appendLine("- Revision Passes: ${executionConfig.revision_passes}")
+                appendLine("- Total Time: ${totalTime / 1000.0}s")
+                appendLine()
+                appendLine(
+                  "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                  }"
+                )
+              }.renderMarkdown(true)
             )
             overviewTask.complete()
 
@@ -1051,16 +1071,16 @@ Provide the complete revised essay.
             log.error("Error during persuasive essay generation: ${e.message}", e)
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ❌ Error Occurred")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                appendLine()
+                appendLine("**Type:** ${e.javaClass.simpleName}")
+              }.renderMarkdown(true)
             )
             overviewTask.complete()
             task.error(e)
@@ -1112,12 +1132,12 @@ Provide the complete revised essay.
             log.info("Generating cover image for: $title")
             val imageTask = tabs.newTask("Cover Image")
             imageTask.add(
-                buildString {
-                    appendLine("# Cover Image")
-                    appendLine()
-                    appendLine("**Status:** Generating cover image...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Cover Image")
+                appendLine()
+                appendLine("**Status:** Generating cover image...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             imageTask.update()
 
@@ -1148,14 +1168,14 @@ Provide the complete revised essay.
           </a>
         </div>
       """.trimIndent()
-            imageTask.add(imageHtml.renderMarkdown)
+            imageTask.add(imageHtml.renderMarkdown(true))
             imageTask.update()
 
             transcript?.write("## Cover Image\n\n".toByteArray())
             transcript?.write("**Prompt:** ${result.text}\n\n".toByteArray())
             transcript?.write("![Cover Image]($link)\n\n".transcriptFilter().toByteArray())
 
-            imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
+            imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown(true))
             imageTask.complete()
         } catch (e: Exception) {
             log.error("Failed to generate cover image: ${e.message}")
@@ -1182,12 +1202,12 @@ Provide the complete revised essay.
             log.info("Generating outline visualization image")
             val imageTask = tabs.newTask("Outline Visualization")
             imageTask.add(
-                buildString {
-                    appendLine("# Outline Visualization")
-                    appendLine()
-                    appendLine("**Status:** Generating outline visualization...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Outline Visualization")
+                appendLine()
+                appendLine("**Status:** Generating outline visualization...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             imageTask.update()
 
@@ -1225,14 +1245,14 @@ Provide the complete revised essay.
           </a>
         </div>
       """.trimIndent()
-            imageTask.add(imageHtml.renderMarkdown)
+            imageTask.add(imageHtml.renderMarkdown(true))
             imageTask.update()
 
             transcript?.write("## Outline Visualization\n\n".toByteArray())
             transcript?.write("**Prompt:** ${result.text}\n\n".toByteArray())
             transcript?.write("![Outline]($link)\n\n".transcriptFilter().toByteArray())
 
-            imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
+            imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown(true))
             imageTask.complete()
         } catch (e: Exception) {
             log.error("Failed to generate outline visualization: ${e.message}")
@@ -1260,12 +1280,12 @@ Provide the complete revised essay.
             log.info("Generating image for argument $argumentNumber")
             val imageTask = tabs.newTask("Argument $argumentNumber Image")
             imageTask.add(
-                buildString {
-                    appendLine("# Argument $argumentNumber Visualization")
-                    appendLine()
-                    appendLine("**Status:** Generating argument visualization...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Argument $argumentNumber Visualization")
+                appendLine()
+                appendLine("**Status:** Generating argument visualization...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             imageTask.update()
 
@@ -1299,14 +1319,14 @@ Provide the complete revised essay.
           </a>
         </div>
       """.trimIndent()
-            imageTask.add(imageHtml.renderMarkdown)
+            imageTask.add(imageHtml.renderMarkdown(true))
             imageTask.update()
 
             transcript?.write("#### Argument $argumentNumber Image\n\n".toByteArray())
             transcript?.write("**Prompt:** ${result.text}\n\n".toByteArray())
             transcript?.write("![Argument $argumentNumber]($link)\n\n".transcriptFilter().toByteArray())
 
-            imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
+            imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown(true))
             imageTask.complete()
         } catch (e: Exception) {
             log.error("Failed to generate argument $argumentNumber image: ${e.message}")
@@ -1332,12 +1352,12 @@ Provide the complete revised essay.
             log.info("Generating counterargument visualization image")
             val imageTask = tabs.newTask("Counterargument Image")
             imageTask.add(
-                buildString {
-                    appendLine("# Counterargument Visualization")
-                    appendLine()
-                    appendLine("**Status:** Generating counterargument visualization...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Counterargument Visualization")
+                appendLine()
+                appendLine("**Status:** Generating counterargument visualization...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             imageTask.update()
 
@@ -1371,14 +1391,14 @@ Provide the complete revised essay.
           </a>
         </div>
       """.trimIndent()
-            imageTask.add(imageHtml.renderMarkdown)
+            imageTask.add(imageHtml.renderMarkdown(true))
             imageTask.update()
 
             transcript?.write("## Counterargument Visualization\n\n".toByteArray())
             transcript?.write("**Prompt:** ${result.text}\n\n".toByteArray())
             transcript?.write("![Counterarguments]($link)\n\n".transcriptFilter().toByteArray())
 
-            imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
+            imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown(true))
             imageTask.complete()
         } catch (e: Exception) {
             log.error("Failed to generate counterargument image: ${e.message}")
