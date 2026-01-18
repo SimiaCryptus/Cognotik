@@ -351,4 +351,3 @@ input:focus, textarea:focus, select:focus {
 .jqueryFileTree li a { color: var(--text-main); text-decoration: none; }
 .jqueryFileTree li a:hover { color: var(--accent-primary); font-weight: bold; }
 .jqueryFileTree .directory a { color: var(--text-dim); }
-

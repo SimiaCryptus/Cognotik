@@ -4,7 +4,8 @@
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cognitive Task Planning Framework - Cognotik</title>
+    <title>Task Planning Framework - Cognotik</title>
+    <meta name="description" content="Intelligent orchestration framework with cognitive modes for autonomous planning, task decomposition, and adaptive execution workflows.">
     <link rel="stylesheet" href="assets/styles/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,14 +28,19 @@
         <!-- Hero -->
         <section class="hero">
             <!-- Prompt: A glowing, central neural core connecting to various geometric modules representing tasks. -->
-            <h1>Cognitive Task Planning Framework</h1>
+            <h1>Task Planning Framework</h1>
             <p class="subtitle">
-                The central nervous system of Cognotik. It understands high-level goals, formulates intelligent plans, 
-                and orchestrates a vast library of tasks to execute complex workflows autonomously.
+                Transform high-level goals into executable workflows. The Task Planning Framework understands your intent, 
+                formulates intelligent plans using cognitive modes, and orchestrates specialized tasks to deliver results autonomously.
             </p>
-            <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
-                Try the Simulator
-            </button>
+            <div class="hero-actions">
+                <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
+                    Try the Simulator
+                </button>
+                <a href="https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan" class="cta-button secondary" target="_blank">
+                    View Source
+                </a>
+            </div>
         </section>
 
         <!-- Features -->
@@ -44,17 +50,22 @@
                 <div class="feature-card">
                     <i data-lucide="brain"></i>
                     <h3>Cognitive Modes</h3>
-                    <p>Distinct "thinking styles" ranging from linear planning to autonomous, adaptive agents.</p>
+                    <p>Nine distinct "thinking styles" from linear Waterfall planning to autonomous Adaptive agents and collaborative Council deliberation.</p>
                 </div>
                 <div class="feature-card">
                     <i data-lucide="layout-list"></i>
-                    <h3>Abstract Tasks</h3>
-                    <p>A unified interface for specialized tools, from file operations to complex reasoning engines.</p>
+                    <h3>Task Library</h3>
+                    <p>50+ specialized tasks for file operations, code execution, web scraping, reasoning, and content generation.</p>
                 </div>
                 <div class="feature-card">
                     <i data-lucide="network"></i>
                     <h3>Orchestration</h3>
-                    <p>Intelligent dependency management and context passing between tasks in a workflow.</p>
+                    <p>Intelligent dependency management, parallel execution, and automatic context passing between workflow steps.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-lucide="git-branch"></i>
+                    <h3>Sub-Planning</h3>
+                    <p>Recursive task decomposition allows complex goals to spawn independent sub-plans with their own cognitive modes.</p>
                 </div>
             </div>
         </section>
@@ -62,49 +73,184 @@
         <!-- Modes Detail -->
         <section class="modes-section" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
             <h2>Cognitive Modes</h2>
+            <p class="section-intro" style="color: var(--text-secondary); margin-bottom: 2rem; text-align: center;">
+                Select the right thinking style for your problem. Each mode offers a unique approach to planning and execution.
+            </p>
             <div class="mode-grid">
                 <div class="mode-card">
-                    <div class="mode-title">Waterfall Mode</div>
-                    <p><strong>The Architect.</strong> Analyzes the entire request upfront and generates a comprehensive, sequential plan. It allows for user review and modification before any code runs. Ideal for well-defined tasks where the path to the solution is clear.</p>
+                    <div class="mode-title">
+                        <span class="mode-icon">🏗️</span>
+                        Waterfall Mode
+                    </div>
+                    <p><strong>The Architect.</strong> Analyzes the entire request upfront and generates a comprehensive, sequential plan with visual diagrams. Review and modify before execution begins. Ideal for well-defined tasks where the path to the solution is clear.</p>
+                    <div class="mode-tags">
+                        <span class="tag">Plan-First</span>
+                        <span class="tag">User Review</span>
+                        <span class="tag">Sequential</span>
+                    </div>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-title">Conversational Mode</div>
-                    <p><strong>The Partner.</strong> Operates interactively, executing one step at a time based on the immediate conversation context. It maintains a full history of the session. Perfect for exploratory work, debugging, or when you need to guide the AI closely.</p>
+                    <div class="mode-title">
+                        <span class="mode-icon">💬</span>
+                        Conversational Mode
+                    </div>
+                    <p><strong>The Partner.</strong> Operates interactively, selecting and executing one optimal task at a time based on conversation context. Maintains full session history for informed decisions. Perfect for exploratory work and debugging.</p>
+                    <div class="mode-tags">
+                        <span class="tag">Interactive</span>
+                        <span class="tag">Step-by-Step</span>
+                        <span class="tag">Context-Aware</span>
+                    </div>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-title">Adaptive Planning</div>
-                    <p><strong>The Strategist.</strong> Uses an iterative "Think, Act, Reflect" loop. It maintains a dynamic internal state of goals, facts, and hypotheses, allowing it to adjust its strategy based on task results. Best for ambiguous or evolving problems.</p>
+                    <div class="mode-title">
+                        <span class="mode-icon">🧠</span>
+                        Adaptive Planning
+                    </div>
+                    <p><strong>The Strategist.</strong> Autonomous agent using a cyclical "Think, Act, Reflect" loop. Maintains dynamic internal state of goals, facts, and hypotheses. Adapts strategy based on results until the goal is achieved.</p>
+                    <div class="mode-tags">
+                        <span class="tag">Autonomous</span>
+                        <span class="tag">Self-Correcting</span>
+                        <span class="tag">Research</span>
+                    </div>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-title">Hierarchical Planning</div>
-                    <p><strong>The Manager.</strong> Tackles massive goals by recursively decomposing them into sub-goals and concrete tasks. It manages a dependency tree, ensuring prerequisites are met before execution. Essential for complex, multi-component projects.</p>
+                    <div class="mode-title">
+                        <span class="mode-icon">🌳</span>
+                        Hierarchical Planning
+                    </div>
+                    <p><strong>The Manager.</strong> Divide-and-conquer strategy that recursively decomposes massive goals into a tree of sub-goals and tasks. Manages dependencies and executes in parallel where possible.</p>
+                    <div class="mode-tags">
+                        <span class="tag">Decomposition</span>
+                        <span class="tag">Parallel</span>
+                        <span class="tag">Large Projects</span>
+                    </div>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-title">Parallel Mode</div>
-                    <p><strong>The Factory.</strong> Designed for high-throughput batch operations. It takes a template and a set of variables (like file patterns), generates all combinations, and executes them simultaneously. Ideal for applying changes across a codebase or running parameter sweeps.</p>
+                    <div class="mode-title">
+                        <span class="mode-icon">⚡</span>
+                        Parallel Mode
+                    </div>
+                    <p><strong>The Factory.</strong> High-throughput batch operations using templates and variable sets. Generates all combinations and executes simultaneously with configurable concurrency. Ideal for codebase-wide changes.</p>
+                    <div class="mode-tags">
+                        <span class="tag">Batch</span>
+                        <span class="tag">Concurrent</span>
+                        <span class="tag">Templates</span>
+                    </div>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-title">Protocol Mode</div>
-                    <p><strong>The Auditor.</strong> Enforces strict methodologies (like TDD) using a state machine with validation steps. It ensures high-quality output by having a 'Referee' agent verify each step before proceeding.</p>
+                    <div class="mode-title">
+                        <span class="mode-icon">✅</span>
+                        Protocol Mode
+                    </div>
+                    <p><strong>The Auditor.</strong> Enforces strict methodologies (like TDD) using a state machine with validation gates. A 'Referee' agent verifies each step before proceeding, ensuring high-quality output.</p>
+                    <div class="mode-tags">
+                        <span class="tag">TDD</span>
+                        <span class="tag">Validation</span>
+                        <span class="tag">Quality</span>
+                    </div>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-title">Session Mode</div>
-                    <p><strong>The Operator.</strong> Assigns a dedicated AI operator to drive a specific tool continuously. It maintains a deep session context with that tool to achieve a goal through repeated interaction.</p>
+                    <div class="mode-title">
+                        <span class="mode-icon">🖥️</span>
+                        Session Mode
+                    </div>
+                    <p><strong>The Operator.</strong> Assigns a dedicated AI operator to drive a specific tool continuously. Maintains deep session context through repeated interaction until the goal is achieved.</p>
+                    <div class="mode-tags">
+                        <span class="tag">Tool-Focused</span>
+                        <span class="tag">Persistent</span>
+                        <span class="tag">Deep Context</span>
+                    </div>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-title">Council Mode</div>
-                    <p><strong>The Board.</strong> A multi-agent system where a "Council" of personas (e.g., CEO, CTO, QA) collaborates. They nominate tasks, vote on the best course of action, and maintain separate perspectives to ensure balanced decision-making.</p>
+                    <div class="mode-title">
+                        <span class="mode-icon">👥</span>
+                        Council Mode
+                    </div>
+                    <p><strong>The Board.</strong> Multi-agent deliberation where a "Council" of personas (CEO, CTO, QA) collaborates. They nominate tasks, vote on actions, and maintain separate perspectives for balanced decisions.</p>
+                    <div class="mode-tags">
+                        <span class="tag">Multi-Agent</span>
+                        <span class="tag">Voting</span>
+                        <span class="tag">Perspectives</span>
+                    </div>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-title">Pre-Planned Mode</div>
-                    <p><strong>The Executor.</strong> Loads a predefined plan template from a file, substitutes variables based on user input, and executes the workflow. Ideal for repeatable, standardized processes or sharing successful strategies.</p>
+                    <div class="mode-title">
+                        <span class="mode-icon">📋</span>
+                        Pre-Planned Mode
+                    </div>
+                    <p><strong>The Executor.</strong> Loads predefined plan templates, substitutes variables from user input, and executes the workflow. Ideal for repeatable processes and sharing proven strategies.</p>
+                    <div class="mode-tags">
+                        <span class="tag">Templates</span>
+                        <span class="tag">Repeatable</span>
+                        <span class="tag">Shareable</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Task Categories -->
+        <section class="tasks-section" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+            <h2>Task Library</h2>
+            <p class="section-intro" style="color: var(--text-secondary); margin-bottom: 2rem; text-align: center;">
+                A comprehensive toolkit of specialized tasks that cognitive modes orchestrate to accomplish goals.
+            </p>
+            <div class="task-categories">
+                <div class="task-category">
+                    <h3><i data-lucide="folder"></i> File Operations</h3>
+                    <ul>
+                        <li><code>FileModificationTask</code> - Create, update, delete files</li>
+                        <li><code>FileSearchTask</code> - Search files by content or pattern</li>
+                        <li><code>AnalysisTask</code> - Analyze file contents and structure</li>
+                    </ul>
+                </div>
+                <div class="task-category">
+                    <h3><i data-lucide="terminal"></i> Code & Execution</h3>
+                    <ul>
+                        <li><code>RunCodeTask</code> - Execute code snippets</li>
+                        <li><code>RunShellCommandTask</code> - Run terminal commands</li>
+                        <li><code>SelfHealingTask</code> - Auto-fix failing scripts</li>
+                    </ul>
+                </div>
+                <div class="task-category">
+                    <h3><i data-lucide="lightbulb"></i> Reasoning</h3>
+                    <ul>
+                        <li><code>ChainOfThoughtTask</code> - Step-by-step reasoning</li>
+                        <li><code>DecompositionSynthesisTask</code> - Break down & synthesize</li>
+                        <li><code>MultiPerspectiveAnalysisTask</code> - Multiple viewpoints</li>
+                        <li><code>SystemsThinkingTask</code> - Holistic analysis</li>
+                    </ul>
+                </div>
+                <div class="task-category">
+                    <h3><i data-lucide="globe"></i> Online & Web</h3>
+                    <ul>
+                        <li><code>CrawlerAgentTask</code> - Web scraping</li>
+                        <li><code>GitHubSearchTask</code> - Search GitHub code</li>
+                        <li><code>SeleniumSessionTask</code> - Browser automation</li>
+                    </ul>
+                </div>
+                <div class="task-category">
+                    <h3><i data-lucide="database"></i> Knowledge Base</h3>
+                    <ul>
+                        <li><code>KnowledgeIndexingTask</code> - Build knowledge base</li>
+                        <li><code>VectorSearchTask</code> - Semantic search</li>
+                    </ul>
+                </div>
+                <div class="task-category">
+                    <h3><i data-lucide="file-text"></i> Content Generation</h3>
+                    <ul>
+                        <li><code>WriteHtmlTask</code> - Generate web pages</li>
+                        <li><code>GeneratePresentationTask</code> - Create slides</li>
+                        <li><code>NarrativeGenerationTask</code> - Write stories</li>
+                    </ul>
                 </div>
             </div>
         </section>
 
         <!-- Simulator -->
         <section id="simulator" class="simulator">
-            <h2>Planning Simulator</h2>
+            <h2>Interactive Simulator</h2>
+            <p class="section-intro" style="color: var(--text-secondary); margin-bottom: 2rem; text-align: center;">
+                See how different cognitive modes approach the same problem. Select a mode and generate a plan.
+            </p>
             <div class="simulator-container">
                 <div class="sim-controls">
                     <h3>Configuration</h3>

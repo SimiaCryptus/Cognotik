@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <title>Use Case Categories | Cognotik</title>
+    <meta name="description" content="Explore Cognotik's taxonomy of generative AI use cases - from basic content creation to advanced hierarchical generation and error correction patterns.">
+    <meta name="keywords" content="AI use cases, generative AI patterns, content generation, code synthesis, AI taxonomy, Cognotik">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="Use Case Categories | Cognotik">
+    <meta property="og:description" content="A comprehensive taxonomy of generative AI use cases for software development and content creation.">
+    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
+    <meta property="og:url" content="https://cognotik.com/use-case-categories.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Use Case Categories | Cognotik">
+    <meta name="twitter:description" content="A comprehensive taxonomy of generative AI use cases for software development.">
+    <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+
+    <!-- Favicon Suite -->
+    <link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="theme-color" content="#0f1115">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <link rel="stylesheet" href="assets/styles/use-case-categories.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+    <cognotik-header></cognotik-header>
+
+    <main class="page-container">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <div class="breadcrumbs">
+                    <a href="/">Home</a>
+                    <span class="separator">/</span>
+                    <span class="current">Use Case Categories</span>
+                </div>
+                <h1>Use Case Taxonomy</h1>
+                <p class="hero-subtitle">A systematic classification of generative AI patterns for software development and content creation</p>
+                <div class="hero-badges">
+                    <span class="badge badge-primary">Framework</span>
+                    <span class="badge badge-success">Production Ready</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Overview Section -->
+        <section class="overview-section">
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <div class="card-icon">🎯</div>
+                    <h3>Basic Patterns</h3>
+                    <p>Foundational generation patterns: creation, transformation, and synthesis</p>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">🔄</div>
+                    <h3>Advanced Patterns</h3>
+                    <p>Incremental, hierarchical, and iterative generation strategies</p>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">🔧</div>
+                    <h3>Combined Workflows</h3>
+                    <p>Real-world pipelines combining multiple patterns</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Basic Use Cases Section -->
+        <section class="category-section" id="basic">
+            <h2 class="section-title">
+                <span class="section-icon">📦</span>
+                Basic Generative Use Cases
+            </h2>
+
+            <!-- 0 -> 1: Content Creation -->
+            <div class="use-case-card">
+                <div class="use-case-header">
+                    <div class="pattern-notation">0 → 1</div>
+                    <h3>Content Creation</h3>
+                    <span class="badge badge-primary">Foundational</span>
+                </div>
+                <div class="use-case-body">
+                    <p class="use-case-description">Generate new content from scratch based on descriptions or prompts.</p>
+                    <div class="use-case-diagram">
+                        <div class="diagram-flow">
+                            <div class="diagram-node input">
+                                <span class="node-label">Description</span>
+                                <code>"Create a REST API for user management"</code>
+                            </div>
+                            <div class="diagram-arrow">→</div>
+                            <div class="diagram-node process">
+                                <span class="node-label">LLM</span>
+                            </div>
+                            <div class="diagram-arrow">→</div>
+                            <div class="diagram-node output">
+                                <span class="node-label">Generated File</span>
+                                <code>UserController.kt</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="examples-list">
+                        <h4>Examples</h4>
+                        <ul>
+                            <li>Generate file from description</li>
+                            <li>Generate images from text prompts</li>
+                            <li>Create boilerplate code from specifications</li>
+                            <li>Generate documentation from requirements</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1 -> 1: Content Transformation -->
+            <div class="use-case-card">
+                <div class="use-case-header">
+                    <div class="pattern-notation">1 → 1</div>
+                    <h3>Content Transformation</h3>
+                    <span class="badge badge-secondary">Transform</span>
+                </div>
+                <div class="use-case-body">
+                    <p class="use-case-description">Transform existing content while preserving its essential meaning or structure.</p>
+                    <div class="use-case-diagram">
+                        <div class="diagram-flow">
+                            <div class="diagram-node input">
+                                <span class="node-label">Input</span>
+                                <code>Original Content</code>
+                            </div>
+                            <div class="diagram-arrow">→</div>
+                            <div class="diagram-node process">
+                                <span class="node-label">Transform</span>
+                            </div>
+                            <div class="diagram-arrow">→</div>
+                            <div class="diagram-node output">
+                                <span class="node-label">Output</span>
+                                <code>Transformed Content</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="examples-list">
+                        <h4>Examples</h4>
+                        <ul>
+                            <li>Summarization of articles</li>
+                            <li>Translation between languages</li>
+                            <li>Edit / feature addition to existing code files</li>
+                            <li>Code refactoring and optimization</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- (A + B + ...) -> C: Synthesis -->
+            <div class="use-case-card">
+                <div class="use-case-header">
+                    <div class="pattern-notation">(A + B + ...) → C</div>
+                    <h3>Synthesis</h3>
+                    <span class="badge badge-purple">Combine</span>
+                </div>
+                <div class="use-case-body">
+                    <p class="use-case-description">Combine multiple inputs to create unified, coherent output.</p>
+                    <div class="use-case-diagram">
+                        <div class="diagram-flow synthesis">
+                            <div class="diagram-inputs">
+                                <div class="diagram-node input">A</div>
+                                <div class="diagram-node input">B</div>
+                                <div class="diagram-node input">C</div>
+                            </div>
+                            <div class="diagram-arrow">→</div>
+                            <div class="diagram-node process">
+                                <span class="node-label">Synthesize</span>
+                            </div>
+                            <div class="diagram-arrow">→</div>
+                            <div class="diagram-node output">
+                                <span class="node-label">Result</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="examples-list">
+                        <h4>Examples</h4>
+                        <ul>
+                            <li><strong>Synthesis by Example:</strong> Generate new content based on multiple input examples</li>
+                            <li><strong>Pattern Extraction:</strong> Identify common patterns from multiple inputs</li>
+                            <li><strong>Mass Summarization:</strong> Summarize multiple documents into a single cohesive summary</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- (A - B + C) -> D: Analogical Generation -->
+            <div class="use-case-card">
+                <div class="use-case-header">
+                    <div class="pattern-notation">(A − B + C) → D</div>
+                    <h3>Analogical Generation</h3>
+                    <span class="badge badge-warning">Advanced</span>
+                </div>
+                <div class="use-case-body">
+                    <p class="use-case-description">Create new content by combining and modifying existing pieces through analogy.</p>
+                    <div class="use-case-diagram">
+                        <div class="diagram-flow analogy">
+                            <div class="diagram-equation">
+                                <div class="diagram-node input">A</div>
+                                <span class="operator">−</span>
+                                <div class="diagram-node input">B</div>
+                                <span class="operator">+</span>
+                                <div class="diagram-node input">C</div>
+                            </div>
+                            <div class="diagram-arrow">→</div>
+                            <div class="diagram-node output">D</div>
+                        </div>
+                    </div>
+                    <div class="analogy-example">
+                        <h4>Concept</h4>
+                        <p>Transfer features from one class/file to another — a sort of "transgenic" content generation.</p>
+                        <div class="code-example">
+                            <pre><code class="language-text">UserService (A) - BasicCRUD (B) + CachingLayer (C) → CachedUserService (D)</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Advanced Use Cases Section -->
+        <section class="category-section" id="advanced">
+            <h2 class="section-title">
+                <span class="section-icon">🚀</span>
+                Advanced Generative Use Cases
+            </h2>
+
+            <!-- A → A+δ: Incremental Generation -->
+            <div class="use-case-card">
+                <div class="use-case-header">
+                    <div class="pattern-notation">A → A + δ</div>
+                    <h3>Incremental Generation</h3>
+                    <span class="badge badge-primary">Extend</span>
+                </div>
+                <div class="use-case-body">
+                    <p class="use-case-description">Generate additions to existing content, continuing from where it left off.</p>
+                    <div class="use-case-diagram">
+                        <div class="diagram-flow">
+                            <div class="diagram-node input">
+                                <span class="node-label">Existing</span>
+                                <code>A</code>
+                            </div>
+                            <div class="diagram-arrow">→</div>
+                            <div class="diagram-node process">
+                                <span class="node-label">Continue</span>
+                            </div>
+                            <div class="diagram-arrow">→</div>
+                            <div class="diagram-node output">
+                                <span class="node-label">Extended</span>
+                                <code>A + δ</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="key-insight">
+                        <h4>💡 Key Insight</h4>
+                        <p>Essentially telling the model to "continue" from where it left off, useful for long-form content generation.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hierarchical Generation -->
+            <div class="use-case-card">
+                <div class="use-case-header">
+                    <div class="pattern-notation">A → (B,C); B → (D,E); ...</div>
+                    <h3>Hierarchical Generation</h3>
+                    <span class="badge badge-success">Scale</span>
+                </div>
+                <div class="use-case-body">
+                    <p class="use-case-description">Generate complex content through multiple stages of refinement and transformation.</p>
+                    <div class="hierarchical-diagram">
+                        <div class="tree-level level-0">
+                            <div class="tree-node root">Spec</div>
+                        </div>
+                        <div class="tree-connectors"></div>
+                        <div class="tree-level level-1">
+                            <div class="tree-node">Module A</div>
+                            <div class="tree-node">Module B</div>
+                            <div class="tree-node">Module C</div>
+                        </div>
+                        <div class="tree-connectors"></div>
+                        <div class="tree-level level-2">
+                            <div class="tree-node leaf">File 1</div>
+                            <div class="tree-node leaf">File 2</div>
+                            <div class="tree-node leaf">File 3</div>
+                            <div class="tree-node leaf">File 4</div>
+                            <div class="tree-node leaf">File 5</div>
+                            <div class="tree-node leaf">File 6</div>
+                        </div>
+                    </div>
+                    <div class="key-insight">
+                        <h4>💡 Key Insight</h4>
+                        <p>Allows for <strong>exponential growth</strong> in content volume. LLM output is generally constrained by input size, but hierarchical generation bypasses this limitation.</p>
+                    </div>
+                    <div class="examples-list">
+                        <h4>Applications</h4>
+                        <ul>
+                            <li>Spec-driven development</li>
+                            <li>Large codebase generation</li>
+                            <li>Documentation hierarchies</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Iterative Editing -->
+            <div class="use-case-card">
+                <div class="use-case-header">
+                    <div class="pattern-notation">for(1..n) A → A</div>
+                    <h3>Iterative Editing</h3>
+                    <span class="badge badge-warning">Refine</span>
+                </div>
+                <div class="use-case-body">
+                    <p class="use-case-description">Repeatedly refine content through multiple editing passes.</p>
+                    <div class="iterative-diagram">
+                        <div class="iteration-flow">
+                            <div class="diagram-node input">A₀</div>
+                            <div class="iteration-loop">
+                                <div class="loop-arrow">→ Edit →</div>
+                                <div class="diagram-node">A₁</div>
+                                <div class="loop-arrow">→ Edit →</div>
+                                <div class="diagram-node">A₂</div>
+                                <div class="loop-arrow">→ ... →</div>
+                                <div class="diagram-node output">Aₙ</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="considerations">
+                        <h4>⚠️ Considerations</h4>
+                        <ul>
+                            <li><strong>Patching Strategy:</strong> Full replacement vs. modification of existing content</li>
+                            <li><strong>Convergence:</strong> Monitor for stability and diminishing returns</li>
+                            <li><strong>Quality Gates:</strong> Define stopping criteria</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Correction -->
+            <div class="use-case-card">
+                <div class="use-case-header">
+                    <div class="pattern-notation">while(failure) A --fix→ A</div>
+                    <h3>Error Correction</h3>
+                    <span class="badge badge-danger">Fix</span>
+                </div>
+                <div class="use-case-body">
+                    <p class="use-case-description">Identify and correct errors using a feedback loop with external validation.</p>
+                    <div class="error-correction-diagram">
+                        <div class="correction-flow">
+                            <div class="diagram-node input">Code</div>
+                            <div class="diagram-arrow">→</div>
+                            <div class="diagram-node validator">
+                                <span class="node-label">Validator</span>
+                                <code>Tests / Linter</code>
+                            </div>
+                            <div class="feedback-loop">
+                                <div class="loop-path fail">
+                                    <span class="loop-label">❌ Fail</span>
+                                    <div class="diagram-arrow curved">↩</div>
+                                    <div class="diagram-node process">Fix</div>
+                                </div>
+                                <div class="loop-path success">
+                                    <span class="loop-label">✅ Pass</span>
+                                    <div class="diagram-arrow">→</div>
+                                    <div class="diagram-node output">Done</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="considerations">
+                        <h4>⚠️ Considerations</h4>
+                        <ul>
+                            <li>May require many iterations to achieve desired quality</li>
+                            <li>Periodic human interventions may be necessary</li>
+                            <li>Set maximum iteration limits to prevent infinite loops</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Combined Workflows Section -->
+        <section class="category-section" id="combined">
+            <h2 class="section-title">
+                <span class="section-icon">🔗</span>
+                Combined Workflows
+            </h2>
+
+            <div class="workflow-intro">
+                <p>Real-world workflows often combine multiple patterns to achieve complex goals. Here's an example of a spec-driven development pipeline:</p>
+            </div>
+
+            <div class="workflow-card">
+                <h3>Spec-Driven Development Pipeline</h3>
+                <div class="workflow-diagram">
+                    <div class="workflow-step">
+                        <div class="step-badge">1</div>
+                        <div class="step-content">
+                            <div class="step-pattern">Hierarchical</div>
+                            <div class="step-description">Spec → (Modules)</div>
+                        </div>
+                    </div>
+                    <div class="workflow-connector">↓</div>
+                    <div class="workflow-step">
+                        <div class="step-badge">2</div>
+                        <div class="step-content">
+                            <div class="step-pattern">0→1 Creation</div>
+                            <div class="step-description">Each Module → Code</div>
+                        </div>
+                    </div>
+                    <div class="workflow-connector">↓</div>
+                    <div class="workflow-step">
+                        <div class="step-badge">3</div>
+                        <div class="step-content">
+                            <div class="step-pattern">1→1 Transformation</div>
+                            <div class="step-description">Code → Tests</div>
+                        </div>
+                    </div>
+                    <div class="workflow-connector">↓</div>
+                    <div class="workflow-step">
+                        <div class="step-badge">4</div>
+                        <div class="step-content">
+                            <div class="step-pattern">Error Correction</div>
+                            <div class="step-description">while(tests fail) → Fix</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">pseudocode</span>
+                    </div>
+                    <pre><code class="language-text">Spec → (Modules)           [Hierarchical]
+  ↓
+Each Module → Code         [0→1 Creation]
+  ↓
+Code → Tests               [1→1 Transformation]
+  ↓
+while(tests fail) → Fix    [Error Correction]</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pattern Reference Table -->
+        <section class="reference-section" id="reference">
+            <h2 class="section-title">
+                <span class="section-icon">📋</span>
+                Quick Reference
+            </h2>
+
+            <div class="reference-table-wrapper">
+                <table class="reference-table">
+                    <thead>
+                        <tr>
+                            <th>Pattern</th>
+                            <th>Notation</th>
+                            <th>Use Case</th>
+                            <th>Cognotik Task</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Content Creation</td>
+                            <td><code>0 → 1</code></td>
+                            <td>Generate new files from descriptions</td>
+                            <td><a href="TaskPlanning.html">FileTask</a></td>
+                        </tr>
+                        <tr>
+                            <td>Transformation</td>
+                            <td><code>1 → 1</code></td>
+                            <td>Edit, refactor, translate</td>
+                            <td><a href="TaskPlanning.html">EditTask</a></td>
+                        </tr>
+                        <tr>
+                            <td>Synthesis</td>
+                            <td><code>(A+B+...) → C</code></td>
+                            <td>Combine multiple inputs</td>
+                            <td><a href="TaskPlanning.html">InquiryTask</a></td>
+                        </tr>
+                        <tr>
+                            <td>Analogical</td>
+                            <td><code>(A−B+C) → D</code></td>
+                            <td>Feature transfer</td>
+                            <td><a href="TaskPlanning.html">EditTask</a></td>
+                        </tr>
+                        <tr>
+                            <td>Incremental</td>
+                            <td><code>A → A+δ</code></td>
+                            <td>Continue/extend content</td>
+                            <td><a href="TaskPlanning.html">FileTask</a></td>
+                        </tr>
+                        <tr>
+                            <td>Hierarchical</td>
+                            <td><code>A → (B,C); ...</code></td>
+                            <td>Multi-stage generation</td>
+                            <td><a href="TaskPlanning.html">TaskPlanningTask</a></td>
+                        </tr>
+                        <tr>
+                            <td>Iterative</td>
+                            <td><code>for(1..n) A → A</code></td>
+                            <td>Repeated refinement</td>
+                            <td><a href="TaskPlanning.html">EditTask</a></td>
+                        </tr>
+                        <tr>
+                            <td>Error Correction</td>
+                            <td><code>while(fail) fix</code></td>
+                            <td>Validation-driven fixes</td>
+                            <td><a href="TaskPlanning.html">RunShellCommandTask</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <div class="cta-content">
+                <h2>Ready to Apply These Patterns?</h2>
+                <p>Explore how Cognotik implements these use case patterns through its task planning system.</p>
+                <div class="cta-buttons">
+                    <a href="TaskPlanning.html" class="btn btn-primary">Explore Task Planning</a>
+                    <a href="https://github.com/SimiaCryptus/Cognotik" class="btn btn-secondary">View on GitHub</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <cognotik-footer></cognotik-footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+</body>
+</html>
