@@ -56,12 +56,12 @@ open class CodingMode(
                     "task_type" to taskType.name
                 )).jsonCast()).run(
                     agent = TaskOrchestrator(
-                        user = user,
-                        session = session,
-                        dataStorage = task.ui.dataStorage,
-                        root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
-                            ?: File(".").toPath()
+                      user = user,
+                      session = session,
+                      dataStorage = task.ui.dataStorage,
+                      root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
+                          ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
+                          ?: File(".").toPath()
                     ),
                     messages = listOf(message),
                     task = task,

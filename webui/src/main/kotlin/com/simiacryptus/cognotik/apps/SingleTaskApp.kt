@@ -104,11 +104,11 @@ abstract class SingleTaskApp(
             // Execute the task
             taskImpl.run(
                 agent = TaskOrchestrator(
-                    user = user,
-                    session = session,
-                    dataStorage = ui.dataStorage!!,
-                    root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                        ?: ui.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
+                  user = user,
+                  session = session,
+                  dataStorage = ui.dataStorage!!,
+                  root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
+                      ?: ui.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
                 ),
                 messages = listOf(taskConfig.task_description ?: "Execute task"),
                 task = task,

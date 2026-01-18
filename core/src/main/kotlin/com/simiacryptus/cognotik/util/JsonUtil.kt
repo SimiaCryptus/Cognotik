@@ -79,12 +79,14 @@ object JsonUtil {
             }
     }
 
+    @JvmStatic
     fun toJson(data: Any?): String = when (data) {
         null -> "null"
         is String -> data
         else -> objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(data)
     }
 
+    @JvmStatic
     fun <T> fromJson(data: String, type: Type): T {
         if (type is Class<*> && type.isAssignableFrom(String::class.java)) return data as T
         val objectMapper = objectMapper()
@@ -104,7 +106,7 @@ object JsonUtil {
         }
     }
 
-    val log = LoggerFactory.getLogger(JsonUtil::class.java)
+    private val log = LoggerFactory.getLogger(JsonUtil::class.java)
 }
 
 fun <T : Any> T.copy(fn: T.() -> Unit): T {

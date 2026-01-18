@@ -19,6 +19,7 @@ import java.io.OutputStream
 import java.nio.file.Path
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
+import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
 class TaskOrchestrator(
@@ -26,9 +27,9 @@ class TaskOrchestrator(
     val session: Session,
     val dataStorage: StorageInterface,
     val root: Path,
-    val transcriptStream: OutputStream? = null
+    val transcriptStream: OutputStream? = null,
+    val timeoutMinutes: Long = 15
 ) {
-
     val pool: ExecutorService by lazy { ApplicationServices.threadPoolManager.getPool(session, user) }
 
     val files: Array<File> by lazy {
@@ -182,21 +183,31 @@ class TaskOrchestrator(
                         JsonUtil.toJson(plan),
                         impl.getPriorCode(executionState)
                     )
+                    val onComplete = Semaphore(0)
                     impl.run(
                         agent = this,
                         messages = messages,
                         task = task,
                         resultFn = {
-                            executionState.taskResult[taskId] = it
-                            transcriptStream?.let { stream ->
-                                synchronized(stream) {
-                                    stream.write("\n### Task `$taskId` Result\n\n$it\n\n".toByteArray())
-                                    stream.flush()
+                            try {
+                                executionState.taskResult[taskId] = it
+                                transcriptStream?.let { stream ->
+                                    synchronized(stream) {
+                                        stream.write("\n### Task `$taskId` Result\n\n$it\n\n".toByteArray())
+                                        stream.flush()
+                                    }
                                 }
+                            } catch (e: Throwable) {
+                                log.warn("Error during result handling", e)
+                            } finally {
+                                onComplete.release()
                             }
                         },
                         orchestrationConfig = orchestrationConfig
                     )
+                    if(!onComplete.tryAcquire(timeoutMinutes, TimeUnit.MINUTES)) {
+                        throw RuntimeException("Task $taskId timed out")
+                    }
                 } catch (e: Throwable) {
                     log.warn("Error during task execution", e)
                     task.error(e)

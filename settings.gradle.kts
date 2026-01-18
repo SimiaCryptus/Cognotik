@@ -24,8 +24,7 @@ include(":groovy")
 include(":kotlin")
 include(":webui")
 include(":desktop")
-//include(":demo-cognotik-buildtool")
-//include(":experiment:newssite")
+include(":tool")
 
 if (System.getenv("CI") == null || System.getenv("ANDROID_HOME") != null) {
 //    include(":android")

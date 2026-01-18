@@ -120,10 +120,10 @@ open class ParallelMode(
                         )
                         task.expandable("Config", "```json\n${JsonUtil.toJson(chosenTask)}\n```".renderMarkdown())
                         val coordinator = TaskOrchestrator(
-                            user = user,
-                            session = session,
-                            dataStorage = task.ui.dataStorage!!,
-                            root = root
+                          user = user,
+                          session = session,
+                          dataStorage = task.ui.dataStorage!!,
+                          root = root
                         )
                         val impl = orchestrationConfig.getImpl(chosenTask)
                         var resultString = ""
