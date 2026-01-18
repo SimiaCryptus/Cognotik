@@ -95,7 +95,7 @@ object FileSelectionUtils {
                 result.add(file)
             }
         } else {
-            log.debug("Skipping file: ${file.absolutePath}")
+            log.trace("Skipping file: ${file.absolutePath}")
         }
         return result
     }
