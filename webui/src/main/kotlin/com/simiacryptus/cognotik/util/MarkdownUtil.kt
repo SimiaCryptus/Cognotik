@@ -43,7 +43,9 @@ object MarkdownUtil {
                     mapOf(
                         "HTML" to "$RENDERED_MARKER\n${stackTrace()}\n$asHtml",
                         "Markdown" to """<pre><code class="language-markdown">${
-                            rawMarkdown
+                            rawMarkdown.replace("&", "&amp;")
+                                .replace("<", "&lt;")
+                                .replace(">", "&gt;")
                         }</code></pre>""",
                         "Hide" to "",
                     ), ui = ui
