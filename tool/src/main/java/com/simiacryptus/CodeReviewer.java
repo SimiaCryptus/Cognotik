@@ -1,6 +1,7 @@
 package com.simiacryptus;
 
 import com.simiacryptus.cognotik.util.FileGenerator;
+import com.simiacryptus.cognotik.util.OverwriteModes;
 import com.simiacryptus.cognotik.util.UnifiedHarness;
 
 import java.io.File;
@@ -21,7 +22,7 @@ public record CodeReviewer(
 ) {
     public void run() {
         List<String> docsList = Arrays.asList(docsArg.split(","));
-        FileGenerator.OverwriteModes mode = FileGenerator.OverwriteModes.valueOf(overwriteMode);
+        OverwriteModes mode = OverwriteModes.valueOf(overwriteMode);
 
         new FileGenerator() {}.run(
                 new File(rootDir),
