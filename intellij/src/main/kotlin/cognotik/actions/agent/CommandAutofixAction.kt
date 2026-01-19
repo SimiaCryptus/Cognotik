@@ -64,7 +64,7 @@ class CommandAutofixAction : BaseAction() {
 
                                 val first = settingsUI.commandsList.firstOrNull()
                                 if (first != null) {
-                                    first.commandField.selectedItem = defaultFile.toFile.name
+                                    first.commandField.selectedItem = defaultFile.toFile.absolutePath
                                     first.workingDirectoryField.selectedItem = defaultFile.parent.toFile.absolutePath
                                     first.argumentsField.selectedItem = ""
                                 }

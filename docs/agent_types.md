@@ -1,6 +1,7 @@
 ---
 documents: ../core/src/main/kotlin/com/simiacryptus/cognotik/agents/*.kt
 specifies: ../site/cognotik.com/agent-types.html
+related: product_pages.md
 ---
 
 This guide provides a detailed overview of the Agent types available in the **Cognotik** library.

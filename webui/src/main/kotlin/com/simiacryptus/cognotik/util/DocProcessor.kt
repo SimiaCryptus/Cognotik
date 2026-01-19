@@ -39,6 +39,7 @@ open class DocProcessor(
     val specifies: List<String>,
     val documents: List<String>,
     val transforms: List<TransformSpec>,
+    val related: List<String>,
     val content: String,
     val frontmatter: Map<String, Any>
   )
@@ -126,14 +127,22 @@ open class DocProcessor(
     files = listOf(relativeTarget.toString()),
     related_files = (specs.flatMap { spec ->
       listOf(spec.docFile.relativeTo(root.absoluteFile).toString()) +
+          spec.related.map { relatedPath ->
+            spec.docFile.parentFile.resolve(relatedPath).relativeTo(root.absoluteFile).toString()
+          } +
           additionalContext(spec, targetFile)
     } + transforms.flatMap { match ->
       listOf(
         match.spec.docFile.relativeTo(root.absoluteFile).toString(),
         match.sourceFile.relativeTo(root.absoluteFile).toString()
-      ) + additionalContext(match.spec, targetFile)
+      ) + match.spec.related.map { relatedPath ->
+        match.spec.docFile.parentFile.resolve(relatedPath).relativeTo(root.absoluteFile).toString()
+      } + additionalContext(match.spec, targetFile)
     } + documents.flatMap { docMatch ->
       docMatch.supportingFiles.map { it.relativeTo(root.absoluteFile).toString() } +
+          docMatch.docSpec.related.map { relatedPath ->
+            docMatch.docSpec.docFile.parentFile.resolve(relatedPath).relativeTo(root.absoluteFile).toString()
+          } +
           additionalContext(docMatch.docSpec, targetFile)
     }).distinct(),
     task_description = buildCombinedTaskDescription(specs, transforms, documents, targetFile),
@@ -156,15 +165,17 @@ open class DocProcessor(
     transforms: List<TransformMatch>,
     documents: List<DocumentMatch>
   ): List<File> = (specs.flatMap { spec ->
-    listOf(spec.docFile) + additionalContext(spec, targetFile).map { File(it) }
+    listOf(spec.docFile) +
+        spec.related.map { spec.docFile.parentFile.resolve(it) } +
+        additionalContext(spec, targetFile).map { File(it) }
   } + transforms.flatMap { match ->
-    listOf(match.spec.docFile, match.sourceFile) + additionalContext(match.spec, targetFile).map {
-      File(
-        it
-      )
-    }
+    listOf(match.spec.docFile, match.sourceFile) +
+        match.spec.related.map { match.spec.docFile.parentFile.resolve(it) } +
+        additionalContext(match.spec, targetFile).map { File(it) }
   } + documents.flatMap { docMatch ->
-    docMatch.supportingFiles + additionalContext(docMatch.docSpec, targetFile).map { File(it) }
+    docMatch.supportingFiles +
+        docMatch.docSpec.related.map { docMatch.docSpec.docFile.parentFile.resolve(it) } +
+        additionalContext(docMatch.docSpec, targetFile).map { File(it) }
   }).distinct()
 
   open fun transformMatches(docSpecs: List<DocSpec>): Map<String, List<TransformMatch>> {
@@ -357,6 +368,7 @@ open class DocProcessor(
       val specifies = parseSpecifies(frontmatter)
       val documents = parseDocuments(frontmatter)
       val transforms = parseTransforms(frontmatter)
+      val related = parseRelated(frontmatter)
 
       // Return null if neither specifies nor transforms are present
       if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty()) {
@@ -368,6 +380,7 @@ open class DocProcessor(
         specifies = specifies,
         documents = documents,
         transforms = transforms,
+        related = related,
         content = bodyContent,
         frontmatter = frontmatter
       )
@@ -417,6 +430,17 @@ open class DocProcessor(
       }
     }
 
+    /**
+     * Parse 'related' from frontmatter (supports single value or list)
+     * These are additional files to include as context in modification tasks.
+     */
+    fun parseRelated(frontmatter: Map<String, Any>): List<String> {
+      return when (val value = frontmatter["related"]) {
+        is String -> listOf(value)
+        is List<*> -> value.filterIsInstance<String>()
+        else -> emptyList()
+      }
+    }
     /**
      * Parse 'specifies' from frontmatter (supports single value or list)
      */
