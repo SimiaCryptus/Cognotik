@@ -21,16 +21,13 @@ public record CodeReviewer(
         int threads
 ) {
     public void run() {
-        List<String> docsList = Arrays.asList(docsArg.split(","));
-        OverwriteModes mode = OverwriteModes.valueOf(overwriteMode);
-
         new FileGenerator() {}.run(
                 new File(rootDir),
                 new File(srcDir),
                 (root, folder) -> Arrays.stream(Objects.requireNonNull(folder.listFiles())).map(file -> relativize(root, file)).toList(),
                 (source) -> source,
-                mode,
-                (source) -> docsList,
+                OverwriteModes.valueOf(overwriteMode),
+                (source) -> Arrays.asList(docsArg.split(",")),
                 (source, target) -> promptTemplate.contains("%s") ? promptTemplate.replace("%s", target.toString()) : promptTemplate + " (" + target + ")",
                 threads
         );

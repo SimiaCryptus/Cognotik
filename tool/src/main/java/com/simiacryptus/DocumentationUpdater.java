@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.chat.model.ChatModel;
 import com.simiacryptus.cognotik.chat.model.GeminiModels;
 import com.simiacryptus.cognotik.util.DocProcessor;
 import com.simiacryptus.cognotik.util.FileGenerator;
+import com.simiacryptus.cognotik.util.OverwriteModes;
 import com.simiacryptus.cognotik.util.UnifiedHarness;
 
 import java.io.File;
@@ -22,7 +23,7 @@ public record DocumentationUpdater(
         int threads
 ) {
     public void run() {
-        FileGenerator.OverwriteModes mode = FileGenerator.OverwriteModes.valueOf(overwriteMode);
+        OverwriteModes mode = OverwriteModes.valueOf(overwriteMode);
         //ChatModel chatModel = GeminiModels.getGeminiFlash_30_Preview();
         ChatModel chatModel = AnthropicModels.INSTANCE.getClaude45Haiku();
         new DocProcessor(
@@ -38,7 +39,7 @@ public record DocumentationUpdater(
 
     public static final String DEFAULT_ROOT = ".";
     public static final int DEFAULT_THREADS = 4;
-    public static final String DEFAULT_OVERWRITE_MODE = FileGenerator.OverwriteModes.PatchToUpdate.name();
+    public static final String DEFAULT_OVERWRITE_MODE = OverwriteModes.PatchToUpdate.name();
     
     public static void main(String[] args) {
         configureEnvironmentalKeys();
