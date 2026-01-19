@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-**Cognotik Demo** is a demonstration project showcasing how to integrate [Cognotik](https://github.com/SimiaCryptus/Cognotik) as a build and automation tool using GitHub Actions. This repository provides working examples of AI-powered code review, automated bug fixing, and intelligent issue resolution integrated directly into your CI/CD pipeline.
+The **Cognotik Build Integration Demo** showcases how to integrate [Cognotik](https://github.com/SimiaCryptus/Cognotik) as a build and automation tool using GitHub Actions. This repository provides working examples of AI-powered code review, automated bug fixing, and intelligent issue resolution integrated directly into your CI/CD pipeline.
 
 ## Table of Contents
 

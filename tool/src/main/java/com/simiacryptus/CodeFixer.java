@@ -15,7 +15,7 @@ import java.util.List;
 import static com.simiacryptus.CognotikUtils.*;
 
 @SuppressWarnings("unused")
-public class CodeFixer {
+public record CodeFixer(String taskDescription, List<String> relatedFiles) {
     public static final String PROMPT = "Fix the build errors reported in build.log";
     public static final int PORT = 8030;
 
@@ -26,17 +26,16 @@ public class CodeFixer {
         );
         configureEnvironmentalKeys();
         UnifiedHarness.configurePlatform();
-        run(taskDescription, relatedFiles);
+        new CodeFixer(taskDescription, relatedFiles).run();
     }
 
-    public static void run(String taskDescription,
-                           List<String> relatedFiles) {
+    public void run() {
         ChatModel chatModel = GeminiModels.getGeminiFlash_30_Preview();
 
         var fileModification = FileModificationTask.getFileModification();
         FileModificationTask.FileModificationTaskExecutionConfigData  config = new FileModificationTask.FileModificationTaskExecutionConfigData();
-        config.setTask_description(taskDescription);
-        config.setRelated_files(relatedFiles);
+        config.setTask_description(this.taskDescription());
+        config.setRelated_files(this.relatedFiles());
 
         new TaskHarness<>(
                 fileModification,
@@ -65,4 +64,6 @@ public class CodeFixer {
     }
 
     private static Logger log = org.slf4j.LoggerFactory.getLogger(CodeFixer.class);
+
+
 }
