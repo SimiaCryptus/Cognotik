@@ -107,7 +107,7 @@ class DataIngestAction : BaseAction() {
             path = "/dataIngestTask",
             showMenubar = false,
             taskType = DataIngestTask.DataIngest,
-            taskConfig = taskConfig,
+            taskConfig = listOf(taskConfig),
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ) {
             override fun instance(model: ApiChatModel) =

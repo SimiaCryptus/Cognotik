@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
-import com.simiacryptus.cognotik.util.FileGenerator.OverwriteModes.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -22,7 +21,7 @@ open class FileGenerator {
         .map { it.relativeTo(root.absoluteFile) }
     },
     targetFile: (File) -> File = { it },
-    overwriteMode: OverwriteMode = SkipExisting,
+    overwriteMode: OverwriteMode = OverwriteModes.SkipExisting,
     relatedFiles: (File) -> List<String>,
     generationPrompt: (File, File) -> String,
     concurrencyLimit: Int = 4
@@ -77,45 +76,6 @@ open class FileGenerator {
     ): PatchProcessors?
   }
 
-  enum class OverwriteModes : OverwriteMode {
-    SkipExisting,
-    OverwriteExisting,
-    OverwriteToUpdate,
-    PatchExisting,
-    PatchToUpdate;
-
-    override fun prepare(
-      source: File,
-      target: File,
-      relatedFiles: List<File>,
-    ): PatchProcessors? = when {
-      target.exists() -> when (this) {
-        SkipExisting -> null
-        PatchExisting -> PatchProcessors.Fuzzy
-
-        OverwriteExisting -> {
-          target.delete()
-          PatchProcessors.FullReplacement
-        }
-
-        OverwriteToUpdate -> when {
-          source.lastModified(relatedFiles) > target.lastModified() -> {
-            target.delete()
-            PatchProcessors.FullReplacement
-          }
-
-          else -> null
-        }
-
-        PatchToUpdate -> when {
-          source.lastModified(relatedFiles) > target.lastModified() -> PatchProcessors.Fuzzy
-          else -> null
-        }
-      }
-
-      else -> PatchProcessors.FullReplacement
-    }
-  }
 
   companion object {
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
@@ -145,3 +105,4 @@ fun withHarness(
     harness.stop()
   }
 }
+

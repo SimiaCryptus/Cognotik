@@ -241,7 +241,7 @@ open class UnifiedHarness(
         val singleTaskApp = object : SingleTaskApp(
             path = "/test",
             taskType = taskType,
-            taskConfig = executionConfig,
+            taskConfig = listOf(executionConfig),
             instanceFn = { model -> modelInstanceFn(model,session) },
         ) {
             override fun instance(model: ApiChatModel) = modelInstanceFn(model,session)

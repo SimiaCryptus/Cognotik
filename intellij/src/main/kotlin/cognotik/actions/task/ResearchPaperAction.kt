@@ -110,7 +110,7 @@ class ResearchPaperAction : BaseAction() {
             path = "/researchPaperTask",
             showMenubar = false,
             taskType = ResearchPaperGenerationTask.ResearchPaperGeneration,
-            taskConfig = taskConfig,
+            taskConfig = listOf(taskConfig),
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ) {
             override fun instance(model: ApiChatModel) =

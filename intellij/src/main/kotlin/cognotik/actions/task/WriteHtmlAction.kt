@@ -110,7 +110,7 @@ class WriteHtmlAction : BaseAction() {
             path = "/writeHtmlTask",
             showMenubar = false,
             taskType = WriteHtmlTask.WriteHtml,
-            taskConfig = taskConfig,
+            taskConfig = listOf(taskConfig),
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ) {
             override fun instance(model: ApiChatModel) =

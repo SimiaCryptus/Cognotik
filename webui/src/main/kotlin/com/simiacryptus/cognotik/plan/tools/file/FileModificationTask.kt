@@ -127,9 +127,9 @@ $taskDesc
                 """.toByteArray())
                 val contextTab = tabs.newTask("Context")
                 contextTab.add("""
-                    # Task Context
-                    ${taskDesc.renderMarkdown()}
-                """.trimIndent().renderMarkdown())
+# Task Context
+$taskDesc
+                """.renderMarkdown())
                 contextTab.complete()
 
                 val chatAgent = ChatAgent(

@@ -1,10 +1,10 @@
 ---
 documents:
-    - webui/src/main/kotlin/com/simiacryptus/cognotik/util/UnifiedHarness.kt
-    - webui/src/main/kotlin/com/simiacryptus/cognotik/util/TaskHarness.kt
-    - webui/src/main/kotlin/com/simiacryptus/cognotik/util/PlanHarness.kt
-    - webui/src/main/kotlin/com/simiacryptus/cognotik/util/FileGenerator.kt
-    - webui/src/main/kotlin/com/simiacryptus/cognotik/util/DocProcessor.kt    
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/UnifiedHarness.kt
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/TaskHarness.kt
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/PlanHarness.kt
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/FileGenerator.kt
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/DocProcessor.kt    
 specifies: ../site/cognotik.com/embedding.html
 ---
 

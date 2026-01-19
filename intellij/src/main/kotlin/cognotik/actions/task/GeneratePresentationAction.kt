@@ -110,7 +110,7 @@ class GeneratePresentationAction : BaseAction() {
             path = "/generatePresentationTask",
             showMenubar = false,
             taskType = GeneratePresentationTask.GeneratePresentation,
-            taskConfig = taskConfig,
+            taskConfig = listOf(taskConfig),
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ) {
             override fun instance(model: ApiChatModel) =

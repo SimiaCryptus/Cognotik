@@ -4,26 +4,43 @@ import cognotik.actions.BaseAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CheckBoxList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
+import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.DocProcessor
 import com.simiacryptus.cognotik.util.DocProcessor.FileMod
-import com.simiacryptus.cognotik.util.FileGenerator.OverwriteModes
+import com.simiacryptus.cognotik.util.FileGenerator
+import com.simiacryptus.cognotik.util.OverwriteModes
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.util.getSelectedFile
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.util.getSelectedFolder
+import com.simiacryptus.cognotik.util.toJson
+import com.simiacryptus.cognotik.webui.application.AppInfoData
+import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import java.awt.Dimension
-import java.io.File
+import java.text.SimpleDateFormat
 import javax.swing.JComponent
+import kotlin.collections.set
 
 /**
  * Action that processes markdown documentation files with frontmatter specifications.
@@ -33,7 +50,9 @@ import javax.swing.JComponent
  * 2. Shows a checklist dialog allowing users to select which file generation tasks to run
  * 3. Executes the selected tasks using DocProcessor infrastructure
  */
-class DocProcessorAction : BaseAction() {
+class DocProcessorAction(
+    val mode: FileGenerator.OverwriteMode = OverwriteModes.PatchExisting,
+) : BaseAction() {
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
@@ -49,7 +68,9 @@ class DocProcessorAction : BaseAction() {
 
     override fun handle(e: AnActionEvent) {
         val project = e.project ?: return
-        val root = getProjectRoot(e) ?: return
+        val root = e.getSelectedFolder()?.toFile ?: e.getSelectedFile()?.parent?.toFile?.let { file ->
+            getModuleRootForFile(file)
+        } ?: return
         val selectedFiles = e.getSelectedFiles()
             .filter { it.name.lowercase().let { name -> name.endsWith(".md") || name.endsWith(".markdown") } }
             .map { it.toFile }
@@ -59,67 +80,93 @@ class DocProcessorAction : BaseAction() {
             return
         }
 
-        UITools.runAsync(project, "Analyzing Documentation Files", true) { progress ->
-            progress.text = "Parsing frontmatter..."
-            
-            val docProcessor = createDocProcessor(root)
-            val allTasks = docProcessor.getAll(*selectedFiles.toTypedArray())
-            
-            if (allTasks.isEmpty()) {
-                UITools.showError(project, "No tasks found in selected files. Ensure files have 'specifies', 'documents', or 'transforms' frontmatter.")
-                return@runAsync
-            }
+        val docProcessor = DocProcessor(
+            root = root,
+            docsFolder = root,
+            concurrencyLimit = 4,
+            overwriteMode = mode,
+            fastModel = AppSettingsState.instance.fastModel?.model
+                ?: throw IllegalStateException("Fast model not configured"),
+            smartModel = AppSettingsState.instance.smartModel?.model
+                ?: throw IllegalStateException("Smart model not configured")
+        )
+        val allTasks = docProcessor.getAll(*selectedFiles.toTypedArray())
 
-            // Show dialog on EDT
-            com.intellij.openapi.application.ApplicationManager.getApplication().invokeAndWait {
-                val dialog = DocProcessorTaskDialog(project, allTasks)
-                if (dialog.showAndGet()) {
-                    val selectedTasks = dialog.getSelectedTasks()
-                    if (selectedTasks.isNotEmpty()) {
-                        UITools.runAsync(project, "Processing Documentation Tasks", true) { innerProgress ->
-                            executeTasks(innerProgress, docProcessor, selectedTasks)
-                        }
+        if (allTasks.isEmpty()) {
+            UITools.showError(project, "No tasks found in selected files. Ensure files have 'specifies', 'documents', or 'transforms' frontmatter.")
+            return
+        }
+
+        // Show dialog on EDT
+        ApplicationManager.getApplication().invokeAndWait {
+            val dialog = DocProcessorTaskDialog(project, allTasks)
+            if (dialog.showAndGet()) {
+                val selectedTasks = dialog.getSelectedTasks()
+                if (selectedTasks.isNotEmpty()) {
+                    UITools.runAsync(project, "Processing Documentation Tasks", true) { innerProgress ->
+                        executeTasks(docProcessor, selectedTasks)
                     }
                 }
             }
         }
     }
 
-    private fun createDocProcessor(root: File): DocProcessor {
-        val settings = AppSettingsState.instance
-        return DocProcessor(
-            root = root,
-            docsFolder = root,
-            concurrencyLimit = 4,
-            overwriteMode = OverwriteModes.PatchExisting,
-            fastModel = settings.fastModel?.model ?: throw IllegalStateException("Fast model not configured"),
-            smartModel = settings.smartModel?.model ?: throw IllegalStateException("Smart model not configured")
-        )
-    }
-
     private fun executeTasks(
-        progress: ProgressIndicator,
         docProcessor: DocProcessor,
         tasks: List<FileMod>
     ) {
-        progress.text = "Executing ${tasks.size} task(s)..."
-        progress.isIndeterminate = false
-        
-        val concurrencyProcessor = com.simiacryptus.cognotik.util.FixedConcurrencyProcessor(
-            java.util.concurrent.Executors.newCachedThreadPool(),
-            docProcessor.concurrencyLimit
+        val session = Session.newGlobalID()
+        DataStorage.sessionPaths[session] = docProcessor.root
+        val orchestrationConfig = OrchestrationConfig(
+            sessionId = session.toString(),
+            defaultSmartModel = AppSettingsState.instance.smartModel
+            ?: throw IllegalStateException("No model configured"),
+            defaultFastModel = AppSettingsState.instance.fastModel
+                ?: throw IllegalStateException("Fast model not configured"),
+            defaultImageModel = AppSettingsState.instance.imageChatModel,
+            temperature = AppSettingsState.instance.temperature,
+            autoFix = false,
+            workingDir = docProcessor.root.toString(),
+            shellCmd = listOf(
+                if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
+            ),
+            taskSettings = mutableMapOf(
+                FileModification.name to TaskTypeConfig(
+                    name = "File Modification Task",
+                    task_type = FileModification.name)
+            )
         )
-        
-        docProcessor.runAll(tasks.toList(), concurrencyProcessor)
-        
-        progress.text = "Completed ${tasks.size} task(s)"
-    }
 
-    private fun getProjectRoot(e: AnActionEvent): File? {
-        val folder = e.getSelectedFolder()
-        return folder?.toFile ?: e.getSelectedFile()?.parent?.toFile?.let { file ->
-            getModuleRootForFile(file)
+        val app = object : SingleTaskApp(
+            applicationName = "Doc Update Processor",
+            path = "/docUpdate",
+            showMenubar = false,
+            taskType = FileModification,
+            taskConfig = tasks.map { it.data },
+            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+        ) {
+            override fun instance(model: ApiChatModel) =
+                model.instance() ?: throw IllegalStateException("Model or Provider not set")
         }
+
+        app.getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())
+        SessionProxyServer.chats[session] = app
+        ApplicationServer.appInfoMap[session] = AppInfoData(
+            applicationName = "Document Illustration Task",
+            inputCnt = 0,
+            stickyInput = false,
+            showMenubar = false
+        )
+        SessionProxyServer.metadataStorage.setSessionName(
+            null, session, "Document Illustration @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+        )
+
+        val uri = CognotikAppServer.getServer(
+            AppSettingsState.instance.listeningEndpoint,
+            AppSettingsState.instance.listeningPort
+        ).server.uri.resolve("/#$session")
+        log.info("Opening browser to $uri")
+        browse(uri)
     }
 
     /**
@@ -162,6 +209,14 @@ class DocProcessorAction : BaseAction() {
                 label("Select which file generation tasks to execute:")
             }
             row {
+                button("Select All") {
+                    taskItems.forEach { checkBoxList.setItemSelected(it, true) }
+                }
+                button("Deselect All") {
+                    taskItems.forEach { checkBoxList.setItemSelected(it, false) }
+                }
+            }
+            row {
                 val scrollPane = JBScrollPane(checkBoxList).apply {
                     preferredSize = Dimension(600, 400)
                 }
@@ -185,11 +240,9 @@ class DocProcessorAction : BaseAction() {
             }
         }
 
-        fun getSelectedTasks(): List<FileMod> {
-            return taskItems
-                .filter { checkBoxList.isItemSelected(it) }
-                .map { allTasks[it.index] }
-        }
+        fun getSelectedTasks() = taskItems
+            .filter { checkBoxList.isItemSelected(it) }
+            .map { allTasks[it.index] }
 
         data class TaskItem(
             val index: Int,

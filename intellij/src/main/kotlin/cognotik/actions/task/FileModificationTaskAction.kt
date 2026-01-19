@@ -108,7 +108,7 @@ class FileModificationTaskAction : BaseAction() {
             path = "/fileModificationTask",
             showMenubar = false,
             taskType = FileModification,
-            taskConfig = taskConfig,
+            taskConfig = listOf(taskConfig),
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ) {
             override fun instance(model: ApiChatModel) = model.instance()

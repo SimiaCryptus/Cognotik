@@ -110,7 +110,7 @@ class NarrativeGenerationAction : BaseAction() {
             path = "/narrativeGenerationTask",
             showMenubar = false,
             taskType = NarrativeGenerationTask.NarrativeGeneration,
-            taskConfig = taskConfig,
+            taskConfig = listOf(taskConfig),
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ) {
             override fun instance(model: ApiChatModel) =

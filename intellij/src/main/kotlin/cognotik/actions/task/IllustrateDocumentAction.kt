@@ -107,7 +107,7 @@ class IllustrateDocumentAction : BaseAction() {
             path = "/illustrateDocumentTask",
             showMenubar = false,
             taskType = IllustrateDocumentTask.IllustrateDocument,
-            taskConfig = taskConfig,
+            taskConfig = listOf(taskConfig),
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ) {
             override fun instance(model: ApiChatModel) =

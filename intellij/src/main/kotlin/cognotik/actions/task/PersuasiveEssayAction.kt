@@ -110,7 +110,7 @@ class PersuasiveEssayAction : BaseAction() {
             path = "/persuasiveEssayTask",
             showMenubar = false,
             taskType = PersuasiveEssayTask.PersuasiveEssay,
-            taskConfig = taskConfig,
+            taskConfig = listOf(taskConfig),
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ) {
             override fun instance(model: ApiChatModel) =
