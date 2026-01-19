@@ -107,7 +107,7 @@ class BusinessProposalAction : BaseAction() {
             path = "/businessProposal",
             showMenubar = false,
             taskType = BusinessProposalTask.BusinessProposal,
-            taskConfig = taskConfig,
+            taskConfig = listOf(taskConfig),
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ) {
             override fun instance(model: ApiChatModel) =

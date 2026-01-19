@@ -16,6 +16,7 @@ object GameTheoryTaskTest {
       UnifiedHarness.configurePlatform()
     }
 
+    @org.junit.jupiter.api.Tag("Integration")
     //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testPrisonersDilemma() {
@@ -49,6 +50,7 @@ object GameTheoryTaskTest {
         ).run()
     }
 
+    @org.junit.jupiter.api.Tag("Integration")
     //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testRepeatedGame() {

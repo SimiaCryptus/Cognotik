@@ -9,9 +9,9 @@ import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.charset.StandardCharsets
@@ -32,7 +32,7 @@ class PoliticalOptimizationTask(
 ) {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PoliticalOptimizationTask::class.java)
-        val PoliticalOptimization = TaskType(
+        @JvmStatic val PoliticalOptimization = TaskType(
           name = "PoliticalOptimization",
           category = "Social",
           taskClass = PoliticalOptimizationTask::class.java,
@@ -297,7 +297,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine()
                 appendLine("- â ³ Evaluating initial text from ${perspectives.size} perspectives...")
             }
-            overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent))
+            overviewTask.add(overviewContent.renderMarkdown())
             transcript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
 
             // Initialize population
@@ -350,7 +350,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine("  - Wedge Issue: ${if (initialEvaluation.is_wedge_issue) "âš ï¸  Yes" else "âœ“ No"}")
                 appendLine()
                 appendLine("- â ³ Starting evolution...")
-            }.let { MarkdownUtil.renderMarkdown(it) })
+            }.let { it.renderMarkdown() })
 
             // Track best variants
             var bestConsensusVariant = currentPopulation[0]
@@ -372,7 +372,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     appendLine("**Status:** In Progress")
                     appendLine()
                     appendLine("Generating $populationSize variants...")
-                }.let { MarkdownUtil.renderMarkdown(it) })
+                }.let { it.renderMarkdown() })
 
                 // Generate new variants
                 val newVariants = mutableListOf<EvaluatedVariant>()
@@ -575,7 +575,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                         )
                     }
                 }
-                generationTask.add(MarkdownUtil.renderMarkdown(generationResults))
+                generationTask.add(generationResults.renderMarkdown())
                 generationTask.complete()
                 transcript?.write(generationResults.toByteArray(StandardCharsets.UTF_8))
 
@@ -590,7 +590,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                             )
                         }, Quality=${String.format("%.1f", avgScores.average())}"
                     )
-                }.let { MarkdownUtil.renderMarkdown(it) })
+                }.let { it.renderMarkdown() })
             }
 
             // Create analysis tabs
@@ -684,7 +684,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     appendLine()
                 }
             }
-            consensusAnalysisTask.add(MarkdownUtil.renderMarkdown(consensusAnalysis))
+            consensusAnalysisTask.add(consensusAnalysis.renderMarkdown())
             consensusAnalysisTask.complete()
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(consensusAnalysis.toByteArray(StandardCharsets.UTF_8))
@@ -805,7 +805,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     }
                 }
             }
-            divisiveAnalysisTask.add(MarkdownUtil.renderMarkdown(divisiveAnalysis))
+            divisiveAnalysisTask.add(divisiveAnalysis.renderMarkdown())
             divisiveAnalysisTask.complete()
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(divisiveAnalysis.toByteArray(StandardCharsets.UTF_8))
@@ -886,7 +886,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     appendLine()
                 }
             }
-            evolutionTask.add(MarkdownUtil.renderMarkdown(evolutionAnalysis))
+            evolutionTask.add(evolutionAnalysis.renderMarkdown())
             evolutionTask.complete()
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(evolutionAnalysis.toByteArray(StandardCharsets.UTF_8))
@@ -932,7 +932,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine()
                 appendLine("**Status:** âœ“ Complete")
             }
-            overviewTask.add(MarkdownUtil.renderMarkdown(finalOverview))
+            overviewTask.add(finalOverview.renderMarkdown())
             overviewTask.complete()
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))

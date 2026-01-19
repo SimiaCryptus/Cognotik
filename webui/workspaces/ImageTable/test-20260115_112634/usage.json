@@ -1,0 +1,8 @@
+{
+  "gemini-2.5-flash-image-preview" : {
+    "prompt_tokens" : 158,
+    "completion_tokens" : 5198,
+    "total_tokens" : 5356,
+    "cost" : 0.002095
+  }
+}

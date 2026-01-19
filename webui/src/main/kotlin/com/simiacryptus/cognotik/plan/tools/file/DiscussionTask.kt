@@ -228,7 +228,7 @@ class DiscussionTask(
 
     companion object {
         private val log = LoggerFactory.getLogger(DiscussionTask::class.java)
-        val Discussion = TaskType(
+        @JvmStatic val Discussion = TaskType(
             name = "Discussion",
             category = "File",
             taskClass = DiscussionTask::class.java,

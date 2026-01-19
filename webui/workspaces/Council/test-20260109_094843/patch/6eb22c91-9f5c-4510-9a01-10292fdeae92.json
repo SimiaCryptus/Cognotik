@@ -1,8 +1,0 @@
-{
-  "filename" : "hello_council.py",
-  "originalCode" : "\"\"\"An alternative simple implementation of the CouncilMode greeting.\"\"\"\nprint(\"Hello from CouncilMode\")",
-  "diff" : "\"\"\"An alternative simple implementation of the CouncilMode greeting.\"\"\"\nprint(\"Hello from CouncilMode\")",
-  "newCode" : "\"\"\"An alternative simple implementation of the CouncilMode greeting.\"\"\"\nprint(\"Hello from CouncilMode\")",
-  "isValid" : true,
-  "errors" : ""
-}

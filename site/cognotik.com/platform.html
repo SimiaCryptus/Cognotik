@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <title>Platform Architecture | Cognotik</title>
+    <meta name="description" content="Comprehensive application framework for building AI-powered applications with session management, authentication, storage, and cloud integration.">
+    <meta name="keywords" content="AI platform, session management, authentication, data storage, cloud integration, Kotlin framework">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="Platform Architecture | Cognotik">
+    <meta property="og:description" content="Comprehensive application framework for building AI-powered applications with session management, authentication, storage, and cloud integration.">
+    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
+    <meta property="og:url" content="https://cognotik.com/platform.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Platform Architecture | Cognotik">
+    <meta name="twitter:description" content="Comprehensive application framework for building AI-powered applications with session management, authentication, storage, and cloud integration.">
+    <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+
+    <!-- Favicon Suite -->
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#0f1115">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Prism.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <link rel="stylesheet" href="assets/styles/product-page.css">
+
+    <style>
+        /* Page-specific styles */
+        .architecture-diagram {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            font-family: var(--font-mono);
+            font-size: var(--text-sm);
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+        }
+
+        .layer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-4);
+            margin: var(--space-6) 0;
+        }
+
+        .layer-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            transition: border-color var(--transition-fast);
+        }
+
+        .layer-card:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .layer-card h4 {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin-bottom: var(--space-3);
+            color: var(--text-primary);
+        }
+
+        .layer-card .layer-icon {
+            font-size: 1.25rem;
+        }
+
+        .layer-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .layer-card li {
+            padding: var(--space-1) 0;
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+        }
+
+        .layer-card li::before {
+            content: "→";
+            margin-right: var(--space-2);
+            color: var(--accent-primary);
+        }
+
+        .feature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: var(--space-4) 0;
+        }
+
+        .feature-table th,
+        .feature-table td {
+            padding: var(--space-3);
+            text-align: left;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .feature-table th {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: var(--text-sm);
+        }
+
+        .feature-table td {
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+        }
+
+        .feature-table code {
+            background: var(--bg-elevated);
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-xs);
+        }
+
+        .directory-tree {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            font-family: var(--font-mono);
+            font-size: var(--text-sm);
+            line-height: 1.6;
+        }
+
+        .directory-tree .folder {
+            color: var(--accent-primary);
+        }
+
+        .directory-tree .comment {
+            color: var(--text-tertiary);
+        }
+
+        .permission-syntax {
+            background: var(--bg-elevated);
+            border-left: 3px solid var(--accent-purple);
+            padding: var(--space-3) var(--space-4);
+            margin: var(--space-4) 0;
+        }
+
+        .permission-syntax code {
+            display: block;
+            margin: var(--space-1) 0;
+        }
+
+        .best-practice {
+            background: rgba(126, 231, 135, 0.1);
+            border: 1px solid rgba(126, 231, 135, 0.3);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            margin: var(--space-4) 0;
+        }
+
+        .best-practice h5 {
+            color: var(--accent-secondary);
+            margin-bottom: var(--space-2);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Component -->
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <cognotik-header></cognotik-header>
+
+    <!-- Main Content -->
+    <main class="page-container">
+        <!-- Hero Section -->
+        <section class="hero-compact">
+            <div class="hero-content">
+                <nav class="breadcrumbs">
+                    <a href="/">Home</a>
+                    <span class="separator">/</span>
+                    <a href="/docs.html">Docs</a>
+                    <span class="separator">/</span>
+                    <span class="current">Platform</span>
+                </nav>
+                <div class="hero-badges">
+                    <span class="badge badge-primary">Core</span>
+                    <span class="badge badge-success">Stable</span>
+                </div>
+                <h1>Platform Architecture</h1>
+                <p class="hero-description">
+                    Comprehensive application framework for building AI-powered applications with 
+                    session management, user authentication, data storage, and cloud integration capabilities.
+                </p>
+                <div class="hero-actions">
+                    <a href="https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/platform" class="btn btn-primary">
+                        <svg class="icon" viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
+                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                        </svg>
+                        View Source
+                    </a>
+                    <a href="#quick-start" class="btn btn-secondary">Quick Start</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Overview -->
+        <section class="content-section">
+            <h2>Architecture Overview</h2>
+            <p>The platform follows a layered architecture with clear separation of concerns:</p>
+            
+            <div class="architecture-diagram">
+┌─────────────────────────────────────────┐
+│           Application Layer             │
+├─────────────────────────────────────────┤
+│           Service Layer                 │
+│  ┌─────────────┐ ┌─────────────────────┐│
+│  │ Client      │ │ Application         ││
+│  │ Manager     │ │ Services            ││
+│  └─────────────┘ └─────────────────────┘│
+├─────────────────────────────────────────┤
+│           Interface Layer               │
+│  ┌─────────┐ ┌─────────┐ ┌─────────────┐│
+│  │ Storage │ │ Auth    │ │ Cloud       ││
+│  │Interface│ │Interface│ │ Interface   ││
+│  └─────────┘ └─────────┘ └─────────────┘│
+├─────────────────────────────────────────┤
+│         Implementation Layer            │
+│  ┌─────────┐ ┌─────────┐ ┌─────────────┐│
+│  │ File    │ │ HSQL    │ │ AWS         ││
+│  │ Storage │ │ Storage │ │ Platform    ││
+│  └─────────┘ └─────────┘ └─────────────┘│
+└─────────────────────────────────────────┘</div>
+
+            <div class="layer-grid">
+                <div class="layer-card">
+                    <h4><span class="layer-icon">📦</span> Application Layer</h4>
+                    <ul>
+                        <li>User-facing application logic</li>
+                        <li>Business rules and workflows</li>
+                        <li>UI integration points</li>
+                    </ul>
+                </div>
+                <div class="layer-card">
+                    <h4><span class="layer-icon">⚙️</span> Service Layer</h4>
+                    <ul>
+                        <li>Client Manager for API clients</li>
+                        <li>Application Services registry</li>
+                        <li>Usage tracking and monitoring</li>
+                    </ul>
+                </div>
+                <div class="layer-card">
+                    <h4><span class="layer-icon">🔌</span> Interface Layer</h4>
+                    <ul>
+                        <li>Storage abstraction interfaces</li>
+                        <li>Authentication contracts</li>
+                        <li>Cloud provider abstractions</li>
+                    </ul>
+                </div>
+                <div class="layer-card">
+                    <h4><span class="layer-icon">🏗️</span> Implementation Layer</h4>
+                    <ul>
+                        <li>File-based storage</li>
+                        <li>HSQL metadata storage</li>
+                        <li>AWS cloud integration</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tabbed Content -->
+        <section class="content-section">
+            <div class="tabs" data-tabs>
+                <div class="tabs-nav" role="tablist">
+                    <button class="tab-btn active" data-tab="sessions" role="tab" aria-selected="true">
+                        Sessions
+                    </button>
+                    <button class="tab-btn" data-tab="storage" role="tab" aria-selected="false">
+                        Storage
+                    </button>
+                    <button class="tab-btn" data-tab="auth" role="tab" aria-selected="false">
+                        Authentication
+                    </button>
+                    <button class="tab-btn" data-tab="services" role="tab" aria-selected="false">
+                        Services
+                    </button>
+                </div>
+                <div class="tabs-content">
+                    <!-- Sessions Tab -->
+                    <div class="tab-panel active" data-tab-panel="sessions" role="tabpanel">
+                        <h3>Session Management</h3>
+                        <p>The <code>Session</code> class provides unique session identification and validation with support for both global and user-specific sessions.</p>
+                        
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">// Create new sessions
+val globalSession = Session.newGlobalID()  // Format: G-YYYYMMDD-XXXX
+val userSession = Session.newUserID()      // Format: U-YYYYMMDD-XXXX
+
+// Parse existing session ID
+val session = Session.parseSessionID("G-20231215-AbC1")
+
+// Check session type
+if (session.isGlobal()) {
+    // Handle global session
+}</code></pre>
+                        </div>
+
+                        <h4>Session ID Formats</h4>
+                        <table class="feature-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Format</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Global</td>
+                                    <td><code>G-YYYYMMDD-XXXX</code></td>
+                                    <td>Accessible to all users</td>
+                                </tr>
+                                <tr>
+                                    <td>User</td>
+                                    <td><code>U-YYYYMMDD-XXXX</code></td>
+                                    <td>User-specific sessions</td>
+                                </tr>
+                                <tr>
+                                    <td>Legacy</td>
+                                    <td><code>YYYYMMDD-XXXX</code></td>
+                                    <td>Treated as global</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>User Management</h4>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">val user = User(
+    email = "user@example.com",
+    name = "John Doe",
+    id = "user123",
+    picture = "https://example.com/avatar.jpg",
+    credential = oauthCredential // Optional credential object
+)</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Storage Tab -->
+                    <div class="tab-panel" data-tab-panel="storage" role="tabpanel" hidden>
+                        <h3>Storage System</h3>
+                        <p>The platform provides flexible storage options through the <code>StorageInterface</code> abstraction.</p>
+
+                        <h4>File Storage Implementation</h4>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">val dataStorage = DataStorage(File("/path/to/data"))
+
+// Store JSON data
+dataStorage.setJson(user, session, "config.json", myConfig)
+
+// Update messages
+dataStorage.updateMessage(user, session, "msg-123", "Hello World")
+
+// Get session directory
+val sessionDir = dataStorage.getSessionDir(user, session)</code></pre>
+                        </div>
+
+                        <h4>Directory Structure</h4>
+                        <div class="directory-tree">
+<span class="folder">data/</span>
+├── <span class="folder">global/</span>                    <span class="comment"># Global sessions</span>
+│   └── <span class="folder">20231215/</span>
+│       └── <span class="folder">AbC1/</span>
+│           ├── <span class="folder">messages/</span>
+│           └── config.json
+├── <span class="folder">user-sessions/</span>             <span class="comment"># User sessions</span>
+│   └── <span class="folder">user@example.com/</span>
+│       └── <span class="folder">20231215/</span>
+│           └── <span class="folder">XyZ2/</span>
+└── <span class="folder">users/</span>                     <span class="comment"># User settings</span>
+    └── user@example.com.json</div>
+
+                        <h4>HSQL Metadata Storage</h4>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">val metadataStorage = HSQLMetadataStorage()
+
+// Set session metadata
+metadataStorage.setSessionName(user, session, "My Chat Session")
+metadataStorage.setMessageIds(user, session, listOf("msg-1", "msg-2"))
+
+// Query metadata
+val sessionName = metadataStorage.getSessionName(user, session)
+val messageIds = metadataStorage.getMessageIds(user, session)</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Authentication Tab -->
+                    <div class="tab-panel" data-tab-panel="auth" role="tabpanel" hidden>
+                        <h3>Authentication & Authorization</h3>
+                        <p>The platform uses file-based authorization with flexible permission management.</p>
+
+                        <h4>Permission Files</h4>
+                        <table class="feature-table">
+                            <thead>
+                                <tr>
+                                    <th>File Path</th>
+                                    <th>Purpose</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>/permissions/read.txt</code></td>
+                                    <td>Global read permissions</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/permissions/write.txt</code></td>
+                                    <td>Global write permissions</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/permissions/com/example/app/read.txt</code></td>
+                                    <td>App-specific permissions</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Permission Syntax</h4>
+                        <div class="permission-syntax">
+                            <code>user@example.com</code> <span class="comment">— Specific user</span>
+                            <code>@company.com</code> <span class="comment">— Domain-based</span>
+                            <code>.</code> <span class="comment">— Any authenticated user</span>
+                            <code>*</code> <span class="comment">— Any user (including anonymous)</span>
+                        </div>
+
+                        <h4>User Settings Management</h4>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user)
+
+// Update API keys
+val updatedSettings = userSettings.copy(
+    apiKeys = userSettings.apiKeys + (APIProvider.OpenAI to "sk-...")
+)
+
+ApplicationServices.userSettingsManager.updateUserSettings(user, updatedSettings)</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Services Tab -->
+                    <div class="tab-panel" data-tab-panel="services" role="tabpanel" hidden>
+                        <h3>Application Services</h3>
+                        <p><code>ApplicationServices</code> is the central registry for all platform services.</p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">// Access services
+val authManager = ApplicationServices.authenticationManager
+val authzManager = ApplicationServices.authorizationManager
+val storage = ApplicationServices.dataStorageFactory(dataDir)
+val clientManager = ApplicationServices.clientManager
+val cloud = ApplicationServices.cloud
+val usageManager = ApplicationServices.usageManager</code></pre>
+                        </div>
+
+                        <h4>Client Manager</h4>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">val clientManager = ApplicationServices.clientManager
+
+// Get chat client for session
+val chatClient = clientManager.getChatClient(session, user)
+
+// Get thread pools
+val pool = clientManager.getPool(session, user)
+val scheduledPool = clientManager.getScheduledPool(session, user, dataStorage)</code></pre>
+                        </div>
+
+                        <h4>Custom Service Implementation</h4>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">// Custom storage implementation
+class CustomStorage(dataDir: File) : DataStorage(dataDir) {
+    override fun getMessages(user: User?, session: Session): LinkedHashMap&lt;String, String&gt; {
+        // Custom implementation
+        return super.getMessages(user, session)
+    }
+}
+
+// Register custom services
+ApplicationServices.dataStorageFactory = { file -> CustomStorage(file) }
+ApplicationServices.authenticationManager = CustomAuthenticationManager()
+ApplicationServices.authorizationManager = CustomAuthorizationManager()</code></pre>
+                        </div>
+
+                        <h4>Usage Tracking</h4>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">val usageManager = HSQLUsageManager()
+
+// Track usage
+usageManager.incrementUsage(session, apiKey, ChatModel.GPT35Turbo, usage)
+
+// Get summaries
+val userUsage = usageManager.getUserUsageSummary(apiKey)
+val sessionUsage = usageManager.getSessionUsageSummary(session)</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Best Practices -->
+        <section class="content-section" id="best-practices">
+            <h2>Best Practices</h2>
+            
+            <div class="best-practice">
+                <h5>✓ Session Management</h5>
+                <ul>
+                    <li>Always validate session IDs using <code>Session.validateSessionId()</code></li>
+                    <li>Use global sessions for public content, user sessions for private content</li>
+                    <li>Clean up expired sessions regularly</li>
+                </ul>
+            </div>
+
+            <div class="best-practice">
+                <h5>✓ Error Handling</h5>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">kotlin</span>
+                        <button class="copy-btn">Copy</button>
+                    </div>
+                    <pre><code class="language-kotlin">try {
+    val session = Session.parseSessionID(sessionId)
+    // Use session
+} catch (e: IllegalArgumentException) {
+    // Handle invalid session ID
+    log.error("Invalid session ID: $sessionId", e)
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="best-practice">
+                <h5>✓ Resource Management</h5>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">kotlin</span>
+                        <button class="copy-btn">Copy</button>
+                    </div>
+                    <pre><code class="language-kotlin">// Always ensure directories exist
+val sessionDir = dataStorage.getSessionDir(user, session).apply { mkdirs() }
+
+// Use try-with-resources for streams
+sessionDir.resolve("data.json").outputStream().use { output ->
+    // Write data
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="best-practice">
+                <h5>✓ Security</h5>
+                <ul>
+                    <li>Validate user permissions before operations</li>
+                    <li>Use encrypted storage for sensitive data</li>
+                    <li>Implement proper session timeout mechanisms</li>
+                </ul>
+            </div>
+
+            <div class="best-practice">
+                <h5>✓ Performance</h5>
+                <ul>
+                    <li>Cache frequently accessed data</li>
+                    <li>Use appropriate thread pools for concurrent operations</li>
+                    <li>Monitor usage patterns and optimize accordingly</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Quick Start -->
+        <section class="content-section" id="quick-start">
+            <h2>Quick Start</h2>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">kotlin</span>
+                    <button class="copy-btn">Copy</button>
+                </div>
+                <pre><code class="language-kotlin">// 1. Configure services before use
+ApplicationServicesConfig.dataStorageRoot = File("/custom/data/path")
+ApplicationServicesConfig.isLocked = true
+
+// 2. Create a session
+val session = Session.newGlobalID()
+
+// 3. Get storage instance
+val storage = ApplicationServices.dataStorageFactory(dataDir)
+
+// 4. Store data
+storage.setJson(user, session, "config.json", myConfig)
+
+// 5. Get a chat client
+val chatClient = ApplicationServices.clientManager.getChatClient(session, user)</code></pre>
+            </div>
+        </section>
+
+        <!-- AWS Integration -->
+        <section class="content-section">
+            <h2>Cloud Integration</h2>
+            <p>The platform includes AWS integration for file storage and encryption.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">kotlin</span>
+                    <button class="copy-btn">Copy</button>
+                </div>
+                <pre><code class="language-kotlin">val awsPlatform = AwsPlatform(
+    bucket = "my-bucket",
+    shareBase = "https://my-bucket.s3.amazonaws.com",
+    region = Region.US_EAST_1,
+    profileName = "my-profile"
+)
+
+// Upload file
+val url = awsPlatform.upload("path/to/file.txt", "text/plain", fileBytes)
+
+// Encrypt/decrypt with KMS
+val encrypted = awsPlatform.encrypt(
+    data, 
+    "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+)
+val decrypted = awsPlatform.decrypt(encryptedData)</code></pre>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Component -->
+    <script type="module" src="assets/scripts/components/CognotikFooter.js"></script>
+    <cognotik-footer></cognotik-footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
+    
+    <script>
+        // Tab functionality
+        document.querySelectorAll('[data-tabs]').forEach(tabContainer => {
+            const buttons = tabContainer.querySelectorAll('.tab-btn');
+            const panels = tabContainer.querySelectorAll('.tab-panel');
+
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.dataset.tab;
+
+                    // Update buttons
+                    buttons.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.setAttribute('aria-selected', 'false');
+                    });
+                    button.classList.add('active');
+                    button.setAttribute('aria-selected', 'true');
+
+                    // Update panels
+                    panels.forEach(panel => {
+                        if (panel.dataset.tabPanel === targetTab) {
+                            panel.classList.add('active');
+                            panel.hidden = false;
+                        } else {
+                            panel.classList.remove('active');
+                            panel.hidden = true;
+                        }
+                    });
+                });
+            });
+        });
+
+        // Copy button functionality
+        document.querySelectorAll('.copy-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const codeBlock = button.closest('.code-block').querySelector('code');
+                navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

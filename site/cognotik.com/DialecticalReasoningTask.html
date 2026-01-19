@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | DialecticalReasoningTask</title>
@@ -13,8 +14,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -35,7 +36,7 @@
             line-height: 1.6;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
@@ -220,11 +221,11 @@
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Reasoning > DialecticalReasoningTask</div>
         <h1>DialecticalReasoningTask</h1>
-        <p class="pitch">
+          <p class="task-pitch">
             Resolve contradictions and architectural tensions through iterative thesis-antithesis-synthesis. 
             Moves beyond binary choices to find higher-level conceptual integration.
         </p>
-        <div class="badges">
+          <div class="task-badges">
             <span class="badge">Category: Reasoning</span>
             <span class="badge">Side-Effect: Safe</span>
             <span class="badge">Model: GPT-4 Preferred</span>
@@ -236,7 +237,7 @@
         <!-- Input -->
         <div class="panel">
             <div class="panel-header">
-                <span>ExecutionConfig.json</span>
+                  <span>⚙️ ExecutionConfig.json</span>
                 <span>JSON</span>
             </div>
             <pre><code>{
@@ -244,7 +245,7 @@
   "antithesis": "Monolithic simplicity",
   "context": "E-commerce Platform Migration",
   "synthesis_levels": 3,
-  "preserve_strengths": true
+"preserve_strengths": true,
 }</code></pre>
         </div>
 
@@ -253,7 +254,7 @@
         <!-- Output -->
         <div class="panel">
             <div class="panel-header">
-                <span>Session UI (TabbedDisplay)</span>
+                  <span>👁️ Session UI (TabbedDisplay)</span>
                 <span>Rendered</span>
             </div>
             <div class="mock-ui-tabs">
@@ -263,7 +264,7 @@
                 <div class="mock-tab active">Synthesis L3</div>
             </div>
             <div class="mock-content">
-                <h4 style="margin-top:0; color: var(--accent-primary);">Synthesis Level 3: Macro-Service Mesh</h4>
+                      <h4 style="color: var(--accent-primary);">Synthesis Level 3: Macro-Service Mesh</h4>
                 <p style="font-size: 0.8rem; color: var(--text-dim);">
                     The final synthesis transcends the scale/simplicity trade-off by proposing a 
                     "Cell-Based Architecture" where logical monoliths are deployed as isolated 
@@ -357,7 +358,7 @@
                 <li><strong>Initialization:</strong> Validates that thesis and antithesis are distinct and within length limits.</li>
                 <li><strong>Thesis/Antithesis Analysis:</strong> Independent agents analyze the core claims, strengths, and blind spots of each position.</li>
                 <li><strong>Contradiction Mapping:</strong> Identifies the root causes of the tension and areas of hidden overlap.</li>
-                <li><strong>Iterative Synthesis:</strong>
+                      <strong>Iterative Synthesis:</strong>
                     <ul>
                         <li>Level 1: Finds a perspective that integrates both insights.</li>
                         <li>Level 2+: Treats the previous synthesis as a new thesis to find even deeper abstractions.</li>
@@ -377,7 +378,7 @@
                 <pre><code>import com.simiacryptus.cognotik.plan.tools.social.DialecticalReasoningTask
 import com.simiacryptus.cognotik.plan.tools.social.DialecticalReasoningTask.Companion.DialecticalReasoning
 
-// 1. Define the Job Configuration
+// Define the Job Configuration
 val config = DialecticalReasoningTask.DialecticalReasoningTaskExecutionConfigData(
     thesis = "Strict microservices for scale",
     antithesis = "Monolithic simplicity",
@@ -387,7 +388,7 @@ val config = DialecticalReasoningTask.DialecticalReasoningTaskExecutionConfigDat
     input_files = listOf("src/main/kotlin/architecture/*.kt")
 )
 
-// 2. Run via Harness
+// Run via Harness
 harness.runTask(
     taskType = DialecticalReasoning,
     typeConfig = TaskTypeConfig(name = "ArchReview"),
@@ -408,13 +409,13 @@ harness.runTask(
       --antithesis "Use Auth0 provider" \
       --workspace .
   env:
-    OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}</pre>
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}</code></pre>
             </div>
 
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
             <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM orchestrator:</p>
             <div class="panel" style="background: #000;">
-                <pre style="color: #8b949e;">DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesis
+                  <pre><code>DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesis
   ** Specify thesis and antithesis statements representing opposing positions
   ** Provide context to ground the dialectical analysis
   ** Configure synthesis_levels (1-5) to iterate toward higher understanding
@@ -423,7 +424,7 @@ harness.runTask(
   ** Explores contradictions and tensions between positions
   ** Generates synthesis that transcends opposition
   ** Iterates to progressively higher levels of understanding
-  ** Produces structured dialectical analysis with final synthesis</pre>
+** Produces structured dialectical analysis with final synthesis</code></pre>
             </div>
         </div>
     </section>
@@ -439,7 +440,7 @@ harness.runTask(
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/DialecticalReasoning/');
 </script>
 

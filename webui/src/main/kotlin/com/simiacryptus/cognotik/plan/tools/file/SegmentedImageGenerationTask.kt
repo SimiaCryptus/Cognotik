@@ -482,7 +482,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(SegmentedImageGenerationTask::class.java)
-    val SegmentedImageGeneration = TaskType(
+    @JvmStatic val SegmentedImageGeneration = TaskType(
       name = "SegmentedImageGeneration",
       category = "Writing",
       taskClass = SegmentedImageGenerationTask::class.java,

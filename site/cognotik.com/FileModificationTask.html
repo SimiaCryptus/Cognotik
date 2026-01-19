@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | FileModificationTask</title>
@@ -229,6 +230,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | FileModificationTask</title>
@@ -283,7 +285,7 @@
 
         .badge {
             background: var(--bg-panel);
-            border: 1px solid var(--border-subtle);
+          border-bottom: 1px solid var(--border-subtle);
             padding: 0.25rem 0.75rem;
             border-radius: 4px;
             font-size: 0.75rem;
@@ -325,7 +327,7 @@
         .flow-arrow {
             text-align: center;
             color: var(--text-dim);
-            font-size: 1.5rem;
+              font-size: 1.75rem;
         }
 
         .tabs-nav {
@@ -401,7 +403,7 @@
             <pre><code class="language-json">{
   "files": ["src/Service.kt"],
   "task_description": "Add calculateTax method",
-  "includeGitDiff": true
+"includeGitDiff": true,
 }</code></pre>
         </div>
 
@@ -485,7 +487,7 @@
             <pre><code class="language-kotlin">
 val executionConfig = FileModificationTaskExecutionConfigData(
     files = listOf("README.md"),
-    modifications = "Update the architecture section based on src/main.",
+  task_description = "Update the architecture section based on src/main.",
     extractContent = true,
     task_description = "Generate Documentation"
 )

@@ -179,15 +179,8 @@ class SubPlanTask(
                 appendLine()
             }
             transcript?.write(planningInfo.toByteArray())
-            planningTask.add(planningInfo.renderMarkdown)
+            planningTask.add(planningInfo.renderMarkdown(true))
             planningTask.complete()
-
-
-
-
-
-
-
 
             fun runExecution(): String {
                 // Execute the sub-plan using the cognitive mode
@@ -217,7 +210,7 @@ class SubPlanTask(
                 transcript?.write("\n\n## Summary\n\n".toByteArray())
                 transcript?.write(summary.toByteArray())
                 transcript?.write("\n\n".toByteArray())
-                summaryTask.add(summary.renderMarkdown)
+                summaryTask.add(summary.renderMarkdown(true))
                 summaryTask.complete()
                 tabs.update()
                 return summary
@@ -235,7 +228,7 @@ class SubPlanTask(
               }
             } else {
                 val semaphore = java.util.concurrent.Semaphore(0)
-              task.add(task.ui.hrefLink("▶ Run Sub-Plan", "btn btn-primary".renderMarkdown) {
+              task.add(task.ui.hrefLink("▶ Run Sub-Plan", "btn btn-primary".renderMarkdown(true)) {
                     task.ui.pool.submit {
                         try {
                             val summary = runExecution()
@@ -244,7 +237,7 @@ class SubPlanTask(
                                 semaphore.release()
                               task.complete()
                             }
-                          task.add(footer.renderMarkdown)
+                          task.add(footer.renderMarkdown(true))
                         } catch (e: Exception) {
                           handleError(e, task, transcript, resultFn)
                           semaphore.release()
@@ -253,11 +246,8 @@ class SubPlanTask(
                 })
                 semaphore.acquire()
             }
-
         } catch (e: Exception) {
           handleError(e, task, transcript, resultFn)
-        } finally {
-          transcript?.close()
         }
     }
 
@@ -365,7 +355,7 @@ class SubPlanTask(
     companion object {
         private val log = LoggerFactory.getLogger(SubPlanTask::class.java)
 
-        val SubPlan = TaskType(
+        @JvmStatic val SubPlan = TaskType(
           name = "SubPlan",
           category = "Execution",
           taskClass = SubPlanTask::class.java,

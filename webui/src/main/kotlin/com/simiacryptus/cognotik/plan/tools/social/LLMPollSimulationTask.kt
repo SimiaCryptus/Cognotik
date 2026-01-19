@@ -1356,7 +1356,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(LLMPollSimulationTask::class.java)
-        val LLMPollSimulation = TaskType(
+        @JvmStatic val LLMPollSimulation = TaskType(
             name = "LLMPollSimulation",
             category = "Social",
             taskClass = LLMPollSimulationTask::class.java,

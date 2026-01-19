@@ -234,7 +234,7 @@ class GitHubSearchTask(
     }
 
     companion object {
-        val GitHubSearch = TaskType(
+        @JvmStatic val GitHubSearch = TaskType(
             "GitHubSearch",
             "Online & Search",
             GitHubSearchTask::class.java,

@@ -429,7 +429,7 @@ class GameLevelDesignTask(
             write("\n---\n\n".toByteArray())
         }
 
-        overviewTask.add(overviewContent.renderMarkdown)
+        overviewTask.add(overviewContent.renderMarkdown(true))
         task.update()
 
         val resultBuilder = StringBuilder()
@@ -452,11 +452,11 @@ class GameLevelDesignTask(
                 val contextTask = task.newTask()
                 tabs["Context"] = contextTask.placeholder
                 contextTask.add(
-                    buildString {
-                        appendLine("# Context")
-                        appendLine()
-                        appendLine(combinedContext.truncateForDisplay(2000))
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Context")
+                    appendLine()
+                    appendLine(combinedContext.truncateForDisplay(2000))
+                  }.renderMarkdown(true)
                 )
                 task.update()
             }
@@ -472,12 +472,12 @@ class GameLevelDesignTask(
             tabs["Level Structure"] = structureTask.placeholder
 
             structureTask.add(
-                buildString {
-                    appendLine("# Level Structure")
-                    appendLine()
-                    appendLine("**Status:** Designing level layout...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Level Structure")
+                appendLine()
+                appendLine("**Status:** Designing level layout...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             task.update()
 
@@ -587,11 +587,19 @@ Keep zone descriptions brief - detailed content will be added later.
                 appendLine("**Status:** ✅ Complete")
             }
 
-            structureTask.add(structureContent.renderMarkdown)
+            structureTask.add(structureContent.renderMarkdown(true))
             task.update()
 
-            overviewTask.add("✅ Phase 1 Complete: Level structure created (${level.layout.zones.size} zones)\n".renderMarkdown)
-            overviewTask.add("\n### Phase 2: Encounter Design\n*Designing encounters and challenges...*\n".renderMarkdown)
+            overviewTask.add(
+              "✅ Phase 1 Complete: Level structure created (${level.layout.zones.size} zones)\n".renderMarkdown(
+                true
+              )
+            )
+            overviewTask.add(
+              "\n### Phase 2: Encounter Design\n*Designing encounters and challenges...*\n".renderMarkdown(
+                true
+              )
+            )
             task.update()
 
             // Phase 2: Design encounters
@@ -605,12 +613,12 @@ Keep zone descriptions brief - detailed content will be added later.
             tabs["Encounters"] = encounterTask.placeholder
 
             encounterTask.add(
-                buildString {
-                    appendLine("# Encounter Design")
-                    appendLine()
-                    appendLine("**Status:** Creating encounters...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Encounter Design")
+                appendLine()
+                appendLine("**Status:** Creating encounters...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             task.update()
 
@@ -698,11 +706,15 @@ Return the complete level with all encounters filled in.
                 appendLine("**Status:** ✅ Complete")
             }
 
-            encounterTask.add(encounterContent.renderMarkdown)
+            encounterTask.add(encounterContent.renderMarkdown(true))
             task.update()
 
-            overviewTask.add("✅ Phase 2 Complete: ${level.encounters.size} encounters designed\n".renderMarkdown)
-            overviewTask.add("\n### Phase 3: Pacing Analysis\n*Analyzing level pacing and intensity...*\n".renderMarkdown)
+            overviewTask.add("✅ Phase 2 Complete: ${level.encounters.size} encounters designed\n".renderMarkdown(true))
+            overviewTask.add(
+              "\n### Phase 3: Pacing Analysis\n*Analyzing level pacing and intensity...*\n".renderMarkdown(
+                true
+              )
+            )
             task.update()
 
             // Phase 3: Pacing analysis
@@ -716,12 +728,12 @@ Return the complete level with all encounters filled in.
             tabs["Pacing"] = pacingTask.placeholder
 
             pacingTask.add(
-                buildString {
-                    appendLine("# Pacing Analysis")
-                    appendLine()
-                    appendLine("**Status:** Analyzing pacing curve...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Pacing Analysis")
+                appendLine()
+                appendLine("**Status:** Analyzing pacing curve...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             task.update()
 
@@ -810,14 +822,18 @@ Return the complete level with pacing_curve filled in.
                 appendLine("**Status:** ✅ Complete")
             }
 
-            pacingTask.add(pacingContent.renderMarkdown)
+            pacingTask.add(pacingContent.renderMarkdown(true))
             task.update()
 
-            overviewTask.add("✅ Phase 3 Complete: Pacing curve analyzed\n".renderMarkdown)
+            overviewTask.add("✅ Phase 3 Complete: Pacing curve analyzed\n".renderMarkdown(true))
 
             // Phase 4: Collectibles and Secrets (if enabled)
             if (executionConfig.include_collectibles || executionConfig.include_secrets) {
-                overviewTask.add("\n### Phase 4: Collectibles & Secrets\n*Placing collectibles and secret areas...*\n".renderMarkdown)
+                overviewTask.add(
+                  "\n### Phase 4: Collectibles & Secrets\n*Placing collectibles and secret areas...*\n".renderMarkdown(
+                    true
+                  )
+                )
                 task.update()
 
                 log.info("Phase 4: Designing collectibles and secrets")
@@ -830,12 +846,12 @@ Return the complete level with pacing_curve filled in.
                 tabs["Collectibles & Secrets"] = collectiblesTask.placeholder
 
                 collectiblesTask.add(
-                    buildString {
-                        appendLine("# Collectibles & Secrets")
-                        appendLine()
-                        appendLine("**Status:** Designing collectibles and secrets...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Collectibles & Secrets")
+                    appendLine()
+                    appendLine("**Status:** Designing collectibles and secrets...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -910,14 +926,18 @@ Return the complete level with collectibles and secrets filled in.
                     appendLine("**Status:** ✅ Complete")
                 }
 
-                collectiblesTask.add(collectiblesContent.renderMarkdown)
+                collectiblesTask.add(collectiblesContent.renderMarkdown(true))
                 task.update()
 
-                overviewTask.add("✅ Phase 4 Complete: ${level.collectibles.size} collectibles, ${level.secrets.size} secrets\n".renderMarkdown)
+                overviewTask.add(
+                  "✅ Phase 4 Complete: ${level.collectibles.size} collectibles, ${level.secrets.size} secrets\n".renderMarkdown(
+                    true
+                  )
+                )
             }
 
             // Phase 5: Player Guidance
-            overviewTask.add("\n### Phase 5: Player Guidance\n*Designing guidance systems...*\n".renderMarkdown)
+            overviewTask.add("\n### Phase 5: Player Guidance\n*Designing guidance systems...*\n".renderMarkdown(true))
             task.update()
 
             log.info("Phase 5: Designing player guidance")
@@ -1003,14 +1023,18 @@ Create comprehensive guidance that helps without patronizing.
                 appendLine("**Status:** ✅ Complete")
             }
 
-            guidanceTask.add(guidanceContent.renderMarkdown)
+            guidanceTask.add(guidanceContent.renderMarkdown(true))
             task.update()
 
-            overviewTask.add("✅ Phase 5 Complete: Player guidance designed\n".renderMarkdown)
+            overviewTask.add("✅ Phase 5 Complete: Player guidance designed\n".renderMarkdown(true))
 
             // Phase 6: Difficulty Variants (if enabled)
             if (executionConfig.generate_difficulty_variants) {
-                overviewTask.add("\n### Phase 6: Difficulty Variants\n*Generating difficulty variants...*\n".renderMarkdown)
+                overviewTask.add(
+                  "\n### Phase 6: Difficulty Variants\n*Generating difficulty variants...*\n".renderMarkdown(
+                    true
+                  )
+                )
                 task.update()
 
                 log.info("Phase 6: Generating difficulty variants")
@@ -1090,14 +1114,18 @@ Ensure variants maintain the core level design while adjusting challenge.
                     appendLine("**Status:** ✅ Complete")
                 }
 
-                variantsTask.add(variantsContent.renderMarkdown)
+                variantsTask.add(variantsContent.renderMarkdown(true))
                 task.update()
 
-                overviewTask.add("✅ Phase 6 Complete: ${variants.variants.size} difficulty variants\n".renderMarkdown)
+                overviewTask.add(
+                  "✅ Phase 6 Complete: ${variants.variants.size} difficulty variants\n".renderMarkdown(
+                    true
+                  )
+                )
             }
 
             // Final Assembly
-            overviewTask.add("\n### Final Assembly\n*Compiling complete level design...*\n".renderMarkdown)
+            overviewTask.add("\n### Final Assembly\n*Compiling complete level design...*\n".renderMarkdown(true))
             task.update()
 
             log.info("Final Assembly: Compiling complete level design")
@@ -1259,7 +1287,7 @@ Ensure variants maintain the core level design while adjusting challenge.
                 appendLine("- **Overall Intensity:** ${level.pacing_curve.overall_intensity}/100")
             }
 
-            finalTask.add(completeDesign.renderMarkdown)
+            finalTask.add(completeDesign.renderMarkdown(true))
             transcript?.apply {
                 write("## Complete Level Design\n<details><summary>Full Design Markdown</summary>\n\n".toByteArray())
                 write(completeDesign.toByteArray())
@@ -1286,26 +1314,26 @@ Ensure variants maintain the core level design while adjusting challenge.
             }
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ✅ Generation Complete")
-                    appendLine()
-                    appendLine("**Statistics:**")
-                    appendLine("- Total Zones: ${level.layout.zones.size}")
-                    appendLine("- Total Encounters: ${level.encounters.size}")
-                    appendLine("- Collectibles: ${level.collectibles.size}")
-                    appendLine("- Secrets: ${level.secrets.size}")
-                    appendLine("- Estimated Duration: ${level.estimated_duration_minutes} minutes")
-                    appendLine("- Total Time: ${totalTime / 1000.0}s")
-                    appendLine()
-                    appendLine(
-                        "**Completed:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ✅ Generation Complete")
+                appendLine()
+                appendLine("**Statistics:**")
+                appendLine("- Total Zones: ${level.layout.zones.size}")
+                appendLine("- Total Encounters: ${level.encounters.size}")
+                appendLine("- Collectibles: ${level.collectibles.size}")
+                appendLine("- Secrets: ${level.secrets.size}")
+                appendLine("- Estimated Duration: ${level.estimated_duration_minutes} minutes")
+                appendLine("- Total Time: ${totalTime / 1000.0}s")
+                appendLine()
+                appendLine(
+                  "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                  }"
+                )
+              }.renderMarkdown(true)
             )
             task.update()
 
@@ -1350,16 +1378,16 @@ Ensure variants maintain the core level design while adjusting challenge.
 
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ❌ Error Occurred")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                appendLine()
+                appendLine("**Type:** ${e.javaClass.simpleName}")
+              }.renderMarkdown(true)
             )
             task.update()
 
@@ -1488,7 +1516,7 @@ Ensure variants maintain the core level design while adjusting challenge.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GameLevelDesignTask::class.java)
 
-        val GameLevelDesign = TaskType(
+        @JvmStatic val GameLevelDesign = TaskType(
             name = "GameLevelDesign",
             category = "Games",
             taskClass = GameLevelDesignTask::class.java,

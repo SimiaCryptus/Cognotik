@@ -25,7 +25,7 @@ open class CodingActorTestApp(
     ) {
         val message = ui.newTask()
         try {
-            message.echo(userMessage.renderMarkdown)
+            message.echo(userMessage.renderMarkdown(true))
             val response = actor.answer(CodeAgent.CodeRequest(listOf(userMessage to ModelSchema.Role.user)))
             val canPlay =
                 ApplicationServices.authorizationManager.isAuthorized(this::class.java, user, OperationType.Execute)
@@ -39,7 +39,8 @@ open class CodingActorTestApp(
                 }
             }
             message.complete(
-                "```${actor.language.lowercase(Locale.getDefault())}\n${response.code}\n```\n$playLink".trim().renderMarkdown
+              "```${actor.language.lowercase(Locale.getDefault())}\n${response.code}\n```\n$playLink".trim()
+                .renderMarkdown(true)
             )
         } catch (e: Throwable) {
             log.warn("Error", e)

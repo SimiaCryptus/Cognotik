@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | SeedMethod</title>
@@ -9,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -113,7 +114,7 @@
 
         .flow-arrow {
             text-align: center;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             font-size: 1.5rem;
         }
 
@@ -152,7 +153,7 @@
         }
 
         .docs-table th {
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -160,7 +161,7 @@
 
         code {
             font-family: var(--font-mono);
-            background: rgba(255,255,255,0.05);
+          background: rgba(255, 255, 255, 0.05);
             padding: 0.2rem 0.4rem;
             border-radius: 3px;
             font-size: 0.9em;
@@ -180,9 +181,9 @@
 
 <main class="task-container">
 
-    <!-- 1. HEADER -->
+      <!-- PAGE HEADER -->
     <header class="page-header">
-        <div class="breadcrumbs">Home > Tasks > Online > SeedMethod</div>
+          <div class="breadcrumbs">Home / Tasks / Online / SeedMethod</div>
         <h1>SeedMethod</h1>
         <p class="pitch">
             Pluggable discovery strategies for web crawling. Defines how the CrawlerAgentTask identifies initial URLs using search engines, proxies, or direct input.
@@ -238,7 +239,7 @@
 
         <!-- TAB: DOCS -->
         <div id="tab-docs" class="tab-pane">
-            <h3>Available Seed Methods</h3>
+              <h2>Available Seed Methods</h2>
             <p>The <code>SeedMethod</code> enum provides various providers for URL discovery:</p>
             <table class="docs-table">
                 <thead>
@@ -319,9 +320,9 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
-            <h3>Kotlin Implementation</h3>
+              <h2>Kotlin Implementation</h2>
             <p>Registering a seed method within an orchestration flow:</p>
-            <div class="panel">
+              <div class="panel mt-4">
                 <pre><code class="language-kotlin">
 val config = CrawlerTaskExecutionConfigData(
     seed_method = SeedMethod.SearchIO_Google_Search,
@@ -333,7 +334,7 @@ val strategy = SeedMethod.SearchIO_Google_Search.createStrategy(
     user = currentUser
 )
 
-val items = strategy.getSeedItems(config, orchestrationConfig)
+val items = strategy.getSeedItems(config, orchestrationConfig)</code></pre>
                 </code></pre>
             </div>
         </div>
@@ -342,7 +343,7 @@ val items = strategy.getSeedItems(config, orchestrationConfig)
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 

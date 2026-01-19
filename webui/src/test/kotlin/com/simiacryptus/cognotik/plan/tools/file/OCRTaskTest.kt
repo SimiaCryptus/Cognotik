@@ -95,6 +95,7 @@ object OCRTaskTest {
         }
     }
 
+    @org.junit.jupiter.api.Tag("Integration")
     //@org.junit.jupiter.api.Test
     @Timeout(30, unit = TimeUnit.MINUTES)
     fun test_convert() {

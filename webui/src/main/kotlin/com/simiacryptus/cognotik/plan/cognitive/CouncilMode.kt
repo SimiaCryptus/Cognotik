@@ -78,11 +78,11 @@ open class CouncilMode(
                 task.complete()
                 val coordinator = task.ui.dataStorage?.let {
                     TaskOrchestrator(
-                        user = user,
-                        session = session,
-                        dataStorage = it,
-                        root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+                      user = user,
+                      session = session,
+                      dataStorage = it,
+                      root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
+                          ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
                     )
                 }
 

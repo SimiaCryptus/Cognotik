@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.util
 
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.vladsch.flexmark.util.data.MutableDataSet
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -11,7 +12,7 @@ class MarkdownUtilTest {
 
     @Test
     fun testRenderMarkdown_BlankInput() {
-        val result = markdownUtil.renderMarkdown("")
+        val result = "".renderMarkdown()
         assertEquals("", result, "Rendering blank markdown should return an empty string.")
     }
 

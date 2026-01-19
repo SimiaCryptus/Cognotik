@@ -38,7 +38,7 @@ class AnthropicChatClient(
     ) {
         request.addHeader("Content-Type", "application/json")
         request.addHeader("Accept", "application/json")
-        request.addHeader("x-api-key", apiKey)
+        request.addHeader("x-api-key", apiKey.decrypt)
         request.addHeader("anthropic-version", "2023-06-01")
     }
 

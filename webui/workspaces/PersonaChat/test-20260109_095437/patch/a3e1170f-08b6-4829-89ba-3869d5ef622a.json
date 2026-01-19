@@ -1,6 +1,0 @@
-{
-  "filename" : "hello_persona.py",
-  "code" : "def main():\n    print('Hello from PersonaChatMode')\n\nif __name__ == \"__main__\":\n    main()",
-  "header" : "hello_persona.py",
-  "language" : "python"
-}

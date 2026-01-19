@@ -20,7 +20,6 @@ nexusPublishing {
     }
 }
 
-
 subprojects {
     apply(plugin = "jacoco")
     repositories {
@@ -145,7 +144,9 @@ allprojects {
     }
 
     tasks.withType<Test> {
-        useJUnitPlatform()
+        useJUnitPlatform {
+            excludeTags("demo", "integration", "research")
+        }
         maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
         maxHeapSize = "2g"
         jvmArgs(
@@ -215,6 +216,7 @@ tasks.register<JacocoReport>("jacocoRootReport") {
         html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/jacocoRootReport"))
     }
 }
+
 
 
 tasks {

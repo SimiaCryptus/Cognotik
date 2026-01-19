@@ -1,8 +1,0 @@
-{
-  "filename" : "hello_council.py",
-  "originalCode" : "",
-  "diff" : "--- hello_council.py\n+++ hello_council.py\n@@ -1,1 +0,0 @@\n-",
-  "newCode" : "",
-  "isValid" : true,
-  "errors" : ""
-}

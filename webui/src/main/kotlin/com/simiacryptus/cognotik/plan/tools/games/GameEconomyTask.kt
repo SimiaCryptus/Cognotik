@@ -28,7 +28,7 @@ class GameEconomyTask(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GameEconomyTask::class.java)
-        val GameEconomy = TaskType(
+        @JvmStatic val GameEconomy = TaskType(
             name = "GameEconomy",
             category = "Games",
             taskClass = GameEconomyTask::class.java,

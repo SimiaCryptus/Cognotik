@@ -1,0 +1,85 @@
+/* Build Tools Page Specific Styles */
+
+.providers-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.providers-table thead {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.providers-table th {
+    padding: var(--space-4);
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.providers-table td {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+.providers-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.providers-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+/* Utility margin classes */
+.mb-4 {
+    margin-bottom: var(--space-4);
+}
+
+.mb-6 {
+    margin-bottom: var(--space-6);
+}
+
+.mb-8 {
+    margin-bottom: var(--space-8);
+}
+
+.mt-2 {
+    margin-top: var(--space-2);
+}
+
+.mt-4 {
+    margin-top: var(--space-4);
+}
+
+.mt-12 {
+    margin-top: var(--space-12);
+}
+
+.ml-4 {
+    margin-left: var(--space-4);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .providers-table {
+        font-size: var(--text-sm);
+    }
+
+    .providers-table th,
+    .providers-table td {
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .hero-actions {
+        flex-direction: column;
+    }
+
+    .hero-actions .btn {
+        width: 100%;
+    }
+}

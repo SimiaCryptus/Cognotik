@@ -193,7 +193,7 @@ class ReadDocumentsTask(
 
     companion object {
         private val log = LoggerFactory.getLogger(ReadDocumentsTask::class.java)
-        val ReadDocuments = TaskType(
+        @JvmStatic val ReadDocuments = TaskType(
           name = "ReadDocuments",
           category = "File",
           taskClass = ReadDocumentsTask::class.java,

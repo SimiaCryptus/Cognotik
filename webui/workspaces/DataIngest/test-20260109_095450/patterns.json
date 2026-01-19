@@ -1,6 +1,0 @@
-[ {
-  "id" : "93daaeb0-4642-4a26-8a58-143c216a46e9",
-  "regex" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2})\\s+(?<level>[A-Z]+)\\s+(?<logger>[a-zA-Z0-9]+)\\s-\\s(?<message>.*)$",
-  "fields" : [ "timestamp", "level", "logger", "message" ],
-  "matchCount" : 0
-} ]

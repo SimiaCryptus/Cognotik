@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | GenerateSpriteSheetTask</title>
@@ -239,13 +240,13 @@
             Automated game asset generation: creates sprite sheets and corresponding JSON metadata using AI-driven image generation, Euclidean distance-based transparency processing, and computer vision analysis.
         </p>
         <div class="badges">
-            <span class="badge">Category: Asset Generation</span>
+              <span class="badge badge-primary">Asset Generation</span>
             <span class="badge">Output: PNG + JSON</span>
             <span class="badge">Vision-Enabled</span>
         </div>
     </header>
 
-    <!-- 2. REALITY CHECK -->
+      <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -352,7 +353,7 @@
                 <li><strong>Image Generation:</strong> Uses <code>ImageProcessingAgent</code> to create a sprite sheet on a solid <strong>Magenta (#FF00FF)</strong> background. This ensures high contrast for the extraction phase.</li>
                 <li><strong>Transparency Processing:</strong> Implements a custom <strong>Soft Keying</strong> algorithm. It calculates the Euclidean distance in RGB space from the magenta background to apply smooth alpha blending for anti-aliased edges.</li>
                 <li><strong>Vision Analysis:</strong> The <code>ParsedImageAgent</code> (Vision LLM) analyzes the generated image to identify distinct sprite boundaries, assigning descriptive names and pixel-perfect bounding boxes.</li>
-                <li><strong>Asset Export:</strong>
+                              <strong>Asset Export:</strong>
                     <ul>
                         <li><strong>Master Sheet:</strong> Saves the full <code>.png</code> with transparency.</li>
                         <li><strong>Metadata:</strong> Writes the <code>.json</code> coordinate file.</li>
@@ -449,7 +450,7 @@ val config = OrchestrationConfig(
 GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadata
   * Generates an image containing multiple sprites based on a description
   * Automatically identifies sprite locations (x, y, width, height)
-  * Outputs both a .png image and a .json metadata file
+* Outputs both a .png image and a .json metadata file</code></pre>
             </code></pre>
         </div>
 
@@ -467,7 +468,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/GenerateSpriteSheet/');
 </script>
 

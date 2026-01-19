@@ -24,6 +24,7 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.asApiChatModel
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
+import com.simiacryptus.cognotik.util.PlanHarness.Companion.now
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.trayIcon
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -123,7 +124,7 @@ open class UnifiedHarness(
         }
     ) {
         val completionLatch = CountDownLatch(1)
-
+        val session = this.session
         val planApp = object : UnifiedPlanApp(
             path = "/test",
             applicationName = "Plan Test App",
@@ -235,13 +236,12 @@ open class UnifiedHarness(
     ) {
         val completionLatch = CountDownLatch(1)
         var error: Throwable? = null
-
-
+        val session = this.session
 
         val singleTaskApp = object : SingleTaskApp(
             path = "/test",
             taskType = taskType,
-            taskConfig = executionConfig,
+            taskConfig = listOf(executionConfig),
             instanceFn = { model -> modelInstanceFn(model,session) },
         ) {
             override fun instance(model: ApiChatModel) = modelInstanceFn(model,session)
@@ -277,6 +277,10 @@ open class UnifiedHarness(
                         clazz = this.javaClass
                     )
                     startSession(session, user, socketManager)
+                    socketManager.resolveUserFile("task_${now()}.json")?.writeText(mapOf(
+                        "typeConfig" to typeConfig,
+                        "exeConfig" to executionConfig
+                    ).toJson())
                     return socketManager
                 } else {
                     return super.newSession(user, session)
@@ -412,6 +416,7 @@ open class UnifiedHarness(
         }
 
 
+        @JvmStatic
         fun configurePlatform() {
             initDynamicEnums()
             ApplicationServices.authenticationManager = object : AuthenticationInterface {

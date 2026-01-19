@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | FunctorialMapping</title>
@@ -13,8 +14,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -114,7 +115,7 @@
 
 <main class="task-container">
 
-    <!-- 1. HEADER -->
+      <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Reasoning > FunctorialMapping</div>
         <h1>FunctorialMapping</h1>
@@ -213,7 +214,7 @@
                     <tr>
                         <td><code>functor_properties</code></td>
                         <td>String</td>
-                        <td>Constraints on the mapping (e.g., 'covariant', 'contravariant'). Default: <code>covariant</code>.</td>
+                          <td>Constraints on the mapping (e.g., <code>covariant</code>, <code>contravariant</code>). Default: <code>covariant</code>.</td>
                     </tr>
                 </tbody>
             </table>
@@ -222,24 +223,24 @@
         <!-- TAB: PROCESS -->
         <div id="tab-process" class="tab-pane" style="display:none;">
             <h3>Task Process Lifecycle</h3>
-            <div class="step-list">
-                <div class="step-item">
+              <ul class="step-list">
+                  <li class="step-item">
                     <div class="step-num">1</div>
                     <div><strong>Category Formalization:</strong> Defines Objects and Morphisms for both Source and Target domains using mathematical notation.</div>
                 </div>
-                <div class="step-item">
+                  <li class="step-item">
                     <div class="step-num">2</div>
                     <div><strong>Functor Construction:</strong> Maps objects and morphisms while ensuring identity and composition preservation.</div>
                 </div>
-                <div class="step-item">
+                  <li class="step-item">
                     <div class="step-num">3</div>
                     <div><strong>Problem Transport:</strong> Translates the problem statement strictly into the Target Category's language.</div>
                 </div>
-                <div class="step-item">
+                  <li class="step-item">
                     <div class="step-num">4</div>
                     <div><strong>Remote Solution:</strong> Solves the problem using tools and reasoning appropriate for the Target Domain.</div>
                 </div>
-                <div class="step-item">
+                  <li class="step-item">
                     <div class="step-num">5</div>
                     <div><strong>Inverse Transport:</strong> Maps the solution back to the Source Category and interprets it in the original context.</div>
                 </div>
@@ -286,7 +287,7 @@ fun solveLogistics(harness: UnifiedHarness, projectDir: File) {
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).style.display = 'block';
@@ -294,7 +295,7 @@ fun solveLogistics(harness: UnifiedHarness, projectDir: File) {
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/FunctorialMapping/');
 </script>
 

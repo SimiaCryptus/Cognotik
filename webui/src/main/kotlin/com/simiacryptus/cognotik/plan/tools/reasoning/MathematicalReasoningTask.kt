@@ -29,7 +29,7 @@ class MathematicalReasoningTask(
 ) {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(MathematicalReasoningTask::class.java)
-        val MathematicalReasoning = TaskType(
+        @JvmStatic val MathematicalReasoning = TaskType(
           name = "MathematicalReasoning",
           category = "Reasoning",
           taskClass = MathematicalReasoningTask::class.java,

@@ -135,6 +135,8 @@ class GeminiSdkChatClient(
                     chatResponse.usage?.copy(cost = model.pricing(chatResponse.usage!!))!!,
                     logStreams = logStreams
                 )
+            } else {
+                log("No usage data returned from Gemini SDK for request ${requestID}", logStreams)
             }
             return chatResponse
         } catch (e: Exception) {

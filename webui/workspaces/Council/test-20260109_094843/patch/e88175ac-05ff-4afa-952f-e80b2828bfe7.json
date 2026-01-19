@@ -1,6 +1,0 @@
-{
-  "filename" : "council_initiation.py",
-  "code" : "\"\"\"\nThe Script of Initiation\nThis script marks the beginning of the CouncilMode process.\n\"\"\"\n\ndef main():\n    print('Hello from CouncilMode')\n\nif __name__ == \"__main__\":\n    main()",
-  "header" : "council_initiation.py",
-  "language" : "python"
-}

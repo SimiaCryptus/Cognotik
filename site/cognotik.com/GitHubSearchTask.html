@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | GitHubSearchTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -75,7 +76,7 @@
             border-radius: 4px;
             font-size: 0.75rem;
             font-family: var(--font-mono);
-            color: var(--accent-primary);
+          color: var(--accent-danger);
         }
 
         /* Reality Check Grid */
@@ -118,7 +119,7 @@
 
         .flow-arrow {
             text-align: center;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             font-size: 1.5rem;
         }
 
@@ -187,7 +188,7 @@
         code {
             font-family: var(--font-mono);
             background: rgba(88, 166, 255, 0.1);
-            padding: 0.1rem 0.3rem;
+          padding: 0.15em 0.4em;
             border-radius: 3px;
             color: var(--accent-primary);
         }
@@ -206,7 +207,7 @@
 
 <main class="task-container">
 
-    <!-- 1. HEADER -->
+      <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Online > GitHubSearchTask</div>
         <h1>GitHubSearchTask</h1>
@@ -215,8 +216,8 @@
         </p>
         <div class="badges">
             <span class="badge">Category: Online</span>
-            <span class="badge">Side-Effect: Safe</span>
-            <span class="badge">Auth: GitHub Token Required</span>
+              <span class="badge badge-success">Side-Effect: Safe</span>
+              <span class="badge badge-warning">Auth: GitHub Token Required</span>
         </div>
     </header>
 
@@ -240,11 +241,11 @@
         <div class="panel">
             <div class="panel-header"><span>👁️</span> Session UI Output</div>
             <div class="mock-ui-content">
-                <div style="font-weight: bold; margin-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                  <div style="font-weight: 600; margin-bottom: var(--space-3); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-2);">
                     GitHub Search Results
                 </div>
                 <div class="search-result-item">
-                    <div class="result-title">JetBrains/kotlin-multiplatform-samples</div>
+                      <a href="#" class="result-title">JetBrains/kotlin-multiplatform-samples</a>
                     <div style="font-size: 0.8rem; margin-top: 2px;">Samples for Kotlin Multiplatform Mobile...</div>
                     <div class="result-meta">Stars: 4.2k | Forks: 850</div>
                 </div>
@@ -288,7 +289,7 @@
                     <td><code>search_type</code></td>
                     <td>String</td>
                     <td><code>"repositories"</code></td>
-                    <td>Type of search: <code>code</code>, <code>commits</code>, <code>issues</code>, <code>repositories</code>, <code>topics</code>, <code>users</code>.</td>
+                          <td>Type of search: <code>code</code>, <code>commits</code>, <code>issues</code>, <code>repositories</code>, <code>topics</code>, <code>users</code></td>
                 </tr>
                 <tr>
                     <td><code>per_page</code></td>
@@ -347,7 +348,7 @@
     orchestrationConfig = config,
     planTask = GitHubSearchTask.GitHubSearchTaskExecutionConfigData(
         search_query = "org:simiacryptus",
-        search_type = "repositories"
+      search_type = "repositories",
     )
 )</code></pre>
         </div>
@@ -357,7 +358,7 @@
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | GeneticOptimizationTask - Evolutionary Text Refinement</title>
@@ -14,12 +15,12 @@
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
-            --bg-app: #0d1117;
+          --bg-app: #0f1115;
             --bg-panel: #161b22;
             --border-subtle: #30363d;
             --accent-primary: #58a6ff;
@@ -36,8 +37,8 @@
             line-height: 1.6;
         }
 
-        .task-container {
-            max-width: 1400px;
+      .page-container {
+          max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
@@ -176,7 +177,7 @@
 
         code {
             font-family: var(--font-mono);
-            background: rgba(255,255,255,0.05);
+          background: rgba(255, 255, 255, 0.05);
             padding: 0.1rem 0.3rem;
             border-radius: 3px;
             font-size: 0.9em;
@@ -254,7 +255,7 @@
                 <div style="background: #161b22; padding: 1rem; border-radius: 4px; font-style: italic; border: 1px solid var(--border-subtle);">
                     "Cognotik empowers engineering teams to automate complex reasoning workflows with industrial-grade precision and iterative refinement."
                 </div>
-                <table style="width:100%; font-size: 0.75rem; margin-top: 1rem; border-top: 1px solid var(--border-subtle);">
+                  <table style="width: 100%; font-size: var(--text-sm); border-top: 1px solid var(--border-subtle);">
                     <tr>
                         <td style="padding: 4px 0;">Clarity</td>
                         <td style="text-align: right;">92/100</td>
@@ -405,7 +406,7 @@ harness.runTask(
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).style.display = 'block';

@@ -56,7 +56,7 @@ abstract class DynamicEnumDeserializer<T : DynamicEnum<T>>(
 ) : JsonDeserializer<T>() {
     private val log = LoggerFactory.getLogger(DynamicEnumDeserializer::class.java)
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): T {
-        log.debug("Deserializing JSON for class: {}", clazz.name)
+        //log.debug("Deserializing JSON for class: {}", clazz.name)
         val values = DynamicEnum.getRegistry(clazz).toMap()
         return when (val node = p.codec.readTree<JsonNode>(p)) {
             is TextNode -> values[node.asText()]

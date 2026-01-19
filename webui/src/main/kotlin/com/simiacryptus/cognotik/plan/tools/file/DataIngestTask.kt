@@ -392,7 +392,7 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
 
     companion object {
         private val log = LoggerFactory.getLogger(DataIngestTask::class.java)
-        val DataIngest = TaskType(
+        @JvmStatic val DataIngest = TaskType(
             name = "DataIngest",
             category = "File",
             taskClass = DataIngestTask::class.java,

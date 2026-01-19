@@ -245,7 +245,7 @@ class ScriptwritingTask(
         }
         markdownTranscript?.write(overviewContent.toByteArray())
         markdownTranscript?.write("\n".toByteArray())
-        overviewTask.add(overviewContent.renderMarkdown)
+        overviewTask.add(overviewContent.renderMarkdown(true))
         task.update()
         val overviewContent2 = buildString {
             appendLine()
@@ -271,7 +271,7 @@ class ScriptwritingTask(
             appendLine("*Analyzing topic and creating script structure...*")
         }
         markdownTranscript?.write(overviewContent2.toByteArray())
-        overviewTask.add(overviewContent2.renderMarkdown)
+        overviewTask.add(overviewContent2.renderMarkdown(true))
         task.update()
 
         val resultBuilder = StringBuilder()
@@ -288,19 +288,19 @@ class ScriptwritingTask(
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
                 val contextTask = tabs.newTask("Research Context")
                 contextTask.add(
-                    buildString {
-                        appendLine("# Research Context")
-                        appendLine()
-                        if (priorContext.isNotBlank()) {
-                            appendLine("## Prior Context")
-                            appendLine(priorContext.truncateForDisplay(2000))
-                            appendLine()
-                        }
-                        if (contextFiles.isNotBlank()) {
-                            appendLine("## Related Files")
-                            appendLine(contextFiles.truncateForDisplay(2000))
-                        }
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Research Context")
+                    appendLine()
+                    if (priorContext.isNotBlank()) {
+                      appendLine("## Prior Context")
+                      appendLine(priorContext.truncateForDisplay(2000))
+                      appendLine()
+                    }
+                    if (contextFiles.isNotBlank()) {
+                      appendLine("## Related Files")
+                      appendLine(contextFiles.truncateForDisplay(2000))
+                    }
+                  }.renderMarkdown(true)
                 )
                 task.update()
             }
@@ -311,12 +311,12 @@ class ScriptwritingTask(
             val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
-                buildString {
-                    appendLine("# Script Outline")
-                    appendLine()
-                    appendLine("**Status:** Creating structured outline...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Script Outline")
+                appendLine()
+                appendLine("**Status:** Creating structured outline...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             markdownTranscript?.write("# Script Outline\n<details>\n<summary>Outline Details</summary>\n\n".toByteArray())
             task.update()
@@ -425,13 +425,21 @@ Ensure the outline:
                 appendLine()
                 appendLine("**Status:** ✅ Complete")
             }
-            outlineTask.add(outlineContent.renderMarkdown)
+            outlineTask.add(outlineContent.renderMarkdown(true))
             markdownTranscript?.write(outlineContent.toByteArray())
             markdownTranscript?.write("\n</details>\n".toByteArray())
             task.update()
 
-            overviewTask.add("✅ Phase 1 Complete: Outline created (${outline.sections.size} sections)\n".renderMarkdown)
-            overviewTask.add("\n### Phase 2: Script Writing\n*Writing detailed script segments...*\n".renderMarkdown)
+            overviewTask.add(
+              "✅ Phase 1 Complete: Outline created (${outline.sections.size} sections)\n".renderMarkdown(
+                true
+              )
+            )
+            overviewTask.add(
+              "\n### Phase 2: Script Writing\n*Writing detailed script segments...*\n".renderMarkdown(
+                true
+              )
+            )
             task.update()
 
             // Phase 2: Write script segments
@@ -443,18 +451,18 @@ Ensure the outline:
             // Write opening if hook is included
             if (executionConfig.include_hook && outline.hook.isNotBlank()) {
                 log.info("Writing opening hook")
-                overviewTask.add("- Opening Hook ".renderMarkdown)
+                overviewTask.add("- Opening Hook ".renderMarkdown(true))
                 task.update()
 
                 val hookTask = tabs.newTask("Opening")
 
                 hookTask.add(
-                    buildString {
-                        appendLine("# Opening Hook")
-                        appendLine()
-                        appendLine("**Status:** Writing opening...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Opening Hook")
+                    appendLine()
+                    appendLine("**Status:** Writing opening...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -491,49 +499,49 @@ Ensure the dialogue sounds natural when spoken aloud.
                 cumulativeWordCount += hookSegment.dialogue.split("\\s+".toRegex()).size
 
                 hookTask.add(
-                    buildString {
-                        appendLine("## Opening Hook")
-                        appendLine()
-                        if (executionConfig.include_timing) {
-                            appendLine("**[${formatTiming(0)}]**")
-                            appendLine()
-                        }
-                        if (executionConfig.include_directions && hookSegment.visual_direction.isNotBlank()) {
-                            appendLine("*${hookSegment.visual_direction}*")
-                            appendLine()
-                        }
-                        appendLine(hookSegment.dialogue)
-                        appendLine()
-                        if (executionConfig.suggest_b_roll && hookSegment.b_roll_suggestions.isNotEmpty()) {
-                            appendLine("**B-Roll:**")
-                            hookSegment.b_roll_suggestions.forEach { broll ->
-                                appendLine("- $broll")
-                            }
-                            appendLine()
-                        }
-                        if (executionConfig.include_notes && hookSegment.notes.isNotBlank()) {
-                            appendLine("**Notes:** ${hookSegment.notes}")
-                            appendLine()
-                        }
-                        appendLine("---")
-                        appendLine()
-                        appendLine(
-                            "**Duration:** ${hookSegment.duration_seconds}s | **Words:** ${
-                                hookSegment.dialogue.split(
-                                    "\\s+".toRegex()
-                                ).size
-                            }"
-                        )
-                        appendLine()
-                        appendLine("**Status:** ✅ Complete")
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("## Opening Hook")
+                    appendLine()
+                    if (executionConfig.include_timing) {
+                      appendLine("**[${formatTiming(0)}]**")
+                      appendLine()
+                    }
+                    if (executionConfig.include_directions && hookSegment.visual_direction.isNotBlank()) {
+                      appendLine("*${hookSegment.visual_direction}*")
+                      appendLine()
+                    }
+                    appendLine(hookSegment.dialogue)
+                    appendLine()
+                    if (executionConfig.suggest_b_roll && hookSegment.b_roll_suggestions.isNotEmpty()) {
+                      appendLine("**B-Roll:**")
+                      hookSegment.b_roll_suggestions.forEach { broll ->
+                        appendLine("- $broll")
+                      }
+                      appendLine()
+                    }
+                    if (executionConfig.include_notes && hookSegment.notes.isNotBlank()) {
+                      appendLine("**Notes:** ${hookSegment.notes}")
+                      appendLine()
+                    }
+                    appendLine("---")
+                    appendLine()
+                    appendLine(
+                      "**Duration:** ${hookSegment.duration_seconds}s | **Words:** ${
+                        hookSegment.dialogue.split(
+                          "\\s+".toRegex()
+                        ).size
+                      }"
+                    )
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete")
+                  }.renderMarkdown(true)
                 )
                 markdownTranscript?.write("# Opening Hook\n\n".toByteArray())
                 markdownTranscript?.write(hookSegment.dialogue.toByteArray())
                 markdownTranscript?.write("\n\n".toByteArray())
                 task.update()
 
-                overviewTask.add("✅\n".renderMarkdown)
+                overviewTask.add("✅\n".renderMarkdown(true))
                 task.update()
             }
 
@@ -541,18 +549,22 @@ Ensure the dialogue sounds natural when spoken aloud.
             outline.sections.forEachIndexed { index, sectionOutline ->
                 log.info("Writing section ${index + 1}/${outline.sections.size}: ${sectionOutline.title}")
 
-                overviewTask.add("- Section ${sectionOutline.section_number}: ${sectionOutline.title} ".renderMarkdown)
+                overviewTask.add(
+                  "- Section ${sectionOutline.section_number}: ${sectionOutline.title} ".renderMarkdown(
+                    true
+                  )
+                )
                 task.update()
 
                 val sectionTask = tabs.newTask("Section ${sectionOutline.section_number}")
 
                 sectionTask.add(
-                    buildString {
-                        appendLine("# Section ${sectionOutline.section_number}: ${sectionOutline.title}")
-                        appendLine()
-                        appendLine("**Status:** Writing section...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Section ${sectionOutline.section_number}: ${sectionOutline.title}")
+                    appendLine()
+                    appendLine("**Status:** Writing section...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -625,73 +637,73 @@ Aim for approximately ${sectionOutline.estimated_duration_seconds} seconds of co
                 cumulativeWordCount += sectionSegment.dialogue.split("\\s+".toRegex()).size
 
                 sectionTask.add(
-                    buildString {
-                        appendLine("## ${sectionOutline.title}")
-                        appendLine()
-                        if (executionConfig.include_timing) {
-                            appendLine("**[${formatTiming(cumulativeDuration - sectionSegment.duration_seconds)}]**")
-                            appendLine()
-                        }
-                        if (executionConfig.include_directions && sectionSegment.visual_direction.isNotBlank()) {
-                            appendLine("*${sectionSegment.visual_direction}*")
-                            appendLine()
-                        }
-                        appendLine(sectionSegment.dialogue)
-                        appendLine()
-                        if (executionConfig.suggest_b_roll && sectionSegment.b_roll_suggestions.isNotEmpty()) {
-                            appendLine("**B-Roll:**")
-                            sectionSegment.b_roll_suggestions.forEach { broll ->
-                                appendLine("- $broll")
-                            }
-                            appendLine()
-                        }
-                        if (executionConfig.mark_key_points && sectionSegment.key_points_marked.isNotEmpty()) {
-                            appendLine("**Key Points for Graphics:**")
-                            sectionSegment.key_points_marked.forEach { point ->
-                                appendLine("- $point")
-                            }
-                            appendLine()
-                        }
-                        if (executionConfig.include_notes && sectionSegment.notes.isNotBlank()) {
-                            appendLine("**Notes:** ${sectionSegment.notes}")
-                            appendLine()
-                        }
-                        appendLine("---")
-                        appendLine()
-                        appendLine(
-                            "**Duration:** ${sectionSegment.duration_seconds}s | **Words:** ${
-                                sectionSegment.dialogue.split(
-                                    "\\s+".toRegex()
-                                ).size
-                            }"
-                        )
-                        appendLine()
-                        appendLine("**Status:** ✅ Complete")
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("## ${sectionOutline.title}")
+                    appendLine()
+                    if (executionConfig.include_timing) {
+                      appendLine("**[${formatTiming(cumulativeDuration - sectionSegment.duration_seconds)}]**")
+                      appendLine()
+                    }
+                    if (executionConfig.include_directions && sectionSegment.visual_direction.isNotBlank()) {
+                      appendLine("*${sectionSegment.visual_direction}*")
+                      appendLine()
+                    }
+                    appendLine(sectionSegment.dialogue)
+                    appendLine()
+                    if (executionConfig.suggest_b_roll && sectionSegment.b_roll_suggestions.isNotEmpty()) {
+                      appendLine("**B-Roll:**")
+                      sectionSegment.b_roll_suggestions.forEach { broll ->
+                        appendLine("- $broll")
+                      }
+                      appendLine()
+                    }
+                    if (executionConfig.mark_key_points && sectionSegment.key_points_marked.isNotEmpty()) {
+                      appendLine("**Key Points for Graphics:**")
+                      sectionSegment.key_points_marked.forEach { point ->
+                        appendLine("- $point")
+                      }
+                      appendLine()
+                    }
+                    if (executionConfig.include_notes && sectionSegment.notes.isNotBlank()) {
+                      appendLine("**Notes:** ${sectionSegment.notes}")
+                      appendLine()
+                    }
+                    appendLine("---")
+                    appendLine()
+                    appendLine(
+                      "**Duration:** ${sectionSegment.duration_seconds}s | **Words:** ${
+                        sectionSegment.dialogue.split(
+                          "\\s+".toRegex()
+                        ).size
+                      }"
+                    )
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete")
+                  }.renderMarkdown(true)
                 )
                 markdownTranscript?.write("## Section ${sectionOutline.section_number}: ${sectionOutline.title}\n\n".toByteArray())
                 markdownTranscript?.write(sectionSegment.dialogue.toByteArray())
                 markdownTranscript?.write("\n\n".toByteArray())
                 task.update()
 
-                overviewTask.add("✅ (${sectionSegment.duration_seconds}s)\n".renderMarkdown)
+                overviewTask.add("✅ (${sectionSegment.duration_seconds}s)\n".renderMarkdown(true))
                 task.update()
             }
 
             // Write closing
             log.info("Writing closing")
-            overviewTask.add("- Closing ".renderMarkdown)
+            overviewTask.add("- Closing ".renderMarkdown(true))
             task.update()
 
             val closingTask = tabs.newTask("Closing")
 
             closingTask.add(
-                buildString {
-                    appendLine("# Closing")
-                    appendLine()
-                    appendLine("**Status:** Writing closing...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Closing")
+                appendLine()
+                appendLine("**Status:** Writing closing...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             task.update()
 
@@ -734,67 +746,71 @@ Target duration: 15-20 seconds.
             cumulativeWordCount += closingSegment.dialogue.split("\\s+".toRegex()).size
 
             closingTask.add(
-                buildString {
-                    appendLine("## Closing")
-                    appendLine()
-                    if (executionConfig.include_timing) {
-                        appendLine("**[${formatTiming(cumulativeDuration - closingSegment.duration_seconds)}]**")
-                        appendLine()
-                    }
-                    if (executionConfig.include_directions && closingSegment.visual_direction.isNotBlank()) {
-                        appendLine("*${closingSegment.visual_direction}*")
-                        appendLine()
-                    }
-                    appendLine(closingSegment.dialogue)
-                    appendLine()
-                    if (executionConfig.suggest_b_roll && closingSegment.b_roll_suggestions.isNotEmpty()) {
-                        appendLine("**B-Roll:**")
-                        closingSegment.b_roll_suggestions.forEach { broll ->
-                            appendLine("- $broll")
-                        }
-                        appendLine()
-                    }
-                    if (executionConfig.include_notes && closingSegment.notes.isNotBlank()) {
-                        appendLine("**Notes:** ${closingSegment.notes}")
-                        appendLine()
-                    }
-                    appendLine("---")
-                    appendLine()
-                    appendLine(
-                        "**Duration:** ${closingSegment.duration_seconds}s | **Words:** ${
-                            closingSegment.dialogue.split(
-                                "\\s+".toRegex()
-                            ).size
-                        }"
-                    )
-                    appendLine()
-                    appendLine("**Status:** ✅ Complete")
-                }.renderMarkdown
+              buildString {
+                appendLine("## Closing")
+                appendLine()
+                if (executionConfig.include_timing) {
+                  appendLine("**[${formatTiming(cumulativeDuration - closingSegment.duration_seconds)}]**")
+                  appendLine()
+                }
+                if (executionConfig.include_directions && closingSegment.visual_direction.isNotBlank()) {
+                  appendLine("*${closingSegment.visual_direction}*")
+                  appendLine()
+                }
+                appendLine(closingSegment.dialogue)
+                appendLine()
+                if (executionConfig.suggest_b_roll && closingSegment.b_roll_suggestions.isNotEmpty()) {
+                  appendLine("**B-Roll:**")
+                  closingSegment.b_roll_suggestions.forEach { broll ->
+                    appendLine("- $broll")
+                  }
+                  appendLine()
+                }
+                if (executionConfig.include_notes && closingSegment.notes.isNotBlank()) {
+                  appendLine("**Notes:** ${closingSegment.notes}")
+                  appendLine()
+                }
+                appendLine("---")
+                appendLine()
+                appendLine(
+                  "**Duration:** ${closingSegment.duration_seconds}s | **Words:** ${
+                    closingSegment.dialogue.split(
+                      "\\s+".toRegex()
+                    ).size
+                  }"
+                )
+                appendLine()
+                appendLine("**Status:** ✅ Complete")
+              }.renderMarkdown(true)
             )
             markdownTranscript?.write("# Closing\n\n".toByteArray())
             markdownTranscript?.write(closingSegment.dialogue.toByteArray())
             markdownTranscript?.write("\n\n".toByteArray())
             task.update()
 
-            overviewTask.add("✅\n".renderMarkdown)
-            overviewTask.add("✅ Phase 2 Complete: All segments written\n".renderMarkdown)
+            overviewTask.add("✅\n".renderMarkdown(true))
+            overviewTask.add("✅ Phase 2 Complete: All segments written\n".renderMarkdown(true))
             task.update()
 
             // Phase 3: Revision (if enabled)
             if (executionConfig.revision_passes > 0) {
-                overviewTask.add("\n### Phase 3: Revision\n*Refining script for flow and timing...*\n".renderMarkdown)
+                overviewTask.add(
+                  "\n### Phase 3: Revision\n*Refining script for flow and timing...*\n".renderMarkdown(
+                    true
+                  )
+                )
                 task.update()
 
                 log.info("Phase 3: Performing ${executionConfig.revision_passes} revision pass(es)")
                 val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
-                    buildString {
-                        appendLine("# Revision Process")
-                        appendLine()
-                        appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Revision Process")
+                    appendLine()
+                    appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -834,21 +850,25 @@ Provide the complete revised script with all formatting intact.
                     revisionAgent.answer(listOf("Revise the script"))
 
                     revisionTask.add(
-                        buildString {
-                            appendLine("## Revision Pass ${passNum + 1}")
-                            appendLine()
-                            appendLine("✅ Complete")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("## Revision Pass ${passNum + 1}")
+                        appendLine()
+                        appendLine("✅ Complete")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     task.update()
                 }
 
-                overviewTask.add("✅ Phase 3 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
+                overviewTask.add(
+                  "✅ Phase 3 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown(
+                    true
+                  )
+                )
             }
 
             // Phase 4: Final Assembly
-            overviewTask.add("\n### Phase 4: Final Assembly\n*Compiling complete script...*\n".renderMarkdown)
+            overviewTask.add("\n### Phase 4: Final Assembly\n*Compiling complete script...*\n".renderMarkdown(true))
             task.update()
 
             log.info("Phase 4: Assembling final script")
@@ -920,7 +940,7 @@ Provide the complete revised script with all formatting intact.
                 appendLine("**Average Words Per Minute:** ${(cumulativeWordCount.toFloat() / (cumulativeDuration / 60f)).toInt()}")
             }
 
-            finalTask.add(finalScript.renderMarkdown)
+            finalTask.add(finalScript.renderMarkdown(true))
             markdownTranscript?.write("\n---\n\n# Complete Script\n\n".toByteArray())
             markdownTranscript?.write(finalScript.toByteArray())
             markdownTranscript?.write("\n".toByteArray())
@@ -981,7 +1001,7 @@ Provide the complete revised script with all formatting intact.
                     }
                 }
 
-                productionNotesTask.add(productionNotes.renderMarkdown)
+                productionNotesTask.add(productionNotes.renderMarkdown(true))
                 markdownTranscript?.write("\n---\n\n".toByteArray())
                 markdownTranscript?.write(productionNotes.toByteArray())
                 markdownTranscript?.write("\n".toByteArray())
@@ -994,27 +1014,27 @@ Provide the complete revised script with all formatting intact.
             val durationAccuracy = 100 - (Math.abs(targetDurationDiff).toFloat() / targetDurationSeconds * 100)
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ✅ Generation Complete")
-                    appendLine()
-                    appendLine("**Statistics:**")
-                    appendLine("- Total Duration: ${formatTiming(cumulativeDuration)} (${cumulativeDuration}s)")
-                    appendLine("- Target Duration: ${formatTiming(targetDurationSeconds)} (${targetDurationSeconds}s)")
-                    appendLine("- Duration Accuracy: ${durationAccuracy.toInt()}%")
-                    appendLine("- Total Word Count: $cumulativeWordCount")
-                    appendLine("- Average WPM: ${(cumulativeWordCount.toFloat() / (cumulativeDuration / 60f)).toInt()}")
-                    appendLine("- Number of Segments: ${scriptSegments.size}")
-                    appendLine("- Total Time: ${totalTime / 1000.0}s")
-                    appendLine()
-                    appendLine(
-                        "**Completed:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ✅ Generation Complete")
+                appendLine()
+                appendLine("**Statistics:**")
+                appendLine("- Total Duration: ${formatTiming(cumulativeDuration)} (${cumulativeDuration}s)")
+                appendLine("- Target Duration: ${formatTiming(targetDurationSeconds)} (${targetDurationSeconds}s)")
+                appendLine("- Duration Accuracy: ${durationAccuracy.toInt()}%")
+                appendLine("- Total Word Count: $cumulativeWordCount")
+                appendLine("- Average WPM: ${(cumulativeWordCount.toFloat() / (cumulativeDuration / 60f)).toInt()}")
+                appendLine("- Number of Segments: ${scriptSegments.size}")
+                appendLine("- Total Time: ${totalTime / 1000.0}s")
+                appendLine()
+                appendLine(
+                  "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                  }"
+                )
+              }.renderMarkdown(true)
             )
             markdownTranscript?.write("\n---\n\n## Generation Complete\n\n".toByteArray())
             markdownTranscript?.write("Script generation completed successfully.\n".toByteArray())
@@ -1058,16 +1078,16 @@ Provide the complete revised script with all formatting intact.
             task.error(e)
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ❌ Error Occurred")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                appendLine()
+                appendLine("**Type:** ${e.javaClass.simpleName}")
+              }.renderMarkdown(true)
             )
             task.update()
             markdownTranscript?.close()
@@ -1150,7 +1170,7 @@ Provide the complete revised script with all formatting intact.
             "Error reading file: ${e.message}"
         }
 
-        val Scriptwriting = TaskType(
+        @JvmStatic val Scriptwriting = TaskType(
           name = "Scriptwriting",
           category = "Writing",
           taskClass = ScriptwritingTask::class.java,

@@ -99,19 +99,19 @@ class DocumentedMassPatchServer(
                         if (design.isNotBlank()) {
                             fileTask.add(
                                 AddApplyFileDiffLinks.instrumentFileDiffs(
-                                    self = socketManager,
-                                    root = _root,
-                                    response = design,
-                                    handle = { newCodeMap ->
-                                        newCodeMap.forEach { (path, newCode) ->
-                                            fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                        }
-                                    },
-                                    shouldAutoApply = { autoApply },
-                                    model = AppSettingsState.instance.fastChatClient,
-                                    defaultFile = path.toString(),
-                                    processor = processor
-                                ).renderMarkdown
+                                                                    self = socketManager,
+                                                                    root = _root,
+                                                                    response = design,
+                                                                    handle = { newCodeMap ->
+                                                                        newCodeMap.forEach { (path, newCode) ->
+                                                                            fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                                                                        }
+                                                                    },
+                                                                    shouldAutoApply = { autoApply },
+                                                                    model = AppSettingsState.instance.fastChatClient,
+                                                                    defaultFile = path.toString(),
+                                                                    processor = processor
+                                                                ).renderMarkdown(true)
                             )
                         } else {
                             fileTask.complete("No changes suggested.")

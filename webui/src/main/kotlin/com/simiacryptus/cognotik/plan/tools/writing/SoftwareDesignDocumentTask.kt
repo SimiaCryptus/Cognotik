@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
@@ -211,7 +212,7 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
             appendLine("### Generation Progress")
             checklist.forEach { (name, status) -> appendLine("- $status $name") }
           }
-          overviewTask.add(content.renderMarkdown)
+          overviewTask.add(content.renderMarkdown(true))
         }
 
         if (executionConfig.generate_use_cases) checklist["Use Cases & Actors"] = "⏳"
@@ -228,12 +229,12 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
 
         overviewTask.add(
           buildString {
-            appendLine("**System:** ${systemDescription.take(200)}${if (systemDescription.length > 200) "..." else ""}")
-            appendLine()
-            appendLine("**Target Audience:** $targetAudience")
-          }.renderMarkdown
+                      appendLine("**System:** ${systemDescription.take(200)}${if (systemDescription.length > 200) "..." else ""}")
+                      appendLine()
+                      appendLine("**Target Audience:** $targetAudience")
+                    }.renderMarkdown(true)
         )
-        val statusBuffer = overviewTask.add("**Status:** 🔄 Gathering context...".renderMarkdown)
+        val statusBuffer = overviewTask.add("**Status:** 🔄 Gathering context...".renderMarkdown(true))
         updateChecklist()
 
         transcriptStream?.write(
@@ -285,11 +286,11 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
         // Section 1: Use Cases
         if (executionConfig.generate_use_cases) {
           statusBuffer?.setLength(0)
-          statusBuffer?.append("**Status:** 🔄 Generating Use Cases...".renderMarkdown)
+          statusBuffer?.append("**Status:** 🔄 Generating Use Cases...".renderMarkdown(true))
           log.debug("Generating use cases and actor documentation")
           val useCaseTask = tabs.newTask("Use Cases")
 
-          val useCaseBuffer = useCaseTask.add("## Use Cases\n\n🔄 Analyzing actors and use cases...".renderMarkdown)
+          val useCaseBuffer = useCaseTask.add("## Use Cases\n\n🔄 Analyzing actors and use cases...".renderMarkdown(true))
           task.update()
 
           val useCaseAnalysis = designAgent.answer(
@@ -341,12 +342,12 @@ Provide detailed, actionable use case documentation.
           useCaseBuffer?.setLength(0)
           useCaseBuffer?.append(
             buildString {
-              appendLine("## Use Cases & Actors")
-              appendLine()
-              appendLine("✅ Analysis complete")
-              appendLine()
-              appendLine(useCaseAnalysis)
-            }.renderMarkdown
+                          appendLine("## Use Cases & Actors")
+                          appendLine()
+                          appendLine("✅ Analysis complete")
+                          appendLine()
+                          appendLine(useCaseAnalysis)
+                        }.renderMarkdown(true)
           )
           useCaseTask.update()
           transcriptStream?.write("## Use Cases & Actors\n\n$useCaseAnalysis\n\n---\n\n".toByteArray())
@@ -360,12 +361,16 @@ Provide detailed, actionable use case documentation.
         // Section 2: Requirements
         if (executionConfig.generate_requirements) {
           statusBuffer?.setLength(0)
-          statusBuffer?.append("**Status:** 🔄 Defining Requirements...".renderMarkdown)
+          statusBuffer?.append("**Status:** 🔄 Defining Requirements...".renderMarkdown(true))
           log.debug("Generating requirements specification")
           val requirementsTask = tabs.newTask("Requirements")
 
           val requirementsBuffer =
-            requirementsTask.add("## Requirements\n\n🔄 Defining functional and non-functional requirements...".renderMarkdown)
+            requirementsTask.add(
+              "## Requirements\n\n🔄 Defining functional and non-functional requirements...".renderMarkdown(
+                true
+              )
+            )
           task.update()
 
           val requirementsAnalysis = designAgent.answer(
@@ -412,12 +417,12 @@ Provide detailed, prioritized requirements.
           requirementsBuffer?.setLength(0)
           requirementsBuffer?.append(
             buildString {
-              appendLine("## Requirements Specification")
-              appendLine()
-              appendLine("✅ Requirements defined")
-              appendLine()
-              appendLine(requirementsAnalysis)
-            }.renderMarkdown
+                          appendLine("## Requirements Specification")
+                          appendLine()
+                          appendLine("✅ Requirements defined")
+                          appendLine()
+                          appendLine(requirementsAnalysis)
+                        }.renderMarkdown(true)
           )
           requirementsTask.update()
           transcriptStream?.write("## Requirements Specification\n\n$requirementsAnalysis\n\n---\n\n".toByteArray())
@@ -431,12 +436,12 @@ Provide detailed, prioritized requirements.
         // Section 3: Architecture
         if (executionConfig.generate_architecture) {
           statusBuffer?.setLength(0)
-          statusBuffer?.append("**Status:** 🔄 Designing Architecture...".renderMarkdown)
+          statusBuffer?.append("**Status:** 🔄 Designing Architecture...".renderMarkdown(true))
           log.debug("Generating architectural diagrams")
           val architectureTask = tabs.newTask("Architecture")
 
           val architectureBuffer =
-            architectureTask.add("## Architecture\n\n🔄 Designing system architecture...".renderMarkdown)
+            architectureTask.add("## Architecture\n\n🔄 Designing system architecture...".renderMarkdown(true))
           task.update()
 
           val architectureAnalysis = designAgent.answer(
@@ -520,12 +525,12 @@ Provide detailed architecture documentation with all diagrams.
           architectureBuffer?.setLength(0)
           architectureBuffer?.append(
             buildString {
-              appendLine("## System Architecture")
-              appendLine()
-              appendLine("✅ Architecture designed")
-              appendLine()
-              appendLine(architectureAnalysis)
-            }.renderMarkdown
+                          appendLine("## System Architecture")
+                          appendLine()
+                          appendLine("✅ Architecture designed")
+                          appendLine()
+                          appendLine(architectureAnalysis)
+                        }.renderMarkdown(true)
           )
           architectureTask.update()
           transcriptStream?.write("## System Architecture\n\n$architectureAnalysis\n\n---\n\n".toByteArray())
@@ -547,11 +552,11 @@ Provide detailed architecture documentation with all diagrams.
         // Section 4: Data Model
         if (executionConfig.generate_data_model) {
           statusBuffer?.setLength(0)
-          statusBuffer?.append("**Status:** 🔄 Designing Data Model...".renderMarkdown)
+          statusBuffer?.append("**Status:** 🔄 Designing Data Model...".renderMarkdown(true))
           log.debug("Generating data model and ERD")
           val dataModelTask = tabs.newTask("Data Model")
 
-          val dataModelBuffer = dataModelTask.add("## Data Model\n\n🔄 Designing data structures...".renderMarkdown)
+          val dataModelBuffer = dataModelTask.add("## Data Model\n\n🔄 Designing data structures...".renderMarkdown(true))
           task.update()
 
           val dataModelAnalysis = designAgent.answer(
@@ -623,12 +628,12 @@ Provide complete data model documentation.
           dataModelBuffer?.setLength(0)
           dataModelBuffer?.append(
             buildString {
-              appendLine("## Data Model & ERD")
-              appendLine()
-              appendLine("✅ Data model designed")
-              appendLine()
-              appendLine(dataModelAnalysis)
-            }.renderMarkdown
+                          appendLine("## Data Model & ERD")
+                          appendLine()
+                          appendLine("✅ Data model designed")
+                          appendLine()
+                          appendLine(dataModelAnalysis)
+                        }.renderMarkdown(true)
           )
           dataModelTask.update()
           transcriptStream?.write("## Data Model & ERD\n\n$dataModelAnalysis\n\n---\n\n".toByteArray())
@@ -639,11 +644,11 @@ Provide complete data model documentation.
         // Section 5: Flow Diagrams
         if (executionConfig.generate_flow_diagrams) {
           statusBuffer?.setLength(0)
-          statusBuffer?.append("**Status:** 🔄 Mapping Flow Diagrams...".renderMarkdown)
+          statusBuffer?.append("**Status:** 🔄 Mapping Flow Diagrams...".renderMarkdown(true))
           log.debug("Generating sequence and activity diagrams")
           val flowTask = tabs.newTask("Flow Diagrams")
 
-          val flowBuffer = flowTask.add("## Flow Diagrams\n\n🔄 Mapping system flows...".renderMarkdown)
+          val flowBuffer = flowTask.add("## Flow Diagrams\n\n🔄 Mapping system flows...".renderMarkdown(true))
           task.update()
 
           val flowAnalysis = designAgent.answer(
@@ -712,12 +717,12 @@ Provide detailed flow documentation for all critical paths.
           flowBuffer?.setLength(0)
           flowBuffer?.append(
             buildString {
-              appendLine("## Flow Diagrams")
-              appendLine()
-              appendLine("✅ Flows documented")
-              appendLine()
-              appendLine(flowAnalysis)
-            }.renderMarkdown
+                          appendLine("## Flow Diagrams")
+                          appendLine()
+                          appendLine("✅ Flows documented")
+                          appendLine()
+                          appendLine(flowAnalysis)
+                        }.renderMarkdown(true)
           )
           flowTask.update()
           transcriptStream?.write("## Flow Diagrams\n\n$flowAnalysis\n\n---\n\n".toByteArray())
@@ -728,11 +733,11 @@ Provide detailed flow documentation for all critical paths.
         // Section 6: Test Plan
         if (executionConfig.generate_test_plan) {
           statusBuffer?.setLength(0)
-          statusBuffer?.append("**Status:** 🔄 Creating Test Plan...".renderMarkdown)
+          statusBuffer?.append("**Status:** 🔄 Creating Test Plan...".renderMarkdown(true))
           log.debug("Generating test plan")
           val testPlanTask = tabs.newTask("Test Plan")
 
-          val testPlanBuffer = testPlanTask.add("## Test Plan\n\n🔄 Creating test strategy...".renderMarkdown)
+          val testPlanBuffer = testPlanTask.add("## Test Plan\n\n🔄 Creating test strategy...".renderMarkdown(true))
           task.update()
 
           val testPlanAnalysis = designAgent.answer(
@@ -801,12 +806,12 @@ Provide actionable test documentation.
           testPlanBuffer?.setLength(0)
           testPlanBuffer?.append(
             buildString {
-              appendLine("## Test Plan")
-              appendLine()
-              appendLine("✅ Test plan created")
-              appendLine()
-              appendLine(testPlanAnalysis)
-            }.renderMarkdown
+                          appendLine("## Test Plan")
+                          appendLine()
+                          appendLine("✅ Test plan created")
+                          appendLine()
+                          appendLine(testPlanAnalysis)
+                        }.renderMarkdown(true)
           )
           testPlanTask.update()
           transcriptStream?.write("## Test Plan\n\n$testPlanAnalysis\n\n---\n\n".toByteArray())
@@ -828,12 +833,12 @@ Provide actionable test documentation.
         // Section 7: Phase Planning
         if (executionConfig.generate_phase_plan) {
           statusBuffer?.setLength(0)
-          statusBuffer?.append("**Status:** 🔄 Planning Phases...".renderMarkdown)
+          statusBuffer?.append("**Status:** 🔄 Planning Phases...".renderMarkdown(true))
           log.debug("Generating phase plan")
           val phasePlanTask = tabs.newTask("Phase Plan")
 
           val phasePlanBuffer =
-            phasePlanTask.add("## Phase Plan\n\n🔄 Planning development phases...".renderMarkdown)
+            phasePlanTask.add("## Phase Plan\n\n🔄 Planning development phases...".renderMarkdown(true))
           task.update()
           val sprintCount = executionConfig.sprint_count
           val sprintDuration = executionConfig.sprint_duration_weeks
@@ -904,12 +909,12 @@ Provide detailed phase planning with realistic timelines.
           phasePlanBuffer?.setLength(0)
           phasePlanBuffer?.append(
             buildString {
-              appendLine("## Phase Plan")
-              appendLine()
-              appendLine("✅ Phases planned")
-              appendLine()
-              appendLine(phasePlanAnalysis)
-            }.renderMarkdown
+                          appendLine("## Phase Plan")
+                          appendLine()
+                          appendLine("✅ Phases planned")
+                          appendLine()
+                          appendLine(phasePlanAnalysis)
+                        }.renderMarkdown(true)
           )
           phasePlanTask.update()
           transcriptStream?.write("## Phase Plan\n\n$phasePlanAnalysis\n\n---\n\n".toByteArray())
@@ -923,12 +928,12 @@ Provide detailed phase planning with realistic timelines.
         // Section 8: Project Data JSON
         if (executionConfig.generate_project_data) {
           statusBuffer?.setLength(0)
-          statusBuffer?.append("**Status:** 🔄 Generating Project Data...".renderMarkdown)
+          statusBuffer?.append("**Status:** 🔄 Generating Project Data...".renderMarkdown(true))
           log.debug("Generating project data JSON")
           val projectDataTask = tabs.newTask("Project Data")
 
           val projectDataBuffer =
-            projectDataTask.add("## Project Data\n\n🔄 Generating structured project data...".renderMarkdown)
+            projectDataTask.add("## Project Data\n\n🔄 Generating structured project data...".renderMarkdown(true))
           task.update()
           val sprintCount = executionConfig.sprint_count
           val sprintDuration = executionConfig.sprint_duration_weeks
@@ -1018,32 +1023,32 @@ Provide comprehensive, realistic project breakdown.
           projectDataBuffer?.setLength(0)
           projectDataBuffer?.append(
             buildString {
-              appendLine("## Project Data")
-              appendLine()
-              appendLine("✅ Project data generated")
-              appendLine()
-              appendLine("### Summary")
-              appendLine()
-              appendLine("| Category | Count |")
-              appendLine("|----------|-------|")
-              appendLine("| Epics | ${collectedEpics.size} |")
-              appendLine("| Tasks | ${collectedTasks.size} |")
-              appendLine("| Sprints | ${sprints.size} |")
-              appendLine("| Releases | ${releases.size} |")
-              appendLine("| Milestones | ${collectedMilestones.size} |")
-              appendLine("| Dependencies | ${collectedDependencies.size} |")
-              appendLine()
-              appendLine("### Download")
-              appendLine()
-              appendLine("📥 [Download Project Data JSON]($jsonLink)")
-              appendLine()
-              appendLine("### Preview")
-              appendLine()
-              appendLine("```json")
-              appendLine(jsonContent.take(2000))
-              if (jsonContent.length > 2000) appendLine("... (truncated)")
-              appendLine("```")
-            }.renderMarkdown
+                          appendLine("## Project Data")
+                          appendLine()
+                          appendLine("✅ Project data generated")
+                          appendLine()
+                          appendLine("### Summary")
+                          appendLine()
+                          appendLine("| Category | Count |")
+                          appendLine("|----------|-------|")
+                          appendLine("| Epics | ${collectedEpics.size} |")
+                          appendLine("| Tasks | ${collectedTasks.size} |")
+                          appendLine("| Sprints | ${sprints.size} |")
+                          appendLine("| Releases | ${releases.size} |")
+                          appendLine("| Milestones | ${collectedMilestones.size} |")
+                          appendLine("| Dependencies | ${collectedDependencies.size} |")
+                          appendLine()
+                          appendLine("### Download")
+                          appendLine()
+                          appendLine("📥 [Download Project Data JSON]($jsonLink)")
+                          appendLine()
+                          appendLine("### Preview")
+                          appendLine()
+                          appendLine("```json")
+                          appendLine(jsonContent.take(2000))
+                          if (jsonContent.length > 2000) appendLine("... (truncated)")
+                          appendLine("```")
+                        }.renderMarkdown(true)
           )
           projectDataTask.update()
           transcriptStream?.write(
@@ -1069,10 +1074,10 @@ Provide comprehensive, realistic project breakdown.
         statusBuffer?.setLength(0)
         statusBuffer?.append(
           buildString {
-            appendLine("---")
-            appendLine("### ✅ Document Generation Complete")
-            appendLine("**Total Time:** ${duration / 1000.0}s | **Tasks:** ${collectedTasks.size} | **Epics:** ${collectedEpics.size}")
-          }.renderMarkdown
+                      appendLine("---")
+                      appendLine("### ✅ Document Generation Complete")
+                      appendLine("**Total Time:** ${duration / 1000.0}s | **Tasks:** ${collectedTasks.size} | **Epics:** ${collectedEpics.size}")
+                    }.renderMarkdown(true)
         )
         overviewTask.complete()
         task.update()
@@ -1125,12 +1130,12 @@ Provide comprehensive, realistic project breakdown.
 
         overviewTask.add(
           buildString {
-            appendLine("## ❌ Error Occurred")
-            appendLine()
-            appendLine("**Error:** ${e.message}")
-            appendLine()
-            appendLine("**Type:** ${e.javaClass.simpleName}")
-          }.renderMarkdown
+                      appendLine("## ❌ Error Occurred")
+                      appendLine()
+                      appendLine("**Error:** ${e.message}")
+                      appendLine()
+                      appendLine("**Type:** ${e.javaClass.simpleName}")
+                    }.renderMarkdown(true)
         )
         overviewTask.update()
         task.update()
@@ -1421,7 +1426,7 @@ Provide comprehensive, production-ready documentation.
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(SoftwareDesignDocumentTask::class.java)
-    val SoftwareDesignDocument = TaskType(
+    @JvmStatic val SoftwareDesignDocument = TaskType(
         name = "SoftwareDesignDocument",
         category = "Writing",
         taskClass = SoftwareDesignDocumentTask::class.java,

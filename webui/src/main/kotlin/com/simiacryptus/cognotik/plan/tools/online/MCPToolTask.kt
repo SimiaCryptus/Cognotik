@@ -284,7 +284,7 @@ class MCPToolTask(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(MCPToolTask::class.java)
-        val MCPTool = TaskType(
+        @JvmStatic val MCPTool = TaskType(
             "MCPTool",
             "Online & Search",
             MCPToolTask::class.java,

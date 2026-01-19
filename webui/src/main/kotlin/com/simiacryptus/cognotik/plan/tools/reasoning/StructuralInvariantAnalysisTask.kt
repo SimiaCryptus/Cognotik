@@ -119,7 +119,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
 
             val prompt = buildPrompt(subject, transformations, format, inputFileContent, priorCode)
             tabbedDisplay.newTask("Prompt").apply {
-                expandable("Full Prompt", "<pre>${prompt.replace("<", "&lt;")}</pre>")
+                expandable("Full Prompt", "<pre>${prompt}</pre>")
             }
 
 
@@ -237,7 +237,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
 
     companion object {
       private val log = LoggerFactory.getLogger(StructuralInvariantAnalysisTask::class.java)
-        val StructuralInvariantAnalysis = TaskType(
+        @JvmStatic val StructuralInvariantAnalysis = TaskType(
           name = "StructuralInvariantAnalysis",
           category = "Reasoning",
           taskClass = StructuralInvariantAnalysisTask::class.java,

@@ -17,6 +17,7 @@ object CrawlerAgentTaskTest {
       UnifiedHarness.configurePlatform()
     }
 
+    @org.junit.jupiter.api.Tag("Integration")
     //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testCrawler() {
@@ -37,6 +38,7 @@ object CrawlerAgentTaskTest {
         ).run()
     }
 
+    @org.junit.jupiter.api.Tag("Integration")
     //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testDirectUrlCrawler() {

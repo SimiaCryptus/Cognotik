@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <title>SessionTask UI System | Cognotik</title>
+    <meta name="description" content="Server-driven reactive UI framework for building AI-powered interfaces. Stream content, manage tasks, and create interactive workflows with Kotlin.">
+    <meta name="keywords" content="AI UI framework, server-driven UI, reactive interface, Kotlin UI, WebSocket streaming, SessionTask">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="SessionTask UI System | Cognotik">
+    <meta property="og:description" content="Server-driven reactive UI framework for building AI-powered interfaces with real-time streaming and interactive workflows.">
+    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
+    <meta property="og:url" content="https://cognotik.com/session-task-ui.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SessionTask UI System | Cognotik">
+    <meta name="twitter:description" content="Server-driven reactive UI framework for building AI-powered interfaces.">
+    <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+
+    <!-- Favicon Suite -->
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#0f1115">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Prism.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <link rel="stylesheet" href="assets/styles/task-page.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <script type="module" src="assets/scripts/components/CognotikFooter.js"></script>
+
+    <style>
+        /* Page-specific styles */
+        .ui-demo-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        @media (max-width: 900px) {
+            .ui-demo-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .ui-demo-panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .ui-demo-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-3) var(--space-4);
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+        }
+
+        .ui-demo-body {
+            padding: var(--space-4);
+            min-height: 200px;
+        }
+
+        .ui-preview {
+            background: var(--bg-app);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+        }
+
+        /* Simulated UI elements */
+        .sim-task {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: var(--space-3);
+            margin-bottom: var(--space-3);
+        }
+
+        .sim-task:last-child {
+            margin-bottom: 0;
+        }
+
+        .sim-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--border-emphasis);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: var(--space-2);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .sim-complete {
+            color: var(--accent-secondary);
+        }
+
+        .sim-tabs {
+            display: flex;
+            gap: var(--space-1);
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: var(--space-3);
+        }
+
+        .sim-tab {
+            padding: var(--space-2) var(--space-3);
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .sim-tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .sim-button {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            background: var(--accent-primary);
+            color: var(--bg-app);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-sm);
+            cursor: pointer;
+        }
+
+        .sim-input {
+            width: 100%;
+            padding: var(--space-2) var(--space-3);
+            background: var(--bg-app);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: var(--text-sm);
+        }
+
+        .sim-expandable {
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .sim-expandable-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            background: var(--bg-elevated);
+            cursor: pointer;
+            font-size: var(--text-sm);
+        }
+
+        .sim-expandable-content {
+            padding: var(--space-3);
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            background: var(--bg-app);
+        }
+
+        .architecture-diagram {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .arch-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-4);
+            flex-wrap: wrap;
+        }
+
+        .arch-node {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .arch-node-title {
+            font-family: var(--font-mono);
+            font-size: var(--text-sm);
+            color: var(--accent-primary);
+            margin-bottom: var(--space-1);
+        }
+
+        .arch-node-desc {
+            font-size: var(--text-xs);
+            color: var(--text-secondary);
+        }
+
+        .arch-arrow {
+            color: var(--text-tertiary);
+            font-size: var(--text-xl);
+        }
+
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-4);
+            margin: var(--space-6) 0;
+        }
+
+        .component-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            transition: border-color var(--transition-fast);
+        }
+
+        .component-card:hover {
+            border-color: var(--border-emphasis);
+        }
+
+        .component-icon {
+            font-size: var(--text-2xl);
+            margin-bottom: var(--space-2);
+        }
+
+        .component-name {
+            font-family: var(--font-mono);
+            font-size: var(--text-base);
+            color: var(--accent-primary);
+            margin-bottom: var(--space-2);
+        }
+
+        .component-desc {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .workflow-section {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .workflow-steps {
+            display: flex;
+            flex-direction: column;
+          gap: var(--space-6);
+        }
+
+        .workflow-step {
+            display: flex;
+            gap: var(--space-4);
+            align-items: flex-start;
+        }
+
+        .step-number {
+            flex-shrink: 0;
+          width: 40px;
+          height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-primary);
+            color: var(--bg-app);
+            border-radius: 50%;
+          font-weight: 700;
+          font-size: var(--text-base);
+        }
+
+        .step-content h4 {
+            font-family: var(--font-mono);
+            font-size: var(--text-base);
+            color: var(--text-primary);
+            margin-bottom: var(--space-1);
+        }
+
+        .step-content p {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header></cognotik-header>
+
+    <main class="page-container">
+        <!-- Hero Section -->
+        <section class="hero-compact">
+            <div class="hero-content">
+                <div class="breadcrumb">
+                    <a href="/">Home</a>
+                    <span class="separator">/</span>
+                    <span class="current">SessionTask UI</span>
+                </div>
+                <h1>SessionTask UI System</h1>
+                <p class="hero-subtitle">
+                    Server-driven reactive UI framework for building AI-powered interfaces. 
+                    Write Kotlin, stream HTML, create interactive workflows.
+                </p>
+                <div class="hero-badges">
+                    <span class="badge badge-primary">Core Framework</span>
+                    <span class="badge badge-success">WebSocket Streaming</span>
+                    <span class="badge badge-purple">Real-time Updates</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Overview -->
+        <section class="content-section">
+            <h2>Architecture Overview</h2>
+            <p>
+                The SessionTask UI system is fundamentally <strong>server-driven</strong>. Instead of writing 
+                JavaScript to manipulate the DOM, you write Kotlin code that generates HTML fragments. These 
+                fragments are pushed to the browser via WebSockets, where they're rendered in real-time.
+            </p>
+
+            <div class="architecture-diagram">
+                <div class="arch-flow">
+                    <div class="arch-node">
+                        <div class="arch-node-title">Kotlin Server</div>
+                        <div class="arch-node-desc">SessionTask generates HTML</div>
+                    </div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-node">
+                        <div class="arch-node-title">SocketManager</div>
+                        <div class="arch-node-desc">WebSocket connection</div>
+                    </div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-node">
+                        <div class="arch-node-title">Browser</div>
+                        <div class="arch-node-desc">DOM updates via messageID</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-callout">
+                <strong>Key Insight:</strong> Each <code>SessionTask</code> owns a unique <code>messageID</code> 
+                that maps to a <code>&lt;div&gt;</code> in the DOM. When you call <code>task.add()</code>, 
+                content is appended to that div. When you call <code>task.update()</code>, the entire div 
+                is replaced with the current buffer state.
+            </div>
+        </section>
+
+        <!-- Reality Check: Code → Output -->
+        <section class="content-section">
+            <h2>Reality Check: Code → Output</h2>
+            
+            <div class="ui-demo-container">
+                <div class="ui-demo-panel">
+                    <div class="ui-demo-header">
+                        <span>📝</span>
+                        <span>Kotlin Code</span>
+                    </div>
+                    <div class="ui-demo-body">
+                        <pre><code class="language-kotlin">fun analyzeCode(task: SessionTask) {
+    task.header("Code Analysis", level = 2)
+    
+    // Create a sub-task for streaming results
+    val resultsTask = task.newTask()
+    
+    task.add("Scanning repository...")
+    
+    // Stream findings as they're discovered
+    for (finding in analyzer.scan()) {
+        resultsTask.add("""
+            &lt;div class="finding"&gt;
+                &lt;strong&gt;${finding.file}&lt;/strong&gt;
+                &lt;p&gt;${finding.message}&lt;/p&gt;
+            &lt;/div&gt;
+        """)
+    }
+    
+    resultsTask.complete()
+    task.add("✓ Analysis complete")
+    task.complete()
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="ui-demo-panel">
+                    <div class="ui-demo-header">
+                        <span>🖥️</span>
+                        <span>Browser Output</span>
+                    </div>
+                    <div class="ui-demo-body">
+                        <div class="ui-preview">
+                            <h2 style="font-size: var(--text-xl); margin-bottom: var(--space-3);">Code Analysis</h2>
+                            
+                            <div class="sim-task">
+                                <div class="finding" style="margin-bottom: var(--space-2);">
+                                    <strong style="color: var(--accent-primary);">src/main/App.kt</strong>
+                                  <p style="font-size: var(--text-sm); color: var(--text-secondary); margin: var(--space-1) 0 0 0;">Unused import detected</p>
+                                </div>
+                                <div class="finding">
+                                    <strong style="color: var(--accent-primary);">src/utils/Helper.kt</strong>
+                                  <p style="font-size: var(--text-sm); color: var(--text-secondary); margin: var(--space-1) 0 0 0;">Consider extracting method</p>
+                                </div>
+                            </div>
+                            
+                            <p style="font-size: var(--text-sm);">Scanning repository...</p>
+                            <p class="sim-complete" style="font-size: var(--text-sm);">✓ Analysis complete</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Core Components -->
+        <section class="content-section">
+            <h2>Core Components</h2>
+
+            <div class="component-grid">
+                <div class="component-card">
+                    <div class="component-icon">📋</div>
+                    <div class="component-name">SessionTask</div>
+                    <div class="component-desc">
+                        The primary canvas for UI output. Manages an HTML buffer, supports streaming, 
+                        and handles lifecycle (spinner → content → complete).
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-icon">🔌</div>
+                    <div class="component-name">SocketManager</div>
+                    <div class="component-desc">
+                        Handles WebSocket connections, routes events, manages file paths, 
+                        and provides the <code>hrefLink</code> and <code>textInput</code> APIs.
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-icon">📑</div>
+                    <div class="component-name">TabbedDisplay</div>
+                    <div class="component-desc">
+                        Dynamic tabbed interface. Add, update, or remove tabs programmatically. 
+                        Supports embedding live streaming tasks inside tabs.
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-icon">🔄</div>
+                    <div class="component-name">Retryable</div>
+                    <div class="component-desc">
+                        Extends TabbedDisplay for operations that might fail. Adds a "Recycle" button 
+                        to re-run the operation in a new tab.
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-icon">💬</div>
+                    <div class="component-name">Discussable</div>
+                    <div class="component-desc">
+                        Human-in-the-loop component. Generate → Review → Revise workflow with 
+                        chat-based feedback and explicit acceptance.
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-icon">📁</div>
+                    <div class="component-name">File Management</div>
+                    <div class="component-desc">
+                        Save files to session directories, generate download links, 
+                        create live-updating log streams.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rendering Methods -->
+        <section class="content-section">
+            <h2>Rendering Methods</h2>
+
+            <div class="tabs" data-tabs>
+                <div class="tabs-nav" role="tablist">
+                  <button class="tab-btn active" data-tab="basic" role="tab" aria-selected="true" aria-controls="basic-panel">Basic Output</button>
+                    <button class="tab-btn" data-tab="interactive" role="tab" aria-selected="false">Interactive</button>
+                  <button class="tab-btn" data-tab="dynamic" role="tab" aria-selected="false" aria-controls="dynamic-panel">Dynamic Updates</button>
+                  <button class="tab-btn" data-tab="layout" role="tab" aria-selected="false" aria-controls="layout-panel">Layout</button>
+                </div>
+                <div class="tabs-content">
+                    <div class="tab-panel active" data-tab-panel="basic" role="tabpanel">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                            </div>
+                            <pre><code class="language-kotlin">// Simple text (wrapped in div)
+task.add("Hello, World!")
+
+// Headers (H1-H6)
+task.header("Analysis Results", level = 2)
+
+// HTML with custom CSS classes
+task.add("&lt;b&gt;Important&lt;/b&gt;", additionalClasses = "alert alert-warning")
+
+// User-style message (right-aligned)
+task.echo("User prompt appears here")
+
+// Dismissible message (has close button)
+task.hideable("&lt;b&gt;Note:&lt;/b&gt; Click X to dismiss")
+
+// Verbose/debug output (hidden by default)
+task.verbose("Detailed debug information...")
+
+// Error display with expandable stack trace
+try {
+    riskyOperation()
+} catch (e: Exception) {
+    task.error(e)
+}
+
+// Mark task as complete (removes spinner)
+task.complete()</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" data-tab-panel="interactive" role="tabpanel" hidden>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                            </div>
+                            <pre><code class="language-kotlin">// Clickable link that triggers server-side code
+val linkHtml = task.ui.hrefLink("Click Me") {
+    log.info("Link was clicked!")
+    task.add("You clicked the link!")
+}
+task.add("Please $linkHtml to continue.")
+
+// Text input field
+val inputHtml = task.ui.textInput { userResponse: String ->
+    task.add("You typed: $userResponse")
+}
+task.add(inputHtml)
+
+// Expandable content (collapsed by default)
+task.expandable("Debug Logs", "&lt;pre&gt;Log content...&lt;/pre&gt;")
+
+// Expandable content (expanded by default)
+task.expanded("Summary", "&lt;p&gt;Key findings here&lt;/p&gt;")</code></pre>
+                        </div>
+
+                        <div class="ui-preview" style="margin-top: var(--space-4);">
+                            <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+                                Please <a href="#" style="color: var(--accent-primary);">Click Me</a> to continue.
+                            </p>
+                          <input type="text" class="sim-input" placeholder="Type here..." style="margin-bottom: var(--space-3);" aria-label="Example text input">
+                            <div class="sim-expandable">
+                                <div class="sim-expandable-header">
+                                    <span>▶</span>
+                                    <span>Debug Logs</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" data-tab-panel="dynamic" role="tabpanel" hidden>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                            </div>
+                            <pre><code class="language-kotlin">// Dynamic updates using buffer references
+// add() returns a StringBuilder you can modify
+
+val statusBuffer = task.add("Starting process...")
+
+for (i in 1..5) {
+    Thread.sleep(500)
+    
+    // Clear and update the buffer
+    statusBuffer?.setLength(0)
+    statusBuffer?.append("Processing step $i/5...")
+    
+    // Push changes to the client
+    task.update()
+}
+
+// Finalize
+statusBuffer?.setLength(0)
+statusBuffer?.append("&lt;strong&gt;Done!&lt;/strong&gt;")
+task.update()
+task.complete()</code></pre>
+                        </div>
+
+                        <div class="info-callout" style="margin-top: var(--space-4);">
+                            <strong>Key Pattern:</strong> The <code>add()</code> method returns a <code>StringBuilder</code> 
+                            reference. Modify this buffer and call <code>task.update()</code> to refresh the UI 
+                            without appending new elements.
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" data-tab-panel="layout" role="tabpanel" hidden>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                            </div>
+                            <pre><code class="language-kotlin">// TabbedDisplay for organized content
+val tabs = TabbedDisplay(task)
+
+tabs["Summary"] = "Overview content here"
+tabs["Details"] = "&lt;ul&gt;&lt;li&gt;Detail 1&lt;/li&gt;&lt;/ul&gt;"
+
+// Embed a streaming task inside a tab
+val workerTask = tabs.newTask("Live Progress")
+workerTask.add("Step 1 complete...")
+workerTask.add("Step 2 complete...")
+workerTask.complete()
+
+// Delete a tab
+tabs.delete("Details")
+
+// Sub-tasks for nested layouts
+val subTask = task.newTask()  // Reserves display order
+task.add("This appears BELOW the subTask")
+subTask.add("I appear in my reserved spot")
+subTask.complete()
+
+// Manual placement (detached task)
+val innerTask = task.ui.newTask(false)
+task.add("&lt;div class='custom-box'&gt;${innerTask.placeholder}&lt;/div&gt;")
+innerTask.add("Content inside the box")
+innerTask.complete()</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Discussable Workflow -->
+        <section class="content-section">
+            <h2>Human-in-the-Loop: Discussable</h2>
+            <p>
+                The <code>Discussable</code> component implements a powerful Generate → Review → Revise workflow. 
+                It blocks execution until the user explicitly accepts the result.
+            </p>
+
+            <div class="workflow-section">
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Initial Generation</h4>
+                            <p>The <code>initialResponse</code> function generates content based on the user's prompt.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Review Interface</h4>
+                            <p>Content is displayed with a chat box for feedback and an "Accept" button.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Revision Loop</h4>
+                            <p>If the user provides feedback, <code>reviseResponse</code> generates a new version in a new tab.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Acceptance</h4>
+                            <p>When "Accept" is clicked, the function returns the final approved object.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">kotlin</span>
+                </div>
+                <pre><code class="language-kotlin">val finalResult = Discussable(
+    task = task,
+    heading = "Drafting Email",
+    userMessage = { "Draft an email to the team about the release" },
+    initialResponse = { prompt ->
+        EmailDraft(llm.generate(prompt))
+    },
+    outputFn = { draft ->
+        // Render the draft as HTML for review
+        draft.toHtml()
+    },
+    reviseResponse = { history ->
+        // history is List&lt;Pair&lt;String, Role&gt;&gt;
+        // Contains user feedback + assistant responses
+        llm.chat(history)
+    }
+).call() // Blocks until user clicks "Accept"
+
+task.add("Final approved email: ${finalResult.subject}")</code></pre>
+            </div>
+        </section>
+
+        <!-- Best Practices -->
+        <section class="content-section">
+            <h2>Best Practices</h2>
+
+            <div class="component-grid">
+                <div class="component-card">
+                    <div class="component-icon">✅</div>
+                    <div class="component-name">Always Complete Tasks</div>
+                    <div class="component-desc">
+                        Call <code>task.complete()</code> when work is done. Otherwise, the spinner 
+                        spins forever, making the UI look unresponsive.
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-icon">🧵</div>
+                    <div class="component-name">Thread Safety</div>
+                    <div class="component-desc">
+                        <code>SessionTask</code> methods are safe to call from background threads. 
+                        Use <code>task.ui.pool</code> for heavy computations.
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-icon">🔒</div>
+                    <div class="component-name">Security</div>
+                    <div class="component-desc">
+                        <code>SocketManager</code> checks <code>AuthorizationManager</code> before 
+                        allowing reads/writes. Configure your auth interface properly.
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-icon">⏱️</div>
+                    <div class="component-name">Blocking Awareness</div>
+                    <div class="component-desc">
+                        <code>Discussable</code> is blocking. <code>Retryable</code> uses a thread pool. 
+                        Use <code>task.ui.scheduledThreadPoolExecutor</code> for delayed execution.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- API Reference -->
+        <section class="content-section">
+            <h2>Quick API Reference</h2>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">kotlin</span>
+                </div>
+                <pre><code class="language-kotlin">// SessionTask Methods
+task.add(html: String, additionalClasses: String = ""): StringBuilder?
+task.header(text: String, level: Int = 1)
+task.echo(message: String)
+task.hideable(html: String): StringBuilder?
+task.verbose(message: String)
+task.error(e: Throwable)
+task.expandable(title: String, content: String)
+task.expanded(title: String, content: String)
+task.image(image: BufferedImage)
+task.append(html: String, showSpinner: Boolean = true)
+task.update()
+task.complete()
+task.newTask(): SessionTask
+task.saveFile(path: String, data: ByteArray): String
+task.newLogStream(name: String): OutputStream
+task.linkedTask(label: String): SessionTask
+
+// SocketManager Methods (via task.ui)
+task.ui.hrefLink(text: String, handler: () -> Unit): String
+task.ui.textInput(handler: (String) -> Unit): String
+task.ui.newTask(root: Boolean = true, cancelable: Boolean = false): SessionTask
+task.ui.linkToSession(text: String): String
+task.ui.pool: ExecutorService
+task.ui.scheduledThreadPoolExecutor: ScheduledExecutorService
+
+// TabbedDisplay
+val tabs = TabbedDisplay(task, closable: Boolean = true)
+tabs[label: String] = content: String
+tabs.newTask(label: String): SessionTask
+tabs.delete(label: String)
+tabs.clear()
+
+// Retryable
+Retryable.retryable(ui: SocketManager) { subTask -> ... }
+
+// Discussable
+Discussable(task, heading, userMessage, initialResponse, outputFn, reviseResponse).call()</code></pre>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <h2>Start Building</h2>
+            <p>
+                The SessionTask UI system powers all of Cognotik's interactive features. 
+                Explore the source code or dive into the documentation.
+            </p>
+            <div class="cta-buttons">
+                <a href="https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/webui" class="btn btn-primary">
+                    View Source Code
+                </a>
+                <a href="docs/user_interface.html" class="btn btn-secondary">
+                    Full Documentation
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <cognotik-footer></cognotik-footer>
+
+  <!-- Prism.js for syntax highlighting (deferred) -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
+
+    <!-- Tab functionality -->
+    <script>
+        document.querySelectorAll('[data-tabs]').forEach(tabContainer => {
+            const buttons = tabContainer.querySelectorAll('.tab-btn');
+            const panels = tabContainer.querySelectorAll('.tab-panel');
+
+              buttons.forEach((button, index) => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.dataset.tab;
+
+                    buttons.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.setAttribute('aria-selected', 'false');
+                    });
+                    button.classList.add('active');
+                    button.setAttribute('aria-selected', 'true');
+
+                    panels.forEach(panel => {
+                        if (panel.dataset.tabPanel === targetTab) {
+                            panel.classList.add('active');
+                            panel.hidden = false;
+                        } else {
+                            panel.classList.remove('active');
+                            panel.hidden = true;
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

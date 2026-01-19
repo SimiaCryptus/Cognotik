@@ -360,7 +360,7 @@ class LanguageServerTask(
 
     companion object {
         private val log = LoggerFactory.getLogger(LanguageServerTask::class.java)
-        val LanguageServer = TaskType(
+        @JvmStatic val LanguageServer = TaskType(
           name = "LanguageServer",
           category = "File",
           taskClass = LanguageServerTask::class.java,

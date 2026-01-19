@@ -51,6 +51,7 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
         private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(UserSettingsManager::class.java)
 
         @JsonIgnore
+        @JvmStatic
         var defaultUser = User(
             id = "1",
             email = "user@localhost"

@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
+import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -61,7 +62,7 @@ open class PlanHarness(
         smartModel = smartModel,
         imageModel = imageModel
     ) {
-        override fun createTempDirectory(prefix: String) = createWorkspace()
+        override fun createTempDirectory(prefix: String) = createTempDirectory()
     }
 
     fun run() {
@@ -101,7 +102,7 @@ open class PlanHarness(
         cognitiveSettings = cognitiveSettings,
     )
 
-    open fun createWorkspace(): File = File(".").resolve("workspaces/${cognitiveSettings.type!!.name}/test-${now()}")
+    open fun createTempDirectory(): File = File(".").resolve("workspaces/${cognitiveSettings.type!!.name}/test-${now()}")
         .apply {
             mkdirs()
             log.debug("Created temp directory: ${this.absolutePath}")
@@ -132,7 +133,9 @@ open class PlanHarness(
             )
         }
 
+        @JvmStatic
         fun initDynamicEnums() {
+            require(APIProvider.values().isNotEmpty())
             require(TaskType.values().isNotEmpty())
             require(ToolProvider.values().isNotEmpty())
             require(CognitiveModeType.values().isNotEmpty())

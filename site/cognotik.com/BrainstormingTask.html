@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | BrainstormingTask</title>
@@ -208,14 +209,14 @@
             Systematically generates diverse solution options and performs independent multi-dimensional analysis (Pros, Cons, Feasibility, Impact, Risks) for informed decision making.
         </p>
         <div class="badges">
-            <span class="badge">Category: Reasoning</span>
-            <span class="badge">Side-Effect Safe</span>
-            <span class="badge">Model: GPT-4 Preferred</span>
+              <span class="badge badge-primary">Category: Reasoning</span>
+              <span class="badge badge-success">Side-Effect Safe</span>
+              <span class="badge badge-warning">Model: GPT-4 Preferred</span>
         </div>
     </header>
 
-    <!-- 2. REALITY CHECK -->
-    <section class="reality-check-grid">
+      <!-- 2. REALITY CHECK SECTION -->
+      <section class="reality-check-section">
         <!-- Input -->
         <div class="panel">
             <div class="panel-header"><span>⚙️</span> BrainstormingConfig.json</div>
@@ -302,12 +303,12 @@
                 <tr>
                     <td><code>input_files</code></td>
                     <td><code>List&lt;String&gt;</code></td>
-                    <td>Glob patterns (e.g. <code>**/*.kt</code>) to provide source code context.</td>
+                          <td>Glob patterns (e.g., <code class="text-mono">**/*.kt</code>) to provide source code context.</td>
                 </tr>
                 <tr>
                     <td><code>target_option_count</code></td>
                     <td><code>Int</code></td>
-                    <td>Number of options to generate. Range: 3-20. Default: <code>7</code>.</td>
+                          <td>Number of options to generate. Range: 3-20. Default: <code class="text-mono">7</code>.</td>
                 </tr>
                 <tr>
                     <td><code>categories</code></td>
@@ -317,7 +318,7 @@
                 <tr>
                     <td><code>include_creative_options</code></td>
                     <td><code>Boolean</code></td>
-                    <td>If true, encourages unconventional/innovative approaches. Default: <code>true</code>.</td>
+                          <td>If true, encourages unconventional/innovative approaches. Default: <code class="text-mono">true</code>.</td>
                 </tr>
                 <tr>
                     <td><code>analysis_depth</code></td>
@@ -414,7 +415,7 @@ harness.runTask(
   ** Enable/disable creative/unconventional options
   ** Set analysis depth (brief/moderate/detailed)
   ** Generates diverse options, analyzes each independently
-  ** Provides comparative summary with recommendations</div>
+** Provides comparative summary with recommendations
             </div>
         </div>
     </section>
@@ -430,7 +431,7 @@ harness.runTask(
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/Brainstorming/');
 </script>
 

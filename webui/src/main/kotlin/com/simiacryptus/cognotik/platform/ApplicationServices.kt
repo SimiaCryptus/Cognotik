@@ -12,18 +12,21 @@ import java.io.File
 
 object ApplicationServices {
 
+    @JvmStatic
     var authorizationManager: AuthorizationInterface = AuthorizationManager()
         set(value) {
             require(!isLocked) { "ApplicationServices is locked" }
             field = value
         }
 
+    @JvmStatic
     var authenticationManager: AuthenticationInterface = AuthenticationManager()
         set(value) {
             require(!isLocked) { "ApplicationServices is locked" }
             field = value
         }
 
+    @JvmStatic
     var threadPoolManager: ThreadPoolManager =
         ThreadPoolManager()
         private set(value) {
@@ -31,6 +34,7 @@ object ApplicationServices {
             field = value
         }
 
+    @JvmStatic
     var cloud: CloudPlatformInterface? =
         AwsPlatform.get()
         set(value) {
@@ -38,7 +42,10 @@ object ApplicationServices {
             field = value
         }
 
+    @JvmStatic
     private val fileApplicationServicesCache = mutableMapOf<File, FileApplicationServices>()
+
+    @JvmStatic
     fun fileApplicationServices(rootDir: File = ApplicationServicesConfig.dataStorageRoot) =
         fileApplicationServicesCache.getOrPut(rootDir) { FileApplicationServices(rootDir) }
 

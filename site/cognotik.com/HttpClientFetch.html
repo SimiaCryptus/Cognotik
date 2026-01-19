@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | HttpClientFetch</title>
@@ -9,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -191,8 +192,8 @@
         .step-number {
             background: var(--accent-primary);
             color: var(--bg-app);
-            width: 24px;
-            height: 24px;
+          width: 32px;
+          height: 32px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -214,7 +215,7 @@
 
 <main class="task-container">
 
-    <!-- 1. HEADER -->
+      <!-- PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Tasks / Online / Fetching</div>
         <h1>HttpClientFetch</h1>
@@ -280,7 +281,7 @@
 
         <!-- TAB: DOCS -->
         <div id="tab-docs" class="tab-pane">
-            <h3>Supported Content Types</h3>
+              <h2>Supported Content Types</h2>
             <table class="docs-table">
                 <thead>
                 <tr>
@@ -323,29 +324,29 @@
 
         <!-- TAB: PROCESS -->
         <div id="tab-process" class="tab-pane" style="display:none;">
-            <div class="step-list">
-                <div class="step-item">
+              <ol class="step-list">
+                  <li class="step-item">
                     <div class="step-number">1</div>
                     <div>
                         <strong>SSL Initialization</strong>
-                        <p style="color: var(--text-dim); font-size: 0.9rem;">Creates a permissive SSL context using <code>X509TrustManager</code> to handle self-signed or expired certificates common in internal documentation sites.</p>
+                          <p>Creates a permissive SSL context using <code>X509TrustManager</code> to handle self-signed or expired certificates common in internal documentation sites.</p>
                     </div>
                 </div>
-                <div class="step-item">
+                  <li class="step-item">
                     <div class="step-number">2</div>
                     <div>
                         <strong>Request Execution</strong>
                         <p style="color: var(--text-dim); font-size: 0.9rem;">Dispatches GET request with <code>CognotikBot</code> User-Agent and standard browser headers to minimize bot-detection triggers.</p>
                     </div>
                 </div>
-                <div class="step-item">
+                  <li class="step-item">
                     <div class="step-number">3</div>
                     <div>
                         <strong>Content Transformation</strong>
                         <p style="color: var(--text-dim); font-size: 0.9rem;">HTML is scrubbed of scripts, styles, and interactive elements. Documents are parsed into plain text using specialized readers.</p>
                     </div>
                 </div>
-                <div class="step-item">
+                  <li class="step-item">
                     <div class="step-number">4</div>
                     <div>
                         <strong>Workspace Persistence</strong>
@@ -357,7 +358,7 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
-            <h3>Kotlin Implementation</h3>
+              <h2>Kotlin Implementation</h2>
             <div class="panel">
                 <div class="panel-header">HttpClientFetch.kt</div>
                 <pre><code>val client = HttpClient.newBuilder()
@@ -381,7 +382,7 @@ val request = HttpRequest.newBuilder()
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 

@@ -43,6 +43,7 @@ object JdbcSessionTaskTest {
         ).run()
     }
 
+    @org.junit.jupiter.api.Tag("Integration")
     //@org.junit.jupiter.api.Test
     @Timeout(5, unit = TimeUnit.MINUTES)
     fun testSessionPersistence() {

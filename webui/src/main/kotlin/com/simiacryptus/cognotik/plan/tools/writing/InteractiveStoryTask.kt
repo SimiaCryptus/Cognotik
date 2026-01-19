@@ -323,7 +323,7 @@ class InteractiveStoryTask(
             write("---\n\n")
             flush()
         }
-        overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent))
+        overviewTask.add(overviewContent.renderMarkdown())
         task.update()
 
             val storyBuilder = StringBuilder()
@@ -346,11 +346,11 @@ class InteractiveStoryTask(
                 log.debug("Found prior context: ${priorContext.length} chars")
                 val contextTask = tabs.newTask("Context")
                 contextTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                    buildString {
                         appendLine("# Context from Previous Tasks")
                         appendLine()
                         appendLine(priorContext.truncateForDisplay(2000))
-                    })
+                    }.renderMarkdown()
                 )
                 task.update()
             }
@@ -365,12 +365,12 @@ class InteractiveStoryTask(
             val structureTask = tabs.newTask("Story Structure")
 
             structureTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+                buildString {
                     appendLine("# Story Structure & Decision Tree")
                     appendLine()
                     appendLine("**Status:** Planning narrative branches and decision points...")
                     appendLine()
-                })
+                }.renderMarkdown()
             )
             task.update()
 
@@ -412,7 +412,7 @@ Keep it concise - just the structure, not full narratives.
                 flush()
             }
             structureTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+                buildString {
                     appendLine("## Story Outline")
                     appendLine()
                     appendLine(outline)
@@ -421,7 +421,7 @@ Keep it concise - just the structure, not full narratives.
                     appendLine()
                     appendLine("**Status:** Building detailed structure...")
                     appendLine()
-                })
+                }.renderMarkdown()
             )
             task.update()
             // Now create the detailed structure in smaller pieces
@@ -571,11 +571,11 @@ Focus on structure and connections, not detailed prose.
                 appendLine()
                 appendLine("**Status:** ✅ Complete")
             }
-            structureTask.add(MarkdownUtil.renderMarkdown(structureContent))
+            structureTask.add(structureContent.renderMarkdown())
             task.update()
 
-            overviewTask.add(MarkdownUtil.renderMarkdown("✅ Phase 1 Complete: Story structure created\n"))
-            overviewTask.add(MarkdownUtil.renderMarkdown("\n### Phase 2: Opening Segment\n*Writing the story opening...*\n"))
+            overviewTask.add("✅ Phase 1 Complete: Story structure created\n".renderMarkdown())
+            overviewTask.add("\n### Phase 2: Opening Segment\n*Writing the story opening...*\n".renderMarkdown())
             task.update()
 
             // Phase 2: Write opening segment
@@ -588,12 +588,12 @@ Focus on structure and connections, not detailed prose.
             val openingTask = tabs.newTask("Opening")
 
             openingTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+                buildString {
                     appendLine("# Opening Segment")
                     appendLine()
                     appendLine("**Status:** Writing opening narrative...")
                     appendLine()
-                })
+                }.renderMarkdown()
             )
             task.update()
 
@@ -641,7 +641,7 @@ Make it immersive and compelling. The reader should feel invested immediately.
             }
 
             openingTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+                buildString {
                     appendLine("## ${structure.title}")
                     appendLine()
                     appendLine(openingSegment.content)
@@ -658,7 +658,7 @@ Make it immersive and compelling. The reader should feel invested immediately.
                     }
                     appendLine()
                     appendLine("**Status:** ✅ Complete")
-                })
+                }.renderMarkdown()
             )
             task.update()
 
@@ -666,8 +666,8 @@ Make it immersive and compelling. The reader should feel invested immediately.
             storyBuilder.append(openingSegment.content)
             storyBuilder.append("\n\n---\n\n")
 
-            overviewTask.add(MarkdownUtil.renderMarkdown("✅ Phase 2 Complete: Opening written (${openingSegment.word_count} words)\n"))
-            overviewTask.add(MarkdownUtil.renderMarkdown("\n### Phase 3: Decision Points\n*Writing branching narrative segments...*\n"))
+            overviewTask.add("✅ Phase 2 Complete: Opening written (${openingSegment.word_count} words)\n".renderMarkdown())
+            overviewTask.add("\n### Phase 3: Decision Points\n*Writing branching narrative segments...*\n".renderMarkdown())
 
             // Phase 3: Write each decision point
             transcriptWriter.apply {
@@ -683,25 +683,23 @@ Make it immersive and compelling. The reader should feel invested immediately.
                 log.info("Writing decision point ${index + 1}/${structure.decision_points.size}: ${decisionPoint.id}")
 
                 overviewTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        "- ${decisionPoint.id}: ${
-                            decisionPoint.decision_prompt.truncateForDisplay(
-                                50
-                            )
-                        } "
-                    )
+                    "- ${decisionPoint.id}: ${
+                        decisionPoint.decision_prompt.truncateForDisplay(
+                            50
+                        )
+                    } ".renderMarkdown()
                 )
                 task.update()
 
                 val dpTask = tabs.newTask("${decisionPoint.id}")
 
                 dpTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                    buildString {
                         appendLine("# ${decisionPoint.id}")
                         appendLine()
                         appendLine("**Status:** Writing decision point narrative...")
                         appendLine()
-                    })
+                    }.renderMarkdown()
                 )
                 task.update()
 
@@ -782,7 +780,7 @@ Make the reader feel the weight of their choice. Each option should feel viable 
                 }
 
                 dpTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                    buildString {
                         appendLine("## ${decisionPoint.id}")
                         appendLine()
                         appendLine(segment.content)
@@ -806,7 +804,7 @@ Make the reader feel the weight of their choice. Each option should feel viable 
                         appendLine("**Word Count:** ${segment.word_count}")
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
-                    })
+                    }.renderMarkdown()
                 )
                 task.update()
 
@@ -819,12 +817,12 @@ Make the reader feel the weight of their choice. Each option should feel viable 
                 }
                 storyBuilder.append("\n---\n\n")
 
-                overviewTask.add(MarkdownUtil.renderMarkdown("✅ (${segment.word_count} words)\n"))
+                overviewTask.add("✅ (${segment.word_count} words)\n".renderMarkdown())
                 task.update()
             }
 
-            overviewTask.add(MarkdownUtil.renderMarkdown("✅ Phase 3 Complete: All decision points written\n"))
-            overviewTask.add(MarkdownUtil.renderMarkdown("\n### Phase 4: Endings\n*Writing story conclusions...*\n"))
+            overviewTask.add("✅ Phase 3 Complete: All decision points written\n".renderMarkdown())
+            overviewTask.add("\n### Phase 4: Endings\n*Writing story conclusions...*\n".renderMarkdown())
             task.update()
 
             // Phase 4: Write endings
@@ -839,18 +837,18 @@ Make the reader feel the weight of their choice. Each option should feel viable 
             structure.endings.forEachIndexed { index, ending ->
                 log.info("Writing ending ${index + 1}/${structure.endings.size}: ${ending.id}")
 
-                overviewTask.add(MarkdownUtil.renderMarkdown("- ${ending.id}: ${ending.ending_type} "))
+                overviewTask.add("- ${ending.id}: ${ending.ending_type} ".renderMarkdown())
                 task.update()
 
                 val endingTask = tabs.newTask("${ending.id}")
 
                 endingTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                    buildString {
                         appendLine("# ${ending.id}")
                         appendLine()
                         appendLine("**Status:** Writing ending narrative...")
                         appendLine()
-                    })
+                    }.renderMarkdown()
                 )
                 task.update()
 
@@ -909,7 +907,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 }
 
                 endingTask.add(
-                    MarkdownUtil.renderMarkdown(buildString {
+                    buildString {
                         appendLine("## ${ending.id}: ${ending.ending_type}")
                         appendLine()
                         appendLine(endingSegment.content)
@@ -928,7 +926,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                         }
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
-                    })
+                    }.renderMarkdown()
                 )
                 task.update()
 
@@ -936,12 +934,12 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 storyBuilder.append(endingSegment.content)
                 storyBuilder.append("\n\n**THE END**\n\n---\n\n")
 
-                overviewTask.add(MarkdownUtil.renderMarkdown("✅ (${endingSegment.word_count} words)\n"))
+                overviewTask.add("✅ (${endingSegment.word_count} words)\n".renderMarkdown())
                 task.update()
             }
 
-            overviewTask.add(MarkdownUtil.renderMarkdown("✅ Phase 4 Complete: All endings written\n"))
-            overviewTask.add(MarkdownUtil.renderMarkdown("\n### Phase 5: Interactive Map\n*Generating playable story map...*\n"))
+            overviewTask.add("✅ Phase 4 Complete: All endings written\n".renderMarkdown())
+            overviewTask.add("\n### Phase 5: Interactive Map\n*Generating playable story map...*\n".renderMarkdown())
             task.update()
 
             // Phase 5: Create interactive story map
@@ -1032,7 +1030,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 appendLine("- Unique Paths: ~${calculateUniquePaths(structure)}")
             }
 
-            mapTask.add(MarkdownUtil.renderMarkdown(storyMap))
+            mapTask.add(storyMap.renderMarkdown())
             task.update()
 
             // Final statistics
@@ -1057,7 +1055,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
 
 
             overviewTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+                buildString {
                     appendLine()
                     appendLine("---")
                     appendLine()
@@ -1076,7 +1074,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         }"
                     )
-                })
+                }.renderMarkdown()
             )
             task.update()
 
@@ -1110,7 +1108,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
             task.error(e)
 
             overviewTask.add(
-                MarkdownUtil.renderMarkdown(buildString {
+                buildString {
                     appendLine()
                     appendLine("---")
                     appendLine()
@@ -1119,7 +1117,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                     appendLine("**Error:** ${e.message}")
                     appendLine()
                     appendLine("**Type:** ${e.javaClass.simpleName}")
-                })
+                }.renderMarkdown()
             )
             task.update()
 
@@ -1233,7 +1231,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(InteractiveStoryTask::class.java)
-        val InteractiveStory = TaskType(
+        @JvmStatic val InteractiveStory = TaskType(
           name = "InteractiveStory",
           category = "Writing",
           taskClass = InteractiveStoryTask::class.java,

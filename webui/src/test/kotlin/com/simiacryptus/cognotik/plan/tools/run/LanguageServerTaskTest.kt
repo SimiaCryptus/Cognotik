@@ -15,6 +15,7 @@ object LanguageServerTaskTest {
       UnifiedHarness.configurePlatform()
     }
 
+    @org.junit.jupiter.api.Tag("Integration")
     //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testHover() {
@@ -45,6 +46,7 @@ object LanguageServerTaskTest {
         harness.run()
     }
 
+    @org.junit.jupiter.api.Tag("Integration")
     //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testDiagnostics() {

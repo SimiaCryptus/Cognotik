@@ -55,7 +55,7 @@ open class ParallelMode(
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         val transcript = task.transcript()
         try {
-            task.echo(userMessage.renderMarkdown)
+            task.echo(userMessage.renderMarkdown(true))
 
             transcript?.write("User Message: $userMessage\n".toByteArray())
 
@@ -120,10 +120,10 @@ open class ParallelMode(
                         )
                         task.expandable("Config", "```json\n${JsonUtil.toJson(chosenTask)}\n```".renderMarkdown())
                         val coordinator = TaskOrchestrator(
-                            user = user,
-                            session = session,
-                            dataStorage = task.ui.dataStorage!!,
-                            root = root
+                          user = user,
+                          session = session,
+                          dataStorage = task.ui.dataStorage!!,
+                          root = root
                         )
                         val impl = orchestrationConfig.getImpl(chosenTask)
                         var resultString = ""

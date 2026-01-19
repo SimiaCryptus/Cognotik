@@ -1,0 +1,1 @@
+"<div><div class=\" response-message\"></div></div><div><div class=\" response-message\"><h3>Proposed Append to <code>Calculator.kt</code></h3>\n<pre><code>    fun subtract(a: Int, b: Int): Int {\n        return a - b\n    }\n</code></pre>\n</div></div><div><div class=\" completion-message response-message\"></div></div>"

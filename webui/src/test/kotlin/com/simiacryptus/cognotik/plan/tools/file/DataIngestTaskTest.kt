@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.plan.tools.file.DataIngestTask
 import com.simiacryptus.cognotik.plan.tools.file.DataIngestTask.DataIngestTaskExecutionConfigData
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Timeout
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -18,6 +19,7 @@ object DataIngestTaskTest {
       UnifiedHarness.configurePlatform()
     }
 
+    @org.junit.jupiter.api.Tag("Integration")
     //@org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {

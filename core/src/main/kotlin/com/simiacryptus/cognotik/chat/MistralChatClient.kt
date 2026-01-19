@@ -52,7 +52,7 @@ class MistralChatClient(
     ) {
         request.addHeader(HEADER_CONTENT_TYPE, APPLICATION_JSON)
         request.addHeader(HEADER_ACCEPT, APPLICATION_JSON)
-        request.addHeader(HEADER_AUTHORIZATION, "Bearer $apiKey")
+        request.addHeader(HEADER_AUTHORIZATION, "Bearer ${apiKey.decrypt}")
         require(null == budget || budget!!.toDouble() > 0.0) { "Budget Exceeded" }
     }
 

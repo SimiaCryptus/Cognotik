@@ -15,7 +15,6 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -43,13 +42,13 @@ open class ProtocolMode(
             isRunning = true
             startProtocolSession(task, userMessage)
         } else {
-            task.echo("User: $userMessage".renderMarkdown)
+            task.echo("User: $userMessage".renderMarkdown(true))
             history.add("User Message: $userMessage")
         }
     }
 
     private fun startProtocolSession(task : SessionTask, userMessage: String) {
-        task.echo(userMessage.renderMarkdown)
+        task.echo(userMessage.renderMarkdown(true))
         val transcript = task.transcript()
         fun writeToTranscript(content: String) {
             transcript?.write(content.toByteArray())
@@ -61,11 +60,11 @@ open class ProtocolMode(
                 task.complete()
                 val coordinator = task.ui.dataStorage?.let {
                     TaskOrchestrator(
-                        user = user,
-                        session = session,
-                        dataStorage = it,
-                        root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+                      user = user,
+                      session = session,
+                      dataStorage = it,
+                      root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
+                          ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
                     )
                 } ?: throw IllegalStateException("Coordinator could not be initialized")
 
@@ -81,7 +80,7 @@ open class ProtocolMode(
                             heading = "Protocol Definition",
                             userMessage = { userMessage },
                             initialResponse = { definer(listOf(it)) },
-                            outputFn = { renderMarkdown("```json\n${JsonUtil.toJson(it)}\n```") },
+                            outputFn = { "```json\n${JsonUtil.toJson(it)}\n```".renderMarkdown() },
                             reviseResponse = { history ->
                                 definer(history.map { "${it.second}: ${it.first}" })
                             }
@@ -101,7 +100,7 @@ open class ProtocolMode(
                 writeToTranscript("# Protocol Definition\n\n```json\n${JsonUtil.toJson(protocol)}\n```\n\n")
 
                 val protocolDisplay = TabbedDisplay(task)
-                protocolDisplay["Protocol"] = renderMarkdown("```json\n${JsonUtil.toJson(protocol)}\n```")
+              protocolDisplay["Protocol"] = "```json\n${JsonUtil.toJson(protocol)}\n```".renderMarkdown()
 
                 var currentStateName: String? = protocol.initialState
                 var iteration = 0
@@ -115,7 +114,7 @@ open class ProtocolMode(
                     val stateTask = task.newTask()
                     protocolDisplay["${iteration}. ${currentState.name}"] = stateTask.placeholder
                     stateTask.header("State: ${currentState.name}", level = 3)
-                    stateTask.add(renderMarkdown("**Instructions:** ${currentState.instructions}"))
+                    stateTask.add("**Instructions:** ${currentState.instructions}".renderMarkdown())
 
                     var statePassed = false
                     var retryCount = 0
@@ -137,7 +136,7 @@ open class ProtocolMode(
                                 heading = "Task Selection",
                                 userMessage = { "Select task for state: ${currentState.name}" },
                                 initialResponse = { selectTask(task, currentState, userMessage, history) },
-                                outputFn = { renderMarkdown("Selected Task: **${it.task_description}**") },
+                                outputFn = { "Selected Task: **${it.task_description}**".renderMarkdown() },
                                 reviseResponse = { h ->
                                     selectTask(
                                         task, currentState,
@@ -151,7 +150,7 @@ open class ProtocolMode(
                         val taskImpl = orchestrationConfig.getImpl(taskConfig)
                         val executionTask = stateTask.newTask()
                         stateTask.add(executionTask.placeholder)
-                        executionTask.add(renderMarkdown("Executing: ${taskConfig?.task_description}"))
+                        executionTask.add("Executing: ${taskConfig?.task_description}".renderMarkdown())
 
                         taskImpl.run(
                             agent = coordinator,
@@ -173,7 +172,7 @@ open class ProtocolMode(
                                 heading = "Validation",
                                 userMessage = { "Validate result for state: ${currentState.name}" },
                                 initialResponse = { validateState(task, currentState, taskConfig!!, actionResult) },
-                                outputFn = { renderMarkdown("Passed: ${it.passed}\nFeedback: ${it.feedback}") },
+                                outputFn = { "Passed: ${it.passed}\nFeedback: ${it.feedback}".renderMarkdown() },
                                 reviseResponse = { h ->
                                     validateState(
                                         task, currentState,
@@ -188,7 +187,7 @@ open class ProtocolMode(
                             "<b>Validation:</b> ${if (validation.passed) "PASSED" else "FAILED"}",
                             additionalClasses = statusClass
                         )
-                        stateTask.add(renderMarkdown(validation.feedback))
+                        stateTask.add(validation.feedback.renderMarkdown())
 
                         if (validation.passed) {
                             statePassed = true

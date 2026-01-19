@@ -1,0 +1,1 @@
+Generated artistic QR code (may not be scannable) saved to <a href="fileIndex/G-20260115-6pvD/artistic_qr.png">artistic_qr.png</a>.

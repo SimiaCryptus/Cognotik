@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.*
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
@@ -57,11 +58,13 @@ object UITools {
     val retry = WeakHashMap<Document, Runnable>()
 
     fun showError(project: Project?, message: String, title: String = "Error") {
-        Messages.showErrorDialog(project, message, title)
+        ReadAction.run<RuntimeException> {
+            Messages.showErrorDialog(project, message, title)
+        }
     }
 
     fun showWarning(project: Project?, message: String, title: String = "Warning") {
-        Messages.showWarningDialog(project, message, title)
+        ReadAction.run<RuntimeException> { Messages.showWarningDialog(project, message, title) }
     }
 
     val log = LoggerFactory.getLogger(UITools::class.java)

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | LateralThinkingTask - Industrial Reasoning</title>
@@ -10,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -162,7 +163,7 @@
 
         code {
             font-family: var(--font-mono);
-            background: rgba(255,255,255,0.05);
+          background: rgba(255, 255, 255, 0.05);
             padding: 0.1rem 0.3rem;
             border-radius: 3px;
         }
@@ -189,9 +190,9 @@
             Break conventional thinking patterns to find innovative solutions using structured techniques like reversal, random stimulus, and provocation.
         </p>
         <div class="badges">
-            <span class="badge">Category: Reasoning</span>
-            <span class="badge">Side-Effect Safe</span>
-            <span class="badge">GPT-4 Preferred</span>
+              <span class="badge badge-primary">Category: Reasoning</span>
+              <span class="badge badge-success">Side-Effect Safe</span>
+              <span class="badge badge-warning">GPT-4 Preferred</span>
         </div>
     </section>
 
@@ -220,7 +221,7 @@
         <div class="panel ui-panel">
             <div class="panel-header">👁️ Session UI: Summary Tab</div>
             <div class="ui-panel-content">
-                <div style="border-left: 4px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1rem;">
+                  <div style="border-left: 4px solid var(--accent-primary); padding-left: var(--space-4); margin-bottom: var(--space-4);">
                     <h4 style="margin: 0;">Idea: The "Anti-Subscription"</h4>
                     <small style="color: var(--text-dim);">Technique: Reversal | Novelty: 85% | Feasibility: 60%</small>
                 </div>
@@ -287,7 +288,7 @@
                     <tr>
                         <td><code>input_files</code></td>
                         <td>List&lt;String&gt;</td>
-                        <td>Glob patterns for context (e.g. <code>**/*.kt</code>).</td>
+                              <td>Glob patterns for context (e.g. <code class="code-inline">**/*.kt</code>).</td>
                     </tr>
                     </tbody>
                 </table>
@@ -313,7 +314,7 @@ val task = LateralThinkingTask(
     planTask = LateralThinkingTaskExecutionConfigData(
         problem = "Optimize database query latency",
         techniques = listOf("exaggeration", "metaphor"),
-        num_alternatives = 5
+      num_alternatives = 5,
     )
 )
 orchestrator.run(task)

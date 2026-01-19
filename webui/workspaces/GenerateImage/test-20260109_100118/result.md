@@ -1,1 +1,0 @@
-Successfully generated and saved image to <a href="fileIndex/G-20260109-kw55/test_output_image.png">test_output_image.png</a>.

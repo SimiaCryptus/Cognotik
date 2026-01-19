@@ -496,7 +496,7 @@ ImageVariation - Creates 'Find the Differences' style image sets.
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ImageVariationTask::class.java)
-    val ImageVariation = TaskType(
+    @JvmStatic val ImageVariation = TaskType(
       name = "ImageVariation",
       category = "File",
       taskClass = ImageVariationTask::class.java,

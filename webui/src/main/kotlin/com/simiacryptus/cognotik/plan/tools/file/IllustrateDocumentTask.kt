@@ -562,7 +562,7 @@ Generate the patches now.
     companion object {
         private val log: Logger = LoggerFactory.getLogger(IllustrateDocumentTask::class.java)
 
-        val IllustrateDocument = TaskType(
+        @JvmStatic val IllustrateDocument = TaskType(
           name = "IllustrateDocument",
           category = "Writing",
           taskClass = IllustrateDocumentTask::class.java,

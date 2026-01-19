@@ -328,7 +328,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
             appendLine("*Analyzing metrics and data points...*")
         }
                 transcript?.write(overviewContent.toByteArray())
-        overviewTask.add(overviewContent.renderMarkdown)
+        overviewTask.add(overviewContent.renderMarkdown(true))
         task.update()
 
         val resultBuilder = StringBuilder()
@@ -342,15 +342,15 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
                 val contextTask = tabs.newTask("Data Sources")
 
-                contextTask.add("# Data Sources & Context".renderMarkdown)
+                contextTask.add("# Data Sources & Context".renderMarkdown(true))
                 if (fullContext.isNotBlank()) {
-                    contextTask.expandable("Input Context", fullContext.truncateForDisplay(3000).renderMarkdown)
+                    contextTask.expandable("Input Context", fullContext.truncateForDisplay(3000).renderMarkdown(true))
                 }
                 if (priorContext.isNotBlank()) {
-                    contextTask.expandable("Prior Context", priorContext.truncateForDisplay(2000).renderMarkdown)
+                    contextTask.expandable("Prior Context", priorContext.truncateForDisplay(2000).renderMarkdown(true))
                 }
                 if (contextFiles.isNotBlank()) {
-                    contextTask.expandable("Related Files", contextFiles.truncateForDisplay(2000).renderMarkdown)
+                    contextTask.expandable("Related Files", contextFiles.truncateForDisplay(2000).renderMarkdown(true))
                 }
                 contextTask.complete()
 
@@ -370,13 +370,13 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
             val dataAnalysisTask = tabs.newTask("Data Analysis")
 
             dataAnalysisTask.add(
-                buildString {
-                    appendLine("# Data Analysis")
-                    appendLine()
-                    appendLine()
-                    appendLine("**Status:** Analyzing metrics and trends...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Data Analysis")
+                appendLine()
+                appendLine()
+                appendLine("**Status:** Analyzing metrics and trends...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             task.update()
 
@@ -462,12 +462,12 @@ Be specific with numbers and percentages where available.
                 appendLine("**Status:** ✅ Complete")
             }
             transcript?.write(dataAnalysisContent.toByteArray())
-            dataAnalysisTask.add(dataAnalysisContent.renderMarkdown)
+            dataAnalysisTask.add(dataAnalysisContent.renderMarkdown(true))
             dataAnalysisTask.complete()
             task.update()
 
-            overviewTask.add("✅ Phase 1 Complete: ${dataAnalyses.size} metrics analyzed\n".renderMarkdown)
-            overviewTask.add("\n### Phase 2: Report Structure\n*Creating report outline...*\n".renderMarkdown)
+            overviewTask.add("✅ Phase 1 Complete: ${dataAnalyses.size} metrics analyzed\n".renderMarkdown(true))
+            overviewTask.add("\n### Phase 2: Report Structure\n*Creating report outline...*\n".renderMarkdown(true))
             task.update()
 
             // Phase 2: Create Report Outline
@@ -475,13 +475,13 @@ Be specific with numbers and percentages where available.
             val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
-                buildString {
-                    appendLine("# Report Outline")
-                    appendLine()
-                    appendLine()
-                    appendLine("**Status:** Structuring report sections...")
-                    appendLine()
-                }.renderMarkdown
+              buildString {
+                appendLine("# Report Outline")
+                appendLine()
+                appendLine()
+                appendLine("**Status:** Structuring report sections...")
+                appendLine()
+              }.renderMarkdown(true)
             )
             task.update()
 
@@ -580,12 +580,16 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
                 appendLine("**Status:** ✅ Complete")
             }
             transcript?.write(outlineContent.toByteArray())
-            outlineTask.add(outlineContent.renderMarkdown)
+            outlineTask.add(outlineContent.renderMarkdown(true))
             outlineTask.complete()
             task.update()
 
-            overviewTask.add("✅ Phase 2 Complete: Outline created (${outline.sections.size} sections)\n".renderMarkdown)
-            overviewTask.add("\n### Phase 3: Content Generation\n*Writing report sections...*\n".renderMarkdown)
+            overviewTask.add(
+              "✅ Phase 2 Complete: Outline created (${outline.sections.size} sections)\n".renderMarkdown(
+                true
+              )
+            )
+            overviewTask.add("\n### Phase 3: Content Generation\n*Writing report sections...*\n".renderMarkdown(true))
             task.update()
 
             // Phase 3: Generate Each Section
@@ -596,18 +600,22 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
             outline.sections.forEachIndexed { index, sectionOutline ->
                 log.info("Generating section ${index + 1}/${outline.sections.size}: ${sectionOutline.title}")
 
-                overviewTask.add("- Section ${sectionOutline.section_number}: ${sectionOutline.title} ".renderMarkdown)
+                overviewTask.add(
+                  "- Section ${sectionOutline.section_number}: ${sectionOutline.title} ".renderMarkdown(
+                    true
+                  )
+                )
                 task.update()
 
                 val sectionTask = tabs.newTask("Section ${sectionOutline.section_number}")
 
                 sectionTask.add(
-                    buildString {
-                        appendLine("# Section ${sectionOutline.section_number}: ${sectionOutline.title}")
-                        appendLine()
-                        appendLine("**Status:** Writing section...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Section ${sectionOutline.section_number}: ${sectionOutline.title}")
+                    appendLine()
+                    appendLine("**Status:** Writing section...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -691,22 +699,22 @@ Be specific, data-driven, and actionable.
                 cumulativeWordCount += generatedSection.word_count
 
                 sectionTask.add(
-                    buildString {
-                        appendLine("## ${sectionOutline.title}")
-                        appendLine()
-                        appendLine(generatedSection.content)
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("**Word Count:** ${generatedSection.word_count}")
-                        appendLine()
-                        appendLine("**Key Insights:**")
-                        generatedSection.key_insights.forEach { insight ->
-                            appendLine("- $insight")
-                        }
-                        appendLine()
-                        appendLine("**Status:** ✅ Complete")
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("## ${sectionOutline.title}")
+                    appendLine()
+                    appendLine(generatedSection.content)
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Word Count:** ${generatedSection.word_count}")
+                    appendLine()
+                    appendLine("**Key Insights:**")
+                    generatedSection.key_insights.forEach { insight ->
+                      appendLine("- $insight")
+                    }
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete")
+                  }.renderMarkdown(true)
                 )
                 transcript?.write(sectionTask.toString().toByteArray())
                 sectionTask.complete()
@@ -716,27 +724,31 @@ Be specific, data-driven, and actionable.
                 resultBuilder.append(generatedSection.content)
                 resultBuilder.append("\n\n")
 
-                overviewTask.add("✅ (${generatedSection.word_count} words)\n".renderMarkdown)
+                overviewTask.add("✅ (${generatedSection.word_count} words)\n".renderMarkdown(true))
                 task.update()
             }
 
-            overviewTask.add("✅ Phase 3 Complete: All sections written\n".renderMarkdown)
+            overviewTask.add("✅ Phase 3 Complete: All sections written\n".renderMarkdown(true))
 
             // Phase 4: Recommendations (if enabled)
             if (executionConfig.include_recommendations) {
-                overviewTask.add("\n### Phase 4: Recommendations\n*Generating actionable recommendations...*\n".renderMarkdown)
+                overviewTask.add(
+                  "\n### Phase 4: Recommendations\n*Generating actionable recommendations...*\n".renderMarkdown(
+                    true
+                  )
+                )
                 task.update()
 
                 log.info("Phase 4: Generating recommendations")
                 val recommendationsTask = tabs.newTask("Recommendations")
 
                 recommendationsTask.add(
-                    buildString {
-                        appendLine("# Recommendations")
-                        appendLine()
-                        appendLine("**Status:** Generating actionable recommendations...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Recommendations")
+                    appendLine()
+                    appendLine("**Status:** Generating actionable recommendations...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -821,7 +833,7 @@ Tailor recommendations to ${executionConfig.target_audience}.
                     }
                     appendLine("**Status:** ✅ Complete")
                 }
-                recommendationsTask.add(recommendationsContent.renderMarkdown)
+                recommendationsTask.add(recommendationsContent.renderMarkdown(true))
                 transcript?.write(recommendationsContent.toByteArray())
                 recommendationsTask.complete()
                 task.update()
@@ -834,24 +846,32 @@ Tailor recommendations to ${executionConfig.target_audience}.
                     resultBuilder.append("**Expected Impact:** ${rec.expected_impact}\n\n")
                 }
 
-                overviewTask.add("✅ Phase 4 Complete: ${recommendations.size} recommendations generated\n".renderMarkdown)
+                overviewTask.add(
+                  "✅ Phase 4 Complete: ${recommendations.size} recommendations generated\n".renderMarkdown(
+                    true
+                  )
+                )
             }
 
             // Phase 5: Risk Assessment (if enabled)
             if (executionConfig.include_risk_assessment) {
-                overviewTask.add("\n### Phase 5: Risk Assessment\n*Identifying risks and challenges...*\n".renderMarkdown)
+                overviewTask.add(
+                  "\n### Phase 5: Risk Assessment\n*Identifying risks and challenges...*\n".renderMarkdown(
+                    true
+                  )
+                )
                 task.update()
 
                 log.info("Phase 5: Generating risk assessment")
                 val riskTask = tabs.newTask("Risk Assessment")
 
                 riskTask.add(
-                    buildString {
-                        appendLine("# Risk Assessment")
-                        appendLine()
-                        appendLine("**Status:** Analyzing risks and challenges...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Risk Assessment")
+                    appendLine()
+                    appendLine("**Status:** Analyzing risks and challenges...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -929,7 +949,7 @@ Be realistic and specific. Focus on risks that ${executionConfig.target_audience
                     }
                     appendLine("**Status:** ✅ Complete")
                 }
-                riskTask.add(riskContent.renderMarkdown)
+                riskTask.add(riskContent.renderMarkdown(true))
                 transcript?.write(riskContent.toByteArray())
                 riskTask.complete()
                 task.update()
@@ -941,24 +961,24 @@ Be realistic and specific. Focus on risks that ${executionConfig.target_audience
                     resultBuilder.append("**Mitigation:** ${risk.mitigation}\n\n")
                 }
 
-                overviewTask.add("✅ Phase 5 Complete: ${riskAssessment.size} risks identified\n".renderMarkdown)
+                overviewTask.add("✅ Phase 5 Complete: ${riskAssessment.size} risks identified\n".renderMarkdown(true))
             }
 
             // Phase 6: Revision (if enabled)
             if (executionConfig.revision_passes > 0) {
-                overviewTask.add("\n### Phase 6: Revision\n*Refining and polishing report...*\n".renderMarkdown)
+                overviewTask.add("\n### Phase 6: Revision\n*Refining and polishing report...*\n".renderMarkdown(true))
                 task.update()
 
                 log.info("Phase 6: Performing ${executionConfig.revision_passes} revision pass(es)")
                 val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
-                    buildString {
-                        appendLine("# Revision Process")
-                        appendLine()
-                        appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Revision Process")
+                    appendLine()
+                    appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -1000,23 +1020,27 @@ Provide the complete revised report.
                     resultBuilder.append(revisedReport)
 
                     revisionTask.add(
-                        buildString {
-                            appendLine("## Revision Pass ${passNum + 1}")
-                            appendLine()
-                            appendLine("✅ Complete")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("## Revision Pass ${passNum + 1}")
+                        appendLine()
+                        appendLine("✅ Complete")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     transcript?.write("## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray())
                     task.update()
                 }
                 revisionTask.complete()
 
-                overviewTask.add("✅ Phase 6 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
+                overviewTask.add(
+                  "✅ Phase 6 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown(
+                    true
+                  )
+                )
             }
 
             // Phase 7: Final Assembly
-            overviewTask.add("\n### Phase 7: Final Assembly\n*Compiling complete report...*\n".renderMarkdown)
+            overviewTask.add("\n### Phase 7: Final Assembly\n*Compiling complete report...*\n".renderMarkdown(true))
             task.update()
 
             log.info("Phase 7: Assembling final report")
@@ -1061,7 +1085,7 @@ Provide the complete revised report.
                 )
             }
 
-            finalTask.add(finalReport.renderMarkdown)
+            finalTask.add(finalReport.renderMarkdown(true))
             // Save report to file and provide download link
             val reportFileName = "report_${System.currentTimeMillis()}.md"
             val reportUrl = task.saveFile("reports/$reportFileName", finalReport.toByteArray())
@@ -1074,30 +1098,30 @@ Provide the complete revised report.
             val totalTime = System.currentTimeMillis() - startTime
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ✅ Generation Complete")
-                    appendLine()
-                    appendLine("**Statistics:**")
-                    appendLine("- Total Word Count: $cumulativeWordCount")
-                    appendLine("- Target Word Count: ${executionConfig.target_word_count}")
-                    appendLine("- Completion: ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
-                    appendLine("- Number of Sections: ${generatedSections.size}")
-                    appendLine("- Metrics Analyzed: ${dataAnalyses.size}")
-                    if (executionConfig.include_visualizations) {
-                        appendLine("- Visualizations Suggested: ${outline.visualization_suggestions.size}")
-                    }
-                    appendLine("- Revision Passes: ${executionConfig.revision_passes}")
-                    appendLine("- Total Time: ${totalTime / 1000.0}s")
-                    appendLine()
-                    appendLine(
-                        "**Completed:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ✅ Generation Complete")
+                appendLine()
+                appendLine("**Statistics:**")
+                appendLine("- Total Word Count: $cumulativeWordCount")
+                appendLine("- Target Word Count: ${executionConfig.target_word_count}")
+                appendLine("- Completion: ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
+                appendLine("- Number of Sections: ${generatedSections.size}")
+                appendLine("- Metrics Analyzed: ${dataAnalyses.size}")
+                if (executionConfig.include_visualizations) {
+                  appendLine("- Visualizations Suggested: ${outline.visualization_suggestions.size}")
+                }
+                appendLine("- Revision Passes: ${executionConfig.revision_passes}")
+                appendLine("- Total Time: ${totalTime / 1000.0}s")
+                appendLine()
+                appendLine(
+                  "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                  }"
+                )
+              }.renderMarkdown(true)
             )
             transcript?.write(overviewTask.toString().toByteArray())
             overviewTask.complete()
@@ -1141,16 +1165,16 @@ Provide the complete revised report.
             task.error(e)
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ❌ Error Occurred")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                appendLine()
+                appendLine("**Type:** ${e.javaClass.simpleName}")
+              }.renderMarkdown(true)
             )
             transcript?.write(
                 """
@@ -1271,7 +1295,7 @@ Provide the complete revised report.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ReportGenerationTask::class.java)
-        val ReportGeneration = TaskType(
+        @JvmStatic val ReportGeneration = TaskType(
             name = "ReportGeneration",
             category = "Writing",
             taskClass = ReportGenerationTask::class.java,

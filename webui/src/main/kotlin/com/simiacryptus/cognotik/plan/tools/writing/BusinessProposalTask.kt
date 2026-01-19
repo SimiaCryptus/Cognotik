@@ -423,7 +423,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
             appendLine("### Phase 1: Strategic Analysis")
             appendLine("*Analyzing stakeholders and strategic positioning...*")
         }
-        overviewTask.add(overviewContent.renderMarkdown)
+        overviewTask.add(overviewContent.renderMarkdown(true))
 
         val resultBuilder = StringBuilder()
         resultBuilder.append("# Business Proposal: $proposalTitle\n\n")
@@ -460,15 +460,21 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
             if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
                 runPhase("Research Context") { contextTask ->
-                    contextTask.add("# Research Context\n\n".renderMarkdown)
+                    contextTask.add("# Research Context\n\n".renderMarkdown(true))
                     if (priorContext.isNotBlank()) {
-                        contextTask.expandable("Prior Context", priorContext.truncateForDisplay(2000).renderMarkdown)
+                        contextTask.expandable("Prior Context",
+                          priorContext.truncateForDisplay(2000).renderMarkdown(true)
+                        )
                     }
                     if (contextFiles.isNotBlank()) {
-                        contextTask.expandable("Related Files", contextFiles.truncateForDisplay(2000).renderMarkdown)
+                        contextTask.expandable("Related Files",
+                          contextFiles.truncateForDisplay(2000).renderMarkdown(true)
+                        )
                     }
                     if (messagesContext.isNotBlank()) {
-                        contextTask.expandable("User Input", messagesContext.truncateForDisplay(2000).renderMarkdown)
+                        contextTask.expandable("User Input",
+                          messagesContext.truncateForDisplay(2000).renderMarkdown(true)
+                        )
                     }
                 }
             }
@@ -480,12 +486,12 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
 
             val stakeholderAnalysis = runPhase("Stakeholder Analysis") { stakeholderTask ->
                 stakeholderTask.add(
-                    buildString {
-                        appendLine("# Stakeholder Analysis")
-                        appendLine()
-                        appendLine("**Status:** Analyzing decision-makers and stakeholders...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Stakeholder Analysis")
+                    appendLine()
+                    appendLine("**Status:** Analyzing decision-makers and stakeholders...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
 
                 val stakeholderAgent = ParsedAgent(
@@ -560,29 +566,33 @@ Identify 3-5 key stakeholders who will influence the decision.
                     }
                     appendLine("**Status:** ✅ Complete")
                 }
-                stakeholderTask.add(stakeholderContent.renderMarkdown)
+                stakeholderTask.add(stakeholderContent.renderMarkdown(true))
                 writeToProposal(stakeholderContent)
                 stakeholderAnalysis
             }
 
-            overviewTask.add("✅ Phase 1 Complete: Stakeholder analysis finished\n".renderMarkdown)
+            overviewTask.add("✅ Phase 1 Complete: Stakeholder analysis finished\n".renderMarkdown(true))
 
             // Phase 2: ROI Analysis (if enabled)
             val roiAnalysis = if (executionConfig.include_roi_analysis) {
                 logToTranscript("## Phase 2: ROI Analysis\n\n")
-                overviewTask.add("\n### Phase 2: ROI Analysis\n*Calculating financial projections and ROI...*\n".renderMarkdown)
+                overviewTask.add(
+                  "\n### Phase 2: ROI Analysis\n*Calculating financial projections and ROI...*\n".renderMarkdown(
+                    true
+                  )
+                )
 
                 log.info("Phase 2: Performing ROI analysis")
 
 
                 runPhase("ROI Analysis") { roiTask ->
                     roiTask.add(
-                        buildString {
-                            appendLine("# ROI Analysis")
-                            appendLine()
-                            appendLine("**Status:** Calculating financial projections...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# ROI Analysis")
+                        appendLine()
+                        appendLine("**Status:** Calculating financial projections...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
 
                     val roiAgent = ParsedAgent(
@@ -667,10 +677,10 @@ If specific numbers aren't provided, use reasonable estimates based on the propo
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
                     }
-                    roiTask.add(roiContent.renderMarkdown)
+                    roiTask.add(roiContent.renderMarkdown(true))
                     writeToProposal(roiContent)
 
-                    overviewTask.add("✅ Phase 2 Complete: ROI analysis finished\n".renderMarkdown)
+                    overviewTask.add("✅ Phase 2 Complete: ROI analysis finished\n".renderMarkdown(true))
                     roiAnalysis
                 }
             } else null
@@ -678,19 +688,23 @@ If specific numbers aren't provided, use reasonable estimates based on the propo
             // Phase 3: Risk Assessment (if enabled)
             val riskAssessment = if (executionConfig.include_risk_assessment) {
                 logToTranscript("## Phase 3: Risk Assessment\n\n")
-                overviewTask.add("\n### Phase 3: Risk Assessment\n*Identifying and mitigating risks...*\n".renderMarkdown)
+                overviewTask.add(
+                  "\n### Phase 3: Risk Assessment\n*Identifying and mitigating risks...*\n".renderMarkdown(
+                    true
+                  )
+                )
 
                 log.info("Phase 3: Performing risk assessment")
 
 
                 runPhase("Risk Assessment") { riskTask ->
                     riskTask.add(
-                        buildString {
-                            appendLine("# Risk Assessment")
-                            appendLine()
-                            appendLine("**Status:** Identifying risks and mitigation strategies...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Risk Assessment")
+                        appendLine()
+                        appendLine("**Status:** Identifying risks and mitigation strategies...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
 
                     val riskAgent = ParsedAgent(
@@ -759,10 +773,10 @@ Be realistic but not alarmist. Focus on actionable mitigation strategies.
                         }
                         appendLine("**Status:** ✅ Complete")
                     }
-                    riskTask.add(riskContent.renderMarkdown)
+                    riskTask.add(riskContent.renderMarkdown(true))
                     writeToProposal(riskContent)
 
-                    overviewTask.add("✅ Phase 3 Complete: Risk assessment finished\n".renderMarkdown)
+                    overviewTask.add("✅ Phase 3 Complete: Risk assessment finished\n".renderMarkdown(true))
                     riskAssessment
                 }
             } else null
@@ -770,19 +784,23 @@ Be realistic but not alarmist. Focus on actionable mitigation strategies.
             // Phase 4: Competitive Analysis (if enabled)
             val competitiveAnalysis = if (executionConfig.include_competitive_analysis) {
                 logToTranscript("## Phase 4: Competitive Analysis\n\n")
-                overviewTask.add("\n### Phase 4: Competitive Analysis\n*Analyzing alternatives and competitive advantages...*\n".renderMarkdown)
+                overviewTask.add(
+                  "\n### Phase 4: Competitive Analysis\n*Analyzing alternatives and competitive advantages...*\n".renderMarkdown(
+                    true
+                  )
+                )
 
                 log.info("Phase 4: Performing competitive analysis")
 
 
                 runPhase("Competitive Analysis") { competitiveTask ->
                     competitiveTask.add(
-                        buildString {
-                            appendLine("# Competitive Analysis")
-                            appendLine()
-                            appendLine("**Status:** Analyzing alternatives and positioning...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Competitive Analysis")
+                        appendLine()
+                        appendLine("**Status:** Analyzing alternatives and positioning...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
 
                     val competitiveAgent = ParsedAgent(
@@ -860,10 +878,10 @@ Be fair to alternatives but make a compelling case for this proposal.
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
                     }
-                    competitiveTask.add(competitiveContent.renderMarkdown)
+                    competitiveTask.add(competitiveContent.renderMarkdown(true))
                     writeToProposal(competitiveContent)
 
-                    overviewTask.add("✅ Phase 4 Complete: Competitive analysis finished\n".renderMarkdown)
+                    overviewTask.add("✅ Phase 4 Complete: Competitive analysis finished\n".renderMarkdown(true))
                     competitiveAnalysis
                 }
             } else null
@@ -871,19 +889,23 @@ Be fair to alternatives but make a compelling case for this proposal.
             // Phase 5: Timeline & Milestones (if enabled)
             val timelineMilestones = if (executionConfig.include_timeline_milestones) {
                 logToTranscript("## Phase 5: Timeline & Milestones\n\n")
-                overviewTask.add("\n### Phase 5: Timeline & Milestones\n*Creating project timeline...*\n".renderMarkdown)
+                overviewTask.add(
+                  "\n### Phase 5: Timeline & Milestones\n*Creating project timeline...*\n".renderMarkdown(
+                    true
+                  )
+                )
 
                 log.info("Phase 5: Creating timeline and milestones")
 
 
                 runPhase("Timeline & Milestones") { timelineTask ->
                     timelineTask.add(
-                        buildString {
-                            appendLine("# Timeline & Milestones")
-                            appendLine()
-                            appendLine("**Status:** Creating project timeline...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Timeline & Milestones")
+                        appendLine()
+                        appendLine("**Status:** Creating project timeline...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
 
                     val timelineAgent = ParsedAgent(
@@ -952,28 +974,28 @@ Ensure phases flow logically and dependencies are clear.
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
                     }
-                    timelineTask.add(timelineContent.renderMarkdown)
+                    timelineTask.add(timelineContent.renderMarkdown(true))
                     writeToProposal(timelineContent)
 
-                    overviewTask.add("✅ Phase 5 Complete: Timeline created\n".renderMarkdown)
+                    overviewTask.add("✅ Phase 5 Complete: Timeline created\n".renderMarkdown(true))
                     timelineMilestones
                 }
             } else null
 
             // Phase 6: Create Proposal Outline
             logToTranscript("## Phase 6: Proposal Structure\n\n")
-            overviewTask.add("\n### Phase 6: Proposal Structure\n*Creating detailed outline...*\n".renderMarkdown)
+            overviewTask.add("\n### Phase 6: Proposal Structure\n*Creating detailed outline...*\n".renderMarkdown(true))
 
             log.info("Phase 6: Creating proposal outline")
 
             val outline = runPhase("Proposal Outline") { outlineTask ->
                 outlineTask.add(
-                    buildString {
-                        appendLine("# Proposal Outline")
-                        appendLine()
-                        appendLine("**Status:** Creating detailed structure...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Proposal Outline")
+                    appendLine()
+                    appendLine("**Status:** Creating detailed structure...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
 
                 val wordsPerSection = executionConfig.target_word_count / 8 // Rough estimate for 8 main sections
@@ -1069,16 +1091,16 @@ Tailor the outline to the ${executionConfig.proposal_type} proposal type and ${e
                     appendLine()
                     appendLine("**Status:** ✅ Complete")
                 }
-                outlineTask.add(outlineContent.renderMarkdown)
+                outlineTask.add(outlineContent.renderMarkdown(true))
                 writeToProposal(outlineContent)
                 outline
             }
 
-            overviewTask.add("✅ Phase 6 Complete: Outline created\n".renderMarkdown)
+            overviewTask.add("✅ Phase 6 Complete: Outline created\n".renderMarkdown(true))
 
             // Phase 7: Write Proposal Sections
             logToTranscript("## Phase 7: Content Generation\n\n")
-            overviewTask.add("\n### Phase 7: Content Generation\n*Writing proposal sections...*\n".renderMarkdown)
+            overviewTask.add("\n### Phase 7: Content Generation\n*Writing proposal sections...*\n".renderMarkdown(true))
 
             log.info("Phase 7: Writing proposal sections")
             val proposalSections = mutableListOf<ProposalContent>()
@@ -1089,12 +1111,12 @@ Tailor the outline to the ${executionConfig.proposal_type} proposal type and ${e
 
             runPhase("Executive Summary") { execSummaryTask ->
                 execSummaryTask.add(
-                    buildString {
-                        appendLine("# Executive Summary")
-                        appendLine()
-                        appendLine("**Status:** Writing executive summary...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Executive Summary")
+                    appendLine()
+                    appendLine("**Status:** Writing executive summary...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
 
                 val execSummaryAgent = ParsedAgent(
@@ -1144,7 +1166,7 @@ Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senio
                 }
 
                 execSummaryTask.add(
-                    execSummaryContent.renderMarkdown
+                  execSummaryContent.renderMarkdown(true)
                 )
                 writeToProposal(execSummaryContent)
 
@@ -1153,25 +1175,25 @@ Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senio
                 resultBuilder.append("\n\n")
             }
 
-            overviewTask.add("- Executive Summary ✅ (${proposalSections.last().word_count} words)\n".renderMarkdown)
+            overviewTask.add("- Executive Summary ✅ (${proposalSections.last().word_count} words)\n".renderMarkdown(true))
 
             // Write each main section
             outline.sections.forEachIndexed { index, sectionOutline ->
                 log.info("Writing section ${index + 1}/${outline.sections.size}: ${sectionOutline.title}")
                 logToTranscript("Writing section: ${sectionOutline.title}\n")
 
-                overviewTask.add("- ${sectionOutline.title} ".renderMarkdown)
+                overviewTask.add("- ${sectionOutline.title} ".renderMarkdown(true))
 
 
 
                 runPhase(sectionOutline.title) { sectionTask ->
                     sectionTask.add(
-                        buildString {
-                            appendLine("# ${sectionOutline.title}")
-                            appendLine()
-                            appendLine("**Status:** Writing section...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# ${sectionOutline.title}")
+                        appendLine()
+                        appendLine("**Status:** Writing section...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
 
                     // Build context from previous sections
@@ -1272,24 +1294,24 @@ Aim for approximately ${sectionOutline.estimated_word_count} words.
                     logToTranscript("Section '${sectionOutline.title}' completed: ${sectionContent.word_count} words\n")
 
                     sectionTask.add(
-                        buildString {
-                            appendLine("## ${sectionOutline.title}")
-                            appendLine()
-                            appendLine(sectionContent.content)
-                            appendLine()
-                            appendLine("---")
-                            appendLine()
-                            appendLine("**Word Count:** ${sectionContent.word_count}")
-                            if (sectionContent.key_messages.isNotEmpty()) {
-                                appendLine()
-                                appendLine("**Key Messages:**")
-                                sectionContent.key_messages.forEach { msg ->
-                                    appendLine("- $msg")
-                                }
-                            }
-                            appendLine()
-                            appendLine("**Status:** ✅ Complete")
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("## ${sectionOutline.title}")
+                        appendLine()
+                        appendLine(sectionContent.content)
+                        appendLine()
+                        appendLine("---")
+                        appendLine()
+                        appendLine("**Word Count:** ${sectionContent.word_count}")
+                        if (sectionContent.key_messages.isNotEmpty()) {
+                          appendLine()
+                          appendLine("**Key Messages:**")
+                          sectionContent.key_messages.forEach { msg ->
+                            appendLine("- $msg")
+                          }
+                        }
+                        appendLine()
+                        appendLine("**Status:** ✅ Complete")
+                      }.renderMarkdown(true)
                     )
 
                     writeToProposal(sectionContent.content)
@@ -1299,25 +1321,25 @@ Aim for approximately ${sectionOutline.estimated_word_count} words.
                     resultBuilder.append("\n\n")
                 }
 
-                overviewTask.add("✅ (${proposalSections.last().word_count} words)\n".renderMarkdown)
+                overviewTask.add("✅ (${proposalSections.last().word_count} words)\n".renderMarkdown(true))
             }
 
-            overviewTask.add("✅ Phase 7 Complete: All sections written\n".renderMarkdown)
+            overviewTask.add("✅ Phase 7 Complete: All sections written\n".renderMarkdown(true))
 
             // Phase 8: Conclusion & Next Steps
             logToTranscript("\n## Phase 8: Conclusion & Next Steps\n\n")
-            overviewTask.add("\n### Phase 8: Conclusion\n*Writing conclusion and next steps...*\n".renderMarkdown)
+            overviewTask.add("\n### Phase 8: Conclusion\n*Writing conclusion and next steps...*\n".renderMarkdown(true))
 
             log.info("Phase 8: Writing conclusion")
 
             val conclusion = runPhase("Conclusion") { conclusionTask ->
                 conclusionTask.add(
-                    buildString {
-                        appendLine("# Conclusion & Next Steps")
-                        appendLine()
-                        appendLine("**Status:** Writing conclusion...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Conclusion & Next Steps")
+                    appendLine()
+                    appendLine("**Status:** Writing conclusion...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
 
                 val conclusionAgent = ParsedAgent(
@@ -1366,7 +1388,7 @@ Make it action-oriented and compelling. The reader should feel motivated to move
                 }
 
                 conclusionTask.add(
-                    conclusionContent.renderMarkdown
+                  conclusionContent.renderMarkdown(true)
                 )
                 writeToProposal(conclusionContent)
 
@@ -1376,23 +1398,27 @@ Make it action-oriented and compelling. The reader should feel motivated to move
                 conclusion
             }
 
-            overviewTask.add("✅ Phase 8 Complete: Conclusion written (${conclusion.word_count} words)\n".renderMarkdown)
+            overviewTask.add(
+              "✅ Phase 8 Complete: Conclusion written (${conclusion.word_count} words)\n".renderMarkdown(
+                true
+              )
+            )
 
             // Phase 9: Revision (if enabled)
             if (executionConfig.revision_passes > 0) {
                 logToTranscript("## Phase 9: Revision Process\n\n")
-                overviewTask.add("\n### Phase 9: Revision\n*Refining and polishing...*\n".renderMarkdown)
+                overviewTask.add("\n### Phase 9: Revision\n*Refining and polishing...*\n".renderMarkdown(true))
 
                 log.info("Phase 9: Performing ${executionConfig.revision_passes} revision pass(es)")
 
                 runPhase("Revision") { revisionTask ->
                     revisionTask.add(
-                        buildString {
-                            appendLine("# Revision Process")
-                            appendLine()
-                            appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Revision Process")
+                        appendLine()
+                        appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
 
                     val fullProposal = resultBuilder.toString()
@@ -1434,22 +1460,26 @@ Provide the complete revised proposal.
                         resultBuilder.append(revisedProposal)
 
                         revisionTask.add(
-                            buildString {
-                                appendLine("## Revision Pass ${passNum + 1}")
-                                appendLine()
-                                appendLine("✅ Complete")
-                                appendLine()
-                            }.renderMarkdown
+                          buildString {
+                            appendLine("## Revision Pass ${passNum + 1}")
+                            appendLine()
+                            appendLine("✅ Complete")
+                            appendLine()
+                          }.renderMarkdown(true)
                         )
                     }
                 }
 
-                overviewTask.add("✅ Phase 9 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
+                overviewTask.add(
+                  "✅ Phase 9 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown(
+                    true
+                  )
+                )
             }
 
             // Phase 10: Final Assembly
             logToTranscript("\n## Phase 10: Final Assembly\n\n")
-            overviewTask.add("\n### Phase 10: Final Assembly\n*Compiling complete proposal...*\n".renderMarkdown)
+            overviewTask.add("\n### Phase 10: Final Assembly\n*Compiling complete proposal...*\n".renderMarkdown(true))
 
             log.info("Phase 10: Assembling final proposal")
 
@@ -1492,7 +1522,7 @@ Provide the complete revised proposal.
                     appendLine("**Completion:** ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
                 }
 
-                finalTask.add(proposal.renderMarkdown)
+                finalTask.add(proposal.renderMarkdown(true))
                 writeToProposal(proposal)
                 proposal
             }
@@ -1502,31 +1532,31 @@ Provide the complete revised proposal.
             logToTranscript("\n## Generation Complete\n\nTotal time: ${totalTime / 1000.0}s\nTotal words: $cumulativeWordCount\n")
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ✅ Generation Complete")
-                    appendLine()
-                    appendLine("**Statistics:**")
-                    appendLine("- Total Word Count: $cumulativeWordCount")
-                    appendLine("- Target Word Count: ${executionConfig.target_word_count}")
-                    appendLine("- Completion: ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
-                    appendLine("- Number of Sections: ${proposalSections.size}")
-                    appendLine("- Stakeholders Analyzed: ${stakeholderAnalysis.stakeholders.size}")
-                    if (roiAnalysis != null) appendLine("- ROI Analysis: ✓ Included")
-                    if (riskAssessment != null) appendLine("- Risk Assessment: ✓ Included (${riskAssessment.risks.size} risks)")
-                    if (competitiveAnalysis != null) appendLine("- Competitive Analysis: ✓ Included")
-                    if (timelineMilestones != null) appendLine("- Timeline: ✓ Included (${timelineMilestones.phases.size} phases)")
-                    appendLine("- Revision Passes: ${executionConfig.revision_passes}")
-                    appendLine("- Total Time: ${totalTime / 1000.0}s")
-                    appendLine()
-                    appendLine(
-                        "**Completed:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ✅ Generation Complete")
+                appendLine()
+                appendLine("**Statistics:**")
+                appendLine("- Total Word Count: $cumulativeWordCount")
+                appendLine("- Target Word Count: ${executionConfig.target_word_count}")
+                appendLine("- Completion: ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
+                appendLine("- Number of Sections: ${proposalSections.size}")
+                appendLine("- Stakeholders Analyzed: ${stakeholderAnalysis.stakeholders.size}")
+                if (roiAnalysis != null) appendLine("- ROI Analysis: ✓ Included")
+                if (riskAssessment != null) appendLine("- Risk Assessment: ✓ Included (${riskAssessment.risks.size} risks)")
+                if (competitiveAnalysis != null) appendLine("- Competitive Analysis: ✓ Included")
+                if (timelineMilestones != null) appendLine("- Timeline: ✓ Included (${timelineMilestones.phases.size} phases)")
+                appendLine("- Revision Passes: ${executionConfig.revision_passes}")
+                appendLine("- Total Time: ${totalTime / 1000.0}s")
+                appendLine()
+                appendLine(
+                  "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                  }"
+                )
+              }.renderMarkdown(true)
             )
 
             // Concise summary for resultFn
@@ -1587,16 +1617,16 @@ Provide the complete revised proposal.
             task.error(e)
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ❌ Error Occurred")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                appendLine()
+                appendLine("**Type:** ${e.javaClass.simpleName}")
+              }.renderMarkdown(true)
             )
 
             val errorOutput = buildString {
@@ -1650,7 +1680,7 @@ Provide the complete revised proposal.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(BusinessProposalTask::class.java)
-        val BusinessProposal = TaskType(
+        @JvmStatic val BusinessProposal = TaskType(
           name = "BusinessProposal",
           category = "Writing",
           taskClass = BusinessProposalTask::class.java,

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | Selenium Fetch Strategy</title>
@@ -9,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -116,7 +117,7 @@
 
         .flow-arrow {
             text-align: center;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             font-size: 1.5rem;
         }
 
@@ -133,7 +134,7 @@
             padding: 1rem 2rem;
             color: var(--text-dim);
             cursor: pointer;
-            font-weight: 600;
+          font-weight: 500;
             border-bottom: 2px solid transparent;
             transition: all 0.2s;
         }
@@ -195,7 +196,7 @@
 
     <!-- 1. HEADER -->
     <header class="page-header">
-        <div class="breadcrumbs">Home > Tasks > Web Operations > Selenium</div>
+          <div class="breadcrumbs">Home / Tasks / Web Operations / Selenium</div>
         <h1>Selenium Fetch Strategy</h1>
         <p class="pitch">
             High-fidelity web content extraction using headless Chrome. Designed for JavaScript-heavy applications where standard HTTP clients fail to render the DOM.
@@ -252,7 +253,7 @@
 
         <!-- TAB: DOCS -->
         <div id="tab-docs" class="tab-pane active">
-            <h3>Fetch Parameters</h3>
+              <h2>Fetch Parameters</h2>
             <table class="docs-table">
                 <thead>
                 <tr>
@@ -285,7 +286,7 @@
                 </tbody>
             </table>
 
-            <h3 style="margin-top: 2rem;">Resource Usage</h3>
+              <h2 style="margin-top: var(--space-8);">Resource Usage</h2>
             <p><strong>Token Consumption:</strong> Low (Retrieval only). Output length depends on target DOM density.</p>
             <p><strong>Compute:</strong> High (Requires local Chrome/Chromium instance).</p>
         </div>
@@ -304,7 +305,7 @@
 
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane">
-            <h3>Kotlin Implementation</h3>
+              <h2>Kotlin Implementation</h2>
             <div class="panel">
                 <div class="panel-header">Selenium.kt</div>
                 <pre><code class="language-kotlin">
@@ -329,7 +330,7 @@ class Selenium : FetchMethodFactory {
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 

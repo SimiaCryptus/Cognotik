@@ -30,7 +30,7 @@ abstract class SingleTaskApp(
     applicationName: String = "Single Task App",
     showMenubar: Boolean = false,
     private val taskType: TaskType<*, *>,
-    private val taskConfig: TaskExecutionConfig,
+    private val taskConfig: List<TaskExecutionConfig>,
     val instanceFn: ((ApiChatModel) -> ChatInterface)?
 ) : ApplicationServer(
     applicationName = applicationName,
@@ -62,7 +62,7 @@ abstract class SingleTaskApp(
         user: User,
         socketManager: SocketManager
     ) {
-        val settings = getSettings(session, user, OrchestrationConfig::class.java)
+        val orchestrationConfig = getOrchestrationConfig(session, user)
         if (null != instanceFn) OrchestrationConfig.instanceFn = instanceFn
         socketManager.newTask(cancelable = false, root = true).expandable(
             "Session Info", """
@@ -70,7 +70,7 @@ abstract class SingleTaskApp(
     
     Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
     
-    Root: `${settings?.absoluteWorkingDir}`
+    Root: `${orchestrationConfig?.absoluteWorkingDir}`
     
     Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
     
@@ -80,8 +80,13 @@ abstract class SingleTaskApp(
     
               """.renderMarkdown()
         )
-        socketManager.pool.submit { executeTask(session, user, socketManager, settings) }
+        socketManager.pool.submit { executeTask(session, user, socketManager, orchestrationConfig) }
     }
+
+    open fun getOrchestrationConfig(
+        session: Session,
+        user: User
+    ): OrchestrationConfig? = getSettings(session, user, OrchestrationConfig::class.java)
 
     protected open fun onTaskComplete(result: String, task: SessionTask) {}
     protected open fun onTaskError(e: Throwable) {}
@@ -94,30 +99,32 @@ abstract class SingleTaskApp(
                 if(null == DataStorage.sessionPaths[session]) absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
-            val task = ui.newTask(true)
+            taskConfig.forEach { taskConfig ->
+                val task = ui.newTask(true)
 
-            // Get the task implementation
-            val taskImpl = orchestrationConfig.getImpl(
-                taskType = taskType, cfg = taskConfig
-            )
+                // Get the task implementation
+                val taskImpl = orchestrationConfig.getImpl(
+                    taskType = taskType, cfg = taskConfig
+                )
 
-            // Execute the task
-            taskImpl.run(
-                agent = TaskOrchestrator(
-                    user = user,
-                    session = session,
-                    dataStorage = ui.dataStorage!!,
-                    root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                        ?: ui.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
-                ),
-                messages = listOf(taskConfig.task_description ?: "Execute task"),
-                task = task,
-                resultFn = { result ->
-                    task.complete(result.renderMarkdown)
-                    onTaskComplete(result, task)
-                },
-                orchestrationConfig = orchestrationConfig
-            )
+                // Execute the task
+                taskImpl.run(
+                    agent = TaskOrchestrator(
+                        user = user,
+                        session = session,
+                        dataStorage = ui.dataStorage!!,
+                        root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
+                            ?: ui.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
+                    ),
+                    messages = listOf(taskConfig.task_description ?: "Execute task"),
+                    task = task,
+                    resultFn = { result ->
+                        task.complete(result.renderMarkdown(true))
+                        onTaskComplete(result, task)
+                    },
+                    orchestrationConfig = orchestrationConfig
+                )
+            }
 
         } catch (e: Throwable) {
             log.error("Error executing task", e)

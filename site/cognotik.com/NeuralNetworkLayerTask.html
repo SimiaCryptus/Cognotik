@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | NeuralNetworkLayerTask</title>
@@ -224,12 +225,12 @@
         </p>
         <div class="badges">
             <span class="badge">Category: Writing</span>
-            <span class="badge">Analysis: Comprehensive</span>
-            <span class="badge">Output: Multi-Tab Report</span>
+              <span class="badge badge-success">Analysis: Comprehensive</span>
+              <span class="badge badge-warning">Output: Multi-Tab Report</span>
         </div>
     </header>
 
-    <!-- 2. REALITY CHECK -->
+      <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -283,14 +284,14 @@
     <!-- 3. TABS -->
     <section class="details-tabs">
         <nav class="tabs-nav">
-            <button class="active" onclick="switchTab('docs')">Documentation</button>
-            <button onclick="switchTab('process')">Process Lifecycle</button>
-            <button onclick="switchTab('integration')">Integration</button>
+              <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
+              <button onclick="switchTab(event, 'process')">Process Lifecycle</button>
+              <button onclick="switchTab(event, 'integration')">Integration</button>
         </nav>
 
         <!-- TAB: DOCS -->
         <div id="tab-docs" class="tab-pane active">
-            <h3>Configuration Parameters</h3>
+              <h2>Configuration Parameters</h2>
             <table class="docs-table">
                 <thead>
                 <tr>
@@ -303,7 +304,7 @@
                 <tr>
                     <td><code>layer_name</code> <span class="req">*</span></td>
                     <td>String</td>
-                    <td>Name of the layer type (e.g., 'Attention', 'BatchNorm').</td>
+                          <td>Name of the layer type (e.g., 'Attention', 'BatchNorm', 'Convolution').</td>
                 </tr>
                 <tr>
                     <td><code>forward_function_description</code> <span class="req">*</span></td>
@@ -328,12 +329,12 @@
                 <tr>
                     <td><code>activation</code></td>
                     <td>String</td>
-                    <td>Activation function (e.g., 'relu', 'sigmoid', 'none').</td>
+                          <td>Activation function (e.g., 'relu', 'sigmoid', 'tanh', 'none').</td>
                 </tr>
                 <tr>
                     <td><code>analysis_depth</code></td>
                     <td>Enum</td>
-                    <td><code>basic</code>, <code>standard</code>, or <code>comprehensive</code>.</td>
+                          <td>Analysis level: <code>basic</code>, <code>standard</code>, or <code>comprehensive</code>.</td>
                 </tr>
                 <tr>
                     <td><code>include_lyapunov</code></td>
@@ -377,14 +378,14 @@
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
             <h3>Kotlin Integration</h3>
-            <div class="panel">
+                  <div class="panel-body">
                 <pre><code>val task = NeuralNetworkLayerTask(
     orchestrationConfig = config,
     planTask = NeuralNetworkLayerTaskExecutionConfigData(
         layer_name = "CustomResidual",
         forward_function_description = "y = x + f(x)",
         analysis_depth = "standard",
-        include_lyapunov = true
+      include_lyapunov = true,
     )
 )</code></pre>
             </div>
@@ -394,7 +395,7 @@
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).style.display = 'block';

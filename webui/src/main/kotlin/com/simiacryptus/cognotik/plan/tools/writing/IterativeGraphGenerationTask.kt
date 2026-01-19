@@ -420,7 +420,7 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
 
     companion object {
         private val log = LoggerFactory.getLogger(IterativeGraphGenerationTask::class.java)
-        val IterativeGraphGeneration = TaskType(
+        @JvmStatic val IterativeGraphGeneration = TaskType(
             name = "IterativeGraphGeneration",
             category = "Writing",
             taskClass = IterativeGraphGenerationTask::class.java,

@@ -418,7 +418,7 @@ class DataTableCompilationTask(
     }
 
     companion object {
-        val DataTableCompilation = TaskType(
+        @JvmStatic val DataTableCompilation = TaskType(
             name = "DataTableCompilation",
             category = "Writing",
             taskClass = DataTableCompilationTask::class.java,

@@ -10,13 +10,13 @@ import java.util.concurrent.ConcurrentHashMap
 
 object PlanUtil {
 
-    fun diagram(
-        taskMap: Map<String, TaskExecutionConfig>
-    ) = "## Sub-Plan Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${
-        buildMermaidGraph(
-            taskMap
-        )
-    }\n${TRIPLE_TILDE}".renderMarkdown
+  fun diagram(
+    taskMap: Map<String, TaskExecutionConfig>
+  ) = "## Sub-Plan Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${
+    buildMermaidGraph(
+      taskMap
+    )
+  }\n${TRIPLE_TILDE}".renderMarkdown(true)
 
 
     fun executionOrder(tasks: Map<String, TaskExecutionConfig>): List<String> {

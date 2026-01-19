@@ -11,11 +11,7 @@ import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
 import com.simiacryptus.cognotik.embedding.OpenAIEmbeddingModels
 import com.simiacryptus.cognotik.image.*
-import com.simiacryptus.cognotik.util.DynamicEnum
-import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
-import com.simiacryptus.cognotik.util.DynamicEnumSerializer
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.SecureString
+import com.simiacryptus.cognotik.util.*
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.Logger
 import org.slf4j.event.Level
@@ -71,6 +67,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
     }
 
     companion object {
+        @JvmStatic
         val SearchAPI: APIProvider = object : APIProvider("SearchAPI", "https://api.searchapi.com") {
 
             override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
@@ -85,6 +82,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
             ) = throw UnsupportedOperationException("SearchAPI does not support chat functionality")
         }
 
+        @JvmStatic
         val Gemini: APIProvider = object : APIProvider("Gemini", "https://generativelanguage.googleapis.com") {
             override fun authorize(
                 request: HttpRequest,
@@ -145,6 +143,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
             )
 
         }
+
+        @JvmStatic
         val Ollama: APIProvider = object : APIProvider("Ollama", "http://localhost:11434") {
             override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
                 key = key,
@@ -191,6 +191,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 scheduledPool = scheduledPool
             )
         }
+
+        @JvmStatic
         val OpenAI: APIProvider = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
 
             override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
@@ -268,6 +270,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 )
             }
         }
+
+        @JvmStatic
         val Anthropic: APIProvider = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
             override fun authorize(
                 request: HttpRequest,
@@ -303,6 +307,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 scheduledPool = scheduledPool
             )
         }
+
+        @JvmStatic
         val AWS: APIProvider = object : APIProvider("AWS", "https://api.openai.aws") {
 
             override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
@@ -331,6 +337,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
             )
 
         }
+
+        @JvmStatic
         val Groq: APIProvider = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
 
             override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
@@ -368,6 +376,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 )
             }
         }
+
+        @JvmStatic
         val Perplexity: APIProvider = object : APIProvider("Perplexity", "https://api.perplexity.ai") {
 
             override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
@@ -393,6 +403,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 scheduledPool = scheduledPool
             )
         }
+
+        @JvmStatic
         val ModelsLab: APIProvider = object : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
 
             override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
@@ -420,6 +432,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 scheduledPool = scheduledPool
             )
         }
+
+        @JvmStatic
         val Mistral: APIProvider = object : APIProvider("Mistral", "https://api.mistral.ai/v1") {
 
             override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
@@ -447,6 +461,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 scheduledPool = scheduledPool
             )
         }
+
+        @JvmStatic
         val DeepSeek: APIProvider = object : APIProvider("DeepSeek", "https://api.deepseek.com") {
 
             override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
@@ -474,6 +490,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 scheduledPool = scheduledPool
             )
         }
+
+        @JvmStatic
         val Google: APIProvider = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
 
             override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
@@ -487,6 +505,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 scheduledPool: ListeningScheduledExecutorService
             ) = throw UnsupportedOperationException("Google Search API does not support chat functionality")
         }
+
+        @JvmStatic
         val Github: APIProvider = object : APIProvider("Github", "https://api.github.com") {
 
             override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()

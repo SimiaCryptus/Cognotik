@@ -196,19 +196,19 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
         overviewTask.header("🔴 Adversarial Reasoning / Red Team Analysis")
         overviewTask.add(
-            """
-            **Target System:** $targetSystem
-            **Attack Vectors:** ${attackVectors.joinToString(", ")}
-            **Adversary Capability:** $adversaryCapability
-            **Generate Exploits:** ${if (generateExploits) "⚠️ Yes" else "No"}
-            **Suggest Mitigations:** ${if (suggestMitigations) "Yes" else "No"}
-            ${if (!relatedFiles.isNullOrEmpty()) "**Related Files:** ${relatedFiles.size} patterns" else ""}
-            ${if (!challengeAssumptions.isNullOrEmpty()) "**Assumptions to Challenge:** ${challengeAssumptions.size}" else ""}
-            **Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
-            """.trimIndent().renderMarkdown
+          """
+                      **Target System:** $targetSystem
+                      **Attack Vectors:** ${attackVectors.joinToString(", ")}
+                      **Adversary Capability:** $adversaryCapability
+                      **Generate Exploits:** ${if (generateExploits) "⚠️ Yes" else "No"}
+                      **Suggest Mitigations:** ${if (suggestMitigations) "Yes" else "No"}
+                      ${if (!relatedFiles.isNullOrEmpty()) "**Related Files:** ${relatedFiles.size} patterns" else ""}
+                      ${if (!challengeAssumptions.isNullOrEmpty()) "**Assumptions to Challenge:** ${challengeAssumptions.size}" else ""}
+                      **Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
+                      """.trimIndent().renderMarkdown(true)
         )
         overviewTask.header("Progress", 2)
-        overviewTask.add("*Initializing adversarial analysis...*".renderMarkdown)
+        overviewTask.add("*Initializing adversarial analysis...*".renderMarkdown(true))
         task.update()
 
         // Gather context
@@ -234,25 +234,25 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             }
             contextTask.header("Context for Analysis")
             if (priorContext.isNotBlank()) {
-                contextTask.expandable("Prior Task Results", priorContext.truncateForDisplay().renderMarkdown)
+                contextTask.expandable("Prior Task Results", priorContext.truncateForDisplay().renderMarkdown(true))
             }
             if (inputFileContent.isNotBlank()) {
-                contextTask.expandable("Input Files", inputFileContent.renderMarkdown)
+                contextTask.expandable("Input Files", inputFileContent.renderMarkdown(true))
             }
             if (fileContext.isNotBlank()) {
-                contextTask.add(fileContext.renderMarkdown)
+                contextTask.add(fileContext.renderMarkdown(true))
             }
             contextTask.complete()
             task.update()
         }
 
         overviewTask.add(
-            buildString {
-                appendLine()
-                appendLine("✅ Context gathered")
-                appendLine()
-                appendLine("*Beginning adversarial analysis...*")
-            }.renderMarkdown
+          buildString {
+            appendLine()
+            appendLine("✅ Context gathered")
+            appendLine()
+            appendLine("*Beginning adversarial analysis...*")
+          }.renderMarkdown(true)
         )
         task.update()
 
@@ -278,10 +278,10 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
                 vectorTask.header("Attack Vector: ${vector.capitalize()}")
                 vectorTask.add(
-                    """
-                    **Status:** Analyzing...
-                    **Adversary Capability:** $adversaryCapability
-                    """.trimIndent().renderMarkdown
+                  """
+                                      **Status:** Analyzing...
+                                      **Adversary Capability:** $adversaryCapability
+                                      """.trimIndent().renderMarkdown(true)
                 )
                 task.update()
 
@@ -305,7 +305,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                 )
 
                 vectorTask.header("Analysis in Progress", 2)
-                vectorTask.add("*Identifying vulnerabilities and weaknesses...*".renderMarkdown)
+                vectorTask.add("*Identifying vulnerabilities and weaknesses...*".renderMarkdown(true))
                 task.update()
 
                 // Perform analysis
@@ -320,7 +320,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
 
                 vectorTask.header("Analysis Results", 2)
-                vectorTask.add(parsedVulnerabilities.joinToString("\n\n").renderMarkdown)
+                vectorTask.add(parsedVulnerabilities.joinToString("\n\n").renderMarkdown(true))
                 task.update()
 
                 allVulnerabilities.addAll(parsedVulnerabilities)
@@ -338,28 +338,28 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
 
                 vectorTask.add(
-                    buildString {
-                        appendLine("---")
-                        appendLine()
-                        appendLine("**Status:** ✅ Complete")
-                        appendLine()
-                        appendLine("**Vulnerabilities Found:** ${parsedVulnerabilities.size}")
-                        appendLine()
-                        appendLine("**Analysis Time:** ${vectorTime / 1000.0}s")
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete")
+                    appendLine()
+                    appendLine("**Vulnerabilities Found:** ${parsedVulnerabilities.size}")
+                    appendLine()
+                    appendLine("**Analysis Time:** ${vectorTime / 1000.0}s")
+                  }.renderMarkdown(true)
                 )
                 vectorTask.complete()
                 task.update()
 
                 overviewTask.add(
-                    buildString {
-                        appendLine()
-                        appendLine("✅ Vector '${vector}' analyzed (${parsedVulnerabilities.size} vulnerabilities, ${vectorTime / 1000.0}s)")
-                        if (index < attackVectors.size - 1) {
-                            appendLine()
-                            appendLine("*Analyzing next vector...*")
-                        }
-                    }.renderMarkdown
+                  buildString {
+                    appendLine()
+                    appendLine("✅ Vector '${vector}' analyzed (${parsedVulnerabilities.size} vulnerabilities, ${vectorTime / 1000.0}s)")
+                    if (index < attackVectors.size - 1) {
+                      appendLine()
+                      appendLine("*Analyzing next vector...*")
+                    }
+                  }.renderMarkdown(true)
                 )
                 task.update()
 
@@ -372,7 +372,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                 val mitigationTask = tabs.newTask("Mitigations")
 
                 mitigationTask.header("🛡️ Mitigation Strategies")
-                mitigationTask.add("**Status:** Generating recommendations...".renderMarkdown)
+                mitigationTask.add("**Status:** Generating recommendations...".renderMarkdown(true))
                 task.update()
                 transcriptStream?.let {
                     it.write("## 🛡️ Mitigation Strategies\n\n".toByteArray())
@@ -394,16 +394,16 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
 
                 mitigationTask.header("Recommended Mitigations", 2)
-                mitigationTask.add(mitigations.renderMarkdown)
-                mitigationTask.add("**Status:** ✅ Complete".renderMarkdown)
+                mitigationTask.add(mitigations.renderMarkdown(true))
+                mitigationTask.add("**Status:** ✅ Complete".renderMarkdown(true))
                 mitigationTask.complete()
                 task.update()
 
                 overviewTask.add(
-                    buildString {
-                        appendLine()
-                        appendLine("✅ Mitigation strategies generated")
-                    }.renderMarkdown
+                  buildString {
+                    appendLine()
+                    appendLine("✅ Mitigation strategies generated")
+                  }.renderMarkdown(true)
                 )
                 task.update()
             }
@@ -413,7 +413,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             val summaryTask = tabs.newTask("Executive Summary")
 
             summaryTask.header("📊 Executive Summary")
-            summaryTask.add("**Status:** Generating summary...".renderMarkdown)
+            summaryTask.add("**Status:** Generating summary...".renderMarkdown(true))
             task.update()
 
             val summary = generateExecutiveSummary(
@@ -433,8 +433,8 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
 
             summaryTask.header("Summary", 2)
-            summaryTask.add(summary.renderMarkdown)
-            summaryTask.add("**Status:** ✅ Complete".renderMarkdown)
+            summaryTask.add(summary.renderMarkdown(true))
+            summaryTask.add("**Status:** ✅ Complete".renderMarkdown(true))
             summaryTask.complete()
             task.update()
 
@@ -452,28 +452,28 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             }
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ✅ Analysis Complete")
-                    appendLine()
-                    appendLine("**Total Time:** ${totalTime / 1000.0}s")
-                    appendLine()
-                    appendLine("**Attack Vectors Analyzed:** ${attackVectors.size}")
-                    appendLine()
-                    appendLine("**Total Vulnerabilities:** ${allVulnerabilities.size}")
-                    appendLine()
-                    appendLine("**Edge Cases Identified:** ${allEdgeCases.size}")
-                    appendLine()
-                    appendLine("**Failure Modes:** ${allFailureModes.size}")
-                    appendLine()
-                    appendLine(
-                        "**Completed:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ✅ Analysis Complete")
+                appendLine()
+                appendLine("**Total Time:** ${totalTime / 1000.0}s")
+                appendLine()
+                appendLine("**Attack Vectors Analyzed:** ${attackVectors.size}")
+                appendLine()
+                appendLine("**Total Vulnerabilities:** ${allVulnerabilities.size}")
+                appendLine()
+                appendLine("**Edge Cases Identified:** ${allEdgeCases.size}")
+                appendLine()
+                appendLine("**Failure Modes:** ${allFailureModes.size}")
+                appendLine()
+                appendLine(
+                  "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                  }"
+                )
+              }.renderMarkdown(true)
             )
             overviewTask.complete()
             task.update()
@@ -546,16 +546,16 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             task.error(e)
 
             overviewTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
+              buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ❌ Error Occurred")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                appendLine()
+                appendLine("**Type:** ${e.javaClass.simpleName}")
+              }.renderMarkdown(true)
             )
             overviewTask.complete()
             task.update()
@@ -992,7 +992,7 @@ Consider both immediate fixes and long-term architectural improvements.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AdversarialReasoningTask::class.java)
-        val AdversarialReasoning = TaskType(
+        @JvmStatic val AdversarialReasoning = TaskType(
           name = "AdversarialReasoning",
           category = "Reasoning",
           taskClass = AdversarialReasoningTask::class.java,

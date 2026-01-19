@@ -768,7 +768,7 @@ Generate the Mermaid timeline diagram now:
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TemporalReasoningTask::class.java)
-        val TemporalReasoning = TaskType(
+        @JvmStatic val TemporalReasoning = TaskType(
           name = "TemporalReasoning",
           category = "Reasoning",
           taskClass = TemporalReasoningTask::class.java,

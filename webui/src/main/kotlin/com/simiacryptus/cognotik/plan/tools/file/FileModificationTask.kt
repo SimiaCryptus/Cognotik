@@ -127,9 +127,9 @@ $taskDesc
                 """.toByteArray())
                 val contextTab = tabs.newTask("Context")
                 contextTab.add("""
-                    # Task Context
-                    ${taskDesc.renderMarkdown()}
-                """.trimIndent().renderMarkdown())
+# Task Context
+$taskDesc
+                """.renderMarkdown())
                 contextTab.complete()
 
                 val chatAgent = ChatAgent(
@@ -306,7 +306,7 @@ ${e.stackTraceToString()}
     companion object {
         private val log = LoggerFactory.getLogger(FileModificationTask::class.java)
 
-        val FileModification = TaskType(
+        @JvmStatic val FileModification = TaskType(
             "FileModification",
             "File",
             FileModificationTask::class.java,

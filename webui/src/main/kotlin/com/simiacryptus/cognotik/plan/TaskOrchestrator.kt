@@ -19,6 +19,7 @@ import java.io.OutputStream
 import java.nio.file.Path
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
+import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
 class TaskOrchestrator(
@@ -26,9 +27,9 @@ class TaskOrchestrator(
     val session: Session,
     val dataStorage: StorageInterface,
     val root: Path,
-    val transcriptStream: OutputStream? = null
+    val transcriptStream: OutputStream? = null,
+    val timeoutMinutes: Long = 15
 ) {
-
     val pool: ExecutorService by lazy { ApplicationServices.threadPoolManager.getPool(session, user) }
 
     val files: Array<File> by lazy {
@@ -63,7 +64,9 @@ class TaskOrchestrator(
             val diagramTask = tabs.newTask("Plan")
             executePlan(
                 diagramBuffer = diagramTask.add(
-                    "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown,
+                    "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown(
+                        true
+                    ),
                     additionalClasses = "flow-chart"
                 ),
                 subTasks = planProcessingState.subTasks,
@@ -107,7 +110,9 @@ class TaskOrchestrator(
         ) {
             override fun renderTabButtons(): String {
                 diagramBuffer?.set(
-                    "\n## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(subTasks)}\n$TRIPLE_TILDE".renderMarkdown
+                    "\n## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(subTasks)}\n$TRIPLE_TILDE".renderMarkdown(
+                        true
+                    )
                 )
                 task.complete()
                 return buildString {
@@ -166,7 +171,9 @@ class TaskOrchestrator(
                 val task = executionState.uitaskMap[taskId] ?: taskTabs.newTask(taskId)
                 task.add(
                     ("\n## Task `" + taskId + "`" + (subTask.task_description ?: "") + "\n" +
-                            TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE + "\n").renderMarkdown
+                        TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE + "\n").renderMarkdown(
+                        true
+                    )
                 )
                 try {
                     val dependencies = subTask.task_dependencies?.toMutableSet() ?: mutableSetOf()
@@ -175,28 +182,38 @@ class TaskOrchestrator(
                         subTasks = executionState.subTasks,
                         visited = mutableSetOf()
                     )
-                    task.add(("\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }).renderMarkdown)
+                    task.add(("\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }).renderMarkdown(true))
                     val impl = orchestrationConfig.getImpl(subTask)
                     val messages = listOf(
                         userMessage,
                         JsonUtil.toJson(plan),
                         impl.getPriorCode(executionState)
                     )
+                    val onComplete = Semaphore(0)
                     impl.run(
                         agent = this,
                         messages = messages,
                         task = task,
                         resultFn = {
-                            executionState.taskResult[taskId] = it
-                            transcriptStream?.let { stream ->
-                                synchronized(stream) {
-                                    stream.write("\n### Task `$taskId` Result\n\n$it\n\n".toByteArray())
-                                    stream.flush()
+                            try {
+                                executionState.taskResult[taskId] = it
+                                transcriptStream?.let { stream ->
+                                    synchronized(stream) {
+                                        stream.write("\n### Task `$taskId` Result\n\n$it\n\n".toByteArray())
+                                        stream.flush()
+                                    }
                                 }
+                            } catch (e: Throwable) {
+                                log.warn("Error during result handling", e)
+                            } finally {
+                                onComplete.release()
                             }
                         },
                         orchestrationConfig = orchestrationConfig
                     )
+                    if(!onComplete.tryAcquire(timeoutMinutes, TimeUnit.MINUTES)) {
+                        throw RuntimeException("Task $taskId timed out")
+                    }
                 } catch (e: Throwable) {
                     log.warn("Error during task execution", e)
                     task.error(e)

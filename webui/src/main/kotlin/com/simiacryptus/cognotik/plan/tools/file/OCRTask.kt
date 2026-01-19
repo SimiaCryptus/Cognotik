@@ -301,7 +301,7 @@ OCR - Convert documents (PDF, Images) to Markdown text.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(OCRTask::class.java)
-        val OCR = TaskType(
+        @JvmStatic val OCR = TaskType(
           name = "OCRTask",
           category = "File",
           taskClass = OCRTask::class.java,

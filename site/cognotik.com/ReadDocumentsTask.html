@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | ReadDocumentsTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- jQuery & FileTree -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
@@ -35,7 +36,7 @@
             line-height: 1.6;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
@@ -165,7 +166,7 @@
 
         code {
             font-family: var(--font-mono);
-            background: rgba(255,255,255,0.05);
+          background: rgba(255, 255, 255, 0.05);
             padding: 0.1rem 0.3rem;
             border-radius: 3px;
         }
@@ -182,9 +183,9 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-<main class="task-container">
+  <main class="page-container">
 
-    <!-- 1. HEADER -->
+      <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Tasks / File Operations</div>
         <h1>ReadDocumentsTask</h1>
@@ -192,9 +193,9 @@
             Deeply analyze project files and provide comprehensive technical insights or answers to specific questions using LLM-driven context extraction.
         </p>
         <div class="badges">
-            <span class="badge">Side-Effect Safe</span>
-            <span class="badge">Interactive Discussion</span>
-            <span class="badge">Multi-Format Support</span>
+              <span class="badge badge-success">Side-Effect Safe</span>
+              <span class="badge badge-primary">Interactive Discussion</span>
+              <span class="badge badge-primary">Multi-Format Support</span>
         </div>
     </header>
 
@@ -220,7 +221,7 @@
         <div class="panel">
             <div class="panel-header"><span>👁️</span> Session UI (Analysis Tab)</div>
             <div class="mock-ui-content">
-                <div style="border-left: 2px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1rem;">
+                  <div style="border-left: 2px solid var(--accent-primary); padding-left: var(--space-4); margin-bottom: var(--space-4);">
                     <h4 style="margin: 0 0 0.5rem 0;">Analysis: Error Handling</h4>
                     <p style="font-size: 0.85rem; color: var(--text-dim);">
                         Based on <code>src/network/Client.kt</code>, timeouts are managed via a custom <code>RetryPolicy</code>. 
@@ -228,7 +229,7 @@
                     </p>
                 </div>
                 <div style="background: #0d1117; border-radius: 4px; padding: 0.5rem; font-family: var(--font-mono); font-size: 0.75rem;">
-                    <span style="color: #8b949e;"># Files Read: 12 files matched glob pattern.</span>
+                      <span style="color: var(--text-tertiary);"># Files Read: 12 files matched glob pattern.</span>
                 </div>
             </div>
         </div>
@@ -330,7 +331,7 @@ ReadDocuments - Directly answer questions or provide a report using the LLM.
 Reading files is optional and can be included if relevant to the inquiry.
   * inquiry_questions: Specific questions to address.
   * inquiry_goal: The goal of the inquiry.
-  * input_files: Optional file patterns to examine.
+* input_files: Optional file patterns to examine.</code></pre>
             </code></pre>
         </div>
     </section>
@@ -338,7 +339,7 @@ Reading files is optional and can be included if relevant to the inquiry.
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).style.display = 'block';
@@ -346,7 +347,7 @@ Reading files is optional and can be included if relevant to the inquiry.
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/ReadDocuments/');
 </script>
 

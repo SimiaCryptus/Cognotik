@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | CausalInferenceTask - Industrial Reasoning Engine</title>
@@ -13,8 +14,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/header.js"></script>
 
     <style>
         :root {
@@ -36,7 +37,7 @@
             line-height: 1.5;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 1.5rem;
@@ -119,7 +120,7 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-<main class="task-container">
+  <main class="page-container">
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Reasoning > CausalInferenceTask</div>
         <h1>CausalInferenceTask</h1>
@@ -153,7 +154,7 @@
         <div class="panel">
             <div class="panel-header"><span>Session UI Output</span><span>Rendered</span></div>
             <div class="mock-ui">
-                <div style="border-left: 3px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1rem;">
+                  <div style="border-left: 3px solid var(--accent-primary); padding-left: var(--space-4); margin-bottom: var(--space-4);">
                     <h4 style="margin: 0; color: var(--accent-primary);">Causal Analysis Results</h4>
                     <p style="font-size: 0.85rem; margin: 0.5rem 0;">Root Cause: <strong>Auth Module Token Validation</strong></p>
                 </div>
@@ -184,9 +185,9 @@
 
     <section class="details-tabs">
         <nav class="tabs-nav">
-            <button class="active" onclick="switchTab('docs')">Documentation</button>
-            <button onclick="switchTab('process')">Config & Process</button>
-            <button onclick="switchTab('integration')">Integration</button>
+              <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
+              <button onclick="switchTab(event, 'process')">Config & Process</button>
+              <button onclick="switchTab(event, 'integration')">Integration</button>
         </nav>
 
         <div id="tab-docs" class="tab-pane">
@@ -235,7 +236,7 @@
             </table>
         </div>
 
-        <div id="tab-process" class="tab-pane" style="display:none;">
+          <div id="tab-process" class="tab-pane" style="display: none;">
             <h3>Task Execution Flow</h3>
             <ol style="color: var(--text-dim); line-height: 2;">
                 <li><strong>Evidence Gathering:</strong> Scans workspace for files matching <code>evidence_sources</code> and <code>input_files</code>.</li>
@@ -246,7 +247,7 @@
             </ol>
         </div>
 
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+          <div id="tab-integration" class="tab-pane" style="display: none;">
             <h3>Embedded Execution (Headless)</h3>
             <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
                 Use the <code>UnifiedHarness</code> to run this task as a standalone tool in CI/CD or scripts.
@@ -276,7 +277,7 @@ fun runAnalysis(harness: UnifiedHarness, projectDir: File) {
 }</code></pre>
             </div>
 
-            <h3 style="margin-top: 2rem;">Direct Instantiation</h3>
+              <h3 style="margin-top: var(--space-8);">Direct Instantiation</h3>
             <div class="panel" style="height: auto;">
                 <pre><code>val task = CausalInferenceTask(
     orchestrationConfig = config,
@@ -284,7 +285,7 @@ fun runAnalysis(harness: UnifiedHarness, projectDir: File) {
 )
 task.run(agent, messages, sessionTask, { result -> println(result) }, config)</code></pre>
             </div>
-            <h3 style="margin-top: 2rem;">Prompt Segment</h3>
+              <h3 style="margin-top: var(--space-8);">Prompt Segment</h3>
             <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the orchestrator's system prompt:</p>
             <pre style="background: #000; border-radius: 4px;"><code>CausalInference - Identify causal relationships and root causes
   ** Specify the observed effect or outcome to explain
@@ -303,7 +304,7 @@ task.run(agent, messages, sessionTask, { result -> println(result) }, config)</c
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).style.display = 'block';
@@ -311,7 +312,7 @@ task.run(agent, messages, sessionTask, { result -> println(result) }, config)</c
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/CausalInference/');
 </script>
 

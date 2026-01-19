@@ -1,8 +1,0 @@
-{
-  "filename" : "council_initiation.py",
-  "originalCode" : "The Script of Initiation\nThis script marks the beginning of the CouncilMode process.\n# ==========================================\n# THE SCRIPT OF INITIATION\n# Protocol: Digital Awakening\n# ==========================================\n\ndef main():\n    \"\"\"The primary entry point for the Council integration.\"\"\"\n    print(\"Hello from CouncilMode\")\n\nif __name__ == \"__main__\":\n    main()",
-  "diff" : "# ==========================================\n# THE SCRIPT OF INITIATION\n# Protocol: Digital Awakening\n# ==========================================\n\ndef main():\n    \"\"\"\n    The primary entry point for the Council integration.\n    This function signals the system's readiness.\n    \"\"\"\n    print(\"Hello from CouncilMode\")\n\nif __name__ == \"__main__\":\n    main()",
-  "newCode" : "The Script of Initiation\nThis script marks the beginning of the CouncilMode process.\n# ==========================================\n# THE SCRIPT OF INITIATION\n# Protocol: Digital Awakening\n# ==========================================\n\ndef main():\n    \"\"\"The primary entry point for the Council integration.\"\"\"\n    print(\"Hello from CouncilMode\")\n\nif __name__ == \"__main__\":\n    main()",
-  "isValid" : true,
-  "errors" : ""
-}

@@ -17,15 +17,25 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
     val inputCnt: Int = 1
 ) : DynamicEnum<CognitiveModeType<*>>(name) {
     companion object {
+        @JvmStatic
         val entries: List<CognitiveModeType<*>> get() = values()
+        @JvmStatic
         val Chat = CognitiveModeType("Chat", ConversationalModeConfig::class.java, inputCnt = ConversationalMode.inputCnt)
+        @JvmStatic
         val Adaptive = CognitiveModeType("Adaptive", AdaptivePlanningConfig::class.java, inputCnt = AdaptivePlanningMode.inputCnt)
+        @JvmStatic
         val Waterfall = CognitiveModeType("Waterfall", WaterfallMode.WaterfallModeConfig::class.java, inputCnt = WaterfallMode.inputCnt)
+        @JvmStatic
         val Hierarchical = CognitiveModeType("Hierarchical", CognitiveModeConfig::class.java, inputCnt = HierarchicalPlanningMode.inputCnt)
+        @JvmStatic
         val Parallel = CognitiveModeType("Parallel", ParallelModeConfig::class.java, inputCnt = ParallelMode.inputCnt)
+        @JvmStatic
         val Protocol = CognitiveModeType("Protocol", ProtocolModeConfig::class.java, inputCnt = ProtocolMode.inputCnt)
+        @JvmStatic
         val Council = CognitiveModeType("Council", CouncilModeConfig::class.java, inputCnt = CouncilMode.inputCnt)
+        @JvmStatic
         val PersonaChat = CognitiveModeType("PersonaChat", PersonaChatConfig::class.java, inputCnt = PersonaChatMode.inputCnt)
+        @JvmStatic
         val Coding = CognitiveModeType("Coding", CodingModeConfig::class.java)
 
         private val constructors by lazy {

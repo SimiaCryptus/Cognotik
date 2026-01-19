@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.Operation
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
 import java.io.File
 import java.io.OutputStream
@@ -468,7 +468,7 @@ abstract class SocketManager(
                 e.message
             )
             try {
-                send("""${randomID()},<div class="error">${MarkdownUtil.renderMarkdown(e.message ?: "Unknown error")}</div>""")
+                send("""${randomID()},<div class="error">${e.message ?: "Unknown error".renderMarkdown()}</div>""")
             } catch (sendError: Exception) {
                 log.error("Failed to send error message", sendError)
             }

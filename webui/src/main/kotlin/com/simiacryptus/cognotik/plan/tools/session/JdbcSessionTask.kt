@@ -313,7 +313,7 @@ class JdbcSessionTask(
     }
 
     companion object {
-        val JdbcSession = TaskType(
+        @JvmStatic val JdbcSession = TaskType(
           name = "JdbcSession",
           category = "Session",
           taskClass = JdbcSessionTask::class.java,

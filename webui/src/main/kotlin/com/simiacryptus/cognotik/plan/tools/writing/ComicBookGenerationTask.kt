@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -186,7 +187,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
             }
 
             val scriptTask = tabs.newTask("Script")
-            scriptTask.add(scriptContent.renderMarkdown)
+            scriptTask.add(scriptContent.renderMarkdown(true))
           transcript?.write("## Generated Script\n<details><summary>Expand Script Content</summary>\n\n$scriptContent\n\n</details>\n".toByteArray())
             task.update()
 
@@ -333,11 +334,11 @@ ComicBookGeneration - Generate comic book scripts and visuals
 
                             val rowHtml = """
                                 <div class='comic-row'>
-                                  <img src='$link' alt='Page ${page.page_number} Row ${row.row_number}' title='${row.visual_description.replace("'", "&apos;")}' style='width: 100%; max-width: 800px; border: 1px solid #ccc;' />
+                                  <img src='$link' alt='Page ${page.page_number} Row ${row.row_number}' title='${row.visual_description}' style='width: 100%; max-width: 800px; border: 1px solid #ccc;' />
                                 </div>
                             """.trimIndent()
 
-                            pageTask.add(rowHtml.renderMarkdown)
+                            pageTask.add(rowHtml.renderMarkdown(true))
                             finalOutput.append("![Row ${row.row_number}]($link)\n\n")
                           transcript?.write(
                             "![Page ${page.page_number} Row ${row.row_number}]($link)".transcriptFilter()
@@ -350,12 +351,12 @@ ComicBookGeneration - Generate comic book scripts and visuals
                                     if (frame.caption != null) appendLine("*${frame.caption}*")
                                 }
                             }
-                            pageTask.add(textContent.renderMarkdown)
+                            pageTask.add(textContent.renderMarkdown(true))
                             finalOutput.append(textContent + "\n\n")
 
                         } catch (e: Exception) {
                             log.error("Failed to generate image for Page ${page.page_number} Row ${row.row_number}", e)
-                            pageTask.add("**Failed to generate image**\n".renderMarkdown)
+                            pageTask.add("**Failed to generate image**\n".renderMarkdown(true))
                         }
                         task.update()
                     }
@@ -408,7 +409,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ComicBookGenerationTask::class.java)
-        val ComicBookGeneration = TaskType(
+        @JvmStatic val ComicBookGeneration = TaskType(
           name = "ComicBookGeneration",
           category = "Writing",
           taskClass = ComicBookGenerationTask::class.java,

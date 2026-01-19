@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | ImageTableTask</title>
@@ -36,13 +37,13 @@
             line-height: 1.6;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
 
-        /* Header Styling */
+      /* Header Section */
         .page-header {
             margin-bottom: 3rem;
             border-bottom: 1px solid var(--border-subtle);
@@ -51,8 +52,8 @@
 
         .breadcrumbs {
             font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: var(--text-dim);
+          font-size: 0.75rem;
+          color: var(--text-tertiary);
             margin-bottom: 1rem;
         }
 
@@ -86,7 +87,7 @@
         }
 
         /* Reality Check Grid */
-        .reality-check-grid {
+      .reality-check-section {
             display: grid;
             grid-template-columns: 1fr 40px 1fr;
             gap: 1rem;
@@ -109,7 +110,7 @@
             padding: 0.5rem 1rem;
             border-bottom: 1px solid var(--border-subtle);
             font-family: var(--font-mono);
-            font-size: 0.85rem;
+          font-size: 0.875rem;
             color: var(--text-dim);
             display: flex;
             align-items: center;
@@ -132,7 +133,7 @@
             font-size: 2rem;
         }
 
-        /* Mock UI Gallery */
+      /* Mock Gallery */
         .mock-gallery {
             padding: 1rem;
             overflow-y: auto;
@@ -142,7 +143,7 @@
         .mock-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.7rem;
+          font-size: 0.75rem;
         }
 
         .mock-table th, .mock-table td {
@@ -172,8 +173,8 @@
             padding: 1rem 2rem;
             color: var(--text-dim);
             cursor: pointer;
-            font-family: var(--font-mono);
-            font-weight: 600;
+          font-family: var(--font-body);
+          font-weight: 500;
             border-bottom: 2px solid transparent;
             transition: all 0.2s;
         }
@@ -240,23 +241,23 @@
 
 <cognotik-header current-page="ImageTableTask"></cognotik-header>
 
-<main class="task-container">
+  <main class="page-container">
 
-    <!-- 1. HEADER -->
+      <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > File > ImageTableTask</div>
         <h1>ImageTableTask</h1>
-        <p class="pitch">
+          <p class="page-pitch">
             Generate structured grids of AI-generated images for style comparisons, product variations, and concept exploration.
         </p>
         <div class="badges">
             <span class="badge">Category: File</span>
-            <span class="badge">Model: Image Generation</span>
-            <span class="badge">Output: HTML/Markdown</span>
+              <span class="badge badge-secondary">Model: Image Generation</span>
+              <span class="badge badge-warning">Output: HTML/Markdown</span>
         </div>
     </header>
 
-    <!-- 2. REALITY CHECK -->
+      <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -408,13 +409,13 @@
             </ol>
         </div>
 
-        <!-- TAB: INTEGRATION -->
+          <!-- TAB 3: INTEGRATION -->
         <div id="tab-integration" class="tab-pane">
             <h3>Embedded Execution (UnifiedHarness)</h3>
             <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
                 Use the <code>UnifiedHarness</code> to run this task programmatically in headless environments or CI/CD pipelines.
             </p>
-            <pre><code>import com.simiacryptus.cognotik.plan.tools.file.ImageTableTask
+                  <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.file.ImageTableTask
 import com.simiacryptus.cognotik.plan.tools.file.ImageTableTask.*
 
 fun generateComparisonGrid(harness: UnifiedHarness, projectDir: File) {
@@ -443,7 +444,7 @@ fun generateComparisonGrid(harness: UnifiedHarness, projectDir: File) {
   ** Specify row labels in the 'rows' array
   ** Specify column labels in the 'columns' array
   ** Provide an image_prompt_template using {row} and {column} placeholders
-  ** Optionally specify a base_style for consistent styling
+** Optionally specify a base_style for consistent styling across all images
   ** Generates an HTML table displaying all images with labels</code></pre>
         </div>
     </section>
@@ -460,7 +461,7 @@ fun generateComparisonGrid(harness: UnifiedHarness, projectDir: File) {
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     // Points to the standard test workspace for this task
     initFileTree('#file-tree-demo', 'webui/workspaces/ImageTable/');
 </script>

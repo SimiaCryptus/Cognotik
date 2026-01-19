@@ -1,0 +1,44 @@
+[
+  {
+    "label": "Agent Types",
+    "url": "agent-types.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/agent",
+    "description": "Comprehensive guide to Cognotik's Agent types including ChatAgent, ParsedAgent, CodeAgent, and more."
+  },
+  {
+    "label": "Patch Processors",
+    "url": "patch-processors.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/diff",
+    "description": "Intelligent code patching with fuzzy matching for AI-assisted code modification workflows."
+  },
+  {
+    "label": "Realtime UI",
+    "url": "session-task-ui.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/webui",
+    "description": "Server-driven reactive UI framework for building AI-powered interfaces with real-time streaming and interactive workflows."
+  },
+  {
+    "label": "Task Planning",
+    "url": "TaskPlanning.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan",
+    "description": "Intelligent orchestration framework with cognitive modes for autonomous planning, task decomposition, and adaptive execution workflows."
+  },
+  {
+    "label": "Platform Architecture",
+    "url": "platform.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/platform",
+    "description": "Comprehensive application framework for building AI-powered applications with session management, authentication, storage, and cloud integration."
+  },
+  {
+    "label": "Use Case Categories",
+    "url": "use_case_categories.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/blob/main/docs/use_case_categories.md",
+    "description": "A taxonomy of generative AI use cases - from basic content creation to advanced hierarchical generation patterns."
+  }
+]

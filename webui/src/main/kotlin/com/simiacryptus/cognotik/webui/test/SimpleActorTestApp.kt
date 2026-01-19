@@ -35,9 +35,9 @@ open class SimpleActorTestApp(
         val message = ui.newTask()
         try {
             val actor = getSettings<Settings>(session, user)?.actor ?: actor
-            message.echo(userMessage.renderMarkdown)
+            message.echo(userMessage.renderMarkdown(true))
             val response = actor.answer(listOf(userMessage))
-            message.complete(response.renderMarkdown)
+            message.complete(response.renderMarkdown(true))
         } catch (e: Throwable) {
             log.warn("Error", e)
             message.error(e)

@@ -377,7 +377,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(IsomorphismDiscoveryTask::class.java)
-        val IsomorphismDiscovery = TaskType(
+        @JvmStatic val IsomorphismDiscovery = TaskType(
             name = "IsomorphismDiscovery",
             category = "Reasoning",
             taskClass = IsomorphismDiscoveryTask::class.java,

@@ -103,7 +103,7 @@ open class ChatSocketManager(
         val expandedUserMessage = expandTopics(userMessage)
         markdownTranscript?.write("## User\n$expandedUserMessage\n\n".toByteArray())
         val task = newTask()
-        task.echo(expandedUserMessage.renderMarkdown)
+        task.echo(expandedUserMessage.renderMarkdown(true))
 
         synchronized(messagesLock) {
             chatMessages += ModelSchema.ChatMessage(ModelSchema.Role.user, expandedUserMessage.toContentList())
@@ -449,8 +449,7 @@ open class ChatSocketManager(
         tabs.update()
     }
 
-    open fun renderResponse(response: String, task: SessionTask) =
-        """<div>${response.renderMarkdown()}</div>"""
+    open fun renderResponse(response: String, task: SessionTask) = """<div>${response.renderMarkdown(true)}</div>"""
 
     companion object {
         private val log = LoggerFactory.getLogger(ChatSocketManager::class.java)

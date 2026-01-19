@@ -37,10 +37,14 @@ open class ChatModel(
     maxOutTokens = maxOutTokens,
     provider = provider,
 ) {
-    override fun toString() = modelName ?: name
+    override fun toString() = modelName
 
-    override fun pricing(usage: Usage) =
-        (usage.prompt_tokens * inputTokenPricePerK + usage.completion_tokens * outputTokenPricePerK) / 1000.0
+    override fun pricing(usage: Usage): Double {
+        val promptCost = usage.prompt_tokens * inputTokenPricePerK
+        val completionCost = usage.completion_tokens * outputTokenPricePerK
+        val estimatedUnaccountedCost = (usage.total_tokens - (usage.prompt_tokens + usage.completion_tokens)) * ((inputTokenPricePerK + outputTokenPricePerK) / 2)
+        return (promptCost + completionCost + estimatedUnaccountedCost) / 1000.0
+    }
 
     fun instance(
         key: SecureString,
@@ -66,6 +70,8 @@ open class ChatModel(
 
 
     companion object {
+
+        val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(ChatModel::class.java)
 
         fun values(): Map<String, ChatModel> = values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
         private val values: MutableMap<String, ChatModel?> by lazy {

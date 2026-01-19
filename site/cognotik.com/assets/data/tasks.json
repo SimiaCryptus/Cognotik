@@ -49,6 +49,12 @@
         "type" : "dropdown",
         "src" : "writing.json"
       } ]
+    },
+    {
+      "label": "Docs",
+      "type": "dropdown",
+      "src": "docs.json",
+      "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/docs"
     }
   ]
 }

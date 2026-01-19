@@ -144,14 +144,14 @@ ImageTable - Generate a table/grid of AI-generated images
           val tabs = TabbedDisplay(task)
           val configTab = tabs.newTask("Configuration")
           configTab.add(buildString {
-            appendLine("# Image Table Configuration")
-            appendLine("- **Rows:** ${rows.size}")
-            appendLine("- **Columns:** ${columns.size}")
-            appendLine("- **Total Images:** ${rows.size * columns.size}")
-            appendLine("- **Prompt Template:** `$promptTemplate`")
-            appendLine("- **Base Style:** `${baseStyle.ifBlank { "None" }}`")
-            appendLine("- **Output Directory:** `$outputDir`")
-          }.renderMarkdown)
+                      appendLine("# Image Table Configuration")
+                      appendLine("- **Rows:** ${rows.size}")
+                      appendLine("- **Columns:** ${columns.size}")
+                      appendLine("- **Total Images:** ${rows.size * columns.size}")
+                      appendLine("- **Prompt Template:** `$promptTemplate`")
+                      appendLine("- **Base Style:** `${baseStyle.ifBlank { "None" }}`")
+                      appendLine("- **Output Directory:** `$outputDir`")
+                    }.renderMarkdown(true))
 
           val progressTab = tabs.newTask("Generation Progress")
 
@@ -184,10 +184,10 @@ ImageTable - Generate a table/grid of AI-generated images
                 val colLabel = columns[colIdx]
 
                 progressTab.add(buildString {
-                  appendLine("### Generating $completedImages/$totalImages")
-                  appendLine("- **Row:** $rowLabel")
-                  appendLine("- **Column:** $colLabel")
-                }.renderMarkdown)
+                                  appendLine("### Generating $completedImages/$totalImages")
+                                  appendLine("- **Row:** $rowLabel")
+                                  appendLine("- **Column:** $colLabel")
+                                }.renderMarkdown(true))
                 progressTab.update()
 
                 // Build the prompt for this cell
@@ -273,14 +273,14 @@ ImageTable - Generate a table/grid of AI-generated images
           }
 
           if (orchestrationConfig.autoFix) {
-            task.complete(summary.renderMarkdown)
+            task.complete(summary.renderMarkdown(true))
             resultFn(summary)
           } else {
             val footer = acceptButtonFooter(task.ui) {
-              task.complete(summary.renderMarkdown)
+              task.complete(summary.renderMarkdown(true))
               resultFn(summary)
             }
-            task.add(summary.renderMarkdown + footer)
+            task.add(summary.renderMarkdown(true) + footer)
           }
           log.info("ImageTableTask completed successfully.")
         } catch (e: Exception) {
@@ -433,7 +433,7 @@ ImageTable - Generate a table/grid of AI-generated images
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ImageTableTask::class.java)
-        val ImageTable = TaskType(
+        @JvmStatic val ImageTable = TaskType(
           name = "ImageTable",
           category = "File",
           taskClass = ImageTableTask::class.java,

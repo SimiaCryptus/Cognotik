@@ -1,3 +1,13 @@
+---
+documents:
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/UnifiedHarness.kt
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/TaskHarness.kt
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/PlanHarness.kt
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/FileGenerator.kt
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/DocProcessor.kt    
+specifies: ../site/cognotik.com/embedding.html
+---
+
 # Embedding Cognotik: A Guide for Automated Agentic Coding
 
 This guide details how to use the **Cognotik** library (`com.cognotik:webapp`) as an embedded engine. By importing Cognotik directly into your build process (Gradle plugins, CLI tools, or GitHub Actions), you can leverage "Headless" AI agents to perform complex coding tasks, refactoring, or documentation generation without a user interface.
@@ -23,15 +33,15 @@ dependencies {
 
 ## 2. The Core Concept: `UnifiedHarness`
 
-The entry point for embedded execution is the `UnifiedHarness` class (found in `com.simiacryptus.cognotik.apps.general`). It wraps the complex server infrastructure, allowing you to run agents in a **Serverless** (headless) mode.
+The entry point for embedded execution is the `UnifiedHarness` class (found in `com.simiacryptus.cognotik.util`). It wraps the complex server infrastructure, allowing you to run agents in a **Serverless** (headless) mode.
 
 ### Initialization
 
-To run in a CI/CD or script environment, you must instantiate the harness with `serverless = true`. You must also inject your API keys programmatically, as there is no UI to configure them.
+To run in a CI/CD or script environment, you must instantiate the harness with `serverless = true`. You must also inject your API keys programmatically via the `modelInstanceFn` parameter.
 
 ```kotlin
-import com.simiacryptus.cognotik.apps.general.UnifiedHarness
-import com.simiacryptus.cognotik.chat.model.OpenAIModels
+import com.simiacryptus.cognotik.util.UnifiedHarness
+import com.simiacryptus.cognotik.chat.model.GeminiModels
 
 val harness = UnifiedHarness(
     serverless = true,   // CRITICAL: Disables Jetty/Websockets for CLI usage
@@ -44,7 +54,7 @@ val harness = UnifiedHarness(
     // Inject API Keys from Environment Variables
     modelInstanceFn = { apiChatModel ->
         val provider = apiChatModel.provider
-        val model = apiChatModel.model!!
+      val model = apiChatModel.model
 
         // Fetch key based on provider (OpenAI, Anthropic, etc.)
         val apiKey = System.getenv("OPENAI_API_KEY")
@@ -121,9 +131,9 @@ This executes a specific `TaskType` in isolation.
 This is useful for writing a Gradle task that automatically generates boilerplate code or documentation.
 
 ```kotlin
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTaskExecutionConfigData
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 
 fun generateReadme(projectDir: File) {
 
@@ -179,8 +189,8 @@ fun runSelfHealingBuild(projectDir: File) {
 ## 5. Task Reference & Configuration Details
 
 When running in "Headless" mode, you often need to manually construct the configuration objects for specific tasks. Every task requires two configuration components:
-1.  **`TypeConfig`**: Static settings (e.g., which Model to use, tool definitions).
-2.  **`ExecutionConfig`**: Runtime inputs (e.g., which files to edit, what command to run).
+1.  **`TaskTypeConfig`**: Static settings (e.g., which Model to use, tool definitions).
+2.  **`TaskExecutionConfig`**: Runtime inputs (e.g., which files to edit, what command to run).
 Below are the configuration details for the most common tasks.
 
 ### A. File Modification (`FileModificationTask`)
@@ -188,7 +198,7 @@ Below are the configuration details for the most common tasks.
 Used for refactoring, bug fixing, or feature implementation.
 
 ```kotlin
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 val config = FileModificationTaskExecutionConfigData(
     // Files to be read and potentially modified
@@ -202,7 +212,7 @@ val config = FileModificationTaskExecutionConfigData(
     // Optional: Include git diff in the context
     includeGitDiff = false
 )
-harness.runTask(FileModification, /* typeConfig */, config, workspace)
+harness.runTask(FileModification, typeConfig, config, workspace)
 ```
 
 ### B. File Append (`FileAppendTask`)
@@ -218,7 +228,7 @@ val config = FileAppendTaskExecutionConfigData(
     // Optional: Read these files to generate the content contextually
     related_files = listOf("src/auth/Login.kt") 
 )
-harness.runTask(FileAppend, /* typeConfig */, config, workspace)
+harness.runTask(FileAppend, typeConfig, config, workspace)
 ```
 
 ### C. Read Documents / Q&A (`ReadDocumentsTask`)
@@ -237,7 +247,7 @@ val config = ReadDocumentsTaskExecutionConfigData(
     ),
     inquiry_goal = "Generate security documentation"
 )
-harness.runTask(ReadDocuments, /* typeConfig */, config, workspace)
+harness.runTask(ReadDocuments, typeConfig, config, workspace)
 ```
 
 ### D. File Search (`FileSearchTask`)
@@ -253,7 +263,7 @@ val config = FileSearchTaskExecutionConfigData(
     input_files = listOf("**/*.kt"),
     context_lines = 2
 )
-harness.runTask(FileSearch, /* typeConfig */, config, workspace)
+harness.runTask(FileSearch, typeConfig, config, workspace)
 ```
 
 ### E. Run Tool (`RunToolTask`)
@@ -268,7 +278,7 @@ val config = RunToolTaskExecutionConfigData(
     args = listOf("scripts/verify_data.py", "--verbose"),
     workingDir = "."
 )
-harness.runTask(RunTool, /* typeConfig */, config, workspace)
+harness.runTask(RunTool, typeConfig, config, workspace)
 ```
 
 ### F. Sub-Planning (`SubPlanTask`)
@@ -333,7 +343,7 @@ harness.runPlan(
 
 ---
 
-## 7. Integration Examples
+## 10. Integration Examples
 
 ### A. As a Gradle Plugin
 You can wrap the harness in a custom Gradle Task to add AI capabilities to your build.
@@ -343,7 +353,7 @@ You can wrap the harness in a custom Gradle Task to add AI capabilities to your 
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.Input
-import com.simiacryptus.cognotik.apps.general.UnifiedHarness
+import com.simiacryptus.cognotik.util.UnifiedHarness
 // ... imports ...
 
 abstract class AiRefactorTask : DefaultTask() {
@@ -352,7 +362,7 @@ abstract class AiRefactorTask : DefaultTask() {
 
     @TaskAction
     fun run() {
-        val harness = UnifiedHarness(serverless = true, /* config */)
+      val harness = UnifiedHarness(serverless = true)
         harness.start()
 
         harness.runPlan(
@@ -401,10 +411,10 @@ jobs:
           title: "AI Automated Fixes"
 ```
 
-## 8. Troubleshooting & Best Practices
+## 11. Troubleshooting & Best Practices
 
-1.  **Environment Variables:** Ensure `OPENAI_API_KEY` (or other provider keys) are available in the environment where the JAR runs. The `UnifiedHarness` does not load from local `.config` files when a custom `modelInstanceFn` is used.
+1.  **Environment Variables:** Ensure API keys are available in the environment where the JAR runs. The `UnifiedHarness` does not load from local `.config` files when a custom `modelInstanceFn` is used.
 2.  **Context Window:** If working on large codebases, ensure you select a model with a large context window (e.g., `gpt-4-turbo` or `claude-3-opus`) in the `UnifiedHarness` constructor.
 3.  **Logging:** Cognotik uses SLF4J. Configure a simple logger (like `slf4j-simple`) to see the agent's "thought process" in your console logs.
 4.  **Concurrency:** In `serverless` mode, the harness runs synchronously (blocking the thread until completion). This is usually desired for CI/CD.
-5.  **Artifacts:** The agent writes a `results.md` and a `plan.json` in the workspace. Archive these in your CI pipeline to review what the agent did.
+5.  **Artifacts:** The agent writes a `results.md` and a `usage.json` in the workspace. Archive these in your CI pipeline to review what the agent did.

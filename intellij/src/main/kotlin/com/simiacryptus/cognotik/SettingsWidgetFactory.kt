@@ -37,6 +37,9 @@ import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
 
 class SettingsWidgetFactory : StatusBarWidgetFactory {
+    companion object {
+        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(SettingsWidgetFactory::class.java)
+    }
 
     class SettingsWidget : StatusBarWidget, StatusBarWidget.MultipleTextValuesPresentation {
 
@@ -118,8 +121,13 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             val userSettings =
                 ApplicationServices.fileApplicationServices(rootDir).userSettingsManager.getUserSettings()
             val pairs = userSettings.apis.flatMap { apiData ->
-                (apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl) ?: listOf())
-                    .map { model -> apiData.provider?.name!! to model }
+                try {
+                    (apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl) ?: listOf())
+                        .map { model -> apiData.provider?.name!! to model }
+                } catch (e: Exception) {
+                    log.warn("Failed to retrieve models for provider: ${apiData.provider?.name}", e)
+                    listOf()
+                }
             }
             val providers = pairs
                 .filter { userSettings.isVisible(it) }

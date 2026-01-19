@@ -321,7 +321,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GenerateSpriteSheetTask::class.java)
-        val GenerateSpriteSheet = TaskType(
+        @JvmStatic val GenerateSpriteSheet = TaskType(
           name = "GenerateSpriteSheet",
           category = "Writing",
           taskClass = GenerateSpriteSheetTask::class.java,

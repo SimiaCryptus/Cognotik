@@ -34,7 +34,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(JournalismReasoningTask::class.java)
-        val JournalismReasoning = TaskType(
+        @JvmStatic val JournalismReasoning = TaskType(
             name = "JournalismReasoning",
             category = "Writing",
             taskClass = JournalismReasoningTask::class.java,
@@ -345,18 +345,18 @@ JournalismReasoning - Investigate stories through journalistic principles and me
                 )
             }
 
-            overviewTask.add(overviewContent.renderMarkdown)
+            overviewTask.add(overviewContent.renderMarkdown(true))
 
             val priorContext = getPriorCode(agent.executionState)
             if (priorContext.isNotBlank()) {
                 log.debug("Found prior context: ${priorContext.length} characters")
                 val contextTask = tabs.newTask("Context")
                 contextTask.add(
-                    buildString {
-                        appendLine("# Context from Previous Tasks")
-                        appendLine()
-                        appendLine(priorContext.truncateForDisplay())
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Context from Previous Tasks")
+                    appendLine()
+                    appendLine(priorContext.truncateForDisplay())
+                  }.renderMarkdown(true)
                 )
             }
 
@@ -367,17 +367,17 @@ JournalismReasoning - Investigate stories through journalistic principles and me
                 // Step 1: Verify facts
                 if (verifyFacts) {
                     log.info("Step 1: Verifying facts")
-                    overviewTask.add("\n✅ Verifying facts and claims...\n".renderMarkdown)
+                    overviewTask.add("\n✅ Verifying facts and claims...\n".renderMarkdown(true))
 
                     val factsTask = tabs.newTask("Fact Verification")
 
                     factsTask.add(
-                        buildString {
-                            appendLine("# Fact Verification")
-                            appendLine()
-                            appendLine("**Status:** Checking claims and evidence...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Fact Verification")
+                        appendLine()
+                        appendLine("**Status:** Checking claims and evidence...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     transcript?.write("## Step 1: Fact Verification\n\n".toByteArray())
 
@@ -471,7 +471,7 @@ Apply rigorous journalistic standards. Be skeptical but fair.
                     """.trimIndent().toByteArray()
                     )
 
-                    factsTask.add(factsContent.renderMarkdown)
+                    factsTask.add(factsContent.renderMarkdown(true))
 
                     resultBuilder.append("## Key Facts\n")
                     factChecks.take(3).forEach { fact ->
@@ -483,23 +483,23 @@ Apply rigorous journalistic standards. Be skeptical but fair.
                     }
                     resultBuilder.append("\n")
 
-                    overviewTask.add("✅ Facts verified (${factChecks.size} claims checked)\n".renderMarkdown)
+                    overviewTask.add("✅ Facts verified (${factChecks.size} claims checked)\n".renderMarkdown(true))
                 }
 
                 // Step 2: Identify perspectives
                 if (identifyPerspectives) {
                     log.info("Step 2: Identifying source perspectives")
-                    overviewTask.add("✅ Identifying perspectives and sources...\n".renderMarkdown)
+                    overviewTask.add("✅ Identifying perspectives and sources...\n".renderMarkdown(true))
 
                     val perspectivesTask = tabs.newTask("Perspectives")
 
                     perspectivesTask.add(
-                        buildString {
-                            appendLine("# Source Perspectives")
-                            appendLine()
-                            appendLine("**Status:** Analyzing viewpoints and sources...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Source Perspectives")
+                        appendLine()
+                        appendLine("**Status:** Analyzing viewpoints and sources...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     transcript?.write("## Step 2: Source Perspectives\n\n".toByteArray())
 
@@ -576,7 +576,7 @@ Ensure balanced representation of different viewpoints.
                     """.trimIndent().toByteArray()
                     )
 
-                    perspectivesTask.add(perspectivesContent.renderMarkdown)
+                    perspectivesTask.add(perspectivesContent.renderMarkdown(true))
 
                     resultBuilder.append("## Key Perspectives\n")
                     perspectives.take(3).forEach { source ->
@@ -589,23 +589,23 @@ Ensure balanced representation of different viewpoints.
                     }
                     resultBuilder.append("\n")
 
-                    overviewTask.add("✅ Perspectives identified (${perspectives.size} sources)\n".renderMarkdown)
+                    overviewTask.add("✅ Perspectives identified (${perspectives.size} sources)\n".renderMarkdown(true))
                 }
 
                 // Step 3: Analyze context
                 if (analyzeContext) {
                     log.info("Step 3: Analyzing context and background")
-                    overviewTask.add("✅ Analyzing context and background...\n".renderMarkdown)
+                    overviewTask.add("✅ Analyzing context and background...\n".renderMarkdown(true))
 
                     val contextTask = tabs.newTask("Context Analysis")
 
                     contextTask.add(
-                        buildString {
-                            appendLine("# Context Analysis")
-                            appendLine()
-                            appendLine("**Status:** Researching background and implications...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Context Analysis")
+                        appendLine()
+                        appendLine("**Status:** Researching background and implications...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     transcript?.write("## Step 3: Context Analysis\n\n".toByteArray())
 
@@ -676,28 +676,28 @@ Help readers understand why this story matters and how it fits into the bigger p
                     """.trimIndent().toByteArray()
                     )
 
-                    contextTask.add(contextContent.renderMarkdown)
+                    contextTask.add(contextContent.renderMarkdown(true))
 
                     resultBuilder.append("## Context\n")
                     resultBuilder.append("${context.historical_background.truncateForDisplay(200)}\n\n")
 
-                    overviewTask.add("✅ Context analyzed\n".renderMarkdown)
+                    overviewTask.add("✅ Context analyzed\n".renderMarkdown(true))
                 }
 
                 // Step 4: Identify biases
                 if (identifyBiases) {
                     log.info("Step 4: Identifying biases and balance issues")
-                    overviewTask.add("✅ Checking for biases and balance...\n".renderMarkdown)
+                    overviewTask.add("✅ Checking for biases and balance...\n".renderMarkdown(true))
 
                     val biasTask = tabs.newTask("Bias Analysis")
 
                     biasTask.add(
-                        buildString {
-                            appendLine("# Bias Analysis")
-                            appendLine()
-                            appendLine("**Status:** Examining potential biases...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Bias Analysis")
+                        appendLine()
+                        appendLine("**Status:** Examining potential biases...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     transcript?.write("## Step 4: Bias Analysis\n\n".toByteArray())
 
@@ -776,28 +776,28 @@ Be thorough but fair. Distinguish between legitimate perspective and problematic
                     """.trimIndent().toByteArray()
                     )
 
-                    biasTask.add(biasContent.renderMarkdown)
+                    biasTask.add(biasContent.renderMarkdown(true))
 
                     resultBuilder.append("## Balance Assessment\n")
                     resultBuilder.append("${biasAnalysis.balance_assessment.truncateForDisplay(200)}\n\n")
 
-                    overviewTask.add("✅ Bias analysis complete\n".renderMarkdown)
+                    overviewTask.add("✅ Bias analysis complete\n".renderMarkdown(true))
                 }
 
                 // Step 5: Explore alternative angles
                 if (alternativeAngles > 0) {
                     log.info("Step 5: Exploring alternative story angles")
-                    overviewTask.add("✅ Exploring alternative angles...\n".renderMarkdown)
+                    overviewTask.add("✅ Exploring alternative angles...\n".renderMarkdown(true))
 
                     val anglesTask = tabs.newTask("Story Angles")
 
                     anglesTask.add(
-                        buildString {
-                            appendLine("# Alternative Story Angles")
-                            appendLine()
-                            appendLine("**Status:** Identifying different approaches...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Alternative Story Angles")
+                        appendLine()
+                        appendLine("**Status:** Identifying different approaches...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     transcript?.write("## Step 5: Alternative Story Angles\n\n".toByteArray())
 
@@ -879,7 +879,7 @@ Consider angles that:
                     """.trimIndent().toByteArray()
                     )
 
-                    anglesTask.add(anglesContent.renderMarkdown)
+                    anglesTask.add(anglesContent.renderMarkdown(true))
 
                     resultBuilder.append("## Story Angles\n")
                     angles.sortedByDescending { it.newsworthiness_score }.take(2).forEach { angle ->
@@ -892,23 +892,23 @@ Consider angles that:
                     }
                     resultBuilder.append("\n")
 
-                    overviewTask.add("✅ Story angles explored (${angles.size} angles)\n".renderMarkdown)
+                    overviewTask.add("✅ Story angles explored (${angles.size} angles)\n".renderMarkdown(true))
                 }
 
                 // Step 6: Find information gaps
                 if (findGaps) {
                     log.info("Step 6: Identifying information gaps")
-                    overviewTask.add("✅ Identifying information gaps...\n".renderMarkdown)
+                    overviewTask.add("✅ Identifying information gaps...\n".renderMarkdown(true))
 
                     val gapsTask = tabs.newTask("Information Gaps")
 
                     gapsTask.add(
-                        buildString {
-                            appendLine("# Information Gaps")
-                            appendLine()
-                            appendLine("**Status:** Finding unanswered questions...")
-                            appendLine()
-                        }.renderMarkdown
+                      buildString {
+                        appendLine("# Information Gaps")
+                        appendLine()
+                        appendLine("**Status:** Finding unanswered questions...")
+                        appendLine()
+                      }.renderMarkdown(true)
                     )
                     transcript?.write("## Step 6: Information Gaps\n\n".toByteArray())
 
@@ -999,7 +999,7 @@ Prioritize gaps that are most important for understanding the full story.
                     """.trimIndent().toByteArray()
                     )
 
-                    gapsTask.add(gapsContent.renderMarkdown)
+                    gapsTask.add(gapsContent.renderMarkdown(true))
 
                     if (gaps.isNotEmpty()) {
                         resultBuilder.append("## Information Gaps\n")
@@ -1015,22 +1015,22 @@ Prioritize gaps that are most important for understanding the full story.
                         resultBuilder.append("\n")
                     }
 
-                    overviewTask.add("✅ Information gaps identified (${gaps.size} found)\n".renderMarkdown)
+                    overviewTask.add("✅ Information gaps identified (${gaps.size} found)\n".renderMarkdown(true))
                 }
 
                 // Step 7: Generate editorial synthesis
                 log.info("Step 7: Generating editorial synthesis")
-                overviewTask.add("✅ Generating editorial synthesis...\n".renderMarkdown)
+                overviewTask.add("✅ Generating editorial synthesis...\n".renderMarkdown(true))
 
                 val synthesisTask = tabs.newTask("Editorial Synthesis")
 
                 synthesisTask.add(
-                    buildString {
-                        appendLine("# Editorial Synthesis")
-                        appendLine()
-                        appendLine("**Status:** Synthesizing findings...")
-                        appendLine()
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("# Editorial Synthesis")
+                    appendLine()
+                    appendLine("**Status:** Synthesizing findings...")
+                    appendLine()
+                  }.renderMarkdown(true)
                 )
                 transcript?.write("## Step 7: Editorial Synthesis\n\n".toByteArray())
 
@@ -1070,15 +1070,15 @@ Be concise, authoritative, and focused on journalistic value.
 
 
                 synthesisTask.add(
-                    buildString {
-                        appendLine("## Editorial Assessment")
-                        appendLine()
-                        appendLine(synthesis)
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("**Status:** ✅ Complete")
-                    }.renderMarkdown
+                  buildString {
+                    appendLine("## Editorial Assessment")
+                    appendLine()
+                    appendLine(synthesis)
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete")
+                  }.renderMarkdown(true)
                 )
 
                 resultBuilder.append("## Editorial Synthesis\n")
@@ -1101,20 +1101,20 @@ Be concise, authoritative, and focused on journalistic value.
                 )
 
                 overviewTask.add(
-                    buildString {
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("## ✅ Investigation Complete")
-                        appendLine()
-                        appendLine("**Total Time:** ${totalTime / 1000.0}s")
-                        appendLine()
-                        appendLine(
-                            "**Completed:** ${
-                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                            }"
-                        )
-                    }.renderMarkdown
+                  buildString {
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("## ✅ Investigation Complete")
+                    appendLine()
+                    appendLine("**Total Time:** ${totalTime / 1000.0}s")
+                    appendLine()
+                    appendLine(
+                      "**Completed:** ${
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                      }"
+                    )
+                  }.renderMarkdown(true)
                 )
 
                 val finalResult = resultBuilder.toString()

@@ -37,3 +37,4 @@ test_config.json
 /experiment/search_lambda/terraform/.terraform/
 symbol_graph.json
 workspaces
+demo-cognotik-buildtool

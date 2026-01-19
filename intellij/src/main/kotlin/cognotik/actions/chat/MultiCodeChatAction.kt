@@ -137,7 +137,7 @@ class MultiCodeChatAction : BaseAction() {
         }
 
         override fun renderResponse(response: String, task: SessionTask) = """<div>${
-            renderMarkdown(response) { html ->
+            renderMarkdown(response, tabs=true) { html ->
                 AddApplyFileDiffLinks.instrumentFileDiffs(
                     this,
                     root = root.toPath(),

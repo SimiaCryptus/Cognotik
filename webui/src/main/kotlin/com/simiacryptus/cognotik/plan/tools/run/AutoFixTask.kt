@@ -29,7 +29,7 @@ class AutoFixTask(
 
     companion object {
         private val log = LoggerFactory.getLogger(AutoFixTask::class.java)
-        val AutoFix = TaskType(
+        @JvmStatic val AutoFix = TaskType(
             name = "AutoFix",
             category = "Execution",
             taskClass = AutoFixTask::class.java,

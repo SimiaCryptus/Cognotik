@@ -763,7 +763,7 @@ class AppSettingsComponent : Disposable {
             userSettings.apis.forEach { api ->
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""
-                val key = api.key
+                val key = api.key?.decrypt ?: ""
                 val url = api.baseUrl
                 model.addRow(arrayOf(providerName, name, key, url))
             }

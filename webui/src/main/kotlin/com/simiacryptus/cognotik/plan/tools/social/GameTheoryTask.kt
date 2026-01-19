@@ -32,7 +32,7 @@ class GameTheoryTask(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)
-        val GameTheory = TaskType(
+        @JvmStatic val GameTheory = TaskType(
           name = "GameTheory",
           category = "Reasoning",
           taskClass = GameTheoryTask::class.java,

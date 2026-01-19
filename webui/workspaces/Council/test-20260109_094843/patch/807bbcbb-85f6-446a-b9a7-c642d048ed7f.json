@@ -1,8 +1,0 @@
-{
-  "filename" : "council_initiation.py",
-  "originalCode" : "\"\"\"\nThe Script of Initiation\nThis script marks the beginning of the CouncilMode process.\n\"\"\"\n\ndef main():\n    print('Hello from CouncilMode')\n\nif __name__ == \"__main__\":\n    main()",
-  "diff" : "-\"\"\"\n-The Script of Initiation\n-This script marks the beginning of the CouncilMode process.\n-\"\"\"\n+# ==========================================\n+# THE SCRIPT OF INITIATION\n+# Protocol: Digital Awakening\n+# ==========================================\n \n def main():\n-    print('Hello from CouncilMode')\n+    \"\"\"\n+    The primary entry point for the Council integration.\n+    This function signals the system's readiness.\n+    \"\"\"\n+    print(\"Hello from CouncilMode\")\n \n if __name__ == \"__main__\":",
-  "newCode" : "# ==========================================\n# THE SCRIPT OF INITIATION\n# Protocol: Digital Awakening\n# ==========================================\n\ndef main():\n    \"\"\"\n    The primary entry point for the Council integration.\n    This function signals the system's readiness.\n    \"\"\"\n    print(\"Hello from CouncilMode\")\n\nif __name__ == \"__main__\":\n    main()",
-  "isValid" : false,
-  "errors" : "* Unbalanced single quotes (line null)"
-}

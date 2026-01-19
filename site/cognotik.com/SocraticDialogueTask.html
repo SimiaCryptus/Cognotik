@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | SocraticDialogueTask - Industrial Reasoning</title>
@@ -230,7 +231,7 @@
         }
         .docs-table .type-label {
             font-family: var(--font-mono);
-            font-size: 0.8rem;
+          font-size: 0.9em;
             color: var(--text-dim);
         }
 
@@ -334,27 +335,27 @@
                 <tr>
                     <td><code>initial_question</code><span class="req">*</span></td>
                     <td><span class="type-label">String</span></td>
-                    <td>The starting hypothesis or question to explore.</td>
+                      <td>The starting hypothesis or question to explore through dialogue.</td>
                 </tr>
                 <tr>
                     <td><code>input_files</code></td>
                     <td><span class="type-label">List&lt;String&gt;</span></td>
-                    <td>Optional glob patterns for files to provide context (e.g., source code or docs).</td>
+                      <td>Optional glob patterns for files to provide context (e.g., source code or documentation).</td>
                 </tr>
                 <tr>
                     <td><code>max_depth</code></td>
                     <td><span class="type-label">Int</span></td>
-                    <td>Number of Q&A exchanges. Default: <code>5</code>. Range: <code>1-20</code>.</td>
+                      <td>Number of question-answer exchanges. Default: <code>5</code>. Range: <code>1-20</code>.</td>
                 </tr>
                 <tr>
                     <td><code>challenge_assumptions</code></td>
                     <td><span class="type-label">Boolean</span></td>
-                    <td>If true, the questioner agent will actively look for and challenge logical leaps.</td>
+                      <td>If true, the questioner agent actively looks for and challenges logical leaps and assumptions.</td>
                 </tr>
                 <tr>
                     <td><code>domain_constraints</code></td>
                     <td><span class="type-label">List&lt;String&gt;</span></td>
-                    <td>Limits the dialogue to specific fields (e.g., "Legal", "Physics").</td>
+                      <td>Limits the dialogue to specific fields or domains (e.g., "Legal", "Physics", "Philosophy").</td>
                 </tr>
                 </tbody>
             </table>
@@ -435,7 +436,7 @@ fun runDialogue(harness: UnifiedHarness, workspace: File) {
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 

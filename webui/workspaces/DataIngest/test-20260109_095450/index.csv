@@ -1,6 +1,0 @@
-message_id,pattern_id,source_file,source_offset_start,source_offset_end,data_offset
-b8dc76fb-dcf8-459c-91e6-68dc778fe07d,93daaeb0-4642-4a26-8a58-143c216a46e9,sample.log,0,53,0
-cf98d15a-7b63-4bef-a403-b06bff4a26a9,93daaeb0-4642-4a26-8a58-143c216a46e9,sample.log,54,117,100
-643a4377-8792-4ef7-bb62-10fb9607fcdd,93daaeb0-4642-4a26-8a58-143c216a46e9,sample.log,118,185,211
-11cd3fd5-8e0e-4479-a025-98062c9928c3,93daaeb0-4642-4a26-8a58-143c216a46e9,sample.log,186,256,325
-7781146f-483b-4487-b0cc-c2838ebe5b22,93daaeb0-4642-4a26-8a58-143c216a46e9,sample.log,257,307,443
