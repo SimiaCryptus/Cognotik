@@ -3,7 +3,9 @@ package cognotik.actions.task
 import cognotik.actions.BaseAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -51,11 +53,33 @@ import kotlin.collections.set
  * 2. Shows a checklist dialog allowing users to select which file generation tasks to run
  * 3. Executes the selected tasks using DocProcessor infrastructure
  */
-class DocProcessorAction(
+open class DocProcessorAction(
     val mode: FileGenerator.OverwriteMode = OverwriteModes.PatchExisting,
 ) : BaseAction() {
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
+    companion object {
+        /**
+         * Returns a pretty label for each overwrite mode
+         */
+        fun getModeLabel(mode: OverwriteModes): String = when (mode) {
+            OverwriteModes.SkipExisting -> "🚫 Skip Existing Files"
+            OverwriteModes.OverwriteExisting -> "🔄 Overwrite All Files"
+            OverwriteModes.OverwriteToUpdate -> "📅 Overwrite Outdated Files"
+            OverwriteModes.PatchExisting -> "🩹 Patch Existing Files"
+            OverwriteModes.PatchToUpdate -> "📝 Patch Outdated Files"
+        }
+        /**
+         * Returns a description for each overwrite mode
+         */
+        fun getModeDescription(mode: OverwriteModes): String = when (mode) {
+            OverwriteModes.SkipExisting -> "Skip files that already exist, only create new files"
+            OverwriteModes.OverwriteExisting -> "Replace all target files with newly generated content"
+            OverwriteModes.OverwriteToUpdate -> "Replace only files older than their source documentation"
+            OverwriteModes.PatchExisting -> "Apply intelligent patches to existing files"
+            OverwriteModes.PatchToUpdate -> "Apply patches only to files older than their source documentation"
+        }
+    }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
@@ -260,5 +284,39 @@ class DocProcessorAction(
         ) {
             override fun toString(): String = "$displayName - $description"
         }
+    }
+}
+
+/**
+ * Action group that provides a submenu with all overwrite mode options
+ */
+class DocProcessorActionGroup : DefaultActionGroup() {
+
+    init {
+        isPopup = true
+        templatePresentation.text = "📋 Build Related"
+        templatePresentation.description = "Process markdown documentation files with frontmatter specifications"
+    }
+
+    override fun getChildren(e: AnActionEvent?): Array<AnAction> {
+        return OverwriteModes.entries.map { mode ->
+            object : DocProcessorAction(mode) {
+                init {
+                    templatePresentation.text = getModeLabel(mode)
+                    templatePresentation.description = getModeDescription(mode)
+                }
+            }
+        }.toTypedArray()
+    }
+
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
+    override fun update(e: AnActionEvent) {
+        val selectedFiles = e.getSelectedFiles()
+        val hasMarkdownFiles = selectedFiles.any { file ->
+            val fileName = file.name.lowercase()
+            fileName.endsWith(".md") || fileName.endsWith(".markdown")
+        }
+        e.presentation.isEnabledAndVisible = hasMarkdownFiles && e.project != null
     }
 }
