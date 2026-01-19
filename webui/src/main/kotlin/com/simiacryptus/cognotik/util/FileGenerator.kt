@@ -132,9 +132,11 @@ fun withHarness(
   smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
   function: (UnifiedHarness) -> Unit
 ) {
+  val workingDir = root.resolve("workspaces/${testName}/test-${PlanHarness.Companion.now()}")
   val harness = object : UnifiedHarness(fastModel = fastModel, smartModel = smartModel) {
-    override fun createTempDirectory(prefix: String) =
-      root.resolve("workspaces/${testName}/test-${PlanHarness.Companion.now()}").apply { mkdirs() }
+    override fun createTempDirectory(prefix: String): File {
+      return workingDir.apply { mkdirs() }
+    }
   }
   harness.start()
   try {

@@ -24,6 +24,7 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.asApiChatModel
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
+import com.simiacryptus.cognotik.util.PlanHarness.Companion.now
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.trayIcon
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -276,6 +277,10 @@ open class UnifiedHarness(
                         clazz = this.javaClass
                     )
                     startSession(session, user, socketManager)
+                    socketManager.resolveUserFile("task_${now()}.json")?.writeText(mapOf(
+                        "typeConfig" to typeConfig,
+                        "exeConfig" to executionConfig
+                    ).toJson())
                     return socketManager
                 } else {
                     return super.newSession(user, session)

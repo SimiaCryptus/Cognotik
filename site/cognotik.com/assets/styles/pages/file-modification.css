@@ -1,0 +1,185 @@
+/* File Modification Page Styles */
+
+/* Simulator Grid Layout */
+.simulator-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+    margin-bottom: var(--space-8);
+}
+
+@media (max-width: 1024px) {
+    .simulator-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Features Grid */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+}
+
+.feature-card {
+    padding: var(--space-6);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-fast);
+}
+
+.feature-card:hover {
+    border-color: var(--border-default);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--space-4);
+    color: var(--accent-primary);
+    background: rgba(88, 166, 255, 0.1);
+    border-radius: var(--radius-md);
+}
+
+.feature-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Configuration Table */
+.config-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+}
+
+.config-table thead {
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.config-table th {
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.config-table td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+.config-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.config-table code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding: 0.15em 0.4em;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--accent-primary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .config-table {
+        font-size: var(--text-xs);
+    }
+
+    .config-table th,
+    .config-table td {
+        padding: var(--space-2) var(--space-3);
+    }
+}
+
+/* Hero section gradient background */
+.hero-gradient {
+    background: radial-gradient(
+        ellipse at top center,
+        rgba(88, 166, 255, 0.1) 0%,
+        transparent 50%
+    ), var(--bg-app);
+}
+
+/* Elevated background section */
+.bg-elevated {
+    background: var(--bg-elevated);
+}
+
+/* Max width container */
+.max-w-6xl {
+    max-width: 1200px;
+}
+
+/* Padding utilities */
+.py-16 {
+    padding-top: var(--space-16);
+    padding-bottom: var(--space-16);
+}
+
+.px-4 {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+}
+
+.mx-auto {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.mb-12 {
+    margin-bottom: var(--space-12);
+}
+
+.mb-4 {
+    margin-bottom: var(--space-4);
+}
+
+.mb-3 {
+    margin-bottom: var(--space-3);
+}
+
+.mb-2 {
+    margin-bottom: var(--space-2);
+}
+
+/* Text utilities */
+.text-center {
+    text-align: center;
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+}
+
+.text-lg {
+    font-size: var(--text-lg);
+}
+
+.text-xl {
+    font-size: var(--text-xl);
+}
+
+.text-3xl {
+    font-size: var(--text-3xl);
+}
+
+.font-semibold {
+    font-weight: 600;
+}
+
+/* Overflow utilities */
+.overflow-x-auto {
+    overflow-x: auto;
+}

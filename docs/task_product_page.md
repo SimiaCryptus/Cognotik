@@ -1,3 +1,7 @@
+---
+transforms: ../webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/(?:.+/)([^\./]+)\.kt -> ../site/cognotik.com/$1.html
+---
+
 # Cognotik Product Page Standards: The "Industrial" Design System
 
 ## 1. Design Philosophy

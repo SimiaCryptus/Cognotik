@@ -1,5 +1,6 @@
 package com.simiacryptus;
 
+import com.simiacryptus.cognotik.chat.model.AnthropicModels;
 import com.simiacryptus.cognotik.chat.model.ChatModel;
 import com.simiacryptus.cognotik.chat.model.GeminiModels;
 import com.simiacryptus.cognotik.util.DocProcessor;
@@ -18,18 +19,17 @@ import static com.simiacryptus.CognotikUtils.relativize;
 public record DocumentationUpdater(
         String overwriteMode,
         String rootDir,
-        String promptTemplate,
         int threads
 ) {
     public void run() {
         FileGenerator.OverwriteModes mode = FileGenerator.OverwriteModes.valueOf(overwriteMode);
-        ChatModel chatModel = GeminiModels.getGeminiFlash_30_Preview();
+        //ChatModel chatModel = GeminiModels.getGeminiFlash_30_Preview();
+        ChatModel chatModel = AnthropicModels.INSTANCE.getClaude45Haiku();
         new DocProcessor() {}.run(
                 new File(rootDir),
-                new File(rootDir, "docs"),
+                new File(rootDir),
                 mode,
-                (source, folder) -> new ArrayList<>(),
-                (source, target) -> promptTemplate.contains("%s") ? promptTemplate.replace("%s", target.toString()) : promptTemplate + " (" + target + ")",
+                ( source, folder) -> new ArrayList<>(),
                 threads,
                 chatModel,
                 chatModel
@@ -37,9 +37,8 @@ public record DocumentationUpdater(
     }
 
     public static final String DEFAULT_ROOT = ".";
-    public static final String DEFAULT_PROMPT = "Update implementation file (%s) according to the standards documents";
     public static final int DEFAULT_THREADS = 4;
-    public static final String DEFAULT_OVERWRITE_MODE = "PatchExisting";
+    public static final String DEFAULT_OVERWRITE_MODE = FileGenerator.OverwriteModes.PatchToUpdate.name();
     
     public static void main(String[] args) {
         configureEnvironmentalKeys();
@@ -47,7 +46,6 @@ public record DocumentationUpdater(
         new DocumentationUpdater(
                 getArg(args, 0, DEFAULT_OVERWRITE_MODE),
                 getArg(args, 1, DEFAULT_ROOT),
-                getArg(args, 2, DEFAULT_PROMPT),
                 Integer.parseInt(getArg(args, 3, String.valueOf(DEFAULT_THREADS)))
         ).run();
     }
