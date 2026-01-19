@@ -1,3 +1,8 @@
+---
+documents: ../core/src/main/kotlin/com/simiacryptus/cognotik/agents/*.kt
+specifies: ../site/cognotik.com/agent-types.html
+---
+
 This guide provides a detailed overview of the Agent types available in the **Cognotik** library.
 
 Cognotik is designed around a strongly typed, object-oriented approach to LLM interaction. At the core is the abstract `BaseAgent<I, R>`, where `I` is the Input type and `R` is the Result type.

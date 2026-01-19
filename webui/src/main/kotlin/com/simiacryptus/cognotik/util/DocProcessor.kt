@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
@@ -24,7 +25,15 @@ import java.util.regex.Pattern
  * Additionally, a 'transforms' key can specify source->destination file transformations using regex
  * patterns with capture groups and backreferences.
  */
-open class DocProcessor {
+open class DocProcessor(
+  val root: File,
+  val docsFolder: File,
+  val overwriteMode: OverwriteMode = OverwriteModes.PatchToUpdate,
+  val additionalContext: (DocSpec, File) -> List<String> = { _, _ -> emptyList() },
+  val concurrencyLimit: Int = 4,
+  val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
+  val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview
+) {
 
   data class DocSpec(
     val docFile: File,
@@ -45,35 +54,23 @@ open class DocProcessor {
     val destinationPattern: String
   )
 
-  /**
-   * Represents a matched transformation with resolved source and destination files.
-   */
   data class TransformMatch(
     val sourceFile: File,
     val destinationFile: File,
     val spec: DocSpec
   )
 
-  fun run(
-    root: File,
-    docsFolder: File,
-    overwriteMode: OverwriteMode = OverwriteModes.PatchToUpdate,
-    additionalContext: (DocSpec, File) -> List<String> = { _, _ -> emptyList() },
-    concurrencyLimit: Int = 4,
-    fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
-    smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview
-  ) {
-    val concurrencyProcessor = FixedConcurrencyProcessor(
-      pool = Executors.newCachedThreadPool(),
-      concurrencyLimit = concurrencyLimit
-    )
-
-    // Find all markdown files in the docs folder
+  fun run() {
+    val concurrencyProcessor = FixedConcurrencyProcessor(Executors.newCachedThreadPool(), concurrencyLimit)
     val markdownFiles = docsFolder.listFilesRecursively()
       .filter { it.isFile && it.extension in setOf("md", "markdown") }
-
     log.info("Found ${markdownFiles.size} markdown files in ${docsFolder.absolutePath}")
+    runAll(getAll(*markdownFiles.toTypedArray()), concurrencyProcessor)
+  }
 
+  fun getAll(
+    vararg markdownFiles: File,
+  ): Array<Pair<FileModificationTaskExecutionConfigData, PatchProcessors>> {
     // Parse each markdown file for frontmatter
     val docSpecs = markdownFiles.mapNotNull { mdFile ->
       parseMarkdownWithFrontmatter(mdFile)
@@ -132,96 +129,106 @@ open class DocProcessor {
       .associateWith { Triple(fileToSpecs[it], fileToTransforms[it], fileToDocuments[it]) }
     log.info("Total unique target files: ${allTargetFiles.size}")
 
+    val fileMods = allTargetFiles.keys.map { targetFile ->
+      val specs = fileToSpecs[targetFile] ?: emptyList()
+      val transforms = fileToTransforms[targetFile] ?: emptyList()
+      val documents = fileToDocuments[targetFile] ?: emptyList()
 
-    withHarness(root, javaClass.simpleName, fastModel, smartModel) { harness ->
-      // Process all target files (combining specifies and transforms)
-      allTargetFiles.keys.map { targetFile ->
-        val specs = fileToSpecs[targetFile] ?: emptyList()
-        val transforms = fileToTransforms[targetFile] ?: emptyList()
-        val documents = fileToDocuments[targetFile] ?: emptyList()
+      val targetFile = File(targetFile)
+      val relativeTarget = targetFile.relativeTo(root.absoluteFile)
 
-        val targetFile = File(targetFile)
-        val relativeTarget = targetFile.relativeTo(root.absoluteFile)
-
-        // Collect all related files from all specs and transforms
-        val allRelatedFiles = (specs.flatMap { spec ->
-          listOf(spec.docFile) + additionalContext(spec, targetFile).map { File(it) }
-        } + transforms.flatMap { match ->
-          listOf(match.spec.docFile, match.sourceFile) + additionalContext(match.spec, targetFile).map {
-            File(
-              it
-            )
-          }
-        } + documents.flatMap { docMatch ->
-          docMatch.supportingFiles + additionalContext(docMatch.docSpec, targetFile).map { File(it) }
-        }).distinct()
-
-        // Determine the primary source file for overwrite mode preparation
-        val primarySource = when {
-          transforms.isNotEmpty() -> transforms.first().sourceFile
-          specs.isNotEmpty() -> specs.first().docFile
-          documents.isNotEmpty() -> documents.first().supportingFiles.firstOrNull() ?: documents.first().docSpec.docFile
-          else -> return@map null
+      // Collect all related files from all specs and transforms
+      val allRelatedFiles = (specs.flatMap { spec ->
+        listOf(spec.docFile) + additionalContext(spec, targetFile).map { File(it) }
+      } + transforms.flatMap { match ->
+        listOf(match.spec.docFile, match.sourceFile) + additionalContext(match.spec, targetFile).map {
+          File(
+            it
+          )
         }
+      } + documents.flatMap { docMatch ->
+        docMatch.supportingFiles + additionalContext(docMatch.docSpec, targetFile).map { File(it) }
+      }).distinct()
 
+      // Determine the primary source file for overwrite mode preparation
+      val primarySource = when {
+        transforms.isNotEmpty() -> transforms.first().sourceFile
+        specs.isNotEmpty() -> specs.first().docFile
+        documents.isNotEmpty() -> documents.first().supportingFiles.firstOrNull() ?: documents.first().docSpec.docFile
+        else -> return@map null
+      }
+
+      fun data(): FileModificationTaskExecutionConfigData = FileModificationTaskExecutionConfigData(
+        files = listOf(relativeTarget.toString()),
+        related_files = (specs.flatMap { spec ->
+          listOf(spec.docFile.relativeTo(root.absoluteFile).toString()) +
+              additionalContext(spec, targetFile)
+        } + transforms.flatMap { match ->
+          listOf(
+            match.spec.docFile.relativeTo(root.absoluteFile).toString(),
+            match.sourceFile.relativeTo(root.absoluteFile).toString()
+          ) + additionalContext(match.spec, targetFile)
+        } + documents.flatMap { docMatch ->
+          docMatch.supportingFiles.map { it.relativeTo(root.absoluteFile).toString() } +
+              additionalContext(docMatch.docSpec, targetFile)
+        }).distinct(),
+        task_description = buildCombinedTaskDescription(specs, transforms, documents, targetFile),
+      )
+
+      try {
+        log.info(
+          "Processing ${relativeTarget} based on ${specs.size} spec(s), ${transforms.size} transform(s), and ${documents.size} document(s): ${
+            (specs.map { it.docFile.name } +
+                transforms.map { "${it.spec.docFile.name}(${it.sourceFile.name})" } +
+                documents.map<DocumentMatch, String> { "${it.docSpec.docFile.name}(${it.supportingFiles.size} files)" }
+                ).joinToString(", ")
+          }")
         overwriteMode.prepare(
           source = primarySource,
           target = targetFile,
           relatedFiles = allRelatedFiles
         )?.let { patchProcessor ->
-          concurrencyProcessor.submit {
-            try {
-              val specNames = specs.map { it.docFile.name }
-              val transformNames = transforms.map { "${it.spec.docFile.name}(${it.sourceFile.name})" }
-              val documentNames = documents.map { "${it.docSpec.docFile.name}(${it.supportingFiles.size} files)" }
-              val allNames = (specNames + transformNames + documentNames).joinToString(", ")
-              log.info("Processing ${relativeTarget} based on ${specs.size} spec(s), ${transforms.size} transform(s), and ${documents.size} document(s): $allNames")
-
-              // Build combined task description
-              val description = buildCombinedTaskDescription(specs, transforms, documents, targetFile)
-
-              // Collect all related file paths from specs and transforms
-              val allRelatedFilePaths = (specs.flatMap { spec ->
-                listOf(spec.docFile.relativeTo(root.absoluteFile).toString()) +
-                    additionalContext(spec, targetFile)
-              } + transforms.flatMap { match ->
-                listOf(
-                  match.spec.docFile.relativeTo(root.absoluteFile).toString(),
-                  match.sourceFile.relativeTo(root.absoluteFile).toString()
-                ) + additionalContext(match.spec, targetFile)
-              } + documents.flatMap { docMatch ->
-                docMatch.supportingFiles.map { it.relativeTo(root.absoluteFile).toString() } +
-                    additionalContext(docMatch.docSpec, targetFile)
-              }).distinct()
-
-              harness.runTask(
-                taskType = FileModification,
-                typeConfig = TaskTypeConfig(task_type = FileModification.name),
-                executionConfig = FileModificationTaskExecutionConfigData(
-                  files = listOf(relativeTarget.toString()),
-                  related_files = allRelatedFilePaths,
-                  task_description = description,
-                ),
-                timeoutMinutes = 5,
-                workspace = root.absoluteFile,
-                initSettings = { session ->
-                  harness.initSettings(
-                    session = session,
-                    workspace = root.absoluteFile,
-                    autoFix = true,
-                    taskType = FileModification,
-                    typeConfig = TaskTypeConfig(task_type = FileModification.name)
-                  ).apply {
-                    processor = patchProcessor
-                  }
-                }
-              )
-            } catch (e: Exception) {
-              log.error("Error processing ${relativeTarget}", e)
-            }
-          }
+          Pair(
+            data(), patchProcessor
+          )
         }
-      }.filterNotNull().toTypedArray().forEach { it.get() }
+      } catch (e: Exception) {
+        log.error("Error processing ${relativeTarget}", e)
+        null
+      }
+    }.filterNotNull().toTypedArray()
+    return fileMods
+  }
+
+  fun runAll(
+    fileMods: Array<Pair<FileModificationTaskExecutionConfigData, PatchProcessors>>,
+    concurrencyProcessor: FixedConcurrencyProcessor
+  ) {
+    withHarness(root, javaClass.simpleName, fastModel, smartModel) { harness ->
+      fileMods.toList().map { pair ->
+        val patchProcessor = pair.component2()
+        val executionConfig = pair.component1()
+        concurrencyProcessor.submit {
+          harness.runTask(
+            taskType = FileModification,
+            typeConfig = TaskTypeConfig(task_type = FileModification.name),
+            executionConfig = executionConfig,
+            timeoutMinutes = 5,
+            workspace = root.absoluteFile,
+            initSettings = { session ->
+              harness.initSettings(
+                session = session,
+                workspace = root.absoluteFile,
+                autoFix = true,
+                taskType = FileModification,
+                typeConfig = TaskTypeConfig(task_type = FileModification.name)
+              ).apply {
+                processor = patchProcessor
+              }
+            }
+          )
+        }
+      }.toTypedArray().forEach { it.get() }
     }
   }
 

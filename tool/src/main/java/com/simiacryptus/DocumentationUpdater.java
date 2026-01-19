@@ -25,7 +25,7 @@ public record DocumentationUpdater(
         FileGenerator.OverwriteModes mode = FileGenerator.OverwriteModes.valueOf(overwriteMode);
         //ChatModel chatModel = GeminiModels.getGeminiFlash_30_Preview();
         ChatModel chatModel = AnthropicModels.INSTANCE.getClaude45Haiku();
-        new DocProcessor() {}.run(
+        new DocProcessor(
                 new File(rootDir),
                 new File(rootDir),
                 mode,
@@ -33,7 +33,7 @@ public record DocumentationUpdater(
                 threads,
                 chatModel,
                 chatModel
-        );
+        ).run();
     }
 
     public static final String DEFAULT_ROOT = ".";

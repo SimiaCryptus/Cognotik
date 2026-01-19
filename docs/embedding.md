@@ -1,3 +1,13 @@
+---
+documents:
+    - webui/src/main/kotlin/com/simiacryptus/cognotik/util/UnifiedHarness.kt
+    - webui/src/main/kotlin/com/simiacryptus/cognotik/util/TaskHarness.kt
+    - webui/src/main/kotlin/com/simiacryptus/cognotik/util/PlanHarness.kt
+    - webui/src/main/kotlin/com/simiacryptus/cognotik/util/FileGenerator.kt
+    - webui/src/main/kotlin/com/simiacryptus/cognotik/util/DocProcessor.kt    
+specifies: ../site/cognotik.com/embedding.html
+---
+
 # Embedding Cognotik: A Guide for Automated Agentic Coding
 
 This guide details how to use the **Cognotik** library (`com.cognotik:webapp`) as an embedded engine. By importing Cognotik directly into your build process (Gradle plugins, CLI tools, or GitHub Actions), you can leverage "Headless" AI agents to perform complex coding tasks, refactoring, or documentation generation without a user interface.
