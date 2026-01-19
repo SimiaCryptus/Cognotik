@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.macros
 
 import com.simiacryptus.cognotik.util.FileGenerator
+import com.simiacryptus.cognotik.util.OverwriteModes
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import java.io.File
 
