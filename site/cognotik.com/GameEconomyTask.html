@@ -265,7 +265,7 @@
 
         code {
             font-family: var(--font-mono);
-            background: rgba(255,255,255,0.05);
+          background: rgba(255, 255, 255, 0.05);
             padding: 0.1rem 0.3rem;
             border-radius: 3px;
         }
@@ -319,7 +319,7 @@
 -            <div class="panel-header">Input Configuration</div>
 +            <div class="panel-header">⚙️ GameEconomyConfig.json</div>
             <div class="panel-header">⚙️ GameEconomyConfig.json</div>
-             <pre><code class="language-json">
+          <pre><code class="language-json">{
  {
 -  "target_file": "src/main/App.kt",
 -  "instructions": "Add a logging statement to the main loop",
@@ -335,7 +335,7 @@
   "monetization_model": "free-to-play",
   "include_battle_pass": true
  }
-             </code></pre>
+}</code></pre>
          </div>
  
          <div class="flow-arrow">→</div>
@@ -386,11 +386,11 @@
      <!-- 3. TABS -->
      <section class="details-tabs">
          <nav class="tabs-nav">
-             <button class="active" onclick="switchTab('docs')">Documentation</button>
+          <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
 -            <button onclick="switchTab('preview')">Live Preview</button>
 +            <button onclick="switchTab('process')">Process Lifecycle</button>
-            <button onclick="switchTab('process')">Process Lifecycle</button>
-             <button onclick="switchTab('integration')">Integration</button>
+          <button onclick="switchTab(event, 'process')">Process Lifecycle</button>
+          <button onclick="switchTab(event, 'integration')">Integration</button>
          </nav>
  
 -        <!-- TAB: DOCS -->
@@ -535,7 +535,7 @@ harness.runTask(
  
      </section>
 <script>
-    function switchTab(tabId) {
+  function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).style.display = 'block';

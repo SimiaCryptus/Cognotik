@@ -83,7 +83,7 @@
             border-radius: 4px;
             font-size: 0.75rem;
             font-family: var(--font-mono);
-            color: var(--accent-primary);
+          color: var(--accent-warning);
         }
 
         /* Reality Check Grid */
@@ -96,7 +96,7 @@
         }
 
         .panel {
-            background: var(--bg-panel);
+          background: var(--bg-elevated);
             border: 1px solid var(--border-subtle);
             border-radius: 6px;
             display: flex;
@@ -195,7 +195,7 @@
             letter-spacing: 0.05em;
         }
         .docs-table tr:hover {
-            background: rgba(255,255,255,0.02);
+          background: rgba(255, 255, 255, 0.02);
         }
 
         .docs-table td {
@@ -234,25 +234,25 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-<main class="bento-container">
+  <main class="page-container">
 
     <!-- 1. HEADER AREA -->
     <section class="task-header">
         <div class="breadcrumbs">Home > Tasks > Reasoning > FiniteStateMachineTask</div>
         <h1>FiniteStateMachineTask</h1>
-        <p class="pitch">
+          <p class="task-pitch">
             Model concepts using finite state machine analysis to identify states, map transitions, and validate system logic.
         </p>
-        <div class="badges">
-            <span class="badge">Category: Reasoning</span>
-            <span class="badge">Model: GPT-4 Preferred</span>
-            <span class="badge">Output: Mermaid + Markdown</span>
+          <div class="task-badges">
+              <span class="badge badge-primary">Category: Reasoning</span>
+              <span class="badge badge-primary">Model: GPT-4 Preferred</span>
+              <span class="badge badge-warning">Output: Mermaid + Markdown</span>
         </div>
     </section>
 
     <!-- 2. REALITY CHECK (Visual Proof) -->
     <section class="reality-check">
-        <!-- Input: The Code -->
+          <!-- Input: The Config -->
         <div class="panel">
             <div class="panel-header"><span>⚙️</span> TaskConfig.json</div>
             <pre><code class="language-json">{
@@ -267,7 +267,7 @@
 
         <div class="flow-arrow">→</div>
 
-        <!-- Output: The UI -->
+          <!-- Output: The Diagram -->
         <div class="panel">
             <div class="panel-header"><span>👁️</span> Generated State Diagram</div>
             <div class="mock-ui-content">
@@ -302,9 +302,9 @@
     <!-- 3. TABBED DETAILS -->
     <section class="task-details">
         <div class="tabs-nav">
-            <button class="active" onclick="switchTab('docs')">Documentation</button>
-            <button onclick="switchTab('process')">Config & Process</button>
-            <button onclick="switchTab('integration')">Integration</button>
+              <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
+              <button onclick="switchTab(event, 'process')">Config & Process</button>
+              <button onclick="switchTab(event, 'integration')">Integration</button>
         </div>
 
         <div class="tab-content">

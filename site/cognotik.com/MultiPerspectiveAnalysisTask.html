@@ -15,8 +15,8 @@
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -121,7 +121,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             font-size: 1.5rem;
         }
 
@@ -145,7 +145,7 @@
             padding: 0.5rem 0.8rem;
             font-size: 0.7rem;
             border-right: 1px solid var(--border-subtle);
-            color: var(--text-dim);
+          color: var(--text-tertiary);
         }
         .mock-tab.active {
             background: var(--bg-panel);
@@ -230,7 +230,7 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-<main class="bento-container">
+  <main class="page-container">
 
     <!-- 1. HEADER AREA -->
     <section class="task-header">
@@ -363,7 +363,7 @@
         <!-- TAB: INTEGRATION -->
         <div id="tab-integration" class="tab-pane">
             <h3>Embedded Execution (Scenario B)</h3>
-            <p class="pitch" style="font-size: 0.9rem;">Invoke this task directly using the <code>UnifiedHarness</code> in headless mode:</p>
+              <p class="pitch" style="font-size: var(--text-sm);">Invoke this task directly using the <code>UnifiedHarness</code> in headless mode:</p>
             <pre style="background: #0d1117; border-radius: 6px; border: 1px solid var(--border-subtle);"><code>import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.social.MultiPerspectiveAnalysisTask.Companion.MultiPerspectiveAnalysis
 import com.simiacryptus.cognotik.plan.tools.social.MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysisTaskExecutionConfigData

@@ -28,7 +28,7 @@
 
         body {
             background-color: var(--bg-app);
-            color: var(--text-main);
+          color: var(--text-primary);
             font-family: 'Inter', sans-serif;
             margin: 0;
             line-height: 1.5;
@@ -227,13 +227,13 @@
     <header class="task-header">
         <div class="breadcrumbs">Home > Tasks > Web Crawling > Strategies</div>
         <h1>DataTableAccumulationStrategy</h1>
-        <p class="pitch">
+          <p class="task-pitch">
             Extracts and accumulates structured tabular data across multiple web pages with automated normalization, deduplication, and multi-format export.
         </p>
         <div class="badges">
-            <span class="badge">Stateful: Accumulative</span>
-            <span class="badge">Model: GPT-4o Preferred</span>
-            <span class="badge">Output: CSV/JSON/Markdown</span>
+              <span class="badge badge-primary">Stateful: Accumulative</span>
+              <span class="badge badge-primary">Model: GPT-4o Preferred</span>
+              <span class="badge badge-success">Output: CSV/JSON/Markdown</span>
         </div>
     </header>
 
@@ -374,19 +374,19 @@
             <div class="process-step">
                 <h4>2. Normalization & Validation</h4>
                 <p style="color: var(--text-dim); font-size: 0.9rem;">
-                    Values are cleaned based on <code>column_types</code>. Numbers are stripped of non-numeric characters, and booleans are normalized from natural language (e.g., "Yes" → <code>true</code>).
+                      Values are cleaned based on <code class="code-inline">column_types</code>. Numbers are stripped of non-numeric characters, and booleans are normalized from natural language (e.g., "Yes" → <code class="code-inline">true</code>).
                 </p>
             </div>
             <div class="process-step">
                 <h4>3. Deduplication</h4>
                 <p style="color: var(--text-dim); font-size: 0.9rem;">
-                    If <code>key_columns</code> are provided, the strategy maintains a <code>ConcurrentHashMap</code> of seen keys to ensure data uniqueness across multi-page crawls.
+                      If <code class="code-inline">key_columns</code> are provided, the strategy maintains a <code class="code-inline">ConcurrentHashMap</code> of seen keys to ensure data uniqueness across multi-page crawls.
                 </p>
             </div>
             <div class="process-step">
                 <h4>4. Final Export</h4>
                 <p style="color: var(--text-dim); font-size: 0.9rem;">
-                    Upon completion, the strategy aggregates all accumulated rows and generates a final file (<code>data_table.csv</code>, <code>.json</code>, or <code>.md</code>) in the workspace directory.
+                      Upon completion, the strategy aggregates all accumulated rows and generates a final file (<code class="code-inline">data_table.csv</code>, <code class="code-inline">.json</code>, or <code class="code-inline">.md</code>) in the workspace directory.
                 </p>
             </div>
         </div>
@@ -426,7 +426,7 @@ Return a list of rows and a confidence score.</code></pre>
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).style.display = 'block';

@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -90,7 +90,7 @@
 
         .panel {
             background: var(--bg-panel);
-            border: 1px solid var(--border-subtle);
+          border-bottom: 1px solid var(--border-subtle);
             border-radius: 6px;
             overflow: hidden;
             height: 100%;
@@ -118,7 +118,7 @@
 
         .flow-arrow {
             text-align: center;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             font-size: 1.5rem;
         }
 
@@ -205,7 +205,7 @@
 
 <main class="task-container">
 
-    <!-- 1. HEADER -->
+      <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Tools / Online / RobotsTxtParser</div>
         <h1>RobotsTxtParser</h1>
@@ -213,8 +213,8 @@
             High-performance, thread-safe robots.txt compliance engine. Handles wildcard matching, crawl-delay directives, and sitemap discovery with built-in caching.
         </p>
         <div class="badges">
-            <span class="badge">Side-Effect: Safe</span>
-            <span class="badge">Network: Required</span>
+              <span class="badge badge-success">Side-Effect: Safe</span>
+              <span class="badge badge-warning">Network: Required</span>
             <span class="badge">Thread-Safe</span>
         </div>
     </header>
@@ -373,7 +373,7 @@ class WebScraper(private val parser: RobotsTxtParser = RobotsTxtParser()) {
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 

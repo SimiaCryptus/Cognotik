@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         .reality-check-grid {
@@ -30,7 +30,7 @@
         }
 
         .panel-header {
-            background: var(--bg-app);
+          background: var(--bg-elevated);
             padding: 0.5rem 1rem;
             border-bottom: 1px solid var(--border-subtle);
             font-family: var(--font-mono);
@@ -43,7 +43,7 @@
 
         .flow-arrow {
             text-align: center;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             font-size: 1.5rem;
         }
 
@@ -56,7 +56,7 @@
             background: none;
             border: none;
             padding: 0.75rem 1.5rem;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             cursor: pointer;
             border-bottom: 2px solid transparent;
         }
@@ -102,7 +102,7 @@
     </header>
 
     <!-- 2. REALITY CHECK -->
-    <section class="reality-check-grid">
+          <div class="reality-check-grid">
         <!-- Input: Protocol Definition -->
         <div class="panel">
             <div class="panel-header">
@@ -235,7 +235,7 @@ while (currentStateName != null && iteration++ < maxIterations) {
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).style.display = 'block';

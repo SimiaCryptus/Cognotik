@@ -51,7 +51,7 @@
         .breadcrumbs {
             font-family: var(--font-mono);
             font-size: 0.75rem;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             margin-bottom: 0.5rem;
         }
 
@@ -152,7 +152,7 @@
 
         .ui-tab {
             font-size: 0.7rem;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             padding: 2px 8px;
             border: 1px solid var(--border-subtle);
             border-radius: 3px;
@@ -191,7 +191,7 @@
             color: var(--text-dim);
             cursor: pointer;
             font-weight: 600;
-            font-size: 0.9rem;
+          font-size: 0.95rem;
             border-bottom: 2px solid transparent;
             transition: all 0.2s;
         }
@@ -252,7 +252,7 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-<main class="bento-container">
+  <main class="page-container">
 
     <!-- 1. HEADER AREA -->
     <section class="task-header">
@@ -320,7 +320,7 @@
                         <span>15/100</span>
                     </div>
                     <h4 style="margin-bottom: 5px; margin-top: 15px; color: #fff;">Dominant Strategies</h4>
-                    <ul style="margin-top: 0; font-size: 0.8rem; color: var(--text-dim); padding-left: 1.2rem;">
+                      <ul style="margin-top: 0; font-size: 0.8rem; color: var(--text-secondary); padding-left: var(--space-6);">
                         <li>Early-game resource hoarding (Mitigated by Sink Mechanics)</li>
                         <li>High-density tower clusters (Countered by Splash Damage)</li>
                     </ul>
@@ -430,21 +430,21 @@
             </table>
 
             <h3 style="color: #fff;">Token Usage</h3>
-            <p style="color: var(--text-dim);">Estimated consumption: <strong>Medium-High</strong>. This task involves multiple LLM passes for generation, interaction analysis, and simulation.</p>
+              <p>Estimated consumption: <strong>Medium-High</strong>. This task involves multiple LLM passes for generation, interaction analysis, and simulation.</p>
         </div>
 
         <!-- TAB 2: Config & Process -->
         <div id="tab-process" class="tab-pane">
             <h3 style="color: #fff;">Task Process Lifecycle</h3>
             <ol style="padding-left: 1.5rem; color: var(--text-main);">
-                <li style="margin-bottom: 0.75rem;"><strong>Context Gathering:</strong> Reads input files and prior task results to align with existing lore or technical constraints.</li>
-                <li style="margin-bottom: 0.75rem;"><strong>Mechanic Generation:</strong> Designs core loops, player actions, and system responses based on the concept and audience.</li>
-                <li style="margin-bottom: 0.75rem;"><strong>Interaction Analysis:</strong> Maps synergies and conflicts between mechanics to identify balance risks.</li>
-                <li style="margin-bottom: 0.75rem;"><strong>Progression Design:</strong> (Optional) Constructs XP curves, level unlocks, and difficulty multipliers.</li>
-                <li style="margin-bottom: 0.75rem;"><strong>Economy Design:</strong> (Optional) Defines resource types, generation rates, and sink mechanisms.</li>
-                <li style="margin-bottom: 0.75rem;"><strong>Balance Evaluation:</strong> Calculates skill/luck ratios and identifies dominant strategies.</li>
-                <li style="margin-bottom: 0.75rem;"><strong>Playtesting Simulation:</strong> Predicts engagement curves and frustration triggers for different player personas.</li>
-                <li style="margin-bottom: 0.75rem;"><strong>Tuning Generation:</strong> (Optional) Produces actionable difficulty and reward multipliers.</li>
+                  <li><strong>Context Gathering:</strong> Reads input files and prior task results to align with existing lore or technical constraints.</li>
+                  <li><strong>Mechanic Generation:</strong> Designs core loops, player actions, and system responses based on the concept and audience.</li>
+                  <li><strong>Interaction Analysis:</strong> Maps synergies and conflicts between mechanics to identify balance risks.</li>
+                  <li><strong>Progression Design:</strong> (Optional) Constructs XP curves, level unlocks, and difficulty multipliers.</li>
+                  <li><strong>Economy Design:</strong> (Optional) Defines resource types, generation rates, and sink mechanisms.</li>
+                  <li><strong>Balance Evaluation:</strong> Calculates skill/luck ratios and identifies dominant strategies.</li>
+                  <li><strong>Playtesting Simulation:</strong> Predicts engagement curves and frustration triggers for different player personas.</li>
+                  <li><strong>Tuning Generation:</strong> (Optional) Produces actionable difficulty and reward multipliers.</li>
             </ol>
         </div>
 
@@ -511,7 +511,7 @@ fun testGameBalance() {
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
@@ -520,7 +520,7 @@ fun testGameBalance() {
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/GameMechanicsDesign/');
 </script>
 

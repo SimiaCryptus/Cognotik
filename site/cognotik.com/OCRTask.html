@@ -16,7 +16,7 @@
 
 
     <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <script type="module" src="assets/scripts/components/footer.js"></script>
 
     <style>
         :root {
@@ -37,7 +37,7 @@
             line-height: 1.5;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
@@ -212,9 +212,9 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-<main class="task-container">
+  <main class="page-container">
 
-    <!-- 1. HEADER -->
+      <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > File Operations > OCRTask</div>
         <h1>OCRTask</h1>
@@ -356,7 +356,7 @@
         <div id="tab-integration" class="tab-pane">
             <h3>Kotlin Usage</h3>
             <p style="color: var(--text-dim); margin-bottom: 1rem;">Invoke as a standalone tool using the <code>UnifiedHarness</code>.</p>
-            <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.file.OCRTask
+                  <pre><code id="code-kotlin-1" class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.file.OCRTask
 import com.simiacryptus.cognotik.plan.tools.file.OCRTask.Companion.OCR
 
 // 1. Define Runtime Input
@@ -379,7 +379,7 @@ harness.runTask(
 
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
             <p style="color: var(--text-dim); margin-bottom: 1rem;">The internal description used by the AI orchestrator:</p>
-            <pre><code class="language-text">OCR - Convert documents (PDF, Images) to Markdown text.
+                  <pre><code id="code-prompt-1" class="language-text">OCR - Convert documents (PDF, Images) to Markdown text.
 * Extracts text from images and PDFs using Vision models.
 * Preserves formatting as Markdown.
 * Optionally extracts figures as images and metadata/form fields.
@@ -401,7 +401,7 @@ harness.runTask(
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/test-20260110_143732/');
 </script>
 

@@ -23,7 +23,7 @@
             --bg-panel: #161b22;
             --border-subtle: #30363d;
             --accent-primary: #58a6ff;
-            --accent-secondary: #8957e5;
+          --accent-secondary: #7ee787;
             --text-main: #c9d1d9;
             --text-dim: #8b949e;
             --font-mono: 'JetBrains Mono', monospace;
@@ -230,7 +230,7 @@
                     <tr>
                         <td><code>relaxation_strategy</code></td>
                         <td>String</td>
-                        <td><code>progressive</code> (gradual), <code>selective</code> (subset), or <code>hierarchical</code> (levels).</td>
+                          <td><code>progressive</code> (gradual), <code>selective</code> (subset), or <code>hierarchical</code> (levels). Default: <code>progressive</code></td>
                     </tr>
                     <tr>
                         <td><code>reintroduction_order</code></td>
@@ -240,17 +240,17 @@
                     <tr>
                         <td><code>find_creative_satisfactions</code></td>
                         <td>Boolean</td>
-                        <td>Whether to actively seek creative ways to satisfy constraints. Default: <code>true</code>.</td>
+                          <td>Whether to actively seek creative ways to satisfy constraints. Default: <code>true</code></td>
                     </tr>
                     <tr>
                         <td><code>max_iterations</code></td>
                         <td>Int</td>
-                        <td>Maximum number of relaxation/reintroduction iterations (1-10). Default: <code>5</code>.</td>
+                          <td>Maximum number of relaxation/reintroduction iterations (1-10). Default: <code>5</code></td>
                     </tr>
                     <tr>
                         <td><code>input_files</code></td>
                         <td>List&lt;String&gt;</td>
-                        <td>Glob patterns for files to use as input context (e.g. <code>**/*.kt</code>).</td>
+                          <td>Glob patterns for files to use as input context (e.g., <code>**/*.kt</code>).</td>
                     </tr>
                     <tr>
                         <td><code>related_files</code></td>
@@ -309,7 +309,7 @@ val task = ConstraintRelaxationTask(
                 Using the <code>UnifiedHarness</code> for headless or automated agentic coding:
             </p>
             <pre class="panel"><code class="language-kotlin">
-import com.simiacryptus.cognotik.plan.tools.reasoning.ConstraintRelaxationTask.Companion.ConstraintRelaxation
+                  <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.reasoning.ConstraintRelaxationTask.Companion.ConstraintRelaxation
 import com.simiacryptus.cognotik.plan.tools.reasoning.ConstraintRelaxationTask.ConstraintRelaxationTaskExecutionConfigData
 harness.runTask(
     taskType = ConstraintRelaxation,
@@ -367,7 +367,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/ConstraintRelaxation/');
 </script>
 

@@ -8,15 +8,15 @@
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
     <!-- jQuery & FileTree for Showcase -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -37,7 +37,7 @@
             line-height: 1.6;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
@@ -204,9 +204,9 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-<main class="task-container">
+  <main class="page-container">
 
-    <!-- 1. HEADER -->
+      <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Writing > GenerateImage</div>
         <h1>GenerateImage</h1>
@@ -262,7 +262,7 @@
             <div id="file-tree-demo" style="height: 250px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
         </div>
         <p style="color: var(--text-dim); font-size: 0.85rem; margin-top: 0.5rem;">
-            Live view of the <code>webui/workspaces/ImageGenerationTask/</code> directory containing generated assets and logs.
+              Live view of the <span class="code-inline">webui/workspaces/ImageGenerationTask/</span> directory containing generated assets and logs.
         </p>
     </section>
 
@@ -317,10 +317,10 @@
             <h3>Task Lifecycle</h3>
             <ol style="color: var(--text-dim); font-size: 0.95rem;">
                 <li><strong>Validation:</strong> Ensures exactly one output file is specified with a valid image extension.</li>
-                <li><strong>Context Loading:</strong> Reads any reference images specified in <code>related_files</code>.</li>
+                  <li><strong>Context Loading:</strong> Reads any reference images specified in <span class="code-inline">related_files</span>.</li>
                 <li><strong>Prompt Engineering:</strong> Combines the task description with content from related files and results from prior tasks.</li>
-                <li><strong>Agent Execution:</strong> Dispatches to <code>ImageProcessingAgent</code> to generate the asset and an optimized prompt.</li>
-                <li><strong>Persistence:</strong> Saves the generated <code>BufferedImage</code> to the workspace and provides a download link in the UI.</li>
+                  <li><strong>Agent Execution:</strong> Dispatches to <span class="code-inline">ImageProcessingAgent</span> to generate the asset and an optimized prompt.</li>
+                  <li><strong>Persistence:</strong> Saves the generated image to the workspace and provides a download link in the UI.</li>
             </ol>
         </div>
 
@@ -376,8 +376,8 @@ val config = GenerateImageTaskExecutionConfigData(
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
-    initFileTree('#file-tree-demo', 'webui/workspaces/ImageGeneration/');
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
+      initFileTree('#file-tree-demo', 'webui/workspaces/ImageGenerationTask/');
 </script>
 
 

@@ -133,7 +133,7 @@
         </div>
     </header>
 
-    <!-- 2. REALITY CHECK -->
+      <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <div class="panel">
             <div class="panel-header"><span>⚙️</span> TaskConfig.json</div>
@@ -269,7 +269,7 @@ harness.runTask(
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).style.display = 'block';
@@ -277,7 +277,7 @@ harness.runTask(
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/GeneratePresentation/');
 </script>
 

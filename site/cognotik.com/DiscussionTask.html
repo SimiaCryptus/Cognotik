@@ -8,15 +8,15 @@
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
     <!-- jQuery & FileTree for Showcase -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -207,7 +207,7 @@
 
 <cognotik-header current-page="discussion-task"></cognotik-header>
 
-<main class="bento-container">
+  <main class="page-container">
 
     <!-- Section A: Header -->
     <section class="task-header">
@@ -217,9 +217,9 @@
             Directly answer questions or provide insights using the LLM, optionally referencing project files, with support for interactive user feedback.
         </p>
         <div class="badges">
-            <span class="badge">Side-Effect Safe</span>
-            <span class="badge">Interactive Support</span>
-            <span class="badge">Markdown Output</span>
+              <span class="badge badge-success">Side-Effect Safe</span>
+              <span class="badge badge-primary">Interactive Support</span>
+              <span class="badge badge-primary">Markdown Output</span>
         </div>
     </section>
 
@@ -266,7 +266,7 @@
     <section class="showcase-section" style="margin-bottom: 3rem;">
         <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Browser</h2>
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
-            Explore the artifacts and logs generated during automated testing of the <code>DiscussionTask</code>.
+              Explore the artifacts and logs generated during automated testing of the <code class="code-inline">DiscussionTask</code>.
         </p>
         <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem; background: var(--bg-panel);"></div>
     </section>
@@ -325,12 +325,12 @@
         <div id="process" class="tab-content">
             <h3>Task Lifecycle</h3>
             <ol>
-                <li><strong>Context Gathering:</strong> The task resolves <code>input_files</code> glob patterns against the workspace.</li>
+                  <li><strong>Context Gathering:</strong> The task resolves <code class="code-inline">input_files</code> glob patterns against the workspace.</li>
                 <li><strong>File Ingestion:</strong> Files are read and formatted into a single context block. Non-text files (PDFs, etc.) are processed via specialized readers.</li>
                 <li><strong>LLM Interaction:</strong>
                     <ul>
-                        <li>If <code>autoFix</code> is enabled: Performs a one-shot analysis and returns the result.</li>
-                        <li>If <code>autoFix</code> is disabled: Initiates an interactive <code>Discussable</code> session allowing the user to ask follow-up questions.</li>
+                          <li>If <code class="code-inline">autoFix</code> is enabled: Performs a one-shot analysis and returns the result.</li>
+                          <li>If <code class="code-inline">autoFix</code> is disabled: Initiates an interactive <code class="code-inline">Discussable</code> session allowing the user to ask follow-up questions.</li>
                     </ul>
                 </li>
                 <li><strong>Output:</strong> Generates a comprehensive Markdown report rendered directly in the Session UI.</li>
@@ -359,7 +359,7 @@
         <div id="integration" class="tab-content">
             <h3>Embedded Execution (UnifiedHarness)</h3>
             <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">
-                To run this task programmatically in a headless environment (CI/CD, CLI), use the <code>UnifiedHarness</code>.
+                  To run this task programmatically in a headless environment (CI/CD, CLI), use the <code class="code-inline">UnifiedHarness</code>.
             </p>
             <div class="panel" style="background: #000;">
                 <div class="panel-content">

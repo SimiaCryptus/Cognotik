@@ -8,7 +8,7 @@
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
     <!-- jQuery & FileTree for Showcase -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -31,13 +31,13 @@
 
         body {
             background-color: var(--bg-app);
-            color: var(--text-main);
+          color: var(--text-primary);
             font-family: 'Inter', sans-serif;
             margin: 0;
             line-height: 1.6;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
@@ -225,7 +225,7 @@
         </div>
     </header>
 
-    <!-- 2. REALITY CHECK -->
+  <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -254,7 +254,7 @@
         <!-- Output -->
         <div class="panel">
             <div class="panel-header">
-                <span>👁️ Session UI Output</span>
+              <span>Session UI Output</span>
             </div>
             <div class="mock-ui-content">
                 <div class="mock-tabs">
@@ -263,7 +263,7 @@
                     <div class="mock-tab">Dilemma Analysis</div>
                     <div class="mock-tab active">Synthesis</div>
                 </div>
-                <h4 style="margin-top: 0; color: var(--accent-primary);">Synthesis & Recommendation</h4>
+              <h4 style="margin-top: 0; color: var(--accent-primary); font-size: var(--text-lg);">Synthesis & Recommendation</h4>
                 <p style="font-size: 0.8rem; color: var(--text-dim);">
                     <strong>Conflict:</strong> Utilitarianism favors deployment to minimize aggregate risk, while Deontology warns against violating testing protocols.
                 </p>
@@ -271,7 +271,7 @@
                     <strong>Final Recommendation:</strong> Perform a 'Canary' deployment to 1% of users. This balances the duty of care (Deontology) with risk mitigation (Utilitarianism).
                 </div>
                 <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--accent-primary);">
-                    📥 Download: <span style="text-decoration: underline;">Report.pdf</span> | <span style="text-decoration: underline;">Report.md</span>
+                  📥 Download: <span style="text-decoration: underline; cursor: pointer;">Report.pdf</span> | <span style="text-decoration: underline; cursor: pointer;">Report.md</span>
                 </div>
             </div>
         </div>
@@ -385,7 +385,7 @@ harness.runTask(
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
             <p style="color: var(--text-dim); font-size: 0.9rem;">The following logic is injected into the LLM context:</p>
             <div class="panel" style="height: auto;">
-                <pre style="color: #8b949e;">EthicalReasoning - Analyze a dilemma through multiple ethical frameworks
+              <pre style="color: var(--text-secondary);">EthicalReasoning - Analyze a dilemma through multiple ethical frameworks
   ** Optionally specify input files (supports glob patterns) to provide context
   ** Files will be read and included in the analysis
   ** Specify the ethical dilemma and stakeholders
@@ -403,7 +403,7 @@ harness.runTask(
 </main>
 
 <script>
-    function switchTab(tabId) {
+  function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 

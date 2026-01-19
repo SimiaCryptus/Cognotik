@@ -8,15 +8,15 @@
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <!-- jQuery & FileTree -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -155,14 +155,14 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0,0,0,0.7);
+          background: rgba(0, 0, 0, 0.7);
             font-size: 0.65rem;
             padding: 2px 5px;
             font-family: var(--font-mono);
         }
         .segment-overlay {
             position: absolute;
-            border: 1px solid #ff4444;
+          border: 2px solid #ff4444;
             box-shadow: 0 0 4px #ff4444;
         }
 
@@ -194,7 +194,7 @@
         .tab-pane.active { display: block; }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
+          from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -355,32 +355,32 @@
                 <tr>
                     <td><code>upscale_factor</code></td>
                     <td>Double</td>
-                    <td>Upscale factor per level (e.g., 2.0 for 2x size). Default: <code>2.0</code>.</td>
+                          <td>Upscale factor per level (e.g., 2.0 for 2x size). Default: <code class="code-inline">2.0</code>.</td>
                 </tr>
                 <tr>
                     <td><code>min_region_size</code></td>
                     <td>Int</td>
-                    <td>Minimum width/height (in pixels) of a region to trigger refinement. Default: <code>128</code>.</td>
+                          <td>Minimum width/height (in pixels) of a region to trigger refinement. Default: <code class="code-inline">128</code>.</td>
                 </tr>
                 <tr>
                     <td><code>max_aspect_ratio</code></td>
                     <td>Double</td>
-                    <td>Maximum aspect ratio for regions (e.g., 3.0 means max 3:1). Default: <code>3.0</code>.</td>
+                          <td>Maximum aspect ratio for regions (e.g., 3.0 means max 3:1). Default: <code class="code-inline">3.0</code>.</td>
                 </tr>
                 <tr>
                     <td><code>tile_overlap</code></td>
                     <td>Double</td>
-                    <td>Overlap between tiles as a fraction of tile size (0.0-1.0). Default: <code>0.15</code>.</td>
+                          <td>Overlap between tiles as a fraction of tile size (0.0-1.0). Default: <code class="code-inline">0.15</code>.</td>
                 </tr>
                 <tr>
                     <td><code>retarget_subimages</code></td>
                     <td>Boolean</td>
-                    <td>Whether to attempt to re-align sub-images to the base image to prevent drift. Default: <code>true</code>.</td>
+                          <td>Whether to attempt to re-align sub-images to the base image to prevent drift. Default: <code class="code-inline">true</code>.</td>
                 </tr>
                 <tr>
                     <td><code>extension</code></td>
                     <td>String</td>
-                    <td>Output image file extension (e.g., 'jpg', 'png'). Default: <code>"png"</code>.</td>
+                          <td>Output image file extension (e.g., 'jpg', 'png'). Default: <code class="code-inline">"png"</code>.</td>
                 </tr>
                 </tbody>
             </table>
@@ -389,22 +389,22 @@
         <!-- TAB: PROCESS -->
         <div id="tab-process" class="tab-pane">
             <h3>Task Lifecycle</h3>
-            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+              <div style="display: flex; flex-direction: column; gap: var(--space-6);">
                 <div>
-                    <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">1. Initialization & Base Generation</h4>
-                    <p style="color: var(--text-dim);">The task either loads an <code>input_file</code> or generates a root image using the first prompt in the <code>prompts</code> list. This serves as the compositional foundation.</p>
+                      <h4 style="color: var(--accent-primary); margin-bottom: var(--space-2);">1. Initialization & Base Generation</h4>
+                      <p style="color: var(--text-secondary);">The task either loads an <code class="code-inline">input_file</code> or generates a root image using the first prompt in the <code class="code-inline">prompts</code> list. This serves as the compositional foundation.</p>
                 </div>
                 <div>
-                    <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">2. Semantic Segmentation (Vision LLM)</h4>
-                    <p style="color: var(--text-dim);">A <code>ParsedImageAgent</code> analyzes the current image. It identifies rectangular regions (GenerationRegions) that contain significant detail or objects that would benefit from upscaling.</p>
+                      <h4 style="color: var(--accent-primary); margin-bottom: var(--space-2);">2. Semantic Segmentation (Vision LLM)</h4>
+                      <p style="color: var(--text-secondary);">A <code class="code-inline">ParsedImageAgent</code> analyzes the current image. It identifies rectangular regions (GenerationRegions) that contain significant detail or objects that would benefit from upscaling.</p>
                 </div>
                 <div>
-                    <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">3. Recursive Refinement</h4>
-                    <p style="color: var(--text-dim);">For each identified region, the task crops the area, applies an Img2Img refinement using the next prompt in the sequence, and recursively repeats the process until the maximum depth (prompt count) is reached.</p>
+                      <h4 style="color: var(--accent-primary); margin-bottom: var(--space-2);">3. Recursive Refinement</h4>
+                      <p style="color: var(--text-secondary);">For each identified region, the task crops the area, applies an Img2Img refinement using the next prompt in the sequence, and recursively repeats the process until the maximum depth (prompt count) is reached.</p>
                 </div>
                 <div>
-                    <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem;">4. Intelligent Compositing</h4>
-                    <p style="color: var(--text-dim);">Refined regions are aligned using <code>ImagePatchLocalization</code> and blended back into the high-resolution canvas using a feathering algorithm to ensure seamless transitions.</p>
+                      <h4 style="color: var(--accent-primary); margin-bottom: var(--space-2);">4. Intelligent Compositing</h4>
+                      <p style="color: var(--text-secondary);">Refined regions are aligned using <code class="code-inline">ImagePatchLocalization</code> and blended back into the high-resolution canvas using a feathering algorithm to ensure seamless transitions.</p>
                 </div>
             </div>
         </div>
@@ -426,7 +426,7 @@
 )</code></pre>
             <h3 style="margin-top: 2rem;">Embedded Execution (UnifiedHarness)</h3>
             <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">
-                To invoke this task within an automated agentic workflow (e.g., CI/CD or CLI), use the <code>runTask</code> method:
+                  To invoke this task within an automated agentic workflow (e.g., CI/CD or CLI), use the <code class="code-inline">runTask</code> method:
             </p>
             <pre style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-subtle);"><code>import com.simiacryptus.cognotik.plan.tools.file.SegmentedImageGenerationTask.Companion.SegmentedImageGeneration
 import com.simiacryptus.cognotik.plan.tools.file.SegmentedImageGenerationTask.SegmentedImageGenerationConfig
@@ -460,7 +460,7 @@ harness.runTask(
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 

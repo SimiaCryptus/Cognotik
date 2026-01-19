@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -107,7 +107,7 @@
         .flow-arrow {
             align-self: center;
             text-align: center;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             font-size: 1.5rem;
         }
 
@@ -222,12 +222,12 @@
         </p>
         <div class="badges">
             <span class="badge">Category: Writing</span>
-            <span class="badge">Resource Intensive</span>
+              <span class="badge badge-warning">Resource Intensive</span>
             <span class="badge">Recursive Upscaling</span>
         </div>
     </header>
 
-    <!-- 2. REALITY CHECK -->
+      <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -243,7 +243,7 @@
   ],
   "upscale_factor": 2.0,
   "grid_schedule": [2, 3],
-  "tile_overlap": 0.15
+"tile_overlap": 0.15,
 }</code></pre>
         </div>
 
@@ -267,7 +267,7 @@
                     </div>
                     <div class="gallery-item">
                         <img src="assets/img/task_previews/tiled_crop.jpg" alt="Refined Crop">
-                        <div class="gallery-label">Refined Region (2x)</div>
+                          <div class="gallery-label">Refined Region (2×)</div>
                     </div>
                     <div class="gallery-item">
                         <img src="assets/img/task_previews/tiled_final.jpg" alt="Final Result">
@@ -301,7 +301,7 @@
                 <tr>
                     <td><code>output_file</code> <span class="req">*</span></td>
                     <td>String</td>
-                    <td>The output file path for the final high-res image.</td>
+                          <td>The output file path for the final high-resolution image.</td>
                 </tr>
                 <tr>
                     <td><code>prompts</code> <span class="req">*</span></td>

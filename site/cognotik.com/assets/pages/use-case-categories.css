@@ -1,0 +1,721 @@
+/* Use Case Categories Page Styles */
+
+/* Hero Section */
+.hero-section {
+    padding: var(--space-16) var(--space-4);
+    background: radial-gradient(
+        ellipse at top center,
+        rgba(88, 166, 255, 0.1) 0%,
+        transparent 50%
+    ), var(--bg-app);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.hero-content {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.breadcrumbs a {
+    color: var(--text-link);
+    transition: color var(--transition-fast);
+}
+
+.breadcrumbs a:hover {
+    color: var(--accent-primary);
+}
+
+.breadcrumbs .separator {
+    color: var(--text-tertiary);
+}
+
+.breadcrumbs .current {
+    color: var(--text-primary);
+}
+
+.hero-section h1 {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    margin-bottom: var(--space-4);
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-6);
+    max-width: 700px;
+}
+
+.hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* Overview Section */
+.overview-section {
+    padding: var(--space-12) var(--space-4);
+    background: var(--bg-app);
+}
+
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.overview-card {
+    padding: var(--space-6);
+    text-align: center;
+}
+
+.overview-card .card-icon {
+    display: inline-block;
+    font-size: 2.5rem;
+    margin-bottom: var(--space-4);
+}
+
+.overview-card h3 {
+    margin-bottom: var(--space-2);
+    color: var(--text-primary);
+}
+
+.overview-card p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+}
+
+/* Category Sections */
+.category-section {
+    padding: var(--space-12) var(--space-4);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.category-section:nth-child(odd) {
+    background: var(--bg-app);
+}
+
+.category-section:nth-child(even) {
+    background: rgba(88, 166, 255, 0.02);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--text-3xl);
+    margin-bottom: var(--space-8);
+    color: var(--text-primary);
+}
+
+.section-icon {
+    font-size: 2rem;
+}
+
+/* Use Case Cards */
+.use-case-card {
+    margin-bottom: var(--space-6);
+    transition: all var(--transition-fast);
+}
+
+.use-case-card:hover {
+    border-color: var(--border-default);
+    box-shadow: var(--shadow-md);
+}
+
+.use-case-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.use-case-header h3 {
+    flex: 1;
+    min-width: 200px;
+    margin: 0;
+}
+
+.pattern-notation {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.use-case-description {
+    margin-bottom: var(--space-4);
+    font-size: var(--text-lg);
+    color: var(--text-primary);
+}
+
+/* Diagrams */
+.use-case-diagram {
+    margin: var(--space-6) 0;
+    padding: var(--space-4);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    overflow-x: auto;
+}
+
+.diagram-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.diagram-flow.synthesis {
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.diagram-inputs {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: center;
+}
+
+.diagram-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3);
+    min-width: 100px;
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    text-align: center;
+}
+
+.diagram-node.input {
+    background: rgba(126, 231, 135, 0.15);
+    border: 1px solid var(--accent-secondary);
+    color: var(--accent-secondary);
+}
+
+.diagram-node.process {
+    background: rgba(88, 166, 255, 0.15);
+    border: 1px solid var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.diagram-node.output {
+    background: rgba(163, 113, 247, 0.15);
+    border: 1px solid var(--accent-purple);
+    color: var(--accent-purple);
+}
+
+.diagram-node.validator {
+    background: rgba(210, 153, 34, 0.15);
+    border: 1px solid var(--accent-warning);
+    color: var(--accent-warning);
+}
+
+.node-label {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.diagram-arrow {
+    color: var(--text-tertiary);
+    font-size: var(--text-lg);
+    font-weight: bold;
+}
+
+.diagram-arrow.curved {
+    transform: scaleX(-1);
+}
+
+.operator {
+    color: var(--text-secondary);
+    font-weight: bold;
+    margin: 0 var(--space-1);
+}
+
+.diagram-equation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+/* Hierarchical Diagram */
+.hierarchical-diagram {
+    margin: var(--space-6) 0;
+    padding: var(--space-4);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+}
+
+.tree-level {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.tree-node {
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    min-width: 80px;
+    text-align: center;
+}
+
+.tree-node.root {
+    background: rgba(88, 166, 255, 0.15);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.tree-node.leaf {
+    background: rgba(126, 231, 135, 0.15);
+    border-color: var(--accent-secondary);
+    color: var(--accent-secondary);
+}
+
+.tree-connectors {
+    height: 20px;
+    border-left: 1px solid var(--border-subtle);
+    border-right: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+    margin: 0 auto;
+    width: 80%;
+}
+
+/* Iterative Diagram */
+.iterative-diagram {
+    margin: var(--space-6) 0;
+    padding: var(--space-4);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+}
+
+.iteration-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.iteration-loop {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.loop-arrow {
+    color: var(--text-tertiary);
+    font-size: var(--text-sm);
+    font-weight: bold;
+}
+
+/* Error Correction Diagram */
+.error-correction-diagram {
+    margin: var(--space-6) 0;
+    padding: var(--space-4);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+}
+
+.correction-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.feedback-loop {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.loop-path {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.loop-label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    min-width: 60px;
+}
+
+/* Examples List */
+.examples-list {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.examples-list h4 {
+    margin-bottom: var(--space-2);
+    color: var(--text-primary);
+}
+
+.examples-list ul {
+    list-style: none;
+    padding: 0;
+}
+
+.examples-list li {
+    padding: var(--space-1) 0;
+    padding-left: var(--space-4);
+    color: var(--text-secondary);
+    position: relative;
+}
+
+.examples-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent-primary);
+    font-weight: bold;
+}
+
+/* Key Insight & Considerations */
+.key-insight,
+.considerations {
+    margin-top: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    background: rgba(88, 166, 255, 0.05);
+    border-left: 3px solid var(--accent-primary);
+    border-radius: var(--radius-md);
+}
+
+.considerations {
+    background: rgba(210, 153, 34, 0.05);
+    border-left-color: var(--accent-warning);
+}
+
+.key-insight h4,
+.considerations h4 {
+    margin-bottom: var(--space-2);
+    color: var(--text-primary);
+}
+
+.key-insight ul,
+.considerations ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.key-insight li,
+.considerations li {
+    padding: var(--space-1) 0;
+    padding-left: var(--space-4);
+    color: var(--text-secondary);
+    position: relative;
+}
+
+.key-insight li::before,
+.considerations li::before {
+    content: '•';
+    position: absolute;
+    left: var(--space-1);
+    color: var(--accent-primary);
+}
+
+.considerations li::before {
+    color: var(--accent-warning);
+}
+
+/* Analogy Example */
+.analogy-example {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.analogy-example h4 {
+    margin-bottom: var(--space-2);
+    color: var(--text-primary);
+}
+
+.code-example {
+    margin-top: var(--space-2);
+}
+
+/* Workflow Section */
+.workflow-intro {
+    margin-bottom: var(--space-6);
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+}
+
+.workflow-card {
+    margin-bottom: var(--space-6);
+}
+
+.workflow-diagram {
+    margin: var(--space-6) 0;
+    padding: var(--space-4);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+}
+
+.workflow-step {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-3);
+}
+
+.step-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--accent-primary);
+    color: var(--bg-app);
+    border-radius: 50%;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-pattern {
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-1);
+}
+
+.step-description {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.workflow-connector {
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: var(--text-lg);
+    margin: var(--space-2) 0;
+}
+
+/* Reference Section */
+.reference-section {
+    padding: var(--space-12) var(--space-4);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.reference-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--bg-panel);
+}
+
+.reference-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+}
+
+.reference-table thead {
+    background: var(--bg-elevated);
+    border-bottom: 2px solid var(--border-default);
+}
+
+.reference-table th {
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+}
+
+.reference-table td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+.reference-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.reference-table a {
+    color: var(--accent-primary);
+    font-weight: 500;
+}
+
+.reference-table a:hover {
+    text-decoration: underline;
+}
+
+/* CTA Section */
+.cta-section {
+    padding: var(--space-16) var(--space-4);
+    background: radial-gradient(
+        ellipse at center,
+        rgba(88, 166, 255, 0.1) 0%,
+        transparent 70%
+    ), var(--bg-app);
+    border-top: 1px solid var(--border-subtle);
+    text-align: center;
+}
+
+.cta-content {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.cta-content h2 {
+    margin-bottom: var(--space-4);
+    color: var(--text-primary);
+}
+
+.cta-content p {
+    margin-bottom: var(--space-6);
+    color: var(--text-secondary);
+}
+
+.cta-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-4);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: var(--space-8) var(--space-4);
+    }
+
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+
+    .section-title {
+        font-size: var(--text-2xl);
+    }
+
+    .use-case-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .use-case-header h3 {
+        min-width: auto;
+    }
+
+    .diagram-flow {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .diagram-arrow {
+        transform: rotate(90deg);
+    }
+
+    .tree-level {
+        gap: var(--space-2);
+    }
+
+    .tree-node {
+        min-width: 60px;
+        font-size: var(--text-xs);
+        padding: var(--space-1) var(--space-2);
+    }
+
+    .workflow-step {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .reference-table {
+        font-size: var(--text-xs);
+    }
+
+    .reference-table th,
+    .reference-table td {
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .cta-buttons {
+        flex-direction: column;
+    }
+
+    .cta-buttons .btn {
+        width: 100%;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .use-case-card,
+    .overview-card {
+        transition: none;
+    }
+
+    .breadcrumbs a,
+    .reference-table a {
+        transition: none;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .breadcrumbs,
+    .cta-section {
+        display: none;
+    }
+
+    .use-case-card {
+        page-break-inside: avoid;
+        border: 1px solid #ccc;
+        margin-bottom: 1rem;
+    }
+
+    .reference-table {
+        font-size: 10pt;
+    }
+}

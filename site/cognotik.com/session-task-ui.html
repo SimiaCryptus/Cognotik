@@ -24,16 +24,16 @@
     <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
 
     <!-- Favicon Suite -->
-    <link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#0f1115">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <!-- Prism.js for syntax highlighting -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
@@ -276,7 +276,7 @@
         .workflow-steps {
             display: flex;
             flex-direction: column;
-            gap: var(--space-4);
+          gap: var(--space-6);
         }
 
         .workflow-step {
@@ -287,16 +287,16 @@
 
         .step-number {
             flex-shrink: 0;
-            width: 32px;
-            height: 32px;
+          width: 40px;
+          height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: var(--accent-primary);
             color: var(--bg-app);
             border-radius: 50%;
-            font-weight: 600;
-            font-size: var(--text-sm);
+          font-weight: 700;
+          font-size: var(--text-base);
         }
 
         .step-content h4 {
@@ -421,11 +421,11 @@
                             <div class="sim-task">
                                 <div class="finding" style="margin-bottom: var(--space-2);">
                                     <strong style="color: var(--accent-primary);">src/main/App.kt</strong>
-                                    <p style="font-size: var(--text-sm); color: var(--text-secondary);">Unused import detected</p>
+                                  <p style="font-size: var(--text-sm); color: var(--text-secondary); margin: var(--space-1) 0 0 0;">Unused import detected</p>
                                 </div>
                                 <div class="finding">
                                     <strong style="color: var(--accent-primary);">src/utils/Helper.kt</strong>
-                                    <p style="font-size: var(--text-sm); color: var(--text-secondary);">Consider extracting method</p>
+                                  <p style="font-size: var(--text-sm); color: var(--text-secondary); margin: var(--space-1) 0 0 0;">Consider extracting method</p>
                                 </div>
                             </div>
                             
@@ -504,10 +504,10 @@
 
             <div class="tabs" data-tabs>
                 <div class="tabs-nav" role="tablist">
-                    <button class="tab-btn active" data-tab="basic" role="tab" aria-selected="true">Basic Output</button>
+                  <button class="tab-btn active" data-tab="basic" role="tab" aria-selected="true" aria-controls="basic-panel">Basic Output</button>
                     <button class="tab-btn" data-tab="interactive" role="tab" aria-selected="false">Interactive</button>
-                    <button class="tab-btn" data-tab="dynamic" role="tab" aria-selected="false">Dynamic Updates</button>
-                    <button class="tab-btn" data-tab="layout" role="tab" aria-selected="false">Layout</button>
+                  <button class="tab-btn" data-tab="dynamic" role="tab" aria-selected="false" aria-controls="dynamic-panel">Dynamic Updates</button>
+                  <button class="tab-btn" data-tab="layout" role="tab" aria-selected="false" aria-controls="layout-panel">Layout</button>
                 </div>
                 <div class="tabs-content">
                     <div class="tab-panel active" data-tab-panel="basic" role="tabpanel">
@@ -574,7 +574,7 @@ task.expanded("Summary", "&lt;p&gt;Key findings here&lt;/p&gt;")</code></pre>
                             <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
                                 Please <a href="#" style="color: var(--accent-primary);">Click Me</a> to continue.
                             </p>
-                            <input type="text" class="sim-input" placeholder="Type here..." style="margin-bottom: var(--space-3);">
+                          <input type="text" class="sim-input" placeholder="Type here..." style="margin-bottom: var(--space-3);" aria-label="Example text input">
                             <div class="sim-expandable">
                                 <div class="sim-expandable-header">
                                     <span>▶</span>
@@ -835,9 +835,9 @@ Discussable(task, heading, userMessage, initialResponse, outputFn, reviseRespons
 
     <cognotik-footer></cognotik-footer>
 
-    <!-- Prism.js for syntax highlighting -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
+  <!-- Prism.js for syntax highlighting (deferred) -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
 
     <!-- Tab functionality -->
     <script>
@@ -845,7 +845,7 @@ Discussable(task, heading, userMessage, initialResponse, outputFn, reviseRespons
             const buttons = tabContainer.querySelectorAll('.tab-btn');
             const panels = tabContainer.querySelectorAll('.tab-panel');
 
-            buttons.forEach(button => {
+              buttons.forEach((button, index) => {
                 button.addEventListener('click', () => {
                     const targetTab = button.dataset.tab;
 

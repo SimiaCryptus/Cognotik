@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -34,7 +34,7 @@
             line-height: 1.5;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
@@ -229,9 +229,9 @@
             Break down complex problems into explicit reasoning steps with per-step validation, confidence scoring, and automated backtracking.
         </p>
         <div class="badges">
-            <span class="badge">Category: Reasoning</span>
-            <span class="badge">Model: GPT-4 Preferred</span>
-            <span class="badge">Side-Effect Safe</span>
+              <span class="badge badge-primary">Category: Reasoning</span>
+              <span class="badge badge-primary">Model: GPT-4 Preferred</span>
+              <span class="badge badge-success">Side-Effect Safe</span>
         </div>
     </header>
 
@@ -320,7 +320,7 @@
                     <td><code>related_files</code></td>
                     <td>List&lt;String&gt;</td>
                     <td>[]</td>
-                    <td>Glob patterns (e.g. <code>**/*.kt</code>) for files to be used as input context.</td>
+                          <td>Glob patterns (e.g., <code>**/*.kt</code>) for files to be used as input context.</td>
                 </tr>
                 </tbody>
             </table>
@@ -330,7 +330,7 @@
         <div id="tab-process" class="tab-pane" style="display:none;">
             <ul class="lifecycle-list">
                 <li><strong>1. Initialization:</strong> Loads workspace context and resolves <code>related_files</code> glob patterns. Previous task outputs are injected as prior context.</li>
-                <li><strong>2. Reasoning Loop:</strong>
+                      <strong>2. Reasoning Loop:</strong>
                     <ul>
                         <li>Generates a <code>ReasoningStep</code> containing reasoning, conclusion, and confidence.</li>
                         <li><strong>Validation:</strong> If enabled, a <code>StepValidation</code> agent checks for logical consistency and fallacies.</li>
@@ -373,7 +373,7 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
    - Validated for logical consistency
    - Used as context for the next step
 ** The task will backtrack if validation fails
-** Final output includes the complete reasoning chain and conclusion</pre>
+** Final output includes the complete reasoning chain and conclusion</code></pre>
             </div>
         </div>
     </section>

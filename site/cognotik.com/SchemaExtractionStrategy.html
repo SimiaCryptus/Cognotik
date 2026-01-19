@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <link rel="stylesheet" href="assets/styles/main.css">
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -206,9 +206,9 @@
 
 <main class="task-container">
 
-    <!-- 1. HEADER -->
+      <!-- 1. PAGE HEADER -->
     <header class="page-header">
-        <div class="breadcrumbs">Home > Tasks > Web Processing > SchemaExtractionStrategy</div>
+          <div class="breadcrumbs">Home / Tasks / Web Processing / SchemaExtractionStrategy</div>
         <h1>SchemaExtractionStrategy</h1>
         <p class="pitch">
             Extracts structured data from web pages according to a user-defined JSON schema and aggregates results into a comprehensive dataset.
@@ -306,7 +306,7 @@
                 <tr>
                     <td><code>min_confidence</code></td>
                     <td>Double</td>
-                    <td>Threshold (0.0-1.0) for including results. Default: <code>0.7</code>.</td>
+                          <td>Threshold (0.0–1.0) for including results. Default: <code>0.7</code>.</td>
                 </tr>
                 <tr>
                     <td><code>aggregate_results</code></td>
@@ -387,14 +387,14 @@ ${config.schema_definition}
 EXTRACTION INSTRUCTIONS:
 ${config.extraction_instructions}
 
-Provide: 1. The extracted data... 2. A confidence score... 3. Validation notes..."</pre>
+Provide: 1. The extracted data... 2. A confidence score... 3. Validation notes..."</code></pre>
         </div>
     </section>
 
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 

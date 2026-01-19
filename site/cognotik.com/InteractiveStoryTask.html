@@ -16,7 +16,7 @@
 
 
     <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <script type="module" src="assets/scripts/components/footer.js"></script>
 
     <style>
         :root {
@@ -37,7 +37,7 @@
             line-height: 1.5;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
@@ -51,8 +51,8 @@
 
         .breadcrumbs {
             font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: var(--text-dim);
+          font-size: 0.75rem;
+          color: var(--text-tertiary);
             margin-bottom: 1rem;
         }
 
@@ -197,9 +197,9 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-<main class="task-container">
+<main class="page-container">
 
-    <!-- 1. HEADER -->
+  <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Writing > InteractiveStoryTask</div>
         <h1>InteractiveStoryTask</h1>
@@ -236,7 +236,7 @@
         <div class="panel">
             <div class="panel-header"><span>👁️</span> Session UI: Story Map</div>
             <div class="mock-ui-content">
-                <div style="border-left: 2px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1.5rem;">
+              <div style="border-left: 2px solid var(--accent-primary); padding-left: var(--space-4); margin-bottom: var(--space-6);">
                     <h4 style="margin: 0; color: var(--accent-primary);">START: Opening</h4>
                     <p style="font-size: 0.85rem; color: var(--text-dim);">The rain in Sector 4 tastes like copper and ozone. You adjust your collar as the neon sign above the noodle shop flickers...</p>
                     <div style="font-family: var(--font-mono); font-size: 0.75rem; color: #4ade80;">→ [Continue to: decision_1]</div>
@@ -253,7 +253,7 @@
             </div>
         </div>
     </section>
-    <!-- 2.5 SHOWCASE (Workspace Browser) -->
+  <!-- 2.5 SHOWCASE: Workspace Browser -->
     <section class="showcase-section" style="margin-bottom: 3rem;">
         <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace: InteractiveStoryTask</h2>
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
@@ -294,19 +294,19 @@
                     <td><code>genre</code></td>
                     <td>String</td>
                     <td>"fantasy"</td>
-                    <td>Story genre (e.g., sci-fi, mystery, horror).</td>
+                      <td>Story genre (e.g., sci-fi, mystery, horror, romance).</td>
                 </tr>
                 <tr>
                     <td><code>target_audience</code></td>
                     <td>String</td>
                     <td>"young_adult"</td>
-                    <td>Target demographic (children, adult, etc.).</td>
+                      <td>Target demographic (children, young_adult, adult).</td>
                 </tr>
                 <tr>
                     <td><code>tone</code></td>
                     <td>String</td>
                     <td>"serious"</td>
-                    <td>Narrative tone (dark, humorous, etc.).</td>
+                      <td>Narrative tone (dark, humorous, lighthearted, etc.).</td>
                 </tr>
                 <tr>
                     <td><code>num_decision_points</code></td>
@@ -330,7 +330,7 @@
                     <td><code>state_variables</code></td>
                     <td>List&lt;String&gt;</td>
                     <td>null</td>
-                    <td>Specific variables to track (e.g., "health", "gold").</td>
+                      <td>Specific variables to track (e.g., "health", "gold", "reputation").</td>
                 </tr>
                 <tr>
                     <td><code>prevent_dead_ends</code></td>
@@ -354,13 +354,13 @@
                     <td><code>segment_word_count</code></td>
                     <td>Int</td>
                     <td>300</td>
-                    <td>Target length for each narrative node (100-1000).</td>
+                      <td>Target length for each narrative node (Range: 100-1000).</td>
                 </tr>
                 <tr>
                     <td><code>writing_style</code></td>
                     <td>String</td>
                     <td>"descriptive"</td>
-                    <td>Prose style (e.g., action-packed, dialogue-heavy).</td>
+                      <td>Prose style (e.g., action-packed, dialogue-heavy, introspective).</td>
                 </tr>
                 <tr>
                     <td><code>point_of_view</code></td>
@@ -380,7 +380,7 @@
 
         <!-- TAB: PROCESS -->
         <div id="tab-process" class="tab-pane" style="display:none;">
-            <h3>Task Lifecycle</h3>
+          <h2>Task Lifecycle</h2>
             <p>The <code>InteractiveStoryTask</code> executes in five distinct phases to ensure narrative coherence and structural integrity:</p>
             <ol style="color: var(--text-dim);">
                 <li style="margin-bottom: 1rem;">
@@ -393,7 +393,7 @@
                 </li>
                 <li style="margin-bottom: 1rem;">
                     <strong style="color: var(--text-main);">Phase 3: Decision Points</strong><br>
-                    Iteratively generates narrative segments for every node in the decision tree, ensuring choices lead to the correct subsequent IDs.
+                  Iteratively generates narrative segments for every node in the decision tree, ensuring choices lead to the correct subsequent IDs and consequences are tracked.
                 </li>
                 <li style="margin-bottom: 1rem;">
                     <strong style="color: var(--text-main);">Phase 4: Endings</strong><br>

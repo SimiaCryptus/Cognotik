@@ -37,7 +37,7 @@
             line-height: 1.6;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
@@ -52,8 +52,8 @@
 
         .breadcrumbs {
             font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: var(--text-dim);
+          font-size: 0.75rem;
+          color: var(--text-tertiary);
             margin-bottom: 1rem;
         }
 
@@ -108,7 +108,7 @@
             padding: 0.6rem 1rem;
             border-bottom: 1px solid var(--border-subtle);
             font-family: var(--font-mono);
-            font-size: 0.8rem;
+          font-size: 0.875rem;
             color: var(--text-dim);
             display: flex;
             justify-content: space-between;
@@ -123,14 +123,14 @@
         pre {
             margin: 0;
             font-family: var(--font-mono);
-            font-size: 0.85rem;
+          font-size: 0.875rem;
         }
 
         .flow-arrow {
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             font-size: 1.5rem;
         }
 
@@ -145,7 +145,7 @@
             padding: 4px 8px;
             font-size: 0.75rem;
             border-bottom: 2px solid transparent;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
         }
         .mock-tab.active {
             color: var(--accent-primary);
@@ -164,7 +164,7 @@
             padding: 1rem 2rem;
             color: var(--text-dim);
             cursor: pointer;
-            font-weight: 600;
+          font-weight: 500;
             border-bottom: 2px solid transparent;
             transition: all 0.2s;
         }
@@ -196,7 +196,7 @@
             font-family: var(--font-mono);
             color: var(--accent-primary);
             background: rgba(88, 166, 255, 0.1);
-            padding: 0.2rem 0.4rem;
+          padding: 0.15em 0.4em;
             border-radius: 3px;
         }
         .req { color: #f85149; margin-left: 4px; }
@@ -227,7 +227,7 @@
         </div>
     </header>
 
-    <!-- 2. REALITY CHECK -->
+      <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -260,7 +260,7 @@
                     <div class="mock-tab">Execution</div>
                     <div class="mock-tab active">Summary</div>
                 </div>
-                <div style="font-size: 0.9rem;">
+                  <div style="font-size: 0.95rem;">
                     <h4 style="margin-top: 0; color: var(--accent-primary);"># Sub-Planning Summary</h4>
                     <p><strong>Goal:</strong> Audit the security of the auth module...</p>
                     <hr style="border: 0; border-top: 1px solid var(--border-subtle);">
@@ -269,7 +269,7 @@
                         <li>Applied patches to <code>SecurityConfig.kt</code>.</li>
                         <li>Verified login latency reduction.</li>
                     </ul>
-                    <div style="color: var(--text-dim); font-size: 0.8rem; margin-top: 1rem;">
+                      <div style="color: var(--text-tertiary); font-size: 0.875rem; margin-top: var(--space-4);">
                         <details>
                             <summary>Full Results (4 items)</summary>
                         </details>
@@ -380,7 +380,7 @@
             </ol>
         </div>
 
-        <!-- TAB: INTEGRATION -->
+          <!-- TAB 3: INTEGRATION -->
         <div id="tab-integration" class="tab-pane" style="display:none;">
             <h3>Embedded Execution (Kotlin)</h3>
             <p style="color: var(--text-dim); margin-bottom: 1rem;">How to invoke a Sub-Plan agent directly from your code using the <code>UnifiedHarness</code>.</p>
@@ -420,7 +420,7 @@ harness.runTask(
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
@@ -429,7 +429,7 @@ harness.runTask(
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/SubPlan/');
 </script>
 

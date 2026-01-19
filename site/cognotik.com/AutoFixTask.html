@@ -17,7 +17,7 @@
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <script type="module" src="assets/scripts/components/footer.js"></script>
 
     <style>
         :root {
@@ -38,7 +38,7 @@
             line-height: 1.6;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
@@ -213,9 +213,9 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-<main class="task-container">
+  <main class="page-container">
 
-    <!-- 1. HEADER -->
+      <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Execution</div>
         <h1>AutoFixTask</h1>
@@ -415,7 +415,7 @@ harness.runTask(
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
             <p style="font-size: 0.9rem; color: var(--text-dim);">The following instructions are injected into the LLM context during healing:</p>
             <div class="panel" style="background: #0d1117;">
-                <pre style="color: #8b949e;">SelfHealing - Run a command and automatically fix any issues that arise
+                  <pre style="color: var(--text-tertiary);">SelfHealing - Run a command and automatically fix any issues that arise
 * Specify the commands to be executed along with their working directories
 * Each command's working directory should be specified relative to the root directory
 * Provide the commands and their arguments in the 'commands' field

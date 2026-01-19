@@ -37,7 +37,7 @@
             line-height: 1.5;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
@@ -203,17 +203,17 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-<main class="task-container">
+  <main class="page-container">
 
-    <!-- 1. HEADER -->
+      <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Writing > ResearchPaperGenerationTask</div>
         <h1>ResearchPaperGenerationTask</h1>
-        <p class="pitch">
+          <p class="page-pitch">
             A multi-phase autonomous agent for generating publication-ready academic research papers, complete with source analysis, structured outlining, and automated citation management.
         </p>
         <div class="badges">
-            <span class="badge">Side-Effect: Safe</span>
+              <span class="badge badge-success">Side-Effect: Safe</span>
             <span class="badge">Model: GPT-4 Preferred</span>
             <span class="badge">Multi-Phase</span>
         </div>
@@ -241,7 +241,7 @@
         <div class="panel">
             <div class="panel-header"><span>👁️</span> Session UI (Overview Tab)</div>
             <div class="mock-ui-content">
-                <div style="font-weight: bold; margin-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                  <div style="font-weight: 600; margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-2);">
                     Progress: Impact of LLMs on Software Engineering
                 </div>
                 <div class="phase-item"><span class="phase-check">✓</span> Phase 1: Research Analysis</div>
@@ -367,7 +367,7 @@
                     <strong>Peer Review (Optional):</strong> Simulates a critical academic review to identify strengths and weaknesses.
                 </li>
                 <li>
-                    <strong>Final Assembly:</strong> Compiles the full Markdown document and provides a download link.
+                      <strong>Final Assembly:</strong> Compiles the complete Markdown document with metadata and provides download link.
                 </li>
             </ol>
         </div>
@@ -412,7 +412,7 @@ fun generatePaper(harness: UnifiedHarness, projectDir: File) {
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 

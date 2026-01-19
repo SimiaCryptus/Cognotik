@@ -29,8 +29,10 @@ The **Cognotik Build Integration Demo** showcases how to integrate [Cognotik](ht
 - 🤖 **Multi-Model Support**: Works with OpenAI, Google Gemini, Anthropic Claude, and Groq
 - 📝 **Code Review Automation**: Review code against best practices and standards
 - 🏗️ **Code Generation**: Generate implementations from natural language descriptions
+- 📚 **Documentation Processing**: Automatically update code and docs based on markdown specifications
 
 ## Quick Start
+
 ### 1. Fork or Clone This Repository
 
 ```bash
@@ -58,7 +60,6 @@ export GOOGLE_API_KEY="your-google-api-key"
 
 ./gradlew codeReview -PreviewPrompt="Review and improve code quality in file (%s)"
 ```
-
 
 ## What is Cognotik?
 
@@ -190,6 +191,83 @@ This demo provides three main Gradle tasks:
   -PimplHeadless=true
 ```
 
+#### Documentation Processor
+
+```bash
+./gradlew docProcessor \
+  -PoverwriteMode="PatchToUpdate" \
+  -ProotDir="." \
+  -Pthreads=4
+```
+
+## Documentation Processing
+
+The **DocProcessor** enables bidirectional synchronization between documentation and code using markdown frontmatter specifications.
+
+### How It Works
+
+Create markdown files with YAML frontmatter that specify relationships to source files:
+
+#### Specifying Target Files
+
+Use the `specifies` key to indicate which files should be updated based on the documentation:
+
+```markdown
+---
+specifies:
+  - "../src/main/java/com/example/*.java"
+  - "../src/main/kotlin/**/*.kt"
+---
+# API Design Guidelines
+All service classes should follow these patterns...
+```
+
+#### Documenting Source Files
+
+Use the `documents` key to indicate which source files should inform the documentation:
+
+```markdown
+---
+documents:
+  - "../src/main/java/com/example/UserService.java"
+  - "../src/main/java/com/example/UserRepository.java"
+---
+# User Service API Documentation
+This documentation is automatically updated based on the source files...
+```
+
+#### File Transformations
+
+Use the `transforms` key to specify source-to-destination file mappings with regex patterns:
+
+```markdown
+---
+transforms:
+  - "src/main/java/(.+)\\.java -> src/test/java/$1Test.java"
+  - "src/main/kotlin/(.+)\\.kt -> docs/api/$1.md"
+---
+# Test Generation Template
+Generate test files based on the source implementation...
+```
+
+### Frontmatter Options
+
+| Key          | Description                                                 | Example                                 |
+|--------------|-------------------------------------------------------------|-----------------------------------------|
+| `specifies`  | Glob patterns for files to update based on this doc         | `"../src/**/*.java"`                    |
+| `documents`  | Glob patterns for source files that inform this doc         | `"../src/main/**/*.kt"`                 |
+| `transforms` | Regex patterns with backreferences for file transformations | `"src/(.+)\\.java -> test/$1Test.java"` |
+
+### Overwrite Modes
+
+| Mode                | Description                                                             |
+|---------------------|-------------------------------------------------------------------------|
+| `SkipExisting`      | Skip files that already exist                                           |
+| `OverwriteExisting` | Completely replace existing files                                       |
+| `OverwriteToUpdate` | Replace files only if source is newer than target                       |
+| `PatchExisting`     | Apply incremental patches to existing files                             |
+| `PatchToUpdate`     | Apply incremental patches only if source is newer than target (default) |
+
 ## API Providers
 
 Cognotik supports multiple AI providers. Configure your preferred provider:
@@ -204,7 +282,6 @@ Cognotik supports multiple AI providers. Configure your preferred provider:
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
 
 ## License
 
@@ -221,3 +298,4 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 ---
 
 Made with ❤️ by [SimiaCryptus](https://github.com/SimiaCryptus) | Powered by [Cognotik](https://github.com/SimiaCryptus/Cognotik)
+- 📚 **Documentation Processing**: Automatically update code and docs based on markdown specifications

@@ -80,7 +80,7 @@
         }
 
         .panel {
-            background: var(--bg-panel);
+          background: var(--bg-app);
             border: 1px solid var(--border-subtle);
             border-radius: 6px;
             overflow: hidden;
@@ -90,7 +90,7 @@
         }
 
         .panel-header {
-            background: var(--bg-app);
+          background: var(--bg-elevated);
             padding: 0.5rem 1rem;
             border-bottom: 1px solid var(--border-subtle);
             font-family: var(--font-mono);
@@ -229,12 +229,12 @@
         </p>
         <div class="badges">
             <span class="badge">Side-Effect Safe</span>
-            <span class="badge">GPT-4 Preferred</span>
-            <span class="badge">Category: Games</span>
+              <span class="badge badge-success">GPT-4 Preferred</span>
+              <span class="badge badge-warning">Category: Games</span>
         </div>
     </section>
 
-    <!-- 2. REALITY CHECK -->
+      <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check">
         <!-- Input -->
         <div class="panel code-panel">
@@ -259,8 +259,8 @@
             <div class="ui-panel-content">
                 <div style="color: var(--accent-primary); font-weight: bold; margin-bottom: 0.5rem;"># Level Design: The Obsidian Vault</div>
                 <div style="font-family: var(--font-mono); font-size: 0.75rem; background: #000; padding: 0.5rem; border-radius: 4px; margin-bottom: 1rem; color: #4ade80; border: 1px solid var(--border-subtle);">
-                    [S] -- [Z1] -- [Z2] <br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <br>
+                      [S] -- [Z1] -- [Z2]<br>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[P1] -- [B]
                 </div>
                 <div style="font-size: 0.8rem;">
@@ -377,57 +377,57 @@
 
         <!-- TAB: PROCESS -->
         <div id="tab-process" class="tab-pane" style="display:none;">
-            <div class="process-list">
-                <div class="process-step">
+              <ul class="process-list">
+                  <li class="process-step">
                     <div class="step-number">01</div>
                     <div>
                         <strong>Context Gathering</strong>
                         <p>Analyzes <code>input_files</code> and prior orchestration state to ensure the level fits existing game mechanics, narrative context, or code standards.</p>
                     </div>
                 </div>
-                <div class="process-step">
+                  <li class="process-step">
                     <div class="step-number">02</div>
                     <div>
                         <strong>Phase 1: Level Structure</strong>
                         <p>Generates the macro-layout, including zones, connections, and an ASCII visual representation of the map.</p>
                     </div>
                 </div>
-                <div class="process-step">
+                  <li class="process-step">
                     <div class="step-number">03</div>
                     <div>
                         <strong>Phase 2: Encounter Design</strong>
                         <p>Populates zones with combat, puzzles, and environmental challenges, including enemy composition and rewards.</p>
                     </div>
                 </div>
-                <div class="process-step">
+                  <li class="process-step">
                     <div class="step-number">04</div>
                     <div>
                         <strong>Phase 3: Pacing Analysis</strong>
                         <p>Calculates intensity curves, identifies the climax location, and strategically places rest points.</p>
                     </div>
                 </div>
-                <div class="process-step">
+                  <li class="process-step">
                     <div class="step-number">05</div>
                     <div>
                         <strong>Phase 4: Content Placement</strong>
                         <p>Adds collectibles and secret areas based on the theme and difficulty tier.</p>
                     </div>
                 </div>
-                <div class="process-step">
+                  <li class="process-step">
                     <div class="step-number">06</div>
                     <div>
                         <strong>Phase 5: UX & Guidance</strong>
                         <p>Defines implicit (environmental) and explicit (markers) player guidance systems.</p>
                     </div>
                 </div>
-                <div class="process-step">
+                  <li class="process-step">
                     <div class="step-number">07</div>
                     <div>
                         <strong>Phase 6: Difficulty Variants</strong>
                        <p>Generates optional balance adjustments for Easy, Hard, and Expert modes for accessibility.</p>
                     </div>
                 </div>
-                <div class="process-step">
+                  <li class="process-step">
                     <div class="step-number">08</div>
                     <div>
                         <strong>Phase 7: Final Assembly</strong>
@@ -506,7 +506,7 @@ GameLevelDesign - Generate complete game level designs with layout, pacing, and 
   ** Generate difficulty variants for accessibility
   ** Produces complete level design with ASCII visualization
   ** Includes encounter progression, pacing analysis, and player guidance
-  ** Ideal for game development, level design documentation, and prototyping
+** Ideal for game development, level design documentation, and prototyping</code></pre>
             </code></pre>
         </div>
     </section>
@@ -522,7 +522,7 @@ GameLevelDesign - Generate complete game level designs with layout, pacing, and 
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/GameLevelDesign/');
 </script>
 

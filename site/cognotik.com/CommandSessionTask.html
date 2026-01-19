@@ -32,7 +32,7 @@
             line-height: 1.6;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
@@ -81,7 +81,7 @@
         }
 
         /* Reality Check Grid */
-        .reality-check-grid {
+      .reality-check-section {
             display: grid;
             grid-template-columns: 1fr 40px 1fr;
             gap: 1rem;
@@ -124,7 +124,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-dim);
+          color: var(--text-tertiary);
             font-size: 1.5rem;
         }
 
@@ -141,8 +141,8 @@
             padding: 1rem 2rem;
             color: var(--text-dim);
             cursor: pointer;
-            font-family: var(--font-mono);
-            font-weight: 600;
+          font-family: var(--font-body);
+          font-weight: 500;
             border-bottom: 2px solid transparent;
             transition: all 0.2s;
         }
@@ -201,7 +201,7 @@
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Session > CommandSessionTask</div>
         <h1>CommandSessionTask</h1>
-        <p class="pitch">
+          <p class="page-pitch">
             Execute commands in a stateful, interactive terminal session. Maintains environment persistence, supports TTY allocation, and manages long-running process lifecycles.
         </p>
         <div class="badges">
@@ -227,7 +227,7 @@
     "echo $PROJECT"
   ],
   "sessionId": "dev-shell-01",
-  "tty": true
+"tty": true,
 }</code></pre>
             </div>
         </div>
@@ -288,7 +288,7 @@ drwxr-xr-x  8 user  staff   256 May 20 09:45 ..
                 <tr>
                     <td><code>sessionId</code></td>
                     <td><code>String?</code></td>
-                    <td>Optional ID to reuse an existing session. Enables state persistence across multiple task executions.</td>
+                          <td>Optional ID to reuse an existing session. Enables state persistence (variables, working directory) across multiple task executions.</td>
                 </tr>
                 <tr>
                     <td><code>timeout</code></td>
@@ -345,7 +345,7 @@ drwxr-xr-x  8 user  staff   256 May 20 09:45 ..
         "print(os.getcwd())"
     ),
     sessionId = "python-env",
-    tty = false
+  tty = false,
 )
 
 val task = CommandSessionTask(orchestrationConfig, config)</code></pre>
@@ -357,7 +357,7 @@ val task = CommandSessionTask(orchestrationConfig, config)</code></pre>
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 

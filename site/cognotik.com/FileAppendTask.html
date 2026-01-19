@@ -16,7 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
     <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+  <script type="module" src="assets/scripts/components/CognotikFooter.js"></script>
 
     <style>
         :root {
@@ -37,13 +37,13 @@
             line-height: 1.6;
         }
 
-        .task-container {
+      .page-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
 
-        /* Header Styling */
+      /* Header Section */
         .page-header {
             margin-bottom: 3rem;
             border-bottom: 1px solid var(--border-subtle);
@@ -238,7 +238,7 @@
         <div class="breadcrumbs">Home > Tasks > File Operations</div>
         <h1>FileAppendTask</h1>
         <p class="pitch">
-            Append content to the end of existing files. Ideal for updating logs, adding exports, or extending configuration files without risking existing code integrity.
+              Append content to the end of existing files with AI assistance. Ideal for updating logs, adding exports, or extending configuration files without risking existing code integrity.
         </p>
         <div class="badges">
             <span class="badge">Category: File</span>
@@ -247,7 +247,7 @@
         </div>
     </header>
 
-    <!-- 2. REALITY CHECK -->
+      <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -271,7 +271,7 @@
                 </div>
                 <p style="font-size: 0.8rem; color: var(--text-dim);">Proposed Append to <code>app.properties</code></p>
                 <div class="append-preview">
-                    <span style="color: #8b949e;"># Added by FileAppendTask</span><br>
+                          <span style="color: var(--text-tertiary);"># Added by FileAppendTask</span><br>
                     db.timeout=30000
                 </div>
                 <button class="accept-btn">Accept Append</button>
@@ -322,7 +322,7 @@
                 <tr>
                     <td><code>related_files</code></td>
                     <td><code>List&lt;String&gt;</code></td>
-                    <td>Additional files provided to the AI to ensure the appended content matches project style/context.</td>
+                          <td>Additional files provided to the AI to ensure the appended content matches project style and context.</td>
                 </tr>
                 </tbody>
             </table>
@@ -379,7 +379,7 @@ harness.runTask(
 </main>
 
 <script>
-    function switchTab(tabId) {
+      function switchTab(event, tabId) {
         document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
@@ -388,7 +388,7 @@ harness.runTask(
     }
 </script>
 <script type="module">
-    import { initFileTree } from './assets/scripts/components/GithubFileTree.js';
+      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
     initFileTree('#file-tree-demo', 'webui/workspaces/FileAppend/');
 </script>
 
