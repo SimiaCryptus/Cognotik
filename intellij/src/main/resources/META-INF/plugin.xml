@@ -155,10 +155,6 @@
                         text="🖼️ Illustrate Document"
                         description="Generate illustrative images for a document based on its content, enhancing visual appeal and comprehension">
                 </action>
-                <action class="cognotik.actions.task.DocProcessorAction"
-                        text="📋 Process Doc Specifications"
-                        description="Process markdown documentation files with frontmatter specifications to generate or update related files">
-                </action>
                 <action class="cognotik.actions.task.BusinessProposalAction"
                         text="📈 Business Proposal"
                         description="Generate a comprehensive business proposal document tailored to your specific needs and objectives">
@@ -193,6 +189,10 @@
                         description="Generate an image based on a natural language description, with customizable styles and formats">
                 </action>
             </group>
+            <action class="cognotik.actions.task.DocProcessorAction"
+                    text="📋 Process Doc Specifications"
+                    description="Process markdown documentation files with frontmatter specifications to generate or update related files">
+            </action>
 
             <action class="cognotik.actions.dev.ApplyPatchAction"
                     text="🔧 Apply Patch"

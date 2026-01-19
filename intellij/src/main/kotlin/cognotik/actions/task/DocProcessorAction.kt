@@ -12,10 +12,10 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.util.DocProcessor
+import com.simiacryptus.cognotik.util.DocProcessor.FileMod
+import com.simiacryptus.cognotik.util.FileGenerator.OverwriteModes
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.util.getSelectedFile
@@ -72,7 +72,7 @@ class DocProcessorAction : BaseAction() {
 
             // Show dialog on EDT
             com.intellij.openapi.application.ApplicationManager.getApplication().invokeAndWait {
-                val dialog = DocProcessorTaskDialog(project, root, allTasks)
+                val dialog = DocProcessorTaskDialog(project, allTasks)
                 if (dialog.showAndGet()) {
                     val selectedTasks = dialog.getSelectedTasks()
                     if (selectedTasks.isNotEmpty()) {
@@ -91,6 +91,7 @@ class DocProcessorAction : BaseAction() {
             root = root,
             docsFolder = root,
             concurrencyLimit = 4,
+            overwriteMode = OverwriteModes.PatchExisting,
             fastModel = settings.fastModel?.model ?: throw IllegalStateException("Fast model not configured"),
             smartModel = settings.smartModel?.model ?: throw IllegalStateException("Smart model not configured")
         )
@@ -99,7 +100,7 @@ class DocProcessorAction : BaseAction() {
     private fun executeTasks(
         progress: ProgressIndicator,
         docProcessor: DocProcessor,
-        tasks: Array<Pair<FileModificationTaskExecutionConfigData, PatchProcessors>>
+        tasks: List<FileMod>
     ) {
         progress.text = "Executing ${tasks.size} task(s)..."
         progress.isIndeterminate = false
@@ -109,7 +110,7 @@ class DocProcessorAction : BaseAction() {
             docProcessor.concurrencyLimit
         )
         
-        docProcessor.runAll(tasks, concurrencyProcessor)
+        docProcessor.runAll(tasks.toList(), concurrencyProcessor)
         
         progress.text = "Completed ${tasks.size} task(s)"
     }
@@ -126,8 +127,7 @@ class DocProcessorAction : BaseAction() {
      */
     class DocProcessorTaskDialog(
         project: Project?,
-        private val root: File,
-        private val allTasks: Array<Pair<FileModificationTaskExecutionConfigData, PatchProcessors>>
+        private val allTasks: List<FileMod>
     ) : DialogWrapper(project) {
 
         private val checkBoxList = CheckBoxList<TaskItem>()
@@ -185,11 +185,10 @@ class DocProcessorAction : BaseAction() {
             }
         }
 
-        fun getSelectedTasks(): Array<Pair<FileModificationTaskExecutionConfigData, PatchProcessors>> {
+        fun getSelectedTasks(): List<FileMod> {
             return taskItems
                 .filter { checkBoxList.isItemSelected(it) }
                 .map { allTasks[it.index] }
-                .toTypedArray()
         }
 
         data class TaskItem(
