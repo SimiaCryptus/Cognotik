@@ -4,43 +4,70 @@ import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.util.FileGenerator.Companion.lastModified
 import java.io.File
 
-enum class OverwriteModes : FileGenerator.OverwriteMode {
-  SkipExisting,
-  OverwriteExisting,
-  OverwriteToUpdate,
-  PatchExisting,
-  PatchToUpdate;
+enum class OverwriteModes : OverwriteMode {
 
-  override fun prepare(
-    source: File,
-    target: File,
-    relatedFiles: List<File>,
-  ): PatchProcessors? = when (this) {
-    SkipExisting -> null
-    PatchExisting -> PatchProcessors.Fuzzy
-
-    OverwriteExisting -> {
+  SkipExisting {
+    override fun prepare(
+      source: File,
+      target: File,
+      relatedFiles: List<File>,
+    ): PatchProcessors? = null
+  },
+  
+  OverwriteExisting {
+    override fun prepare(
+      source: File,
+      target: File,
+      relatedFiles: List<File>,
+    ): PatchProcessors? {
       target.delete()
-      PatchProcessors.FullReplacement
+      return PatchProcessors.FullReplacement
     }
-
-    OverwriteToUpdate -> when {
-      source.lastModified(relatedFiles) > target.lastModified() -> {
+  },
+  
+  OverwriteToUpdate {
+    override fun prepare(
+      source: File,
+      target: File,
+      relatedFiles: List<File>,
+    ): PatchProcessors? {
+      return if (source.lastModified(relatedFiles) > target.lastModified()) {
         target.delete()
         PatchProcessors.FullReplacement
+      } else {
+        null
       }
-
-      else -> null
     }
-
-    PatchToUpdate -> when {
-      source.lastModified(relatedFiles) > target.lastModified() -> PatchProcessors.Fuzzy
-      else -> null
+  },
+  
+  PatchExisting {
+    override fun prepare(
+      source: File,
+      target: File,
+      relatedFiles: List<File>,
+    ): PatchProcessors? = PatchProcessors.Fuzzy
+  },
+  
+  PatchToUpdate {
+    override fun prepare(
+      source: File,
+      target: File,
+      relatedFiles: List<File>,
+    ): PatchProcessors? {
+      return if (source.lastModified(relatedFiles) > target.lastModified()) {
+        PatchProcessors.Fuzzy
+      } else {
+        null
+      }
     }
-  }
-//  when {
-//    target.exists() ->
-//
-//    else -> PatchProcessors.FullReplacement
-//  }
+  };
+}
+
+
+interface OverwriteMode {
+  fun prepare(
+    source: File,
+    target: File,
+    relatedFiles: List<File> = emptyList(),
+  ): PatchProcessors?
 }

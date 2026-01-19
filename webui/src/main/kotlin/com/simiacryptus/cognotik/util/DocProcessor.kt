@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
-import com.simiacryptus.cognotik.util.FileGenerator.OverwriteMode
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -60,9 +59,10 @@ open class DocProcessor(
     val spec: DocSpec
   )
 
-  data class FileMod(
+  data class ModificationTask(
     val data: FileModificationTaskExecutionConfigData,
-    val patchProcessor: PatchProcessors
+    val patchProcessor: PatchProcessors,
+    val shouldDeleteTarget: Boolean = false
   )
 
   data class DocumentMatch(
@@ -80,7 +80,7 @@ open class DocProcessor(
 
   open fun getAll(
     vararg markdownFiles: File,
-  ): List<FileMod> {
+  ): List<ModificationTask> {
     val docSpecs = markdownFiles.mapNotNull { parseMarkdownWithFrontmatter(it) }
     log.info("Found ${docSpecs.size} markdown files with 'specifies' frontmatter")
     val fileToSpecs = fileToSpecs(docSpecs)
@@ -108,7 +108,7 @@ open class DocProcessor(
           target = targetFile,
           relatedFiles = allRelatedFiles(specs, targetFile, transforms, documents)
         )?.let { patchProcessor ->
-          FileMod(data(relativeTarget, specs, targetFile, transforms, documents), patchProcessor)
+          ModificationTask(data(relativeTarget, specs, targetFile, transforms, documents), patchProcessor)
         }
       } catch (e: Exception) {
         log.error("Error processing ${relativeTarget}", e)
@@ -232,7 +232,7 @@ open class DocProcessor(
   }
 
   open fun runAll(
-    fileMods: List<FileMod>,
+    fileMods: List<ModificationTask>,
     concurrencyProcessor: FixedConcurrencyProcessor
   ) {
     withHarness(root, javaClass.simpleName, fastModel, smartModel) { harness ->

@@ -1,8 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.GeminiModels
-import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
@@ -68,41 +65,12 @@ open class FileGenerator {
     }
   }
 
-  interface OverwriteMode {
-    fun prepare(
-      source: File,
-      target: File,
-      relatedFiles: List<File> = emptyList(),
-    ): PatchProcessors?
-  }
-
 
   companion object {
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
     fun File.lastModified(
       relatedFiles: List<File>,
     ): Long = maxOf(this.lastModified(), relatedFiles.maxOfOrNull { it.lastModified() } ?: 0L)
-  }
-}
-
-fun withHarness(
-  root: File,
-  testName: String,
-  fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
-  smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
-  function: (UnifiedHarness) -> Unit
-) {
-  val workingDir = root.resolve("workspaces/${testName}/test-${PlanHarness.Companion.now()}")
-  val harness = object : UnifiedHarness(fastModel = fastModel, smartModel = smartModel) {
-    override fun createTempDirectory(prefix: String): File {
-      return workingDir.apply { mkdirs() }
-    }
-  }
-  harness.start()
-  try {
-    function(harness)
-  } finally {
-    harness.stop()
   }
 }
 

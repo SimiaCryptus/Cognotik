@@ -27,8 +27,8 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.DocProcessor
-import com.simiacryptus.cognotik.util.DocProcessor.FileMod
-import com.simiacryptus.cognotik.util.FileGenerator
+import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
+import com.simiacryptus.cognotik.util.OverwriteMode
 import com.simiacryptus.cognotik.util.OverwriteModes
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.UITools
@@ -54,7 +54,7 @@ import kotlin.collections.set
  * 3. Executes the selected tasks using DocProcessor infrastructure
  */
 open class DocProcessorAction(
-    val mode: FileGenerator.OverwriteMode = OverwriteModes.PatchExisting,
+    val mode: OverwriteMode = OverwriteModes.PatchExisting,
 ) : BaseAction() {
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -138,7 +138,7 @@ open class DocProcessorAction(
 
     private fun executeTasks(
         docProcessor: DocProcessor,
-        tasks: List<FileMod>
+        tasks: List<ModificationTask>
     ) {
         val session = Session.newGlobalID()
         DataStorage.sessionPaths[session] = docProcessor.root
@@ -206,7 +206,7 @@ open class DocProcessorAction(
      */
     class DocProcessorTaskDialog(
         project: Project?,
-        private val allTasks: List<FileMod>
+        private val allTasks: List<ModificationTask>
     ) : DialogWrapper(project) {
 
         private val checkBoxList = CheckBoxList<TaskItem>()

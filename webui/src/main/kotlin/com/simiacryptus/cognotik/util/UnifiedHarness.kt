@@ -439,3 +439,24 @@ fun ApiChatModel.findApi(): ApiData? {
     val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
     return (userSettings.apis.find { api -> api.provider?.name == provider?.name })
 }
+
+fun withHarness(
+    root: File,
+    testName: String,
+    fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
+    smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
+    function: (UnifiedHarness) -> Unit
+) {
+    val workingDir = root.resolve("workspaces/${testName}/test-${PlanHarness.Companion.now()}")
+    val harness = object : UnifiedHarness(fastModel = fastModel, smartModel = smartModel) {
+        override fun createTempDirectory(prefix: String): File {
+            return workingDir.apply { mkdirs() }
+        }
+    }
+    harness.start()
+    try {
+        function(harness)
+    } finally {
+        harness.stop()
+    }
+}
