@@ -447,8 +447,8 @@ open class DocProcessor(
             // Could be a list or multi-line value
             val listItems = mutableListOf<String>()
             i++
-            while (i < lines.size && lines[i].startsWith("  - ")) {
-              listItems.add(lines[i].removePrefix("  - ").trim())
+            while (i < lines.size && lines[i].trimStart().startsWith("- ")) {
+              listItems.add(lines[i].trimStart().removePrefix("- ").trim())
               i++
             }
             if (listItems.isNotEmpty()) {

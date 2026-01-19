@@ -22,6 +22,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.DocProcessor
 import com.simiacryptus.cognotik.util.DocProcessor.FileMod
@@ -147,6 +148,13 @@ class DocProcessorAction(
         ) {
             override fun instance(model: ApiChatModel) =
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")
+
+            override fun getOrchestrationConfig(
+                session: Session,
+                user: User
+            ) = super.getOrchestrationConfig(session, user)?.apply {
+                processor = tasks.first().patchProcessor
+            }
         }
 
         app.getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())

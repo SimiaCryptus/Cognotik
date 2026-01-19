@@ -62,7 +62,7 @@ abstract class SingleTaskApp(
         user: User,
         socketManager: SocketManager
     ) {
-        val settings = getSettings(session, user, OrchestrationConfig::class.java)
+        val orchestrationConfig = getOrchestrationConfig(session, user)
         if (null != instanceFn) OrchestrationConfig.instanceFn = instanceFn
         socketManager.newTask(cancelable = false, root = true).expandable(
             "Session Info", """
@@ -70,7 +70,7 @@ abstract class SingleTaskApp(
     
     Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
     
-    Root: `${settings?.absoluteWorkingDir}`
+    Root: `${orchestrationConfig?.absoluteWorkingDir}`
     
     Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
     
@@ -80,8 +80,13 @@ abstract class SingleTaskApp(
     
               """.renderMarkdown()
         )
-        socketManager.pool.submit { executeTask(session, user, socketManager, settings) }
+        socketManager.pool.submit { executeTask(session, user, socketManager, orchestrationConfig) }
     }
+
+    open fun getOrchestrationConfig(
+        session: Session,
+        user: User
+    ): OrchestrationConfig? = getSettings(session, user, OrchestrationConfig::class.java)
 
     protected open fun onTaskComplete(result: String, task: SessionTask) {}
     protected open fun onTaskError(e: Throwable) {}
