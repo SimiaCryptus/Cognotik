@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <title>Frontmatter Schema | Cognotik</title>
+    <meta name="description" content="YAML frontmatter schema documentation for DocProcessor - manage relationships between documentation and source code.">
+    <meta name="keywords" content="AI coding, documentation, frontmatter, YAML, DocProcessor, code generation">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="Frontmatter Schema | Cognotik">
+    <meta property="og:description" content="YAML frontmatter schema documentation for DocProcessor - manage relationships between documentation and source code.">
+    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
+    <meta property="og:url" content="https://cognotik.com/frontmatter.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Frontmatter Schema | Cognotik">
+    <meta name="twitter:description" content="YAML frontmatter schema documentation for DocProcessor - manage relationships between documentation and source code.">
+    <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+
+    <!-- Favicon Suite -->
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#0f1115">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        /* Page-specific styles */
+        .doc-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: var(--spacing-xl);
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+        }
+
+        @media (max-width: 968px) {
+            .doc-layout {
+                grid-template-columns: 1fr;
+            }
+            .doc-sidebar {
+                display: none;
+            }
+        }
+
+        .doc-sidebar {
+            position: sticky;
+            top: calc(var(--header-height) + var(--spacing-lg));
+            height: fit-content;
+            max-height: calc(100vh - var(--header-height) - var(--spacing-xl));
+            overflow-y: auto;
+        }
+
+        .doc-nav {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-md);
+        }
+
+        .doc-nav-title {
+            font-family: var(--font-family-mono);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .doc-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .doc-nav li {
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .doc-nav a {
+            display: block;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .doc-nav a:hover {
+            color: var(--primary-color);
+            background: rgba(139, 92, 246, 0.1);
+            text-decoration: none;
+        }
+
+        .doc-nav a.active {
+            color: var(--accent-color);
+            background: rgba(139, 92, 246, 0.15);
+        }
+
+        .doc-content {
+            min-width: 0;
+        }
+
+        .doc-header {
+            margin-bottom: var(--spacing-xl);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .doc-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .doc-header .lead {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        .doc-section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .doc-section h2 {
+            font-size: 1.75rem;
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .doc-section h3 {
+            font-size: 1.35rem;
+            margin-top: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+            color: var(--accent-color);
+        }
+
+        .doc-section h4 {
+            font-size: 1.1rem;
+            margin-top: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            color: var(--accent-secondary);
+        }
+
+        .key-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin-bottom: var(--spacing-lg);
+            overflow: hidden;
+        }
+
+        .key-card-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            background: rgba(139, 92, 246, 0.1);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .key-card-header code {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            background: transparent;
+            padding: 0;
+        }
+
+        .key-card-body {
+            padding: var(--spacing-md);
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 0.15em 0.5em;
+            font-size: 0.75rem;
+            font-family: var(--font-family-mono);
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-secondary);
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .example-block {
+            margin-top: var(--spacing-md);
+        }
+
+        .example-block h4 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: var(--spacing-md) 0;
+            font-size: 0.9rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: var(--spacing-sm) var(--spacing-md);
+            text-align: left;
+            border: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: var(--surface-color);
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .data-table td {
+            background: rgba(30, 41, 59, 0.3);
+        }
+
+        .data-table code {
+            font-size: 0.85em;
+        }
+
+        .note-box {
+            padding: var(--spacing-md);
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 4px solid var(--accent-secondary);
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            margin: var(--spacing-md) 0;
+        }
+
+        .note-box strong {
+            color: var(--accent-secondary);
+        }
+
+        .complete-example {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .complete-example-header {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: rgba(139, 92, 246, 0.1);
+            border-bottom: 1px solid var(--border-color);
+            font-family: var(--font-family-mono);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .behavior-list {
+            list-style: none;
+            padding: 0;
+            margin: var(--spacing-md) 0;
+        }
+
+        .behavior-list li {
+            position: relative;
+            padding-left: var(--spacing-lg);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .behavior-list li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<!-- Header Component -->
+<cognotik-header></cognotik-header>
+
+<!-- Main Content -->
+<main class="doc-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="doc-sidebar">
+        <nav class="doc-nav">
+            <div class="doc-nav-title">On This Page</div>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#format">Frontmatter Format</a></li>
+                <li><a href="#supported-keys">Supported Keys</a></li>
+                <li><a href="#key-specifies">specifies</a></li>
+                <li><a href="#key-documents">documents</a></li>
+                <li><a href="#key-transforms">transforms</a></li>
+                <li><a href="#key-generates">generates</a></li>
+                <li><a href="#key-related">related</a></li>
+                <li><a href="#complete-example">Complete Example</a></li>
+                <li><a href="#processing-behavior">Processing Behavior</a></li>
+                <li><a href="#data-structures">Data Structures</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Documentation Content -->
+    <article class="doc-content">
+        <header class="doc-header">
+            <h1>Frontmatter Schema</h1>
+            <p class="lead">
+                This document describes the YAML frontmatter schema used by <code>DocProcessor</code>
+                to process markdown documentation files and manage relationships between documentation
+                and source code.
+            </p>
+        </header>
+
+        <!-- Overview Section -->
+        <section id="overview" class="doc-section">
+            <h2>Overview</h2>
+            <p>
+                <code>DocProcessor</code> processes markdown files that contain YAML frontmatter blocks.
+                The frontmatter specifies how the documentation relates to source files — either as
+                specifications that drive code generation, as documentation that should be updated
+                based on source files, or as transformation rules between files.
+            </p>
+        </section>
+
+        <!-- Format Section -->
+        <section id="format" class="doc-section">
+            <h2>Frontmatter Format</h2>
+            <p>
+                Frontmatter must be enclosed between <code>---</code> delimiters at the start of the markdown file:
+            </p>
+            <pre><code>---
+key: value
+list_key:
+  - item1
+  - item2
+---
+
+# Document content starts here</code></pre>
+        </section>
+
+        <!-- Supported Keys Section -->
+        <section id="supported-keys" class="doc-section">
+            <h2>Supported Keys</h2>
+
+            <!-- specifies -->
+            <div id="key-specifies" class="key-card">
+                <div class="key-card-header">
+                    <code>specifies</code>
+                    <span class="type-badge">String | List&lt;String&gt;</span>
+                </div>
+                <div class="key-card-body">
+                    <p>
+                        Defines glob patterns for files that this documentation specifies.
+                        The matched files will be created or updated based on the documentation content.
+                    </p>
+
+                    <div class="example-block">
+                        <h4>Examples</h4>
+                        <pre><code># Single file
+specifies: ../src/utils/helper.kt
+
+# Single glob pattern
+specifies: ../src/**/*.kt
+
+# Multiple patterns
+specifies:
+  - ../src/models/*.kt
+  - ../src/utils/*.kt</code></pre>
+                    </div>
+
+                    <h4>Glob Pattern Support</h4>
+                    <ul>
+                        <li>Simple patterns: <code>*.kt</code>, <code>helper.kt</code></li>
+                        <li>Recursive patterns: <code>**/*.kt</code> (matches files in all subdirectories)</li>
+                        <li>Paths are resolved relative to the markdown file's directory</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- documents -->
+            <div id="key-documents" class="key-card">
+                <div class="key-card-header">
+                    <code>documents</code>
+                    <span class="type-badge">String | List&lt;String&gt;</span>
+                </div>
+                <div class="key-card-body">
+                    <p>
+                        Defines glob patterns for source files that this documentation describes.
+                        This is the inverse of <code>specifies</code> — the documentation file itself
+                        becomes the target to be updated based on the matched source files.
+                    </p>
+
+                    <div class="example-block">
+                        <h4>Examples</h4>
+                        <pre><code># Single file
+documents: ../src/main/kotlin/MyClass.kt
+
+# Multiple source files
+documents:
+  - ../src/**/*.kt
+  - ../src/**/*.java</code></pre>
+                    </div>
+
+                    <div class="note-box">
+                        <strong>Use Case:</strong> Keep documentation in sync with source code changes.
+                        When source files change, the documentation can be automatically updated to
+                        reflect the current implementation.
+                    </div>
+                </div>
+            </div>
+
+            <!-- transforms -->
+            <div id="key-transforms" class="key-card">
+                <div class="key-card-header">
+                    <code>transforms</code>
+                    <span class="type-badge">String | List&lt;String&gt;</span>
+                </div>
+                <div class="key-card-body">
+                    <p>
+                        Defines regex-based transformation rules that map source files to destination files.
+                        Uses regex capture groups and backreferences for flexible file mapping.
+                    </p>
+
+                    <h4>Format</h4>
+                    <p><code>sourcePattern -&gt; destinationPattern</code></p>
+                    <ul>
+                        <li><code>sourcePattern</code>: A regex pattern to match source file paths (relative to the doc file's directory)</li>
+                        <li><code>destinationPattern</code>: The destination path with backreferences (<code>$0</code>, <code>$1</code>, <code>$2</code>, etc.)</li>
+                    </ul>
+
+                    <div class="example-block">
+                        <h4>Examples</h4>
+                        <pre><code># Single transform
+transforms: src/(.+)\.java -> generated/$1.kt
+
+# Multiple transforms
+transforms:
+  - src/models/(.+)\.java -> kotlin/models/$1.kt
+  - src/utils/(.+)\.java -> kotlin/utils/$1.kt</code></pre>
+                    </div>
+
+                    <h4>Backreference Support</h4>
+                    <ul>
+                        <li><code>$0</code> — The entire matched string</li>
+                        <li><code>$1</code>, <code>$2</code>, etc. — Captured groups from the regex pattern</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- generates -->
+            <div id="key-generates" class="key-card">
+                <div class="key-card-header">
+                    <code>generates</code>
+                    <span class="type-badge">Map | List&lt;Map&gt;</span>
+                </div>
+                <div class="key-card-body">
+                    <p>
+                        Defines explicit output files to generate from specified input files.
+                        Unlike <code>transforms</code>, this doesn't use pattern matching — it explicitly
+                        lists the output file and its input sources.
+                    </p>
+
+                    <h4>Structure</h4>
+                    <pre><code>generates:
+  output: path/to/output/file
+  inputs:
+    - input/pattern/*.kt
+    - another/input.kt</code></pre>
+
+                    <div class="example-block">
+                        <h4>Examples</h4>
+                        <pre><code># Single generate spec
+generates:
+  output: ../generated/combined.kt
+  inputs:
+    - ../src/models/*.kt
+    - ../src/utils/*.kt
+
+# Multiple generate specs
+generates:
+  - output: ../generated/models.kt
+    inputs:
+      - ../src/models/**/*.kt
+  - output: ../generated/utils.kt
+    inputs:
+      - ../src/utils/**/*.kt</code></pre>
+                    </div>
+
+                    <div class="note-box">
+                        <strong>Use Case:</strong> Generate aggregate files, combined outputs, or files
+                        that depend on multiple input sources.
+                    </div>
+                </div>
+            </div>
+
+            <!-- related -->
+            <div id="key-related" class="key-card">
+                <div class="key-card-header">
+                    <code>related</code>
+                    <span class="type-badge">String | List&lt;String&gt;</span>
+                </div>
+                <div class="key-card-body">
+                    <p>
+                        Specifies additional files to include as context when processing modification tasks.
+                        These files are not targets but provide supplementary information.
+                    </p>
+
+                    <div class="example-block">
+                        <h4>Examples</h4>
+                        <pre><code># Single related file
+related: ../shared/constants.kt
+
+# Multiple related files
+related:
+  - ../shared/constants.kt
+  - ../config/settings.yaml
+  - ./helper-docs.md</code></pre>
+                    </div>
+
+                    <div class="note-box">
+                        <strong>Use Case:</strong> Include configuration files, shared constants, or related
+                        documentation that provides context for the AI when processing the target files.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Complete Example Section -->
+        <section id="complete-example" class="doc-section">
+            <h2>Complete Example</h2>
+            <div class="complete-example">
+                <div class="complete-example-header">api-documentation.md</div>
+                <pre><code>---
+specifies:
+  - ../src/api/*.kt
+  - ../src/models/*.kt
+documents:
+  - ../src/core/Engine.kt
+transforms:
+  - src/legacy/(.+)\.java -> src/modern/$1.kt
+generates:
+  output: ../generated/api-index.md
+  inputs:
+    - ../src/api/**/*.kt
+related:
+  - ../config/api-config.yaml
+  - ./api-conventions.md
+---
+
+# API Documentation
+
+This document specifies the API layer implementation...</code></pre>
+            </div>
+        </section>
+
+        <!-- Processing Behavior Section -->
+        <section id="processing-behavior" class="doc-section">
+            <h2>Processing Behavior</h2>
+            <ul class="behavior-list">
+                <li>
+                    <strong>Dependency Resolution:</strong> Tasks are sorted topologically so dependencies
+                    are processed before dependents. Cycles are detected and broken automatically.
+                </li>
+                <li>
+                    <strong>File Resolution:</strong> All paths in frontmatter are resolved relative to
+                    the markdown file's parent directory.
+                </li>
+                <li>
+                    <strong>Glob Expansion:</strong> Simple globs (<code>*.kt</code>) match files in the
+                    specified directory. Recursive globs (<code>**/*.kt</code>) match files in all subdirectories.
+                </li>
+                <li>
+                    <strong>Multiple Specifications:</strong> A single target file can be specified by
+                    multiple documentation files. All specifications are combined when processing.
+                </li>
+                <li>
+                    <strong>Overwrite Modes:</strong> The processor supports different overwrite strategies
+                    (configured externally) for handling existing files.
+                </li>
+            </ul>
+        </section>
+
+        <!-- Data Structures Section -->
+        <section id="data-structures" class="doc-section">
+            <h2>Data Structures</h2>
+            <p>The frontmatter is parsed into a <code>DocSpec</code> containing:</p>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>docFile</code></td>
+                    <td><code>File</code></td>
+                    <td>The markdown file itself</td>
+                </tr>
+                <tr>
+                    <td><code>specifies</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Glob patterns for files this doc specifies</td>
+                </tr>
+                <tr>
+                    <td><code>documents</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Glob patterns for files this doc describes</td>
+                </tr>
+                <tr>
+                    <td><code>transforms</code></td>
+                    <td><code>List&lt;TransformSpec&gt;</code></td>
+                    <td>Source-to-destination transformation rules</td>
+                </tr>
+                <tr>
+                    <td><code>generates</code></td>
+                    <td><code>List&lt;GenerateSpec&gt;</code></td>
+                    <td>Explicit generation specifications</td>
+                </tr>
+                <tr>
+                    <td><code>related</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Additional context files</td>
+                </tr>
+                <tr>
+                    <td><code>content</code></td>
+                    <td><code>String</code></td>
+                    <td>The markdown body (after frontmatter)</td>
+                </tr>
+                <tr>
+                    <td><code>frontmatter</code></td>
+                    <td><code>Map&lt;String, Any&gt;</code></td>
+                    <td>Raw parsed frontmatter</td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+    </article>
+</main>
+
+<!-- Footer -->
+<footer style="padding: var(--spacing-xl) var(--spacing-lg); border-top: 1px solid var(--border-color); text-align: center; color: var(--text-muted);">
+    <p>&copy; 2024 Cognotik. All rights reserved.</p>
+</footer>
+
+<!-- Core Scripts -->
+<script type="module" src="assets/scripts/core.js"></script>
+
+<!-- Active nav link highlighting -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const navLinks = document.querySelectorAll('.doc-nav a');
+        const sections = document.querySelectorAll('.doc-section, .key-card');
+
+        function updateActiveLink() {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (window.scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', updateActiveLink);
+        updateActiveLink();
+    });
+</script>
+</body>
+</html>

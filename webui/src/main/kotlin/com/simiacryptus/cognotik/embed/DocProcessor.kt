@@ -13,6 +13,7 @@ import java.nio.file.FileSystems
 import java.nio.file.PathMatcher
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
+import java.util.LinkedList
 
 /**
  * DocProcessor processes markdown documentation files that specify target files via frontmatter.
@@ -38,6 +39,7 @@ open class DocProcessor(
     val specifies: List<String>,
     val documents: List<String>,
     val transforms: List<TransformSpec>,
+    val generates: List<GenerateSpec>,
     val related: List<String>,
     val content: String,
     val frontmatter: Map<String, Any>
@@ -52,12 +54,28 @@ open class DocProcessor(
     val sourcePattern: String,
     val destinationPattern: String
   )
+  /**
+   * Represents a non-pattern-based generation specification.
+   * @param output The single output file path (relative to doc file)
+   * @param inputs List of glob patterns for input files to include as context
+   */
+  data class GenerateSpec(
+    val output: String,
+    val inputs: List<String>
+  )
+
 
   data class TransformMatch(
     val sourceFile: File,
     val destinationFile: File,
     val spec: DocSpec
   )
+  data class GenerateMatch(
+    val outputFile: File,
+    val inputFiles: List<File>,
+    val spec: DocSpec
+  )
+
 
   data class ModificationTask(
     val data: FileModificationTaskExecutionConfigData,
@@ -86,35 +104,38 @@ open class DocProcessor(
     val fileToSpecs = fileToSpecs(docSpecs)
     val documentMatches = documentMatches(docSpecs)
     val transformMatches = transformMatches(docSpecs)
-    val allTargetFiles = (fileToSpecs.keys + transformMatches.keys + documentMatches.keys).distinct()
-      .associateWith { Triple(fileToSpecs[it], transformMatches[it], documentMatches[it]) }
+    val generateMatches = generateMatches(docSpecs)
+    val allTargetFiles = (fileToSpecs.keys + transformMatches.keys + documentMatches.keys + generateMatches.keys).distinct()
     log.info("Total unique target files: ${allTargetFiles.size}")
-    return allTargetFiles.keys.map { targetFile ->
+    return allTargetFiles.map { targetFile ->
       val specs = fileToSpecs[targetFile] ?: emptyList()
       val transforms = transformMatches[targetFile] ?: emptyList()
       val documents = documentMatches[targetFile] ?: emptyList()
+      val generates = generateMatches[targetFile] ?: emptyList()
       val targetFile = File(targetFile)
       val relativeTarget = targetFile.relativeTo(root.absoluteFile)
       try {
         log.info(
-          "Processing ${relativeTarget} based on ${specs.size} spec(s), ${transforms.size} transform(s), and ${documents.size} document(s): ${
+          "Processing ${relativeTarget} based on ${specs.size} spec(s), ${transforms.size} transform(s), ${documents.size} document(s), and ${generates.size} generate(s): ${
             (specs.map { it.docFile.name } +
                 transforms.map { "${it.spec.docFile.name}(${it.sourceFile.name})" } +
-                documents.map<DocumentMatch, String> { "${it.docSpec.docFile.name}(${it.supportingFiles.size} files)" }
+                documents.map<DocumentMatch, String> { "${it.docSpec.docFile.name}(${it.supportingFiles.size} files)" } +
+                generates.map { "${it.spec.docFile.name}(${it.inputFiles.size} inputs)" }
                 ).joinToString(", ")
           }")
         overwriteMode.prepare(
-          source = primarySource(transforms, specs, documents) ?: return@map null,
+          source = primarySource(transforms, specs, documents, generates) ?: return@map null,
           target = targetFile,
-          relatedFiles = allRelatedFiles(specs, targetFile, transforms, documents)
+          relatedFiles = allRelatedFiles(specs, targetFile, transforms, documents, generates)
         )?.let { patchProcessor ->
-          ModificationTask(data(relativeTarget, specs, targetFile, transforms, documents), patchProcessor)
+          ModificationTask(data(relativeTarget, specs, targetFile, transforms, documents, generates), patchProcessor)
         }
       } catch (e: Exception) {
         log.error("Error processing ${relativeTarget}", e)
         null
       }
     }.filterNotNull()
+      .let { sortByDependencies(it) }
   }
 
   open fun data(
@@ -122,7 +143,8 @@ open class DocProcessor(
     specs: List<DocSpec>,
     targetFile: File,
     transforms: List<TransformMatch>,
-    documents: List<DocumentMatch>
+    documents: List<DocumentMatch>,
+    generates: List<GenerateMatch>
   ): FileModificationTaskExecutionConfigData = FileModificationTaskExecutionConfigData(
     files = listOf(relativeTarget.toString()),
     related_files = (specs.flatMap { spec ->
@@ -144,18 +166,27 @@ open class DocProcessor(
             docMatch.docSpec.docFile.parentFile.resolve(relatedPath).relativeTo(root.absoluteFile).toString()
           } +
           additionalContext(docMatch.docSpec, targetFile)
+    } + generates.flatMap { genMatch ->
+      listOf(genMatch.spec.docFile.relativeTo(root.absoluteFile).toString()) +
+          genMatch.inputFiles.map { it.relativeTo(root.absoluteFile).toString() } +
+          genMatch.spec.related.map { relatedPath ->
+            genMatch.spec.docFile.parentFile.resolve(relatedPath).relativeTo(root.absoluteFile).toString()
+          } +
+          additionalContext(genMatch.spec, targetFile)
     }).distinct(),
-    task_description = buildCombinedTaskDescription(specs, transforms, documents, targetFile),
+    task_description = buildCombinedTaskDescription(specs, transforms, documents, generates, targetFile),
   )
 
   open fun primarySource(
     transforms: List<TransformMatch>,
     specs: List<DocSpec>,
-    documents: List<DocumentMatch>
+    documents: List<DocumentMatch>,
+    generates: List<GenerateMatch>
   ): File? = when {
     transforms.isNotEmpty() -> transforms.first().sourceFile
     specs.isNotEmpty() -> specs.first().docFile
     documents.isNotEmpty() -> documents.first().supportingFiles.firstOrNull() ?: documents.first().docSpec.docFile
+    generates.isNotEmpty() -> generates.first().inputFiles.firstOrNull() ?: generates.first().spec.docFile
     else -> null
   }
 
@@ -163,7 +194,8 @@ open class DocProcessor(
     specs: List<DocSpec>,
     targetFile: File,
     transforms: List<TransformMatch>,
-    documents: List<DocumentMatch>
+    documents: List<DocumentMatch>,
+    generates: List<GenerateMatch>
   ): List<File> = (specs.flatMap { spec ->
     listOf(spec.docFile) +
         spec.related.map { spec.docFile.parentFile.resolve(it) } +
@@ -176,6 +208,11 @@ open class DocProcessor(
     docMatch.supportingFiles +
         docMatch.docSpec.related.map { docMatch.docSpec.docFile.parentFile.resolve(it) } +
         additionalContext(docMatch.docSpec, targetFile).map { File(it) }
+  } + generates.flatMap { genMatch ->
+    listOf(genMatch.spec.docFile) +
+        genMatch.inputFiles +
+        genMatch.spec.related.map { genMatch.spec.docFile.parentFile.resolve(it) } +
+        additionalContext(genMatch.spec, targetFile).map { File(it) }
   }).distinct()
 
   open fun transformMatches(docSpecs: List<DocSpec>): Map<String, List<TransformMatch>> {
@@ -189,6 +226,32 @@ open class DocProcessor(
     log.info("Found ${transformMatches.size} transform matches")
     return transformMatches
   }
+  open fun generateMatches(docSpecs: List<DocSpec>): Map<String, List<GenerateMatch>> {
+    val generateMatches = docSpecs
+      .filter { it.generates.isNotEmpty() }
+      .flatMap { spec ->
+        spec.generates.map { genSpec ->
+          val baseDir = spec.docFile.parentFile
+          val outputFile = baseDir.resolve(genSpec.output).canonicalFile
+          val inputFiles = genSpec.inputs.flatMap { pattern ->
+            if (pattern.contains("**")) {
+              expandRecursiveGlob(baseDir, pattern)
+            } else {
+              expandSimpleGlob(baseDir, pattern)
+            }
+          }.distinct()
+          log.info("Doc ${spec.docFile.name} generates '${genSpec.output}' from ${inputFiles.size} input files")
+          GenerateMatch(
+            outputFile = outputFile,
+            inputFiles = inputFiles,
+            spec = spec
+          )
+        }
+      }.groupBy { it.outputFile.absolutePath }
+    log.info("Found ${generateMatches.size} generate matches")
+    return generateMatches
+  }
+
 
   open fun documentMatches(docSpecs: List<DocSpec>): Map<String, List<DocumentMatch>> {
     val documentMatches = docSpecs
@@ -260,6 +323,66 @@ open class DocProcessor(
       }.toTypedArray().forEach { it.get() }
     }
   }
+  /**
+   * Sorts modification tasks so that dependencies are processed before dependents.
+   * Uses topological sorting with cycle detection - when cycles are encountered,
+   * the cycle is broken by processing one of the cycle members to allow progress.
+   *
+   * @param tasks The list of modification tasks to sort
+   * @return A sorted list where dependencies come before their dependents
+   */
+  open fun sortByDependencies(tasks: List<ModificationTask>): List<ModificationTask> {
+    if (tasks.isEmpty()) return tasks
+    // Build a map from target file path to task
+    val taskByTarget = tasks.associateBy { task ->
+      task.data.files?.firstOrNull()?.let { File(root, it).canonicalPath } ?: ""
+    }.filterKeys { it.isNotEmpty() }
+    // Build adjacency list: task -> tasks it depends on (tasks that modify files in its related_files)
+    val dependencies = tasks.associateWith { task ->
+      task.data.related_files?.mapNotNull { relatedFile ->
+        val canonicalPath = File(root, relatedFile).canonicalPath
+        taskByTarget[canonicalPath]
+      }?.filter { it != task }?.distinct() ?: emptyList()
+    }
+    // Kahn's algorithm for topological sort with cycle handling
+    val result = mutableListOf<ModificationTask>()
+    val queue = LinkedList<ModificationTask>()
+    // Tasks with no dependencies should be processed first
+    tasks.filter { (dependencies[it]?.size ?: 0) == 0 }.forEach { queue.add(it) }
+    val remaining = tasks.toMutableSet()
+    remaining.removeAll(queue.toSet())
+    while (queue.isNotEmpty() || remaining.isNotEmpty()) {
+      if (queue.isNotEmpty()) {
+        val task = queue.poll()
+        result.add(task)
+        // For each task that depends on this one, reduce its dependency count
+        remaining.filter { dependencies[it]?.contains(task) == true }.forEach { dependent ->
+          val newDeps = (dependencies[dependent] ?: emptyList()).filter { it in remaining }
+          if (newDeps.isEmpty()) {
+            queue.add(dependent)
+            remaining.remove(dependent)
+          }
+        }
+      } else {
+        // Cycle detected - break it by picking a task with minimum remaining dependencies
+        val taskToBreak = remaining.minByOrNull { task ->
+          (dependencies[task] ?: emptyList()).count { it in remaining }
+        }
+        if (taskToBreak != null) {
+          log.warn("Dependency cycle detected, breaking cycle by processing: ${taskToBreak.data.files?.firstOrNull()}")
+          queue.add(taskToBreak)
+          remaining.remove(taskToBreak)
+        } else {
+          // Should not happen, but handle gracefully
+          log.warn("Unable to resolve remaining tasks, adding them in original order")
+          result.addAll(remaining)
+          remaining.clear()
+        }
+      }
+    }
+    log.info("Sorted ${tasks.size} tasks by dependencies")
+    return result
+  }
 
   /**
    * Build a combined task description from multiple specs and transforms
@@ -268,6 +391,7 @@ open class DocProcessor(
     specs: List<DocSpec>,
     transforms: List<TransformMatch>,
     documents: List<Any>, // Using Any to avoid inner class reference issues
+    generates: List<Any>,
     target: File
   ): String {
     val parts = mutableListOf<String>()
@@ -283,6 +407,12 @@ open class DocProcessor(
       parts.add("The documentation should accurately reflect the current state of the code.")
       parts.add("Update any outdated information, add documentation for new features, and ensure consistency with the actual implementation.")
     }
+    if (generates.isNotEmpty()) {
+      parts.add("Generate or update the file ${target.name} based on the documentation and input files provided as context.")
+      parts.add("The output should follow the patterns and requirements described in the documentation.")
+      parts.add("Use the input files as source material to create the appropriate output.")
+    }
+
 
     return parts.joinToString("\n")
   }
@@ -368,10 +498,11 @@ open class DocProcessor(
       val specifies = parseSpecifies(frontmatter)
       val documents = parseDocuments(frontmatter)
       val transforms = parseTransforms(frontmatter)
+    val generates = parseGenerates(frontmatter)
       val related = parseRelated(frontmatter)
 
       // Return null if neither specifies nor transforms are present
-      if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty()) {
+    if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty() && generates.isEmpty()) {
         return null
       }
 
@@ -380,6 +511,7 @@ open class DocProcessor(
         specifies = specifies,
         documents = documents,
         transforms = transforms,
+      generates = generates,
         related = related,
         content = bodyContent,
         frontmatter = frontmatter
@@ -441,6 +573,43 @@ open class DocProcessor(
         else -> emptyList()
       }
     }
+
+    fun parseGenerates(frontmatter: Map<String, Any>): List<GenerateSpec> {
+      val generateValue = frontmatter["generates"] ?: return emptyList()
+      return when (generateValue) {
+        is Map<*, *> -> {
+          // Single generate spec
+          parseGenerateSpec(generateValue)?.let { listOf(it) } ?: emptyList()
+        }
+        is List<*> -> {
+          // List of generate specs
+          generateValue.mapNotNull { item ->
+            when (item) {
+              is Map<*, *> -> parseGenerateSpec(item)
+              else -> null
+            }
+          }
+        }
+        else -> emptyList()
+      }
+    }
+    /**
+     * Parse a single generate spec from a map
+     */
+    private fun parseGenerateSpec(map: Map<*, *>): GenerateSpec? {
+      val output = map["output"] as? String ?: return null
+      val inputs = when (val inputsValue = map["inputs"]) {
+        is String -> listOf(inputsValue)
+        is List<*> -> inputsValue.filterIsInstance<String>()
+        else -> emptyList()
+      }
+      if (inputs.isEmpty()) {
+        log.warn("Generate spec for '$output' has no inputs")
+        return null
+      }
+      return GenerateSpec(output = output, inputs = inputs)
+    }
+
     /**
      * Parse 'specifies' from frontmatter (supports single value or list)
      */

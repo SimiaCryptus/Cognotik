@@ -35,10 +35,10 @@
     "description": "Comprehensive application framework for building AI-powered applications with session management, authentication, storage, and cloud integration."
   },
   {
-    "label": "Use Case Categories",
-    "url": "use_case_categories.html",
+    "label": "Frontmatter Schema",
+    "url": "frontmatter.html",
     "type": "link",
-    "code": "https://github.com/SimiaCryptus/Cognotik/blob/main/docs/use_case_categories.md",
-    "description": "A taxonomy of generative AI use cases - from basic content creation to advanced hierarchical generation patterns."
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/docproc",
+    "description": "YAML frontmatter schema documentation for DocProcessor - manage relationships between documentation and source code."
   }
 ]

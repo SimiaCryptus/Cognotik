@@ -265,6 +265,7 @@ open class DocProcessorAction(
                         <li><b>specifies:</b> Files that should be updated based on the documentation</li>
                         <li><b>documents:</b> Documentation files to update based on source files</li>
                         <li><b>transforms:</b> Source-to-destination file transformations</li>
+                    <li><b>generates:</b> Single output file from multiple input patterns</li>
                         </ul>
                     """.trimIndent())
                 }
