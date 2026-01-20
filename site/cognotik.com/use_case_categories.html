@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -14,7 +13,7 @@
     <meta property="og:title" content="Use Case Categories | Cognotik">
     <meta property="og:description" content="A comprehensive taxonomy of generative AI use cases for software development and content creation.">
     <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
-    <meta property="og:url" content="https://cognotik.com/use-case-categories.html">
+    <meta property="og:url" content="https://cognotik.com/use_case_categories.html">
     <meta property="og:type" content="website">
 
     <!-- Twitter Card -->
@@ -28,16 +27,23 @@
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-    <link rel="manifest" href="site.webmanifest">
+    <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#0f1115">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- jQuery & FileTree -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <link rel="stylesheet" href="assets/styles/use-case-categories.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <script type="module" src="assets/scripts/components/CognotikFooter.js"></script>
 </head>
 <body>
     <cognotik-header></cognotik-header>
@@ -541,6 +547,9 @@ while(tests fail) → Fix    [Error Correction]</code></pre>
     </main>
 
     <cognotik-footer></cognotik-footer>
+    <!-- Core Scripts -->
+    <script type="module" src="assets/scripts/core.js"></script>
+    <!-- Syntax Highlighting -->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 </body>

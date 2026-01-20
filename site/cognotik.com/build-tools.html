@@ -1,207 +1,529 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Cognotik Build Tools - AI-Powered CI/CD Automation</title>
-    <meta content="Cognotik Build Tools for automated code review, build fixing, and issue resolution. Integrate AI agents into your GitHub Actions and Gradle builds."
-          name="description">
-    <meta content="Cognotik, Build Tools, CI/CD, GitHub Actions, Gradle, Automated Code Review, Build Fixing, AI Agents, SimiaCryptus"
-          name="keywords">
-    <link href="https://cognotik.com/build-tools.html" hreflang="en" rel="alternate">
-    <meta content="SimiaCryptus" name="author">
-    <meta content="Cognotik Build Tools - AI-Powered CI/CD Automation" property="og:title">
-    <meta content="Integrate AI agents into your GitHub Actions and Gradle builds for automated code review and fixing."
-          property="og:description">
-    <meta content="https://cognotik.com/assets/og-image.png" property="og:image">
-    <meta content="website" property="og:type">
-    <meta content="https://cognotik.com/build-tools.html" property="og:url">
-    <meta content="summary_large_image" name="twitter:card">
-    <meta content="Cognotik Build Tools - AI-Powered CI/CD Automation" name="twitter:title">
-    <meta content="Integrate AI agents into your GitHub Actions and Gradle builds for automated code review and fixing."
-          name="twitter:description">
-    <meta content="https://cognotik.com/assets/og-image.png" name="twitter:image">
-    <link href="https://cognotik.com/build-tools.html" rel="canonical">
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
-    <link href="assets/styles/styles.css" rel="stylesheet">
-    <link href="styles/responsive.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Fonts -->
+    <!-- SEO Meta Tags -->
+    <title>Build Tools | Cognotik</title>
+    <meta name="description" content="AI-powered build tools for automated code generation, documentation processing, and CI/CD automation with GitHub Actions and Gradle integration.">
+    <meta name="keywords" content="AI coding, build tools, code generation, documentation processing, GitHub Actions, Gradle, CI/CD automation">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="Build Tools | Cognotik">
+    <meta property="og:description" content="AI-powered build tools for automated code generation, documentation processing, and CI/CD automation.">
+    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
+    <meta property="og:url" content="https://cognotik.com/build-tools.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Build Tools | Cognotik">
+    <meta name="twitter:description" content="AI-powered build tools for automated code generation, documentation processing, and CI/CD automation.">
+    <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+
+    <!-- Favicon Suite -->
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#0f1115">
+
+    <link href="https://cognotik.com/build-tools.html" rel="canonical">
+
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Styles -->
+    <link href="assets/styles/main.css" rel="stylesheet">
+
+    <!-- Components -->
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 </head>
 <body>
-<main>
     <cognotik-header current-page="build-tools"></cognotik-header>
-    <section class="hero-section fade-in" style="padding-top:3em;padding-bottom:2em;">
-        <div class="container">
-            <div class="hero-content" style="flex-flow: row;">
-                <div class="hero-text fade-in delay-1">
-                    <h1>Cognotik Build Tools</h1>
-                    <p style="font-size:1.2em;max-width:650px;">
-                        Supercharge your CI/CD pipeline with AI-powered automation. 
-                        Automatically fix failing builds, review code against best practices, 
-                        and resolve GitHub issues with intelligent agents integrated directly into your workflow.
-                    </p>
-                    <div class="download-ui-simple" style="margin-top: 1em;">
-                  <a class="btn btn-primary" href="https://github.com/SimiaCryptus/demo-cognotik-buildtool" target="_blank" rel="noopener noreferrer">
-                            <i class="fab fa-github"></i> View Demo Repository
-                        </a>
-                  <a class="btn btn-secondary" href="https://github.com/SimiaCryptus/Cognotik/blob/main/tool/README.md" target="_blank" rel="noopener noreferrer">
-                           style="margin-top:1em; margin-left: 0.5em;" target="_blank">
-                            <i class="fas fa-book"></i> Documentation
-                        </a>
-                    </div>
-                </div>
-                <div class="hero-image fade-in delay-2">
-                    <div style="border-radius: var(--border-radius-lg); width: 300px; height: 250px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--text-light); font-style: italic; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                        <i class="fas fa-cogs" style="font-size: 5em; opacity: 0.5;"></i>
-                    </div>
+
+    <main class="task-container">
+        <!-- Hero Section -->
+        <section class="hero hero-gradient">
+            <div class="hero-content">
+                <h1 class="hero-title">Build Tools</h1>
+                <p class="hero-subtitle">
+                    AI-powered utilities for automated code generation, documentation processing, and task execution.
+                    Embed intelligent workflows into your build processes or run standalone.
+                </p>
+                <div class="hero-actions">
+                    <a class="btn btn-primary" href="https://github.com/SimiaCryptus/demo-cognotik-buildtool" target="_blank" rel="noopener noreferrer">
+                        <i class="fab fa-github"></i> View Demo Repository
+                    </a>
+                    <a class="btn btn-secondary" href="https://github.com/SimiaCryptus/Cognotik/blob/main/tool/README.md" target="_blank" rel="noopener noreferrer">
+                        <i class="fas fa-book"></i> Documentation
+                    </a>
                 </div>
             </div>
-        </div>
-    </section>
-    <section class="features-section">
-        <div class="container">
-            <h2>Key Capabilities</h2>
+        </section>
+
+        <!-- Key Components Section -->
+        <section class="features">
+            <h2 class="text-heading text-center mb-8">Key Components</h2>
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-wrench"></i></div>
-                    <h3>Auto-Fix Builds</h3>
-                    <p>Automatically detect and fix failing builds in pull requests. The agent analyzes build logs and applies intelligent fixes.</p>
+                    <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                    <h3 class="feature-title">DocProcessor</h3>
+                    <p class="feature-description">Processes markdown documentation files to generate or update code files. Supports bidirectional documentation-code synchronization via YAML frontmatter.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-search"></i></div>
-                    <h3>Code Review</h3>
-                    <p>Review source files against best practices and standards. Generate improvement suggestions automatically.</p>
+                    <div class="feature-icon"><i class="fas fa-file-code"></i></div>
+                    <h3 class="feature-title">FileGenerator</h3>
+                    <p class="feature-description">Flexible framework for generating files based on source files and AI assistance. Perfect for test generation and boilerplate creation.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-ticket-alt"></i></div>
-                    <h3>Issue Resolution</h3>
-                    <p>AI agents that analyze GitHub issues and create pull requests with proposed fixes automatically.</p>
+                    <div class="feature-icon"><i class="fas fa-bug"></i></div>
+                    <h3 class="feature-title">ExceptionFixer</h3>
+                    <p class="feature-description">Analyzes exception stack traces and automatically generates fixes for relevant source files using fuzzy patching.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="fab fa-github"></i></div>
-                    <h3>GitHub Actions</h3>
-                    <p>Pre-configured workflows for immediate integration into your GitHub repository.</p>
+                    <div class="feature-icon"><i class="fas fa-project-diagram"></i></div>
+                    <h3 class="feature-title">PlanHarness</h3>
+                    <p class="feature-description">Executes complex multi-step AI plans using cognitive modes for sophisticated task orchestration.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-elephant"></i></div>
-                    <h3>Gradle Plugin</h3>
-                    <p>Run code review, fixing, and implementation tasks directly from your Gradle build scripts.</p>
+                    <div class="feature-icon"><i class="fas fa-tasks"></i></div>
+                    <h3 class="feature-title">TaskHarness</h3>
+                    <p class="feature-description">Executes single AI tasks with specific configurations for focused, targeted operations.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-key"></i></div>
-                    <h3>Multi-Provider Support</h3>
-                    <p>Works with OpenAI, Google Gemini, Anthropic Claude, and Groq. Use your preferred AI provider.</p>
+                    <div class="feature-icon"><i class="fas fa-server"></i></div>
+                    <h3 class="feature-title">UnifiedHarness</h3>
+                    <p class="feature-description">Core infrastructure for running AI-assisted operations in server or serverless mode.</p>
                 </div>
             </div>
-        </div>
-    </section>
-    <section class="section">
-        <div class="container container-narrow">
-            <h2>Getting Started</h2>
-            
-            <h3>Quick Setup</h3>
-            <ol>
-                <li>Fork or clone the <a href="https://github.com/SimiaCryptus/demo-cognotik-buildtool">demo repository</a></li>
-                <li>Add your API keys as repository secrets (Settings → Secrets → Actions):
-                    <ul>
-                        <li><code>GOOGLE_API_KEY</code> - Google Gemini API key (recommended)</li>
-                        <li><code>OPENAI_API_KEY</code> - OpenAI API key</li>
-                    </ul>
-                </li>
-                <li>Enable GitHub Actions - workflows will automatically activate</li>
-            </ol>
+        </section>
 
-            <h3>Gradle Tasks</h3>
-            <p>Three main tasks are available for local development:</p>
-            
-            <h4>Code Reviewer</h4>
-            <pre><code class="language-bash">./gradlew codeReview \
-  -PreviewPrompt="Update implementation file (%s) according to best practices" \
-  -PreviewSrc="src/main/java" \
-  -PreviewThreads=4</code></pre>
+        <!-- Tabbed Documentation Section -->
+        <section class="my-8">
+            <div class="tabs" data-tabs>
+                <div class="tabs-nav" role="tablist">
+                    <button class="tab-btn active" data-tab="docprocessor" role="tab" aria-selected="true">DocProcessor</button>
+                    <button class="tab-btn" data-tab="filegenerator" role="tab" aria-selected="false">FileGenerator</button>
+                    <button class="tab-btn" data-tab="harnesses" role="tab" aria-selected="false">Harnesses</button>
+                    <button class="tab-btn" data-tab="integration" role="tab" aria-selected="false">Integration</button>
+                </div>
+                <div class="tabs-content">
+                    <!-- DocProcessor Tab -->
+                    <div class="tab-panel active" data-tab-panel="docprocessor" role="tabpanel">
+                        <h3 class="text-subheading mb-4">DocProcessor</h3>
+                        <p class="mb-4">The DocProcessor processes markdown documentation files that specify target files via YAML frontmatter. It supports bidirectional documentation-code synchronization.</p>
+                        
+                        <h4 class="text-body-lg font-semibold mb-2">Frontmatter Keys</h4>
+                        <div class="panel mb-4">
+                            <div class="panel-body">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Key</th>
+                                            <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">specifies</code></td>
+                                            <td style="padding: 0.75rem;">Glob pattern(s) for files to generate/update based on this documentation</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">documents</code></td>
+                                            <td style="padding: 0.75rem;">Glob pattern(s) for source files this documentation describes</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">transforms</code></td>
+                                            <td style="padding: 0.75rem;">Pattern-based file transformations using regex with capture groups</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">generates</code></td>
+                                            <td style="padding: 0.75rem;">Non-pattern-based generation with explicit output and input files</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.75rem;"><code class="code-inline">related</code></td>
+                                            <td style="padding: 0.75rem;">Additional files to include as context</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
-            <h4>Code Fixer</h4>
-            <pre><code class="language-bash">./gradlew codeFixer \
-  -PfixPrompt="Fix the build errors reported in build.log" \
-  -PfixLog="build.log"</code></pre>
+                        <h4 class="text-body-lg font-semibold mb-2">Basic Specification Example</h4>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">yaml</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-yaml">---
+specifies: ../src/main/kotlin/MyClass.kt
+---
+# MyClass Documentation
+This class should implement...</code></pre>
+                        </div>
 
-            <h4>Code Implementer</h4>
-            <pre><code class="language-bash">./gradlew codeImplementer \
-  -PimplPrompt="Create a REST API endpoint for user management" \
-  -PimplHeadless=true</code></pre>
+                        <h4 class="text-body-lg font-semibold mb-2">Overwrite Modes</h4>
+                        <div class="panel">
+                            <div class="panel-body">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Mode</th>
+                                            <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Behavior</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">SkipExisting</code></td>
+                                            <td style="padding: 0.75rem;">Never modify existing files</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">OverwriteExisting</code></td>
+                                            <td style="padding: 0.75rem;">Always replace existing files</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">OverwriteToUpdate</code></td>
+                                            <td style="padding: 0.75rem;">Replace only if source is newer</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">PatchExisting</code></td>
+                                            <td style="padding: 0.75rem;">Apply incremental patches to existing files</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.75rem;"><code class="code-inline">PatchToUpdate</code></td>
+                                            <td style="padding: 0.75rem;">Apply patches only if source is newer</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
 
-            <h3>GitHub Actions Workflows</h3>
-            
-            <h4>Auto-Fixing Build Validator</h4>
-            <p>Triggered on pull requests to <code>main</code>. Automatically fixes failing builds:</p>
-            <ol>
-                <li>Runs the test suite and captures output</li>
-                <li>If tests fail, invokes the Code Fixer agent</li>
-                <li>Agent analyzes build log and fixes implementation files</li>
-                <li>Commits fixes automatically</li>
-            </ol>
+                    <!-- FileGenerator Tab -->
+                    <div class="tab-panel" data-tab-panel="filegenerator" role="tabpanel" hidden>
+                        <h3 class="text-subheading mb-4">FileGenerator</h3>
+                        <p class="mb-4">The FileGenerator provides a flexible framework for generating files based on source files and AI assistance.</p>
+                        
+                        <h4 class="text-body-lg font-semibold mb-2">Usage Example</h4>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">FileGenerator().run(
+    root = projectRoot,
+    folder = sourceFolder,
+    listFiles = { root, folder ->
+        folder.listFilesRecursively()
+            .filter { it.extension == "kt" }
+    },
+    targetFile = { source ->
+        File(source.parent, "${source.nameWithoutExtension}Test.kt")
+    },
+    overwriteMode = OverwriteModes.SkipExisting,
+    relatedFiles = { source -> listOf(source.path) },
+    generationPrompt = { source, target ->
+        "Generate unit tests for ${source.name}"
+    }
+)</code></pre>
+                        </div>
 
-            <h4>Agentic Issue Handler</h4>
-            <p>Triggered when issues are labeled with <code>agent-help</code>:</p>
-            <ol>
-                <li>Analyzes the issue title and description</li>
-                <li>Reviews relevant source files</li>
-                <li>Creates a pull request with proposed changes</li>
-            </ol>
-        </div>
-    </section>
-    <section class="section" style="background: rgba(255,255,255,0.02);">
-        <div class="container container-narrow">
-            <h2>Supported AI Providers</h2>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 1em;">
-                <thead>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <th style="text-align: left; padding: 0.75em;">Provider</th>
-                        <th style="text-align: left; padding: 0.75em;">Model Example</th>
-                        <th style="text-align: left; padding: 0.75em;">Environment Variable</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 0.75em;">Google</td>
-                        <td style="padding: 0.75em;">Gemini 3.0</td>
-                        <td style="padding: 0.75em;"><code>GOOGLE_API_KEY</code></td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 0.75em;">OpenAI</td>
-                        <td style="padding: 0.75em;">GPT-4o</td>
-                        <td style="padding: 0.75em;"><code>OPENAI_API_KEY</code></td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 0.75em;">Anthropic</td>
-                        <td style="padding: 0.75em;">Claude 4.5</td>
-                        <td style="padding: 0.75em;"><code>ANTHROPIC_API_KEY</code></td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 0.75em;">Groq</td>
-                        <td style="padding: 0.75em;">Llama 3 70B</td>
-                        <td style="padding: 0.75em;"><code>GROQ_API_KEY</code></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-</main>
+                        <h3 class="text-subheading mb-4 mt-8">ExceptionFixer</h3>
+                        <p class="mb-4">The ExceptionFixer analyzes exception stack traces and automatically generates fixes for the relevant source files.</p>
+                        
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">val fixer = ExceptionFixer(
+    projectRoot = File("/project"),
+    related_files = listOf("src/main/kotlin/Config.kt")
+)
+try {
+    // Code that might throw
+} catch (e: Exception) {
+    fixer.fix(e)
+}</code></pre>
+                        </div>
+
+                        <div class="panel mt-4">
+                            <div class="panel-header">
+                                <span class="panel-icon">✨</span>
+                                <span class="panel-title">Features</span>
+                            </div>
+                            <div class="panel-body">
+                                <ul style="margin: 0; padding-left: 1.5rem;">
+                                    <li>Automatically identifies source files from stack traces</li>
+                                    <li>Searches for Kotlin source files in standard Maven/Gradle layouts</li>
+                                    <li>Includes related files as context for better fixes</li>
+                                    <li>Uses fuzzy patching for safe modifications</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Harnesses Tab -->
+                    <div class="tab-panel" data-tab-panel="harnesses" role="tabpanel" hidden>
+                        <h3 class="text-subheading mb-4">PlanHarness</h3>
+                        <p class="mb-4">Executes complex multi-step AI plans using cognitive modes.</p>
+                        
+                        <div class="code-block mb-4">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">val harness = PlanHarness(
+    prompt = "Create a REST API for user management",
+    cognitiveSettings = CognitiveModeConfig(
+        type = CognitiveModeType.TaskPlanning
+    ),
+    fastModel = GeminiModels.GeminiFlash_30_Preview,
+    smartModel = GeminiModels.GeminiFlash_30_Preview,
+    workspace = File("/project"),
+    timeoutMinutes = 30,
+    openBrowser = false,
+    serverless = true
+)
+harness.run()</code></pre>
+                        </div>
+
+                        <h4 class="text-body-lg font-semibold mb-2">PlanHarness Options</h4>
+                        <div class="panel mb-6">
+                            <div class="panel-body">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Parameter</th>
+                                            <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Description</th>
+                                            <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Default</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">prompt</code></td>
+                                            <td style="padding: 0.75rem;">The task description for the AI</td>
+                                            <td style="padding: 0.75rem;"><span class="badge badge-danger">Required</span></td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">cognitiveSettings</code></td>
+                                            <td style="padding: 0.75rem;">Cognitive mode configuration</td>
+                                            <td style="padding: 0.75rem;"><span class="badge badge-danger">Required</span></td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">fastModel</code></td>
+                                            <td style="padding: 0.75rem;">Model for quick operations</td>
+                                            <td style="padding: 0.75rem;">GeminiFlash_30_Preview</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">smartModel</code></td>
+                                            <td style="padding: 0.75rem;">Model for complex reasoning</td>
+                                            <td style="padding: 0.75rem;">GeminiFlash_30_Preview</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                            <td style="padding: 0.75rem;"><code class="code-inline">timeoutMinutes</code></td>
+                                            <td style="padding: 0.75rem;">Maximum execution time</td>
+                                            <td style="padding: 0.75rem;">30</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.75rem;"><code class="code-inline">serverless</code></td>
+                                            <td style="padding: 0.75rem;">Run without web server</td>
+                                            <td style="padding: 0.75rem;">true</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <h3 class="text-subheading mb-4">TaskHarness</h3>
+                        <p class="mb-4">Executes single AI tasks with specific configurations.</p>
+                        
+                        <div class="code-block mb-4">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">val harness = TaskHarness(
+    taskType = FileModification,
+    typeConfig = TaskTypeConfig(task_type = "FileModification"),
+    executionConfig = FileModificationTaskExecutionConfigData(
+        files = listOf("src/main/kotlin/MyClass.kt"),
+        task_description = "Add logging to all public methods"
+    ),
+    workspace = File("/project"),
+    timeoutMinutes = 5
+)
+harness.run()</code></pre>
+                        </div>
+
+                        <h3 class="text-subheading mb-4">UnifiedHarness</h3>
+                        <p class="mb-4">Core infrastructure supporting both server and serverless modes.</p>
+                        
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">// Helper function for convenient operation
+withHarness(
+    root = projectRoot,
+    testName = "MyOperation",
+    fastModel = GeminiModels.GeminiFlash_30_Preview,
+    smartModel = GeminiModels.GeminiFlash_30_Preview
+) { harness ->
+    harness.runTask(...)
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Integration Tab -->
+                    <div class="tab-panel" data-tab-panel="integration" role="tabpanel" hidden>
+                        <h3 class="text-subheading mb-4">Gradle Integration</h3>
+                        <div class="code-block mb-6">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">tasks.register("generateDocs") {
+    doLast {
+        DocProcessor(
+            root = projectDir,
+            docsFolder = file("docs"),
+            overwriteMode = OverwriteModes.PatchToUpdate
+        ).run()
+    }
+}</code></pre>
+                        </div>
+
+                        <h3 class="text-subheading mb-4">Maven Integration</h3>
+                        <p class="mb-4">Use the <code class="code-inline">exec-maven-plugin</code> to run the tools:</p>
+                        <div class="code-block mb-6">
+                            <div class="code-header">
+                                <span class="code-lang">xml</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+    &lt;artifactId&gt;exec-maven-plugin&lt;/artifactId&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;java&lt;/goal&gt;
+            &lt;/goals&gt;
+            &lt;configuration&gt;
+                &lt;mainClass&gt;com.simiacryptus.cognotik.util.DocProcessorKt&lt;/mainClass&gt;
+            &lt;/configuration&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+                        </div>
+
+                        <h3 class="text-subheading mb-4">GitHub Actions Workflows</h3>
+                        
+                        <div class="panel mb-4">
+                            <div class="panel-header">
+                                <span class="panel-icon">🔧</span>
+                                <span class="panel-title">Auto-Fixing Build Validator</span>
+                            </div>
+                            <div class="panel-body">
+                                <p class="mb-2">Triggered on pull requests to <code class="code-inline">main</code>. Automatically fixes failing builds:</p>
+                                <ol style="margin: 0; padding-left: 1.5rem;">
+                                    <li>Runs the test suite and captures output</li>
+                                    <li>If tests fail, invokes the Code Fixer agent</li>
+                                    <li>Agent analyzes build log and fixes implementation files</li>
+                                    <li>Commits fixes automatically</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <div class="panel-header">
+                                <span class="panel-icon">🎫</span>
+                                <span class="panel-title">Agentic Issue Handler</span>
+                            </div>
+                            <div class="panel-body">
+                                <p class="mb-2">Triggered when issues are labeled with <code class="code-inline">agent-help</code>:</p>
+                                <ol style="margin: 0; padding-left: 1.5rem;">
+                                    <li>Analyzes the issue title and description</li>
+                                    <li>Reviews relevant source files</li>
+                                    <li>Creates a pull request with proposed changes</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <h3 class="text-subheading mb-4 mt-6">Error Handling</h3>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">PlanHarness.fix = { e ->
+    // Custom error handling
+    ExceptionFixer(projectRoot).fix(e)
+}
+TaskHarness.fix = { e ->
+    // Custom error handling
+    log.error("Task failed", e)
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Supported AI Providers Section -->
+        <section class="my-8">
+            <h2 class="text-heading text-center mb-6">Supported AI Providers</h2>
+            <div class="panel">
+                <div class="panel-body">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Provider</th>
+                                <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Model Example</th>
+                                <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Environment Variable</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                <td style="padding: 0.75rem;">Google</td>
+                                <td style="padding: 0.75rem;">Gemini 3.0</td>
+                                <td style="padding: 0.75rem;"><code class="code-inline">GOOGLE_API_KEY</code></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                <td style="padding: 0.75rem;">OpenAI</td>
+                                <td style="padding: 0.75rem;">GPT-4o</td>
+                                <td style="padding: 0.75rem;"><code class="code-inline">OPENAI_API_KEY</code></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-subtle);">
+                                <td style="padding: 0.75rem;">Anthropic</td>
+                                <td style="padding: 0.75rem;">Claude 4.5</td>
+                                <td style="padding: 0.75rem;"><code class="code-inline">ANTHROPIC_API_KEY</code></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 0.75rem;">Groq</td>
+                                <td style="padding: 0.75rem;">Llama 3 70B</td>
+                                <td style="padding: 0.75rem;"><code class="code-inline">GROQ_API_KEY</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
 <footer>
     <div class="container">
         <div class="footer-content">
-            <p>© 2025 Cognotik by <a href="https://simia.net/" rel="noopener" target="_blank">SimiaCryptus</a>. All
-                rights reserved.</p>
+            <p>© 2025 Cognotik by <a href="https://simia.net/" rel="noopener" target="_blank">SimiaCryptus</a>. All rights reserved.</p>
             <ul class="footer-links">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="intellij-plugin.html">IntelliJ Plugin</a></li>
@@ -215,7 +537,63 @@
         </div>
     </div>
 </footer>
-<script src="scripts/logo-animation.js"></script>
-<script src="scripts/main.js"></script>
+
+    <!-- Tab Functionality Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabContainers = document.querySelectorAll('[data-tabs]');
+            
+            tabContainers.forEach(container => {
+                const tabButtons = container.querySelectorAll('.tab-btn');
+                const tabPanels = container.querySelectorAll('.tab-panel');
+                
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const targetTab = button.dataset.tab;
+                        
+                        // Update buttons
+                        tabButtons.forEach(btn => {
+                            btn.classList.remove('active');
+                            btn.setAttribute('aria-selected', 'false');
+                        });
+                        button.classList.add('active');
+                        button.setAttribute('aria-selected', 'true');
+                        
+                        // Update panels
+                        tabPanels.forEach(panel => {
+                            if (panel.dataset.tabPanel === targetTab) {
+                                panel.classList.add('active');
+                                panel.removeAttribute('hidden');
+                            } else {
+                                panel.classList.remove('active');
+                                panel.setAttribute('hidden', '');
+                            }
+                        });
+                    });
+                });
+            });
+
+            // Copy button functionality
+            const copyButtons = document.querySelectorAll('.copy-btn');
+            copyButtons.forEach(button => {
+                button.addEventListener('click', async () => {
+                    const codeBlock = button.closest('.code-block');
+                    const code = codeBlock.querySelector('code').textContent;
+                    
+                    try {
+                        await navigator.clipboard.writeText(code);
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Failed to copy:', err);
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
