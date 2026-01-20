@@ -1,9 +1,6 @@
 ---
 documents: ../webui/src/main/kotlin/com/simiacryptus/cognotik/embed/DocProcessor.kt
 specifies: ../site/cognotik.com/frontmatter.html
-related: 
-  - product_pages.md
-  - ../site/cognotik.com/assets/styles/main.css
 ---
 
 # Frontmatter Schema for DocProcessor
