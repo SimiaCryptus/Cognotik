@@ -42,38 +42,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 
     <style>
-        :root {
-            /* Industrial Theme Variables */
-            --bg-app: #0f1115;
-            --bg-panel: #161b22;
-            --bg-elevated: #1c2128;
-            --bg-hover: #21262d;
-            --border-subtle: #30363d;
-            --border-default: #3d444d;
-            --accent-primary: #58a6ff;
-            --accent-secondary: #7ee787;
-            --accent-warning: #d29922;
-            --accent-purple: #a371f7;
-            --text-primary: #e6edf3;
-            --text-secondary: #8b949e;
-            --text-tertiary: #6e7681;
-            --font-display: 'Cinzel', serif;
-            --font-mono: 'JetBrains Mono', monospace;
-            --radius-lg: 8px;
-            --space-4: 1rem;
-            --space-8: 2rem;
-            --transition-fast: 150ms ease;
-        }
-
         /* Documentation Layout */
         .docs-layout {
             display: grid;
             grid-template-columns: 280px 1fr;
-            gap: var(--space-8);
+            gap: var(--spacing-lg);
             max-width: 1400px;
             margin: 0 auto;
-            padding: var(--space-8) var(--space-6);
-            min-height: calc(100vh - 64px);
+            padding: var(--spacing-lg) var(--spacing-md);
+            min-height: calc(100vh - var(--header-height));
         }
 
         @media (max-width: 1024px) {
@@ -91,16 +68,16 @@
         }
 
         .docs-nav {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: var(--space-4);
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-md);
         }
 
         .docs-nav-title {
-            font-family: var(--font-mono);
+            font-family: var(--font-family-mono);
             font-size: 0.75rem;
-            color: var(--text-tertiary);
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.1em;
             margin-bottom: 0.5rem;
@@ -109,41 +86,42 @@
         .docs-nav-link {
             display: block;
             padding: 0.5rem 0.75rem;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             font-size: 0.875rem;
             border-radius: 4px;
-            transition: all var(--transition-fast);
+            transition: all 0.15s ease;
             text-decoration: none;
         }
 
         .docs-nav-link:hover {
-            color: var(--text-primary);
-            background: var(--bg-hover);
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.05);
+            text-decoration: none;
         }
 
         .docs-nav-link.active {
-            color: var(--accent-primary);
-            background: rgba(88, 166, 255, 0.1);
+           color: var(--accent-color);
+            background: rgba(139, 92, 246, 0.1);
             font-weight: 500;
         }
 
         /* Main Content Area */
         .docs-header {
-            margin-bottom: var(--space-8);
+            margin-bottom: var(--spacing-lg);
             padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .docs-header h1 {
-            font-family: var(--font-display);
+            font-family: var(--font-family-serif);
             font-size: 2.25rem;
             margin-bottom: 1rem;
-            color: var(--text-primary);
+            color: var(--primary-color);
         }
 
         .lead {
             font-size: 1.125rem;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             line-height: 1.7;
             max-width: 65ch;
         }
@@ -155,27 +133,27 @@
         }
 
         .agent-section h2 {
-            font-family: var(--font-display);
+            font-family: var(--font-family-serif);
             font-size: 1.875rem;
             margin-bottom: 1.5rem;
             padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border-subtle);
-            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--primary-color);
         }
 
         .agent-section h3 {
-            font-family: var(--font-display);
+            font-family: var(--font-family-serif);
             font-size: 1.5rem;
             margin-top: 2rem;
             margin-bottom: 1rem;
-            color: var(--accent-primary);
+           color: var(--accent-color);
         }
 
         /* Agent Cards */
         .agent-card {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
             padding: 1.5rem;
             margin-bottom: 1.5rem;
         }
@@ -189,89 +167,207 @@
         }
 
         .agent-card-title {
-            font-family: var(--font-mono);
+            font-family: var(--font-family-mono);
             font-size: 1.125rem;
             font-weight: 700;
-            color: var(--accent-primary);
+           color: var(--accent-color);
         }
 
         .agent-card-inheritance {
-            font-family: var(--font-mono);
+            font-family: var(--font-family-mono);
             font-size: 0.875rem;
-            color: var(--text-secondary);
-            background: var(--bg-elevated);
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
             padding: 0.25rem 0.5rem;
             border-radius: 4px;
             margin-bottom: 1rem;
             display: inline-block;
         }
+        .agent-card-file {
+            font-family: var(--font-family-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        /* Badge Styles */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .badge-primary {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-color);
+        }
+        .badge-success {
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--success-color);
+        }
+        .badge-warning {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+        }
+
 
         /* Lists & Tables */
         .io-list { list-style: none; padding: 0; margin: 1rem 0; }
         .io-list li { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.875rem; }
-        .io-label { font-family: var(--font-mono); color: var(--accent-secondary); min-width: 70px; }
-        .io-type { font-family: var(--font-mono); color: var(--accent-purple); background: var(--bg-elevated); padding: 0.1em 0.3em; border-radius: 3px; }
+        .io-label { font-family: var(--font-family-mono); color: var(--accent-secondary); min-width: 70px; font-weight: 600; }
+        .io-type { font-family: var(--font-family-mono); color: var(--accent-color); background: rgba(139, 92, 246, 0.1); padding: 0.1em 0.3em; border-radius: 3px; }
 
         .feature-list { list-style: none; padding: 0; margin: 1rem 0; }
-        .feature-list li { position: relative; padding-left: 1.25rem; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary); }
-        .feature-list li::before { content: "→"; position: absolute; left: 0; color: var(--accent-primary); }
+        .feature-list li { position: relative; padding-left: 1.25rem; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted); }
+        .feature-list li::before { content: "→"; position: absolute; left: 0; color: var(--accent-color); }
 
         .summary-table {
             width: 100%;
             border-collapse: collapse;
             margin: 1.5rem 0;
             font-size: 0.875rem;
-            border: 1px solid var(--border-subtle);
+            border: 1px solid var(--border-color);
         }
-        .summary-table th { background: var(--bg-elevated); text-align: left; padding: 0.75rem; color: var(--text-primary); }
-        .summary-table td { padding: 0.75rem; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); }
+        .summary-table th {
+            background: var(--surface-color);
+            text-align: left;
+            padding: 0.75rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        .summary-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+        .summary-table code {
+            font-family: var(--font-family-mono);
+            font-size: 0.8rem;
+            background: rgba(139, 92, 246, 0.1);
+            padding: 0.1em 0.3em;
+            border-radius: 3px;
+            color: var(--accent-color);
+        }
 
         /* Callouts */
         .best-for {
-            background: rgba(126, 231, 135, 0.05);
-            border-left: 3px solid var(--accent-secondary);
+            background: rgba(74, 222, 128, 0.05);
+            border-left: 3px solid var(--success-color);
             padding: 1rem;
             margin-top: 1rem;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
         }
-        .best-for-label { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-secondary); text-transform: uppercase; margin-bottom: 0.25rem; }
+        .best-for-label { font-family: var(--font-family-mono); font-size: 0.75rem; color: var(--success-color); text-transform: uppercase; margin-bottom: 0.25rem; letter-spacing: 0.05em; }
+        .best-for p { margin: 0; color: var(--text-muted); font-size: 0.875rem; }
 
         .warning-box {
-            background: rgba(210, 153, 34, 0.05);
-            border-left: 3px solid var(--accent-warning);
+            background: rgba(251, 191, 36, 0.05);
+            border-left: 3px solid #fbbf24;
             padding: 1rem;
             margin: 1rem 0;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
         }
+        .warning-box p { margin: 0; color: var(--text-muted); font-size: 0.875rem; }
+        .info-box {
+            background: rgba(6, 182, 212, 0.05);
+            border-left: 3px solid var(--accent-secondary);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+        .info-box p { margin: 0; color: var(--text-muted); font-size: 0.875rem; }
 
         /* Code Blocks */
         .code-block {
-            background: var(--bg-elevated);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
             margin: 1rem 0;
             overflow: hidden;
         }
         .code-header {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 0.5rem 1rem;
-            background: var(--bg-panel);
-            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-color);
         }
-        .code-lang { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; }
-        .copy-btn { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary); background: transparent; border: 1px solid var(--border-subtle); cursor: pointer; }
+        .code-lang {
+            font-family: var(--font-family-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .copy-btn {
+            font-family: var(--font-family-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: transparent;
+            border: 1px solid var(--border-color);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .copy-btn:hover {
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--text-muted);
+        }
+        .copy-btn.copied {
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
         .code-block pre { margin: 0; padding: 1rem; overflow-x: auto; }
-        .code-block code { font-family: var(--font-mono); font-size: 0.875rem; color: var(--text-primary); }
+        .code-block code { font-family: var(--font-family-mono); font-size: 0.875rem; color: var(--text-color); background: transparent; padding: 0; }
 
         /* Footer */
         .site-footer {
-            background: var(--bg-panel);
-            border-top: 1px solid var(--border-subtle);
+            background: var(--surface-color);
+            border-top: 1px solid var(--border-color);
             padding: 3rem 1rem;
             margin-top: 4rem;
             text-align: center;
         }
-        .footer-links { display: flex; justify-content: center; gap: 1.5rem; margin: 1rem 0; }
-        .footer-links a { color: var(--text-secondary); font-size: 0.875rem; text-decoration: none; }
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .footer-brand span {
+            font-family: var(--font-family-serif);
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin: 1rem 0;
+        }
+        .footer-links a {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+        .footer-links a:hover {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+        .footer-copyright {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -297,7 +393,7 @@
                 <h1>Agent Types</h1>
                 <p class="lead">
                     Cognotik is designed around a strongly typed, object-oriented approach to LLM interaction. 
-                    At the core is the abstract <code>BaseAgent&lt;I, R&gt;</code>.
+                    At the core is the abstract <code>BaseAgent&lt;I, R&gt;</code>, where <code>I</code> is the Input type and <code>R</code> is the Result type.
                 </p>
             </header>
 
@@ -308,21 +404,30 @@
                         <span class="agent-card-title">BaseAgent&lt;I, R&gt;</span>
                         <span class="badge badge-primary">Abstract</span>
                     </div>
-                    <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-tertiary);">File: BaseAgent.kt</p>
-                    <p>Standardizes how inputs are converted into chat messages and how responses are returned.</p>
+                    <p class="agent-card-file">File: BaseAgent.kt</p>
+                    <p>All agents inherit from this class. It standardizes how inputs are converted into chat messages and how responses are returned.</p>
                     
                     <h4>Generic Types</h4>
                     <ul class="io-list">
                         <li><span class="io-label">I</span><span>Input type (e.g., <code class="io-type">List&lt;String&gt;</code>, <code class="io-type">CodeRequest</code>)</span></li>
                         <li><span class="io-label">R</span><span>Return type (e.g., <code class="io-type">String</code>, <code class="io-type">ParsedResponse&lt;T&gt;</code>)</span></li>
                     </ul>
+                    <h4>Key Properties</h4>
+                    <ul class="feature-list">
+                        <li><strong>model:</strong> The <code>ChatInterface</code> (the LLM provider, e.g., OpenAI, Anthropic).</li>
+                        <li><strong>temperature:</strong> Controls randomness (0.0 for deterministic, 1.0 for creative).</li>
+                        <li><strong>prompt:</strong> The system prompt/instructions.</li>
+                        <li><strong>name:</strong> Optional identifier for the agent.</li>
+                    </ul>
+
 
                     <h4>Key Methods</h4>
                     <ul class="feature-list">
-                        <li><strong>respond(input, messages):</strong> Core processing method.</li>
-                        <li><strong>answer(input):</strong> Convenience method for auto-generating messages.</li>
-                        <li><strong>withModel(model):</strong> Returns a new instance with a different model.</li>
-                        <li><strong>response(messages, model):</strong> Sends raw messages to the model.</li>
+                        <li><strong>respond(input, messages):</strong> Core method that processes input and returns a result. Can be called with custom messages.</li>
+                        <li><strong>answer(input):</strong> Convenience method that automatically generates chat messages from input and calls <code>respond()</code>.</li>
+                        <li><strong>chatMessages(input):</strong> Abstract method that subclasses must implement to convert input into chat messages.</li>
+                        <li><strong>withModel(model):</strong> Abstract method that returns a new agent instance with a different model.</li>
+                        <li><strong>response(messages, model):</strong> Protected method that sends messages to the model and returns the raw response.</li>
                     </ul>
                 </div>
             </section>
@@ -335,63 +440,151 @@
                         <span class="badge badge-success">Stable</span>
                     </div>
                     <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;String&gt;, String&gt;</div>
-                    <p>The standard agent for conversational text generation. Takes a history of strings and returns a raw string response.</p>
+                    <p class="agent-card-file">File: ChatAgent.kt</p>
+                    <p>The standard agent for conversational text generation. It takes a history of strings and returns a raw string response.</p>
+                    
+                    <ul class="io-list">
+                        <li><span class="io-label">Input</span><span><code class="io-type">List&lt;String&gt;</code> (A list of user messages/questions)</span></li>
+                        <li><span class="io-label">Output</span><span><code class="io-type">String</code> (The raw content of the LLM's response)</span></li>
+                    </ul>
+
+                    <p>It constructs a chat history starting with the system <code>prompt</code>, followed by each string in the input list as a separate user message.</p>
                     
                     <div class="code-block">
                         <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-chat">Copy</button></div>
-                        <pre><code id="code-chat">val agent = ChatAgent(prompt = "Helpful assistant.", model = myModel)
+                        <pre><code id="code-chat">val agent = ChatAgent(
+    prompt = "You are a helpful assistant.",
+    model = myChatModel,
+    temperature = 0.7
+)
 val response = agent.respond(listOf("Hello", "Tell me a joke"))</code></pre>
                     </div>
                     <div class="best-for">
                         <div class="best-for-label">Best For</div>
-                        <p>Chatbots, summarization, and general Q&A.</p>
+                        <p>Chatbots, summarization, creative writing, and general Q&A.</p>
                     </div>
                 </div>
             </section>
 
             <section id="structured-agents" class="agent-section">
                 <h2>3. Structured Data Agents (JSON/POJO)</h2>
+                <p>These agents are designed to force the LLM to output structured data (JSON) which is then automatically deserialized into Kotlin/Java objects.</p>
+
                 <div class="agent-card">
                     <div class="agent-card-header">
                         <span class="agent-card-title">ParsedAgent&lt;T&gt;</span>
                     </div>
                     <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;String&gt;, ParsedResponse&lt;T&gt;&gt;</div>
-                    <p>Converts natural language into a specific class instance (T).</p>
+                    <p class="agent-card-file">File: ParsedAgent.kt</p>
+                    <p>Converts natural language input into a specific class instance (<code>T</code>).</p>
+
+                    <ul class="io-list">
+                        <li><span class="io-label">Input</span><span><code class="io-type">List&lt;String&gt;</code> (Instructions)</span></li>
+                        <li><span class="io-label">Output</span><span><code class="io-type">ParsedResponse&lt;T&gt;</code> (Contains the raw text and the deserialized object <code>obj</code>)</span></li>
+                    </ul>
+
                     <h4>Key Features</h4>
                     <ul class="feature-list">
                         <li><strong>Schema Generation:</strong> Uses TypeDescriber to inject YAML schemas into prompts.</li>
-                        <li><strong>Single vs. Two-Stage:</strong> <code>singleStage = false</code> (default) uses a dedicated parser agent for reliability.</li>
                         <li><strong>Validation:</strong> Runs <code>ValidatedObject</code> logic after deserialization.</li>
+                        <li><strong>Retries:</strong> If JSON parsing fails, it can retry with adjusted parameters (<code>deserializerRetries</code>).</li>
+                        <li><strong>Single vs. Two-Stage:</strong> <code>singleStage = false</code> (default) uses a dedicated parser agent to extract and format JSON from the response.</li>
+                        <li><strong>Custom Parser Prompt:</strong> The <code>parserPrompt</code> parameter allows additional instructions to the parser agent.</li>
                     </ul>
+                    <div class="best-for">
+                        <div class="best-for-label">Best For</div>
+                        <p>Data extraction, converting unstructured text to structured data, API payload generation.</p>
+                    </div>
                 </div>
 
                 <div class="agent-card">
                     <div class="agent-card-header"><span class="agent-card-title">ParsedResponse&lt;T&gt;</span></div>
+                    <p class="agent-card-file">File: ParsedResponse.kt</p>
                     <p>A wrapper holding both the raw <code>text</code> and the deserialized <code>obj</code>.</p>
+                    <ul class="feature-list">
+                        <li><strong>text:</strong> The raw response from the LLM.</li>
+                        <li><strong>obj:</strong> The deserialized object of type <code>T</code>.</li>
+                        <li><strong>clazz:</strong> The class of the deserialized object.</li>
+                        <li><strong>map(cls, fn):</strong> Transforms the object using a function while preserving the original text.</li>
+                    </ul>
+
                     <div class="code-block">
                         <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-parsed">Copy</button></div>
-                        <pre><code id="code-parsed">val response: ParsedResponse&lt;User&gt; = agent.respond(listOf("Extract user"))
-val transformed = response.map(UserDTO::class.java) { user -> UserDTO(user.name) }</code></pre>
+                        <pre><code id="code-parsed">val response: ParsedResponse&lt;User&gt; = agent.respond(listOf("Extract user info"))
+val transformed: ParsedResponse&lt;UserDTO&gt; = response.map(UserDTO::class.java) { user ->
+    UserDTO(user.name.uppercase(), user.email)
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="agent-card">
+                    <div class="agent-card-header">
+                        <span class="agent-card-title">ParsedImageAgent&lt;T&gt;</span>
+                    </div>
+                    <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;ImageAndText&gt;, ParsedResponse&lt;T&gt;&gt;</div>
+                    <p class="agent-card-file">File: ParsedImageAgent.kt</p>
+                    <p>Similar to <code>ParsedAgent</code>, but accepts images as input. It performs Visual Question Answering (VQA) where the answer is a structured object.</p>
+
+                    <ul class="io-list">
+                        <li><span class="io-label">Input</span><span><code class="io-type">List&lt;ImageAndText&gt;</code> (Text prompts paired with <code>BufferedImage</code>)</span></li>
+                        <li><span class="io-label">Output</span><span><code class="io-type">ParsedResponse&lt;T&gt;</code></span></li>
+                    </ul>
+
+                    <ul class="feature-list">
+                        <li>Images are automatically encoded to Base64 PNG format and embedded in the request.</li>
+                        <li>Supports vision-capable models (e.g., GPT-4-Vision, Claude 3).</li>
+                        <li>Includes automatic retry logic with <code>deserializerRetries</code>.</li>
+                    </ul>
+
+                    <div class="best-for">
+                        <div class="best-for-label">Best For</div>
+                        <p>Extracting data from invoices, describing UI elements in JSON, categorizing visual content, OCR with structured output.</p>
                     </div>
                 </div>
 
                 <div class="agent-card">
                     <div class="agent-card-header"><span class="agent-card-title">ProxyAgent&lt;T&gt;</span><span class="badge badge-warning">Advanced</span></div>
-                    <p>Creates a dynamic Java Proxy. Method calls are serialized to JSON, executed by the LLM, and returned as typed results.</p>
+                    <p class="agent-card-file">File: ProxyAgent.kt</p>
+                    <div class="info-box">
+                        <p><strong>Note:</strong> Does <em>not</em> inherit <code>BaseAgent</code>.</p>
+                    </div>
+                    <p>This is a "Magic" agent. It creates a dynamic Java Proxy for a given interface or class. When you call a method on the proxy, the arguments are serialized, sent to the LLM, and the LLM "executes" the logic, returning the result.</p>
+
                     <ul class="feature-list">
-                        <li><strong>Metrics:</strong> Tracks performance and request counts per method.</li>
-                        <li><strong>Examples:</strong> Supports <code>addExample()</code> for few-shot learning.</li>
+                        <li><strong>Dynamic Proxy Creation:</strong> Uses Java reflection to intercept method calls.</li>
+                        <li><strong>Automatic Serialization:</strong> Arguments are converted to JSON and sent to the LLM.</li>
+                        <li><strong>Retry Logic:</strong> Automatically retries failed calls with adjusted temperature (<code>maxRetries</code>).</li>
+                        <li><strong>Validation:</strong> If the return type implements <code>ValidatedObject</code>, validation is performed.</li>
+                        <li><strong>Examples:</strong> You can provide example input/output pairs via <code>addExample()</code> to improve accuracy.</li>
+                        <li><strong>Metrics:</strong> Track performance via the <code>metrics</code> property, which includes request counts per method.</li>
                     </ul>
+                    <div class="code-block">
+                        <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-proxy">Copy</button></div>
+                        <pre><code id="code-proxy">interface SentimentAnalyzer {
+    fun analyze(text: String): SentimentResult
+}
+val proxy = ProxyAgent(SentimentAnalyzer::class.java, model).create()
+val result = proxy.analyze("I love this library!") // LLM determines the return value</code></pre>
+                    </div>
+                    <div class="best-for">
+                        <div class="best-for-label">Best For</div>
+                        <p>Rapid prototyping, implementing complex logic without writing code, semantic routing, simulating service behavior.</p>
+                    </div>
                 </div>
 
                 <h3>Schema Best Practices</h3>
+                <p>To ensure reliable parsing and validation with <code>ParsedAgent</code> and <code>ParsedImageAgent</code>, follow these guidelines when defining your data classes:</p>
                 <ul class="feature-list">
-                    <li><strong>Constructors:</strong> Provide default values for all fields.</li>
+                    <li><strong>Constructors:</strong> All fields should have a default value to ensure a no-argument constructor exists.</li>
+                    <li><strong>Mutability:</strong> Using <code>var</code> in data objects is recommended.</li>
+                    <li><strong>Nullability:</strong> Nullable types are fully supported and handled well by Kotlin.</li>
+                    <li><strong>Validation:</strong> Implement <code>ValidatedObject</code> to ensure validity. Use validation logic to modify <code>var</code> properties for canonicalization rather than just rejecting data.</li>
+                    <li><strong>Documentation:</strong> Use <code>@Description</code> to provide semantic guidance to the Parser LLM.</li>
                     <li><strong>Naming:</strong> Use <code>user_name</code> (snake_case) for JSON compatibility.</li>
-                    <li><strong>Documentation:</strong> Use <code>@Description</code> for semantic guidance.</li>
+                    <li><strong>Dynamic Types:</strong> Using <code>Any</code> types is appropriate for dynamic schemas. These will be deserialized as Lists and Maps according to Jackson defaults.</li>
                 </ul>
                 <div class="warning-box">
-                    <p><strong>Validation Tip:</strong> Use validation to canonicalize data (e.g., fixing formatting) rather than just rejecting it.</p>
+                    <p><strong>Validation Tip:</strong> Do not be too strict. Use validation to canonicalize data (e.g., fixing formatting) rather than just rejecting it.</p>
                 </div>
             </section>
 
@@ -403,30 +596,132 @@ val transformed = response.map(UserDTO::class.java) { user -> UserDTO(user.name)
                         <span class="badge badge-primary">Core</span>
                     </div>
                     <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;CodeRequest, CodeResult&gt;</div>
-                    <p>Autonomous agent that writes, executes, and fixes code in a sandboxed environment.</p>
+                    <p class="agent-card-file">File: CodeAgent.kt</p>
+                    <p>An autonomous agent capable of writing, executing, and fixing code in a sandboxed runtime environment.</p>
+
+                    <h4>Input: CodeRequest</h4>
+                    <ul class="feature-list">
+                        <li><strong>messages:</strong> Chat history with role information.</li>
+                        <li><strong>codePrefix:</strong> Code to prepend before execution (e.g., imports, setup).</li>
+                        <li><strong>autoEvaluate:</strong> Whether to automatically execute and fix code.</li>
+                        <li><strong>fixIterations:</strong> Number of times to attempt fixing failed code.</li>
+                        <li><strong>fixRetries:</strong> Number of times to retry the entire coding process.</li>
+                    </ul>
+
+                    <h4>Output: CodeResult</h4>
+                    <ul class="feature-list">
+                        <li><strong>code:</strong> The final generated code.</li>
+                        <li><strong>status:</strong> One of <code>Coding</code>, <code>Correcting</code>, <code>Success</code>, or <code>Failure</code>.</li>
+                        <li><strong>result:</strong> Contains <code>resultValue</code> and <code>resultOutput</code>.</li>
+                        <li><strong>renderedResponse:</strong> The LLM's text response alongside the code.</li>
+                    </ul>
+
                     <h4>Key Components</h4>
                     <ul class="feature-list">
-                        <li><strong>CodeRuntime:</strong> The execution environment (Kotlin, JS, etc.).</li>
-                        <li><strong>Symbols:</strong> Objects injected into the script context for tool use.</li>
-                        <li><strong>Self-Correction:</strong> Automatically feeds exceptions back to the LLM to generate fixes.</li>
-                        <li><strong>Interception:</strong> <code>codeInterceptor</code> allows transforming code before execution.</li>
+                        <li><strong>CodeRuntime:</strong> The environment where code runs (e.g., a Kotlin script engine, JavaScript engine).</li>
+                        <li><strong>symbols:</strong> A map of objects injected into the script context (allows the agent to control your application).</li>
+                        <li><strong>language:</strong> Automatically determined from the <code>CodeRuntime</code> (e.g., "kotlin", "javascript").</li>
+                        <li><strong>codeInterceptor:</strong> A function that can transform generated code before execution (useful for logging, sanitization, or instrumentation).</li>
+                        <li><strong>evalFormat:</strong> When true, instructs the LLM to structure code as parameterized functions with a final invocation.</li>
+                        <li><strong>fallbackModel:</strong> An optional secondary model to use if the primary model fails to generate valid code.</li>
+                        <li><strong>describer:</strong> A <code>TypeDescriber</code> that generates API documentation for the injected symbols.</li>
                     </ul>
+                    <h4>Self-Correction Loop</h4>
+                    <p>If <code>autoEvaluate</code> is true, the agent executes the code. If it throws an exception, the agent feeds the error back to the LLM to generate a fix (up to <code>fixIterations</code> times). If the code still fails, it retries the entire process (up to <code>fixRetries</code> times).</p>
+                    <div class="code-block">
+                        <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-agent">Copy</button></div>
+                        <pre><code id="code-agent">val agent = CodeAgent(
+    codeRuntime = KotlinScriptRuntime(),
+    symbols = mapOf("api" to myApiClient),
+    model = myChatModel,
+    temperature = 0.1
+)
+val result = agent.respond(CodeAgent.CodeRequest(
+    messages = listOf("Calculate the sum of 1 to 100" to Role.user),
+    autoEvaluate = true,
+    fixIterations = 3
+))
+println(result.code)
+println(result.result.resultOutput)</code></pre>
+                    </div>
+                    <div class="best-for">
+                        <div class="best-for-label">Best For</div>
+                        <p>Data analysis, complex math, controlling external APIs via script, tasks requiring iterative logic, automation.</p>
+                    </div>
                 </div>
             </section>
 
             <section id="media-agents" class="agent-section">
                 <h2>5. Media Agents</h2>
+
                 <div class="agent-card">
                     <div class="agent-card-header"><span class="agent-card-title">ImageAndText</span></div>
-                    <p>Data class pairing <code>text: String</code> with an optional <code>image: BufferedImage?</code>.</p>
+                    <p class="agent-card-file">File: ImageAndText.kt</p>
+                    <p>A simple data class that pairs text with an optional image.</p>
+                    <ul class="feature-list">
+                        <li><strong>text:</strong> Text content.</li>
+                        <li><strong>image:</strong> Optional <code>BufferedImage</code> (null if not present).</li>
+                    </ul>
+                    <div class="best-for">
+                        <div class="best-for-label">Best For</div>
+                        <p>Passing multimodal data to agents that accept both text and images.</p>
+                    </div>
                 </div>
+
                 <div class="agent-card">
                     <div class="agent-card-header"><span class="agent-card-title">ImageGenerationAgent</span></div>
-                    <p>Uses a text LLM to refine prompts before sending them to an image model (e.g., DALL-E 3).</p>
+                    <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;String&gt;, ImageAndText&gt;</div>
+                    <p class="agent-card-file">File: ImageGenerationAgent.kt</p>
+                    <p>Generates images from text descriptions.</p>
+
+                    <ul class="io-list">
+                        <li><span class="io-label">Input</span><span><code class="io-type">List&lt;String&gt;</code> (User instructions)</span></li>
+                        <li><span class="io-label">Output</span><span><code class="io-type">ImageAndText</code> (The generated image and the refined prompt used)</span></li>
+                    </ul>
+
+                    <h4>Key Components</h4>
+                    <ul class="feature-list">
+                        <li><strong>textModel:</strong> A <code>ChatInterface</code> used to refine the user's request into an optimized image generation prompt.</li>
+                        <li><strong>imageModel:</strong> The image generation model (e.g., DALL-E 3).</li>
+                        <li><strong>imageClient:</strong> The <code>ImageClientInterface</code> that communicates with the image generation service.</li>
+                        <li><strong>width / height:</strong> Dimensions of the generated image (default: 1024x1024).</li>
+                    </ul>
+
+                    <h4>Workflow</h4>
+                    <ol class="feature-list">
+                        <li><strong>Refinement:</strong> Uses the text LLM to transform the user request into an optimized image generation prompt.</li>
+                        <li><strong>Length Validation:</strong> If the prompt exceeds the model's <code>maxPrompt</code> limit, it's automatically shortened.</li>
+                        <li><strong>Generation:</strong> Sends the refined prompt to the <code>ImageClientInterface</code>.</li>
+                        <li><strong>Decoding:</strong> Handles both URL-based and Base64-encoded image responses.</li>
+                    </ol>
+
+                    <div class="best-for">
+                        <div class="best-for-label">Best For</div>
+                        <p>Creating assets, visualizing concepts, generating illustrations.</p>
+                    </div>
                 </div>
+
                 <div class="agent-card">
                     <div class="agent-card-header"><span class="agent-card-title">ImageProcessingAgent</span></div>
-                    <p>Handles vision tasks like captioning or OCR by encoding images to Base64 PNG.</p>
+                    <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;ImageAndText&gt;, ImageAndText&gt;</div>
+                    <p class="agent-card-file">File: ImageProcessingAgent.kt</p>
+                    <p>Handles Vision tasks. It can analyze images or (depending on the backend model) edit them.</p>
+
+                    <ul class="io-list">
+                        <li><span class="io-label">Input</span><span><code class="io-type">List&lt;ImageAndText&gt;</code> (Text prompts paired with images)</span></li>
+                        <li><span class="io-label">Output</span><span><code class="io-type">ImageAndText</code> (Analyzed text and optionally a modified image)</span></li>
+                    </ul>
+
+                    <ul class="feature-list">
+                        <li>Encodes images to Base64 PNG format and sends them alongside text to a vision-capable model.</li>
+                        <li>Supports multimodal responses (text and/or image).</li>
+                        <li>Falls back to input image if the model doesn't return an image.</li>
+                    </ul>
+
+                    <div class="best-for">
+                        <div class="best-for-label">Best For</div>
+                        <p>Image captioning, visual analysis, describing scenes, OCR, image editing (with capable models).</p>
+                    </div>
                 </div>
             </section>
 
@@ -434,31 +729,73 @@ val transformed = response.map(UserDTO::class.java) { user -> UserDTO(user.name)
                 <h2>Summary Table</h2>
                 <table class="summary-table">
                     <thead>
-                        <tr><th>Agent Class</th><th>Input</th><th>Output</th><th>Use Case</th></tr>
+                        <tr><th>Agent Class</th><th>Input Type</th><th>Output Type</th><th>Primary Use Case</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td><code>ChatAgent</code></td><td><code>List&lt;String&gt;</code></td><td><code>String</code></td><td>Conversation</td></tr>
-                        <tr><td><code>ParsedAgent&lt;T&gt;</code></td><td><code>List&lt;String&gt;</code></td><td><code>ParsedResponse&lt;T&gt;</code></td><td>Data Extraction</td></tr>
-                        <tr><td><code>CodeAgent</code></td><td><code>CodeRequest</code></td><td><code>CodeResult</code></td><td>Tool Use / Automation</td></tr>
-                        <tr><td><code>ImageGenerationAgent</code></td><td><code>List&lt;String&gt;</code></td><td><code>ImageAndText</code></td><td>Asset Creation</td></tr>
-                        <tr><td><code>ProxyAgent&lt;T&gt;</code></td><td>Method Args</td><td>Method Return</td><td>Dynamic Logic</td></tr>
+                        <tr><td><code>ChatAgent</code></td><td><code>List&lt;String&gt;</code></td><td><code>String</code></td><td>Conversation, Q&A</td></tr>
+                        <tr><td><code>ParsedAgent&lt;T&gt;</code></td><td><code>List&lt;String&gt;</code></td><td><code>ParsedResponse&lt;T&gt;</code></td><td>Text-to-Object, Data Extraction</td></tr>
+                        <tr><td><code>CodeAgent</code></td><td><code>CodeRequest</code></td><td><code>CodeResult</code></td><td>Writing & Executing Code, Tool Use</td></tr>
+                        <tr><td><code>ImageGenerationAgent</code></td><td><code>List&lt;String&gt;</code></td><td><code>ImageAndText</code></td><td>Creating Images from text</td></tr>
+                        <tr><td><code>ImageProcessingAgent</code></td><td><code>List&lt;ImageAndText&gt;</code></td><td><code>ImageAndText</code></td><td>Analyzing/Captioning Images</td></tr>
+                        <tr><td><code>ParsedImageAgent&lt;T&gt;</code></td><td><code>List&lt;ImageAndText&gt;</code></td><td><code>ParsedResponse&lt;T&gt;</code></td><td>Image-to-Object (Visual Data Extraction)</td></tr>
+                        <tr><td><code>ProxyAgent&lt;T&gt;</code></td><td>Method Args</td><td>Method Return</td><td>Implementing Interfaces via LLM</td></tr>
                     </tbody>
                 </table>
             </section>
 
             <section id="advanced" class="agent-section">
                 <h2>Advanced Topics</h2>
-                <h3>Code Interception</h3>
-                <p>Wrap execution with logging or sanitization:</p>
+
+                <h3>Code Interception in CodeAgent</h3>
+                <p>The <code>codeInterceptor</code> function allows you to transform code before execution. This is useful for:</p>
+                <ul class="feature-list">
+                    <li><strong>Logging:</strong> Wrap code execution with logging statements.</li>
+                    <li><strong>Sanitization:</strong> Remove or modify dangerous operations.</li>
+                    <li><strong>Instrumentation:</strong> Add performance monitoring.</li>
+                </ul>
                 <div class="code-block">
-                    <div class="code-header"><span class="code-lang">kotlin</span></div>
-                    <pre><code>codeInterceptor = { code -> "println(\"Starting...\")\n$code" }</code></pre>
+                    <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-intercept">Copy</button></div>
+                    <pre><code id="code-intercept">val agent = CodeAgent(
+    codeRuntime = runtime,
+    model = model,
+    codeInterceptor = { code ->
+        "println(\"Executing code...\")\n$code\nprintln(\"Code executed.\")"
+    }
+)</code></pre>
                 </div>
-                <h3>Fallback Models</h3>
-                <p>Use a cheaper model first, falling back to a more capable one on failure:</p>
+
+                <h3>Fallback Models in CodeAgent</h3>
+                <p>If the primary model fails to generate valid code after all retries, the <code>fallbackModel</code> is used. This is useful for:</p>
+                <ul class="feature-list">
+                    <li><strong>Reliability:</strong> Use a more capable model as a fallback.</li>
+                    <li><strong>Cost Optimization:</strong> Use a cheaper model first, then fall back to a more expensive one.</li>
+                </ul>
                 <div class="code-block">
-                    <div class="code-header"><span class="code-lang">kotlin</span></div>
-                    <pre><code>CodeAgent(model = gpt35, fallbackModel = gpt4)</code></pre>
+                    <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-fallback">Copy</button></div>
+                    <pre><code id="code-fallback">val agent = CodeAgent(
+    codeRuntime = runtime,
+    model = cheaperModel,
+    fallbackModel = moreCapableModel,
+    temperature = 0.1
+)</code></pre>
+                </div>
+
+                <h3>Example-Based Learning in ProxyAgent</h3>
+                <p>Improve <code>ProxyAgent</code> accuracy by providing examples:</p>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-examples">Copy</button></div>
+                    <pre><code id="code-examples">val agent = ProxyAgent(MyInterface::class.java, model)
+
+// Add examples
+agent.addExample(SentimentResult(score = 0.9, label = "positive")) { proxy ->
+    proxy.analyze("I love this!")
+}
+
+agent.addExample(SentimentResult(score = 0.1, label = "negative")) { proxy ->
+    proxy.analyze("This is terrible.")
+}
+
+val finalProxy = agent.create()</code></pre>
                 </div>
             </section>
         </div>
@@ -467,14 +804,15 @@ val transformed = response.map(UserDTO::class.java) { user -> UserDTO(user.name)
     <footer class="site-footer">
         <div class="footer-brand">
             <img src="assets/images/logos/cognotik-mark.svg" alt="Cognotik" width="24" height="24">
-            <span style="font-family: var(--font-display); font-weight: 600; color: var(--text-primary);">Cognotik</span>
+            <span>Cognotik</span>
         </div>
         <div class="footer-links">
             <a href="https://github.com/SimiaCryptus/Cognotik">GitHub</a>
             <a href="/docs">Documentation</a>
             <a href="/agent-types.html">Agent Types</a>
+            <a href="/type-describers.html">Type Describers</a>
         </div>
-        <p style="font-size: 0.75rem; color: var(--text-tertiary);">© 2024 SimiaCryptus. Apache 2.0 License.</p>
+        <p class="footer-copyright">© 2024 SimiaCryptus. Apache 2.0 License.</p>
     </footer>
 
     <script type="module" src="assets/scripts/core.js"></script>
@@ -497,8 +835,13 @@ val transformed = response.map(UserDTO::class.java) { user -> UserDTO(user.name)
             btn.onclick = () => {
                 const code = document.getElementById(btn.dataset.copyTarget).innerText;
                 navigator.clipboard.writeText(code).then(() => {
+                    const originalText = btn.innerText;
                     btn.innerText = 'Copied!';
-                    setTimeout(() => btn.innerText = 'Copy', 2000);
+                    btn.classList.add('copied');
+                    setTimeout(() => {
+                        btn.innerText = originalText;
+                        btn.classList.remove('copied');
+                    }, 2000);
                 });
             };
         });

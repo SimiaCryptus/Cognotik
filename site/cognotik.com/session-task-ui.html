@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -31,9 +30,9 @@
     <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#0f1115">
 
-    <!-- Fonts -->
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- jQuery & FileTree -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -44,17 +43,57 @@
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
-        /* Page-specific layout overrides */
+        /* Page-specific styles for SessionTask UI */
+        
+        /* CSS Variables from Design System */
+        :root {
+            --bg-app: #0f1115;
+            --bg-panel: #161b22;
+            --bg-elevated: #1c2128;
+            --bg-hover: #21262d;
+            --border-subtle: #30363d;
+            --border-default: #3d444d;
+            --border-emphasis: #484f58;
+            --accent-primary: #58a6ff;
+            --accent-secondary: #7ee787;
+            --accent-warning: #d29922;
+            --accent-danger: #f85149;
+            --accent-purple: #a371f7;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-tertiary: #6e7681;
+            --text-link: #58a6ff;
+            --font-display: 'Cinzel', serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --space-12: 3rem;
+            --space-16: 4rem;
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+            --radius-xl: 12px;
+            --transition-fast: 150ms ease;
+            --transition-base: 200ms ease;
+        }
+
+        /* Reality Check Grid */
         .reality-check-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: var(--space-4);
-            margin-bottom: var(--space-8);
+            gap: var(--space-6);
+            margin-bottom: var(--space-12);
         }
 
         @media (max-width: 768px) {
             .reality-check-grid { grid-template-columns: 1fr; }
         }
+        /* UI Preview Window */
 
         .ui-preview-window {
             background: var(--bg-app);
@@ -62,7 +101,9 @@
             border-radius: var(--radius-md);
             padding: var(--space-4);
             font-family: var(--font-body);
+            min-height: 200px;
         }
+        /* Spinner Animation */
 
         .sim-spinner {
             display: inline-block;
@@ -76,6 +117,343 @@
         }
 
         @keyframes spin { to { transform: rotate(360deg); } }
+        /* Panel Component */
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-3) var(--space-4);
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        .panel-icon {
+            font-size: 1.2em;
+        }
+        .panel-title {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .panel-body {
+            padding: var(--space-4);
+        }
+        /* Code Block */
+        .code-block {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: var(--space-4);
+        }
+        .code-block.m-0 { margin: 0; }
+        .code-block.border-0 { border: none; }
+        .code-block.rounded-none { border-radius: 0; }
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-2) var(--space-4);
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .code-lang {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .copy-btn {
+            padding: var(--space-1) var(--space-2);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .copy-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+            border-color: var(--border-default);
+        }
+        .copy-btn.copied {
+            color: var(--accent-secondary);
+            border-color: var(--accent-secondary);
+        }
+        .code-block pre {
+            margin: 0;
+            padding: var(--space-4);
+            overflow-x: auto;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+        }
+        .code-block code {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.6;
+            background: transparent;
+            padding: 0;
+            color: var(--text-primary);
+        }
+        /* Badge Component */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-1);
+            padding: var(--space-1) var(--space-2);
+            font-size: 0.75rem;
+            font-weight: 500;
+            line-height: 1;
+            border-radius: var(--radius-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .badge-primary {
+            background: rgba(88, 166, 255, 0.15);
+            color: var(--accent-primary);
+        }
+        .badge-purple {
+            background: rgba(163, 113, 247, 0.15);
+            color: var(--accent-purple);
+        }
+        .badge-success {
+            background: rgba(126, 231, 135, 0.15);
+            color: var(--accent-secondary);
+        }
+        /* Hero Section */
+        .hero {
+            padding: var(--space-16) var(--space-4);
+            text-align: center;
+            background: var(--bg-app);
+        }
+        .hero-gradient {
+            background: radial-gradient(
+                ellipse at top center,
+                rgba(88, 166, 255, 0.15) 0%,
+                transparent 50%
+            ), var(--bg-app);
+        }
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .hero-title {
+            font-family: var(--font-display);
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: var(--space-4);
+            background: linear-gradient(
+                135deg,
+                var(--text-primary) 0%,
+                var(--accent-primary) 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: var(--space-8);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: var(--space-4);
+        }
+        /* Button Component */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-4);
+            font-family: var(--font-body);
+            font-size: 0.875rem;
+            font-weight: 500;
+            line-height: 1.5;
+            text-decoration: none;
+            border: 1px solid transparent;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .btn-primary {
+            background: var(--accent-primary);
+            color: var(--bg-app);
+            border-color: var(--accent-primary);
+        }
+        .btn-primary:hover {
+            background: #79b8ff;
+            border-color: #79b8ff;
+            text-decoration: none;
+        }
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border-color: var(--border-default);
+        }
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-emphasis);
+            text-decoration: none;
+        }
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-6);
+        }
+        .feature-card {
+            padding: var(--space-6);
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            transition: all var(--transition-fast);
+        }
+        .feature-card:hover {
+            border-color: var(--border-default);
+            transform: translateY(-2px);
+        }
+        .feature-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            margin-bottom: var(--space-4);
+            font-size: 1.5rem;
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.1);
+            border-radius: var(--radius-md);
+        }
+        .feature-title {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: var(--space-2);
+            color: var(--text-primary);
+        }
+        .feature-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .feature-description code {
+            font-family: var(--font-mono);
+            font-size: 0.85em;
+            padding: 0.15em 0.4em;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--accent-primary);
+        }
+        /* Tabs Component */
+        .tabs {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        .tabs-nav {
+            display: flex;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border-subtle);
+            overflow-x: auto;
+        }
+        .tab-btn {
+            flex: 0 0 auto;
+            padding: var(--space-3) var(--space-4);
+            font-family: var(--font-body);
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+        }
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+        .tab-btn.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        .tabs-content {
+            padding: var(--space-4);
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+            animation: fadeIn var(--transition-base);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-6);
+        }
+        /* Utility Classes */
+        .my-12 { margin-top: var(--space-12); margin-bottom: var(--space-12); }
+        .my-16 { margin-top: var(--space-16); margin-bottom: var(--space-16); }
+        .mb-2 { margin-bottom: var(--space-2); }
+        .mb-3 { margin-bottom: var(--space-3); }
+        .mb-4 { margin-bottom: var(--space-4); }
+        .mb-6 { margin-bottom: var(--space-6); }
+        .mb-12 { margin-bottom: var(--space-12); }
+        .p-0 { padding: 0; }
+        .p-3 { padding: var(--space-3); }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: var(--space-2); }
+        .text-center { text-align: center; }
+        .text-xl { font-size: 1.25rem; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .font-bold { font-weight: 700; }
+        .text-heading { font-family: var(--font-display); font-size: 1.875rem; font-weight: 600; color: var(--text-primary); }
+        .text-accent { color: var(--accent-primary); }
+        .text-secondary { color: var(--text-secondary); }
+        .text-success { color: var(--accent-secondary); }
+        .bg-elevated { background: var(--bg-elevated); }
+        .border { border: 1px solid var(--border-default); }
+        .border-subtle { border-color: var(--border-subtle); }
+        .rounded { border-radius: var(--radius-md); }
+        /* Page Container */
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-8) var(--space-4);
+        }
     </style>
 </head>
 <body>
@@ -86,7 +464,7 @@
         <section class="hero hero-gradient">
             <div class="hero-content">
                 <div class="flex items-center justify-center gap-2 mb-4">
-                    <span class="badge badge-primary">Core Framework</span>
+                   <span class="badge badge-primary">Core</span>
                     <span class="badge badge-purple">Server-Driven UI</span>
                 </div>
                 <h1 class="hero-title">SessionTask UI System</h1>
@@ -103,7 +481,7 @@
 
         <!-- Reality Check: Code to UI -->
         <section id="reality-check" class="my-12">
-            <h2 class="text-heading mb-6">Reality Check: Kotlin to Browser</h2>
+            <h2 class="text-heading text-center mb-6">Reality Check: Kotlin to Browser</h2>
             <div class="reality-check-grid">
                 <!-- Code Side -->
                 <div class="panel">
@@ -139,13 +517,13 @@
                     </div>
                     <div class="panel-body">
                         <div class="ui-preview-window">
-                            <h2 class="text-xl font-bold mb-4">Analysis Results</h2>
-                            <div class="p-3 bg-elevated border border-subtle rounded mb-3">
-                                <div class="text-sm text-accent mb-1">src/main/App.kt</div>
-                                <div class="text-xs text-secondary">Unused import detected</div>
+                            <h2 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; margin-bottom: var(--space-4); color: var(--text-primary);">Analysis Results</h2>
+                            <div style="padding: var(--space-3); background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
+                                <div style="font-size: 0.875rem; color: var(--accent-primary); margin-bottom: var(--space-1);">src/main/App.kt</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">Unused import detected</div>
                             </div>
-                            <div class="text-sm mb-2">Scanning repository...</div>
-                            <div class="text-sm text-success">✓ Done</div>
+                            <div style="font-size: 0.875rem; margin-bottom: var(--space-2);">Scanning repository...</div>
+                            <div style="font-size: 0.875rem; color: var(--accent-secondary);">✓ Done</div>
                         </div>
                     </div>
                 </div>
@@ -197,6 +575,7 @@
                     <button class="tab-btn active" data-tab="rendering" role="tab" aria-selected="true">Rendering</button>
                     <button class="tab-btn" data-tab="interaction" role="tab" aria-selected="false">Interaction</button>
                     <button class="tab-btn" data-tab="layout" role="tab" aria-selected="false">Layout & Tasks</button>
+                    <button class="tab-btn" data-tab="updates" role="tab" aria-selected="false">Dynamic Updates</button>
                 </div>
                 <div class="tabs-content">
                     <!-- Rendering Tab -->
@@ -269,6 +648,27 @@ liveTab.add("Updating...")
 task.add(AgentPatterns.displayMapInTabs(fileMap))</code></pre>
                         </div>
                     </div>
+                    <!-- Dynamic Updates Tab -->
+                    <div class="tab-panel" data-tab-panel="updates" role="tabpanel" hidden>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">kotlin</span>
+                                <button class="copy-btn">Copy</button>
+                            </div>
+                            <pre><code class="language-kotlin">// Dynamic content updates
+val statusBuffer = task.add("Starting process...")
+for (i in 1..5) {
+    Thread.sleep(500)
+    statusBuffer?.setLength(0)
+    statusBuffer?.append("Processing step $i/5...")
+    task.update() // Push changes to client
+}
+statusBuffer?.setLength(0)
+statusBuffer?.append("&lt;strong&gt;Done!&lt;/strong&gt;")
+task.update()
+task.complete()</code></pre>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -283,17 +683,76 @@ task.add(AgentPatterns.displayMapInTabs(fileMap))</code></pre>
                 <div class="panel-body">
                     <div class="content-grid">
                         <div>
-                            <h4 class="font-bold mb-2">Lifecycle Management</h4>
-                            <p class="text-sm text-secondary">Always call <code>task.complete()</code>. Failing to do so leaves the loading spinner active indefinitely, degrading user experience.</p>
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-2); color: var(--text-primary);">Lifecycle Management</h4>
+                            <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;">Always call <code style="font-family: var(--font-mono); font-size: 0.85em; padding: 0.15em 0.4em; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--accent-primary);">task.complete()</code>. Failing to do so leaves the loading spinner active indefinitely, degrading user experience.</p>
                         </div>
                         <div>
-                            <h4 class="font-bold mb-2">Thread Safety</h4>
-                            <p class="text-sm text-secondary">SessionTask methods are thread-safe. Use <code>task.ui.pool</code> for heavy computations to avoid blocking the UI thread.</p>
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-2); color: var(--text-primary);">Thread Safety</h4>
+                            <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;">SessionTask methods are thread-safe. Use <code style="font-family: var(--font-mono); font-size: 0.85em; padding: 0.15em 0.4em; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--accent-primary);">task.ui.pool</code> for heavy computations to avoid blocking the UI thread.</p>
                         </div>
                         <div>
-                            <h4 class="font-bold mb-2">Dynamic Updates</h4>
-                            <p class="text-sm text-secondary">Use the <code>StringBuilder</code> returned by <code>add()</code> and call <code>task.update()</code> to refresh existing elements instead of appending new ones.</p>
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-2); color: var(--text-primary);">Dynamic Updates</h4>
+                            <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;">Use the <code style="font-family: var(--font-mono); font-size: 0.85em; padding: 0.15em 0.4em; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--accent-primary);">StringBuilder</code> returned by <code style="font-family: var(--font-mono); font-size: 0.85em; padding: 0.15em 0.4em; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--accent-primary);">add()</code> and call <code style="font-family: var(--font-mono); font-size: 0.85em; padding: 0.15em 0.4em; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--accent-primary);">task.update()</code> to refresh existing elements.</p>
                         </div>
+                        <div>
+                            <h4 style="font-weight: 600; margin-bottom: var(--space-2); color: var(--text-primary);">Blocking Operations</h4>
+                            <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;"><code style="font-family: var(--font-mono); font-size: 0.85em; padding: 0.15em 0.4em; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--accent-primary);">Discussable</code> is blocking. Use <code style="font-family: var(--font-mono); font-size: 0.85em; padding: 0.15em 0.4em; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--accent-primary);">task.ui.scheduledThreadPoolExecutor</code> for delayed or periodic execution.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Workflow Patterns Section -->
+        <section class="my-16">
+            <h2 class="text-heading text-center mb-12">Advanced Workflow Patterns</h2>
+            <div class="reality-check-grid">
+                <!-- Discussable Pattern -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-icon">💬</span>
+                        <span class="panel-title">Discussable: Human-in-the-Loop</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="code-block">
+                            <pre><code class="language-kotlin">val finalResult = Discussable(
+    task = task,
+    heading = "Drafting Email",
+    userMessage = { "Draft an email" },
+    initialResponse = { prompt ->
+        MyObject(llm.generate(prompt))
+    },
+    outputFn = { design ->
+        design.toHtml()
+    },
+    reviseResponse = { history ->
+        llm.chat(history)
+    }
+).call() // Blocks until Accept</code></pre>
+                        </div>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: var(--space-3);">
+                            <strong>Flow:</strong> Generate → Review → Revise → Accept
+                        </p>
+                    </div>
+                </div>
+                <!-- Retryable Pattern -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-icon">♻️</span>
+                        <span class="panel-title">Retryable: LLM Regeneration</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="code-block">
+                            <pre><code class="language-kotlin">val retryable = Retryable(task) { buffer ->
+    // Runs on init and each recycle
+    val result = performExpensiveOperation()
+    result // Return HTML content
+}
+// Each retry creates a new tab
+// User clicks ♻ to regenerate</code></pre>
+                        </div>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: var(--space-3);">
+                            <strong>Use case:</strong> LLM generations that may need multiple attempts
+                        </p>
                     </div>
                 </div>
             </div>
@@ -317,13 +776,36 @@ task.add(AgentPatterns.displayMapInTabs(fileMap))</code></pre>
             btns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const target = btn.dataset.tab;
-                    btns.forEach(b => b.classList.toggle('active', b === btn));
+                    btns.forEach(b => {
+                        b.classList.toggle('active', b === btn);
+                        b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+                    });
                     panels.forEach(p => {
                         const isActive = p.dataset.tabPanel === target;
                         p.classList.toggle('active', isActive);
                         p.hidden = !isActive;
                     });
                 });
+            });
+        });
+        // Copy button functionality
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const codeBlock = btn.closest('.code-block');
+                const code = codeBlock.querySelector('code');
+                if (code) {
+                    try {
+                        await navigator.clipboard.writeText(code.textContent);
+                        btn.textContent = 'Copied!';
+                        btn.classList.add('copied');
+                        setTimeout(() => {
+                            btn.textContent = 'Copy';
+                            btn.classList.remove('copied');
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Failed to copy:', err);
+                    }
+                }
             });
         });
     </script>
