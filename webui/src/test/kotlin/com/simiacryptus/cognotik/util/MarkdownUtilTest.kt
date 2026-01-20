@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.webui.util
+package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.renderMarkdown

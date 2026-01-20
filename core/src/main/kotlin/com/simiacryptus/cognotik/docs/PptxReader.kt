@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.input
+package com.simiacryptus.cognotik.docs
 
 import org.apache.poi.xslf.usermodel.XMLSlideShow
 import org.apache.poi.xslf.usermodel.XSLFTextShape

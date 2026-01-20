@@ -71,7 +71,6 @@ abstract class ApplicationServer(
         }
     }
     protected open val sessionSettingsServlet by lazy { ServletHolder("settings", SessionSettingsServlet(this)) }
-    protected open val sessionShareServlet by lazy { ServletHolder("share", SessionShareServlet(this)) }
     protected open val sessionThreadsServlet by lazy { ServletHolder("threads", SessionThreadsServlet()) }
     protected open val deleteSessionServlet by lazy { ServletHolder("delete", DeleteSessionServlet(this)) }
     protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
@@ -246,8 +245,6 @@ abstract class ApplicationServer(
         logger.debug("Added sessionSettings servlet")
         webAppContext.addServlet(sessionThreadsServlet, "/threads")
         logger.debug("Added sessionThreads servlet")
-        webAppContext.addServlet(sessionShareServlet, "/share")
-        logger.debug("Added sessionShare servlet")
         webAppContext.addServlet(deleteSessionServlet, "/delete")
         logger.debug("Added deleteSession servlet")
         webAppContext.addServlet(cancelSessionServlet, "/cancel")

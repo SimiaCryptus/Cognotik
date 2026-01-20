@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.input
+package com.simiacryptus.cognotik.docs
 
 import org.odftoolkit.odfdom.doc.OdfTextDocument
 import java.io.File

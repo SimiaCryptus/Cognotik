@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.input.getDocumentReader
+import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig

@@ -4,7 +4,8 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.input.getDocumentReader
+import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
+import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
@@ -677,7 +678,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     private fun extractDocumentContent(file: java.io.File): String = try {
         file.getDocumentReader().use { reader ->
             when (reader) {
-                is com.simiacryptus.cognotik.input.PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+                is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
                 else -> reader.getText()
             }
         }

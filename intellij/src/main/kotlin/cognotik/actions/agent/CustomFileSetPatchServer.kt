@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.input.getDocumentReader
+import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User

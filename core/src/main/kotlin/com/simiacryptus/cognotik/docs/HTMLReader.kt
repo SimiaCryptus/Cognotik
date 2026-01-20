@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.input
+package com.simiacryptus.cognotik.docs
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document

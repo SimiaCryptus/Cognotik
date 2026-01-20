@@ -1,12 +1,12 @@
-package com.simiacryptus.cognotik.input
+package com.simiacryptus.cognotik.docs
 
+import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.ss.usermodel.CellType
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
 import java.io.FileInputStream
 
-class XlsxReader(xlsxFile: File) : DocumentReader {
-    private val workbook: XSSFWorkbook = XSSFWorkbook(FileInputStream(xlsxFile))
+class XlsReader(xlsFile: File) : DocumentReader {
+    private val workbook: HSSFWorkbook = HSSFWorkbook(FileInputStream(xlsFile))
     override fun getText(): String {
         val text = StringBuilder()
         for (sheetIndex in 0 until workbook.numberOfSheets) {

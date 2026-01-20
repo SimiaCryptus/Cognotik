@@ -10,14 +10,14 @@ object AgentPatterns {
         ui: SocketManager? = null,
         split: Boolean = map.entries.map { it.value.length + it.key.length }.sum() > 10000
     ): String = if (split && ui != null) {
-        val tasks = map.entries.map { (key, value) ->
-            key to ui.newTask(root = false)
-        }.toMap()
-        ui.scheduledThreadPoolExecutor?.schedule({
-            tasks.forEach { (key, task) ->
-                task.complete(map[key]!!)
-            }
-        }, 200, java.util.concurrent.TimeUnit.MILLISECONDS)
+        val tasks = map.entries.associate { (key, value) ->
+          key to ui.newTask(root = false)
+        }
+      ui.scheduledThreadPoolExecutor.schedule({
+        tasks.forEach { (key, task) ->
+          task.complete(map[key]!!)
+        }
+      }, 200, java.util.concurrent.TimeUnit.MILLISECONDS)
         displayMapInTabs(tasks.mapValues { it.value.placeholder }, ui = ui, split = false)
     } else {
         """

@@ -10,7 +10,7 @@ import com.jetbrains.rd.generator.nova.GenerationSpec.Companion.nullIfEmpty
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.input.getDocumentReader
+import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
 import com.simiacryptus.cognotik.models.ModelSchema.ContentPart

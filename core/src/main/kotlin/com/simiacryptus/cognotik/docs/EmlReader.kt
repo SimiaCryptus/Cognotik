@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.input
+package com.simiacryptus.cognotik.docs
 
 import jakarta.mail.BodyPart
 import jakarta.mail.Message

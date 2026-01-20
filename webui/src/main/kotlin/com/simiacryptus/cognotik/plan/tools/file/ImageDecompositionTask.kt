@@ -4,8 +4,8 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ParsedImageAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.input.RenderableDocumentReader
-import com.simiacryptus.cognotik.input.getDocumentReader
+import com.simiacryptus.cognotik.docs.RenderableDocumentReader
+import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
