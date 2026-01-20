@@ -222,7 +222,7 @@ open class DocProcessorAction(
                     }
                 }
                 TaskItem(index, targetFiles, description, config)
-            }
+        }.sortedBy { it.displayName.lowercase() }
             
             checkBoxList.setItems(taskItems) { it.displayName }
             taskItems.forEach { checkBoxList.setItemSelected(it, true) }
@@ -242,9 +242,11 @@ open class DocProcessorAction(
             row {
                 button("Select All") {
                     taskItems.forEach { checkBoxList.setItemSelected(it, true) }
+                    checkBoxList.repaint()
                 }
                 button("Deselect All") {
                     taskItems.forEach { checkBoxList.setItemSelected(it, false) }
+                    checkBoxList.repaint()
                 }
             }
             row {
