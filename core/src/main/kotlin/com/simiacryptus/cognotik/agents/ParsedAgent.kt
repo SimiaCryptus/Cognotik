@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.agents
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.exceptions.MultiExeption
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.*
 import java.util.function.Function

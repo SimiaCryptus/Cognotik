@@ -37,7 +37,6 @@ class LLMModelDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<LLM
         listOf(
             ChatModel.values(),
             EmbeddingModel.values(),
-            EditModels.values(),
         ).flatMap { it.entries }.find { it.key == modelName }?.value?.let { return it }
         return LLMModel(
             modelName,

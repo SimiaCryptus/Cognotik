@@ -13,7 +13,6 @@ operations. It supports multiple search engines and methods for generating start
 
 The main interface for implementing seed collection strategies. Each strategy must implement:
 
-- `getSeedItems()`: Returns a list of `SeedItem` objects based on task configuration
 - `isEnabled()`: Determines if the strategy is available for use
 
 #### `SeedMethodFactory`
@@ -27,7 +26,6 @@ Data class representing a discovered URL with metadata:
 - `link`: The URL to crawl
 - `title`: Human-readable title
 - `tags`: Optional categorization tags
-- `relevance_score`: Relevance rating (1-100)
 - `additionalData`: Extra metadata from the source
 
 ### Seed Methods
@@ -78,7 +76,6 @@ Base class for SearchAPI.io integrations, supporting multiple search engines:
 - **SearchIO_Google_Jobs**: Job listing search
 - **SearchIO_Amazon**: Amazon product search
 - **SearchIO_Bing**: Bing web search
-- **SearchIO_DuckDuckGo**: DuckDuckGo web search
 - **SearchIO_EBay**: eBay product search
 
 **Use Case**: Unified API for multiple search engines
@@ -116,7 +113,10 @@ if (strategy.isEnabled()) {
 ```kotlin
 data class CrawlerTaskExecutionConfigData(
     val search_query: String? = null,      // For search-based methods
-    val direct_urls: List<String> = emptyList()  // For DirectUrls method
+    val direct_urls: List<String> = emptyList(), // For DirectUrls method
+    // ... other configuration fields
+    val crawl_depth: Int = 1,
+    val max_pages: Int = 100
 )
 ```
 
@@ -131,7 +131,6 @@ Required API credentials in user settings:
 
 All seed methods implement robust error handling:
 
-- Invalid URLs are filtered out
 - Missing configuration throws `IllegalArgumentException`
 - API failures throw `RuntimeException` with descriptive messages
 - Empty results return empty lists (not errors)
@@ -210,3 +209,8 @@ enum class SeedMethod : SeedMethodFactory {
 - Java HTTP Client for API requests
 - CognoTik platform services for user settings
 
+
+- `getSeedItems()`: Returns a list of `SeedItem` objects (or null) based on task configuration
+- `relevance_score`: Relevance rating (1-100, defaults to 100.0)
+- **SearchIO_DuckDuckGo**: DuckDuckGo search
+- Invalid URLs (non-HTTP/HTTPS or malformed) are filtered out

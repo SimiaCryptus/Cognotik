@@ -10,9 +10,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CheckBoxList
+import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.selected
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
@@ -25,25 +27,15 @@ import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.DocProcessor
 import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
-import com.simiacryptus.cognotik.util.OverwriteMode
-import com.simiacryptus.cognotik.util.OverwriteModes
-import com.simiacryptus.cognotik.util.SessionProxyServer
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.getModuleRootForFile
-import com.simiacryptus.cognotik.util.getSelectedFile
-import com.simiacryptus.cognotik.util.getSelectedFiles
-import com.simiacryptus.cognotik.util.getSelectedFolder
-import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import java.awt.Dimension
 import java.text.SimpleDateFormat
 import javax.swing.JComponent
-import kotlin.collections.set
 
 /**
  * Action that processes markdown documentation files with frontmatter specifications.
@@ -129,7 +121,7 @@ open class DocProcessorAction(
                 val selectedTasks = dialog.getSelectedTasks()
                 if (selectedTasks.isNotEmpty()) {
                     UITools.runAsync(project, "Processing Documentation Tasks", true) { innerProgress ->
-                        executeTasks(docProcessor, selectedTasks)
+                        executeTasks(docProcessor, selectedTasks, dialog.autoFix)
                     }
                 }
             }
@@ -138,7 +130,8 @@ open class DocProcessorAction(
 
     private fun executeTasks(
         docProcessor: DocProcessor,
-        tasks: List<ModificationTask>
+        tasks: List<ModificationTask>,
+        autoFix: Boolean
     ) {
         val session = Session.newGlobalID()
         DataStorage.sessionPaths[session] = docProcessor.root
@@ -150,7 +143,7 @@ open class DocProcessorAction(
                 ?: throw IllegalStateException("Fast model not configured"),
             defaultImageModel = AppSettingsState.instance.imageChatModel,
             temperature = AppSettingsState.instance.temperature,
-            autoFix = false,
+            autoFix = autoFix,
             workingDir = docProcessor.root.toString(),
             shellCmd = listOf(
                 if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
@@ -165,7 +158,7 @@ open class DocProcessorAction(
         val app = object : SingleTaskApp(
             applicationName = "Doc Update Processor",
             path = "/docUpdate",
-            showMenubar = false,
+            showMenubar = autoFix,
             taskType = FileModification,
             taskConfig = tasks.map { it.data },
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
@@ -186,8 +179,8 @@ open class DocProcessorAction(
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Document Illustration Task",
             inputCnt = 0,
-            stickyInput = false,
-            showMenubar = false
+            stickyInput = autoFix,
+            showMenubar = autoFix
         )
         SessionProxyServer.metadataStorage.setSessionName(
             null, session, "Document Illustration @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
@@ -209,6 +202,7 @@ open class DocProcessorAction(
         private val allTasks: List<ModificationTask>
     ) : DialogWrapper(project) {
 
+        var autoFix: Boolean = true
         private val checkBoxList = CheckBoxList<TaskItem>()
         private val taskItems: List<TaskItem>
 
@@ -237,6 +231,11 @@ open class DocProcessorAction(
         }
 
         override fun createCenterPanel(): JComponent = panel {
+            row {
+                checkBox("Auto-fix issues")
+                    .selected(autoFix)
+                    .onChanged { autoFix = it.isSelected }
+            }
             row {
                 label("Select which file generation tasks to execute:")
             }
