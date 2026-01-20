@@ -1,25 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- SEO Meta Tags -->
-    <title>PatchProcessor - Intelligent Code Patching | Cognotik</title>
-    <meta name="description" content="Fuzzy matching code patching system for AI-assisted development. Apply patches even when source code has variations.">
-    <meta name="keywords" content="AI coding, code patching, fuzzy matching, diff, patch, code modification, Cognotik">
+    <title>PatchProcessor: Intelligent Code Patching | Cognotik</title>
+    <meta name="description" content="Sophisticated fuzzy matching code patching system for AI-assisted development. Apply modifications even when source code has drifted from the patch context.">
+    <meta name="keywords" content="AI coding, code patching, fuzzy matching, diff, patch, code modification, thermodynamic matching, Cognotik">
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="PatchProcessor - Intelligent Code Patching | Cognotik">
-    <meta property="og:description" content="Fuzzy matching code patching system for AI-assisted development. Apply patches even when source code has variations.">
+    <meta property="og:title" content="PatchProcessor: Intelligent Code Patching | Cognotik">
+    <meta property="og:description" content="Sophisticated fuzzy matching code patching system for AI-assisted development.">
     <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
-    <meta property="og:url" content="https://cognotik.com/patch-processors">
+    <meta property="og:url" content="https://cognotik.com/patch-processors.html">
     <meta property="og:type" content="website">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="PatchProcessor - Intelligent Code Patching | Cognotik">
-    <meta name="twitter:description" content="Fuzzy matching code patching system for AI-assisted development.">
+    <meta name="twitter:title" content="PatchProcessor: Intelligent Code Patching | Cognotik">
+    <meta name="twitter:description" content="Sophisticated fuzzy matching code patching system for AI-assisted development.">
     <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
 
     <!-- Favicon Suite -->
@@ -27,35 +28,26 @@
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-    <link rel="manifest" href="site.webmanifest">
+    <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#0f1115">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 
-    <!-- Prism.js for syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
 
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <script type="module" src="assets/scripts/components/CognotikFooter.js"></script>
 
     <style>
-        /* Page-specific styles */
-        .page-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: var(--space-8) var(--space-4);
-        }
 
         .page-header {
             margin-bottom: var(--space-8);
         }
 
         .page-header h1 {
-            font-family: var(--font-display);
-            font-size: var(--text-4xl);
             margin-bottom: var(--space-2);
             display: flex;
             align-items: center;
@@ -63,34 +55,9 @@
             flex-wrap: wrap;
         }
 
-        .page-header .subtitle {
-            color: var(--text-secondary);
-            font-size: var(--text-lg);
-            max-width: 700px;
-            line-height: 1.6;
-        }
 
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: var(--space-1) var(--space-2);
-            font-size: var(--text-xs);
-            font-weight: 500;
-            border-radius: var(--radius-sm);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-family: var(--font-mono);
-        }
 
-        .badge-primary {
-            background: rgba(88, 166, 255, 0.15);
-            color: var(--accent-primary);
-        }
 
-        .badge-success {
-            background: rgba(126, 231, 135, 0.15);
-            color: var(--accent-secondary);
-        }
 
         /* Reality Check Section */
         .reality-check {
@@ -100,160 +67,39 @@
             margin-bottom: var(--space-8);
         }
 
-        @media (max-width: 900px) {
-            .reality-check {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .panel {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-        }
-
-        .panel-header {
-            display: flex;
-            align-items: center;
-            gap: var(--space-2);
-            padding: var(--space-3) var(--space-4);
-            background: var(--bg-elevated);
-            border-bottom: 1px solid var(--border-subtle);
-            font-family: var(--font-mono);
-            font-size: var(--text-sm);
-            color: var(--text-secondary);
-        }
-        .panel-icon {
-            font-size: 1.2em;
-        }
-        .panel-title {
-            font-weight: 500;
-            color: var(--text-primary);
-        }
 
 
-        .panel-body {
-            padding: var(--space-4);
-            max-height: 400px;
-            overflow-y: auto;
-        }
 
-        .panel-body pre {
-            margin: 0;
-            font-size: var(--text-sm);
-            line-height: 1.6;
-        }
+
+
 
         /* Processor Grid */
         .processor-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: var(--space-4);
             margin-bottom: var(--space-8);
         }
 
-        .processor-card {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: var(--space-4);
-            transition: border-color var(--transition-fast);
-        }
-
-        .processor-card:hover {
-            border-color: var(--border-emphasis);
-        }
-
-        .processor-card h3 {
-            font-size: var(--text-lg);
-            margin-bottom: var(--space-2);
-            display: flex;
-            align-items: center;
-            gap: var(--space-2);
-        }
-
-        .processor-card .languages {
-            font-size: var(--text-sm);
-            color: var(--text-secondary);
-            margin-bottom: var(--space-3);
-        }
-
-        .processor-card .description {
-            font-size: var(--text-sm);
-            color: var(--text-secondary);
-            line-height: 1.5;
-            margin-bottom: var(--space-3);
-        }
-
-        .processor-card code {
-            background: var(--bg-elevated);
-            padding: 2px 6px;
-            border-radius: var(--radius-sm);
-            font-size: var(--text-xs);
-            color: var(--accent-primary);
-        }
-
-        /* Tabs */
-        .tabs {
-            margin-bottom: var(--space-8);
-        }
-
-        .tabs-nav {
-            display: flex;
-            gap: var(--space-1);
-            border-bottom: 1px solid var(--border-subtle);
-            margin-bottom: var(--space-4);
-            overflow-x: auto;
-        }
-
-        .tab-btn {
-            background: none;
-            border: none;
-            padding: var(--space-3) var(--space-4);
-            font-family: var(--font-body);
-            font-size: var(--text-sm);
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -1px;
-            transition: all var(--transition-fast);
-            white-space: nowrap;
-        }
-
-        .tab-btn:hover {
-            color: var(--text-primary);
-        }
-
-        .tab-btn.active {
-            color: var(--accent-primary);
-            border-bottom-color: var(--accent-primary);
-        }
-        .tab-btn:focus-visible {
-            outline: 2px solid var(--accent-primary);
-            outline-offset: 2px;
-        }
 
 
-        .tab-panel {
-            display: none;
-        }
 
-        .tab-panel.active {
-            display: block;
-            animation: fadeIn var(--transition-base);
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+
+
+
+
+
+
+
+
+
+
 
         /* Innovation Section */
         .innovations {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: var(--space-4);
-            margin-bottom: var(--space-8);
         }
 
         .innovation-card {
@@ -264,209 +110,30 @@
         }
 
         .innovation-card h4 {
-            font-size: var(--text-base);
             margin-bottom: var(--space-2);
             color: var(--accent-primary);
         }
 
         .innovation-card p {
-            font-size: var(--text-sm);
             color: var(--text-secondary);
             line-height: 1.6;
         }
 
-        /* Section Headers */
-        .section-header {
-            margin-bottom: var(--space-4);
-        }
-
-        .section-header h2 {
-            font-family: var(--font-display);
-            font-size: var(--text-2xl);
-            margin-bottom: var(--space-2);
-        }
-        .section-header h3 {
-            font-family: var(--font-display);
-            font-size: var(--text-xl);
-            margin-bottom: var(--space-2);
-        }
 
 
-        .section-header p {
-            color: var(--text-secondary);
-        }
-
-        /* Code blocks */
-        .code-block {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            margin-bottom: var(--space-4);
-        }
-
-        .code-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--space-2) var(--space-4);
-            background: var(--bg-elevated);
-            border-bottom: 1px solid var(--border-subtle);
-        }
-
-        .code-lang {
-            font-family: var(--font-mono);
-            font-size: var(--text-xs);
-            color: var(--text-tertiary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .copy-btn {
-            background: none;
-            border: 1px solid var(--border-subtle);
-            padding: var(--space-1) var(--space-2);
-            font-size: var(--text-xs);
-            color: var(--text-secondary);
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-        }
-
-        .copy-btn:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-        .copy-btn:focus-visible {
-            outline: 2px solid var(--accent-primary);
-            outline-offset: 2px;
-        }
-        .copy-btn.copied {
-            color: var(--accent-secondary);
-            border-color: var(--accent-secondary);
-        }
 
 
-        /* Comparison Table */
-        .comparison-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: var(--text-sm);
-            margin-bottom: var(--space-4);
-        }
 
-        .comparison-table th,
-        .comparison-table td {
-            padding: var(--space-3);
-            text-align: left;
-            border-bottom: 1px solid var(--border-subtle);
-        }
 
-        .comparison-table th {
-            background: var(--bg-elevated);
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
 
-        .comparison-table td code {
-            background: var(--bg-elevated);
-            padding: 2px 6px;
-            border-radius: var(--radius-sm);
-            font-size: var(--text-xs);
-        }
 
-        .check {
-            color: var(--accent-secondary);
-        }
 
-        .cross {
-            color: var(--text-tertiary);
-        }
-        /* CTA Section */
-        .cta-section {
-            text-align: center;
-            padding: var(--space-8);
-        }
-        .cta-section h2 {
-            font-family: var(--font-display);
-            margin-bottom: var(--space-4);
-        }
-        .cta-section p {
-            color: var(--text-secondary);
-            margin-bottom: var(--space-6);
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .cta-actions {
-            display: flex;
-            gap: var(--space-4);
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--space-2);
-            padding: var(--space-3) var(--space-6);
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            text-decoration: none;
-            transition: all var(--transition-fast);
-        }
-        .btn-primary {
-            background: var(--accent-primary);
-            color: var(--bg-app);
-        }
-        .btn-primary:hover {
-            background: #79b8ff;
-            text-decoration: none;
-        }
-        .btn-secondary {
-            background: var(--bg-elevated);
-            color: var(--text-primary);
-            border: 1px solid var(--border-subtle);
-        }
-        .btn-secondary:hover {
-            background: var(--bg-hover);
-            border-color: var(--border-default);
-            text-decoration: none;
-        }
-        .btn:focus-visible {
-            outline: 2px solid var(--accent-primary);
-            outline-offset: 2px;
-        }
-        /* Footer */
-        .site-footer {
-            border-top: 1px solid var(--border-subtle);
-            padding: var(--space-8) var(--space-4);
-            margin-top: var(--space-8);
-        }
-        .footer-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: var(--space-4);
-        }
-        .footer-copyright {
-            color: var(--text-tertiary);
-            font-size: var(--text-sm);
-        }
-        .footer-links {
-            display: flex;
-            gap: var(--space-6);
-        }
-        .footer-links a {
-            color: var(--text-secondary);
-            font-size: var(--text-sm);
-            transition: color var(--transition-fast);
-        }
-        .footer-links a:hover {
-            color: var(--text-primary);
-        }
+
+
+
+
+
+
     </style>
 </head>
 <body>
@@ -477,40 +144,37 @@
     <main class="page-container">
         <!-- Page Header -->
         <header class="page-header">
-            <h1>
-                🔧 PatchProcessor
+            <h1 class="text-title">
+                PatchProcessor
                 <span class="badge badge-primary">Core</span>
                 <span class="badge badge-success">Stable</span>
             </h1>
-            <p class="subtitle">
-                Intelligent code patching with fuzzy matching. Apply modifications to source code even when it has minor variations—ideal for AI-assisted code modification workflows.
+            <p class="text-body-lg text-secondary">
+                Intelligent code patching with sophisticated matching algorithms. Apply modifications to source code even when it has minor variations—ideal for AI-assisted code modification workflows.
             </p>
         </header>
 
         <!-- Reality Check: Config → Output -->
-        <section class="reality-check" aria-label="Configuration and Output Example">
+        <section class="reality-check" aria-label="Reality Check: Configuration and Output">
             <div class="panel">
                 <div class="panel-header">
                     <span class="panel-icon" aria-hidden="true">⚙️</span>
                     <span class="panel-title">Configuration</span>
                 </div>
                 <div class="panel-body">
-                    <pre><code class="language-kotlin">// Select a processor for your language
-val processor = PatchProcessors.CStyle.processor
 
-// Or configure a custom FuzzyPatchMatcher
-val customProcessor = FuzzyPatchMatcher(
+                    <pre><code class="language-kotlin">// Configure a custom FuzzyPatchMatcher
+val processor = FuzzyPatchMatcher(
     contextSize = 3,
     levenshteinThresholdDivisor = 4,
     minLineLengthForFuzzyMatch = 5,
-    snippetMatchThreshold = 0.8,
-    requireAnchorMatch = true,
-    bracketChars = setOf('(', ')', '{', '}', '[', ']'),
-    bracketWeights = mapOf('{' to 2, '}' to 2)
+    enableFuzzyMatching = true,
+    enableSnippetPatching = true,
+    snippetMatchThreshold = 0.8
 )
 
 // Apply a patch
-val result = processor.patch(sourceCode, patchText)</code></pre>
+val result = processor.applyPatch(source, patch)</code></pre>
                 </div>
             </div>
             <div class="panel">
@@ -534,155 +198,66 @@ val result = processor.patch(sourceCode, patchText)</code></pre>
  }
 
 ✓ Patch applied successfully
-  - 2 lines modified
-  - 1 line added
+  - 2 lines modified, 1 line added
   - Fuzzy matched 3 context lines</code></pre>
                 </div>
             </div>
         </section>
 
-        <!-- Language-Specific Processors -->
+        <!-- Available Processors -->
         <section>
             <div class="section-header">
-                <h2>Language-Specific Processors</h2>
-                <p>Pre-configured processors optimized for different languages and syntaxes.</p>
+                <h2 class="text-heading">Available Processors</h2>
+                <p class="text-secondary">Pre-configured processors optimized for different use cases and precision requirements.</p>
             </div>
 
             <div class="processor-grid">
-                <div class="processor-card">
-                    <h3>🔷 CStyle</h3>
-                    <div class="languages">Java, JavaScript, TypeScript, C++, C#, Go, Rust, Swift, Kotlin</div>
-                    <div class="description">
-                        Optimized for curly-brace syntax. Tracks bracket nesting depth with weighted scoring for languages with explicit block delimiters.
-                    </div>
-                    <code>PatchProcessors.CStyle</code>
+
+
+
+
+
+
+
+
+
+
+
+                <div class="card card-bordered p-4">
+                    <h3 class="text-lg font-semibold mb-2">🔷 Fuzzy (Default)</h3>
+                    <p class="text-sm text-secondary mb-3">Balanced default for most languages. Uses a Levenshtein threshold divisor of 4 and 80% snippet match threshold.</p>
+                    <code class="text-xs text-accent bg-elevated px-2 py-1 rounded">PatchProcessors.Fuzzy</code>
                 </div>
 
-                <div class="processor-card">
-                    <h3>🐍 Indentation</h3>
-                    <div class="languages">Python, YAML, Haskell, F#, CoffeeScript</div>
-                    <div class="description">
-                        Reduced bracket matching (only parentheses and square brackets). Larger context window respects indentation-based structure.
-                    </div>
-                    <code>PatchProcessors.Indentation</code>
+                <div class="card card-bordered p-4">
+                    <h3 class="text-lg font-semibold mb-2">🔒 Strict</h3>
+                    <p class="text-sm text-secondary mb-3">Maximum precision. No fuzzy matching or snippet patching. Requires exact line matches with 5 lines of context.</p>
+                    <code class="text-xs text-accent bg-elevated px-2 py-1 rounded">PatchProcessors.Strict</code>
                 </div>
 
-                <div class="processor-card">
-                    <h3>📝 Markdown</h3>
-                    <div class="languages">Markdown, reStructuredText, plain text, documentation</div>
-                    <div class="description">
-                        Disables bracket matching with more lenient fuzzy matching. Ideal for natural language content and documentation.
-                    </div>
-                    <code>PatchProcessors.Markdown</code>
+                <div class="card card-bordered p-4">
+                    <h3 class="text-lg font-semibold mb-2">🍃 Lenient</h3>
+                    <p class="text-sm text-secondary mb-3">Maximum flexibility for heavily modified codebases. Very lenient thresholds and minimal context requirements.</p>
+                    <code class="text-xs text-accent bg-elevated px-2 py-1 rounded">PatchProcessors.Lenient</code>
                 </div>
 
-                <div class="processor-card">
-                    <h3>🏷️ Markup</h3>
-                    <div class="languages">HTML, XML, SVG, XAML</div>
-                    <div class="description">
-                        Specialized angle bracket matching with higher weight for tags. Smaller context window optimized for markup languages.
-                    </div>
-                    <code>PatchProcessors.Markup</code>
+                <div class="card card-bordered p-4">
+                    <h3 class="text-lg font-semibold mb-2">🐍 Python</h3>
+                    <p class="text-sm text-secondary mb-3">Specialized for indentation-sensitive languages like Python and YAML. Preserves leading whitespace exactly.</p>
+                    <code class="text-xs text-accent bg-elevated px-2 py-1 rounded">PatchProcessors.Python</code>
                 </div>
 
-                <div class="processor-card">
-                    <h3>🔮 Lisp</h3>
-                    <div class="languages">Lisp, Scheme, Clojure, Racket</div>
-                    <div class="description">
-                        Heavy parenthesis tracking with triple weight. Optimized for deeply nested S-expressions.
-                    </div>
-                    <code>PatchProcessors.Lisp</code>
+                <div class="card card-bordered p-4">
+                    <h3 class="text-lg font-semibold mb-2">⚛️ Thermodynamic</h3>
+                    <p class="text-sm text-secondary mb-3">Physics-based matching using DNA-binding principles. Calculates optimal alignment via binding energy.</p>
+                    <code class="text-xs text-accent bg-elevated px-2 py-1 rounded">PatchProcessors.Thermodynamic</code>
                 </div>
 
-                <div class="processor-card">
-                    <h3>🔚 EndBased</h3>
-                    <div class="languages">Ruby, Lua, VB.NET, Pascal</div>
-                    <div class="description">
-                        Supports optional braces with equal weight for all bracket types. Larger context window for block-end languages.
-                    </div>
-                    <code>PatchProcessors.EndBased</code>
+                <div class="card card-bordered p-4">
+                    <h3 class="text-lg font-semibold mb-2">🔄 FullReplacement</h3>
+                    <p class="text-sm text-secondary mb-3">Simple full-file replacement. Ideal for creating new files or complete rewrites where patching is unnecessary.</p>
+                    <code class="text-xs text-accent bg-elevated px-2 py-1 rounded">PatchProcessors.FullReplacement</code>
                 </div>
-
-                <div class="processor-card">
-                    <h3>🗃️ SQL</h3>
-                    <div class="languages">SQL, PL/SQL, T-SQL, PostgreSQL</div>
-                    <div class="description">
-                        Parenthesis-only bracket matching with stricter fuzzy matching for database query languages.
-                    </div>
-                    <code>PatchProcessors.SQL</code>
-                </div>
-
-                <div class="processor-card">
-                    <h3>📊 DataFormat</h3>
-                    <div class="languages">JSON, TOML, HOCON</div>
-                    <div class="description">
-                        Curly and square bracket tracking with higher weights. <strong>Disables fuzzy matching</strong> for data integrity.
-                    </div>
-                    <code>PatchProcessors.DataFormat</code>
-                </div>
-
-                <div class="processor-card">
-                    <h3>💻 Shell</h3>
-                    <div class="languages">Bash, Zsh, Fish, PowerShell</div>
-                    <div class="description">
-                        Full bracket support with fuzzy matching enabled. Standard context window for shell scripts.
-                    </div>
-                    <code>PatchProcessors.Shell</code>
-                </div>
-
-                <div class="processor-card">
-                    <h3>⚙️ Config</h3>
-                    <div class="languages">INI, properties, .env, .conf files</div>
-                    <div class="description">
-                        No bracket matching with fuzzy matching enabled. Minimal context for configuration files.
-                    </div>
-                    <code>PatchProcessors.Config</code>
-                </div>
-            </div>
-        </section>
-
-        <!-- Behavior-Specific Processors -->
-        <section>
-            <div class="section-header">
-                <h2>Behavior-Specific Processors</h2>
-                <p>Choose based on your precision vs. flexibility requirements.</p>
-            </div>
-
-            <div class="panel" style="margin-bottom: var(--space-4);">
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Processor</th>
-                            <th>Fuzzy Matching</th>
-                            <th>Snippet Patching</th>
-                            <th>Context Size</th>
-                            <th>Best For</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>Strict</code></td>
-                            <td><span class="cross" aria-label="Disabled">✗</span> Disabled</td>
-                            <td><span class="cross" aria-label="Disabled">✗</span> Disabled</td>
-                            <td>5 lines</td>
-                            <td>Critical production code, security-sensitive files</td>
-                        </tr>
-                        <tr>
-                            <td><code>Fuzzy</code></td>
-                            <td><span class="check" aria-label="Enabled">✓</span> Balanced (÷4)</td>
-                            <td><span class="check" aria-label="Enabled">✓</span> 80% threshold</td>
-                            <td>3 lines</td>
-                            <td>General-purpose patching, default recommendation</td>
-                        </tr>
-                        <tr>
-                            <td><code>Lenient</code></td>
-                            <td><span class="check" aria-label="Enabled">✓</span> Very lenient (÷2)</td>
-                            <td><span class="check" aria-label="Enabled">✓</span> 60% threshold</td>
-                            <td>2 lines</td>
-                            <td>Heavily modified codebases, rapid prototyping</td>
-                        </tr>
-                    </tbody>
-                </table>
             </div>
         </section>
 
@@ -704,39 +279,63 @@ val result = processor.patch(sourceCode, patchText)</code></pre>
                 <!-- How It Works Tab -->
                 <div class="tab-panel active" data-tab-panel="how-it-works" role="tabpanel" aria-labelledby="tab-how-it-works">
                     <div class="section-header">
-                        <h3>Key Innovations</h3>
-                        <p>What makes FuzzyPatchMatcher different from traditional diff/patch tools.</p>
+                        <h3 class="text-subheading">10 Key Innovations</h3>
+                        <p class="text-secondary">What makes Cognotik's patching system different from traditional diff/patch tools.</p>
                     </div>
 
                     <div class="innovations">
                         <div class="innovation-card">
                             <h4>1. Bidirectional Line Linking</h4>
-                            <p>Creates a doubly-linked list of lines with forward and backward references, enabling context-aware matching and bidirectional traversal.</p>
+                            <p>Lines know their neighbors, enabling context-aware matching and bidirectional traversal during the alignment phase.</p>
                         </div>
 
                         <div class="innovation-card">
                             <h4>2. Multi-Phase Matching</h4>
-                            <p>Three-phase approach: Unique line matching → Adjacent line propagation → Recursive subsequence linking. Adapts to code structure organically.</p>
+
+
+
+
+                            <p>Unique line matching → Adjacent line propagation → Recursive subsequence linking. Adapts to code structure organically.</p>
                         </div>
 
                         <div class="innovation-card">
-                            <h4>3. Structural Awareness</h4>
-                            <p>Tracks bracket nesting depth with weighted scoring. Provides semantic context beyond text matching—distinguishes similar lines in different scopes.</p>
+                            <h4>3. Adaptive Fuzzy Matching</h4>
+                            <p>Levenshtein distance with structural type checking and adaptive thresholds that scale with line length.</p>
                         </div>
 
                         <div class="innovation-card">
-                            <h4>4. Intelligent Fuzzy Matching</h4>
-                            <p>Levenshtein distance with structural type checking. Adaptive thresholds scale with line length. Prevents false positives on short lines.</p>
+                            <h4>4. Snippet Patching</h4>
+                            <p>Handles AI-generated code blocks without explicit diff markers using a three-tier matching strategy.</p>
                         </div>
 
                         <div class="innovation-card">
-                            <h4>5. Snippet Patching</h4>
-                            <p>Handles AI-generated code blocks without explicit diff markers. Three-tier matching: exact → anchor → fuzzy with graceful degradation.</p>
+                            <h4>5. Move Detection</h4>
+                            <p>Identifies relocated code blocks by detecting order inversions, representing them as clean delete + add operations.</p>
                         </div>
 
                         <div class="innovation-card">
-                            <h4>6. Move Detection</h4>
-                            <p>Detects when lines have been moved (not just added/deleted) by comparing the ordering of matched lines between source and patch.</p>
+                            <h4>6. Intelligent Context Management</h4>
+                            <p>Truncates large context blocks with ellipsis while preserving critical lines before and after changes.</p>
+                        </div>
+
+                        <div class="innovation-card">
+                            <h4>7. No-op Annihilation</h4>
+                            <p>Cleans up redundant DELETE/ADD pairs where the content remains identical after processing.</p>
+                        </div>
+
+                        <div class="innovation-card">
+                            <h4>8. Thermodynamic Alternative</h4>
+                            <p>Physics-based matching for specialized scenarios where traditional string matching fails.</p>
+                        </div>
+
+                        <div class="innovation-card">
+                            <h4>9. Language-Specific Support</h4>
+                            <p>Dedicated processors for indentation-sensitive languages like Python and YAML.</p>
+                        </div>
+
+                        <div class="innovation-card">
+                            <h4>10. Validation Integration</h4>
+                            <p>Seamlessly integrates with grammar validation to ensure patches don't introduce syntax errors.</p>
                         </div>
                     </div>
                 </div>
@@ -751,34 +350,20 @@ val result = processor.patch(sourceCode, patchText)</code></pre>
                         <pre><code class="language-kotlin">// FuzzyPatchMatcher Configuration Options
 
 val processor = FuzzyPatchMatcher(
-    // Number of context lines to preserve around changes
-    contextSize = 3,
 
-    // Levenshtein distance threshold = lineLength / divisor
-    // Lower = stricter matching, Higher = more lenient
-    levenshteinThresholdDivisor = 4,
 
-    // Minimum line length to apply fuzzy matching
-    // Prevents false positives on short lines
-    minLineLengthForFuzzyMatch = 5,
 
-    // Threshold for snippet matching (0.0 - 1.0)
-    // null disables snippet patching
-    snippetMatchThreshold = 0.8,
 
-    // Require first/last lines to match for snippet patching
-    requireAnchorMatch = true,
 
-    // Characters to track for structural awareness
-    bracketChars = setOf('(', ')', '{', '}', '[', ']'),
 
-    // Weights for bracket depth calculation
-    // Higher weight = more important for matching
-    bracketWeights = mapOf(
-        '{' to 2, '}' to 2,  // Curly braces weighted higher
-        '(' to 1, ')' to 1,
-        '[' to 1, ']' to 1
-    )
+    contextSize = 3,                              // Context lines before/after changes
+    maxRecursionDepth = 100,                      // Max recursion in subsequence linking
+    levenshteinThresholdDivisor = 4,              // Stricter = higher value
+    minLineLengthForFuzzyMatch = 5,               // Min length for fuzzy matching
+    enableFuzzyMatching = true,                   // Enable Levenshtein matching
+    enableSnippetPatching = true,                 // Enable snippet application
+    snippetMatchThreshold = 0.8,                  // Min match % for snippets
+    requireAnchorMatch = true                     // Require first/last line match
 )</code></pre>
                     </div>
 
@@ -787,19 +372,17 @@ val processor = FuzzyPatchMatcher(
                             <span class="code-lang">kotlin</span>
                             <button class="copy-btn" aria-label="Copy code to clipboard">Copy</button>
                         </div>
-                        <pre><code class="language-kotlin">// Using pre-configured processors
 
-// For Java/Kotlin code
-val result = PatchProcessors.CStyle.processor.patch(source, patch)
 
-// For Python code
-val result = PatchProcessors.Indentation.processor.patch(source, patch)
 
-// For maximum precision
-val result = PatchProcessors.Strict.processor.patch(source, patch)
 
-// For maximum flexibility
-val result = PatchProcessors.Lenient.processor.patch(source, patch)</code></pre>
+                        <pre><code class="language-kotlin">// ThermodynamicPatchMatcher Configuration
+val thermoProcessor = ThermodynamicPatchMatcher(
+    temperature = 1.0,                         // Matching stringency
+    cooperativityBonus = 2.0,                  // Bonus for adjacent matches
+    entropyPenalty = 1.0,                      // Energy cost per gap
+    contextSize = 3
+)</code></pre>
                     </div>
                 </div>
 
@@ -810,27 +393,24 @@ val result = PatchProcessors.Lenient.processor.patch(source, patch)</code></pre>
                             <span class="code-lang">kotlin</span>
                             <button class="copy-btn" aria-label="Copy code to clipboard">Copy</button>
                         </div>
-                        <pre><code class="language-kotlin">// Integration with Cognotik Task Planning
 
-class CodeModificationTask(
-    private val processor: PatchProcessor = PatchProcessors.CStyle.processor
-) : AbstractTask() {
 
-    override fun execute(context: TaskContext): TaskResult {
-        val sourceFile = context.getFile("target.kt")
-        val aiPatch = context.getAIResponse()
 
-        // Apply the patch with fuzzy matching
-        val modifiedCode = processor.patch(
-            sourceFile.readText(),
-            aiPatch
-        )
 
-        // Write back the modified code
-        sourceFile.writeText(modifiedCode)
 
-        return TaskResult.success("Code modified successfully")
-    }
+                        <pre><code class="language-kotlin">// High-level API with SimpleDiffApplier
+val applier = SimpleDiffApplier()
+val result = applier.apply(
+    originalCode = sourceCode,
+    response = aiMarkdownResponse,
+    filename = "Service.kt",
+    processor = PatchProcessors.Fuzzy
+)
+
+if (result.isValid) {
+    println("Patched successfully: ${result.newCode}")
+} else {
+    result.errors.forEach { println("Error: ${it.message}") }
 }</code></pre>
                     </div>
 
@@ -839,64 +419,48 @@ class CodeModificationTask(
                             <span class="code-lang">kotlin</span>
                             <button class="copy-btn" aria-label="Copy code to clipboard">Copy</button>
                         </div>
-                        <pre><code class="language-kotlin">// Generating diffs for review
 
-val processor = PatchProcessors.Fuzzy.processor
 
-// Generate a diff between two versions
-val diff = processor.generateDiff(originalCode, modifiedCode)
 
-// The diff includes:
-// - Context lines (unchanged)
-// - Added lines (prefixed with +)
-// - Deleted lines (prefixed with -)
-// - Ellipsis markers for truncated context
 
-println(diff)
-// Output:
-//  fun calculate() {
-// -    return x + y
-// +    return x + y + z
-//  }</code></pre>
+                        <pre><code class="language-kotlin">// Basic Patch Generation
+val processor = PatchProcessors.Fuzzy
+val patch = processor.generatePatch(oldCode, newCode)
+
+/* Output:
+  fun hello() {
+-     return 1
++     return 2
+  }
+*/</code></pre>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- CTA Section -->
-        <section class="panel cta-section">
-            <h2>Ready to Get Started?</h2>
-            <p>
-                PatchProcessor is part of the Cognotik core library. Explore the source code or integrate it into your AI-assisted development workflow.
+        <section class="panel cta-section bg-elevated border-subtle">
+            <h2 class="text-heading">Ready to Get Started?</h2>
+            <p class="text-secondary">
+                PatchProcessor is part of the Cognotik core library. Explore the source code on GitHub or read the full technical documentation.
             </p>
             <div class="cta-actions">
-                <a href="https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/diff" class="btn btn-primary">
+                <a href="https://github.com/SimiaCryptus/Cognotik" class="btn btn-primary">
                     View Source Code →
                 </a>
-                <a href="/docs/patch-processors" class="btn btn-secondary">
+                <a href="https://github.com/SimiaCryptus/Cognotik/blob/main/docs/patch_processors.md" class="btn btn-secondary">
                     Read Documentation
                 </a>
             </div>
         </section>
     </main>
 
-    <!-- Footer -->
-    <footer class="site-footer">
-        <div class="footer-container">
-            <div class="footer-copyright">
-                © 2024 Cognotik. Collaborative Intelligence for Software Development.
-            </div>
-            <nav class="footer-links" aria-label="Footer navigation">
-                <a href="https://github.com/SimiaCryptus/Cognotik">GitHub</a>
-                <a href="/docs">Documentation</a>
-            </nav>
-        </div>
-    </footer>
+    <!-- Footer Component -->
+    <cognotik-footer></cognotik-footer>
 
-    <!-- Prism.js for syntax highlighting -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-diff.min.js"></script>
+    <!-- Core Scripts -->
+    <script type="module" src="assets/scripts/core.js"></script>
+    <script src="assets/scripts/vendor/prism.js"></script>
 
     <!-- Tab functionality -->
     <script>

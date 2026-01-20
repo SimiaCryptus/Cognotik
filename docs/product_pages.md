@@ -52,10 +52,10 @@ related: ../site/cognotik.com/assets/styles/main.css
     <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
 
     <!-- Favicon Suite -->
-    <link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#0f1115">
 
@@ -85,12 +85,12 @@ related: ../site/cognotik.com/assets/styles/main.css
     <cognotik-footer></cognotik-footer>
 
     <!-- Core Scripts -->
-    <script type="module" src="/assets/scripts/core.js"></script>
-    <script type="module" src="/assets/scripts/components/header.js"></script>
-    <script type="module" src="/assets/scripts/components/footer.js"></script>
+    <script type="module" src="assets/scripts/core.js"></script>
+    <script type="module" src="assets/scripts/components/header.js"></script>
+    <script type="module" src="assets/scripts/components/footer.js"></script>
 
     <!-- Syntax Highlighting -->
-    <script src="/assets/scripts/vendor/prism.js"></script>
+    <script src="assets/scripts/vendor/prism.js"></script>
 </body>
 </html>
 ```
@@ -339,7 +339,7 @@ class CognotikHeader extends HTMLElement {
             <header class="site-header">
                 <div class="header-container">
                     <a href="/" class="logo">
-                        <img src="/assets/images/logos/cognotik-mark.svg" alt="Cognotik" width="32" height="32">
+                        <img src="assets/images/logos/cognotik-mark.svg" alt="Cognotik" width="32" height="32">
                         <span class="logo-text">Cognotik</span>
                     </a>
                     <nav class="main-nav">
@@ -597,13 +597,13 @@ val config = OrchestrationConfig(
 </style>
 
 <!-- Defer non-critical CSS -->
-<link rel="preload" href="/assets/styles/components.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" href="assets/styles/components.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
 
 <!-- Lazy load images below fold -->
 <img src="placeholder.svg" data-src="actual-image.webp" loading="lazy" alt="Description">
 
 <!-- Defer non-critical scripts -->
-<script defer src="/assets/scripts/analytics.js"></script>
+<script defer src="assets/scripts/analytics.js"></script>
 ```
 
 ### Performance Budget
