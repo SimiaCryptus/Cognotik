@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.input.isDocumentFile
+import com.simiacryptus.cognotik.docs.isDocumentFile
 import java.io.File
 import java.io.InputStream
 import java.nio.file.Path

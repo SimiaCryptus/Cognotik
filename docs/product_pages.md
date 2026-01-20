@@ -1,5 +1,6 @@
 ---
 specifies: ../site/cognotik.com/*.html
+related: ../site/cognotik.com/assets/styles/main.css
 ---
 
 # Cognotik Product Site Standards & Best Practices

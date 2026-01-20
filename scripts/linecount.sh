@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+echo 'FIX ME!'
+exit 1
 # Provides a directory tree with per-file line counts and totals per directory (cascaded).
 traverse() {
     local dir="$1"

@@ -1,210 +1,103 @@
-# Kotlin Diff Utilities Package Documentation
+# Diff and Patch Utilities
 
-## Overview
+The `com.simiacryptus.cognotik.diff` package provides a suite of robust tools for generating and applying text patches. It is specifically designed to handle the challenges of working with Large Language Models (LLMs), which may produce patches with minor inaccuracies, missing context, or unconventional formatting.
 
-The `com.simiacryptus.diff` package provides a comprehensive set of utilities for generating, displaying, and applying
-differences (diffs) between text files. This package is particularly useful for code editing applications, version
-control systems, and collaborative development environments where tracking and applying changes is essential.
+## Key Features
 
-The package includes several key components:
-
-- Diff generation and formatting utilities
-- Patch application tools
-- Interactive UI components for applying diffs
-- Support for both line-by-line and character-level diff operations
+*   **Fuzzy Matching:** Uses Levenshtein distance to match lines even when context or formatting has slightly changed.
+*   **Snippet Patching:** Can apply code blocks directly without standard diff markers by finding the best fit in the source.
+*   **Thermodynamic Alignment:** An experimental matcher inspired by DNA binding principles for high-precision alignment.
+*   **Language-Specific Logic:** Specialized handling for Python and YAML where indentation is significant.
+*   **Validation Integration:** Built-in support for validating patched code using grammar and syntax checkers.
+*   **Moved Line Detection:** Identifies blocks of code that have been relocated within a file.
 
 ## Core Components
 
-### DiffUtil
+### `PatchProcessor`
+The central interface for all patching logic. It defines methods for:
+*   `generatePatch(oldCode, newCode)`: Creates a diff string.
+*   `applyPatch(source, patch)`: Applies a diff string to source text.
+*   `extractCodeBlocks(response)`: Parses markdown responses to find patches.
 
-`DiffUtil` is the central class for generating and formatting differences between text files.
+### `FuzzyPatchMatcher`
+The most versatile processor. It employs a multi-pass linking strategy:
+1.  **Exact Unique Anchors:** Links lines that appear exactly once in both versions.
+2.  **Adjacent Expansion:** Grows matches outward from anchors.
+3.  **Subsequence Linking:** Recursively finds similarities in remaining blocks.
+4.  **Fuzzy Logic:** Uses Levenshtein distance thresholds to bridge minor differences.
+
+### `ThermodynamicPatchMatcher`
+Treats patching as a molecular binding problem. It calculates "binding energy" between lines and seeks the lowest free energy configuration. This is particularly effective for complex alignments where traditional algorithms might struggle.
+
+### `PythonPatcher`
+A specialized version of the fuzzy matcher that preserves leading whitespace, ensuring that Python and YAML indentation remains intact during the patching process.
+
+### `PatchProcessors` (Enum)
+Provides pre-configured instances for common use cases:
+*   **`Fuzzy`**: Balanced configuration for general use.
+*   **`Strict`**: Exact matching only, no fuzzy logic.
+*   **`Lenient`**: High tolerance for differences and lower thresholds for snippet matching.
+*   **`Python`**: Optimized for indentation-sensitive code.
+*   **`Thermodynamic`**: Physics-based alignment.
+*   **`FullReplacement`**: Simply replaces the entire file content.
+
+### `SimpleDiffApplier`
+A high-level utility that:
+1.  Extracts diff blocks from an LLM response.
+2.  Applies them sequentially using a `PatchProcessor`.
+3.  Validates the result using `GrammarValidator` (e.g., checking Kotlin syntax or parenthesis matching).
+
+## Usage Examples
+
+### Basic Patching with Fuzzy Matcher
 
 ```kotlin
+val matcher = PatchProcessors.Fuzzy
+val oldCode = "..."
+val newCode = "..."
 
+// Generate a patch
+val patch = matcher.generatePatch(oldCode, newCode)
+
+// Apply a patch
+val result = matcher.applyPatch(oldCode, patch)
 ```
 
-#### Key Features:
-
-- Generates a list of `PatchLine` objects representing differences between original and modified texts
-- Categorizes changes as additions, deletions, or unchanged lines
-- Formats diffs with proper context for readability
-- Provides detailed logging for debugging and analysis
-
-#### Example Usage:
+### Applying Patches from LLM Responses
 
 ```kotlin
-val original = File("original.txt").readLines()
-val modified = File("modified.txt").readLines()
-val diff = DiffUtil.generateDiff(original, modified)
-val formattedDiff = DiffUtil.formatDiff(diff)
-println(formattedDiff)
-```
+val applier = SimpleDiffApplier()
+val response = """
+    Here is the fix:
+    ```diff
+    - old line
+    + new line
+    ```
+"""
 
-### PatchLine and PatchLineType
-
-These data structures represent individual lines in a diff:
-
-```kotlin
-
-
-
-```
-
-### PatchResult
-
-`PatchResult` encapsulates the outcome of applying a patch:
-
-```kotlin
-
-```
-
-### ApxPatchUtil
-
-`ApxPatchUtil` provides approximate patching capabilities, useful when exact matches aren't possible:
-
-```kotlin
-
-```
-
-#### Key Features:
-
-- Handles fuzzy matching for more flexible patch application
-- Uses Levenshtein distance to find similar lines when exact matches aren't available
-- Provides context-aware patching for better results
-
-### DiffMatchPatch
-
-`DiffMatchPatch` is a port of Google's diff-match-patch library, offering character-level diff operations:
-
-```kotlin
-
-```
-
-#### Key Features:
-
-- Character-level diff generation
-- Semantic cleanup to produce more meaningful diffs
-- Patch creation and application
-- Support for fuzzy matching
-
-## UI Integration Components
-
-### AddApplyDiffLinks
-
-`AddApplyDiffLinks` enhances markdown content by adding interactive UI elements for applying diffs:
-
-```kotlin
-
-```
-
-#### Key Features:
-
-- Parses markdown content to identify diff blocks
-- Adds interactive buttons to apply diffs
-- Provides preview functionality to see the result before applying
-- Supports automatic application of diffs when configured
-
-### AddApplyFileDiffLinks
-
-`AddApplyFileDiffLinks` extends the functionality to work with file systems:
-
-```kotlin
-
-```
-
-#### Key Features:
-
-- Works with file paths to apply diffs to actual files
-- Provides file-specific UI elements for diff application
-- Supports automatic application of diffs to files
-- Includes verification and preview capabilities
-- Offers "bottom-to-top" application for special cases
-- Provides revert functionality to undo changes
-
-## Advanced Features
-
-### Iterative Patching
-
-The package includes `IterativePatchUtil` (documented separately) which provides a sophisticated algorithm for
-generating and applying patches between two versions of textual content. This utility is particularly useful for
-handling complex code changes while maintaining structural integrity.
-
-Key capabilities include:
-
-- Bracket nesting awareness
-- Context-sensitive patching
-- Intelligent line linking between versions
-- Handling of moved code blocks
-
-### Diff Validation
-
-The package includes validation capabilities to ensure that applied diffs result in valid code:
-
-- Syntax validation for various programming languages
-- Error reporting with line numbers and descriptions
-- Preview functionality to check results before applying changes
-
-### Fuzzy Matching
-
-For situations where exact matches aren't possible, the package provides fuzzy matching capabilities:
-
-- Levenshtein distance calculations for finding similar lines
-- Configurable threshold for match acceptance
-- Special handling for whitespace and formatting differences
-
-## Integration Examples
-
-### Basic Diff Generation and Application
-
-```kotlin
-
-val original = "function add(a, b) {\n  return a + b;\n}"
-val modified = "function add(a, b) {\n  const sum = a + b;\n  return sum;\n}"
-val patchLines = DiffUtil.generateDiff(original.lines(), modified.lines())
-val formattedDiff = DiffUtil.formatDiff(patchLines)
-
-val result = ApxPatchUtil.patch(original, formattedDiff)
-```
-
-### Interactive UI Integration
-
-```kotlin
-
-val enhancedMarkdown = AddApplyDiffLinks.addApplyDiffLinks(
-    socketManager,
-    { currentCode },
-    markdownWithDiffs,
-    { newCode -> updateCodeFile(newCode) },
-    currentTask,
-    uiInterface
+val result = applier.apply(
+    originalCode = sourceCode,
+    response = response,
+    filename = "MyFile.kt",
+    processor = PatchProcessors.Fuzzy
 )
+
+if (result.isValid) {
+    println("Successfully patched: ${result.newCode}")
+} else {
+    result.errors.forEach { println("Validation error: ${it.message}") }
+}
 ```
 
-### File-Based Diff Application
+## Configuration
 
-```kotlin
+The `FuzzyPatchMatcher` can be tuned with several parameters:
+*   `contextSize`: Number of lines around changes (default: 3).
+*   `levenshteinThresholdDivisor`: Controls fuzzy matching stringency (default: 4).
+*   `snippetMatchThreshold`: Minimum similarity for snippet application (default: 0.8).
+*   `enableFuzzyMatching`: Toggle for fuzzy logic.
 
-val enhancedMarkdown = AddApplyFileDiffLinks.instrumentFileDiffs(
-    socketManager,
-    projectRoot,
-    markdownWithFileDiffs,
-    { fileChanges -> applyFileChanges(fileChanges) },
-    uiInterface,
-    apiClient,
-    { path -> shouldAutoApplyToFile(path) }
-)
-```
-
-## Best Practices
-
-1. **Validation Before Application**: Always validate patches before applying them to important code.
-2. **Context Preservation**: Use appropriate context line settings to ensure diffs have sufficient context.
-3. **Error Handling**: Implement proper error handling for cases where patches cannot be applied cleanly.
-4. **Backup Original**: Keep a backup of the original text before applying patches.
-5. **UI Feedback**: Provide clear feedback to users about the success or failure of patch applications.
-
-## Conclusion
-
-The `com.simiacryptus.diff` package provides a robust set of tools for working with text differences and patches. From
-low-level diff generation to high-level UI integration, this package offers comprehensive support for implementing
-diff-related functionality in Kotlin applications.
+The `ThermodynamicPatchMatcher` parameters include:
+*   `temperature`: Controls tolerance for mismatches.
+*   `cooperativityBonus`: Rewards contiguous matches.
+*   `entropyPenalty`: Penalizes gaps and insertions.

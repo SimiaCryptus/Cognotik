@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -33,6 +32,7 @@
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
 
     <!-- Prism.js for syntax highlighting -->
@@ -54,17 +54,20 @@
         }
 
         .page-header h1 {
+            font-family: var(--font-display);
             font-size: var(--text-4xl);
             margin-bottom: var(--space-2);
             display: flex;
             align-items: center;
             gap: var(--space-3);
+            flex-wrap: wrap;
         }
 
         .page-header .subtitle {
             color: var(--text-secondary);
             font-size: var(--text-lg);
             max-width: 700px;
+            line-height: 1.6;
         }
 
         .badge {
@@ -121,6 +124,14 @@
             font-size: var(--text-sm);
             color: var(--text-secondary);
         }
+        .panel-icon {
+            font-size: 1.2em;
+        }
+        .panel-title {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
 
         .panel-body {
             padding: var(--space-4);
@@ -131,6 +142,7 @@
         .panel-body pre {
             margin: 0;
             font-size: var(--text-sm);
+            line-height: 1.6;
         }
 
         /* Processor Grid */
@@ -171,6 +183,7 @@
             font-size: var(--text-sm);
             color: var(--text-secondary);
             line-height: 1.5;
+            margin-bottom: var(--space-3);
         }
 
         .processor-card code {
@@ -191,6 +204,7 @@
             gap: var(--space-1);
             border-bottom: 1px solid var(--border-subtle);
             margin-bottom: var(--space-4);
+            overflow-x: auto;
         }
 
         .tab-btn {
@@ -204,6 +218,7 @@
             border-bottom: 2px solid transparent;
             margin-bottom: -1px;
             transition: all var(--transition-fast);
+            white-space: nowrap;
         }
 
         .tab-btn:hover {
@@ -214,6 +229,11 @@
             color: var(--accent-primary);
             border-bottom-color: var(--accent-primary);
         }
+        .tab-btn:focus-visible {
+            outline: 2px solid var(--accent-primary);
+            outline-offset: 2px;
+        }
+
 
         .tab-panel {
             display: none;
@@ -221,6 +241,11 @@
 
         .tab-panel.active {
             display: block;
+            animation: fadeIn var(--transition-base);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         /* Innovation Section */
@@ -256,9 +281,16 @@
         }
 
         .section-header h2 {
+            font-family: var(--font-display);
             font-size: var(--text-2xl);
             margin-bottom: var(--space-2);
         }
+        .section-header h3 {
+            font-family: var(--font-display);
+            font-size: var(--text-xl);
+            margin-bottom: var(--space-2);
+        }
+
 
         .section-header p {
             color: var(--text-secondary);
@@ -287,6 +319,7 @@
             font-size: var(--text-xs);
             color: var(--text-tertiary);
             text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .copy-btn {
@@ -304,6 +337,15 @@
             background: var(--bg-hover);
             color: var(--text-primary);
         }
+        .copy-btn:focus-visible {
+            outline: 2px solid var(--accent-primary);
+            outline-offset: 2px;
+        }
+        .copy-btn.copied {
+            color: var(--accent-secondary);
+            border-color: var(--accent-secondary);
+        }
+
 
         /* Comparison Table */
         .comparison-table {
@@ -340,6 +382,91 @@
         .cross {
             color: var(--text-tertiary);
         }
+        /* CTA Section */
+        .cta-section {
+            text-align: center;
+            padding: var(--space-8);
+        }
+        .cta-section h2 {
+            font-family: var(--font-display);
+            margin-bottom: var(--space-4);
+        }
+        .cta-section p {
+            color: var(--text-secondary);
+            margin-bottom: var(--space-6);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .cta-actions {
+            display: flex;
+            gap: var(--space-4);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-3) var(--space-6);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            text-decoration: none;
+            transition: all var(--transition-fast);
+        }
+        .btn-primary {
+            background: var(--accent-primary);
+            color: var(--bg-app);
+        }
+        .btn-primary:hover {
+            background: #79b8ff;
+            text-decoration: none;
+        }
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-default);
+            text-decoration: none;
+        }
+        .btn:focus-visible {
+            outline: 2px solid var(--accent-primary);
+            outline-offset: 2px;
+        }
+        /* Footer */
+        .site-footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: var(--space-8) var(--space-4);
+            margin-top: var(--space-8);
+        }
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--space-4);
+        }
+        .footer-copyright {
+            color: var(--text-tertiary);
+            font-size: var(--text-sm);
+        }
+        .footer-links {
+            display: flex;
+            gap: var(--space-6);
+        }
+        .footer-links a {
+            color: var(--text-secondary);
+            font-size: var(--text-sm);
+            transition: color var(--transition-fast);
+        }
+        .footer-links a:hover {
+            color: var(--text-primary);
+        }
     </style>
 </head>
 <body>
@@ -361,11 +488,11 @@
         </header>
 
         <!-- Reality Check: Config → Output -->
-        <section class="reality-check">
+        <section class="reality-check" aria-label="Configuration and Output Example">
             <div class="panel">
                 <div class="panel-header">
-                    <span>⚙️</span>
-                    <span>Configuration</span>
+                    <span class="panel-icon" aria-hidden="true">⚙️</span>
+                    <span class="panel-title">Configuration</span>
                 </div>
                 <div class="panel-body">
                     <pre><code class="language-kotlin">// Select a processor for your language
@@ -388,18 +515,21 @@ val result = processor.patch(sourceCode, patchText)</code></pre>
             </div>
             <div class="panel">
                 <div class="panel-header">
-                    <span>📤</span>
-                    <span>Output</span>
+                    <span class="panel-icon" aria-hidden="true">📤</span>
+                    <span class="panel-title">Output</span>
                 </div>
                 <div class="panel-body">
                     <pre><code class="language-diff">// Source (with minor variations)
  fun calculateTotal(items: List&lt;Item&gt;) {
 -    var total = 0
 +    var total = 0.0
+    var total = 0.0
      for (item in items) {
 -        total += item.price
 +        total += item.price * item.quantity
+        total += item.price * item.quantity
      }
+    return total.roundToTwoDecimals()
 +    return total.roundToTwoDecimals()
  }
 
@@ -532,22 +662,22 @@ val result = processor.patch(sourceCode, patchText)</code></pre>
                     <tbody>
                         <tr>
                             <td><code>Strict</code></td>
-                            <td><span class="cross">✗</span> Disabled</td>
-                            <td><span class="cross">✗</span> Disabled</td>
+                            <td><span class="cross" aria-label="Disabled">✗</span> Disabled</td>
+                            <td><span class="cross" aria-label="Disabled">✗</span> Disabled</td>
                             <td>5 lines</td>
                             <td>Critical production code, security-sensitive files</td>
                         </tr>
                         <tr>
                             <td><code>Fuzzy</code></td>
-                            <td><span class="check">✓</span> Balanced (÷4)</td>
-                            <td><span class="check">✓</span> 80% threshold</td>
+                            <td><span class="check" aria-label="Enabled">✓</span> Balanced (÷4)</td>
+                            <td><span class="check" aria-label="Enabled">✓</span> 80% threshold</td>
                             <td>3 lines</td>
                             <td>General-purpose patching, default recommendation</td>
                         </tr>
                         <tr>
                             <td><code>Lenient</code></td>
-                            <td><span class="check">✓</span> Very lenient (÷2)</td>
-                            <td><span class="check">✓</span> 60% threshold</td>
+                            <td><span class="check" aria-label="Enabled">✓</span> Very lenient (÷2)</td>
+                            <td><span class="check" aria-label="Enabled">✓</span> 60% threshold</td>
                             <td>2 lines</td>
                             <td>Heavily modified codebases, rapid prototyping</td>
                         </tr>
@@ -572,7 +702,7 @@ val result = processor.patch(sourceCode, patchText)</code></pre>
 
             <div class="tabs-content">
                 <!-- How It Works Tab -->
-                <div class="tab-panel active" data-tab-panel="how-it-works" role="tabpanel">
+                <div class="tab-panel active" data-tab-panel="how-it-works" role="tabpanel" aria-labelledby="tab-how-it-works">
                     <div class="section-header">
                         <h3>Key Innovations</h3>
                         <p>What makes FuzzyPatchMatcher different from traditional diff/patch tools.</p>
@@ -612,11 +742,11 @@ val result = processor.patch(sourceCode, patchText)</code></pre>
                 </div>
 
                 <!-- Configuration Tab -->
-                <div class="tab-panel" data-tab-panel="configuration" role="tabpanel">
+                <div class="tab-panel" data-tab-panel="configuration" role="tabpanel" aria-labelledby="tab-configuration" hidden>
                     <div class="code-block">
                         <div class="code-header">
                             <span class="code-lang">kotlin</span>
-                            <button class="copy-btn">Copy</button>
+                            <button class="copy-btn" aria-label="Copy code to clipboard">Copy</button>
                         </div>
                         <pre><code class="language-kotlin">// FuzzyPatchMatcher Configuration Options
 
@@ -655,7 +785,7 @@ val processor = FuzzyPatchMatcher(
                     <div class="code-block">
                         <div class="code-header">
                             <span class="code-lang">kotlin</span>
-                            <button class="copy-btn">Copy</button>
+                            <button class="copy-btn" aria-label="Copy code to clipboard">Copy</button>
                         </div>
                         <pre><code class="language-kotlin">// Using pre-configured processors
 
@@ -674,11 +804,11 @@ val result = PatchProcessors.Lenient.processor.patch(source, patch)</code></pre>
                 </div>
 
                 <!-- Integration Tab -->
-                <div class="tab-panel" data-tab-panel="integration" role="tabpanel">
+                <div class="tab-panel" data-tab-panel="integration" role="tabpanel" aria-labelledby="tab-integration" hidden>
                     <div class="code-block">
                         <div class="code-header">
                             <span class="code-lang">kotlin</span>
-                            <button class="copy-btn">Copy</button>
+                            <button class="copy-btn" aria-label="Copy code to clipboard">Copy</button>
                         </div>
                         <pre><code class="language-kotlin">// Integration with Cognotik Task Planning
 
@@ -707,7 +837,7 @@ class CodeModificationTask(
                     <div class="code-block">
                         <div class="code-header">
                             <span class="code-lang">kotlin</span>
-                            <button class="copy-btn">Copy</button>
+                            <button class="copy-btn" aria-label="Copy code to clipboard">Copy</button>
                         </div>
                         <pre><code class="language-kotlin">// Generating diffs for review
 
@@ -734,16 +864,16 @@ println(diff)
         </section>
 
         <!-- CTA Section -->
-        <section class="panel" style="text-align: center; padding: var(--space-8);">
-            <h2 style="margin-bottom: var(--space-4);">Ready to Get Started?</h2>
-            <p style="color: var(--text-secondary); margin-bottom: var(--space-6); max-width: 600px; margin-left: auto; margin-right: auto;">
+        <section class="panel cta-section">
+            <h2>Ready to Get Started?</h2>
+            <p>
                 PatchProcessor is part of the Cognotik core library. Explore the source code or integrate it into your AI-assisted development workflow.
             </p>
-            <div style="display: flex; gap: var(--space-4); justify-content: center; flex-wrap: wrap;">
-                <a href="https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/diff" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-6); background: var(--accent-primary); color: var(--bg-app); border-radius: var(--radius-md); font-weight: 600; text-decoration: none;">
+            <div class="cta-actions">
+                <a href="https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/diff" class="btn btn-primary">
                     View Source Code →
                 </a>
-                <a href="/docs/patch-processors" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-6); background: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-weight: 600; text-decoration: none;">
+                <a href="/docs/patch-processors" class="btn btn-secondary">
                     Read Documentation
                 </a>
             </div>
@@ -751,15 +881,15 @@ println(diff)
     </main>
 
     <!-- Footer -->
-    <footer style="border-top: 1px solid var(--border-subtle); padding: var(--space-8) var(--space-4); margin-top: var(--space-8);">
-        <div style="max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-4);">
-            <div style="color: var(--text-tertiary); font-size: var(--text-sm);">
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-copyright">
                 © 2024 Cognotik. Collaborative Intelligence for Software Development.
             </div>
-            <div style="display: flex; gap: var(--space-6);">
-                <a href="https://github.com/SimiaCryptus/Cognotik" style="color: var(--text-secondary); font-size: var(--text-sm);">GitHub</a>
-                <a href="/docs" style="color: var(--text-secondary); font-size: var(--text-sm);">Documentation</a>
-            </div>
+            <nav class="footer-links" aria-label="Footer navigation">
+                <a href="https://github.com/SimiaCryptus/Cognotik">GitHub</a>
+                <a href="/docs">Documentation</a>
+            </nav>
         </div>
     </footer>
 
@@ -789,8 +919,10 @@ println(diff)
                     // Update panels
                     panels.forEach(panel => {
                         panel.classList.remove('active');
+                        panel.setAttribute('hidden', '');
                         if (panel.dataset.tabPanel === targetTab) {
                             panel.classList.add('active');
+                            panel.removeAttribute('hidden');
                         }
                     });
                 });
@@ -804,8 +936,10 @@ println(diff)
                 navigator.clipboard.writeText(codeBlock.textContent).then(() => {
                     const originalText = button.textContent;
                     button.textContent = 'Copied!';
+                    button.classList.add('copied');
                     setTimeout(() => {
                         button.textContent = originalText;
+                        button.classList.remove('copied');
                     }, 2000);
                 });
             });

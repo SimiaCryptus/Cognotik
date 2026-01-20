@@ -343,3 +343,30 @@ your productivity.
 5. **Combine actions**: Use multiple actions in sequence for complex transformations
 6. **Review AI suggestions**: Always verify generated code before applying changes
 7. **Provide feedback**: The AI learns from your interactions and improves over time
+## Technical Architecture
+The AI Coder plugin uses a hierarchical action system to provide consistent behavior and robust error handling across all features.
+### BaseAction
+The root class for all plugin actions. It provides:
+- **API Initialization**: Ensures models (Smart and Fast) are configured before execution.
+- **Performance Monitoring**: Detects and logs slow UI updates to ensure a responsive IDE experience.
+- **Error Handling**: Standardized catching and reporting of state, input, and unexpected errors.
+- **Action Logging**: Tracks user interactions for debugging and usage analytics.
+### SelectionAction
+A specialized base class for editor-based transformations.
+- **Selection Management**: Automatically handles line-based or custom selection logic, including retargeting.
+- **Guarded Blocks**: Protects the document from concurrent modifications during AI processing using range markers.
+- **Context Awareness**: Provides the AI with PSI tree information, language detection, and indentation context.
+- **Undo/Redo Support**: Integrates with the IDE's command system for seamless history management.
+### FileContextAction
+A base class for operations targeting files and directories.
+- **Background Execution**: Runs long-running tasks (like AI generation) on background threads to keep the UI responsive.
+- **File System Integration**: Handles refreshing the virtual file system after external modifications.
+- **Automatic Opening**: Can automatically open newly generated files in the editor once they appear on disk.
+- **Dev Mode**: Supports developer-only actions that are hidden unless "Dev Actions" is enabled in settings.
+
+- [Technical Architecture](#technical-architecture)
+### Symbol Graph
+**Location**: Right-click in editor/project view > AI Coder > Dev > Symbol Graph
+- Visualizes symbol relationships and dependencies within the project
+- Requires a `symbol_graph.json` file in the project root
+- Launches an interactive web interface for exploring the codebase structure

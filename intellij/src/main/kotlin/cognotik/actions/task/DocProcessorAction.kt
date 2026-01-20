@@ -3,14 +3,18 @@ package cognotik.actions.task
 import cognotik.actions.BaseAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CheckBoxList
+import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.selected
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
@@ -23,25 +27,15 @@ import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.DocProcessor
-import com.simiacryptus.cognotik.util.DocProcessor.FileMod
-import com.simiacryptus.cognotik.util.FileGenerator
-import com.simiacryptus.cognotik.util.OverwriteModes
-import com.simiacryptus.cognotik.util.SessionProxyServer
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.getModuleRootForFile
-import com.simiacryptus.cognotik.util.getSelectedFile
-import com.simiacryptus.cognotik.util.getSelectedFiles
-import com.simiacryptus.cognotik.util.getSelectedFolder
-import com.simiacryptus.cognotik.util.toJson
+import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import java.awt.Dimension
 import java.text.SimpleDateFormat
 import javax.swing.JComponent
-import kotlin.collections.set
 
 /**
  * Action that processes markdown documentation files with frontmatter specifications.
@@ -51,11 +45,33 @@ import kotlin.collections.set
  * 2. Shows a checklist dialog allowing users to select which file generation tasks to run
  * 3. Executes the selected tasks using DocProcessor infrastructure
  */
-class DocProcessorAction(
-    val mode: FileGenerator.OverwriteMode = OverwriteModes.PatchExisting,
+open class DocProcessorAction(
+    val mode: OverwriteMode = OverwriteModes.PatchExisting,
 ) : BaseAction() {
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
+    companion object {
+        /**
+         * Returns a pretty label for each overwrite mode
+         */
+        fun getModeLabel(mode: OverwriteModes): String = when (mode) {
+            OverwriteModes.SkipExisting -> "🚫 Skip Existing Files"
+            OverwriteModes.OverwriteExisting -> "🔄 Overwrite All Files"
+            OverwriteModes.OverwriteToUpdate -> "📅 Overwrite Outdated Files"
+            OverwriteModes.PatchExisting -> "🩹 Patch Existing Files"
+            OverwriteModes.PatchToUpdate -> "📝 Patch Outdated Files"
+        }
+        /**
+         * Returns a description for each overwrite mode
+         */
+        fun getModeDescription(mode: OverwriteModes): String = when (mode) {
+            OverwriteModes.SkipExisting -> "Skip files that already exist, only create new files"
+            OverwriteModes.OverwriteExisting -> "Replace all target files with newly generated content"
+            OverwriteModes.OverwriteToUpdate -> "Replace only files older than their source documentation"
+            OverwriteModes.PatchExisting -> "Apply intelligent patches to existing files"
+            OverwriteModes.PatchToUpdate -> "Apply patches only to files older than their source documentation"
+        }
+    }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
@@ -105,7 +121,7 @@ class DocProcessorAction(
                 val selectedTasks = dialog.getSelectedTasks()
                 if (selectedTasks.isNotEmpty()) {
                     UITools.runAsync(project, "Processing Documentation Tasks", true) { innerProgress ->
-                        executeTasks(docProcessor, selectedTasks)
+                        executeTasks(docProcessor, selectedTasks, dialog.autoFix)
                     }
                 }
             }
@@ -114,7 +130,8 @@ class DocProcessorAction(
 
     private fun executeTasks(
         docProcessor: DocProcessor,
-        tasks: List<FileMod>
+        tasks: List<ModificationTask>,
+        autoFix: Boolean
     ) {
         val session = Session.newGlobalID()
         DataStorage.sessionPaths[session] = docProcessor.root
@@ -126,7 +143,7 @@ class DocProcessorAction(
                 ?: throw IllegalStateException("Fast model not configured"),
             defaultImageModel = AppSettingsState.instance.imageChatModel,
             temperature = AppSettingsState.instance.temperature,
-            autoFix = false,
+            autoFix = autoFix,
             workingDir = docProcessor.root.toString(),
             shellCmd = listOf(
                 if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
@@ -141,7 +158,7 @@ class DocProcessorAction(
         val app = object : SingleTaskApp(
             applicationName = "Doc Update Processor",
             path = "/docUpdate",
-            showMenubar = false,
+            showMenubar = autoFix,
             taskType = FileModification,
             taskConfig = tasks.map { it.data },
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
@@ -162,8 +179,8 @@ class DocProcessorAction(
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Document Illustration Task",
             inputCnt = 0,
-            stickyInput = false,
-            showMenubar = false
+            stickyInput = autoFix,
+            showMenubar = autoFix
         )
         SessionProxyServer.metadataStorage.setSessionName(
             null, session, "Document Illustration @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
@@ -182,9 +199,10 @@ class DocProcessorAction(
      */
     class DocProcessorTaskDialog(
         project: Project?,
-        private val allTasks: List<FileMod>
+        private val allTasks: List<ModificationTask>
     ) : DialogWrapper(project) {
 
+        var autoFix: Boolean = true
         private val checkBoxList = CheckBoxList<TaskItem>()
         private val taskItems: List<TaskItem>
 
@@ -213,6 +231,11 @@ class DocProcessorAction(
         }
 
         override fun createCenterPanel(): JComponent = panel {
+            row {
+                checkBox("Auto-fix issues")
+                    .selected(autoFix)
+                    .onChanged { autoFix = it.isSelected }
+            }
             row {
                 label("Select which file generation tasks to execute:")
             }
@@ -260,5 +283,39 @@ class DocProcessorAction(
         ) {
             override fun toString(): String = "$displayName - $description"
         }
+    }
+}
+
+/**
+ * Action group that provides a submenu with all overwrite mode options
+ */
+class DocProcessorActionGroup : DefaultActionGroup() {
+
+    init {
+        isPopup = true
+        templatePresentation.text = "📋 Build Related"
+        templatePresentation.description = "Process markdown documentation files with frontmatter specifications"
+    }
+
+    override fun getChildren(e: AnActionEvent?): Array<AnAction> {
+        return OverwriteModes.entries.map { mode ->
+            object : DocProcessorAction(mode) {
+                init {
+                    templatePresentation.text = getModeLabel(mode)
+                    templatePresentation.description = getModeDescription(mode)
+                }
+            }
+        }.toTypedArray()
+    }
+
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
+    override fun update(e: AnActionEvent) {
+        val selectedFiles = e.getSelectedFiles()
+        val hasMarkdownFiles = selectedFiles.any { file ->
+            val fileName = file.name.lowercase()
+            fileName.endsWith(".md") || fileName.endsWith(".markdown")
+        }
+        e.presentation.isEnabledAndVisible = hasMarkdownFiles && e.project != null
     }
 }

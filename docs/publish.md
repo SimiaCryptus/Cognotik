@@ -1,3 +1,8 @@
+---
+documents: ../scripts/publish.sh
+specifies: ../scripts/publish.sh
+---
+
 # Create the key alias/maven-central if it does not exist
 ```shell
 aws kms create-alias --alias-name alias/maven-central --target-key-id $(aws kms create-key --query KeyMetadata.KeyId --output text)

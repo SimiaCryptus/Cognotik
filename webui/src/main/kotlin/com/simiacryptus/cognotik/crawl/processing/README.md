@@ -117,7 +117,11 @@ Analyzes job postings and matches them against candidate profiles.
   "target_salary": 150000,
   "max_salary": 180000,
   "salary_currency": "USD",
-  "willing_to_relocate": false
+  "willing_to_relocate": false,
+  "requires_relocation_assistance": false,
+  "travel_willingness": "occasional",
+  "max_travel_percentage": 20,
+  "adaptive_threshold": false
 }
 ```
 
