@@ -5,11 +5,9 @@ import com.simiacryptus.cognotik.apps.SymbolGraphService
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.servlet.SymbolGraphServlet
 import org.eclipse.jetty.servlet.ServletHolder
-import org.eclipse.jetty.webapp.WebAppContext
 import java.io.File
 
 class SymbolGraphAction : BaseAction() {

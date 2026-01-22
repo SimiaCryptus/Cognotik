@@ -61,5 +61,12 @@
     "type": "link",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/util",
     "description": "Learn how to extend Cognotik with custom API providers, tool providers, code runtimes, cognitive modes, and task types using the DynamicEnum pattern."
+  },
+  {
+    "label": "Symbol Database",
+    "url": "symboldb.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/symboldb",
+    "description": "Graph-based code analysis and browsing system for extracting, storing, and navigating code symbols across your project using Apache TinkerGraph."
   }
 ]

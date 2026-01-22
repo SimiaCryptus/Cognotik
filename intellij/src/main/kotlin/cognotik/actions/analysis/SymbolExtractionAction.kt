@@ -16,15 +16,13 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.*
 import com.simiacryptus.cognotik.apps.SymbolGraphService
 import com.simiacryptus.cognotik.util.LoggerFactory
-//import org.jetbrains.kotlin.com.intellij.psi.PsiModifier
-//import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
-//import org.jetbrains.kotlin.psi.KtModifierListOwner
 import java.io.File
 import java.util.*
 
 class SymbolExtractionAction : BaseAction() {
 
-    val verbose = false
+    private val verbose = false
+    
     override fun isEnabled(event: AnActionEvent): Boolean {
         return true
     }
@@ -35,11 +33,11 @@ class SymbolExtractionAction : BaseAction() {
             log.warn("Project is null")
             return
         }
-        if(verbose) log.info("Starting symbol extraction for project: ${project.name}")
+        if (verbose) log.info("Starting symbol extraction for project: ${project.name}")
 
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Extracting Symbols", true) {
             override fun run(indicator: ProgressIndicator) {
-                if(verbose) log.info("Background task started")
+                if (verbose) log.info("Background task started")
                 val service = SymbolGraphService()
                 val jsonFile = File(project.basePath, "symbol_graph.json")
                 if (jsonFile.exists()) {
@@ -52,9 +50,9 @@ class SymbolExtractionAction : BaseAction() {
                 val fileList = mutableListOf<VirtualFile>()
 
                 ReadAction.run<Throwable> {
-                    if(verbose) log.info("Collecting source roots")
+                    if (verbose) log.info("Collecting source roots")
                     ProjectRootManager.getInstance(project).contentSourceRoots.forEach { root ->
-                        if(verbose) log.info("Processing root: ${root.path}")
+                        if (verbose) log.info("Processing root: ${root.path}")
                         VfsUtilCore.iterateChildrenRecursively(root, null) { file ->
                             if (!file.isDirectory) {
                                 fileList.add(file)
@@ -62,7 +60,7 @@ class SymbolExtractionAction : BaseAction() {
                             true
                         }
                     }
-                    if(verbose) log.info("Collected ${fileList.size} files")
+                    if (verbose) log.info("Collected ${fileList.size} files")
                 }
                 val currentFilePaths = fileList.map { it.path }.toSet()
                 val graphFilePaths = service.listFileIds()
@@ -78,7 +76,7 @@ class SymbolExtractionAction : BaseAction() {
 
                 fileList.forEachIndexed { index, virtualFile ->
                     if (indicator.isCanceled) {
-                        if(verbose) log.warn("Task canceled")
+                        if (verbose) log.warn("Task canceled")
                         return
                     }
                     indicator.fraction = index.toDouble() / totalFiles
@@ -102,7 +100,7 @@ class SymbolExtractionAction : BaseAction() {
                         if (virtualFile.isValid) {
                             val psiFile = PsiManager.getInstance(project).findFile(virtualFile)
                             if (psiFile != null) {
-                                if(verbose) log.debug("Analyzing file: ${virtualFile.path}")
+                                if (verbose) log.debug("Analyzing file: ${virtualFile.path}")
                                 
 
                                 service.addFile(fileId, virtualFile.name, lastModified)
@@ -120,6 +118,7 @@ class SymbolExtractionAction : BaseAction() {
                                                 var endOffset: Int? = null
                                                 var line: Int? = null
                                                 var symbolLastModified: Long? = null
+                                                val nodeType = getNodeType(element)
                                                 val range = element.textRange
                                                 if (range != null) {
                                                     startOffset = range.startOffset
@@ -129,37 +128,21 @@ class SymbolExtractionAction : BaseAction() {
                                                         line = document.getLineNumber(range.startOffset) + 1
                                                         if (fileAnnotation != null) {
                                                             try {
-                                                                symbolLastModified = fileAnnotation?.getLineDate(line!! - 1)?.time
+                                                                symbolLastModified = fileAnnotation.getLineDate(line - 1)?.time
                                                             } catch (e: Exception) {
-                                                                // ignore
+                                                                if (verbose) log.trace("Could not get line date for line $line", e)
                                                             }
                                                         }
                                                     }
                                                 }
-                                                var visibility: String? = null
-                                                var modifiersStr: String? = null
-                                                var annotationsStr: String? = null
-//                                                if (element is KtModifierListOwner) {
-//                                                    element.modifierList?.let { modList ->
-//                                                        visibility = when {
-//                                                            modList.hasModifier(KtModifierKeywordToken.keywordModifier("public")) -> "public"
-//                                                            modList.hasModifier(KtModifierKeywordToken.keywordModifier("private")) -> "private"
-//                                                            modList.hasModifier(KtModifierKeywordToken.keywordModifier("internal")) -> "internal"
-//                                                            else -> "package"
-//                                                        }
-//                                                        val modifiers = listOf(PsiModifier.STATIC, PsiModifier.FINAL, PsiModifier.ABSTRACT, PsiModifier.SYNCHRONIZED)
-//                                                            .filter { m -> modList.hasModifier(KtModifierKeywordToken.keywordModifier(m.lowercase())) }
-//                                                        if (modifiers.isNotEmpty()) modifiersStr = modifiers.joinToString(",")
-//                                                        val annotations = modList.annotations.mapNotNull { a -> a.name }
-//                                                        if (annotations.isNotEmpty()) annotationsStr = annotations.joinToString(",")
-//                                                    }
-//                                                }
+                                                val (visibility, modifiersStr, annotationsStr) = extractModifiers(element)
+                                                val parentSymbolId = if (scopeStack.isNotEmpty()) scopeStack.peek() else null
 
-                                                service.addSymbol(nodeId, elementName, fileId, startOffset, endOffset, line, visibility, modifiersStr, annotationsStr, symbolLastModified)
+                                                service.addSymbol(nodeId, elementName, fileId, startOffset, endOffset, line, visibility, modifiersStr, annotationsStr, symbolLastModified, nodeType, parentSymbolId)
                                                 foundSymbolIds.add(nodeId)
                                                 scopeStack.push(nodeId)
                                                 pushed = true
-                                                if(verbose) log.trace("Found definition: $elementName")
+                                                if (verbose) log.trace("Found definition: $elementName")
                                             }
                                         }
                                         try {
@@ -176,17 +159,11 @@ class SymbolExtractionAction : BaseAction() {
                                                         }
                                                     }
                                                 } catch (e: Exception) {
-                                                    if (verbose) log.warn(
-                                                        "Error resolving reference in ${virtualFile.name}",
-                                                        e
-                                                    )
+                                                    if (verbose) log.warn("Error resolving reference in ${virtualFile.name}", e)
                                                 }
                                             }
                                         } catch (e: Exception) {
-                                            if (verbose) log.warn(
-                                                "Error processing element in ${virtualFile.name}",
-                                                e
-                                            )
+                                            if (verbose) log.warn("Error processing element in ${virtualFile.name}", e)
                                         }
                                         super.visitElement(element)
                                         if (pushed) {
@@ -196,16 +173,16 @@ class SymbolExtractionAction : BaseAction() {
                                 })
                                 service.pruneRemovedSymbols(fileId, foundSymbolIds)
                             } else {
-                                if(verbose) log.warn("PsiFile not found for ${virtualFile.path}")
+                                if (verbose) log.warn("PsiFile not found for ${virtualFile.path}")
                             }
                         } else {
-                            if(verbose) log.warn("VirtualFile is invalid: ${virtualFile.path}")
+                            if (verbose) log.warn("VirtualFile is invalid: ${virtualFile.path}")
                         }
                     }
                 }
 
                 try {
-                    if(verbose) log.info("Serializing result")
+                    if (verbose) log.info("Serializing result to ${jsonFile.absolutePath}")
                     
                     service.save(jsonFile.absolutePath)
                     
@@ -222,6 +199,48 @@ class SymbolExtractionAction : BaseAction() {
             }
         })
     }
+    private fun extractModifiers(element: PsiElement): Triple<String?, String?, String?> {
+//        if (element is PsiModifierListOwner) {
+//            val modifierList = element.modifierList
+//            if (modifierList != null) {
+//                val visibility = when {
+//                    modifierList.hasModifierProperty(PsiModifier.PUBLIC) -> "public"
+//                    modifierList.hasModifierProperty(PsiModifier.PRIVATE) -> "private"
+//                    modifierList.hasModifierProperty(PsiModifier.PROTECTED) -> "protected"
+//                    else -> "package"
+//                }
+//                val modifiers = listOf(PsiModifier.STATIC, PsiModifier.FINAL, PsiModifier.ABSTRACT, PsiModifier.SYNCHRONIZED)
+//                    .filter { modifierList.hasModifierProperty(it) }
+//                val modifiersStr = if (modifiers.isNotEmpty()) modifiers.joinToString(",") else null
+//                val annotations = modifierList.annotations.mapNotNull { it.qualifiedName?.substringAfterLast('.') }
+//                val annotationsStr = if (annotations.isNotEmpty()) annotations.joinToString(",") else null
+//                return Triple(visibility, modifiersStr, annotationsStr)
+//            }
+//        }
+        return Triple(null, null, null)
+    }
+    private fun getNodeType(element: PsiElement): String {
+        return when {
+            element.javaClass.simpleName.contains("Class") -> "class"
+            element.javaClass.simpleName.contains("Interface") -> "interface"
+            element.javaClass.simpleName.contains("Enum") -> "enum"
+            element.javaClass.simpleName.contains("Method") || element.javaClass.simpleName.contains("Function") -> "function"
+            element.javaClass.simpleName.contains("Field") || element.javaClass.simpleName.contains("Property") -> "field"
+            element.javaClass.simpleName.contains("Variable") -> "variable"
+            element.javaClass.simpleName.contains("Parameter") -> "parameter"
+            element.javaClass.simpleName.contains("Constructor") -> "constructor"
+            element.javaClass.simpleName.contains("Object") -> "object"
+            element.javaClass.simpleName.contains("Annotation") -> "annotation"
+            else -> element.javaClass.simpleName.lowercase()
+                .replace("psi", "")
+                .replace("impl", "")
+                .replace("kt", "")
+                .replace("java", "")
+                .trim()
+                .ifEmpty { "symbol" }
+        }
+    }
+
 
     companion object {
         val log = LoggerFactory.getLogger(SymbolExtractionAction::class.java)
