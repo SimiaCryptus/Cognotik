@@ -155,7 +155,30 @@ class SymbolExtractionAction : BaseAction() {
                                                         if (name != null && resolvedFile != null) {
                                                             val targetId = "$resolvedFile::$name"
                                                             val sourceId = if (scopeStack.isNotEmpty()) scopeStack.peek() else fileId
-                                                            service.addReference(sourceId, targetId, name, resolvedFile)
+                                                            // Get reference location
+                                                            val refElement = ref.element
+                                                            val refRange = refElement.textRange
+                                                            var refLine: Int? = null
+                                                            var refStartOffset: Int? = null
+                                                            var refEndOffset: Int? = null
+                                                            if (refRange != null) {
+                                                                refStartOffset = refRange.startOffset
+                                                                refEndOffset = refRange.endOffset
+                                                                val document = PsiDocumentManager.getInstance(project).getDocument(psiFile)
+                                                                if (document != null) {
+                                                                    refLine = document.getLineNumber(refRange.startOffset) + 1
+                                                                }
+                                                            }
+                                                            service.addReference(
+                                                                sourceId, 
+                                                                targetId, 
+                                                                name, 
+                                                                resolvedFile,
+                                                                fileId,
+                                                                refLine,
+                                                                refStartOffset,
+                                                                refEndOffset
+                                                            )
                                                         }
                                                     }
                                                 } catch (e: Exception) {

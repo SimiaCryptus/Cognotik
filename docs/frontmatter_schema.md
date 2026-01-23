@@ -1,11 +1,14 @@
 ---
-documents: ../webui/src/main/kotlin/com/simiacryptus/cognotik/embed/DocProcessor.kt
+documents:
+  - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/DocProcessor.kt
+  - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/OverwriteModes.kt
 specifies: ../site/cognotik.com/frontmatter.html
 ---
 
 # Frontmatter Schema for DocProcessor
 
-This document describes the YAML frontmatter schema used by `DocProcessor` to process markdown documentation files and manage relationships between documentation and source code.
+This document describes the YAML frontmatter schema used by `DocProcessor` (located in `com.simiacryptus.cognotik.util`)
+to process markdown documentation files and manage relationships between documentation and source code.
 
 ## Overview
 
@@ -142,6 +145,12 @@ generates:
       - ../src/utils/**/*.kt
 ```
 
+**Input Pattern Support:**
+
+- Simple globs: `*.kt`, `models/*.kt`
+- Recursive globs: `**/*.kt` (matches files in all subdirectories)
+- Paths are resolved relative to the markdown file's directory
+
 **Use Case:** Generate aggregate files, combined outputs, or files that depend on multiple input sources.
 
 ---
@@ -203,10 +212,23 @@ This document specifies the API layer implementation...
 3. **Glob Expansion:**
   - Simple globs (`*.kt`) match files in the specified directory
   - Recursive globs (`**/*.kt`) match files in all subdirectories
+  - For `transforms`, the source pattern is a regex (not a glob) that matches against file paths relative to the doc
+    file's directory
 
 4. **Multiple Specifications:** A single target file can be specified by multiple documentation files. All specifications are combined when processing.
 
-5. **Overwrite Modes:** The processor supports different overwrite strategies (configured externally) for handling existing files.
+5. **Overwrite Modes:** The processor supports different overwrite strategies for handling existing files:
+  - `SkipExisting` - Skip files that already exist (no processing)
+  - `OverwriteExisting` - Always overwrite existing files with full replacement
+  - `OverwriteToUpdate` - Overwrite only if source/related files are newer than target
+  - `PatchExisting` - Always apply fuzzy patch to existing files
+  - `PatchToUpdate` - Apply fuzzy patch only if source/related files are newer than target (default)
+
+6. **Task Description Generation:** The processor automatically generates appropriate task descriptions based on the
+   frontmatter type:
+  - For `specifies`/`transforms`: Updates target files based on documentation and specifications
+  - For `documents`: Updates documentation to reflect current source code state
+  - For `generates`: Generates output files based on documentation and input files
 
 ## Data Structures
 
@@ -222,4 +244,49 @@ The frontmatter is parsed into a `DocSpec` containing:
 | `related` | `List<String>` | Additional context files |
 | `content` | `String` | The markdown body (after frontmatter) |
 | `frontmatter` | `Map<String, Any>` | Raw parsed frontmatter |
-```
+
+### TransformSpec
+
+| Field                | Type     | Description                             |
+|----------------------|----------|-----------------------------------------|
+| `sourcePattern`      | `String` | Regex pattern to match source files     |
+| `destinationPattern` | `String` | Destination pattern with backreferences |
+
+### GenerateSpec
+
+| Field    | Type           | Description                                 |
+|----------|----------------|---------------------------------------------|
+| `output` | `String`       | The output file path (relative to doc file) |
+| `inputs` | `List<String>` | Glob patterns for input files               |
+
+## Additional Processing Classes
+
+### TransformMatch
+
+Represents a matched transformation from source to destination:
+
+| Field             | Type      | Description                       |
+|-------------------|-----------|-----------------------------------|
+| `sourceFile`      | `File`    | The matched source file           |
+| `destinationFile` | `File`    | The computed destination file     |
+| `spec`            | `DocSpec` | The originating doc specification |
+
+### GenerateMatch
+
+Represents a matched generation specification:
+
+| Field        | Type         | Description                       |
+|--------------|--------------|-----------------------------------|
+| `outputFile` | `File`       | The output file to generate       |
+| `inputFiles` | `List<File>` | The resolved input files          |
+| `spec`       | `DocSpec`    | The originating doc specification |
+
+### DocumentMatch
+
+Represents a documentation update specification:
+
+| Field             | Type         | Description                                           |
+|-------------------|--------------|-------------------------------------------------------|
+| `docSpec`         | `DocSpec`    | The doc specification (target is the doc file itself) |
+| `supportingFiles` | `List<File>` | Source files that provide context                     |
+

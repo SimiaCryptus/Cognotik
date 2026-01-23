@@ -310,6 +310,7 @@
                 <li><a href="#key-related">related</a></li>
                 <li><a href="#complete-example">Complete Example</a></li>
                 <li><a href="#processing-behavior">Processing Behavior</a></li>
+                <li><a href="#overwrite-modes">Overwrite Modes</a></li>
                 <li><a href="#data-structures">Data Structures</a></li>
             </ul>
         </nav>
@@ -590,7 +591,53 @@ This document specifies the API layer implementation...</code></pre>
                 </li>
                 <li>
                     <strong>Overwrite Modes:</strong> The processor supports different overwrite strategies
-                    (configured externally) for handling existing files.
+                        for handling existing files.
+                    </li>
+                </ul>
+
+                <h3>Overwrite Modes</h3>
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>Mode</th>
+                        <th>Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td><code>SkipExisting</code></td>
+                        <td>Skip files that already exist (no processing)</td>
+                    </tr>
+                    <tr>
+                        <td><code>OverwriteExisting</code></td>
+                        <td>Always overwrite existing files with full replacement</td>
+                    </tr>
+                    <tr>
+                        <td><code>OverwriteToUpdate</code></td>
+                        <td>Overwrite only if source/related files are newer than target</td>
+                    </tr>
+                    <tr>
+                        <td><code>PatchExisting</code></td>
+                        <td>Always apply fuzzy patch to existing files</td>
+                    </tr>
+                    <tr>
+                        <td><code>PatchToUpdate</code></td>
+                        <td>Apply fuzzy patch only if source/related files are newer than target (default)</td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <h3>Task Description Generation</h3>
+                <p>The processor automatically generates appropriate task descriptions based on the frontmatter type:</p>
+                <ul class="behavior-list">
+                    <li>
+                        <strong>For <code>specifies</code>/<code>transforms</code>:</strong> Updates target files based on documentation and specifications
+                    </li>
+                    <li>
+                        <strong>For <code>documents</code>:</strong> Updates documentation to reflect current source code state
+                    </li>
+                    <li>
+                        <strong>For <code>generates</code>:</strong> Generates output files based on documentation and input files
                 </li>
             </ul>
         </section>
@@ -647,6 +694,130 @@ This document specifies the API layer implementation...</code></pre>
                     <td><code>frontmatter</code></td>
                     <td><code>Map&lt;String, Any&gt;</code></td>
                     <td>Raw parsed frontmatter</td>
+                </tr>
+                </tbody>
+            </table>
+            <h3>TransformSpec</h3>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>sourcePattern</code></td>
+                    <td><code>String</code></td>
+                    <td>Regex pattern to match source files</td>
+                </tr>
+                <tr>
+                    <td><code>destinationPattern</code></td>
+                    <td><code>String</code></td>
+                    <td>Destination pattern with backreferences</td>
+                </tr>
+                </tbody>
+            </table>
+            <h3>GenerateSpec</h3>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>output</code></td>
+                    <td><code>String</code></td>
+                    <td>The output file path (relative to doc file)</td>
+                </tr>
+                <tr>
+                    <td><code>inputs</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td>Glob patterns for input files</td>
+                </tr>
+                </tbody>
+            </table>
+            <h3>Additional Processing Classes</h3>
+            <h4>TransformMatch</h4>
+            <p>Represents a matched transformation from source to destination:</p>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>sourceFile</code></td>
+                    <td><code>File</code></td>
+                    <td>The matched source file</td>
+                </tr>
+                <tr>
+                    <td><code>destinationFile</code></td>
+                    <td><code>File</code></td>
+                    <td>The computed destination file</td>
+                </tr>
+                <tr>
+                    <td><code>spec</code></td>
+                    <td><code>DocSpec</code></td>
+                    <td>The originating doc specification</td>
+                </tr>
+                </tbody>
+            </table>
+            <h4>GenerateMatch</h4>
+            <p>Represents a matched generation specification:</p>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>outputFile</code></td>
+                    <td><code>File</code></td>
+                    <td>The output file to generate</td>
+                </tr>
+                <tr>
+                    <td><code>inputFiles</code></td>
+                    <td><code>List&lt;File&gt;</code></td>
+                    <td>The resolved input files</td>
+                </tr>
+                <tr>
+                    <td><code>spec</code></td>
+                    <td><code>DocSpec</code></td>
+                    <td>The originating doc specification</td>
+                </tr>
+                </tbody>
+            </table>
+            <h4>DocumentMatch</h4>
+            <p>Represents a documentation update specification:</p>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>docSpec</code></td>
+                    <td><code>DocSpec</code></td>
+                    <td>The doc specification (target is the doc file itself)</td>
+                </tr>
+                <tr>
+                    <td><code>supportingFiles</code></td>
+                    <td><code>List&lt;File&gt;</code></td>
+                    <td>Source files that provide context</td>
                 </tr>
                 </tbody>
             </table>

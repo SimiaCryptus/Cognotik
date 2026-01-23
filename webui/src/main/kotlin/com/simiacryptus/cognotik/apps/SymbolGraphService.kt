@@ -187,7 +187,16 @@ class SymbolGraphService {
 
     @Synchronized
     @Description("Adds a 'REFERENCES' edge from a source symbol to a target symbol. If the target symbol vertex does not exist, it is created with basic information (name, file).")
-    fun addReference(sourceId: String, targetId: String, targetName: String, targetFile: String) {
+    fun addReference(
+        sourceId: String,
+        targetId: String,
+        targetName: String,
+        targetFile: String,
+        referenceFile: String? = null,
+        referenceLine: Int? = null,
+        referenceStartOffset: Int? = null,
+        referenceEndOffset: Int? = null
+    ) {
         val sourceIter = graph.vertices(sourceId)
         if (!sourceIter.hasNext()) return
         
@@ -197,14 +206,27 @@ class SymbolGraphService {
             targetV.property(VertexProperty.Cardinality.single, "name", targetName)
             targetV.property(VertexProperty.Cardinality.single, "file", targetFile)
         }
-        addEdgeIfNotExists(sourceV, "REFERENCES", targetV)
+        // Create edge with reference location properties
+        val existingEdge = sourceV.edges(Direction.OUT, "REFERENCES").asSequence()
+            .find {
+                it.inVertex().id() == targetV.id() &&
+                    it.property<Int>("line").orElse(null) == referenceLine &&
+                    it.property<Int>("startOffset").orElse(null) == referenceStartOffset
+            }
+        if (existingEdge == null) {
+            val edge = sourceV.addEdge("REFERENCES", targetV)
+            referenceFile?.let { edge.property("file", it) }
+            referenceLine?.let { edge.property("line", it) }
+            referenceStartOffset?.let { edge.property("startOffset", it) }
+            referenceEndOffset?.let { edge.property("endOffset", it) }
+        }
     }
 
     @Synchronized
     @Description("Retrieves a Symbol object wrapper for the vertex with the specified ID. Returns null if no such vertex exists.")
     fun getSymbol(id: String): Symbol? {
         val iter = graph.vertices(id)
-        return if (iter.hasNext()) Symbol(iter.next()) else null
+        return if (iter.hasNext()) Symbol(iter.next(), graph) else null
     }
 
     @Synchronized
@@ -214,7 +236,7 @@ class SymbolGraphService {
             .has("name", TextP.containing(query))
             .limit(limit.toLong())
             .toList()
-            .map { Symbol(it) }
+            .map { Symbol(it, graph) }
     }
 
     @Synchronized
@@ -223,7 +245,7 @@ class SymbolGraphService {
         return graph.traversal().V()
             .has("Symbol", "file", fileId)
             .toList()
-            .map { Symbol(it) }
+            .map { Symbol(it, graph) }
     }
 
     @Synchronized
@@ -232,7 +254,7 @@ class SymbolGraphService {
         return graph.traversal().V()
             .hasLabel("File")
             .toList()
-            .map { Symbol(it) }
+            .map { Symbol(it, graph) }
     }
 
     @Synchronized
@@ -242,7 +264,7 @@ class SymbolGraphService {
             .has("Language", "name", language)
             .`in`("WRITTEN_IN")
             .toList()
-            .map { Symbol(it) }
+            .map { Symbol(it, graph) }
     }
 
     @Synchronized
@@ -252,7 +274,7 @@ class SymbolGraphService {
             .has("Library", "name", library)
             .`in`("IN_LIBRARY")
             .toList()
-            .map { Symbol(it) }
+            .map { Symbol(it, graph) }
     }
 
     @Synchronized
@@ -262,7 +284,7 @@ class SymbolGraphService {
             .has("Package", "name", pkg)
             .`in`("IN_PACKAGE")
             .toList()
-            .map { Symbol(it) }
+            .map { Symbol(it, graph) }
     }
 
     @Synchronized
@@ -310,7 +332,7 @@ class SymbolGraphService {
         return graph.traversal().V()
             .has("Symbol", "nodeType", nodeType)
             .toList()
-            .map { Symbol(it) }
+            .map { Symbol(it, graph) }
     }
     @Synchronized
     @Description("Returns files that have at least one symbol defined in them.")
@@ -319,7 +341,7 @@ class SymbolGraphService {
             .hasLabel("File")
             .filter { it.get().vertices(Direction.IN, "DEFINED_IN").hasNext() }
             .toList()
-            .map { Symbol(it) }
+            .map { Symbol(it, graph) }
     }
     @Synchronized
     @Description("Returns a hierarchical structure of folders containing files with symbols.")
@@ -398,11 +420,11 @@ class SymbolGraphService {
         return graph.traversal().V()
             .hasLabel("Symbol")
             .toList()
-            .map { Symbol(it) }
+            .map { Symbol(it, graph) }
     }
 
     @Description("Represents a node in the symbol graph, which can be a Symbol, File, Language, Library, or Package. Provides access to properties and related nodes.")
-    data class Symbol(private val vertex: Vertex) {
+    data class Symbol(private val vertex: Vertex, private val graph: TinkerGraph? = null) {
         @get:Description("The unique identifier of the node.")
         val id: String = vertex.id() as String
         @get:Description("The name of the symbol or entity.")
@@ -440,25 +462,41 @@ class SymbolGraphService {
         }
 
         @Description("Returns a list of symbols referenced by this symbol.")
-        fun references(): List<Symbol> {
-            return vertex.vertices(Direction.OUT, "REFERENCES")
+        fun references(): List<Reference> {
+            return vertex.edges(Direction.OUT, "REFERENCES")
                 .asSequence()
-                .map { Symbol(it) }
+                .map { edge ->
+                    Reference(
+                        targetSymbol = Symbol(edge.inVertex(), graph),
+                        file = edge.property<String>("file").orElse(null),
+                        line = edge.property<Int>("line").orElse(null),
+                        startOffset = edge.property<Int>("startOffset").orElse(null),
+                        endOffset = edge.property<Int>("endOffset").orElse(null)
+                    )
+                }
                 .toList()
         }
 
         @Description("Returns a list of symbols that reference this symbol.")
-        fun referencedBy(): List<Symbol> {
-            return vertex.vertices(Direction.IN, "REFERENCES")
+        fun referencedBy(): List<Reference> {
+            return vertex.edges(Direction.IN, "REFERENCES")
                 .asSequence()
-                .map { Symbol(it) }
+                .map { edge ->
+                    Reference(
+                        targetSymbol = Symbol(edge.outVertex(), graph),
+                        file = edge.property<String>("file").orElse(null),
+                        line = edge.property<Int>("line").orElse(null),
+                        startOffset = edge.property<Int>("startOffset").orElse(null),
+                        endOffset = edge.property<Int>("endOffset").orElse(null)
+                    )
+                }
                 .toList()
         }
 
         @Description("Returns the file symbol where this symbol is defined.")
         fun file(): Symbol? {
             val iter = vertex.vertices(Direction.OUT, "DEFINED_IN")
-            return if (iter.hasNext()) Symbol(iter.next()) else null
+            return if (iter.hasNext()) Symbol(iter.next(), graph) else null
         }
 
         @Description("Returns the name of the language this symbol is written in.")
@@ -488,18 +526,118 @@ class SymbolGraphService {
         fun contains(): List<Symbol> {
             return vertex.vertices(Direction.OUT, "CONTAINS")
                 .asSequence()
-                .map { Symbol(it) }
+                .map { Symbol(it, graph) }
                 .toList()
         }
         @Description("Returns the parent symbol that contains this symbol.")
         fun containedBy(): Symbol? {
             val iter = vertex.vertices(Direction.IN, "CONTAINS")
-            return if (iter.hasNext()) Symbol(iter.next()) else null
+            return if (iter.hasNext()) Symbol(iter.next(), graph) else null
         }
     }
+    @Synchronized
+    @Description("Returns all symbols transitively referenced by the given symbol, up to a maximum limit. Includes the original symbol and all symbols it references, and all symbols those reference, etc.")
+    fun getTransitiveReferences(symbolId: String, maxResults: Int = 1000): TransitiveResult {
+        val visited = mutableSetOf<String>()
+        val result = mutableListOf<Symbol>()
+        val queue = ArrayDeque<Pair<String, Int>>() // symbol id, depth
+        queue.add(symbolId to 0)
+        visited.add(symbolId)
+        var maxDepthReached = 0
+        var truncated = false
+        while (queue.isNotEmpty() && result.size < maxResults) {
+            val (currentId, depth) = queue.removeFirst()
+            maxDepthReached = maxOf(maxDepthReached, depth)
+            val symbol = getSymbol(currentId)
+            if (symbol != null) {
+                result.add(symbol)
+                for (ref in symbol.references()) {
+                    val refId = ref.targetSymbol.id
+                    if (refId !in visited) {
+                        visited.add(refId)
+                        queue.add(refId to depth + 1)
+                    }
+                }
+            }
+        }
+        if (queue.isNotEmpty()) {
+            truncated = true
+        }
+        return TransitiveResult(
+            symbols = result,
+            totalFound = result.size,
+            maxDepth = maxDepthReached,
+            truncated = truncated,
+            remainingInQueue = queue.size
+        )
+    }
+    @Synchronized
+    @Description("Returns all symbols that transitively reference the given symbol, up to a maximum limit. Includes the original symbol and all symbols that reference it, and all symbols that reference those, etc.")
+    fun getTransitiveReferencedBy(symbolId: String, maxResults: Int = 1000): TransitiveResult {
+        val visited = mutableSetOf<String>()
+        val result = mutableListOf<Symbol>()
+        val queue = ArrayDeque<Pair<String, Int>>() // symbol id, depth
+        queue.add(symbolId to 0)
+        visited.add(symbolId)
+        var maxDepthReached = 0
+        var truncated = false
+        while (queue.isNotEmpty() && result.size < maxResults) {
+            val (currentId, depth) = queue.removeFirst()
+            maxDepthReached = maxOf(maxDepthReached, depth)
+            val symbol = getSymbol(currentId)
+            if (symbol != null) {
+                result.add(symbol)
+                for (ref in symbol.referencedBy()) {
+                    val refId = ref.targetSymbol.id
+                    if (refId !in visited) {
+                        visited.add(refId)
+                        queue.add(refId to depth + 1)
+                    }
+                }
+            }
+        }
+        if (queue.isNotEmpty()) {
+            truncated = true
+        }
+        return TransitiveResult(
+            symbols = result,
+            totalFound = result.size,
+            maxDepth = maxDepthReached,
+            truncated = truncated,
+            remainingInQueue = queue.size
+        )
+    }
+    @Description("Result of a transitive reference query.")
+    data class TransitiveResult(
+        val symbols: List<Symbol>,
+        val totalFound: Int,
+        val maxDepth: Int,
+        val truncated: Boolean,
+        val remainingInQueue: Int
+    )
 
     private fun getOrCreateVertex(id: String, label: String): Vertex {
         val iter = graph.vertices(id)
         return if (iter.hasNext()) iter.next() else graph.addVertex(T.label, label, T.id, id)
+    }
+
+    @Description("Represents a reference edge with location information.")
+    data class Reference(
+        val targetSymbol: Symbol,
+        val file: String?,
+        val line: Int?,
+        val startOffset: Int?,
+        val endOffset: Int?
+    ) {
+        val properties: Map<String, Any>
+            get() {
+                val map = mutableMapOf<String, Any>()
+                map["target"] = targetSymbol.properties
+                file?.let { map["file"] = it }
+                line?.let { map["line"] = it }
+                startOffset?.let { map["startOffset"] = it }
+                endOffset?.let { map["endOffset"] = it }
+                return map
+            }
     }
 }
