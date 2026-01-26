@@ -754,7 +754,7 @@ class SymbolGraphServlet(
             val refRows = references.map { ref ->
                 val target = ref.targetSymbol
                 val typeBadge = target.nodeType?.let { "<span class='badge badge-type'>$it</span>" } ?: ""
-                val locationInfo = buildReferenceLocationHtml(ref)
+                val locationInfo = buildReferenceLocationHtml(ref, null)
                 listOf(
                     "<a href=\"${urlBase}symbol?id=${escapeHtml(urlEncode(target.id))}\">${escapeHtml(target.name ?: target.id)}</a>$typeBadge",
                     target.nodeType ?: "",
@@ -773,7 +773,7 @@ class SymbolGraphServlet(
             val refByRows = referencedBy.map { ref ->
                 val source = ref.targetSymbol
                 val typeBadge = source.nodeType?.let { "<span class='badge badge-type'>$it</span>" } ?: ""
-                val locationInfo = buildReferenceLocationHtml(ref)
+                val locationInfo = buildReferenceLocationHtml(ref, source)
                 listOf(
                     "<a href=\"${urlBase}symbol?id=${escapeHtml(urlEncode(source.id))}\">${escapeHtml(source.name ?: source.id)}</a>$typeBadge",
                     source.nodeType ?: "",
@@ -930,8 +930,15 @@ class SymbolGraphServlet(
         }
         return ""
     }
-    private fun buildReferenceLocationHtml(ref: SymbolGraphService.Reference): String {
+    private fun buildReferenceLocationHtml(ref: SymbolGraphService.Reference, sourceSymbol: SymbolGraphService.Symbol?): String {
         val parts = mutableListOf<String>()
+        // Build containment path for the source symbol
+        if (sourceSymbol != null) {
+            val containmentPath = buildContainmentPath(sourceSymbol)
+            if (containmentPath.isNotEmpty()) {
+                parts.add("in $containmentPath")
+            }
+        }
         if (ref.file != null) {
             val fileName = ref.file.substringAfterLast("/")
             parts.add("in <a href=\"${urlBase}file/${escapeHtml(urlEncode(ref.file))}\">${escapeHtml(fileName)}</a>")
@@ -944,6 +951,22 @@ class SymbolGraphServlet(
         }
         return if (parts.isNotEmpty()) {
             "<small class='reference-location'>↳ ${parts.joinToString(", ")}</small>"
+        } else ""
+    }
+    private fun buildContainmentPath(symbol: SymbolGraphService.Symbol): String {
+        val path = mutableListOf<String>()
+        val visited = mutableSetOf<String>()
+        visited.add(symbol.id)
+        var current = symbol.containedBy()
+        while (current != null && current.id !in visited) {
+            visited.add(current.id)
+            val name = current.name ?: current.id
+            val link = "<a href=\"${urlBase}symbol?id=${escapeHtml(urlEncode(current.id))}\">${escapeHtml(name)}</a>"
+            path.add(0, link)
+            current = current.containedBy()
+        }
+        return if (path.isNotEmpty()) {
+            path.joinToString(" → ")
         } else ""
     }
     private fun writeTransitiveResultHtml(

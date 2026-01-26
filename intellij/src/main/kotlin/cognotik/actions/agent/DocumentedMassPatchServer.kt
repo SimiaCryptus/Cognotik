@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -98,20 +99,21 @@ class DocumentedMassPatchServer(
                             mainActor.answer(toInput(userMessage)).toContentList().firstOrNull()?.text ?: ""
                         if (design.isNotBlank()) {
                             fileTask.add(
-                                AddApplyFileDiffLinks.instrumentFileDiffs(
-                                                                    self = socketManager,
-                                                                    root = _root,
-                                                                    response = design,
-                                                                    handle = { newCodeMap ->
-                                                                        newCodeMap.forEach { (path, newCode) ->
-                                                                            fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                                                        }
-                                                                    },
-                                                                    shouldAutoApply = { autoApply },
-                                                                    model = AppSettingsState.instance.fastChatClient,
-                                                                    defaultFile = path.toString(),
-                                                                    processor = processor
-                                                                ).renderMarkdown(true)
+                              AddApplyFileDiffLinks(
+                                processor = processor
+                              ).instrument(
+                                socketManager = socketManager,
+                                root = _root,
+                                response = design,
+                                handle = { newCodeMap: Map<Path, String> ->
+                                  newCodeMap.forEach { (path, newCode) ->
+                                    fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                                  }
+                                },
+                                shouldAutoApply = { it: Path -> autoApply },
+                                model = AppSettingsState.instance.fastChatClient,
+                                defaultFile = path.toString()
+                              ).renderMarkdown(true)
                             )
                         } else {
                             fileTask.complete("No changes suggested.")
@@ -127,20 +129,21 @@ class DocumentedMassPatchServer(
                             outputFn = { design: String ->
                                 """<div>${
                                     renderMarkdown(design) {
-                                        AddApplyFileDiffLinks.instrumentFileDiffs(
-                                            self = socketManager,
-                                            root = _root,
-                                            response = design,
-                                            handle = { newCodeMap ->
-                                                newCodeMap.forEach { (path, newCode) ->
-                                                    fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                                }
-                                            },
-                                            shouldAutoApply = { autoApply },
-                                            model = AppSettingsState.instance.fastChatClient,
-                                            defaultFile = path.toString(),
-                                            processor = processor
-                                        )
+                                      AddApplyFileDiffLinks(
+                                        processor = processor
+                                      ).instrument(
+                                        socketManager = socketManager,
+                                        root = _root,
+                                        response = design,
+                                        handle = { newCodeMap: Map<Path, String> ->
+                                          newCodeMap.forEach { (path, newCode) ->
+                                            fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                                          }
+                                        },
+                                        shouldAutoApply = { it: Path -> autoApply },
+                                        model = AppSettingsState.instance.fastChatClient,
+                                        defaultFile = path.toString()
+                                      )
                                     }
                                 }</div>"""
                             },

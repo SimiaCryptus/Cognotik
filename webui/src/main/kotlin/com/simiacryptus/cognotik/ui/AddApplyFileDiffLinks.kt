@@ -10,95 +10,20 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.nio.file.Path
-import java.time.Duration
 import java.time.Instant
 import java.util.*
 import kotlin.io.path.readText
 
-open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
+open class AddApplyFileDiffLinks(
+    val processor: PatchProcessor,
+    val diffApplier: SimpleDiffApplier = SimpleDiffApplier()
+) {
 
     companion object {
-        var loggingEnabled = { false }
-        private val diffApplier = SimpleDiffApplier()
         private val log = LoggerFactory.getLogger(AddApplyFileDiffLinks::class.java).apply {
             debug("Initializing AddApplyFileDiffLinks")
         }
-
-        private fun logFileOperation(
-            filepath: Path,
-            originalCode: String,
-            patch: String?,
-            newCode: String,
-            operationType: String,
-            startTime: Instant,
-            validator: GrammarValidator? = null
-        ) {
-            if (loggingEnabled()) try {
-                val logFile = filepath.resolveSibling(filepath.fileName.toString() + ".log").toFile()
-                val duration = Duration.between(startTime, Instant.now())
-                val originalSize = filepath.toFile().length()
-                val stackTrace = Thread.currentThread().stackTrace
-                    .drop(2)
-                    .take(10)
-                    .joinToString("\n    ")
-                val logEntry = buildString {
-                    appendLine("─".repeat(80))
-                    appendLine("Timestamp: ${Instant.now()}")
-                    appendLine("Operation: $operationType")
-                    appendLine("Duration: ${duration.toMillis()}ms")
-                    appendLine("File: ${filepath.fileName}")
-                    appendLine("Original Size: $originalSize bytes")
-                    appendLine("New Size: ${filepath.toFile().length()} bytes")
-                    appendLine("Validator: ${validator?.javaClass?.simpleName ?: "None"}")
-                    appendLine("Stack Trace:")
-                    appendLine("    $stackTrace")
-                    appendLine("Original Code:")
-                    originalCode.lines().forEach { appendLine("    $it") }
-                    if (patch != null) {
-                        appendLine("Patch:")
-                        patch.lines().forEach { appendLine("    $it") }
-                    }
-                    appendLine("New Code:")
-                    newCode.lines().forEach { appendLine("    $it") }
-                    appendLine()
-                }
-                logFile.appendText(logEntry)
-            } catch (e: Throwable) {
-                log.error("Failed to write operation log", e)
-            }
-        }
-
-        fun instrumentFileDiffs(
-            self: SocketManager,
-            root: Path,
-            response: String,
-            handle: (Map<Path, String>) -> Unit = {},
-            shouldAutoApply: (Path) -> Boolean = { false },
-            model: ChatInterface? = null,
-            defaultFile: String? = null,
-            processor: PatchProcessor,
-        ) = AddApplyFileDiffLinks(processor).instrument(
-            socketManager = self,
-            root = root,
-            response = response,
-            handle = handle,
-            shouldAutoApply = shouldAutoApply,
-            model = model,
-            defaultFile = defaultFile
-        )
-
-        fun newFile(
-            filepath: Path,
-            content: String,
-            filename: String,
-            handle: (Map<Path, String>) -> Unit
-        ) {
-            val startTime = Instant.now()
-            filepath.toFile().parentFile?.mkdirs()
-            filepath.toFile().writeText(content, Charsets.UTF_8)
-            logFileOperation(filepath, "", null, content, "NEW_FILE", startTime)
-            handle(mapOf(File(filename).toPath() to content))
-        }
+        private fun String.reverseLines(): String = lines().reversed().joinToString("\n")
     }
 
     protected open fun getInitiatorPattern(): Regex {
@@ -119,8 +44,6 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         log.error("Error reading file {}: {}", filepath, e.message, e)
         ""
     }
-
-    private fun String.reverseLines(): String = lines().reversed().joinToString("\n")
 
     private fun record(socketManager: SocketManager, data: Any): String {
         val relativePath = "patch/${UUID.randomUUID()}.json"
@@ -170,34 +93,34 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
             }
         }
 
-        fun isFileResolvable(header: String?): Boolean {
-            return try {
-                val resolvedPath = resolver(root, prefilterFilename(normalizeFilename(header ?: "")) ?: "")
-                if (resolvedPath == null) {
-                    return (true != header?.contains('.') && null != defaultFile)
-                }
-                when {
-                    root.resolve(resolvedPath).toFile().exists() -> {
-                        true
-                    }
-                    !resolvedPath.contains('.') && null != defaultFile -> {
-                        log.debug("File not found for header '$header': resolved to '$resolvedPath', but default file is set")
-                        true // Allow default file for extensionless paths (likely to be a mis-parse)
-                    }
-
-                    else -> {
-                        log.debug("File not found for header '$header': resolved to '$resolvedPath'")
-                        false
-                    }
-                }
-            } catch (e: Throwable) {
-                log.info("Error processing code block", e)
-                false
-            }
-        }
 
         val (newFileBlocks, patchBlocks) = codeBlocksWithHeaders
-            .partition { (header, lang, code) -> !isFileResolvable(header) }
+            .partition { (header, lang, code) ->
+                !try {
+                    val resolvedPath = resolver(root, prefilterFilename(normalizeFilename(header ?: "")) ?: "")
+                    if (resolvedPath == null) {
+                        (true != header?.contains('.') && null != defaultFile)
+                    } else when {
+
+                        root.resolve(resolvedPath).toFile().exists() -> {
+                            true
+                        }
+
+                        !resolvedPath.contains('.') && null != defaultFile -> {
+                            log.debug("File not found for header '$header': resolved to '$resolvedPath', but default file is set")
+                            true // Allow default file for extensionless paths (likely to be a mis-parse)
+                        }
+
+                        else -> {
+                            log.debug("File not found for header '$header': resolved to '$resolvedPath'")
+                            false
+                        }
+                    }
+                } catch (e: Throwable) {
+                    log.info("Error processing code block", e)
+                    false
+                }
+            }
 
         log.debug("Categorized blocks: ${newFileBlocks.size} new files, ${patchBlocks.size} patches")
 
@@ -211,7 +134,9 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
             }
             val filename = resolver(root, normalizeFilename) ?: return@fold markdown
             val newValue =
-                try { socketManager.renderDiffBlock(root, filename, diffValue, handle, socketManager, shouldAutoApply) }
+                try {
+                    renderDiffBlock(root, filename, diffValue, handle, socketManager, shouldAutoApply)
+                }
                 catch (e: Throwable) {
                     log.error("Error rendering diff block for file: $filename", e)
                     "\n```diff\n$diffValue\n```\n<div class=\"warning\">Error rendering diff block for file $filename: ${e.message?.renderMarkdown()
@@ -244,7 +169,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
                 val filename = prefilterFilename(normalizeFilename(header))
                 if (filename.isNullOrBlank()) return markdown
                 val newMarkdown =
-                    socketManager.renderNewFile(root, filename, processedCode, handle, socketManager, lang, shouldAutoApply) + record(
+                    renderNewFile(root, filename, processedCode, handle, socketManager, lang, shouldAutoApply) + record(
                         socketManager, mapOf(
                             "filename" to filename,
                             "code" to processedCode,
@@ -330,7 +255,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         return if (newValue != filename) normalizeFilename(newValue) else newValue
     }
 
-    private fun SocketManager.renderNewFile(
+    private fun renderNewFile(
         root: Path,
         filename: String,
         codeValue: String,
@@ -342,7 +267,9 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         val filepath = root.resolve(filename)
         if (shouldAutoApply(filepath) && !filepath.toFile().exists()) {
             try {
-                newFile(filepath, codeValue, filename, handle)
+                filepath.toFile().parentFile?.mkdirs()
+                filepath.toFile().writeText(codeValue, Charsets.UTF_8)
+                handle(mapOf(File(filename).toPath() to codeValue))
                 return "\n```${codeLang}\n${codeValue}\n```\n\n<div class=\"cmd-button\">Automatically Saved ${filepath}</div>"
             } catch (e: Throwable) {
                 return "\n```${codeLang}\n${codeValue}\n```\n\n<div class=\"cmd-button\">Error Auto-Saving ${filename}: ${e.message}</div>"
@@ -351,9 +278,11 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
             val commandTask = ui.newTask(false)
             lateinit var hrefLink: StringBuilder
             @Suppress("AssignedValueIsNeverRead")
-            hrefLink = commandTask.complete(hrefLink("Save File", classname = "href-link cmd-button") {
+            hrefLink = commandTask.complete(ui.hrefLink("Save File", classname = "href-link cmd-button") {
                 try {
-                    newFile(filepath, codeValue, filename, handle)
+                    filepath.toFile().parentFile?.mkdirs()
+                    filepath.toFile().writeText(codeValue, Charsets.UTF_8)
+                    handle(mapOf(File(filename).toPath() to codeValue))
                     hrefLink.set("""<div class="cmd-button">Saved ${filepath}</div>""")
                     commandTask.complete()
                 } catch (e: Throwable) {
@@ -365,7 +294,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         }
     }
 
-    private fun SocketManager.renderDiffBlock(
+    private fun renderDiffBlock(
         root: Path,
         filename: String,
         diffVal: String,
@@ -401,7 +330,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
             val revertTask = ui.newTask(false)
             lateinit var revertButton: StringBuilder
             @Suppress("AssignedValueIsNeverRead")
-            revertButton = revertTask.complete(hrefLink("Revert", classname = "href-link cmd-button") {
+            revertButton = revertTask.complete(ui.hrefLink("Revert", classname = "href-link cmd-button") {
                 try {
                     filepath.toFile().writeText(originalCode, Charsets.UTF_8)
                     handle(mapOf(relativize to originalCode))
@@ -418,24 +347,14 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         if (echoDiff.isNotBlank()) {
             if (newCode.isValid) {
                 if (shouldAutoApply(filepath ?: root.resolve(filename))) {
-                    try {
-                        val startTime = Instant.now()
+                    return try {
                         filepath.toFile().writeText(newCode.newCode, Charsets.UTF_8)
                         handle(mapOf(relativize to newCode.newCode))
-                        logFileOperation(
-                            filepath,
-                            prevCode,
-                            diffVal,
-                            newCode.newCode,
-                            "AUTO_PATCH",
-                            startTime,
-                            apply.validator
-                        )
                         val revertButton = createRevertButton(filepath, prevCode, handle)
-                        return "\n```diff\n$diffVal\n```\n" + """<div class="cmd-button">Diff Automatically Applied to ${filepath}</div>""" + revertButton
+                        "\n```diff\n$diffVal\n```\n" + """<div class="cmd-button">Diff Automatically Applied to ${filepath}</div>""" + revertButton
                     } catch (e: Throwable) {
                         log.error("Error auto-applying diff", e)
-                        return "\n```diff\n$diffVal\n```\n" + """<div class="cmd-button">Error Auto-Applying Diff to ${filepath}: ${e.message}</div>"""
+                        "\n```diff\n$diffVal\n```\n" + """<div class="cmd-button">Error Auto-Applying Diff to ${filepath}: ${e.message}</div>"""
                     }
                 }
             }
@@ -449,7 +368,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         var originalCode = prevCode
         var isApplied = false
 
-        applyButton = hrefLink("Apply Diff", classname = "href-link cmd-button") {
+        applyButton = ui.hrefLink("Apply Diff", classname = "href-link cmd-button") {
             if (isApplied) return@hrefLink // Prevent re-triggering
             try {
                 isApplied = true
@@ -458,15 +377,6 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
                 newCode = diffApplier.apply(originalCode, "```diff\n$diffVal\n```", processor = processor).patchResult
                 filepath.toFile().writeText(newCode.newCode, Charsets.UTF_8)
                 handle(mapOf(relativize to newCode.newCode))
-                logFileOperation(
-                    filepath,
-                    originalCode,
-                    diffVal,
-                    newCode.newCode,
-                    "MANUAL_PATCH",
-                    startTime,
-                    apply.validator
-                )
                 hrefLink.set("<div class=\"cmd-button\">Diff Applied</div>$revert")
                 applydiffTask.complete()
             } catch (e: Throwable) {
@@ -479,7 +389,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         val applyDiff = applydiffTask.complete(applyButton)!!
         hrefLink = applyDiff
         @Suppress("AssignedValueIsNeverRead")
-        revert = hrefLink("Revert", classname = "href-link cmd-button") {
+        revert = ui.hrefLink("Revert", classname = "href-link cmd-button") {
             try {
                 isApplied = false
                 filepath.toFile().writeText(originalCode, Charsets.UTF_8)

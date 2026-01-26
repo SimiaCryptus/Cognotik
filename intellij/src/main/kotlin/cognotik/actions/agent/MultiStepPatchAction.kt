@@ -22,6 +22,7 @@ import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -241,29 +242,28 @@ class MultiStepPatchAction : BaseAction() {
                   """.trimIndent() + (paths?.joinToString("\n") ?: "")
                                 }
                                 renderMarkdown(
-                                    AddApplyFileDiffLinks.instrumentFileDiffs(
-                                        ui,
-                                        root = root,
-                                        response = taskActor.answer(
-                                            listOf(
-                                                codeSummary(),
-                                                userMessage,
-                                                filter.joinToString("\n\n") {
-                                                    "# ${it}\n```${
-                                                        it.toString().split('.').last()
-                                                            .let { it }
-                                                    }\n${root.resolve(it).toFile().readText()}\n```"
-                                                },
-                                                architectureResponse.text,
-                                                "Provide a change for ${paths?.joinToString(",") { it } ?: ""} ($description)"
-                                            )),
-                                        handle = { newCodeMap ->
-                                            newCodeMap.forEach { (path, newCode) ->
-                                                task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                            }
+                                  AddApplyFileDiffLinks(processor = processor).instrument(
+                                    socketManager = ui,
+                                    root = root,
+                                    response = taskActor.answer(
+                                      listOf(
+                                        codeSummary(),
+                                        userMessage,
+                                        filter.joinToString("\n\n") {
+                                          "# ${it}\n```${
+                                            it.toString().split('.').last()
+                                              .let { it }
+                                          }\n${root.resolve(it).toFile().readText()}\n```"
                                         },
-                                        processor = processor,
-                                    )
+                                        architectureResponse.text,
+                                        "Provide a change for ${paths?.joinToString(",") { it } ?: ""} ($description)"
+                                      )),
+                                    handle = { newCodeMap: Map<Path, String> ->
+                                      newCodeMap.forEach { (path, newCode) ->
+                                        task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                                      }
+                                    }
+                                  )
                                 )
                             } catch (e: Exception) {
                                 task.error(e)

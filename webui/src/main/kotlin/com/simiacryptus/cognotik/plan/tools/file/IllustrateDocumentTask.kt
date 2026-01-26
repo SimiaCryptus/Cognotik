@@ -12,9 +12,11 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import java.nio.file.Path
 import java.util.concurrent.Semaphore
 import javax.imageio.ImageIO
 
@@ -503,39 +505,41 @@ Generate the patches now.
                     log.debug("Patch generation response: $response")
                     if (orchestrationConfig.autoFix) {
                         subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
-                            AddApplyFileDiffLinks.instrumentFileDiffs(
-                                subTask.ui,
-                                root = root,
-                                response = it,
-                                handle = { newCodeMap ->
-                                    newCodeMap.forEach { (path, _) ->
-                                        log.info("Applied patch to: $path")
-                                    }
-                                    patchResult = "Patches applied successfully"
-                                },
-                                shouldAutoApply = { true },
-                                model = chatChatter,
-                                defaultFile = documentFile,
-                                orchestrationConfig.processor
-                            ) + "\n\n## Auto-applied image insertion patches"
+                          AddApplyFileDiffLinks(
+                            orchestrationConfig.processor
+                          ).instrument(
+                            socketManager = subTask.ui,
+                            root = root,
+                            response = it,
+                            handle = { newCodeMap: Map<Path, String> ->
+                              newCodeMap.forEach { (path, _) ->
+                                log.info("Applied patch to: $path")
+                              }
+                              patchResult = "Patches applied successfully"
+                            },
+                            shouldAutoApply = { it: Path -> true },
+                            model = chatChatter,
+                            defaultFile = documentFile
+                          ) + "\n\n## Auto-applied image insertion patches"
                         })
                         semaphore.release()
                     } else {
                         subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
-                            AddApplyFileDiffLinks.instrumentFileDiffs(
-                                subTask.ui,
-                                root = root,
-                                response = it,
-                                handle = { newCodeMap ->
-                                    newCodeMap.forEach { (path, _) ->
-                                        log.info("Applied patch to: $path")
-                                    }
-                                    patchResult = "Patches applied successfully"
-                                },
-                                model = chatChatter,
-                                defaultFile = documentFile,
-                                processor = orchestrationConfig.processor
-                            ) + acceptButtonFooter(subTask.ui) {
+                          AddApplyFileDiffLinks(
+                            processor = orchestrationConfig.processor
+                          ).instrument(
+                            socketManager = subTask.ui,
+                            root = root,
+                            response = it,
+                            handle = { newCodeMap: Map<Path, String> ->
+                              newCodeMap.forEach { (path, _) ->
+                                log.info("Applied patch to: $path")
+                              }
+                              patchResult = "Patches applied successfully"
+                            },
+                            model = chatChatter,
+                            defaultFile = documentFile
+                          ) + acceptButtonFooter(subTask.ui) {
                                 subTask.complete()
                                 semaphore.release()
                             }

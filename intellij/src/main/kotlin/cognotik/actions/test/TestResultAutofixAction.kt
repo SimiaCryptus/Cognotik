@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isGitignore
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -272,17 +273,16 @@ $projectStructure
             ).answer(listOf(error.message ?: ""))
             task.add("Processing suggested fixes...")
 
-            val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
-                socketManager,
-                root = root.toPath(),
-                response = response,
-                handle = { newCodeMap ->
-                    newCodeMap.forEach { (path, newCode) ->
-                        task.add("Applying changes to $path...")
-                        task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                    }
-                },
-                processor = AppSettingsState.instance.processor,
+            val markdown = AddApplyFileDiffLinks(processor = AppSettingsState.instance.processor).instrument(
+              socketManager = socketManager,
+              root = root.toPath(),
+              response = response,
+              handle = { newCodeMap: Map<Path, String> ->
+                newCodeMap.forEach { (path, newCode) ->
+                  task.add("Applying changes to $path...")
+                  task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                }
+              }
             )
             task.add("<div>${renderMarkdown(markdown)}</div>")
         }

@@ -24,12 +24,14 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import javax.swing.JOptionPane
 
@@ -236,17 +238,16 @@ class AnalyzeProblemAction : AnAction() {
 
             return "<div>${
                 renderMarkdown(
-                    AddApplyFileDiffLinks.instrumentFileDiffs(
-                        self = socketManager,
-                        root = root.toPath(),
-                        response = response,
-                        handle = { newCodeMap ->
-                            newCodeMap.forEach { (path, newCode) ->
-                                task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                            }
-                        },
-                        processor = AppSettingsState.instance.processor,
-                    )
+                  AddApplyFileDiffLinks(processor = AppSettingsState.instance.processor).instrument(
+                    socketManager = socketManager,
+                    root = root.toPath(),
+                    response = response,
+                    handle = { newCodeMap: Map<Path, String> ->
+                      newCodeMap.forEach { (path, newCode) ->
+                        task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                      }
+                    }
+                  )
                 )
             }</div>"
         }

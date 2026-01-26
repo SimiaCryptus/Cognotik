@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -166,22 +167,26 @@ $codeResult
 
                 // 5. Render and Instrument
                 val markdown = renderMarkdown(codeResult, ui = mainTask.ui) {
-                    AddApplyFileDiffLinks.instrumentFileDiffs(
-                        task.ui,
+                    AddApplyFileDiffLinks(
+                        processor = orchestrationConfig.processor
+                    ).instrument(
+                        socketManager = task.ui,
                         root = agent.root,
                         response = it,
-                        handle = { newCodeMap ->
-                            newCodeMap.forEach<Path, String> { (path, _) ->
+                        handle = { newCodeMap: Map<Path, String> ->
+                            newCodeMap.forEach { (path, _) ->
                                 val note = "<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated"
                                 completionNotes += note
-                                // Log individual file updates to transcript
-                                transcript?.write("- $note\n".toByteArray())
+                                try {
+                                    transcript?.write("- $note\n".toByteArray())
+                                } catch (e: Exception) {
+                                    log.warn("Failed to write to transcript for file: $path", e)
+                                }
                             }
                         },
-                        shouldAutoApply = { autoFix },
+                        shouldAutoApply = { it: Path -> autoFix },
                         model = chatInterface,
-                        defaultFile = defaultFile,
-                        processor = orchestrationConfig.processor
+                        defaultFile = defaultFile
                     )
                 }
 
@@ -232,7 +237,7 @@ ${e.stackTraceToString()}
 
             throw e
         } finally {
-            transcript?.close()
+            transcript?.flush()
         }
     }
 

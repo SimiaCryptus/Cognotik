@@ -946,6 +946,14 @@ open class FuzzyPatchMatcher(
             if(debug) log.debug("Snippet patching disabled, returning original source")
             return source
         }
+        val sourceLines = source.lines().toMutableList()
+        val isSourceEmpty = sourceLines.isEmpty() || (sourceLines.size == 1 && sourceLines[0].isBlank())
+        // If source is empty, the patch becomes the new content
+        if (isSourceEmpty) {
+            if(debug) log.debug("Empty source, returning patch as new content")
+            return patch
+        }
+
 
         val patchLines = patch.lines().filter { it.isNotBlank() }
         if (patchLines.isEmpty()) {
@@ -953,11 +961,6 @@ open class FuzzyPatchMatcher(
             return source
         }
 
-        val sourceLines = source.lines().toMutableList()
-        if (sourceLines.isEmpty()) {
-            if(debug) log.debug("Empty source, returning patch as new content")
-            return patch
-        }
 
 
         // Use normalized lines for matching to handle whitespace consistently

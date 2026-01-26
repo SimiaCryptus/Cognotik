@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -168,20 +169,19 @@ open class ModifyFilesAction(
         }
 
         override fun renderResponse(response: String, task: SessionTask) = renderMarkdown(response, tabs=true) { html ->
-            AddApplyFileDiffLinks.instrumentFileDiffs(
-                this,
-                root = root.toPath(),
-                response = html,
-                handle = { newCodeMap ->
-                    newCodeMap.forEach { (path, newCode) ->
-                        task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
-                    }
-                },
-                defaultFile = if (files.size == 1) files.first().let {
-                    root.toPath().resolve(it).toFile().absolutePath
-                } else null,
-                processor = AppSettingsState.instance.processor,
-            )
+          AddApplyFileDiffLinks(processor = AppSettingsState.instance.processor).instrument(
+              socketManager = this,
+              root = root.toPath(),
+              response = html,
+              handle = { newCodeMap: Map<Path, String> ->
+                newCodeMap.forEach { (path, newCode) ->
+                  task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
+                }
+              },
+            defaultFile = if (files.size == 1) files.first().let {
+              root.toPath().resolve(it).toFile().absolutePath
+            } else null
+          )
         }
 
         override fun respond(
