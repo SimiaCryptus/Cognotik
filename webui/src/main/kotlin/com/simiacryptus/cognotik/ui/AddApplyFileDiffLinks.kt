@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.diff.DiffApplicationResult
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchResult
-import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -15,8 +14,7 @@ import java.util.*
 import kotlin.io.path.readText
 
 open class AddApplyFileDiffLinks(
-    val processor: PatchProcessor,
-    val diffApplier: SimpleDiffApplier = SimpleDiffApplier()
+    val processor: PatchProcessor
 ) {
 
     companion object {
@@ -72,6 +70,7 @@ open class AddApplyFileDiffLinks(
                 handle = handle,
                 model = model,
                 defaultFile = defaultFile,
+                shouldAutoApply = { path -> shouldAutoApply(path) },
             )
         }
 
@@ -313,8 +312,7 @@ open class AddApplyFileDiffLinks(
         val applydiffTask = ui.newTask(false)
         lateinit var hrefLink: StringBuilder
 
-        val apply = diffApplier.apply(prevCode, "```diff\n$diffVal\n```", filename, processor)
-        var newCode = apply.patchResult
+        var newCode = processor.apply(prevCode, "```diff\n$diffVal\n```", filename).patchResult
         val echoDiff = try {
             processor.generatePatch(prevCode, newCode.newCode)
         } catch (e: Throwable) {
@@ -374,7 +372,7 @@ open class AddApplyFileDiffLinks(
                 isApplied = true
                 val startTime = Instant.now()
                 originalCode = load(filepath)
-                newCode = diffApplier.apply(originalCode, "```diff\n$diffVal\n```", processor = processor).patchResult
+                newCode = processor.apply(originalCode, "```diff\n$diffVal\n```").patchResult
                 filepath.toFile().writeText(newCode.newCode, Charsets.UTF_8)
                 handle(mapOf(relativize to newCode.newCode))
                 hrefLink.set("<div class=\"cmd-button\">Diff Applied</div>$revert")

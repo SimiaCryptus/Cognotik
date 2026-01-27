@@ -1,11 +1,13 @@
 package com.simiacryptus.cognotik.util
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.diff.PatchProcessors
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -42,7 +44,8 @@ open class DocProcessor(
     val generates: List<GenerateSpec>,
     val related: List<String>,
     val content: String,
-    val frontmatter: Map<String, Any>
+    val frontmatter: Map<String, Any>,
+    val taskType: String? = null
   )
 
   /**
@@ -54,6 +57,7 @@ open class DocProcessor(
     val sourcePattern: String,
     val destinationPattern: String
   )
+
   /**
    * Represents a non-pattern-based generation specification.
    * @param output The single output file path (relative to doc file)
@@ -70,6 +74,7 @@ open class DocProcessor(
     val destinationFile: File,
     val spec: DocSpec
   )
+
   data class GenerateMatch(
     val outputFile: File,
     val inputFiles: List<File>,
@@ -77,15 +82,29 @@ open class DocProcessor(
   )
 
 
-  data class ModificationTask(
-    val data: FileModificationTaskExecutionConfigData,
-    val patchProcessor: PatchProcessors,
-    val shouldDeleteTarget: Boolean = false
+  data class ModificationTaskConfig(
+    val files: List<String>? = null,
+    val related_files: List<String>? = null,
+    val task_description: String = "",
   )
+
+  data class ModificationTask(
+    val data: ModificationTaskConfig = ModificationTaskConfig(),
+    val patchProcessor: PatchProcessors = PatchProcessors.Fuzzy,
+    val shouldDeleteTarget: Boolean = false,
+    val taskType: TaskType<*, *> = FileModification
+  ) {
+    @get:JsonIgnore
+    val taskExecutionConfig : TaskExecutionConfig get() {
+      return (mapOf(
+        "task_type" to taskType.name,
+      ) + data.jsonCast<Map<String,Any>>()).jsonCast()
+    }
+  }
 
   data class DocumentMatch(
     val docSpec: DocSpec,
-    val supportingFiles: List<File>
+    val supportingFiles: List<File> = emptyList()
   )
 
   fun run() {
@@ -105,7 +124,8 @@ open class DocProcessor(
     val documentMatches = documentMatches(docSpecs)
     val transformMatches = transformMatches(docSpecs)
     val generateMatches = generateMatches(docSpecs)
-    val allTargetFiles = (fileToSpecs.keys + transformMatches.keys + documentMatches.keys + generateMatches.keys).distinct()
+    val allTargetFiles =
+      (fileToSpecs.keys + transformMatches.keys + documentMatches.keys + generateMatches.keys).distinct()
     log.info("Total unique target files: ${allTargetFiles.size}")
     return allTargetFiles.map { targetFile ->
       val specs = fileToSpecs[targetFile] ?: emptyList()
@@ -119,23 +139,57 @@ open class DocProcessor(
           "Processing ${relativeTarget} based on ${specs.size} spec(s), ${transforms.size} transform(s), ${documents.size} document(s), and ${generates.size} generate(s): ${
             (specs.map { it.docFile.name } +
                 transforms.map { "${it.spec.docFile.name}(${it.sourceFile.name})" } +
-                documents.map<DocumentMatch, String> { "${it.docSpec.docFile.name}(${it.supportingFiles.size} files)" } +
+                documents.map { "${it.docSpec.docFile.name}(${it.supportingFiles.size} files)" } +
                 generates.map { "${it.spec.docFile.name}(${it.inputFiles.size} inputs)" }
                 ).joinToString(", ")
           }")
-        overwriteMode.prepare(
-          source = primarySource(transforms, specs, documents, generates) ?: return@map null,
+        val source = primarySource(transforms, specs, documents, generates)
+        if (source == null) {
+          return@map null
+        }
+        val patchProcessor = overwriteMode.prepare(
+          source = source,
           target = targetFile,
           relatedFiles = allRelatedFiles(specs, targetFile, transforms, documents, generates)
-        )?.let { patchProcessor ->
-          ModificationTask(data(relativeTarget, specs, targetFile, transforms, documents, generates), patchProcessor)
+        )
+        if (patchProcessor == null) {
+          return@map null
         }
+        val taskType = resolveTaskType(specs, transforms, documents, generates)
+        val executionConfigData = data(relativeTarget, specs, targetFile, transforms, documents, generates)
+        ModificationTask(executionConfigData, patchProcessor, taskType = taskType)
       } catch (e: Exception) {
         log.error("Error processing ${relativeTarget}", e)
         null
       }
-    }.filterNotNull()
-      .let { sortByDependencies(it) }
+    }.filterNotNull().let { sortByDependencies(it) }
+  }
+
+  /**
+   * Resolves the task type to use based on frontmatter specifications.
+   * Priority: specs > transforms > documents > generates, first non-null wins.
+   * Defaults to FileModification if no task type is specified.
+   */
+  open fun resolveTaskType(
+    specs: List<DocSpec>,
+    transforms: List<TransformMatch>,
+    documents: List<DocumentMatch>,
+    generates: List<GenerateMatch>
+  ): TaskType<*, *> {
+    val taskTypeName = specs.firstNotNullOfOrNull { it.taskType }
+      ?: transforms.firstNotNullOfOrNull { it.spec.taskType }
+      ?: documents.firstNotNullOfOrNull { it.docSpec.taskType }
+      ?: generates.firstNotNullOfOrNull { it.spec.taskType }
+    return if (taskTypeName != null) {
+      try {
+        TaskType.valueOf(taskTypeName.replace(" ", ""))
+      } catch (e: IllegalArgumentException) {
+        log.warn("Unknown task type '$taskTypeName', defaulting to FileModification")
+        FileModification
+      }
+    } else {
+      FileModification
+    }
   }
 
   open fun data(
@@ -145,7 +199,7 @@ open class DocProcessor(
     transforms: List<TransformMatch>,
     documents: List<DocumentMatch>,
     generates: List<GenerateMatch>
-  ): FileModificationTaskExecutionConfigData = FileModificationTaskExecutionConfigData(
+  ): ModificationTaskConfig = ModificationTaskConfig(
     files = listOf(relativeTarget.toString()),
     related_files = (specs.flatMap { spec ->
       listOf(spec.docFile.relativeTo(root.absoluteFile).toString()) +
@@ -226,6 +280,7 @@ open class DocProcessor(
     log.info("Found ${transformMatches.size} transform matches")
     return transformMatches
   }
+
   open fun generateMatches(docSpecs: List<DocSpec>): Map<String, List<GenerateMatch>> {
     val generateMatches = docSpecs
       .filter { it.generates.isNotEmpty() }
@@ -302,9 +357,9 @@ open class DocProcessor(
       fileMods.map { mod ->
         concurrencyProcessor.submit {
           harness.runTask(
-            taskType = FileModification,
-            typeConfig = TaskTypeConfig(task_type = FileModification.name),
-            executionConfig = mod.data,
+            taskType = mod.taskType,
+            typeConfig = typeConfig(mod),
+            executionConfig = mod.taskExecutionConfig,
             timeoutMinutes = 5,
             workspace = root.absoluteFile,
             initSettings = { session ->
@@ -312,8 +367,8 @@ open class DocProcessor(
                 session = session,
                 workspace = root.absoluteFile,
                 autoFix = true,
-                taskType = FileModification,
-                typeConfig = TaskTypeConfig(task_type = FileModification.name)
+                taskType = mod.taskType,
+                typeConfig = typeConfig(mod)
               ).apply {
                 processor = mod.patchProcessor
               }
@@ -323,6 +378,9 @@ open class DocProcessor(
       }.toTypedArray().forEach { it.get() }
     }
   }
+
+  private fun typeConfig(mod: ModificationTask): TaskTypeConfig = TaskTypeConfig(task_type = mod.taskType.name)
+
   /**
    * Sorts modification tasks so that dependencies are processed before dependents.
    * Uses topological sorting with cycle detection - when cycles are encountered,
@@ -393,30 +451,27 @@ open class DocProcessor(
     documents: List<Any>, // Using Any to avoid inner class reference issues
     generates: List<Any>,
     target: File
-  ): String {
-    val parts = mutableListOf<String>()
+  ) = buildString {
+    when {
+      specs.isNotEmpty() || transforms.isNotEmpty() -> {
+        appendLine("Update the file ${target.name} based on the included documentation and specifications.")
+        appendLine("Ensure the file conforms to all the patterns, standards, and requirements described.")
+        appendLine("If the file already exists, update it to match the specifications while preserving existing functionality where appropriate.")
+      }
 
-    if (specs.isNotEmpty() || transforms.isNotEmpty()) {
-      parts.add("Update the file ${target.name} based on the included documentation and specifications.")
-      parts.add("Ensure the file conforms to all the patterns, standards, and requirements described.")
-      parts.add("If the file already exists, update it to match the specifications while preserving existing functionality where appropriate.")
+      documents.isNotEmpty() -> {
+        appendLine("Update the documentation file ${target.name} based on the supporting source files included as context.")
+        appendLine("The documentation should accurately reflect the current state of the code.")
+        appendLine("Update any outdated information, add documentation for new features, and ensure consistency with the actual implementation.")
+      }
+
+      generates.isNotEmpty() -> {
+        appendLine("Generate or update the file ${target.name} based on the documentation and input files provided as context.")
+        appendLine("The output should follow the patterns and requirements described in the documentation.")
+        appendLine("Use the input files as source material to create the appropriate output.")
+      }
     }
-
-    if (documents.isNotEmpty()) {
-      parts.add("Update the documentation file ${target.name} based on the supporting source files included as context.")
-      parts.add("The documentation should accurately reflect the current state of the code.")
-      parts.add("Update any outdated information, add documentation for new features, and ensure consistency with the actual implementation.")
-    }
-    if (generates.isNotEmpty()) {
-      parts.add("Generate or update the file ${target.name} based on the documentation and input files provided as context.")
-      parts.add("The output should follow the patterns and requirements described in the documentation.")
-      parts.add("Use the input files as source material to create the appropriate output.")
-    }
-
-
-    return parts.joinToString("\n")
   }
-
 
   companion object {
     private val log = LoggerFactory.getLogger(DocProcessor::class.java)
@@ -498,11 +553,12 @@ open class DocProcessor(
       val specifies = parseSpecifies(frontmatter)
       val documents = parseDocuments(frontmatter)
       val transforms = parseTransforms(frontmatter)
-    val generates = parseGenerates(frontmatter)
+      val generates = parseGenerates(frontmatter)
       val related = parseRelated(frontmatter)
+      val taskType = parseTaskType(frontmatter)
 
       // Return null if neither specifies nor transforms are present
-    if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty() && generates.isEmpty()) {
+      if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty() && generates.isEmpty()) {
         return null
       }
 
@@ -511,11 +567,20 @@ open class DocProcessor(
         specifies = specifies,
         documents = documents,
         transforms = transforms,
-      generates = generates,
+        generates = generates,
         related = related,
         content = bodyContent,
-        frontmatter = frontmatter
+        frontmatter = frontmatter,
+        taskType = taskType
       )
+    }
+
+    /**
+     * Parse 'task_type' from frontmatter.
+     * This specifies which task type to use for processing (defaults to FileModification).
+     */
+    fun parseTaskType(frontmatter: Map<String, Any>): String? {
+      return frontmatter["task_type"] as? String
     }
 
     /**
@@ -581,6 +646,7 @@ open class DocProcessor(
           // Single generate spec
           parseGenerateSpec(generateValue)?.let { listOf(it) } ?: emptyList()
         }
+
         is List<*> -> {
           // List of generate specs
           generateValue.mapNotNull { item ->
@@ -590,9 +656,11 @@ open class DocProcessor(
             }
           }
         }
+
         else -> emptyList()
       }
     }
+
     /**
      * Parse a single generate spec from a map
      */

@@ -10,7 +10,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CheckBoxList
-import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
@@ -19,9 +18,8 @@ import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
@@ -121,7 +119,7 @@ open class DocProcessorAction(
                 val selectedTasks = dialog.getSelectedTasks()
                 if (selectedTasks.isNotEmpty()) {
                     UITools.runAsync(project, "Processing Documentation Tasks", true) { innerProgress ->
-                        executeTasks(docProcessor, selectedTasks, dialog.autoFix)
+                        executeTasks(docProcessor, selectedTasks, dialog.autoFix, selectedTasks.first().taskType)
                     }
                 }
             }
@@ -131,7 +129,8 @@ open class DocProcessorAction(
     private fun executeTasks(
         docProcessor: DocProcessor,
         tasks: List<ModificationTask>,
-        autoFix: Boolean
+        autoFix: Boolean,
+        taskType: TaskType<*,*>
     ) {
         val session = Session.newGlobalID()
         DataStorage.sessionPaths[session] = docProcessor.root
@@ -149,9 +148,9 @@ open class DocProcessorAction(
                 if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
             ),
             taskSettings = mutableMapOf(
-                FileModification.name to TaskTypeConfig(
+                taskType.name to TaskTypeConfig(
                     name = "File Modification Task",
-                    task_type = FileModification.name)
+                    task_type = taskType.name)
             )
         )
 
@@ -159,8 +158,8 @@ open class DocProcessorAction(
             applicationName = "Doc Update Processor",
             path = "/docUpdate",
             showMenubar = autoFix,
-            taskType = FileModification,
-            taskConfig = tasks.map { it.data },
+            taskType = taskType,
+            taskConfig = tasks.map { it.taskExecutionConfig },
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ) {
             override fun instance(model: ApiChatModel) =
@@ -282,7 +281,7 @@ open class DocProcessorAction(
             val index: Int,
             val displayName: String,
             val description: String,
-            val config: FileModificationTaskExecutionConfigData
+            val config: DocProcessor.ModificationTaskConfig
         ) {
             override fun toString(): String = "$displayName - $description"
         }

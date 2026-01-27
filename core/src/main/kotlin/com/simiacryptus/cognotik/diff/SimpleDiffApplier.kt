@@ -16,7 +16,7 @@ class SimpleDiffApplier {
     companion object {
         val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(SimpleDiffApplier::class.java)
 
-        private const val MAX_DIFF_SIZE_CHARS = 100000
+        const val MAX_DIFF_SIZE_CHARS = 100000
 
         val DIFF_PATTERN = """(?s)(?<![^\n])```diff\n(.*?)\n```""".toRegex()
 
@@ -33,39 +33,5 @@ class SimpleDiffApplier {
 
     }
 
-    private fun validateDiffSize(diff: String): Boolean {
-        return diff.length <= MAX_DIFF_SIZE_CHARS
-    }
-
-    fun apply(
-        originalCode: String, response: String, filename: String? = null, processor: PatchProcessor
-    ): DiffApplicationResult {
-        val matches = DIFF_PATTERN.findAll(response).distinct()
-        var currentCode = originalCode
-
-        val validator = getValidator(filename)
-        val originalCodeErrors = validator.validateGrammar(originalCode)
-        val newErrors = matches.flatMap { diffBlock ->
-            val diffVal: String = diffBlock.groupValues[1]
-            try {
-                if (!validateDiffSize(diffVal)) {
-                    throw IllegalArgumentException("Diff size exceeds maximum limit")
-                }
-                val newCode = processor.applyPatch(currentCode, diffVal).replace("\r", "")
-                val validationErrors = validator.validateGrammar(newCode)
-                currentCode = newCode
-                return@flatMap validationErrors
-            } catch (e: Throwable) {
-                return@flatMap emptyList()
-            }
-        }.toList().filter {
-            originalCodeErrors.none { originalError ->
-                it.message == originalError.message
-            }
-        }
-        if (newErrors.isNotEmpty()) {
-            log.error("Error applying diff: ${newErrors.joinToString("\n") { it.message }}")
-        }
-        return DiffApplicationResult(currentCode, newErrors, validator = validator)
-    }
 }
+

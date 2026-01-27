@@ -185,6 +185,18 @@ open class FuzzyPatchMatcher(
             if(debug) log.debug("Empty patch provided, returning original source")
             return source
         }
+        // If source if blank, treat patch as new file content but strip diff markers
+        if (source.isBlank()) {
+            val newContent = patch.lines().map { line ->
+                when {
+                    line.startsWith("+") -> line.removePrefix("+").trimStart()
+                    line.startsWith("-") -> "" // Ignore deletions in this case. Should we warn?
+                    else -> line.trimStart()
+                }
+            }.filter { it.isNotEmpty() }.joinToString("\n")
+            if(debug) log.debug("Source is blank, returning new content from patch")
+            return newContent
+        }
 
         val hasAddOrDeleteLines = patch.lines().any { line ->
             val trimmed = line.trimStart()

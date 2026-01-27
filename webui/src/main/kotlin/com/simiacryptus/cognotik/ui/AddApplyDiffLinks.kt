@@ -39,7 +39,7 @@ class AddApplyDiffLinks {
         val matches = SimpleDiffApplier.DIFF_PATTERN.findAll(response).distinct()
 
         val patch = { code: String, diff: String ->
-            val result = diffApplier.apply(code, "```diff\n$diff\n```", processor = processor)
+            val result = processor.apply(code, "```diff\n$diff\n```")
             PatchResult(result.newCode, result.isValid, null)
         }
 
