@@ -282,6 +282,7 @@ font-weight: bold;
 <li><a href="#api-reference">API Reference</a></li>
 <li><a href="#best-practices">Best Practices</a></li>
 <li><a href="#examples">Examples</a></li>
+<li><a href="#error-handling">Error Handling</a></li>
 </ul>
 </nav>
 </aside>
@@ -601,6 +602,16 @@ Content when false
 &lt;% if status != "inactive" %&gt;Not Inactive&lt;% end %&gt;
 &lt;% if !hidden %&gt;Visible&lt;% end %&gt;</code></pre>
 </div>
+<h3>Arithmetic in Conditions</h3>
+<p>Simple arithmetic expressions (like modulo) can be used in conditions:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% if loop.index % 2 == 0 %&gt;Even row&lt;% end %&gt;</code></pre>
+</div>
+
 <h3>For Loops</h3>
 <h4>Iterating Over Arrays</h4>
 <div class="code-block">
@@ -642,6 +653,39 @@ Content when false
 </div>
 <pre><code>&lt;% for entry in settings %&gt;
 &lt;%= entry.key %&gt; = &lt;%= entry.value %&gt;
+&lt;% end %&gt;</code></pre>
+</div>
+<h4>Nested Loops</h4>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% for row in matrix %&gt;
+    &lt;% for cell in row %&gt;
+        &lt;%= cell %&gt;
+    &lt;% end %&gt;
+&lt;% end %&gt;</code></pre>
+</div>
+<h3>Combining Loops and Conditionals</h3>
+<h4>If-Else Inside For Loops</h4>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% for item in items %&gt;
+&lt;% if item.active %&gt;Active: &lt;%= item.name %&gt;&lt;% else %&gt;Inactive: &lt;%= item.name %&gt;&lt;% end %&gt;
+&lt;% end %&gt;</code></pre>
+</div>
+<h4>For Loops Inside Conditionals</h4>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% if showItems %&gt;
+&lt;% for item in items %&gt;&lt;%= item %&gt; &lt;% end %&gt;
 &lt;% end %&gt;</code></pre>
 </div>
 </section>
@@ -695,6 +739,45 @@ return last + ", " + first
 return x * 2
 &lt;% enddef %&gt;
 &lt;%= value | double %&gt;</code></pre>
+</div>
+<h3>Accessing Global Data from Functions</h3>
+<p>Functions can access the template's global data through the <code>data</code> variable:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% def greetWithTitle(name) %&gt;
+return data.title + " " + name
+&lt;% enddef %&gt;
+&lt;%= greetWithTitle("World") %&gt;
+&lt;%-- With data.title = "Hello", Output: Hello World --%&gt;</code></pre>
+</div>
+<h3>Using Functions in For Loops</h3>
+<p>Functions work seamlessly within iteration contexts:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% def format(item) %&gt;
+return "[" + item + "]"
+&lt;% enddef %&gt;
+&lt;% for item in items %&gt;&lt;%= item | format %&gt;&lt;% if !loop.last %&gt; &lt;% end %&gt;&lt;% end %&gt;
+&lt;%-- Output: [a] [b] [c] --%&gt;</code></pre>
+</div>
+<h3>Chaining Functions with Filters</h3>
+<p>Custom functions can be chained with built-in filters:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% def prefix(text) %&gt;
+return "PREFIX_" + text
+&lt;% enddef %&gt;
+&lt;%= name | prefix | upper %&gt;
+&lt;%-- "test" becomes "PREFIX_TEST" --%&gt;</code></pre>
 </div>
 </section>
 <!-- Type Schema Section -->
@@ -795,6 +878,7 @@ println("  ${error.path}: ${error.message}")
 &lt;% end %&gt;
 \end{document}</code></pre>
 </div>
+<p>The engine correctly distinguishes between LaTeX's <code>\end{...}</code> commands and the template's <code>&lt;% end %&gt;</code> tags.</p>
 <h3>Tables Pattern</h3>
 <div class="code-block">
 <div class="code-header">
@@ -887,6 +971,19 @@ println("  ${error.path}: ${error.message}")
 </tr>
 </tbody>
 </table>
+<h3>FieldType Sealed Class</h3>
+<p>Represents field types in the schema:</p>
+<ul>
+<li><code>StringType</code></li>
+<li><code>NumberType</code></li>
+<li><code>BooleanType</code></li>
+<li><code>AnyType</code></li>
+<li><code>ArrayType</code></li>
+<li><code>ObjectType</code></li>
+<li><code>UnionType</code></li>
+<li><code>CustomType</code></li>
+</ul>
+
 <h3>ValidationError Data Class</h3>
 <div class="code-block">
 <div class="code-header">
@@ -897,6 +994,15 @@ println("  ${error.path}: ${error.message}")
 val path: String,    // e.g., "user.profile.name"
 val message: String  // e.g., "Required field is missing"
 )</code></pre>
+</div>
+<h3>TemplateValidationException</h3>
+<p>Thrown when strict validation fails:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">kotlin</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>class TemplateValidationException(val errors: List&lt;ValidationError&gt;)</code></pre>
 </div>
 </section>
 <!-- Best Practices Section -->
@@ -937,7 +1043,9 @@ title: string;
 sections: Array&lt;{ title: string; content: string }&gt;;
 };
 %&gt;
+---</code></pre>
 </div>
+
 <h3>4. Use Functions for Repeated Logic</h3>
 <div class="code-block">
 <div class="code-header">
