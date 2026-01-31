@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- SEO Meta Tags -->
+<title>ERB Template Engine | Cognotik</title>
+<meta name="description" content="Ruby ERB-inspired templating engine for Kotlin with variable interpolation, filters, control structures, and LaTeX support.">
+<meta name="keywords" content="ERB template, Kotlin templating, LaTeX generation, template engine, Cognotik">
+<!-- Open Graph / Social -->
+<meta property="og:title" content="ERB Template Engine | Cognotik">
+<meta property="og:description" content="Ruby ERB-inspired templating engine for Kotlin with variable interpolation, filters, control structures, and LaTeX support.">
+<meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
+<meta property="og:url" content="https://cognotik.com/erb_templating.html">
+<meta property="og:type" content="website">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ERB Template Engine | Cognotik">
+<meta name="twitter:description" content="Ruby ERB-inspired templating engine for Kotlin with variable interpolation, filters, control structures, and LaTeX support.">
+<meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+<!-- Favicon Suite -->
+<link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0f1115">
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles/main.css">
+<script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+<style>
+/* Page-specific styles */
+.doc-container {
+display: grid;
+grid-template-columns: 280px 1fr;
+gap: var(--spacing-xl);
+max-width: 1400px;
+margin: 0 auto;
+padding: var(--spacing-lg) var(--spacing-md);
+min-height: calc(100vh - var(--header-height));
+}
+@media (max-width: 968px) {
+.doc-container {
+grid-template-columns: 1fr;
+}
+.doc-sidebar {
+display: none;
+}
+}
+.doc-sidebar {
+position: sticky;
+top: calc(var(--header-height) + var(--spacing-lg));
+height: fit-content;
+max-height: calc(100vh - var(--header-height) - var(--spacing-xl));
+overflow-y: auto;
+}
+.doc-nav {
+background: var(--surface-color);
+border: 1px solid var(--border-color);
+border-radius: var(--border-radius);
+padding: var(--spacing-md);
+}
+.doc-nav-title {
+font-family: var(--font-family-serif);
+font-size: 0.875rem;
+font-weight: 600;
+color: var(--text-muted);
+text-transform: uppercase;
+letter-spacing: 0.05em;
+margin-bottom: var(--spacing-sm);
+}
+.doc-nav ul {
+list-style: none;
+padding: 0;
+margin: 0;
+}
+.doc-nav li {
+margin-bottom: var(--spacing-xs);
+}
+.doc-nav a {
+display: block;
+padding: var(--spacing-xs) var(--spacing-sm);
+color: var(--text-muted);
+font-size: 0.875rem;
+border-radius: 4px;
+transition: all 0.2s ease;
+}
+.doc-nav a:hover {
+color: var(--accent-color);
+background: rgba(139, 92, 246, 0.1);
+text-decoration: none;
+}
+.doc-nav a.active {
+color: var(--accent-color);
+background: rgba(139, 92, 246, 0.15);
+}
+.doc-content {
+max-width: 900px;
+}
+.doc-header {
+margin-bottom: var(--spacing-xl);
+padding-bottom: var(--spacing-lg);
+border-bottom: 1px solid var(--border-color);
+}
+.doc-header h1 {
+font-size: 2.5rem;
+margin-bottom: var(--spacing-sm);
+}
+.doc-header .lead {
+font-size: 1.125rem;
+color: var(--text-muted);
+line-height: 1.7;
+}
+.doc-section {
+margin-bottom: var(--spacing-xl);
+}
+.doc-section h2 {
+font-size: 1.75rem;
+margin-bottom: var(--spacing-md);
+padding-top: var(--spacing-lg);
+border-top: 1px solid var(--border-color);
+}
+.doc-section h2:first-child {
+border-top: none;
+padding-top: 0;
+}
+.doc-section h3 {
+font-size: 1.25rem;
+margin-top: var(--spacing-lg);
+margin-bottom: var(--spacing-sm);
+color: var(--secondary-color);
+}
+.doc-section h4 {
+font-size: 1rem;
+margin-top: var(--spacing-md);
+margin-bottom: var(--spacing-sm);
+color: var(--text-muted);
+}
+/* Tables */
+.doc-table {
+width: 100%;
+border-collapse: collapse;
+margin-bottom: var(--spacing-md);
+font-size: 0.9rem;
+}
+.doc-table th,
+.doc-table td {
+padding: var(--spacing-sm) var(--spacing-md);
+text-align: left;
+border: 1px solid var(--border-color);
+}
+.doc-table th {
+background: var(--surface-color);
+font-weight: 600;
+color: var(--secondary-color);
+}
+.doc-table td {
+background: rgba(30, 41, 59, 0.3);
+}
+.doc-table code {
+font-size: 0.85em;
+}
+/* Code blocks with headers */
+.code-block {
+background: var(--surface-color);
+border: 1px solid var(--border-color);
+border-radius: var(--border-radius);
+overflow: hidden;
+margin-bottom: var(--spacing-md);
+}
+.code-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: var(--spacing-xs) var(--spacing-md);
+background: rgba(15, 23, 42, 0.5);
+border-bottom: 1px solid var(--border-color);
+}
+.code-lang {
+font-family: var(--font-family-mono);
+font-size: 0.75rem;
+color: var(--text-muted);
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+.copy-btn {
+padding: var(--spacing-xs) var(--spacing-sm);
+font-size: 0.75rem;
+color: var(--text-muted);
+background: transparent;
+border: 1px solid var(--border-color);
+border-radius: 4px;
+cursor: pointer;
+transition: all 0.2s ease;
+}
+.copy-btn:hover {
+color: var(--primary-color);
+background: rgba(139, 92, 246, 0.1);
+border-color: var(--accent-color);
+}
+.code-block pre {
+margin: 0;
+padding: var(--spacing-md);
+border: none;
+border-radius: 0;
+}
+/* Badges */
+.badge {
+display: inline-flex;
+align-items: center;
+padding: 0.25rem 0.5rem;
+font-size: 0.75rem;
+font-weight: 500;
+border-radius: 4px;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+.badge-primary {
+background: rgba(139, 92, 246, 0.15);
+color: var(--accent-color);
+}
+.badge-success {
+background: rgba(74, 222, 128, 0.15);
+color: var(--success-color);
+}
+/* Alert boxes */
+.alert {
+padding: var(--spacing-md);
+border-radius: var(--border-radius);
+margin-bottom: var(--spacing-md);
+border-left: 4px solid;
+}
+.alert-info {
+background: rgba(6, 182, 212, 0.1);
+border-color: var(--accent-secondary);
+}
+.alert-warning {
+background: rgba(251, 191, 36, 0.1);
+border-color: #fbbf24;
+}
+/* Feature list */
+.feature-list {
+list-style: none;
+padding: 0;
+margin: 0 0 var(--spacing-md) 0;
+}
+.feature-list li {
+position: relative;
+padding-left: 1.5rem;
+margin-bottom: var(--spacing-sm);
+}
+.feature-list li::before {
+content: "✓";
+position: absolute;
+left: 0;
+color: var(--success-color);
+font-weight: bold;
+}
+</style>
+</head>
+<body>
+<!-- Header Component -->
+<cognotik-header></cognotik-header>
+<!-- Main Content -->
+<main class="doc-container">
+<!-- Sidebar Navigation -->
+<aside class="doc-sidebar">
+<nav class="doc-nav">
+<div class="doc-nav-title">Contents</div>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#getting-started">Getting Started</a></li>
+<li><a href="#basic-syntax">Basic Syntax</a></li>
+<li><a href="#variable-interpolation">Variable Interpolation</a></li>
+<li><a href="#filters">Filters</a></li>
+<li><a href="#control-structures">Control Structures</a></li>
+<li><a href="#custom-functions">Custom Functions</a></li>
+<li><a href="#type-schema">Type Schema</a></li>
+<li><a href="#latex-features">LaTeX Features</a></li>
+<li><a href="#api-reference">API Reference</a></li>
+<li><a href="#best-practices">Best Practices</a></li>
+<li><a href="#examples">Examples</a></li>
+</ul>
+</nav>
+</aside>
+<!-- Documentation Content -->
+<article class="doc-content">
+<header class="doc-header">
+<h1>ERB Template Engine</h1>
+<p class="lead">
+A powerful, Ruby ERB-inspired templating engine written in Kotlin. Generate dynamic text content 
+(particularly LaTeX documents) from JSON data with variable interpolation, control structures, 
+filters, custom functions, and optional type-safe schema validation.
+</p>
+<div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+<span class="badge badge-primary">Core</span>
+<span class="badge badge-success">Stable</span>
+</div>
+</header>
+<!-- Overview Section -->
+<section id="overview" class="doc-section">
+<h2>Overview</h2>
+<p>
+The <code>ErbTemplateEngine</code> provides a flexible way to generate dynamic text content from JSON data. 
+It's particularly useful for generating LaTeX documents, configuration files, and any text-based output 
+that requires dynamic content insertion.
+</p>
+<h3>Key Features</h3>
+<ul class="feature-list">
+<li>ERB-style syntax (<code>&lt;%= %&gt;</code> and <code>&lt;% %&gt;</code>)</li>
+<li>Variable interpolation with dot notation for nested objects</li>
+<li>Built-in filters for text transformation</li>
+<li>Control structures (if/else, for loops)</li>
+<li>Custom function definitions using Groovy</li>
+<li>TypeScript-style schema validation</li>
+<li>LaTeX-specific escaping and Markdown conversion</li>
+</ul>
+</section>
+<!-- Getting Started Section -->
+<section id="getting-started" class="doc-section">
+<h2>Getting Started</h2>
+<h3>Basic Usage</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">kotlin</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>import com.simiacryptus.cognotik.util.ErbTemplateEngine
+import com.google.gson.JsonObject
+val engine = ErbTemplateEngine()
+val template = "Hello, &lt;%= name %&gt;!"
+val data = JsonObject().apply {
+addProperty("name", "World")
+}
+val result = engine.render(template, data)
+// Output: "Hello, World!"</code></pre>
+</div>
+<h3>Input Data Format</h3>
+<p>The engine accepts data as a <code>JsonObject</code> from the Gson library. Data can include:</p>
+<ul>
+<li><strong>Primitives:</strong> strings, numbers, booleans</li>
+<li><strong>Objects:</strong> nested JSON objects</li>
+<li><strong>Arrays:</strong> JSON arrays for iteration</li>
+</ul>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">kotlin</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>val data = JsonObject().apply {
+addProperty("title", "My Document")
+addProperty("count", 42)
+addProperty("active", true)
+add("user", JsonObject().apply {
+addProperty("name", "John")
+addProperty("email", "john@example.com")
+})
+add("items", JsonArray().apply {
+add("Item 1")
+add("Item 2")
+add("Item 3")
+})
+}</code></pre>
+</div>
+</section>
+<!-- Basic Syntax Section -->
+<section id="basic-syntax" class="doc-section">
+<h2>Basic Syntax</h2>
+<p>The engine uses ERB-style delimiters:</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Syntax</th>
+<th>Purpose</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;%= expr %&gt;</code></td>
+<td>Output expression</td>
+<td><code>&lt;%= name %&gt;</code></td>
+</tr>
+<tr>
+<td><code>&lt;% code %&gt;</code></td>
+<td>Control structure</td>
+<td><code>&lt;% if active %&gt;</code></td>
+</tr>
+<tr>
+<td><code>&lt;%# comment %&gt;</code></td>
+<td>Comment (in preamble)</td>
+<td><code>&lt;%# @type ... %&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h3>Whitespace Handling</h3>
+<p>Whitespace inside tags is flexible:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%=name%&gt;           &lt;%-- Works --%&gt;
+&lt;%= name %&gt;         &lt;%-- Works --%&gt;
+&lt;%=    name    %&gt;   &lt;%-- Works --%&gt;</code></pre>
+</div>
+</section>
+<!-- Variable Interpolation Section -->
+<section id="variable-interpolation" class="doc-section">
+<h2>Variable Interpolation</h2>
+<h3>Simple Variables</h3>
+<p>Access top-level variables directly:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%= title %&gt;
+&lt;%= count %&gt;
+&lt;%= active %&gt;</code></pre>
+</div>
+<h3>Nested Object Access</h3>
+<p>Use dot notation to access nested properties:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%= user.name %&gt;
+&lt;%= user.email %&gt;
+&lt;%= config.settings.theme %&gt;</code></pre>
+</div>
+<h3>Missing Variables</h3>
+<p>Missing variables render as empty strings (no error):</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%= nonexistent %&gt;  &lt;%-- Outputs: "" --%&gt;</code></pre>
+</div>
+</section>
+<!-- Filters Section -->
+<section id="filters" class="doc-section">
+<h2>Filters</h2>
+<p>Filters transform values using the pipe (<code>|</code>) syntax. Multiple filters can be chained.</p>
+<h3>Syntax</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%= value | filter %&gt;
+&lt;%= value | filter:argument %&gt;
+&lt;%= value | filter1 | filter2 | filter3 %&gt;</code></pre>
+</div>
+<h3>Built-in Filters</h3>
+<h4><code>escape</code></h4>
+<p>Escapes special LaTeX characters:</p>
+<table class="doc-table">
+<thead>
+<tr><th>Input</th><th>Output</th></tr>
+</thead>
+<tbody>
+<tr><td><code>\</code></td><td><code>\textbackslash{}</code></td></tr>
+<tr><td><code>{</code></td><td><code>\{</code></td></tr>
+<tr><td><code>}</code></td><td><code>\}</code></td></tr>
+<tr><td><code>$</code></td><td><code>\$</code></td></tr>
+<tr><td><code>&amp;</code></td><td><code>\&amp;</code></td></tr>
+<tr><td><code>%</code></td><td><code>\%</code></td></tr>
+<tr><td><code>#</code></td><td><code>\#</code></td></tr>
+<tr><td><code>_</code></td><td><code>\_</code></td></tr>
+<tr><td><code>~</code></td><td><code>\textasciitilde{}</code></td></tr>
+<tr><td><code>^</code></td><td><code>\textasciicircum{}</code></td></tr>
+</tbody>
+</table>
+<h4><code>markdown</code></h4>
+<p>Converts basic Markdown to LaTeX:</p>
+<table class="doc-table">
+<thead>
+<tr><th>Markdown</th><th>LaTeX</th></tr>
+</thead>
+<tbody>
+<tr><td><code>**bold**</code></td><td><code>\textbf{bold}</code></td></tr>
+<tr><td><code>*italic*</code></td><td><code>\textit{italic}</code></td></tr>
+<tr><td><code>`code`</code></td><td><code>\texttt{code}</code></td></tr>
+<tr><td><code>[text](url)</code></td><td><code>\href{url}{text}</code></td></tr>
+</tbody>
+</table>
+<h4><code>upper</code> / <code>lower</code></h4>
+<p>Converts text to uppercase or lowercase:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%= name | upper %&gt;  &lt;%-- "hello" → "HELLO" --%&gt;
+&lt;%= name | lower %&gt;  &lt;%-- "HELLO" → "hello" --%&gt;</code></pre>
+</div>
+<h4><code>join</code></h4>
+<p>Joins array elements with a separator:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%= items | join %&gt;           &lt;%-- Default: ", " --%&gt;
+&lt;%= items | join:' - ' %&gt;     &lt;%-- Custom separator --%&gt;
+&lt;%= items | join:'\n' %&gt;      &lt;%-- Newline separator --%&gt;</code></pre>
+</div>
+<h4><code>default</code></h4>
+<p>Provides a fallback value for empty or missing values:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%= name | default:'Unknown' %&gt;
+&lt;%= color | default:"20, 20, 35" %&gt;</code></pre>
+</div>
+<h3>Chaining Filters</h3>
+<p>Filters are applied left to right:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%= name | upper | escape %&gt;
+&lt;%-- "hello &amp; world" → "HELLO \&amp; WORLD" --%&gt;</code></pre>
+</div>
+<h3>Custom Filters</h3>
+<p>Register custom filters programmatically:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">kotlin</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>engine.registerFilter("reverse") { value, args ->
+value?.toString()?.reversed() ?: ""
+}
+engine.registerFilter("truncate") { value, args ->
+val maxLength = args.firstOrNull()?.toIntOrNull() ?: 50
+val text = value?.toString() ?: ""
+if (text.length > maxLength) {
+text.take(maxLength) + "..."
+} else {
+text
+}
+}</code></pre>
+</div>
+</section>
+<!-- Control Structures Section -->
+<section id="control-structures" class="doc-section">
+<h2>Control Structures</h2>
+<h3>If Statements</h3>
+<h4>Basic If</h4>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% if condition %&gt;
+Content when true
+&lt;% end %&gt;</code></pre>
+</div>
+<h4>If-Else</h4>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% if condition %&gt;
+Content when true
+&lt;% else %&gt;
+Content when false
+&lt;% end %&gt;</code></pre>
+</div>
+<h3>Truthiness Rules</h3>
+<table class="doc-table">
+<thead>
+<tr><th>Value Type</th><th>Truthy</th><th>Falsy</th></tr>
+</thead>
+<tbody>
+<tr><td>Boolean</td><td><code>true</code></td><td><code>false</code></td></tr>
+<tr><td>String</td><td>Non-empty</td><td>Empty <code>""</code></td></tr>
+<tr><td>Number</td><td>Always truthy</td><td>-</td></tr>
+<tr><td>Array</td><td>Non-empty</td><td>Empty <code>[]</code></td></tr>
+<tr><td>Object</td><td>Non-empty</td><td>Empty <code>{}</code></td></tr>
+<tr><td>Null</td><td>-</td><td>Always falsy</td></tr>
+</tbody>
+</table>
+<h3>Comparison Operators</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% if status == "active" %&gt;Active&lt;% end %&gt;
+&lt;% if status != "inactive" %&gt;Not Inactive&lt;% end %&gt;
+&lt;% if !hidden %&gt;Visible&lt;% end %&gt;</code></pre>
+</div>
+<h3>For Loops</h3>
+<h4>Iterating Over Arrays</h4>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% for item in items %&gt;
+&lt;%= item %&gt;
+&lt;% end %&gt;</code></pre>
+</div>
+<h4>Loop Variables</h4>
+<p>Inside a loop, a <code>loop</code> object provides metadata:</p>
+<table class="doc-table">
+<thead>
+<tr><th>Variable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>loop.index</code></td><td>Current index (0-based)</td></tr>
+<tr><td><code>loop.first</code></td><td><code>true</code> if first iteration</td></tr>
+<tr><td><code>loop.last</code></td><td><code>true</code> if last iteration</td></tr>
+</tbody>
+</table>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% for item in items %&gt;
+&lt;%= loop.index %&gt;: &lt;%= item %&gt;&lt;% if !loop.last %&gt;, &lt;% end %&gt;
+&lt;% end %&gt;</code></pre>
+</div>
+<h4>Iterating Over Objects</h4>
+<p>When iterating over an object, each entry has <code>key</code> and <code>value</code> properties:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% for entry in settings %&gt;
+&lt;%= entry.key %&gt; = &lt;%= entry.value %&gt;
+&lt;% end %&gt;</code></pre>
+</div>
+</section>
+<!-- Custom Functions Section -->
+<section id="custom-functions" class="doc-section">
+<h2>Custom Functions</h2>
+<p>Define reusable functions using Groovy syntax within templates.</p>
+<h3>Defining Functions</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% def functionName(param1, param2) %&gt;
+// Groovy code here
+return result
+&lt;% enddef %&gt;</code></pre>
+</div>
+<h3>Basic Function Example</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% def greet(name) %&gt;
+return "Hello, " + name + "!"
+&lt;% enddef %&gt;
+&lt;%= greet("World") %&gt;
+&lt;%-- Output: Hello, World! --%&gt;</code></pre>
+</div>
+<h3>Functions with Multiple Parameters</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% def formatName(first, last) %&gt;
+return last + ", " + first
+&lt;% enddef %&gt;
+&lt;%= formatName("John", "Doe") %&gt;
+&lt;%-- Output: Doe, John --%&gt;</code></pre>
+</div>
+<h3>Using Functions as Filters</h3>
+<p>Defined functions are automatically available as filters:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% def double(x) %&gt;
+return x * 2
+&lt;% enddef %&gt;
+&lt;%= value | double %&gt;</code></pre>
+</div>
+</section>
+<!-- Type Schema Section -->
+<section id="type-schema" class="doc-section">
+<h2>Type Schema and Validation</h2>
+<p>The engine supports TypeScript-style type declarations for documenting and validating template data.</p>
+<h3>Schema Preamble Syntax</h3>
+<p>Place the schema at the beginning of the template:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>---
+&lt;%#
+@type TemplateData = {
+fieldName: type;
+optionalField?: type;
+};
+%&gt;
+Template content here...</code></pre>
+</div>
+<h3>Supported Types</h3>
+<table class="doc-table">
+<thead>
+<tr><th>Type</th><th>Description</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><code>string</code></td><td>Text values</td><td><code>name: string;</code></td></tr>
+<tr><td><code>number</code></td><td>Numeric values</td><td><code>age: number;</code></td></tr>
+<tr><td><code>boolean</code></td><td>True/false</td><td><code>active: boolean;</code></td></tr>
+<tr><td><code>any</code></td><td>Any value</td><td><code>data: any;</code></td></tr>
+<tr><td><code>type[]</code></td><td>Array of type</td><td><code>items: string[];</code></td></tr>
+<tr><td><code>Array&lt;type&gt;</code></td><td>Array (generic)</td><td><code>items: Array&lt;number&gt;;</code></td></tr>
+<tr><td><code>{ ... }</code></td><td>Nested object</td><td><code>user: { name: string };</code></td></tr>
+<tr><td><code>type1 | type2</code></td><td>Union type</td><td><code>id: string | number;</code></td></tr>
+</tbody>
+</table>
+<h3>Enabling Strict Validation</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">kotlin</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>val engine = ErbTemplateEngine()
+engine.strictValidation = true
+try {
+engine.render(template, data)
+} catch (e: ErbTemplateEngine.TemplateValidationException) {
+println("Validation errors:")
+e.errors.forEach { error ->
+println("  ${error.path}: ${error.message}")
+}
+}</code></pre>
+</div>
+</section>
+<!-- LaTeX Features Section -->
+<section id="latex-features" class="doc-section">
+<h2>LaTeX-Specific Features</h2>
+<h3>Escaping for LaTeX</h3>
+<p>Always use the <code>escape</code> filter for user-provided content:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>\section{&lt;%= title | escape %&gt;}
+&lt;%= content | escape %&gt;</code></pre>
+</div>
+<h3>Markdown in LaTeX</h3>
+<p>Convert Markdown formatting to LaTeX:</p>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%= description | markdown %&gt;</code></pre>
+</div>
+<h3>Document Structure Pattern</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>\documentclass{article}
+\usepackage{hyperref}
+\title{&lt;%= title | escape %&gt;}
+\author{&lt;%= author | escape %&gt;}
+\date{&lt;%= date | default:'\today' %&gt;}
+\begin{document}
+\maketitle
+&lt;% if showToc %&gt;
+\tableofcontents
+&lt;% end %&gt;
+&lt;% for section in sections %&gt;
+\section{&lt;%= section.title | escape %&gt;}
+&lt;%= section.content | markdown %&gt;
+&lt;% end %&gt;
+\end{document}</code></pre>
+</div>
+<h3>Tables Pattern</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>\begin{tabular}{|l|r|}
+\hline
+\textbf{Name} &amp; \textbf{Value} \\
+\hline
+&lt;% for row in data %&gt;
+&lt;%= row.name | escape %&gt; &amp; &lt;%= row.value | escape %&gt; \\
+&lt;% end %&gt;
+\hline
+\end{tabular}</code></pre>
+</div>
+<h3>Lists Pattern</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>\begin{itemize}
+&lt;% for item in items %&gt;
+\item &lt;%= item | escape %&gt;
+&lt;% end %&gt;
+\end{itemize}</code></pre>
+</div>
+</section>
+<!-- API Reference Section -->
+<section id="api-reference" class="doc-section">
+<h2>API Reference</h2>
+<h3>ErbTemplateEngine Class</h3>
+<h4>Constructor</h4>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">kotlin</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>val engine = ErbTemplateEngine()</code></pre>
+</div>
+<h4>Properties</h4>
+<table class="doc-table">
+<thead>
+<tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>strictValidation</code></td>
+<td><code>Boolean</code></td>
+<td><code>false</code></td>
+<td>Throw exception on validation errors</td>
+</tr>
+</tbody>
+</table>
+<h4>Methods</h4>
+<table class="doc-table">
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>render(template: String, data: JsonObject): String</code></td>
+<td>Renders a template with the provided data</td>
+</tr>
+<tr>
+<td><code>registerFilter(name: String, filter: (Any?, List&lt;String&gt;) -&gt; String)</code></td>
+<td>Registers a custom filter</td>
+</tr>
+<tr>
+<td><code>extractSchema(template: String): TypeSchema?</code></td>
+<td>Extracts the type schema from a template's preamble</td>
+</tr>
+<tr>
+<td><code>callFunction(functionName: String, firstArg: Any?, additionalArgs: List&lt;String&gt;): String</code></td>
+<td>Calls a defined function programmatically</td>
+</tr>
+</tbody>
+</table>
+<h3>TypeSchema Class</h3>
+<h4>Methods</h4>
+<table class="doc-table">
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>toTypeScript(): String</code></td>
+<td>Generates a TypeScript interface definition</td>
+</tr>
+</tbody>
+</table>
+<h3>ValidationError Data Class</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">kotlin</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>data class ValidationError(
+val path: String,    // e.g., "user.profile.name"
+val message: String  // e.g., "Required field is missing"
+)</code></pre>
+</div>
+</section>
+<!-- Best Practices Section -->
+<section id="best-practices" class="doc-section">
+<h2>Best Practices</h2>
+<h3>1. Always Escape User Content</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%-- Good --%&gt;
+&lt;%= userInput | escape %&gt;
+&lt;%-- Bad - potential LaTeX injection --%&gt;
+&lt;%= userInput %&gt;</code></pre>
+</div>
+<h3>2. Use Default Values</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%-- Good --%&gt;
+&lt;%= subtitle | default:'No subtitle' %&gt;
+&lt;%-- Risky - may produce empty output --%&gt;
+&lt;%= subtitle %&gt;</code></pre>
+</div>
+<h3>3. Define Schemas for Complex Templates</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>---
+&lt;%#
+@type TemplateData = {
+title: string;
+sections: Array&lt;{ title: string; content: string }&gt;;
+};
+%&gt;
+</div>
+<h3>4. Use Functions for Repeated Logic</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% def formatDate(date) %&gt;
+return date.split("-").reverse().join("/")
+&lt;% enddef %&gt;
+Published: &lt;%= publishDate | formatDate %&gt;
+Updated: &lt;%= updateDate | formatDate %&gt;</code></pre>
+</div>
+<h3>5. Handle Empty Collections</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% if items %&gt;
+\begin{itemize}
+&lt;% for item in items %&gt;
+\item &lt;%= item | escape %&gt;
+&lt;% end %&gt;
+\end{itemize}
+&lt;% else %&gt;
+No items available.
+&lt;% end %&gt;</code></pre>
+</div>
+<h3>6. Use Meaningful Variable Names</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%-- Good --%&gt;
+&lt;% for chapter in chapters %&gt;
+&lt;% for section in chapter.sections %&gt;
+&lt;%-- Less clear --%&gt;
+&lt;% for c in chapters %&gt;
+&lt;% for s in c.sections %&gt;</code></pre>
+</div>
+</section>
+<!-- Examples Section -->
+<section id="examples" class="doc-section">
+<h2>Examples</h2>
+<h3>Complete LaTeX Document</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>---
+&lt;%#
+@type TemplateData = {
+title: string;
+author: string;
+date?: string;
+abstract?: string;
+chapters: Array&lt;{
+title: string;
+sections: Array&lt;{
+title: string;
+content: string;
+}&gt;;
+}&gt;;
+bibliography?: string[];
+};
+%&gt;
+\documentclass[12pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\title{&lt;%= title | escape %&gt;}
+\author{&lt;%= author | escape %&gt;}
+\date{&lt;%= date | default:'\today' %&gt;}
+\begin{document}
+\maketitle
+&lt;% if abstract %&gt;
+\begin{abstract}
+&lt;%= abstract | markdown %&gt;
+\end{abstract}
+&lt;% end %&gt;
+\tableofcontents
+&lt;% for chapter in chapters %&gt;
+\chapter{&lt;%= chapter.title | escape %&gt;}
+&lt;% for section in chapter.sections %&gt;
+\section{&lt;%= section.title | escape %&gt;}
+&lt;%= section.content | markdown %&gt;
+&lt;% end %&gt;
+&lt;% end %&gt;
+&lt;% if bibliography %&gt;
+\begin{thebibliography}{99}
+&lt;% for ref in bibliography %&gt;
+\bibitem{ref&lt;%= loop.index %&gt;} &lt;%= ref | escape %&gt;
+&lt;% end %&gt;
+\end{thebibliography}
+&lt;% end %&gt;
+\end{document}</code></pre>
+</div>
+<h3>Invoice Template</h3>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;% def formatCurrency(amount) %&gt;
+return String.format("$%.2f", amount)
+&lt;% enddef %&gt;
+&lt;% def calculateTotal(items) %&gt;
+return items.collect { it.quantity * it.price }.sum()
+&lt;% enddef %&gt;
+\documentclass{article}
+\usepackage{booktabs}
+\begin{document}
+\textbf{INVOICE}
+\vspace{1em}
+\textbf{To:} &lt;%= customer.name | escape %&gt; \\
+&lt;%= customer.address | escape %&gt;
+\vspace{1em}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Item} &amp; \textbf{Qty} &amp; \textbf{Price} &amp; \textbf{Total} \\
+\midrule
+&lt;% for item in items %&gt;
+&lt;%= item.name | escape %&gt; &amp; &lt;%= item.quantity %&gt; &amp; &lt;%= item.price | formatCurrency %&gt; &amp; &lt;%= (item.quantity * item.price) | formatCurrency %&gt; \\
+&lt;% end %&gt;
+\midrule
+\textbf{Total} &amp; &amp; &amp; \textbf{&lt;%= items | calculateTotal | formatCurrency %&gt;} \\
+\bottomrule
+\end{tabular}
+\end{document}</code></pre>
+</div>
+</section>
+<!-- Error Handling Section -->
+<section id="error-handling" class="doc-section">
+<h2>Error Handling</h2>
+<h3>Common Errors</h3>
+<table class="doc-table">
+<thead>
+<tr><th>Error</th><th>Cause</th><th>Solution</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>Empty output</td>
+<td>Missing variable</td>
+<td>Use <code>default</code> filter</td>
+</tr>
+<tr>
+<td>Validation exception</td>
+<td>Missing required field</td>
+<td>Provide all required data</td>
+</tr>
+<tr>
+<td>Function not defined</td>
+<td>Calling undefined function</td>
+<td>Define function before use</td>
+</tr>
+<tr>
+<td>Malformed template</td>
+<td>Unclosed tags</td>
+<td>Check <code>&lt;% %&gt;</code> matching</td>
+</tr>
+</tbody>
+</table>
+<h3>Debugging Tips</h3>
+<ol>
+<li><strong>Check variable paths:</strong> Use simple interpolation to verify data access</li>
+<li><strong>Test incrementally:</strong> Build templates piece by piece</li>
+<li><strong>Enable strict validation:</strong> Catch data issues early</li>
+<li><strong>Log intermediate values:</strong> Use custom filters for debugging</li>
+</ol>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">kotlin</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>engine.registerFilter("debug") { value, _ ->
+println("DEBUG: $value")
+value?.toString() ?: ""
+}</code></pre>
+</div>
+<div class="code-block">
+<div class="code-header">
+<span class="code-lang">erb</span>
+<button class="copy-btn" onclick="copyCode(this)">Copy</button>
+</div>
+<pre><code>&lt;%= data | debug %&gt;</code></pre>
+</div>
+</section>
+</article>
+</main>
+<!-- Footer -->
+<footer style="background: var(--surface-color); border-top: 1px solid var(--border-color); padding: 2rem; text-align: center; color: var(--text-muted);">
+<p>&copy; 2024 Cognotik. All rights reserved.</p>
+<p style="margin-top: 0.5rem;">
+<a href="https://github.com/SimiaCryptus/Cognotik" style="color: var(--accent-color);">GitHub</a> &middot;
+<a href="/docs" style="color: var(--accent-color);">Documentation</a>
+</p>
+</footer>
+<!-- Scripts -->
+<script>
+// Copy code functionality
+function copyCode(button) {
+const codeBlock = button.closest('.code-block');
+const code = codeBlock.querySelector('code').textContent;
+navigator.clipboard.writeText(code).then(() => {
+const originalText = button.textContent;
+button.textContent = 'Copied!';
+button.style.color = 'var(--success-color)';
+button.style.borderColor = 'var(--success-color)';
+setTimeout(() => {
+button.textContent = originalText;
+button.style.color = '';
+button.style.borderColor = '';
+}, 2000);
+});
+}
+// Active navigation highlighting
+document.addEventListener('DOMContentLoaded', function() {
+const sections = document.querySelectorAll('.doc-section');
+const navLinks = document.querySelectorAll('.doc-nav a');
+function updateActiveLink() {
+let currentSection = '';
+sections.forEach(section => {
+const sectionTop = section.offsetTop - 100;
+if (window.scrollY >= sectionTop) {
+currentSection = section.getAttribute('id');
+}
+});
+navLinks.forEach(link => {
+link.classList.remove('active');
+if (link.getAttribute('href') === '#' + currentSection) {
+link.classList.add('active');
+}
+});
+}
+window.addEventListener('scroll', updateActiveLink);
+updateActiveLink();
+});
+</script>
+</body>
+</html>

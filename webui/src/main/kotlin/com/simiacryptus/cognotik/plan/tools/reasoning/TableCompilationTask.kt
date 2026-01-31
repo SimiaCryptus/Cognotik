@@ -64,12 +64,6 @@ class TableCompilationTask(
         }
     }
 
-    init {
-        planTask?.validate()?.let { errorMessage ->
-            throw ValidatedObject.ValidationError(errorMessage, planTask)
-        }
-    }
-
     override fun promptSegment(): String {
         return """
 TableCompilation - Generate structured tables with AI-computed cell values

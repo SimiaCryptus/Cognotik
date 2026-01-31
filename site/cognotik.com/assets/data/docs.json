@@ -68,5 +68,12 @@
     "type": "link",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/symboldb",
     "description": "Graph-based code analysis and browsing system for extracting, storing, and navigating code symbols across your project using Apache TinkerGraph."
+  },
+  {
+    "label": "ERB Templating",
+    "url": "erb_templating.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/util",
+    "description": "Ruby ERB-inspired templating engine for Kotlin with variable interpolation, filters, control structures, and LaTeX support."
   }
 ]

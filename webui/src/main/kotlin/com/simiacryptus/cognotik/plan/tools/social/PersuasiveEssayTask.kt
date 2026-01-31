@@ -395,17 +395,7 @@ Ensure the outline:
                 parsingChatter = defaultFast
             )
 
-            var outline = outlineAgent.answer(listOf("Generate outline")).obj
-
-            // Validate outline
-            outline.validate()?.let { validationError ->
-                log.error("Outline validation failed: $validationError")
-                outlineTask.error(ValidatedObject.ValidationError(validationError, outline))
-                task.safeComplete("Outline validation failed: $validationError", log)
-                resultFn("ERROR: Outline validation failed: $validationError")
-                return@submit
-            }
-
+            val outline = outlineAgent.answer(listOf("Generate outline")).obj
             log.info("Generated outline: ${outline.arguments.size} arguments, ${outline.counterarguments.size} counterarguments")
 
             val outlineContent = buildString {

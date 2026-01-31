@@ -308,9 +308,11 @@
                 <li><a href="#key-transforms">transforms</a></li>
                 <li><a href="#key-generates">generates</a></li>
                 <li><a href="#key-related">related</a></li>
+                <li><a href="#key-task-type">task_type</a></li>
+                <li><a href="#key-task-config-json">task_config_json</a></li>
+                <li><a href="#key-overwrite">overwrite</a></li>
                 <li><a href="#complete-example">Complete Example</a></li>
                 <li><a href="#processing-behavior">Processing Behavior</a></li>
-                <li><a href="#overwrite-modes">Overwrite Modes</a></li>
                 <li><a href="#data-structures">Data Structures</a></li>
             </ul>
         </nav>
@@ -539,6 +541,125 @@ related:
                     </div>
                 </div>
             </div>
+            <!-- task_type -->
+            <div id="key-task-type" class="key-card">
+                <div class="key-card-header">
+                    <code>task_type</code>
+                    <span class="type-badge">String</span>
+                </div>
+                <div class="key-card-body">
+                    <p>
+                        Specifies which task type to use for processing the target files. This allows
+                        customization of how the AI processes the modification task.
+                    </p>
+                    <h4>Default</h4>
+                    <p><code>FileModification</code></p>
+                    <div class="example-block">
+                        <h4>Examples</h4>
+                        <pre><code># Use default file modification task
+task_type: FileModification
+# Use a different task type
+task_type: CodeReview</code></pre>
+                    </div>
+                    <h4>Resolution Priority</h4>
+                    <p>When multiple specifications apply to a single target file, the task type is resolved in this order:</p>
+                    <ol>
+                        <li><code>specifies</code> frontmatter (first non-null)</li>
+                        <li><code>transforms</code> frontmatter (first non-null)</li>
+                        <li><code>documents</code> frontmatter (first non-null)</li>
+                        <li><code>generates</code> frontmatter (first non-null)</li>
+                        <li>Default: <code>FileModification</code></li>
+                    </ol>
+                    <div class="note-box">
+                        <strong>Use Case:</strong> Customize the AI's behavior when processing files.
+                        Different task types may have different prompts, validation rules, or processing strategies.
+                    </div>
+                </div>
+            </div>
+            <!-- task_config_json -->
+            <div id="key-task-config-json" class="key-card">
+                <div class="key-card-header">
+                    <code>task_config_json</code>
+                    <span class="type-badge">String</span>
+                </div>
+                <div class="key-card-body">
+                    <p>
+                        Specifies a relative file path to a JSON file containing additional task type configuration.
+                        This allows for more complex configuration that would be unwieldy in YAML frontmatter.
+                    </p>
+                    <div class="example-block">
+                        <h4>Examples</h4>
+                        <pre><code># Reference a JSON config file
+task_config_json: ./config/my-task-config.json
+# Config file in parent directory
+task_config_json: ../shared/task-settings.json</code></pre>
+                    </div>
+                    <div class="note-box">
+                        <strong>Use Case:</strong> Provide detailed task configuration without cluttering the frontmatter.
+                        Useful for complex task types that require many parameters or when sharing configuration across
+                        multiple documentation files.
+                    </div>
+                </div>
+            </div>
+            <!-- overwrite -->
+            <div id="key-overwrite" class="key-card">
+                <div class="key-card-header">
+                    <code>overwrite</code>
+                    <span class="type-badge">String</span>
+                </div>
+                <div class="key-card-body">
+                    <p>
+                        Specifies the overwrite mode for this documentation file's targets. This controls
+                        how existing files are handled during processing.
+                    </p>
+                    <h4>Valid Values</h4>
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th>Value</th>
+                            <th>Description</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td><code>Skip</code></td>
+                            <td>Skip files that already exist (no processing)</td>
+                        </tr>
+                        <tr>
+                            <td><code>Overwrite</code></td>
+                            <td>Always overwrite existing files with full replacement</td>
+                        </tr>
+                        <tr>
+                            <td><code>OverwriteIfOlder</code></td>
+                            <td>Overwrite only if source/related files are newer than target</td>
+                        </tr>
+                        <tr>
+                            <td><code>Patch</code></td>
+                            <td>Always apply fuzzy patch to existing files</td>
+                        </tr>
+                        <tr>
+                            <td><code>PatchIfOlder</code></td>
+                            <td>Apply fuzzy patch only if source/related files are newer than target (default)</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="example-block">
+                        <h4>Examples</h4>
+                        <pre><code># Always apply patches to existing files
+overwrite: Patch
+# Skip processing if target exists
+overwrite: Skip
+# Always fully overwrite
+overwrite: Overwrite</code></pre>
+                    </div>
+                    <div class="note-box">
+                        <strong>Use Case:</strong> Control how the processor handles existing target files.
+                        Use <code>Patch</code> or <code>PatchIfOlder</code> for incremental updates that preserve manual changes.
+                        Use <code>Overwrite</code> or <code>OverwriteIfOlder</code> for complete regeneration.
+                        Use <code>Skip</code> to prevent accidental overwrites.
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- Complete Example Section -->
@@ -561,6 +682,9 @@ generates:
 related:
   - ../config/api-config.yaml
   - ./api-conventions.md
+overwrite: Patch
+task_type: FileModification
+task_config_json: ./config/api-task-config.json
 ---
 
 # API Documentation
@@ -595,7 +719,7 @@ This document specifies the API layer implementation...</code></pre>
                     </li>
                 </ul>
 
-                <h3>Overwrite Modes</h3>
+                <h3 id="overwrite-modes">Overwrite Modes</h3>
                 <table class="data-table">
                     <thead>
                     <tr>
@@ -605,27 +729,35 @@ This document specifies the API layer implementation...</code></pre>
                     </thead>
                     <tbody>
                     <tr>
-                        <td><code>SkipExisting</code></td>
+                        <td><code>Skip</code></td>
                         <td>Skip files that already exist (no processing)</td>
                     </tr>
                     <tr>
-                        <td><code>OverwriteExisting</code></td>
+                        <td><code>Overwrite</code></td>
                         <td>Always overwrite existing files with full replacement</td>
                     </tr>
                     <tr>
-                        <td><code>OverwriteToUpdate</code></td>
+                        <td><code>OverwriteIfOlder</code></td>
                         <td>Overwrite only if source/related files are newer than target</td>
                     </tr>
                     <tr>
-                        <td><code>PatchExisting</code></td>
+                        <td><code>Patch</code></td>
                         <td>Always apply fuzzy patch to existing files</td>
                     </tr>
                     <tr>
-                        <td><code>PatchToUpdate</code></td>
+                        <td><code>PatchIfOlder</code></td>
                         <td>Apply fuzzy patch only if source/related files are newer than target (default)</td>
                     </tr>
                     </tbody>
                 </table>
+                <h3>File Modification Time Checking</h3>
+                <p>For <code>OverwriteIfOlder</code> and <code>PatchIfOlder</code> modes, the processor compares the target file's last modified time against:</p>
+                <ul class="behavior-list">
+                    <li>The documentation file itself</li>
+                    <li>All related files specified in the frontmatter</li>
+                    <li>All source/input files that contribute to the target</li>
+                </ul>
+                <p>If any of these are newer than the target, the target will be processed.</p>
 
                 <h3>Task Description Generation</h3>
                 <p>The processor automatically generates appropriate task descriptions based on the frontmatter type:</p>
@@ -684,6 +816,21 @@ This document specifies the API layer implementation...</code></pre>
                     <td><code>related</code></td>
                     <td><code>List&lt;String&gt;</code></td>
                     <td>Additional context files</td>
+                </tr>
+                <tr>
+                    <td><code>overwrite</code></td>
+                    <td><code>OverwriteModes?</code></td>
+                    <td>Overwrite mode for this doc's targets (nullable, defaults to <code>PatchIfOlder</code>)</td>
+                </tr>
+                <tr>
+                    <td><code>taskType</code></td>
+                    <td><code>String?</code></td>
+                    <td>Task type to use for processing (nullable, defaults to <code>FileModification</code>)</td>
+                </tr>
+                <tr>
+                    <td><code>taskConfigJson</code></td>
+                    <td><code>String?</code></td>
+                    <td>Path to JSON file with additional task configuration (nullable)</td>
                 </tr>
                 <tr>
                     <td><code>content</code></td>
