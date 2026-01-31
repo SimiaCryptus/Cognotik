@@ -148,20 +148,20 @@ Escapes special LaTeX characters.
 <%= text | escape %>
 ```
 
-| Input | Output |
-|-------|--------|
-| `\` | `\textbackslash{}` |
-| `{` | `\{` |
-| `}` | `\}` |
-| `$` | `\$` |
-| `&` | `\&` |
-| `%` | `\%` |
-| `#` | `\#` |
-| `_` | `\_` |
-| `~` | `\textasciitilde{}` |
-| `^` | `\textasciicircum{}` |
-| `<` | `\textless{}` |
-| `>` | `\textgreater{}` |
+| Input | Output               |
+|-------|----------------------|
+| `\`   | `\textbackslash{}`   |
+| `{`   | `\{`                 |
+| `}`   | `\}`                 |
+| `$`   | `\$`                 |
+| `&`   | `\&`                 |
+| `%`   | `\%`                 |
+| `#`   | `\#`                 |
+| `_`   | `\_`                 |
+| `~`   | `\textasciitilde{}`  |
+| `^`   | `\textasciicircum{}` |
+| `<`   | `\textless{}`        |
+| `>`   | `\textgreater{}`     |
 
 #### `markdown`
 Converts basic Markdown to LaTeX.
@@ -170,11 +170,11 @@ Converts basic Markdown to LaTeX.
 <%= text | markdown %>
 ```
 
-| Markdown | LaTeX |
-|----------|-------|
-| `**bold**` | `\textbf{bold}` |
-| `*italic*` | `\textit{italic}` |
-| `` `code` `` | `\texttt{code}` |
+| Markdown      | LaTeX              |
+|---------------|--------------------|
+| `**bold**`    | `\textbf{bold}`    |
+| `*italic*`    | `\textit{italic}`  |
+| `` `code` ``  | `\texttt{code}`    |
 | `[text](url)` | `\href{url}{text}` |
 
 #### `upper`
@@ -280,14 +280,14 @@ Usage:
 
 ### Truthiness Rules
 
-| Value Type | Truthy | Falsy |
-|------------|--------|-------|
-| Boolean | `true` | `false` |
-| String | Non-empty | Empty `""` |
-| Number | Always truthy | - |
-| Array | Non-empty | Empty `[]` |
-| Object | Non-empty | Empty `{}` |
-| Null | - | Always falsy |
+| Value Type | Truthy        | Falsy        |
+|------------|---------------|--------------|
+| Boolean    | `true`        | `false`      |
+| String     | Non-empty     | Empty `""`   |
+| Number     | Always truthy | -            |
+| Array      | Non-empty     | Empty `[]`   |
+| Object     | Non-empty     | Empty `{}`   |
+| Null       | -             | Always falsy |
 
 ### Comparison Operators
 
@@ -308,6 +308,14 @@ Usage:
 
 ```erb
 <% if !hidden %>Visible<% end %>
+```
+
+#### Arithmetic in Conditions
+
+Simple arithmetic expressions (like modulo) can be used in conditions:
+
+```erb
+<% if loop.index % 2 == 0 %>Even row<% end %>
 ```
 
 ### Nested Conditions
@@ -340,7 +348,7 @@ Usage:
 <% endfor %>
 ```
 
-#### Loop Variables
+### Loop Variables
 
 Inside a loop, a `loop` object provides metadata:
 
@@ -353,6 +361,16 @@ Inside a loop, a `loop` object provides metadata:
 ```erb
 <% for item in items %>
     <%= loop.index %>: <%= item %><% if !loop.last %>, <% end %>
+<% end %>
+```
+
+#### Using Loop Index in Conditions
+
+The loop index can be used in arithmetic expressions:
+
+```erb
+<% for item in items %>
+<% if loop.index % 2 == 0 %>Even: <%= item %><% else %>Odd: <%= item %><% end %>
 <% end %>
 ```
 
@@ -373,6 +391,34 @@ When iterating over an object, each entry has `key` and `value` properties:
     <% for cell in row %>
         <%= cell %>
     <% end %>
+<% end %>
+```
+
+### Combining Loops and Conditionals
+
+#### If-Else Inside For Loops
+
+```erb
+<% for item in items %>
+<% if item.active %>Active: <%= item.name %><% else %>Inactive: <%= item.name %><% end %>
+<% end %>
+```
+
+#### For Loops Inside Conditionals
+
+```erb
+<% if showItems %>
+<% for item in items %><%= item %> <% end %>
+<% end %>
+```
+
+#### Complex Nested Structures
+
+```erb
+<% if enabled %>
+<% for item in items %>
+<% if item.type == "special" %>[<%= item.name %>]<% else %><%= item.name %><% end %>
+<% end %>
 <% end %>
 ```
 
@@ -462,6 +508,38 @@ Grade: <%= grade(85) %>
 <%-- Output: Grade: B --%>
 ```
 
+### Accessing Global Data from Functions
+
+Functions can access the template's global data through the `data` variable:
+
+```erb
+<% def greetWithTitle(name) %>
+return data.title + " " + name
+<% enddef %>
+<%= greetWithTitle("World") %>
+<%-- With data.title = "Hello", Output: Hello World --%>
+```
+
+Access nested data:
+
+```erb
+<% def formatUser(prefix) %>
+return prefix + ": " + data.user.firstName + " " + data.user.lastName
+<% enddef %>
+<%= formatUser("Name") %>
+<%-- Output: Name: John Doe --%>
+```
+
+Combine with filter values:
+
+```erb
+<% def appendSuffix(text) %>
+return text + data.suffix
+<% enddef %>
+<%= name | appendSuffix %>
+<%-- With data.suffix = "!", "Hello" becomes "Hello!" --%>
+```
+
 ### List Operations
 
 ```erb
@@ -470,6 +548,30 @@ return items.sum()
 <% enddef %>
 
 Total: <%= numbers | sum %>
+```
+
+### Using Functions in For Loops
+
+Functions work seamlessly within iteration contexts:
+
+```erb
+<% def format(item) %>
+return "[" + item + "]"
+<% enddef %>
+<% for item in items %><%= item | format %><% if !loop.last %> <% end %><% end %>
+<%-- Output: [a] [b] [c] --%>
+```
+
+### Chaining Functions with Filters
+
+Custom functions can be chained with built-in filters:
+
+```erb
+<% def prefix(text) %>
+return "PREFIX_" + text
+<% enddef %>
+<%= name | prefix | upper %>
+<%-- "test" becomes "PREFIX_TEST" --%>
 ```
 
 ---
@@ -496,16 +598,16 @@ Template content here...
 
 ### Supported Types
 
-| Type | Description | Example |
-|------|-------------|---------|
-| `string` | Text values | `name: string;` |
-| `number` | Numeric values | `age: number;` |
-| `boolean` | True/false | `active: boolean;` |
-| `any` | Any value | `data: any;` |
-| `type[]` | Array of type | `items: string[];` |
-| `Array<type>` | Array (generic) | `items: Array<number>;` |
-| `{ ... }` | Nested object | `user: { name: string };` |
-| `type1 \| type2` | Union type | `id: string \| number;` |
+| Type             | Description     | Example                   |
+|------------------|-----------------|---------------------------|
+| `string`         | Text values     | `name: string;`           |
+| `number`         | Numeric values  | `age: number;`            |
+| `boolean`        | True/false      | `active: boolean;`        |
+| `any`            | Any value       | `data: any;`              |
+| `type[]`         | Array of type   | `items: string[];`        |
+| `Array<type>`    | Array (generic) | `items: Array<number>;`   |
+| `{ ... }`        | Nested object   | `user: { name: string };` |
+| `type1 \| type2` | Union type      | `id: string \| number;`   |
 
 ### Complete Schema Example
 
@@ -631,6 +733,27 @@ Convert Markdown formatting to LaTeX:
 \end{document}
 ```
 
+#### Handling LaTeX Environments in Loops
+
+LaTeX `\begin{...}` and `\end{...}` environments work correctly within template loops and conditionals:
+
+```erb
+<% for job in experience %>
+\begin{infocard}
+\textbf{<%= job.position %>}
+<% if job.highlights %>
+\begin{itemize}
+<% for highlight in job.highlights %>
+\item <%= highlight %>
+<% end %>
+\end{itemize}
+<% end %>
+\end{infocard}
+<% end %>
+```
+
+The engine correctly distinguishes between LaTeX's `\end{...}` commands and the template's `<% end %>` tags.
+
 #### Tables
 
 ```erb
@@ -679,8 +802,8 @@ val engine = ErbTemplateEngine()
 
 #### Properties
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
+| Property           | Type      | Default | Description                          |
+|--------------------|-----------|---------|--------------------------------------|
 | `strictValidation` | `Boolean` | `false` | Throw exception on validation errors |
 
 #### Methods
@@ -1010,12 +1133,12 @@ return items.collect { it.quantity * it.price }.sum()
 
 ### Common Errors
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| Empty output | Missing variable | Use `default` filter |
-| Validation exception | Missing required field | Provide all required data |
+| Error                | Cause                      | Solution                   |
+|----------------------|----------------------------|----------------------------|
+| Empty output         | Missing variable           | Use `default` filter       |
+| Validation exception | Missing required field     | Provide all required data  |
 | Function not defined | Calling undefined function | Define function before use |
-| Malformed template | Unclosed tags | Check `<% %>` matching |
+| Malformed template   | Unclosed tags              | Check `<% %>` matching     |
 
 ### Debugging Tips
 

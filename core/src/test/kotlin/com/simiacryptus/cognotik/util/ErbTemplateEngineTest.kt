@@ -155,6 +155,67 @@ return "PREFIX_" + text
       }
       assertEquals("PREFIX_TEST", engine.render(template, data).trim())
     }
+    @Test
+    fun `should access global data from function`() {
+      val template = """
+<% def greetWithTitle(name) %>
+return data.title + " " + name
+<% enddef %>
+<%= greetWithTitle("World") %>
+      """.trimIndent()
+      val data = JsonObject().apply {
+        addProperty("title", "Hello")
+      }
+      assertEquals("Hello World", engine.render(template, data).trim())
+    }
+    @Test
+    fun `should access nested global data from function`() {
+      val template = """
+<% def formatUser(prefix) %>
+return prefix + ": " + data.user.firstName + " " + data.user.lastName
+<% enddef %>
+<%= formatUser("Name") %>
+      """.trimIndent()
+      val data = JsonObject().apply {
+        add("user", JsonObject().apply {
+          addProperty("firstName", "John")
+          addProperty("lastName", "Doe")
+        })
+      }
+      assertEquals("Name: John Doe", engine.render(template, data).trim())
+    }
+    @Test
+    fun `should access global data array from function`() {
+      val template = """
+<% def countItems() %>
+return "Total: " + data.items.size()
+<% enddef %>
+<%= countItems() %>
+      """.trimIndent()
+      val data = JsonObject().apply {
+        add("items", JsonArray().apply {
+          add("a")
+          add("b")
+          add("c")
+        })
+      }
+      assertEquals("Total: 3", engine.render(template, data).trim())
+    }
+    @Test
+    fun `should use global data as filter with value`() {
+      val template = """
+<% def appendSuffix(text) %>
+return text + data.suffix
+<% enddef %>
+<%= name | appendSuffix %>
+      """.trimIndent()
+      val data = JsonObject().apply {
+        addProperty("name", "Hello")
+        addProperty("suffix", "!")
+      }
+      assertEquals("Hello!", engine.render(template, data).trim())
+    }
+
 
     @Test
     fun `should use function in for loop`() {

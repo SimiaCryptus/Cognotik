@@ -42,6 +42,7 @@ class ErbTemplateEngine {
   var strictValidation: Boolean = false
   private val groovyShell = GroovyShell()
   private val definedFunctions = mutableMapOf<String, GroovyFunction>()
+  private var currentData: JsonObject? = null
 
   data class GroovyFunction(
     val name: String,
@@ -65,6 +66,8 @@ class ErbTemplateEngine {
     // Clear previously defined functions for this render
     definedFunctions.clear()
     log.trace("Cleared previously defined functions")
+    // Store current data for use in Groovy functions
+    currentData = data
 
     // First pass: extract and compile function definitions
     val templateWithoutFunctions = extractFunctions(templateBody)
@@ -72,6 +75,9 @@ class ErbTemplateEngine {
 
     val result = processBlocks(templateWithoutFunctions, Context(data))
     log.debug("Template render completed, output length: {}", result.length)
+    // Clear current data after rendering
+    currentData = null
+    
     return result
   }
 
@@ -127,6 +133,12 @@ class ErbTemplateEngine {
         throw IllegalArgumentException("Function '$functionName' is not defined")
       }
     val binding = Binding()
+    // Bind the global data as 'data' variable
+    currentData?.let { data ->
+      binding.setVariable("data", convertToGroovyValue(data))
+      log.trace("Bound global data to 'data' variable")
+    }
+    
     // Bind the first argument to the first parameter (if any)
     if (function.parameters.isNotEmpty()) {
       binding.setVariable(function.parameters[0], convertToGroovyValue(firstArg))
@@ -835,6 +847,12 @@ class ErbTemplateEngine {
         throw IllegalArgumentException("Function '$functionName' is not defined")
       }
     val binding = Binding()
+    // Bind the global data as 'data' variable
+    currentData?.let { data ->
+      binding.setVariable("data", convertToGroovyValue(data))
+      log.trace("Bound global data to 'data' variable")
+    }
+    
     // Bind arguments to parameters
     for (i in args.indices) {
       if (i < function.parameters.size) {
