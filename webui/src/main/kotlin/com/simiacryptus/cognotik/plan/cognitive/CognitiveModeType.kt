@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CodingMode.CodingModeConfig
+import com.simiacryptus.cognotik.plan.cognitive.FrontmatterOrchestrationMode.FrontmatterOrchestrationConfig
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.DynamicEnum
+import kotlin.jvm.java
 
 @JsonDeserialize(using = CognitiveModeTypeDeserializer::class)
 @JsonSerialize(using = CognitiveModeTypeSerializer::class)
@@ -37,6 +39,11 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
         val PersonaChat = CognitiveModeType("PersonaChat", PersonaChatConfig::class.java, inputCnt = PersonaChatMode.inputCnt)
         @JvmStatic
         val Coding = CognitiveModeType("Coding", CodingModeConfig::class.java)
+        val FrontmatterOrchestration = CognitiveModeType(
+            "FrontmatterOrchestration",
+            FrontmatterOrchestrationConfig::class.java,
+            inputCnt = FrontmatterOrchestrationMode.inputCnt
+        )
 
         private val constructors by lazy {
             val map =
