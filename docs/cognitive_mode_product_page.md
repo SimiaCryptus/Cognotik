@@ -1,4 +1,8 @@
- # Cognitive Modes: The Strategy Engine
+---
+transforms: ../webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/([^\./]+Mode)\.kt -> ../site/cognotik.com/$1.html
+---
+
+# Cognitive Modes: The Strategy Engine
 
 ## 1. Overview
 

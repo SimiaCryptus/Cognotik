@@ -2,7 +2,7 @@
 
 /* Hero Section */
 .hero-section {
-    padding: var(--space-12) var(--space-6);
+  padding: var(--spacing-xl) var(--spacing-md);
     background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-app) 100%);
     border-bottom: 1px solid var(--border-subtle);
 }
@@ -25,13 +25,13 @@
 
 .breadcrumbs .separator {
     margin: 0 var(--space-2);
-    color: var(--text-tertiary);
+  color: var(--text-color);
 }
 
 .hero-section h1 {
     font-size: var(--text-4xl);
-    margin-bottom: var(--space-4);
-    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-primary) 100%);
+  margin-bottom: var(--spacing-md);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -40,7 +40,7 @@
 .hero-subtitle {
     font-size: var(--text-lg);
     color: var(--text-secondary);
-    margin-bottom: var(--space-6);
+  margin-bottom: var(--spacing-lg);
 }
 
 .hero-badges {
@@ -51,7 +51,7 @@
 
 /* Overview Section */
 .overview-section {
-    padding: var(--space-8) var(--space-6);
+  padding: var(--spacing-xl) var(--spacing-md);
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -59,7 +59,7 @@
 .overview-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: var(--space-6);
+  gap: var(--spacing-lg);
 }
 
 .overview-card {
@@ -78,7 +78,7 @@
 
 .card-icon {
     font-size: 2.5rem;
-    margin-bottom: var(--space-4);
+  margin-bottom: var(--spacing-md);
 }
 
 .overview-card h3 {
@@ -93,19 +93,19 @@
 
 /* Category Sections */
 .category-section {
-    padding: var(--space-12) var(--space-6);
-    max-width: 1000px;
+  padding: var(--spacing-xl) var(--spacing-md);
+  max-width: 1200px;
     margin: 0 auto;
 }
 
 .section-title {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+  gap: var(--spacing-sm);
     font-size: var(--text-2xl);
-    margin-bottom: var(--space-8);
-    padding-bottom: var(--space-4);
-    border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .section-icon {
@@ -117,21 +117,21 @@
     background: var(--bg-panel);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
-    margin-bottom: var(--space-6);
+  margin-bottom: var(--spacing-lg);
     overflow: hidden;
 }
 
 .use-case-header {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-4) var(--space-6);
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
     background: var(--bg-elevated);
     border-bottom: 1px solid var(--border-subtle);
 }
 
 .pattern-notation {
-    font-family: var(--font-mono);
+  font-family: var(--font-family-mono);
     font-size: var(--text-sm);
     font-weight: 500;
     color: var(--accent-primary);
@@ -148,7 +148,7 @@
 }
 
 .use-case-body {
-    padding: var(--space-6);
+  padding: var(--spacing-lg);
 }
 
 .use-case-description {
@@ -162,8 +162,8 @@
     background: var(--bg-app);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
-    padding: var(--space-6);
-    margin-bottom: var(--space-6);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
     overflow-x: auto;
 }
 
@@ -171,7 +171,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-4);
+  gap: var(--spacing-md);
     flex-wrap: wrap;
 }
 
@@ -179,13 +179,13 @@
     background: var(--bg-panel);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
-    padding: var(--space-3) var(--space-4);
+  padding: var(--spacing-sm) var(--spacing-md);
     text-align: center;
-    min-width: 120px;
+  min-width: 80px;
 }
 
 .diagram-node.input {
-    border-color: var(--accent-primary);
+  border-color: var(--accent-color);
 }
 
 .diagram-node.output {
@@ -193,8 +193,8 @@
 }
 
 .diagram-node.process {
-    border-color: var(--accent-purple);
-    background: rgba(163, 113, 247, 0.1);
+  border-color: var(--accent-secondary);
+  background: rgba(6, 182, 212, 0.1);
 }
 
 .diagram-node.validator {
@@ -212,7 +212,7 @@
 
 .diagram-node code {
     font-size: var(--text-sm);
-    color: var(--text-primary);
+  color: var(--text-color);
 }
 
 .diagram-arrow {
@@ -225,7 +225,7 @@
 .diagram-flow.synthesis .diagram-inputs {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+  gap: var(--spacing-sm);
 }
 
 /* Analogy Diagram */
@@ -237,7 +237,7 @@
 
 .diagram-equation .operator {
     font-size: var(--text-xl);
-    color: var(--text-tertiary);
+  color: var(--text-muted);
     font-weight: bold;
 }
 
@@ -279,12 +279,12 @@
 
 .tree-connectors {
     text-align: center;
-    color: var(--text-tertiary);
-    margin-bottom: var(--space-2);
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-sm);
 }
 
 .tree-connectors::before {
-    content: "↓";
+  content: '↓';
     font-size: var(--text-lg);
 }
 
@@ -293,15 +293,15 @@
     background: var(--bg-app);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
-    padding: var(--space-6);
-    margin-bottom: var(--space-6);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
     overflow-x: auto;
 }
 
 .iteration-flow {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+  gap: var(--spacing-sm);
     justify-content: center;
     flex-wrap: wrap;
 }
@@ -309,7 +309,7 @@
 .iteration-loop {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+  gap: var(--spacing-sm);
 }
 
 .loop-arrow {
@@ -323,15 +323,15 @@
     background: var(--bg-app);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
-    padding: var(--space-6);
-    margin-bottom: var(--space-6);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
 }
 
 .correction-flow {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-4);
+  gap: var(--spacing-md);
 }
 
 .feedback-loop {
@@ -343,7 +343,7 @@
 .loop-path {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+  gap: var(--spacing-sm);
 }
 
 .loop-label {
@@ -361,7 +361,7 @@
 
 /* Examples List */
 .examples-list {
-    margin-top: var(--space-4);
+  margin-top: var(--spacing-md);
 }
 
 .examples-list h4 {
@@ -379,17 +379,17 @@
 
 .examples-list li {
     position: relative;
-    padding-left: var(--space-4);
-    margin-bottom: var(--space-2);
+  padding-left: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
     color: var(--text-secondary);
     font-size: var(--text-sm);
 }
 
 .examples-list li::before {
-    content: "→";
+  content: '→';
     position: absolute;
     left: 0;
-    color: var(--accent-primary);
+  color: var(--accent-secondary);
 }
 
 /* Key Insight Box */
@@ -397,8 +397,8 @@
     background: rgba(88, 166, 255, 0.05);
     border: 1px solid rgba(88, 166, 255, 0.2);
     border-radius: var(--radius-md);
-    padding: var(--space-4);
-    margin-top: var(--space-4);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-md);
 }
 
 .key-insight h4 {
@@ -415,11 +415,11 @@
 
 /* Considerations Box */
 .considerations {
-    background: rgba(210, 153, 34, 0.05);
-    border: 1px solid rgba(210, 153, 34, 0.2);
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
     border-radius: var(--radius-md);
-    padding: var(--space-4);
-    margin-top: var(--space-4);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-md);
 }
 
 .considerations h4 {
@@ -443,7 +443,7 @@
 }
 
 .considerations li::before {
-    content: "•";
+  content: '•';
     position: absolute;
     left: 0;
     color: var(--accent-warning);
@@ -451,7 +451,7 @@
 
 /* Analogy Example */
 .analogy-example {
-    margin-top: var(--space-4);
+  margin-top: var(--spacing-md);
 }
 
 .analogy-example h4 {
@@ -484,7 +484,7 @@
 
 /* Workflow Section */
 .workflow-intro {
-    margin-bottom: var(--space-6);
+  margin-bottom: var(--spacing-lg);
 }
 
 .workflow-intro p {
@@ -496,7 +496,7 @@
     background: var(--bg-panel);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
-    padding: var(--space-6);
+  padding: var(--spacing-lg);
 }
 
 .workflow-card h3 {
@@ -508,14 +508,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-2);
-    margin-bottom: var(--space-6);
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
 }
 
 .workflow-step {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
+  gap: var(--spacing-md);
     background: var(--bg-elevated);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
@@ -525,12 +525,12 @@
 }
 
 .step-badge {
-    width: 28px;
-    height: 28px;
+  width: 32px;
+  height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--accent-primary);
+  background: var(--accent-color);
     color: var(--bg-app);
     border-radius: 50%;
     font-size: var(--text-sm);
@@ -544,20 +544,20 @@
 
 .step-pattern {
     font-size: var(--text-xs);
-    color: var(--accent-primary);
+  color: var(--accent-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: var(--space-1);
 }
 
 .step-description {
-    font-family: var(--font-mono);
+  font-family: var(--font-family-mono);
     font-size: var(--text-sm);
-    color: var(--text-primary);
+  color: var(--text-color);
 }
 
 .workflow-connector {
-    color: var(--text-tertiary);
+  color: var(--text-muted);
     font-size: var(--text-lg);
 }
 
@@ -573,21 +573,21 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-2) var(--space-4);
+  padding: var(--spacing-sm) var(--spacing-md);
     background: var(--bg-elevated);
-    border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .code-lang {
-    font-family: var(--font-mono);
+  font-family: var(--font-family-mono);
     font-size: var(--text-xs);
-    color: var(--text-tertiary);
+  color: var(--text-muted);
     text-transform: uppercase;
 }
 
 .code-block pre {
     margin: 0;
-    padding: var(--space-4);
+  padding: var(--spacing-md);
     overflow-x: auto;
 }
 
@@ -598,8 +598,8 @@
 
 /* Reference Section */
 .reference-section {
-    padding: var(--space-12) var(--space-6);
-    max-width: 1000px;
+  padding: var(--spacing-xl) var(--spacing-md);
+  max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -620,7 +620,7 @@
 .reference-table td {
     padding: var(--space-3) var(--space-4);
     text-align: left;
-    border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .reference-table th {
@@ -654,7 +654,7 @@
 
 /* CTA Section */
 .cta-section {
-    padding: var(--space-16) var(--space-6);
+  padding: var(--spacing-xl) var(--spacing-md);
     background: linear-gradient(180deg, var(--bg-app) 0%, var(--bg-elevated) 100%);
     border-top: 1px solid var(--border-subtle);
 }
@@ -667,12 +667,12 @@
 
 .cta-content h2 {
     font-size: var(--text-2xl);
-    margin-bottom: var(--space-4);
+  margin-bottom: var(--spacing-md);
 }
 
 .cta-content p {
     color: var(--text-secondary);
-    margin-bottom: var(--space-6);
+  margin-bottom: var(--spacing-lg);
 }
 
 .cta-buttons {
@@ -684,19 +684,19 @@
 
 /* Badge Variants */
 .badge-secondary {
-    background: rgba(139, 148, 158, 0.15);
-    color: var(--text-secondary);
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--accent-secondary);
 }
 
 .badge-purple {
-    background: rgba(163, 113, 247, 0.15);
+  background: rgba(167, 139, 250, 0.15);
     color: var(--accent-purple);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
     .hero-section {
-        padding: var(--space-8) var(--space-4);
+      padding: var(--spacing-lg) var(--spacing-md);
     }
 
     .hero-section h1 {
@@ -730,7 +730,7 @@
 
     .reference-table th,
     .reference-table td {
-        padding: var(--space-2);
+      padding: var(--spacing-sm);
         font-size: var(--text-xs);
     }
 }

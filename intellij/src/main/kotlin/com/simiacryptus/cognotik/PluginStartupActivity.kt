@@ -69,8 +69,6 @@ class PluginStartupActivity : ProjectActivity {
             }
         }
         try {
-            AddApplyFileDiffLinks.loggingEnabled =
-                { AppSettingsState.instance.diffLoggingEnabled }
             val currentThread = Thread.currentThread()
             val prevClassLoader = currentThread.contextClassLoader
             log.debug("Setting context class loader for plugin initialization")

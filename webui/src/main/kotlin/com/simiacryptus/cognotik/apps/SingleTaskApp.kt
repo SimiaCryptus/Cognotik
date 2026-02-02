@@ -112,7 +112,7 @@ abstract class SingleTaskApp(
                     agent = TaskOrchestrator(
                         user = user,
                         session = session,
-                        dataStorage = ui.dataStorage!!,
+                        dataStorage = ui.dataStorage,
                         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
                             ?: ui.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
                     ),

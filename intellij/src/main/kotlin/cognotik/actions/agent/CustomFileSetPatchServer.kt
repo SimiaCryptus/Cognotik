@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -732,20 +733,20 @@ class CustomFileSetPatchServer(
         val design = mainActor.answer(toInput(userMessage)).toContentList().firstOrNull()?.text ?: ""
         if (design.isNotBlank()) {
             task.add(
-                AddApplyFileDiffLinks.instrumentFileDiffs(
-                                    self = socketManager,
-                                    root = _root ?: throw IllegalStateException("Root directory is not set"),
-                                    response = design,
-                                    handle = { newCodeMap ->
-                                        newCodeMap.forEach { (path, _) ->
-                                            task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                        }
-                                    },
-                                    shouldAutoApply = { autoApply },
-                                    model = AppSettingsState.instance.fastChatClient,
-                                    defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
-                                        ?: "",
-                                    processor = processor).renderMarkdown(true))
+              AddApplyFileDiffLinks(processor = processor).instrument(
+                socketManager = socketManager,
+                root = _root ?: throw IllegalStateException("Root directory is not set"),
+                response = design,
+                handle = { newCodeMap: Map<Path, String> ->
+                  newCodeMap.forEach { (path, _) ->
+                    task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                  }
+                },
+                shouldAutoApply = { it: Path -> autoApply },
+                model = AppSettingsState.instance.fastChatClient,
+                defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
+                  ?: ""
+              ).renderMarkdown(true))
         } else {
             task.complete("No changes suggested.")
         }
@@ -830,19 +831,19 @@ class CustomFileSetPatchServer(
             CustomFileSetPatchAction.OutputMode.EDIT_FILES -> {
                 """<div>${
                     renderMarkdown(design) {
-                        AddApplyFileDiffLinks.instrumentFileDiffs(
-                            self = socketManager,
-                            root = _root ?: throw IllegalStateException("Root directory is not set"),
-                            response = design,
-                            handle = { newCodeMap ->
-                                newCodeMap.forEach { (path, _) ->
-                                    fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                }
-                            },
-                            model = AppSettingsState.instance.fastChatClient,
-                            defaultFile = fileSet.files.firstOrNull()
-                                ?.let { (_root?.relativize(it) ?: it).toString() } ?: "",
-                            processor = processor)
+                      AddApplyFileDiffLinks(processor = processor).instrument(
+                        socketManager = socketManager,
+                        root = _root ?: throw IllegalStateException("Root directory is not set"),
+                        response = design,
+                        handle = { newCodeMap: Map<Path, String> ->
+                          newCodeMap.forEach { (path, _) ->
+                            fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                          }
+                        },
+                        model = AppSettingsState.instance.fastChatClient,
+                        defaultFile = fileSet.files.firstOrNull()
+                          ?.let { (_root?.relativize(it) ?: it).toString() } ?: ""
+                      )
                     }
                 }</div>"""
             }

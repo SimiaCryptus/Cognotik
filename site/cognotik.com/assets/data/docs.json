@@ -35,10 +35,45 @@
     "description": "Comprehensive application framework for building AI-powered applications with session management, authentication, storage, and cloud integration."
   },
   {
+    "label": "Frontmatter Schema",
+    "url": "frontmatter.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/docproc",
+    "description": "YAML frontmatter schema documentation for DocProcessor - manage relationships between documentation and source code."
+  },
+  {
+    "label": "Document Formats",
+    "url": "doc_formats.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/docs",
+    "description": "Unified document reading API supporting PDF, Word, Excel, PowerPoint, HTML, email, and plain text formats with pagination and rendering capabilities."
+  },
+  {
     "label": "Use Case Categories",
     "url": "use_case_categories.html",
     "type": "link",
-    "code": "https://github.com/SimiaCryptus/Cognotik/blob/main/docs/use_case_categories.md",
-    "description": "A taxonomy of generative AI use cases - from basic content creation to advanced hierarchical generation patterns."
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan",
+    "description": "A systematic classification of generative AI patterns for software development and content creation - from basic content creation to advanced hierarchical generation and error correction patterns."
+  },
+  {
+    "label": "Extending Cognotik",
+    "url": "extending.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/util",
+    "description": "Learn how to extend Cognotik with custom API providers, tool providers, code runtimes, cognitive modes, and task types using the DynamicEnum pattern."
+  },
+  {
+    "label": "Symbol Database",
+    "url": "symboldb.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/symboldb",
+    "description": "Graph-based code analysis and browsing system for extracting, storing, and navigating code symbols across your project using Apache TinkerGraph."
+  },
+  {
+    "label": "ERB Templating",
+    "url": "erb_templating.html",
+    "type": "link",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/core/src/main/kotlin/com/simiacryptus/cognotik/util",
+    "description": "Ruby ERB-inspired templating engine for Kotlin with variable interpolation, filters, control structures, and LaTeX support."
   }
 ]

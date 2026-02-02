@@ -20,6 +20,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -273,17 +274,17 @@ class ReplicateCommitAction : BaseAction() {
                               """.trimIndent() + (planTask.message?.prependIndent("  ") ?: "")
                             ),
                         )
-                        val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
-                            ui,
+                        val markdown =
+                          AddApplyFileDiffLinks(processor = AppSettingsState.instance.processor).instrument(
+                            socketManager = ui,
                             root = root.toPath(),
                             response = response,
-                            handle = { newCodeMap ->
-                                newCodeMap.forEach { (path, newCode) ->
-                                    task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                                }
-                            },
-                            processor = AppSettingsState.instance.processor,
-                        )
+                            handle = { newCodeMap: Map<Path, String> ->
+                              newCodeMap.forEach { (path, newCode) ->
+                                task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                              }
+                                              }
+                          )
                         task.add(renderMarkdown(markdown))
                         task.placeholder
                     }

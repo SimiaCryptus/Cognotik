@@ -1,3 +1,11 @@
+---
+documents:
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/plan/README.md
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/tools/README.md
+    - ../webui/src/main/kotlin/com/simiacryptus/cognotik/cognitive/README.md
+specifies: ../site/cognotik.com/TaskPlanning.html
+---
+
 ## Cognitive Task Planning Framework: User Documentation
 
 ### 1. Introduction

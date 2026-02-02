@@ -45,8 +45,13 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                 try {
                     val constructor = taskType.getConstructor()
                     taskConstructors[taskType] = { settings: OrchestrationConfig, task: TaskExecutionConfig? ->
-                        @Suppress("UNCHECKED_CAST")
-                        constructor(settings, task as T?) as AbstractTask<TaskExecutionConfig, TaskTypeConfig>
+                        try {
+                            val t = task as T?
+                            val constructor1 = constructor(settings, t)
+                            constructor1 as AbstractTask<TaskExecutionConfig, TaskTypeConfig>
+                        } catch (e: ClassCastException) {
+                            throw RuntimeException("Failed to create task instance for task type: ${taskType.name}. Ensure that the task execution config class and task class are correctly paired.", e)
+                        }
                     }
                     register(taskType)
                 } catch (e: NoSuchMethodException) {
@@ -70,6 +75,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(ConstraintRelaxationTask.ConstraintRelaxation)
             registerConstructor(ConstraintSatisfactionTask.ConstraintSatisfaction)
             registerConstructor(CounterfactualAnalysisTask.CounterfactualAnalysis)
+            registerConstructor(CreateErbTemplateTask.CreateErbTemplate)
             registerConstructor(CrawlerAgentTask.CrawlerAgent)
             registerConstructor(DataIngestTask.DataIngest)
             registerConstructor(DataTableCompilationTask.DataTableCompilation)
@@ -89,7 +95,6 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(GameMechanicsDesignTask.GameMechanicsDesign)
             registerConstructor(GameNarrativeDesignTask.GameNarrativeDesign)
             registerConstructor(GameTheoryTask.GameTheory)
-            registerConstructor(ImageGenerationTask.GenerateImage)
             registerConstructor(GeneratePresentationTask.GeneratePresentation)
             registerConstructor(GenerateQRImageTask.GenerateQRImage)
             registerConstructor(GenerateSpriteSheetTask.GenerateSpriteSheet)
@@ -97,6 +102,8 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(GitHubSearchTask.GitHubSearch)
             registerConstructor(IllustrateDocumentTask.IllustrateDocument)
             registerConstructor(ImageDecompositionTask.ImageDecomposition)
+            registerConstructor(ImageGenerationTask.GenerateImage)
+            registerConstructor(IterativeFileModificationTask.IterativeFileModification)
             registerConstructor(TiledImageGenerationTask.TiledImageGeneration)
             registerConstructor(ImageTableTask.ImageTable)
             registerConstructor(ImageVariationTask.ImageVariation)
@@ -121,6 +128,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(PoliticalOptimizationTask.PoliticalOptimization)
             registerConstructor(ProbabilisticReasoningTask.ProbabilisticReasoning)
             registerConstructor(ReadDocumentsTask.ReadDocuments)
+            registerConstructor(RenderErbTemplateTask.RenderErbTemplate)
             registerConstructor(ReportGenerationTask.ReportGeneration)
             registerConstructor(ResearchPaperGenerationTask.ResearchPaperGeneration)
             registerConstructor(RunCodeTask.RunCode)
@@ -167,7 +175,12 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             } catch (e: NoSuchMethodException) {
                 throw RuntimeException("Task execution config class ${taskType.executionConfigClass.name} does not have a no-arg constructor. Please provide a planTask instance.", e)
             }
-            return constructor(this, executionConfig) as AbstractTask<out T, U>
+            try {
+                val task = constructor(this, executionConfig)
+                return task as AbstractTask<out T, U>
+            } catch (e: ClassCastException) {
+                throw RuntimeException("Failed to create task instance for task type: ${taskType.name}. Ensure that the task execution config class and task class are correctly paired.", e)
+            }
         }
 
         fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig): List<TaskType<*, *>> {

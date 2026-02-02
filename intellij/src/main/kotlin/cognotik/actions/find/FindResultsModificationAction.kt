@@ -18,6 +18,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -150,19 +151,20 @@ class FindResultsModificationAction(
                         ),
                     ).replace(Regex("""/\* L\d+ \*/"""), "")
                         .replace(Regex("""/\* <<< \*/"""), "")
-                    AddApplyFileDiffLinks.instrumentFileDiffs(
-                        socketManager,
-                        root = root.toPath(),
-                        response = response,
-                        handle = { newCodeMap ->
-                            newCodeMap.forEach { (path, newCode) ->
-                                task.complete("Updated $path")
-                            }
-                        },
-                        shouldAutoApply = { modificationParams.autoApply },
-                        defaultFile = file?.toFile?.path,
-                        processor = AppSettingsState.instance.processor
-                    ).apply {
+                  AddApplyFileDiffLinks(
+                    processor = AppSettingsState.instance.processor
+                  ).instrument(
+                    socketManager = socketManager,
+                    root = root.toPath(),
+                    response = response,
+                    handle = { newCodeMap: Map<Path, String> ->
+                      newCodeMap.forEach { (path, newCode) ->
+                        task.complete("Updated $path")
+                      }
+                    },
+                    shouldAutoApply = { it: Path -> modificationParams.autoApply },
+                    defaultFile = file?.toFile?.path
+                  ).apply {
                         task.complete(renderMarkdown(this))
                     }
                 }

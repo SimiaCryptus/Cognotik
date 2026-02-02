@@ -1,3 +1,10 @@
+---
+documents:
+    - webui/src/main/kotlin/com/simiacryptus/cognotik/platform/README.md
+    - webui/src/main/kotlin/com/simiacryptus/cognotik/platform/**/README.md
+specifies: ../site/cognotik.com/platform.html
+---
+
 # Cognotik Platform Developer Documentation
 
 ## Overview
@@ -15,11 +22,11 @@ The platform follows a layered architecture with clear separation of concerns:
 ┌─────────────────────────────────────────┐
 │           Application Layer             │
 ├─────────────────────────────────────────┤
-│           Service Layer                 │
-│  ┌─────────────┐ ┌─────────────────────┐│
-│  │ Client      │ │ Application         ││
-│  │ Manager     │ │ Services            ││
-│  └─────────────┘ └─────────────────────┘│
+│           Platform Services             │
+│  ┌─────────────┐ ┌──────────┐ ┌────────┐│
+│  │ Thread Pool │ │ Usage    │ │ User   ││
+│  │ Manager     │ │ Manager  │ │Settings││
+│  └─────────────┘ └──────────┘ └────────┘│
 ├─────────────────────────────────────────┤
 │           Interface Layer               │
 │  ┌─────────┐ ┌─────────┐ ┌─────────────┐│
@@ -57,9 +64,9 @@ if (session.isGlobal()) {
 
 **Session ID Format:**
 
-- Global sessions: `G-YYYYMMDD-XXXX` (accessible to all users)
-- User sessions: `U-YYYYMMDD-XXXX` (user-specific)
-- Legacy format: `YYYYMMDD-XXXX` (treated as global)
+- Global sessions: `G-YYYY-MM-DD-XXXX` (accessible to all users)
+- User sessions: `U-YYYY-MM-DD-XXXX` (user-specific to the owner)
+- Legacy format: `YYYY-MM-DD-XXXX` (treated as global)
 
 ### 2. User Management
 
@@ -83,17 +90,33 @@ val user = User(
 // Access services
 val authManager = ApplicationServices.authenticationManager
 val authzManager = ApplicationServices.authorizationManager
-val storage = ApplicationServices.dataStorageFactory(dataDir)
-val clientManager = ApplicationServices.clientManager
+val storage = ApplicationServices.fileApplicationServices().dataStorageFactory
 val cloud = ApplicationServices.cloud
-val usageManager = ApplicationServices.usageManager
+val usageManager = ApplicationServices.fileApplicationServices().usageManager
+val threadPoolManager = ApplicationServices.threadPoolManager
+```
+
+### 4. Thread Pool Management
+
+The `ThreadPoolManager` provides execution contexts scoped to specific sessions and users, ensuring proper resource isolation and logging:
+
+```kotlin
+// Get a standard thread pool for a session
+val pool = ApplicationServices.threadPoolManager.getPool(session, user)
+
+// Get a scheduled executor
+val scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(session, user)
 ```
 
 ## Storage System
 
 ### Data Storage Interface
 
-The `StorageInterface` provides methods for managing session data:
+The `StorageInterface` handles the physical persistence of session data:
+
+- **Message Persistence**: Storing and retrieving individual chat messages.
+- **Session Management**: Listing, deleting, and organizing session directories.
+- **JSON Data**: Generic storage for session-specific configuration and state.
 
 ```kotlin
 
@@ -121,13 +144,13 @@ val sessionDir = dataStorage.getSessionDir(user, session)
 ```
 data/
 ├── global/                    # Global sessions
-│   └── 20231215/
+│   └── 2023-12-15/
 │       └── AbC1/
 │           ├── messages/
 │           └── config.json
 ├── user-sessions/             # User sessions
 │   └── user@example.com/
-│       └── 20231215/
+│       └── 2023-12-15/
 │           └── XyZ2/
 └── users/                     # User settings
     └── user@example.com.json
@@ -135,7 +158,11 @@ data/
 
 ### Metadata Storage
 
-The `MetadataStorageInterface` handles session metadata:
+The `MetadataStorageInterface` manages high-level session information separately from raw content:
+
+- **Session Naming**: Human-readable titles for sessions.
+- **Message Sequences**: Maintaining the order and presence of message IDs.
+- **Timestamps**: Tracking creation and last-update times.
 
 ```kotlin
 
@@ -158,10 +185,16 @@ val messageIds = metadataStorage.getMessageIds(user, session)
 ```
 
 ## Authentication & Authorization
+### Authentication
+The `AuthenticationManager` handles user identity:
+- Maps access tokens to `User` objects.
+- Manages the `sessionId` cookie.
+- Provides a `defaultUser` (e.g., `user@localhost`) for local development.
+
 
 ### File-based Authorization
 
-The `AuthorizationManager` uses resource files for permission management:
+The `AuthorizationManager` uses resource files (e.g., `/permissions/read.txt`) to define access. It supports several operation types: `Read`, `Write`, `Public`, `Share`, `Execute`, `Delete`, and `Admin`.
 
 **Permission Files:**
 
@@ -182,15 +215,16 @@ user@example.com          # Specific user
 
 ### Usage Example
 
-```kotlin
-val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user)
+The `UserSettings` object contains structured configuration for AI providers and tools:
 
-// Update API keys
+```kotlin
+val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
+
+// Update API configurations (ApiData includes key, base URL, etc.)
 val updatedSettings = userSettings.copy(
-    apiKeys = userSettings.apiKeys + (APIProvider.OpenAI to "sk-...")
+    apiKeys = userSettings.apiKeys + ApiData(provider = APIProvider.OpenAI, key = "sk-...")
 )
 
-ApplicationServices.userSettingsManager.updateUserSettings(user, updatedSettings)
 ```
 
 ## Usage Tracking
@@ -208,38 +242,11 @@ val userUsage = usageManager.getUserUsageSummary(apiKey)
 val sessionUsage = usageManager.getSessionUsageSummary(session)
 ```
 
-## Client Management
+## Cloud Integration
 
-### Client Manager
+### AWS Platform
 
-The `ClientManager` provides OpenAI client instances with automatic usage tracking:
-
-```kotlin
-val clientManager = ApplicationServices.clientManager
-
-// Get chat client for session
-val chatClient = clientManager.getChatClient(session, user)
-
-// Get thread pools
-val pool = clientManager.getPool(session, user)
-val scheduledPool = clientManager.getScheduledPool(session, user, dataStorage)
-```
-
-### Custom Client Creation
-
-```kotlin
-class CustomClientManager : ClientManager() {
-    override fun createChatClient(session: Session, user: User?): ChatClient? {
-        // Custom client creation logic
-        return CustomChatClient(session, user)
-    }
-}
-
-// Use custom client manager
-ApplicationServices.clientManager = CustomClientManager()
-```
-
-### AWS Platform Implementation
+The `AwsPlatform` provides S3-based sharing and KMS-based encryption:
 
 ```kotlin
 val awsPlatform = AwsPlatform(
@@ -256,6 +263,11 @@ val url = awsPlatform.upload("path/to/file.txt", "text/plain", fileBytes)
 val encrypted = awsPlatform.encrypt(data, "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012")
 val decrypted = awsPlatform.decrypt(encryptedData)
 ```
+**Configuration Properties:**
+- `share_bucket`: S3 bucket for uploads.
+- `share_base`: Base URL for shared links.
+- `aws.profile`: AWS CLI profile for credentials.
+
 
 ## Configuration
 
@@ -263,7 +275,7 @@ val decrypted = awsPlatform.decrypt(encryptedData)
 
 ```kotlin
 // Configure before locking
-ApplicationServicesConfig.dataStorageRoot = File("/custom/data/path")
+ApplicationServices.dataStorageRoot = File("/custom/data/path")
 
 // Lock configuration to prevent changes
 ApplicationServicesConfig.isLocked = true
@@ -281,7 +293,7 @@ class CustomStorage(dataDir: File) : DataStorage(dataDir) {
 }
 
 // Register custom services
-ApplicationServices.dataStorageFactory = { file -> CustomStorage(file) }
+ApplicationServices.fileApplicationServices().dataStorageFactory = { file -> CustomStorage(file) }
 ApplicationServices.authenticationManager = CustomAuthenticationManager()
 ApplicationServices.authorizationManager = CustomAuthorizationManager()
 ```

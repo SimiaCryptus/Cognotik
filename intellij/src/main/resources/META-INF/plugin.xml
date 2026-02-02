@@ -189,7 +189,15 @@
                         text="🖼️ Create Image from Description"
                         description="Generate an image based on a natural language description, with customizable styles and formats">
                 </action>
+                <action class="cognotik.actions.task.CreateErbTemplateAction"
+                        text="✨ Create ERB Template"
+                        description="Create a new ERB template with AI assistance, specifying the purpose, format, and data structure">
+                </action>
             </group>
+            <action class="cognotik.actions.task.RenderErbTemplateAction"
+                    text="📝 Render ERB Template"
+                    description="Render ERB templates with JSON data files, automatically determining output format from template naming">
+            </action>
             <group class="cognotik.actions.task.DocProcessorActionGroup"
                    id="cognotik.ui.ProjectMenu.DocProcessor"
                    description="Process markdown documentation files with frontmatter specifications"

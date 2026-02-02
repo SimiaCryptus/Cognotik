@@ -91,12 +91,6 @@ class ImageTableTask(
         }
     }
 
-    init {
-        planTask?.validate()?.let { errorMessage ->
-            throw ValidatedObject.ValidationError(errorMessage, planTask)
-        }
-    }
-
     override fun promptSegment(): String {
         return """
 ImageTable - Generate a table/grid of AI-generated images
@@ -125,13 +119,12 @@ ImageTable - Generate a table/grid of AI-generated images
 
       val transcript = task.transcript()
       log.info("Starting ImageTableTask execution.")
+      executionConfig?.validate()?.let { errorMessage ->
+        resultFn("VALIDATION ERROR: $errorMessage")
+        return
+      }
       task.ui.pool.submit {
         try {
-          executionConfig?.validate()?.let { errorMessage ->
-            resultFn("VALIDATION ERROR: $errorMessage")
-            return@submit
-          }
-
           val rows = executionConfig?.rows ?: emptyList()
           val columns = executionConfig?.columns ?: emptyList()
           val promptTemplate = executionConfig?.image_prompt_template ?: ""

@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.renderMarkdown
@@ -615,21 +616,22 @@ abstract class PatchApp(
             )
         }
 
-        val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
-            self = task.ui,
-            root = root.toPath(),
-            response = fixResponse,
-            shouldAutoApply = { path ->
-                if (autoFix) {
-                    log.info("Auto-applying fix to: $path")
-                    true
-                } else {
-                    log.debug("Not auto-applying fix to: {} (autoFix={})", path, autoFix)
-                    false
-                }
-            },
-            model = model,
-            processor = processor
+        val markdown = AddApplyFileDiffLinks(
+          processor = processor
+        ).instrument(
+          socketManager = task.ui,
+          root = root.toPath(),
+          response = fixResponse,
+          shouldAutoApply = { path: Path ->
+            if (autoFix) {
+              log.info("Auto-applying fix to: $path")
+              true
+            } else {
+              log.debug("Not auto-applying fix to: {} (autoFix={})", path, autoFix)
+              false
+            }
+          },
+          model = model
         )
         log.info("Instrumented file diffs with apply links")
         task.verbose(

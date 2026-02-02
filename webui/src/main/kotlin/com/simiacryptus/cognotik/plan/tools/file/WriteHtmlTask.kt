@@ -70,13 +70,6 @@ class WriteHtmlTask(
         }
     }
 
-    init {
-        // Validate the configuration on initialization
-        planTask?.validate()?.let { errorMessage ->
-            throw ValidatedObject.ValidationError(errorMessage, planTask)
-        }
-    }
-
     override fun promptSegment(): String {
         return """
 WriteHtml - Create a complete HTML file with embedded CSS and JavaScript

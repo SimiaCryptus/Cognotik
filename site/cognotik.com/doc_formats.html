@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <title>Document Formats | Cognotik</title>
+    <meta name="description" content="Unified document reading API supporting PDF, Word, Excel, PowerPoint, HTML, email, and plain text formats with pagination and rendering capabilities.">
+    <meta name="keywords" content="document reader, PDF extraction, Word parser, Excel reader, document processing, text extraction, Cognotik">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="Document Formats | Cognotik">
+    <meta property="og:description" content="Unified document reading API supporting PDF, Word, Excel, PowerPoint, HTML, email, and plain text formats.">
+    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
+    <meta property="og:url" content="https://cognotik.com/doc_formats.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Document Formats | Cognotik">
+    <meta name="twitter:description" content="Unified document reading API supporting PDF, Word, Excel, PowerPoint, HTML, email, and plain text formats.">
+    <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+
+    <!-- Favicon Suite -->
+    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#0f1115">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        /* Page-specific styles */
+        .doc-hero {
+            padding: var(--spacing-xl) var(--spacing-md);
+            text-align: center;
+            background: radial-gradient(ellipse at top center, rgba(139, 92, 246, 0.15) 0%, transparent 50%), var(--background-color);
+        }
+
+        .doc-hero h1 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            margin-bottom: var(--spacing-sm);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .doc-hero .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .features-highlight {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-lg);
+        }
+
+        .feature-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-color);
+            border-radius: var(--border-radius);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .content-section {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: var(--spacing-xl) var(--spacing-md);
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Format Table */
+        .format-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: var(--spacing-lg);
+            font-size: 0.95rem;
+        }
+
+        .format-table th,
+        .format-table td {
+            padding: var(--spacing-sm) var(--spacing-md);
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .format-table th {
+            background: var(--surface-color);
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .format-table tr:hover {
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        .format-table code {
+            font-size: 0.85em;
+            padding: 0.15em 0.4em;
+        }
+
+        .feature-tag {
+            display: inline-block;
+            padding: 0.15em 0.5em;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-secondary);
+            border-radius: 4px;
+            margin-right: 0.25rem;
+        }
+
+        /* Interface Cards */
+        .interface-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .interface-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-md);
+        }
+
+        .interface-card h4 {
+            font-family: var(--font-family-mono);
+            font-size: 1rem;
+            color: var(--accent-color);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .interface-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .interface-card pre {
+            margin: 0;
+            font-size: 0.8rem;
+        }
+
+        /* Code Examples */
+        .code-block {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-lang {
+            font-family: var(--font-family-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .copy-btn {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            color: var(--primary-color);
+            background: var(--surface-color);
+            border-color: var(--accent-color);
+        }
+
+        .code-block pre {
+            margin: 0;
+            padding: var(--spacing-md);
+            overflow-x: auto;
+            border: none;
+            background: transparent;
+        }
+
+        /* Tabs */
+        .tabs {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .tabs-nav {
+            display: flex;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            flex: 0 0 auto;
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary-color);
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+        }
+
+        .tabs-content {
+            padding: var(--spacing-md);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Reader Details */
+        .reader-section {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .reader-section h4 {
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .reader-section ul {
+            margin: 0;
+            padding-left: var(--spacing-lg);
+            color: var(--text-muted);
+        }
+
+        .reader-section li {
+            margin-bottom: var(--spacing-xs);
+        }
+
+        /* Dependencies */
+        .dep-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-sm);
+        }
+
+        .dep-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm);
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+        }
+
+        .dep-item strong {
+            color: var(--accent-secondary);
+        }
+
+        .dep-item span {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .format-table {
+                font-size: 0.85rem;
+            }
+
+            .format-table th,
+            .format-table td {
+                padding: var(--spacing-xs) var(--spacing-sm);
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Header Component -->
+<cognotik-header></cognotik-header>
+
+<!-- Hero Section -->
+<section class="doc-hero">
+    <h1>Document Reading Module</h1>
+    <p class="subtitle">
+        A unified interface for extracting text and rendering images from a wide variety of document formats.
+        Leverages industry-standard libraries for robust document processing capabilities.
+    </p>
+    <div class="features-highlight">
+        <span class="feature-badge">📄 Unified API</span>
+        <span class="feature-badge">📑 Pagination</span>
+        <span class="feature-badge">🖼️ Rendering</span>
+        <span class="feature-badge">📎 Attachments</span>
+        <span class="feature-badge">✂️ Smart Splitting</span>
+    </div>
+</section>
+
+<!-- Main Content -->
+<main class="content-section">
+
+    <!-- Supported Formats -->
+    <section>
+        <h2 class="section-title">Supported Formats</h2>
+        <table class="format-table">
+            <thead>
+            <tr>
+                <th>Format</th>
+                <th>Extension</th>
+                <th>Reader Class</th>
+                <th>Features</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>PDF</td>
+                <td><code>.pdf</code></td>
+                <td><code>PDFReader</code></td>
+                <td>
+                    <span class="feature-tag">Text</span>
+                    <span class="feature-tag">Pagination</span>
+                    <span class="feature-tag">Rendering</span>
+                </td>
+            </tr>
+            <tr>
+                <td>Word</td>
+                <td><code>.docx</code></td>
+                <td><code>DocxReader</code></td>
+                <td>
+                    <span class="feature-tag">Text</span>
+                    <span class="feature-tag">Tables</span>
+                </td>
+            </tr>
+            <tr>
+                <td>Word (Legacy)</td>
+                <td><code>.doc</code></td>
+                <td><code>DocReader</code></td>
+                <td><span class="feature-tag">Text</span></td>
+            </tr>
+            <tr>
+                <td>Excel</td>
+                <td><code>.xlsx</code></td>
+                <td><code>XlsxReader</code></td>
+                <td>
+                    <span class="feature-tag">Text</span>
+                    <span class="feature-tag">Sheet-aware</span>
+                </td>
+            </tr>
+            <tr>
+                <td>Excel (Legacy)</td>
+                <td><code>.xls</code></td>
+                <td><code>XlsReader</code></td>
+                <td>
+                    <span class="feature-tag">Text</span>
+                    <span class="feature-tag">Sheet-aware</span>
+                </td>
+            </tr>
+            <tr>
+                <td>PowerPoint</td>
+                <td><code>.pptx</code></td>
+                <td><code>PptxReader</code></td>
+                <td>
+                    <span class="feature-tag">Text</span>
+                    <span class="feature-tag">Slide-aware</span>
+                    <span class="feature-tag">Notes</span>
+                </td>
+            </tr>
+            <tr>
+                <td>PowerPoint (Legacy)</td>
+                <td><code>.ppt</code></td>
+                <td><code>PptReader</code></td>
+                <td>
+                    <span class="feature-tag">Text</span>
+                    <span class="feature-tag">Slide-aware</span>
+                </td>
+            </tr>
+            <tr>
+                <td>OpenDocument</td>
+                <td><code>.odt</code></td>
+                <td><code>OdtReader</code></td>
+                <td><span class="feature-tag">Text</span></td>
+            </tr>
+            <tr>
+                <td>Rich Text</td>
+                <td><code>.rtf</code></td>
+                <td><code>RtfReader</code></td>
+                <td><span class="feature-tag">Text</span></td>
+            </tr>
+            <tr>
+                <td>HTML</td>
+                <td><code>.html</code>, <code>.htm</code></td>
+                <td><code>HTMLReader</code></td>
+                <td>
+                    <span class="feature-tag">Text</span>
+                    <span class="feature-tag">Pagination</span>
+                </td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td><code>.eml</code></td>
+                <td><code>EmlReader</code></td>
+                <td>
+                    <span class="feature-tag">Text</span>
+                    <span class="feature-tag">Headers</span>
+                    <span class="feature-tag">Attachments</span>
+                </td>
+            </tr>
+            <tr>
+                <td>Plain Text</td>
+                <td><code>.txt</code> (default)</td>
+                <td><code>TextReader</code></td>
+                <td>
+                    <span class="feature-tag">Text</span>
+                    <span class="feature-tag">Pagination</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Core Interfaces -->
+    <section>
+        <h2 class="section-title">Core Interfaces</h2>
+        <div class="interface-grid">
+            <div class="interface-card">
+                <h4>DocumentReader</h4>
+                <p>Base interface for all readers. Extends <code>AutoCloseable</code> for proper resource management.</p>
+                <pre><code>interface DocumentReader : AutoCloseable {
+  fun getText(): String
+}</code></pre>
+            </div>
+            <div class="interface-card">
+                <h4>PaginatedDocumentReader</h4>
+                <p>Extends <code>DocumentReader</code> for formats that support or simulate pagination.</p>
+                <pre><code>interface PaginatedDocumentReader : DocumentReader {
+  fun getPageCount(): Int
+  fun getText(startPage: Int, endPage: Int): String
+}</code></pre>
+            </div>
+            <div class="interface-card">
+                <h4>RenderableDocumentReader</h4>
+                <p>Extends <code>DocumentReader</code> for formats that can be rendered as images.</p>
+                <pre><code>interface RenderableDocumentReader : DocumentReader {
+  fun getPageCount(): Int
+  fun renderImage(pageIndex: Int, dpi: Float): BufferedImage
+}</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Usage Examples -->
+    <section>
+        <h2 class="section-title">Usage</h2>
+
+        <div class="tabs" data-tabs>
+            <div class="tabs-nav" role="tablist">
+                <button class="tab-btn active" data-tab="basic" role="tab" aria-selected="true">Basic Usage</button>
+                <button class="tab-btn" data-tab="paginated" role="tab" aria-selected="false">Pagination</button>
+                <button class="tab-btn" data-tab="rendering" role="tab" aria-selected="false">Rendering</button>
+                <button class="tab-btn" data-tab="config" role="tab" aria-selected="false">Configuration</button>
+            </div>
+            <div class="tabs-content">
+                <div class="tab-panel active" data-tab-panel="basic" role="tabpanel">
+                    <h4>Getting a Reader</h4>
+                    <p>The easiest way to obtain a reader is via the <code>File</code> extension function:</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang">kotlin</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code>import com.simiacryptus.cognotik.docs.getDocumentReader
+import com.simiacryptus.cognotik.docs.isDocumentFile
+import java.io.File
+
+val file = File("document.pdf")
+if (file.isDocumentFile()) {
+  file.getDocumentReader().use { reader ->
+    val text = reader.getText()
+    println(text)
+  }
+}</code></pre>
+                    </div>
+
+                    <h4>Checking File Support</h4>
+                    <p>Use the <code>isDocumentFile()</code> extension function to check if a file is supported:</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang">kotlin</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code>val file = File("example.docx")
+if (file.isDocumentFile()) {
+  // File format is supported
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="tab-panel" data-tab-panel="paginated" role="tabpanel">
+                    <h4>Handling Paginated Documents</h4>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang">kotlin</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code>val reader = file.getDocumentReader()
+if (reader is PaginatedDocumentReader) {
+  val pageCount = reader.getPageCount()
+  println("Document has $pageCount pages")
+
+  // Get text from first page only
+  val firstPageText = reader.getText(0, 1)
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="tab-panel" data-tab-panel="rendering" role="tabpanel">
+                    <h4>Rendering PDF Pages</h4>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang">kotlin</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code>val reader = file.getDocumentReader()
+if (reader is RenderableDocumentReader) {
+  val pageCount = reader.getPageCount()
+  for (i in 0 until pageCount) {
+    val image = reader.renderImage(i, 150f) // 150 DPI
+    // Process the BufferedImage
+  }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="tab-panel" data-tab-panel="config" role="tabpanel">
+                    <h4>Configuration</h4>
+                    <p>The <code>Settings</code> data class allows you to configure behavior for certain readers:</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang">kotlin</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code>data class Settings(
+  val dpi: Float = 120f,
+  val maxPages: Int = Int.MAX_VALUE,
+  val outputFormat: String = "PNG",
+  val fileInputs: List&lt;String&gt;? = null,
+  val showImages: Boolean = true,
+  val pagesPerBatch: Int = 1,
+  val saveImageFiles: Boolean = false,
+  val saveTextFiles: Boolean = false,
+  val saveFinalJson: Boolean = true,
+  val fastMode: Boolean = true,
+  val addLineNumbers: Boolean = false
+)</code></pre>
+                    </div>
+
+                    <h4>Example with TextReader</h4>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang">kotlin</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code>val settings = Settings(addLineNumbers = true)
+val reader = TextReader(file)
+reader.configure(settings)
+val textWithLineNumbers = reader.getText()</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reader Details -->
+    <section>
+        <h2 class="section-title">Reader Details</h2>
+
+        <div class="reader-section">
+            <h4>PDFReader</h4>
+            <p>Implements both <code>PaginatedDocumentReader</code> and <code>RenderableDocumentReader</code>. Uses Apache PDFBox for text extraction and image rendering.</p>
+            <ul>
+                <li>Supports page-range text extraction</li>
+                <li>Renders pages to <code>BufferedImage</code> at configurable DPI</li>
+                <li>Automatically registers ImageIO service providers for proper image format support</li>
+            </ul>
+        </div>
+
+        <div class="reader-section">
+            <h4>DocxReader / DocReader</h4>
+            <p>Extracts text from Microsoft Word files using Apache POI.</p>
+            <ul>
+                <li><strong>DocxReader:</strong> Extracts text from paragraphs and tables (tab-separated cells)</li>
+                <li><strong>DocReader:</strong> Extracts text from legacy <code>.doc</code> files using HWPF library</li>
+            </ul>
+        </div>
+
+        <div class="reader-section">
+            <h4>XlsxReader / XlsReader</h4>
+            <p>Extracts text from Excel spreadsheets.</p>
+            <ul>
+                <li>Processes all sheets in the workbook</li>
+                <li>Handles STRING, NUMERIC, BOOLEAN, and FORMULA cell types</li>
+                <li>Tab-separated cell values within rows</li>
+            </ul>
+        </div>
+
+        <div class="reader-section">
+            <h4>PptxReader / PptReader</h4>
+            <p>Extracts text from PowerPoint presentations.</p>
+            <ul>
+                <li>Extracts slide titles and text from all text shapes</li>
+                <li><strong>PptxReader</strong> also extracts speaker notes</li>
+            </ul>
+        </div>
+
+        <div class="reader-section">
+            <h4>HTMLReader</h4>
+            <p>Parses HTML files using Jsoup.</p>
+            <ul>
+                <li>Implements <code>PaginatedDocumentReader</code> with smart page splitting</li>
+                <li>Configurable line numbering via <code>Settings</code></li>
+                <li>Splits large documents into ~16KB pages at paragraph boundaries</li>
+            </ul>
+        </div>
+
+        <div class="reader-section">
+            <h4>TextReader</h4>
+            <p>Reads plain text files with pagination support.</p>
+            <ul>
+                <li>Implements <code>PaginatedDocumentReader</code></li>
+                <li>Uses entropy-based splitting algorithm to find optimal page breaks</li>
+                <li>Prefers splitting at empty lines</li>
+                <li>Configurable line numbering via <code>Settings</code></li>
+            </ul>
+        </div>
+
+        <div class="reader-section">
+            <h4>EmlReader</h4>
+            <p>Parses email files using Jakarta Mail.</p>
+            <ul>
+                <li>Extracts email headers (From, To, CC, Subject, Date)</li>
+                <li>Processes message body (text/plain and text/html)</li>
+                <li>Recursively processes attachments using appropriate document readers</li>
+                <li>Automatically cleans up temporary files on close</li>
+            </ul>
+        </div>
+
+        <div class="reader-section">
+            <h4>OdtReader / RtfReader</h4>
+            <ul>
+                <li><strong>OdtReader:</strong> Reads OpenDocument Text files using ODF Toolkit</li>
+                <li><strong>RtfReader:</strong> Reads Rich Text Format files using Java's built-in RTF support (<code>RTFEditorKit</code>)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Dependencies -->
+    <section>
+        <h2 class="section-title">Dependencies</h2>
+        <div class="dep-grid">
+            <div class="dep-item">
+                <strong>Apache POI</strong>
+                <span>.doc, .docx, .xls, .xlsx, .ppt, .pptx</span>
+            </div>
+            <div class="dep-item">
+                <strong>Apache PDFBox</strong>
+                <span>PDF processing & rendering</span>
+            </div>
+            <div class="dep-item">
+                <strong>Jsoup</strong>
+                <span>HTML parsing & extraction</span>
+            </div>
+            <div class="dep-item">
+                <strong>Jakarta Mail</strong>
+                <span>.eml file parsing</span>
+            </div>
+            <div class="dep-item">
+                <strong>ODF Toolkit</strong>
+                <span>.odt files</span>
+            </div>
+            <div class="dep-item">
+                <strong>Java Swing</strong>
+                <span>RTF support (built-in)</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Resource Management -->
+    <section>
+        <h2 class="section-title">Resource Management</h2>
+        <p>All readers implement <code>AutoCloseable</code>. Always use <code>use</code> blocks or try-with-resources to ensure proper cleanup:</p>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">kotlin</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <pre><code>file.getDocumentReader().use { reader ->
+  // Work with reader
+} // Automatically closed</code></pre>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+            <strong>Note:</strong> The <code>PDFReader</code> temporarily sets the thread's context class loader during image rendering to ensure proper ImageIO service provider discovery. This is handled internally and transparent to users.
+        </p>
+    </section>
+
+</main>
+
+<!-- Footer -->
+<footer style="text-align: center; padding: var(--spacing-lg); border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.9rem;">
+    <p>&copy; 2024 Cognotik. Part of the Document Reading Module.</p>
+</footer>
+
+<!-- Scripts -->
+<script>
+    // Tab functionality
+    document.querySelectorAll('[data-tabs]').forEach(tabContainer => {
+        const buttons = tabContainer.querySelectorAll('.tab-btn');
+        const panels = tabContainer.querySelectorAll('.tab-panel');
+
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.dataset.tab;
+
+                buttons.forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-selected', 'false');
+                });
+                button.classList.add('active');
+                button.setAttribute('aria-selected', 'true');
+
+                panels.forEach(panel => {
+                    panel.classList.remove('active');
+                    if (panel.dataset.tabPanel === targetTab) {
+                        panel.classList.add('active');
+                    }
+                });
+            });
+        });
+    });
+
+    // Copy code functionality
+    function copyCode(button) {
+        const codeBlock = button.closest('.code-block');
+        const code = codeBlock.querySelector('code').textContent;
+
+        navigator.clipboard.writeText(code).then(() => {
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.style.color = 'var(--success-color)';
+            button.style.borderColor = 'var(--success-color)';
+
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.color = '';
+                button.style.borderColor = '';
+            }, 2000);
+        });
+    }
+</script>
+</body>
+</html>

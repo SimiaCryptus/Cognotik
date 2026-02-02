@@ -798,14 +798,7 @@ class DecompositionSynthesisTask(
             parsingChatter = defaultFast,
         )
 
-        val decomposition = decompositionAgent.answer(listOf(problem)).obj
-        // Validate the decomposition
-        decomposition.validate()?.let { error ->
-            log.error("Decomposition validation failed: $error")
-            throw IllegalArgumentException("Invalid decomposition: $error")
-        }
-
-        return decomposition
+        return decompositionAgent.answer(listOf(problem)).obj
     }
 
     private fun solveSubproblems(
@@ -880,11 +873,6 @@ class DecompositionSynthesisTask(
             )
 
             val solution = solutionAgent.answer(listOf(subproblem.description)).obj
-            // Validate the solution
-            solution.validate()?.let { error ->
-                log.error("Solution validation failed for ${subproblem.id}: $error")
-                throw IllegalArgumentException("Invalid solution for ${subproblem.id}: $error")
-            }
 
             val finalSolution = solution.jsonCopy().apply {
                 subproblem_id = subproblem.id
@@ -990,15 +978,7 @@ class DecompositionSynthesisTask(
             model = api,
             parsingChatter = defaultFast,
         )
-
-        val synthesized: SynthesizedSolution = synthesisAgent.answer(listOf(problem)).obj
-        // Validate the synthesized solution
-        synthesized.validate()?.let { error ->
-            log.error("Synthesis validation failed: $error")
-            throw IllegalArgumentException("Invalid synthesis: $error")
-        }
-
-        return synthesized!!
+        return synthesisAgent.answer(listOf(problem)).obj
     }
 
     private fun validateCoherence(
@@ -1040,14 +1020,7 @@ class DecompositionSynthesisTask(
             parsingChatter = defaultFast,
         )
 
-        val validation: CoherenceValidation = validationAgent.answer(listOf(synthesized.solution)).obj
-        // Validate the validation result
-        validation.validate()?.let { error ->
-            log.error("Validation result validation failed: $error")
-            throw IllegalArgumentException("Invalid validation result: $error")
-        }
-
-        return validation!!
+        return validationAgent.answer(listOf(synthesized.solution)).obj
     }
 
     override fun writeToTranscript(it: FileOutputStream, buildString: String) {
