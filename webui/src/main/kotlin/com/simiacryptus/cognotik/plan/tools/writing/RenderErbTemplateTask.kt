@@ -26,11 +26,11 @@ class RenderErbTemplateTask(
 
   class RenderErbTemplateTaskExecutionConfig(
     @Description("JSON data object to be used for template rendering. Keys should match template variables.")
-    var template_data: Map<String, Any?>? = null,
+    var data: Map<String, Any?>? = null,
     @Description("Optional: Override the template file path from type config")
-    var template_file_override: String? = null,
-    @Description("Optional: Output file path to write the rendered content")
-    var output_file: String? = null,
+    var template_file: String? = null,
+    @Description("List of output file paths to write the rendered content to (only one supported)")
+    var files: List<String> = emptyList(),
     task_description: String? = null,
     task_dependencies: MutableList<String>? = null,
     state: TaskState? = null
@@ -41,8 +41,11 @@ class RenderErbTemplateTask(
     state = state
   ), ValidatedObject {
     override fun validate(): String? {
-      if (template_data == null || template_data!!.isEmpty()) {
+      if (data == null || data!!.isEmpty()) {
         return "template_data must be provided and non-empty"
+      }
+      if(files.size != 1) {
+        return "Only one output file path is supported"
       }
       return ValidatedObject.validateFields(this)
     }
@@ -80,7 +83,7 @@ RenderErbTemplate - Render ERB-style templates with dynamic data
       transcript?.write("# ERB Template Rendering Task\n\n".toByteArray())
 
       // 1. Resolve template file path
-      val templatePath = executionConfig?.template_file_override
+      val templatePath = executionConfig?.template_file
         ?: typeConfig?.template_file
         ?: throw RuntimeException("No template file specified in execution config or type config")
 
@@ -108,7 +111,7 @@ $templateContent
       )
 
       // 3. Prepare data
-      val templateData = executionConfig?.template_data ?: emptyMap()
+      val templateData = executionConfig?.data ?: emptyMap()
       val jsonData = gson.toJsonTree(templateData).asJsonObject
 
       transcript?.write(
@@ -173,7 +176,7 @@ $renderedContent
       )
 
       // 5. Optionally write to file
-      val outputPath = executionConfig?.output_file
+      val outputPath = executionConfig?.files?.first()
       if (!outputPath.isNullOrBlank()) {
         val outputFile = agent.root.resolve(outputPath).toFile()
         outputFile.parentFile?.mkdirs()

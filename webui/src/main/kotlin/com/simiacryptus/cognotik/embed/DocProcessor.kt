@@ -1,7 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.diff.PatchProcessors
@@ -14,9 +12,9 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.PathMatcher
+import java.util.*
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
-import java.util.LinkedList
 
 /**
  * DocProcessor processes markdown documentation files that specify target files via frontmatter.
@@ -36,6 +34,16 @@ open class DocProcessor(
   val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
   val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview
 ) {
+
+  open fun executionConfig(
+    taskType: TaskType<*, *>,
+    data: ModificationTaskConfig
+  ): TaskExecutionConfig {
+    val map = mapOf(
+      "task_type" to taskType.name,
+    ) + data.jsonCast<Map<String, Any>>()
+    return map.jsonCast()
+  }
 
   data class DocSpec(
     val docFile: File,
@@ -88,6 +96,8 @@ open class DocProcessor(
     val files: List<String>? = null,
     val related_files: List<String>? = null,
     val task_description: String = "",
+    val template_file: String? = null,
+    val data: Map<String, Any>? = null,
   )
 
   data class ModificationTask(
@@ -95,15 +105,8 @@ open class DocProcessor(
     val patchProcessor: PatchProcessors = PatchProcessors.Fuzzy,
     val shouldDeleteTarget: Boolean = false,
     val taskType: TaskType<*, *> = FileModification
-  ) {
-    @get:JsonIgnore
-    val taskExecutionConfig: TaskExecutionConfig
-      get() {
-        return (mapOf(
-          "task_type" to taskType.name,
-        ) + data.jsonCast<Map<String, Any>>()).jsonCast()
-      }
-  }
+  )
+
 
   data class DocumentMatch(
     val docSpec: DocSpec,
@@ -119,13 +122,16 @@ open class DocProcessor(
       log.warn("No markdown files found in ${docsFolder.absolutePath}")
       return
     }
-    runAll(getAll(*markdownFiles.toTypedArray()), concurrencyProcessor)
+    val docSpecs = markdownFiles.mapNotNull { parseMarkdownWithFrontmatter(it) }
+    val fileMods = modificationTasks(docSpecs)
+    runAll(fileMods, concurrencyProcessor)
   }
 
   open fun getAll(
     vararg markdownFiles: File,
-  ): List<ModificationTask> {
-    val docSpecs = markdownFiles.mapNotNull { parseMarkdownWithFrontmatter(it) }
+  ) = modificationTasks(markdownFiles.mapNotNull { parseMarkdownWithFrontmatter(it) })
+
+  fun modificationTasks(docSpecs: List<DocSpec>): List<ModificationTask> {
     log.info("Found ${docSpecs.size} markdown files with 'specifies' frontmatter")
     val fileToSpecs = fileToSpecs(docSpecs)
     val documentMatches = documentMatches(docSpecs)
@@ -135,7 +141,7 @@ open class DocProcessor(
       (fileToSpecs.keys + transformMatches.keys + documentMatches.keys + generateMatches.keys).distinct()
     log.info("Total unique target files: ${allTargetFiles.size}")
     return allTargetFiles.map { targetFile ->
-      val specs = fileToSpecs[targetFile] ?: emptyList()
+      val specs = (fileToSpecs[targetFile] ?: emptyList()).toMutableList()
       val transforms = transformMatches[targetFile] ?: emptyList()
       val documents = documentMatches[targetFile] ?: emptyList()
       val generates = generateMatches[targetFile] ?: emptyList()
@@ -236,6 +242,32 @@ open class DocProcessor(
           additionalContext(genMatch.spec, targetFile)
     }).distinct(),
     task_description = buildCombinedTaskDescription(specs, transforms, documents, generates, targetFile),
+    template_file = specs.mapNotNull { spec ->
+      (spec.frontmatter["template_file"] as? String)?.let { templatePath ->
+        spec.docFile.parentFile.resolve(templatePath).relativeTo(root.absoluteFile).toString()
+      }
+    }.firstOrNull(),
+    data = run {
+      // First check for explicit data_file in frontmatter
+      val explicitDataFile = specs.mapNotNull { spec ->
+        (spec.frontmatter["data_file"] as? String)?.let { dataPath ->
+          spec.docFile.parentFile.resolve(dataPath).absolutePath
+        }
+      }.firstOrNull()
+      // If no explicit data_file, check if we have a transform with a JSON source file
+      val implicitDataFile = if (explicitDataFile == null && transforms.isNotEmpty()) {
+        transforms.firstOrNull { it.sourceFile.extension.equals("json", ignoreCase = true) }?.sourceFile?.absolutePath
+      } else null
+      (explicitDataFile ?: implicitDataFile)?.let { dataFilePath ->
+        val dataFile = File(dataFilePath)
+        if (dataFile.exists()) {
+          JsonUtil.fromJson(dataFile.readText(), Map::class.java) as Map<String, Any>
+        } else {
+          log.warn("Data file not found: $dataFilePath")
+          null
+        }
+      }
+    }
   )
 
   open fun primarySource(
@@ -336,7 +368,8 @@ open class DocProcessor(
   }
 
   open fun fileToSpecs(docSpecs: List<DocSpec>): Map<String, List<DocSpec>> {
-    val fileToSpecs = docSpecs
+    // First, collect specs from 'specifies' patterns
+    val specsFromSpecifies = docSpecs
       .filter { it.specifies.isNotEmpty() }
       .flatMap { spec ->
         val baseDir = spec.docFile.parentFile
@@ -350,7 +383,24 @@ open class DocProcessor(
           log.info("Doc ${spec.docFile.name} specifies pattern '$pattern' -> ${targetFiles.size} files")
           targetFiles.map { targetFile -> targetFile.canonicalFile to spec }
         }
-      }.groupBy({ it.first.absolutePath }, { it.second })
+      }
+    
+    // Also collect specs from 'transforms' patterns
+    val specsFromTransforms = docSpecs
+      .filter { it.transforms.isNotEmpty() }
+      .flatMap { spec ->
+        spec.transforms.flatMap { transform ->
+          expandTransformPattern(root, transform, spec).map { match ->
+            match.destinationFile to spec
+          }
+        }
+      }
+    
+    // Combine both sources and group by target file
+    val fileToSpecs = (specsFromSpecifies + specsFromTransforms)
+      .groupBy({ it.first.absolutePath }, { it.second })
+      .mapValues { it.value.distinct() }
+    
     log.info("Grouped into ${fileToSpecs.size} unique target files from 'specifies'")
     return fileToSpecs
   }
@@ -370,7 +420,7 @@ open class DocProcessor(
             harness.runTask(
               taskType = mod.taskType,
               typeConfig = typeConfig(mod),
-              executionConfig = mod.taskExecutionConfig,
+              executionConfig = executionConfig(mod.taskType, mod.data),
               timeoutMinutes = 5,
               workspace = root.absoluteFile,
               initSettings = { session ->

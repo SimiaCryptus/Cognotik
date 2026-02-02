@@ -159,7 +159,7 @@ open class DocProcessorAction(
             path = "/docUpdate",
             showMenubar = autoFix,
             taskType = taskType,
-            taskConfig = tasks.map { it.taskExecutionConfig },
+            taskConfig = tasks.map { docProcessor.executionConfig(it.taskType, it.data) },
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ) {
             override fun instance(model: ApiChatModel) =
