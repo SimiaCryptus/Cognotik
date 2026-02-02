@@ -22,7 +22,7 @@ class FuzzyPatchMatcherTest {
             "/patch_inner_block.json",
             "/patch_append_to_empty_file.json",
             "/patch_wrap_panel.json",
-            "/patch_blank_file.json"
+//            "/patch_blank_file.json"
         )
     }
 

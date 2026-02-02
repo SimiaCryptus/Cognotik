@@ -374,12 +374,7 @@ open class DocProcessor(
       .flatMap { spec ->
         val baseDir = spec.docFile.parentFile
         spec.specifies.flatMap { pattern ->
-          val targetFiles =     // If the pattern contains ** or other complex globs, handle differently
-            if (pattern.contains("**")) {
-              expandRecursiveGlob(baseDir, pattern)
-            } else {
-              expandSimpleGlob(baseDir, pattern)
-            }
+          val targetFiles = expandPatternOrLiteral(baseDir, pattern)
           log.info("Doc ${spec.docFile.name} specifies pattern '$pattern' -> ${targetFiles.size} files")
           targetFiles.map { targetFile -> targetFile.canonicalFile to spec }
         }
@@ -537,30 +532,30 @@ open class DocProcessor(
     val bodyContent = content.substring(endOfFrontmatter + 3).trim()
     // Parse YAML frontmatter (supports simple key: value and lists)
     val frontmatter = parseFrontmatter(frontmatterText)
-    val specifies = parseSpecifies(frontmatter)
-    val documents = parseDocuments(frontmatter)
-    val transforms = parseTransforms(frontmatter)
-    val generates = parseGenerates(frontmatter)
-    val related = parseRelated(frontmatter)
-    val taskType = parseTaskType(frontmatter)
-    val taskConfigJson = parseTaskConfigJson(frontmatter)
-    // Return null if neither specifies nor transforms are present
-    if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty() && generates.isEmpty()) {
-      return null
-    }
-    return DocSpec(
-      docFile = file,
-      specifies = specifies,
-      documents = documents,
-      transforms = transforms,
-      generates = generates,
-      related = related,
-      content = bodyContent,
-      frontmatter = frontmatter,
-      taskType = taskType,
-      taskConfigJson = taskConfigJson
-    )
-  }
+val specifies = parseSpecifies(frontmatter)
+     val documents = parseDocuments(frontmatter)
+     val transforms = parseTransforms(frontmatter)
+     val generates = parseGenerates(frontmatter)
+     val related = parseRelated(frontmatter)
+     val taskType = parseTaskType(frontmatter)
+     val taskConfigJson = parseTaskConfigJson(frontmatter)
+     // Return null if neither specifies nor transforms are present
+     if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty() && generates.isEmpty()) {
+       return null
+     }
+     return DocSpec(
+       docFile = file,
+       specifies = specifies,
+       documents = documents,
+       transforms = transforms,
+       generates = generates,
+       related = related,
+       content = bodyContent,
+       frontmatter = frontmatter,
+       taskType = taskType,
+       taskConfigJson = taskConfigJson
+     )
+   }
 
   /**
    * Parse 'task_type' from frontmatter.
@@ -611,6 +606,37 @@ open class DocProcessor(
 
   companion object {
     private val log = LoggerFactory.getLogger(DocProcessor::class.java)
+    /**
+     * Check if a pattern contains glob wildcards
+     */
+    fun isGlobPattern(pattern: String): Boolean {
+      return pattern.contains("*") || pattern.contains("?") || pattern.contains("[")
+    }
+    /**
+     * Expand a pattern that may be either a glob or a literal file path.
+     * For literal paths (no wildcards), returns the file even if it doesn't exist yet.
+     * For glob patterns, only returns existing files that match.
+     */
+    fun expandPatternOrLiteral(baseDir: File, pattern: String): List<File> {
+      return if (isGlobPattern(pattern)) {
+        // It's a glob pattern - only return existing files
+        if (pattern.contains("**")) {
+          expandRecursiveGlob(baseDir, pattern)
+        } else {
+          expandSimpleGlob(baseDir, pattern)
+        }
+      } else {
+        // It's a literal file path - return it even if it doesn't exist
+        val targetFile = try {
+          baseDir.resolve(pattern).canonicalFile
+        } catch (e: Exception) {
+          log.warn("Failed to resolve literal path '$pattern'", e)
+          baseDir.resolve(pattern)
+        }
+        listOf(targetFile)
+      }
+    }
+
 
     /**
      * Expand a simple glob pattern (e.g., *.kt) in a specific directory
