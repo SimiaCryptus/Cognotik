@@ -7,7 +7,7 @@ object GroqModels {
     val Llama33_70bVersatile = ChatModel(
         name = "Llama33_70bVersatile",
         modelName = "llama-3.3-70b-versatile",
-        maxTotalTokens = 128000,
+        maxTotalTokens = 131072,
         maxOutTokens = 32768,
         provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.59,
@@ -37,8 +37,8 @@ object GroqModels {
     val Llama31_8bInstant = ChatModel(
         name = "Llama31_8bInstant",
         modelName = "llama-3.1-8b-instant",
-        maxTotalTokens = 128000,
-        maxOutTokens = 8192,
+        maxTotalTokens = 131072,
+        maxOutTokens = 131072,
         provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.05,
         outputTokenPricePerK = 0.08
@@ -176,8 +176,8 @@ object GroqModels {
         maxTotalTokens = 512,
         maxOutTokens = 512,
         provider = APIProvider.Companion.Groq,
-        inputTokenPricePerK = 0.05,
-        outputTokenPricePerK = 0.05
+        inputTokenPricePerK = 0.03,
+        outputTokenPricePerK = 0.03
     )
     val LlamaPromptGuard2_86m = ChatModel(
         name = "LlamaPromptGuard2_86m",
@@ -185,35 +185,35 @@ object GroqModels {
         maxTotalTokens = 512,
         maxOutTokens = 512,
         provider = APIProvider.Companion.Groq,
-        inputTokenPricePerK = 0.05,
-        outputTokenPricePerK = 0.05
+        inputTokenPricePerK = 0.04,
+        outputTokenPricePerK = 0.04
     )
     val KimiK2Instruct = ChatModel(
         name = "KimiK2Instruct",
-        modelName = "moonshotai/kimi-k2-instruct",
-        maxTotalTokens = 131072,
+        modelName = "moonshotai/kimi-k2-instruct-0905",
+        maxTotalTokens = 262144,
         maxOutTokens = 16384,
         provider = APIProvider.Companion.Groq,
-        inputTokenPricePerK = 0.30,
-        outputTokenPricePerK = 0.30
+        inputTokenPricePerK = 1.00,
+        outputTokenPricePerK = 3.00
     )
     val GptOss120b = ChatModel(
         name = "GptOss120b",
         modelName = "openai/gpt-oss-120b",
         maxTotalTokens = 131072,
-        maxOutTokens = 32766,
+        maxOutTokens = 65536,
         provider = APIProvider.Companion.Groq,
-        inputTokenPricePerK = 1.00,
-        outputTokenPricePerK = 1.00
+        inputTokenPricePerK = 0.15,
+        outputTokenPricePerK = 0.60
     )
     val GptOss20b = ChatModel(
         name = "GptOss20b",
         modelName = "openai/gpt-oss-20b",
         maxTotalTokens = 131072,
-        maxOutTokens = 32768,
+        maxOutTokens = 65536,
         provider = APIProvider.Companion.Groq,
-        inputTokenPricePerK = 0.50,
-        outputTokenPricePerK = 0.50
+        inputTokenPricePerK = 0.075,
+        outputTokenPricePerK = 0.30
     )
     val PlayAiTts = ChatModel(
         name = "PlayAiTts",
@@ -239,8 +239,8 @@ object GroqModels {
         maxTotalTokens = 131072,
         maxOutTokens = 40960,
         provider = APIProvider.Companion.Groq,
-        inputTokenPricePerK = 0.30,
-        outputTokenPricePerK = 0.30
+        inputTokenPricePerK = 0.29,
+        outputTokenPricePerK = 0.59
     )
 
     val Llama4Scout17b = ChatModel(
@@ -249,8 +249,8 @@ object GroqModels {
         maxTotalTokens = 131072,
         maxOutTokens = 8192,
         provider = APIProvider.Companion.Groq,
-        inputTokenPricePerK = 0.20,
-        outputTokenPricePerK = 0.20
+        inputTokenPricePerK = 0.11,
+        outputTokenPricePerK = 0.34
     )
     val Llama4Maverick17b = ChatModel(
         name = "Llama4Maverick17b",
@@ -259,7 +259,7 @@ object GroqModels {
         maxOutTokens = 8192,
         provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.20,
-        outputTokenPricePerK = 0.20
+        outputTokenPricePerK = 0.60
     )
     val Allam2_7b = ChatModel(
         name = "Allam2_7b",
@@ -270,6 +270,43 @@ object GroqModels {
         inputTokenPricePerK = 0.10,
         outputTokenPricePerK = 0.10
     )
+    val LlamaGuard4_12b = ChatModel(
+        name = "LlamaGuard4_12b",
+        modelName = "meta-llama/llama-guard-4-12b",
+        maxTotalTokens = 131072,
+        maxOutTokens = 1024,
+        provider = APIProvider.Companion.Groq,
+        inputTokenPricePerK = 0.20,
+        outputTokenPricePerK = 0.20
+    )
+    val GptOssSafeguard20b = ChatModel(
+        name = "GptOssSafeguard20b",
+        modelName = "openai/gpt-oss-safeguard-20b",
+        maxTotalTokens = 131072,
+        maxOutTokens = 65536,
+        provider = APIProvider.Companion.Groq,
+        inputTokenPricePerK = 0.075,
+        outputTokenPricePerK = 0.30
+    )
+    val Compound = ChatModel(
+        name = "Compound",
+        modelName = "groq/compound",
+        maxTotalTokens = 131072,
+        maxOutTokens = 8192,
+        provider = APIProvider.Companion.Groq,
+        inputTokenPricePerK = 0.0,
+        outputTokenPricePerK = 0.0
+    )
+    val CompoundMini = ChatModel(
+        name = "CompoundMini",
+        modelName = "groq/compound-mini",
+        maxTotalTokens = 131072,
+        maxOutTokens = 8192,
+        provider = APIProvider.Companion.Groq,
+        inputTokenPricePerK = 0.0,
+        outputTokenPricePerK = 0.0
+    )
+
 
     val values = mapOf(
         "Llama33_70bVersatile" to Llama33_70bVersatile,
@@ -299,6 +336,10 @@ object GroqModels {
         "Qwen3_32b" to Qwen3_32b,
         "Llama4Scout17b" to Llama4Scout17b,
         "Llama4Maverick17b" to Llama4Maverick17b,
-        "Allam2_7b" to Allam2_7b
+        "Allam2_7b" to Allam2_7b,
+        "LlamaGuard4_12b" to LlamaGuard4_12b,
+        "GptOssSafeguard20b" to GptOssSafeguard20b,
+        "Compound" to Compound,
+        "CompoundMini" to CompoundMini
     )
 }
