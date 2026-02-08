@@ -99,7 +99,7 @@ open class SearchAPISearch(
 
         override fun isEnabled() = user?.let {
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it)
-                .apis.any { api -> api.provider == APIProvider.SearchAPI && api.key != null }
+                .apis.any { api -> api.provider == APIProvider.SearchAPI && api.key?.decrypt != null }
         } ?: false
     }
 

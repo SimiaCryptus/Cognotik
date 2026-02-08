@@ -113,7 +113,7 @@ CausalInference - Identify causal relationships and root causes
       val startTime = System.currentTimeMillis()
 
 
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
       try {
 

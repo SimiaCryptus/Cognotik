@@ -51,7 +51,7 @@ class IllustrateDocumentTask(
     }
 
     class IllustrateDocumentTaskExecutionConfigData(
-        @Description("The document file to illustrate (must be .md or .html)") files: List<String>? = null,
+        @Description("The document file to illustrate (must be .md or .html)") files: List<String> = emptyList(),
         @Description("Maximum number of images to generate (default: 5)") val maxImages: Int = 5,
         @Description("Image format to use (png or jpg, default: png)") val imageFormat: String = "png",
         @Description("Whether to automatically insert image references into the document") val autoInsert: Boolean = true,
@@ -112,7 +112,7 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
       task.ui.pool.submit {
         val startTime = System.currentTimeMillis()
         val documentFile = executionConfig?.files?.firstOrNull()
-        val transcript = task.transcript()
+        val transcript = task.newFileOutputStream(transcriptFile())
 
         try {
           if (documentFile == null) {

@@ -86,7 +86,7 @@ class JdbcSessionTask(
 
         val execute: (Boolean) -> Unit = { shouldComplete ->
             task.ui.pool.submit {
-                val transcript = task.transcript()
+              val transcript = task.newFileOutputStream(transcriptFile())
                 
                 try {
                   log.info("Starting JDBC execution for session: ${executionConfig.sessionId ?: "transient"}")

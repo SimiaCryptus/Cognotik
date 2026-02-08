@@ -103,12 +103,11 @@ class IllustrateDocumentAction : BaseAction() {
         taskConfig: IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData
     ) {
         val app = object : SingleTaskApp(
-            applicationName = "Document Illustration Task",
             path = "/illustrateDocumentTask",
-            showMenubar = false,
+            applicationName = "Document Illustration Task",
             taskType = IllustrateDocumentTask.IllustrateDocument,
-            taskConfig = listOf(taskConfig),
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
+            message = "Execute task"
         ) {
             override fun instance(model: ApiChatModel) =
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")

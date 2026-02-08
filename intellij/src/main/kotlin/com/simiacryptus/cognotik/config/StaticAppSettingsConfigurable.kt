@@ -468,7 +468,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             val imageModelName = component.mainImageModel.selectedItem as String?
             log.debug("Selected models - fast: $fastModelName, smart: $smartModelName, imageChat: $imageChatModelName")
 
-            val chatModels = userSettings.apis.flatMap { apiData ->
+            val chatModels = userSettings.apis.filter { it.key?.decrypt != null }.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl) ?: emptyList()
             }
             val imageModels = userSettings.apis.flatMap { apiData ->

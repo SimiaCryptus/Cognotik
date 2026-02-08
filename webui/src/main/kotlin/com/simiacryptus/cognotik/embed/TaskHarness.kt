@@ -64,13 +64,9 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
             try {
                 harness.runTask(
                     taskType = taskType,
-                    typeConfig = typeConfig,
-                    executionConfig = executionConfig,
                     timeoutMinutes = timeoutMinutes,
-                    autoFix = !openBrowser,
-                    workspace = workspace,
-                    initSettings = { initSettings(it, workspace, !openBrowser, taskType, typeConfig, harness) }
-                )
+                    executionConfig = TaskExecutionConfig(task_type = taskType.name)
+                ) { initSettings(it, workspace, !openBrowser, taskType, typeConfig, harness) }
             } finally {
                 harness.stop()
             }
@@ -89,10 +85,9 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
         harness: UnifiedHarness
     ) = harness.initSettings(
         session = session,
-        workspace = workspace,
         autoFix = autoFix,
-        taskType = taskType,
         typeConfig = typeConfig,
+        workingDir = harness.getRoot(workspace, session, taskType.name).absolutePath,
     )
 
     open fun createWorkspace(): File {

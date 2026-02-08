@@ -18,7 +18,6 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 import java.util.Locale.getDefault
 
 
@@ -266,7 +265,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
     task.ui.pool.submit {
       val startTime = System.currentTimeMillis()
       log.info("Starting TutorialGenerationTask for goal: '${executionConfig?.goal}'")
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
       // Validate configuration
       executionConfig?.validate()?.let { validationError ->

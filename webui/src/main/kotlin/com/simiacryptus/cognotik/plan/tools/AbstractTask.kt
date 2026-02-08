@@ -6,6 +6,8 @@ import com.simiacryptus.cognotik.docs.isDocumentFile
 import com.simiacryptus.cognotik.plan.ExecutionState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
+import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -120,16 +122,34 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
             }
         }
 
-    fun SessionTask.transcript(name: String = this@AbstractTask.taskType): FileOutputStream? {
-        val transcriptFile: String = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    fun SessionTask.newFileOutputStream(transcriptFile: String): FileOutputStream? {
         val (link, file) = Pair(linkTo(transcriptFile), resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
         add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
         return markdownTranscript
     }
 
+    fun transcriptFile(name: String): String =
+        "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+
+    fun transcriptFile(): String = mainOuputFile(this@AbstractTask.taskType)
+
+    open fun mainOuputFile(name: String = this@AbstractTask.taskType) = executionConfig?.files?.let {
+         when {
+            it.size == 1 && it.first().endsWith(".md") ->
+                when(executionConfig) {
+                    is RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig -> null
+                    is AbstractFileTask.FileTaskExecutionConfig -> null
+                    else -> it[0]
+                }
+            it.isNotEmpty() -> null
+            else -> null
+        }
+    } ?: "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+
+
     open fun initializeTranscript(task: SessionTask, name: String = this@AbstractTask.taskType): Pair<String, FileOutputStream?> {
-        val transcriptFile = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val transcriptFile = transcriptFile(name)
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
         task.add(

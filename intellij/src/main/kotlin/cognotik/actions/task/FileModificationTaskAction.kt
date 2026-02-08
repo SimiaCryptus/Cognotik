@@ -104,12 +104,11 @@ class FileModificationTaskAction : BaseAction() {
         root: File
     ) {
         val app = object : SingleTaskApp(
-            applicationName = "File Modification Task",
             path = "/fileModificationTask",
-            showMenubar = false,
+            applicationName = "File Modification Task",
             taskType = FileModification,
-            taskConfig = listOf(taskConfig),
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
+            message = "Execute task"
         ) {
             override fun instance(model: ApiChatModel) = model.instance()
                 ?: throw IllegalStateException("Model or Provider not set")

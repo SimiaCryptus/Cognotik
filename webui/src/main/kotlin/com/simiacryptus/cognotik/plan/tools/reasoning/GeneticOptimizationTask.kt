@@ -191,7 +191,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         orchestrationConfig: OrchestrationConfig
     ) {
         task.ui.pool.submit {
-            val transcript = task.transcript()
+          val transcript = task.newFileOutputStream(transcriptFile())
             try {
                 val startTime = System.currentTimeMillis()
                 log.info("Starting GeneticOptimizationTask. Goal: ${executionConfig?.optimization_goal}")

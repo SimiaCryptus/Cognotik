@@ -29,7 +29,7 @@ class WriteHtmlTask(
 
     class WriteHtmlTaskExecutionConfigData(
         @Description("The HTML file to be created (relative path, must end with .html)")
-        files: List<String>? = null,
+        files: List<String> = emptyList(),
         @Description("Additional files for context (e.g., existing HTML templates, related files)")
         related_files: List<String>? = null,
         @Description("Detailed description of the HTML page to create, including layout, styling, and functionality requirements")
@@ -120,7 +120,8 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
 
         val tabs = TabbedDisplay(task)
         val overviewTask = tabs.newTask("Overview")
-        val transcriptStream = task.transcript("html_generation_${htmlFile.substringBeforeLast(".")}")
+      val transcriptStream =
+        task.newFileOutputStream(transcriptFile("html_generation_${htmlFile.substringBeforeLast(".")}"))
         val transcriptWriter = transcriptStream?.bufferedWriter()
 
         val toInput = { it: String -> listOf(it) }

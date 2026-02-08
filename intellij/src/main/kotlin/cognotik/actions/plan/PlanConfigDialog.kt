@@ -644,7 +644,7 @@ open class PlanConfigDialog(
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_ -]+$")
 
         fun isVisible(chatModel: AIModel) =
-            ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.filter { it.key != null }
+            ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.filter { it.key?.decrypt != null }
                 .any { it.provider == chatModel.provider }
     }
 }

@@ -141,7 +141,7 @@ class EthicalReasoningTask(
         val context = executionConfig?.context ?: ""
 
         val api = defaultSmart ?: return
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         val tabs = TabbedDisplay(task)
 
       task.ui.pool.submit {

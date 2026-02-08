@@ -23,13 +23,13 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     protected val codeFiles = mutableMapOf<Path, String>()
 
     abstract class FileTaskExecutionConfig(
-        task_type: String? = null,
-        task_description: String? = null,
-        @Description("REQUIRED: The files to be generated as output for the task (relative paths)") var files: List<String>? = null,
-        @Description("Additional files used to inform the change, including relevant files created by previous tasks") var related_files: List<String>? = null,
-        @Description("Whether to extract text content from non-text files (PDF, HTML, etc.)") var extractContent: Boolean = false,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = TaskState.Pending,
+      task_type: String? = null,
+      task_description: String? = null,
+      @Description("REQUIRED: The files to be generated as output for the task (relative paths)") override var files: List<String> = emptyList(),
+      @Description("Additional files used to inform the change, including relevant files created by previous tasks") var related_files: List<String>? = null,
+      @Description("Whether to extract text content from non-text files (PDF, HTML, etc.)") var extractContent: Boolean = false,
+      task_dependencies: List<String>? = null,
+      state: TaskState? = TaskState.Pending,
     ) : TaskExecutionConfig(
         task_type = task_type,
         task_description = task_description,

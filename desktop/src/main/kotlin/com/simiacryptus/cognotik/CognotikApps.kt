@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik
 
 import com.simiacryptus.cognotik.UpdateManager.checkUpdate
-import com.simiacryptus.cognotik.apps.UnifiedPlanApp
+import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -249,7 +249,7 @@ open class CognotikApps(
         listOf(
             ChildWebApp("/chat", BasicChatApp(File("."), model, model)),
             ChildWebApp(
-                "/taskChat", object : UnifiedPlanApp(
+                "/taskChat", object : SinglePlanApp(
                     path = "/taskChat",
                     applicationName = "Task-Runner"
                 ) {

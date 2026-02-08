@@ -14,25 +14,12 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
-import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.tools.TaskType
-import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
-import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import java.awt.Dimension
-import java.text.SimpleDateFormat
+import java.io.File
+import java.util.concurrent.Executors
 import javax.swing.JComponent
 
 /**
@@ -103,7 +90,9 @@ open class DocProcessorAction(
             fastModel = AppSettingsState.instance.fastModel?.model
                 ?: throw IllegalStateException("Fast model not configured"),
             smartModel = AppSettingsState.instance.smartModel?.model
-                ?: throw IllegalStateException("Smart model not configured")
+                ?: throw IllegalStateException("Smart model not configured"),
+            serverless = false,
+            openBrowser = true,
         )
         val allTasks = docProcessor.getAll(*selectedFiles.toTypedArray())
 
@@ -118,79 +107,16 @@ open class DocProcessorAction(
             if (dialog.showAndGet()) {
                 val selectedTasks = dialog.getSelectedTasks()
                 if (selectedTasks.isNotEmpty()) {
-                    UITools.runAsync(project, "Processing Documentation Tasks", true) { innerProgress ->
-                        executeTasks(docProcessor, selectedTasks, dialog.autoFix, selectedTasks.first().taskType)
+                    UITools.runAsync(project, "Processing Documentation Tasks", true) { _ ->
+                        val concurrencyProcessor = FixedConcurrencyProcessor(
+                            Executors.newCachedThreadPool(),
+                            docProcessor.concurrencyLimit
+                        )
+                        docProcessor.runAll(selectedTasks, concurrencyProcessor)
                     }
                 }
             }
         }
-    }
-
-    private fun executeTasks(
-        docProcessor: DocProcessor,
-        tasks: List<ModificationTask>,
-        autoFix: Boolean,
-        taskType: TaskType<*,*>
-    ) {
-        val session = Session.newGlobalID()
-        DataStorage.sessionPaths[session] = docProcessor.root
-        val orchestrationConfig = OrchestrationConfig(
-            sessionId = session.toString(),
-            defaultSmartModel = AppSettingsState.instance.smartModel
-            ?: throw IllegalStateException("No model configured"),
-            defaultFastModel = AppSettingsState.instance.fastModel
-                ?: throw IllegalStateException("Fast model not configured"),
-            defaultImageModel = AppSettingsState.instance.imageChatModel,
-            temperature = AppSettingsState.instance.temperature,
-            autoFix = autoFix,
-            workingDir = docProcessor.root.toString(),
-            shellCmd = listOf(
-                if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
-            ),
-            taskSettings = mutableMapOf(
-                taskType.name to TaskTypeConfig(
-                    name = "File Modification Task",
-                    task_type = taskType.name)
-            )
-        )
-
-        val app = object : SingleTaskApp(
-            applicationName = "Doc Update Processor",
-            path = "/docUpdate",
-            showMenubar = autoFix,
-            taskType = taskType,
-            taskConfig = tasks.map { docProcessor.executionConfig(it.taskType, it.data) },
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
-        ) {
-            override fun instance(model: ApiChatModel) =
-                model.instance() ?: throw IllegalStateException("Model or Provider not set")
-
-            override fun getOrchestrationConfig(
-                session: Session,
-                user: User
-            ) = super.getOrchestrationConfig(session, user)?.apply {
-                processor = tasks.first().patchProcessor
-            }
-        }
-
-        app.getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())
-        SessionProxyServer.chats[session] = app
-        ApplicationServer.appInfoMap[session] = AppInfoData(
-            applicationName = "Document Illustration Task",
-            inputCnt = 0,
-            stickyInput = autoFix,
-            showMenubar = autoFix
-        )
-        SessionProxyServer.metadataStorage.setSessionName(
-            null, session, "Document Illustration @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
-        )
-
-        val uri = CognotikAppServer.getServer(
-            AppSettingsState.instance.listeningEndpoint,
-            AppSettingsState.instance.listeningPort
-        ).server.uri.resolve("/#$session")
-        log.info("Opening browser to $uri")
-        browse(uri)
     }
 
     /**
@@ -200,7 +126,6 @@ open class DocProcessorAction(
         project: Project?,
         private val allTasks: List<ModificationTask>
     ) : DialogWrapper(project) {
-
         var autoFix: Boolean = true
         private val checkBoxList = CheckBoxList<TaskItem>()
         private val taskItems: List<TaskItem>

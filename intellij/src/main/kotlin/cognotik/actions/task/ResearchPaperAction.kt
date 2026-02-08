@@ -60,7 +60,7 @@ class ResearchPaperAction : BaseAction() {
                 val orchestrationConfig = dialog.getOrchestrationConfig()
 
                 UITools.runAsync(e.project, "Initializing Research Paper Generation Task", true) { progress ->
-                    initializeTask(e, progress, orchestrationConfig, taskConfig, root)
+                    initializeTask(progress, orchestrationConfig, root)
                 }
             } catch (ex: Exception) {
                 log.error("Failed to initialize research paper generation task", ex)
@@ -70,10 +70,8 @@ class ResearchPaperAction : BaseAction() {
     }
 
     private fun initializeTask(
-        e: AnActionEvent,
         progress: ProgressIndicator,
         orchestrationConfig: OrchestrationConfig,
-        taskConfig: ResearchPaperGenerationTask.ResearchPaperGenerationTaskExecutionConfigData,
         root: File
     ) {
         progress.text = "Setting up session..."
@@ -82,7 +80,7 @@ class ResearchPaperAction : BaseAction() {
         DataStorage.sessionPaths[session] = root
 
         progress.text = "Starting server..."
-        setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId), taskConfig, root)
+        setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId))
 
         Thread {
             Thread.sleep(500)
@@ -101,17 +99,14 @@ class ResearchPaperAction : BaseAction() {
 
     private fun setupTaskSession(
         session: Session,
-        orchestrationConfig: OrchestrationConfig,
-        taskConfig: ResearchPaperGenerationTask.ResearchPaperGenerationTaskExecutionConfigData,
-        root: File
+        orchestrationConfig: OrchestrationConfig
     ) {
         val app = object : SingleTaskApp(
-            applicationName = "Research Paper Generation Task",
             path = "/researchPaperTask",
-            showMenubar = false,
+            applicationName = "Research Paper Generation Task",
             taskType = ResearchPaperGenerationTask.ResearchPaperGeneration,
-            taskConfig = listOf(taskConfig),
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
+            message = "Execute task"
         ) {
             override fun instance(model: ApiChatModel) =
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")
@@ -408,9 +403,7 @@ class ResearchPaperAction : BaseAction() {
         private fun getVisibleModels() =
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
-                    model.provider == apiData.provider &&
-                            model.modelName?.isNotBlank() == true &&
-                            PlanConfigDialog.isVisible(model)
+                  model.provider == apiData.provider && model.modelName.isNotBlank() && PlanConfigDialog.isVisible(model)
                 } ?: listOf()
             }.distinctBy { it.modelName }.sortedBy { "${it.provider?.name} - ${it.modelName}" }
     }

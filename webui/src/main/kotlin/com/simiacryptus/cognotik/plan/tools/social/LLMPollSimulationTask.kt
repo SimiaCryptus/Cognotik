@@ -190,7 +190,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
     ) {
         val startTime = System.currentTimeMillis()
         log.info("Starting LLMPollSimulationTask execution")
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
         // Create tabbed display
         val tabs = TabbedDisplay(task)

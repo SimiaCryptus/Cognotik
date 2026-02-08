@@ -354,7 +354,7 @@ class GameMechanicsDesignTask(
 
     val ui = task.ui
     val tabs = TabbedDisplay(task)
-    val transcript = task.transcript()
+    val transcript = task.newFileOutputStream(transcriptFile())
 
     task.ui.pool.submit {
       val overviewTask = task.newTask()

@@ -30,7 +30,7 @@ class GeneratePresentationTask(
 
     class GeneratePresentationTaskExecutionConfigData(
         @Description("The HTML presentation file to be created (relative path, must end with .html)")
-        files: List<String>? = null,
+        files: List<String> = emptyList(),
         @Description("Additional files for context (e.g., existing presentations, reference materials)")
         related_files: List<String>? = null,
         @Description("Detailed description of the presentation including topic, key points, target audience, and desired style")
@@ -333,7 +333,8 @@ $TT
         overviewTask.header("Step 3: Finalizing Files", level = 3)
         filesToWrite.add(htmlFile to htmlStructure)
         filesToWrite.add("presentation.css" to (standardCss + "\n\n" + cssCode))
-        val transcriptStream = task.transcript("${presentationTitle.replace(Regex("[^a-zA-Z0-9]"), "_")}")
+      val transcriptStream =
+        task.newFileOutputStream(transcriptFile("${presentationTitle.replace(Regex("[^a-zA-Z0-9]"), "_")}"))
         transcriptStream?.close()
 
 

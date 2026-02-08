@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap
  * A unified application that can use different cognitive modes based on configuration.
  * This allows for switching between different planning and execution strategies.
  */
-abstract class UnifiedPlanApp(
+abstract class SinglePlanApp(
     path: String,
     applicationName: String = "Unified Planning App",
     showMenubar: Boolean = true,
@@ -39,7 +39,7 @@ abstract class UnifiedPlanApp(
     showMenubar = showMenubar,
     root = dataStorageRoot,
 ) {
-    private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
+    private val log = LoggerFactory.getLogger(SinglePlanApp::class.java)
 
     // Updated expansion patterns to match ChatSocketManager
     private val idSubPattern = """[^|\n,/\\;}\]\[><()@]+"""
@@ -268,7 +268,7 @@ ${settings?.toJson()}
             processor,
             rangeMatch.value,
             items,
-            this@UnifiedPlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!
+            this@SinglePlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!
         )
     }
 
@@ -294,7 +294,7 @@ ${settings?.toJson()}
             processor,
             sequenceMatch.value,
             items,
-            this@UnifiedPlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!
+            this@SinglePlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!
         )
     }
 

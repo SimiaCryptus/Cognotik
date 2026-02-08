@@ -98,7 +98,7 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
         val ui = task.ui
         val tabs = TabbedDisplay(task)
         val logTask = task.newTask()
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         tabs["Log"] = logTask.placeholder
 
         fun log(msg: String) {

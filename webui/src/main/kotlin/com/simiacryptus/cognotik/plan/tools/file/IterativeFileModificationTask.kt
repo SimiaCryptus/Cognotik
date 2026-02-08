@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -23,7 +22,7 @@ class IterativeFileModificationTask(
 ) : AbstractFileTask<IterativeFileModificationTask.IterativeFileModificationTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
     class IterativeFileModificationTaskExecutionConfigData(
-        files: List<String>? = null,
+        files: List<String> = emptyList(),
         related_files: List<String>? = null,
         extractContent: Boolean = false,
         @Description("High-level description of the overall modification goal")
@@ -123,7 +122,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
     ) {
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         val tabs = TabbedDisplay(task)
 
         try {

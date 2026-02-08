@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import cognotik.actions.BaseAction
 import com.simiacryptus.cognotik.SettingsWidgetFactory.SettingsWidget
 import com.simiacryptus.cognotik.config.AppSettingsState
 import java.awt.Desktop
@@ -11,6 +12,7 @@ import java.net.URI
 object BrowseUtil {
 
     fun browse(uri: URI) {
+        log.info("Opening browser to $uri")
         SettingsWidget().updateSessionsList()
         sendUdpMessage(uri.toString())
         if (!AppSettingsState.instance.disableAutoOpenUrls && Desktop.isDesktopSupported()) {

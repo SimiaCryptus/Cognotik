@@ -41,7 +41,7 @@ class OpenAIEmbeddingClient(
         request.addHeader("Content-Type", "application/json")
         request.addHeader("Accept", "application/json")
         val apiKey = this.apiKey.decrypt
-        if (apiKey.isNotBlank()) {
+        if (!apiKey.isNullOrBlank()) {
             request.addHeader("Authorization", "Bearer $apiKey")
         } else {
             throw IllegalStateException("OpenAI API key is required")
@@ -95,6 +95,6 @@ class OpenAIEmbeddingClient(
         require(request.input.toString().isNotBlank()) { "Embedding request input cannot be blank" }
         require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
         val apiKey = this.apiKey.decrypt
-        require(apiKey.isNotBlank()) { "OpenAI API key is required" }
+        require(!apiKey.isNullOrBlank()) { "OpenAI API key is required" }
     }
 }

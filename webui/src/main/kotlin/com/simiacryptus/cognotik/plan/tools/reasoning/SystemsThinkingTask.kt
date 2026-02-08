@@ -98,7 +98,7 @@ class SystemsThinkingTask(
     ) {
         val startTime = System.currentTimeMillis()
       log.info("Starting SystemsThinkingTask for system: '${executionConfig?.system_description?.take(100)}'")
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
         val systemDescription = executionConfig?.system_description
         if (systemDescription.isNullOrBlank()) {

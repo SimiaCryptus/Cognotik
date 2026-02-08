@@ -20,7 +20,7 @@ class SecureString {
 
   override fun toString() = toJson()
 
-  val decrypt: String get() = decrypt(data)
+  val decrypt: String? get() = decrypt(data)
 
   @JsonValue
   fun toJson(): String = PREFIX + Base64.getEncoder().encodeToString(data)
@@ -78,13 +78,18 @@ class SecureString {
       return result
     }
 
-    private fun decrypt(bytes: ByteArray): String {
-      val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-      val iv = bytes.copyOfRange(0, 12)
-      val encrypted = bytes.copyOfRange(12, bytes.size)
-      val spec = GCMParameterSpec(128, iv)
-      cipher.init(Cipher.DECRYPT_MODE, key, spec)
-      return String(cipher.doFinal(encrypted), Charsets.UTF_8)
+    private fun decrypt(bytes: ByteArray): String? {
+      try {
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        val iv = bytes.copyOfRange(0, 12)
+        val encrypted = bytes.copyOfRange(12, bytes.size)
+        val spec = GCMParameterSpec(128, iv)
+        cipher.init(Cipher.DECRYPT_MODE, key, spec)
+        return String(cipher.doFinal(encrypted), Charsets.UTF_8)
+      } catch (e: Throwable) {
+        log.error("Error decrypting data", e)
+        return null
+      }
     }
 
     @JsonCreator

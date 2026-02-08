@@ -89,7 +89,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
     ) {
 
 
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
 
 

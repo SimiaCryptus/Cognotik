@@ -206,7 +206,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
     ) {
         val startTime = System.currentTimeMillis()
         log.info("Starting NarrativeGenerationTask - Subject: '${executionConfig?.subject}', Target words: ${executionConfig?.target_word_count}")
-        val transcript = task.transcript("NarrativeGeneration")?.let { OutputStreamWriter(it) }
+        val transcript = task.newFileOutputStream(transcriptFile("NarrativeGeneration"))?.let { OutputStreamWriter(it) }
         val genConfig = executionConfig
         transcript?.write("# Narrative Generation Task\n\n")
 

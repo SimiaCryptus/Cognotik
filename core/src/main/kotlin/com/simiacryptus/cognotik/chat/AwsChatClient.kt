@@ -40,7 +40,7 @@ class AwsChatClient(
     scheduledPool = scheduledPool
 ) {
     private val awsAuth: AWSAuth by lazy {
-        JsonUtil.fromJson(apiKey.decrypt, AWSAuth::class.java)
+        JsonUtil.fromJson(apiKey.decrypt!!, AWSAuth::class.java)
     }
     private val bedrockClient: BedrockRuntimeClient by lazy {
         BedrockRuntimeClient.builder().credentialsProvider(awsCredentials(awsAuth)).region(Region.of(awsAuth.region))

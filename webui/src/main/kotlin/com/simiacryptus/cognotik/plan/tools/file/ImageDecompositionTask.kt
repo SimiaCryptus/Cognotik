@@ -34,7 +34,7 @@ class ImageDecompositionTask(
 
   class ImageDecompositionConfig(
     @Description("The image file to analyze (relative path)")
-    files: List<String>? = null,
+    files: List<String> = emptyList(),
     @Description("The goal of the analysis (e.g., 'Find Waldo', 'Read all text', 'Describe every person')")
     var segmentation_query: String? = "Describe the contents of this image in detail",
     @Description("The specific query for detailed analysis of identified regions")
@@ -157,7 +157,7 @@ class ImageDecompositionTask(
     val minSize = executionConfig.min_region_size
     val outputFile = executionConfig.output_file ?: "analysis.json"
 
-    val transcript = task.transcript()
+    val transcript = task.newFileOutputStream(transcriptFile())
     val tabs = TabbedDisplay(task)
     val logTab = tabs.newTask("Live Log")
 

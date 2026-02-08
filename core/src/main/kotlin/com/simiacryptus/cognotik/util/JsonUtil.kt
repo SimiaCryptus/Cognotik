@@ -121,6 +121,6 @@ fun <T:Any> T.jsonCopy(): T {
     return JsonUtil.toJson(this).let { JsonUtil.fromJson<T>(it, this.javaClass) }
 }
 
-inline fun <reified T> Any.jsonCast(): T {
-    return JsonUtil.toJson(this).let { JsonUtil.fromJson<T>(it, T::class.java) }
-}
+inline fun <reified T> Any.jsonCast(): T = JsonUtil.fromJson(JsonUtil.toJson(this), T::class.java)
+
+fun <T> Any.jsonCast(type: Type): T = JsonUtil.fromJson(JsonUtil.toJson(this), type)

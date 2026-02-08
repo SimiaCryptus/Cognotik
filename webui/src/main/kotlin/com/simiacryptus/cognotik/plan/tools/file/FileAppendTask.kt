@@ -65,7 +65,7 @@ FileAppend - Append content to the end of an existing file
             ?: defaultSmart).getChildClient(task)
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         val tabs = TabbedDisplay(task)
         val overviewTab = tabs.newTask("Overview")
 

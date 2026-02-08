@@ -19,7 +19,7 @@ open class ParsedAgent<T : Any>(
     val deserializerRetries: Int = 2,
     val validation: Boolean = true,
     open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
-        "com.simiacryptus", "aicoder.actions"
+        "com.simiacryptus", "cognotik.actions"
     ) {
         override val includeMethods: Boolean get() = false
     },
@@ -232,7 +232,7 @@ open class ParsedAgent<T : Any>(
 
 inline fun <reified T : Any> Any.parserCast(
     model: ChatInterface, describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
-        "com.simiacryptus", "aicoder.actions"
+        "com.simiacryptus", "cognotik.actions"
     ) {
         override val includeMethods: Boolean get() = false
     }

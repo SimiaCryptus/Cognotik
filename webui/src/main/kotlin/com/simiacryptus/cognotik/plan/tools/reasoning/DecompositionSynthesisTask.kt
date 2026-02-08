@@ -202,7 +202,7 @@ class DecompositionSynthesisTask(
             // Create tabbed display for organized output
             val tabs = TabbedDisplay(task)
             val transcriptStream = try {
-                task.transcript("decomposition_transcript")
+              task.newFileOutputStream(transcriptFile("decomposition_transcript"))
             } catch (e: Exception) {
                 log.error("Failed to initialize transcript", e)
                 null

@@ -186,7 +186,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
     // Overview tab
     val overviewTask = tabs.newTask("Overview")
 
-    val transcript = task.transcript()
+    val transcript = task.newFileOutputStream(transcriptFile())
       val resultBuilder = StringBuilder()
     task.ui.pool.submit {
       try {

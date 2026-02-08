@@ -122,7 +122,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         try {
             log.info("Starting IsomorphismDiscoveryTask. Source: ${executionConfig?.source_domain}, Target: ${executionConfig?.target_domain}")
 

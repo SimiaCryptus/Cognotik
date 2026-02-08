@@ -3,25 +3,15 @@ package com.simiacryptus.cognotik.chat.model
 import com.simiacryptus.cognotik.models.APIProvider
 
 object AnthropicModels {
-    val Claude41Opus = ChatModel(
-        name = "Claude41Opus",
-        modelName = "claude-opus-4-1-20250805",
+    val Claude35Sonnet = ChatModel(
+        name = "Claude35Sonnet",
+        modelName = "claude-3-5-sonnet-latest",
         maxTotalTokens = 200000,
-        maxOutTokens = 32000,
-        provider = APIProvider.Anthropic,
-        inputTokenPricePerK = 15.0 / 1000.0,
-        outputTokenPricePerK = 75.0 / 1000.0,
-    )
-    val Claude4Sonnet = ChatModel(
-        name = "Claude4Sonnet",
-        modelName = "claude-sonnet-4-20250514",
-        maxTotalTokens = 200000,
-        maxOutTokens = 64000,
+        maxOutTokens = 8192,
         provider = APIProvider.Anthropic,
         inputTokenPricePerK = 3.0 / 1000.0,
         outputTokenPricePerK = 15.0 / 1000.0,
     )
-
     val Claude35Haiku = ChatModel(
         name = "Claude35Haiku",
         modelName = "claude-3-5-haiku-latest",
@@ -31,40 +21,51 @@ object AnthropicModels {
         inputTokenPricePerK = 0.80 / 1000.0,
         outputTokenPricePerK = 4.0 / 1000.0,
     )
-    val Claude45Haiku = ChatModel(
-        name = "Claude45Haiku",
-        modelName = "claude-haiku-4-5-20251001",
-        maxTotalTokens = 200000,
-        maxOutTokens = 64000,
-        provider = APIProvider.Anthropic,
-        inputTokenPricePerK = 1.0 / 1000.0,
-        outputTokenPricePerK = 5.0 / 1000.0,
-    )
-    val Claude45Sonnet = ChatModel(
-        name = "Claude45Sonnet",
-        modelName = "claude-sonnet-4-5-20250929",
+    val Claude37Sonnet = ChatModel(
+        name = "Claude37Sonnet",
+        modelName = "claude-3-7-sonnet-20250219",
         maxTotalTokens = 200000,
         maxOutTokens = 64000,
         provider = APIProvider.Anthropic,
         inputTokenPricePerK = 3.0 / 1000.0,
         outputTokenPricePerK = 15.0 / 1000.0,
     )
-    val Claude45Opus = ChatModel(
-        name = "Claude45Opus",
-        modelName = "claude-opus-4-5-20251101",
+    val Claude45Sonnet = ChatModel(
+        name = "Claude45Sonnet",
+        modelName = "claude-sonnet-4-5",
         maxTotalTokens = 200000,
         maxOutTokens = 64000,
+        provider = APIProvider.Anthropic,
+        inputTokenPricePerK = 3.0 / 1000.0,
+        outputTokenPricePerK = 15.0 / 1000.0,
+    )
+    val Claude45Haiku = ChatModel(
+        name = "Claude45Haiku",
+        modelName = "claude-haiku-4-5",
+        maxTotalTokens = 200000,
+        maxOutTokens = 64000,
+        provider = APIProvider.Anthropic,
+        inputTokenPricePerK = 1.0 / 1000.0,
+        outputTokenPricePerK = 5.0 / 1000.0,
+    )
+    val Claude46Opus = ChatModel(
+        name = "Claude46Opus",
+        modelName = "claude-opus-4-6",
+        maxTotalTokens = 200000,
+        maxOutTokens = 128000,
         provider = APIProvider.Anthropic,
         inputTokenPricePerK = 5.0 / 1000.0,
         outputTokenPricePerK = 25.0 / 1000.0,
     )
 
+
     val values = mapOf(
-        "Claude41Opus" to Claude41Opus,
-        "Claude4Sonnet" to Claude4Sonnet,
-        "Claude45Sonnet" to Claude45Sonnet,
+        "Claude35Sonnet" to Claude35Sonnet,
         "Claude35Haiku" to Claude35Haiku,
+        "Claude37Sonnet" to Claude37Sonnet,
+        "Claude45Sonnet" to Claude45Sonnet,
         "Claude45Haiku" to Claude45Haiku,
+        "Claude46Opus" to Claude46Opus,
     )
 
 }

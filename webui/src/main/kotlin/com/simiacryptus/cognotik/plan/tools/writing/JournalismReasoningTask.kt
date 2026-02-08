@@ -252,7 +252,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
         orchestrationConfig: OrchestrationConfig
     ) {
 
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         task.ui.pool.submit {
             val startTime = System.currentTimeMillis()
             val config = executionConfig ?: return@submit

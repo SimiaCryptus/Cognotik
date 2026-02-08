@@ -311,9 +311,13 @@
                 <li><a href="#key-task-type">task_type</a></li>
                 <li><a href="#key-task-config-json">task_config_json</a></li>
                 <li><a href="#key-overwrite">overwrite</a></li>
+                <li><a href="#key-prompt">prompt</a></li>
+                <li><a href="#key-template-file">template_file</a></li>
+                <li><a href="#key-data-file">data_file</a></li>
                 <li><a href="#complete-example">Complete Example</a></li>
                 <li><a href="#processing-behavior">Processing Behavior</a></li>
                 <li><a href="#data-structures">Data Structures</a></li>
+                <li><a href="#intellij-integration">IntelliJ Integration</a></li>
             </ul>
         </nav>
     </aside>
@@ -337,6 +341,8 @@
                 The frontmatter specifies how the documentation relates to source files — either as
                 specifications that drive code generation, as documentation that should be updated
                 based on source files, or as transformation rules between files.
+                The processor also supports fetching and caching URL-based related resources, allowing
+                documentation to reference external web content as context.
             </p>
         </section>
 
@@ -391,6 +397,9 @@ specifies:
                         <li>Simple patterns: <code>*.kt</code>, <code>helper.kt</code></li>
                         <li>Recursive patterns: <code>**/*.kt</code> (matches files in all subdirectories)</li>
                         <li>Paths are resolved relative to the markdown file's directory</li>
+                        <li>Bracket patterns: <code>file[0-9].txt</code> (matches character ranges)</li>
+                        <li>Question mark patterns: <code>file?.txt</code> (matches single character)</li>
+                        <li>Literal paths (without wildcards) are returned even if the file doesn't exist yet, enabling creation of new files</li>
                     </ul>
                 </div>
             </div>
@@ -462,6 +471,17 @@ transforms:
                         <li><code>$0</code> — The entire matched string</li>
                         <li><code>$1</code>, <code>$2</code>, etc. — Captured groups from the regex pattern</li>
                     </ul>
+                    <div class="note-box">
+                        <strong>Note:</strong> Transform source patterns use Java regex syntax (not glob patterns).
+                        The regex is matched against file paths relative to the documentation file's parent directory.
+                        When rebasing, transform patterns are preserved as-is since they are resolved relative to the
+                        doc file at usage time.
+                    </div>
+                    <div class="note-box">
+                        <strong>Data File Detection:</strong> If a transform matches a JSON source file, it can be
+                        automatically used as a data source for template processing (see <code>data_file</code>
+                        under implicit frontmatter keys).
+                    </div>
                 </div>
             </div>
 
@@ -503,6 +523,18 @@ generates:
     inputs:
       - ../src/utils/**/*.kt</code></pre>
                     </div>
+                    <h4>Input Pattern Support</h4>
+                    <ul>
+                        <li>Simple globs: <code>*.kt</code>, <code>models/*.kt</code></li>
+                        <li>Recursive globs: <code>**/*.kt</code> (matches files in all subdirectories)</li>
+                        <li>Paths are resolved relative to the markdown file's directory</li>
+                        <li>A single string input is also accepted (converted to a single-element list)</li>
+                    </ul>
+                    <div class="note-box">
+                        <strong>Validation:</strong> A generate spec requires both <code>output</code> and
+                        <code>inputs</code> fields. Specs missing either field are skipped with a warning.
+                    </div>
+
 
                     <div class="note-box">
                         <strong>Use Case:</strong> Generate aggregate files, combined outputs, or files
@@ -519,8 +551,8 @@ generates:
                 </div>
                 <div class="key-card-body">
                     <p>
-                        Specifies additional files to include as context when processing modification tasks.
-                        These files are not targets but provide supplementary information.
+                        Specifies additional files or URLs to include as context when processing modification tasks.
+                        These resources are not targets but provide supplementary information.
                     </p>
 
                     <div class="example-block">
@@ -528,16 +560,26 @@ generates:
                         <pre><code># Single related file
 related: ../shared/constants.kt
 
-# Multiple related files
+# Multiple related files and URLs
 related:
   - ../shared/constants.kt
   - ../config/settings.yaml
-  - ./helper-docs.md</code></pre>
+  - ./helper-docs.md
+  - https://example.com/api-spec</code></pre>
                     </div>
+                    <h4>URL Support</h4>
+                    <p>
+                        Related resources can be URLs (<code>http://</code> or <code>https://</code>). URLs are
+                        automatically fetched, cached locally (with a 1-hour cache TTL), and their HTML content is
+                        simplified before being included as context. The URL cache is stored in
+                        <code>.doc-processor-cache/url-cache</code> within the root directory.
+                    </p>
+
 
                     <div class="note-box">
-                        <strong>Use Case:</strong> Include configuration files, shared constants, or related
-                        documentation that provides context for the AI when processing the target files.
+                        <strong>Use Case:</strong> Include configuration files, shared constants, related
+                        documentation, or external web resources that provide context for the AI when processing
+                        the target files.
                     </div>
                 </div>
             </div>
@@ -570,6 +612,11 @@ task_type: CodeReview</code></pre>
                         <li><code>generates</code> frontmatter (first non-null)</li>
                         <li>Default: <code>FileModification</code></li>
                     </ol>
+                    <h4>Task Type Resolution</h4>
+                    <p>
+                        The task type name is resolved using <code>TaskType.valueOf()</code> with spaces removed.
+                        Unknown task type names log a warning and fall back to <code>FileModification</code>.
+                    </p>
                     <div class="note-box">
                         <strong>Use Case:</strong> Customize the AI's behavior when processing files.
                         Different task types may have different prompts, validation rules, or processing strategies.
@@ -622,23 +669,23 @@ task_config_json: ../shared/task-settings.json</code></pre>
                         </thead>
                         <tbody>
                         <tr>
-                            <td><code>Skip</code></td>
+                            <td><code>SkipExisting</code></td>
                             <td>Skip files that already exist (no processing)</td>
                         </tr>
                         <tr>
-                            <td><code>Overwrite</code></td>
+                            <td><code>OverwriteExisting</code></td>
                             <td>Always overwrite existing files with full replacement</td>
                         </tr>
                         <tr>
-                            <td><code>OverwriteIfOlder</code></td>
+                            <td><code>OverwriteToUpdate</code></td>
                             <td>Overwrite only if source/related files are newer than target</td>
                         </tr>
                         <tr>
-                            <td><code>Patch</code></td>
+                            <td><code>PatchExisting</code></td>
                             <td>Always apply fuzzy patch to existing files</td>
                         </tr>
                         <tr>
-                            <td><code>PatchIfOlder</code></td>
+                            <td><code>PatchToUpdate</code></td>
                             <td>Apply fuzzy patch only if source/related files are newer than target (default)</td>
                         </tr>
                         </tbody>
@@ -646,17 +693,87 @@ task_config_json: ../shared/task-settings.json</code></pre>
                     <div class="example-block">
                         <h4>Examples</h4>
                         <pre><code># Always apply patches to existing files
-overwrite: Patch
+overwrite: PatchExisting
 # Skip processing if target exists
-overwrite: Skip
+overwrite: SkipExisting
 # Always fully overwrite
-overwrite: Overwrite</code></pre>
+overwrite: OverwriteExisting</code></pre>
                     </div>
                     <div class="note-box">
                         <strong>Use Case:</strong> Control how the processor handles existing target files.
-                        Use <code>Patch</code> or <code>PatchIfOlder</code> for incremental updates that preserve manual changes.
-                        Use <code>Overwrite</code> or <code>OverwriteIfOlder</code> for complete regeneration.
-                        Use <code>Skip</code> to prevent accidental overwrites.
+                        Use <code>PatchExisting</code> or <code>PatchToUpdate</code> for incremental updates that preserve manual changes.
+                        Use <code>OverwriteExisting</code> or <code>OverwriteToUpdate</code> for complete regeneration.
+                        Use <code>SkipExisting</code> to prevent accidental overwrites.
+                    </div>
+                </div>
+            </div>
+            <!-- prompt -->
+            <div id="key-prompt" class="key-card">
+                <div class="key-card-header">
+                    <code>prompt</code>
+                    <span class="type-badge">String</span>
+                </div>
+                <div class="key-card-body">
+                    <p>
+                        Specifies a custom prompt string to use as the task description instead of the auto-generated one.
+                        Only used when there is exactly one spec for the target file.
+                    </p>
+                    <div class="example-block">
+                        <h4>Examples</h4>
+                        <pre><code># Custom prompt for the AI
+specifies: ../src/Main.kt
+prompt: Refactor this file to use coroutines instead of callbacks</code></pre>
+                    </div>
+                    <div class="note-box">
+                        <strong>Use Case:</strong> Override the default task description with a specific instruction for the AI.
+                    </div>
+                </div>
+            </div>
+            <!-- template_file -->
+            <div id="key-template-file" class="key-card">
+                <div class="key-card-header">
+                    <code>template_file</code>
+                    <span class="type-badge">String</span>
+                </div>
+                <div class="key-card-body">
+                    <p>
+                        Specifies a template file to use when processing the target. The path is resolved relative
+                        to the markdown file's directory.
+                    </p>
+                    <div class="example-block">
+                        <h4>Examples</h4>
+                        <pre><code>specifies: ../src/Generated.kt
+template_file: ./templates/class-template.kt</code></pre>
+                    </div>
+                    <div class="note-box">
+                        <strong>Use Case:</strong> Provide a template that guides the structure of generated files.
+                    </div>
+                </div>
+            </div>
+            <!-- data_file -->
+            <div id="key-data-file" class="key-card">
+                <div class="key-card-header">
+                    <code>data_file</code>
+                    <span class="type-badge">String</span>
+                </div>
+                <div class="key-card-body">
+                    <p>
+                        Specifies a JSON data file to use as structured data input for template processing.
+                        The path is resolved relative to the markdown file's directory.
+                    </p>
+                    <div class="example-block">
+                        <h4>Examples</h4>
+                        <pre><code>specifies: ../src/Generated.kt
+template_file: ./templates/class-template.kt
+data_file: ./data/model-config.json</code></pre>
+                    </div>
+                    <div class="note-box">
+                        <strong>Implicit Detection:</strong> If no explicit <code>data_file</code> is specified and a
+                        transform matches a JSON source file, that JSON file is automatically used as the data source.
+                    </div>
+                    <div class="note-box">
+                        <strong>Use Case:</strong> Provide structured data that can be used in conjunction with templates
+                        for code generation.
                     </div>
                 </div>
             </div>
@@ -682,9 +799,11 @@ generates:
 related:
   - ../config/api-config.yaml
   - ./api-conventions.md
-overwrite: Patch
+  - https://example.com/api-spec
+overwrite: PatchExisting
 task_type: FileModification
 task_config_json: ./config/api-task-config.json
+prompt: Update the API layer to conform to the latest specification
 ---
 
 # API Documentation
@@ -708,6 +827,11 @@ This document specifies the API layer implementation...</code></pre>
                 <li>
                     <strong>Glob Expansion:</strong> Simple globs (<code>*.kt</code>) match files in the
                     specified directory. Recursive globs (<code>**/*.kt</code>) match files in all subdirectories.
+                    Bracket patterns (<code>file[0-9].txt</code>) match character ranges.
+                    Question mark patterns (<code>file?.txt</code>) match single characters.
+                    For <code>transforms</code>, the source pattern is a regex (not a glob) that matches against
+                    file paths relative to the doc file's directory.
+                    Literal paths (without wildcards) are returned even if the target file doesn't exist, enabling file creation.
                 </li>
                 <li>
                     <strong>Multiple Specifications:</strong> A single target file can be specified by
@@ -729,29 +853,29 @@ This document specifies the API layer implementation...</code></pre>
                     </thead>
                     <tbody>
                     <tr>
-                        <td><code>Skip</code></td>
+                        <td><code>SkipExisting</code></td>
                         <td>Skip files that already exist (no processing)</td>
                     </tr>
                     <tr>
-                        <td><code>Overwrite</code></td>
+                        <td><code>OverwriteExisting</code></td>
                         <td>Always overwrite existing files with full replacement</td>
                     </tr>
                     <tr>
-                        <td><code>OverwriteIfOlder</code></td>
+                        <td><code>OverwriteToUpdate</code></td>
                         <td>Overwrite only if source/related files are newer than target</td>
                     </tr>
                     <tr>
-                        <td><code>Patch</code></td>
+                        <td><code>PatchExisting</code></td>
                         <td>Always apply fuzzy patch to existing files</td>
                     </tr>
                     <tr>
-                        <td><code>PatchIfOlder</code></td>
+                        <td><code>PatchToUpdate</code></td>
                         <td>Apply fuzzy patch only if source/related files are newer than target (default)</td>
                     </tr>
                     </tbody>
                 </table>
                 <h3>File Modification Time Checking</h3>
-                <p>For <code>OverwriteIfOlder</code> and <code>PatchIfOlder</code> modes, the processor compares the target file's last modified time against:</p>
+                <p>For <code>OverwriteToUpdate</code> and <code>PatchToUpdate</code> modes, the processor compares the target file's last modified time against:</p>
                 <ul class="behavior-list">
                     <li>The documentation file itself</li>
                     <li>All related files specified in the frontmatter</li>
@@ -771,7 +895,51 @@ This document specifies the API layer implementation...</code></pre>
                     <li>
                         <strong>For <code>generates</code>:</strong> Generates output files based on documentation and input files
                 </li>
+                <li>
+                    <strong>Custom prompt:</strong> If a single spec has a <code>prompt</code> frontmatter key, that prompt is used directly as the task description
+                </li>
+                <li>
+                    <strong>Non-file task types:</strong> Processes the file according to the task type with documentation as context
+                </li>
             </ul>
+                <h3>URL Fetching and Caching</h3>
+                <p>Related resources specified as URLs (<code>http://</code> or <code>https://</code>) are automatically fetched and cached locally:</p>
+                <ul class="behavior-list">
+                    <li>Cache location: <code>.doc-processor-cache/url-cache</code> within the root directory</li>
+                    <li>Cache TTL: 1 hour (cached content older than 1 hour is re-fetched)</li>
+                    <li>HTML content is automatically simplified (scripts, styles, interactive elements removed)</li>
+                    <li>Non-HTML content is stored as-is</li>
+                    <li>Failed fetches log a warning and return null (the resource is skipped)</li>
+                    <li>Cache files use a SHA-256 hash prefix for uniqueness</li>
+                </ul>
+                <h3>Rebasing</h3>
+                <p>
+                    Both <code>DocSpec</code> and <code>ModificationTask</code> support rebasing from one root directory
+                    to another. This is used when the IntelliJ action needs to adjust paths for a different working
+                    directory. URL-based related resources are preserved as-is during rebasing.
+                </p>
+                <h3>Primary Source Resolution</h3>
+                <p>When determining the primary source file for overwrite mode checks, the priority is:</p>
+                <ol>
+                    <li>First transform's source file</li>
+                    <li>First spec's doc file</li>
+                    <li>First document match's first supporting file (or doc file if no supporting files)</li>
+                    <li>First generate match's first input file (or doc file if no input files)</li>
+                </ol>
+                <h3>Error Handling</h3>
+                <ul class="behavior-list">
+                    <li>Invalid frontmatter YAML will cause parsing to fail</li>
+                    <li>Missing required fields in <code>generates</code> entries (like <code>output</code>) will result in incomplete specifications</li>
+                    <li>Invalid regex patterns in <code>transforms</code> will cause matching to fail for those rules</li>
+                    <li>Unknown <code>task_type</code> values will log a warning and fall back to <code>FileModification</code></li>
+                    <li>Invalid <code>task_config_json</code> paths will be stored but may cause errors during task execution</li>
+                    <li>Files without frontmatter (not starting with <code>---</code>) return null (silently skipped)</li>
+                    <li>Files with unclosed frontmatter (no closing <code>---</code>) return null</li>
+                    <li>Files with frontmatter but no <code>specifies</code>, <code>transforms</code>, <code>documents</code>, or <code>generates</code> keys return null</li>
+                    <li>Non-existent files referenced in <code>related</code> are still returned (downstream code handles them)</li>
+                    <li>URL fetch failures log a warning and return null (the resource is skipped)</li>
+                    <li>Errors processing individual target files are caught and logged; other targets continue processing</li>
+                </ul>
         </section>
 
         <!-- Data Structures Section -->
@@ -815,12 +983,7 @@ This document specifies the API layer implementation...</code></pre>
                 <tr>
                     <td><code>related</code></td>
                     <td><code>List&lt;String&gt;</code></td>
-                    <td>Additional context files</td>
-                </tr>
-                <tr>
-                    <td><code>overwrite</code></td>
-                    <td><code>OverwriteModes?</code></td>
-                    <td>Overwrite mode for this doc's targets (nullable, defaults to <code>PatchIfOlder</code>)</td>
+                    <td>Additional context files or URLs</td>
                 </tr>
                 <tr>
                     <td><code>taskType</code></td>
@@ -844,6 +1007,12 @@ This document specifies the API layer implementation...</code></pre>
                 </tr>
                 </tbody>
             </table>
+            <div class="note-box">
+                <strong>Note:</strong> The <code>overwrite</code> mode is not stored in <code>DocSpec</code> —
+                it is configured at the <code>DocProcessor</code> level and applies to all targets processed by
+                that instance.
+            </div>
+
             <h3>TransformSpec</h3>
             <table class="data-table">
                 <thead>
@@ -888,6 +1057,83 @@ This document specifies the API layer implementation...</code></pre>
                 </tr>
                 </tbody>
             </table>
+            <h3>ModificationTaskConfig</h3>
+            <p>Represents the configuration for a single modification task:</p>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>files</code></td>
+                    <td><code>List&lt;String&gt;?</code></td>
+                    <td>Target file paths (relative to root)</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td><code>List&lt;String&gt;?</code></td>
+                    <td>Related/context file paths (relative to root)</td>
+                </tr>
+                <tr>
+                    <td><code>task_description</code></td>
+                    <td><code>String</code></td>
+                    <td>Generated or custom task description</td>
+                </tr>
+                <tr>
+                    <td><code>template_file</code></td>
+                    <td><code>String?</code></td>
+                    <td>Path to template file (nullable)</td>
+                </tr>
+                <tr>
+                    <td><code>data</code></td>
+                    <td><code>Map&lt;String, Any&gt;?</code></td>
+                    <td>Structured data from data_file or JSON source (nullable)</td>
+                </tr>
+                </tbody>
+            </table>
+            <h3>ModificationTask</h3>
+            <p>Represents a complete modification task ready for execution:</p>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>data</code></td>
+                    <td><code>ModificationTaskConfig</code></td>
+                    <td>Task configuration</td>
+                </tr>
+                <tr>
+                    <td><code>message</code></td>
+                    <td><code>String</code></td>
+                    <td>Message content (context files or execute command)</td>
+                </tr>
+                <tr>
+                    <td><code>patchProcessor</code></td>
+                    <td><code>PatchProcessors</code></td>
+                    <td>Patch processing strategy (default: Fuzzy)</td>
+                </tr>
+                <tr>
+                    <td><code>shouldDeleteTarget</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>Whether to delete the target file (default: false)</td>
+                </tr>
+                <tr>
+                    <td><code>taskType</code></td>
+                    <td><code>TaskType&lt;*, *&gt;</code></td>
+                    <td>The resolved task type (default: FileModification)</td>
+                </tr>
+                </tbody>
+            </table>
+
             <h3>Additional Processing Classes</h3>
             <h4>TransformMatch</h4>
             <p>Represents a matched transformation from source to destination:</p>
@@ -968,7 +1214,84 @@ This document specifies the API layer implementation...</code></pre>
                 </tr>
                 </tbody>
             </table>
+            <h3>Implementation Notes</h3>
+            <h4>Frontmatter Parsing</h4>
+            <p>
+                The frontmatter is parsed using a custom simple YAML parser (not SnakeYAML). The parser handles
+                string values, list values, and map values (for <code>generates</code>).
+            </p>
+            <ul class="behavior-list">
+                <li>Lines are split on the first colon to extract key-value pairs</li>
+                <li>Lines without colons are ignored</li>
+                <li>If the value after the colon is empty, the parser looks for subsequent list items (lines starting with <code>- </code>)</li>
+                <li>Empty keys (colon with no value and no subsequent list items) are not added to the result map</li>
+                <li>Values are trimmed of whitespace</li>
+            </ul>
+            <h4>Transform Pattern Matching</h4>
+            <p>
+                Transform patterns use Java regex syntax. The source pattern is matched against file paths relative
+                to the documentation file's directory. When a match is found:
+            </p>
+            <ol>
+                <li>The regex is applied to the relative file path</li>
+                <li>Capture groups are extracted from the match</li>
+                <li>Backreferences (<code>$0</code>, <code>$1</code>, etc.) in the destination pattern are replaced with the captured values</li>
+                <li>The destination path is resolved relative to the documentation file's directory</li>
+            </ol>
         </section>
+        <!-- IntelliJ Integration Section -->
+        <section id="intellij-integration" class="doc-section">
+            <h2>IntelliJ Integration</h2>
+            <p>
+                The <code>DocProcessorAction</code> provides an IntelliJ IDE action that:
+            </p>
+            <ol>
+                <li>Filters selected files to markdown files (<code>.md</code> or <code>.markdown</code> extensions)</li>
+                <li>Creates a <code>DocProcessor</code> instance with the configured fast and smart models</li>
+                <li>Calls <code>getAll()</code> to collect all modification tasks from the selected files</li>
+                <li>Shows a <code>DocProcessorTaskDialog</code> with a checklist of tasks for user selection</li>
+                <li>Executes the first selected task via <code>SingleTaskApp</code> in a browser session</li>
+            </ol>
+            <p>
+                The action is available through the <code>DocProcessorActionGroup</code> which provides a submenu
+                with all overwrite mode options:
+            </p>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Label</th>
+                    <th>Mode</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>🚫 Skip Existing Files</td>
+                    <td><code>SkipExisting</code></td>
+                </tr>
+                <tr>
+                    <td>🔄 Overwrite All Files</td>
+                    <td><code>OverwriteExisting</code></td>
+                </tr>
+                <tr>
+                    <td>📅 Overwrite Outdated Files</td>
+                    <td><code>OverwriteToUpdate</code></td>
+                </tr>
+                <tr>
+                    <td>🩹 Patch Existing Files</td>
+                    <td><code>PatchExisting</code></td>
+                </tr>
+                <tr>
+                    <td>📝 Patch Outdated Files</td>
+                    <td><code>PatchToUpdate</code></td>
+                </tr>
+                </tbody>
+            </table>
+            <p>
+                The dialog includes an "Auto-fix issues" checkbox and displays task details including target files
+                and related files.
+            </p>
+        </section>
+
     </article>
 </main>
 

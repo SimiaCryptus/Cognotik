@@ -43,7 +43,7 @@ class OllamaEmbeddingClient(
         request.addHeader("Accept", "application/json")
         // Ollama typically doesn't require authorization for local instances
         val apiKey = this.apiKey.decrypt
-        if (apiKey.isNotBlank()) {
+        if (!apiKey.isNullOrBlank()) {
             request.addHeader("Authorization", "Bearer $apiKey")
         }
     }

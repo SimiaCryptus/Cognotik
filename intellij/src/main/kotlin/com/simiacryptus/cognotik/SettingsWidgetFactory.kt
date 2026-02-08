@@ -559,7 +559,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             fun UserSettings.isVisible(
                 model: Pair<String, ChatModel>
             ): Boolean = apis.any { api ->
-                api.provider?.name == model.second.provider?.name && api.key != null
+                api.provider?.name == model.second.provider?.name && api.key?.decrypt != null
             }
         }
 

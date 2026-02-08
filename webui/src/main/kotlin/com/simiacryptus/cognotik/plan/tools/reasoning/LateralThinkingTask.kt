@@ -256,7 +256,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
         orchestrationConfig: OrchestrationConfig
     ) {
         task.ui.pool.submit {
-            val transcript = task.transcript()
+          val transcript = task.newFileOutputStream(transcriptFile())
             try {
                 val startTime = System.currentTimeMillis()
             log.info("Starting LateralThinkingTask for problem='${executionConfig?.problem?.take(50)}...', techniques=${executionConfig?.techniques}")

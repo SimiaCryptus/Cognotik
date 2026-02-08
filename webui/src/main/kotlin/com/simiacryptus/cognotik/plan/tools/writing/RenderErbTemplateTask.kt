@@ -30,7 +30,7 @@ class RenderErbTemplateTask(
     @Description("Optional: Override the template file path from type config")
     var template_file: String? = null,
     @Description("List of output file paths to write the rendered content to (only one supported)")
-    var files: List<String> = emptyList(),
+    override var files: List<String> = emptyList(),
     task_description: String? = null,
     task_dependencies: MutableList<String>? = null,
     state: TaskState? = null
@@ -76,7 +76,7 @@ RenderErbTemplate - Render ERB-style templates with dynamic data
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val transcript = task.transcript()
+    val transcript = task.newFileOutputStream(transcriptFile())
     val gson = Gson()
 
     try {

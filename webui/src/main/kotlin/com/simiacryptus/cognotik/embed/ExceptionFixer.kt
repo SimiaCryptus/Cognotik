@@ -1,8 +1,10 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.diff.PatchProcessors
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
@@ -14,33 +16,29 @@ class ExceptionFixer(
   fun fix(throwable: Throwable) {
     val codeFiles = throwable.getCodeFiles(projectRoot)
     val eAsString = throwable.toFullString() ?: return
-    withHarness(
-      root = projectRoot,
-      testName = "SmartFixingExceptions",
-    ) { harness ->
+    object : UnifiedHarness(
+      fastModel = GeminiModels.GeminiFlash_30_Preview,
+      smartModel = GeminiModels.GeminiFlash_30_Preview
+    ) {
+      override fun createTempDirectory(prefix: String) = projectRoot
+        .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
+        .apply { mkdirs() }
+    }.use { harness: UnifiedHarness ->
       try {
         harness.runTask(
-          taskType = FileModificationTask.Companion.FileModification,
-          typeConfig = TaskTypeConfig(task_type = FileModificationTask.Companion.FileModification.name),
-          executionConfig = FileModificationTask.FileModificationTaskExecutionConfigData(
-            files = codeFiles.map { it.relativeTo(projectRoot).toString() },
-            related_files = related_files,
-            task_description = eAsString,
-          ),
+          taskType = FileModification,
           timeoutMinutes = 5,
-          workspace = projectRoot.absoluteFile,
-          initSettings = { session ->
-            harness.initSettings(
-              session = session,
-              workspace = projectRoot.absoluteFile,
-              autoFix = true,
-              taskType = FileModificationTask.Companion.FileModification,
-              typeConfig = TaskTypeConfig(task_type = FileModificationTask.Companion.FileModification.name)
-            ).apply {
-              processor = PatchProcessors.Fuzzy
-            }
+          executionConfig = TaskExecutionConfig(task_type = FileModification.name)
+        ) { session ->
+          harness.initSettings(
+            session = session,
+            autoFix = true,
+            typeConfig = TaskTypeConfig(task_type = FileModification.name),
+            workingDir = harness.getRoot(projectRoot, session, FileModification.name).absolutePath
+          ).apply {
+            processor = PatchProcessors.Fuzzy
           }
-        )
+        }
       } catch (e: Exception) {
         log.error("Error running task", e)
       }

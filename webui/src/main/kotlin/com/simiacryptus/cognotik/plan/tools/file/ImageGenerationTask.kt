@@ -24,7 +24,7 @@ class ImageGenerationTask(
 
     class GenerateImageTaskExecutionConfigData(
         @Description("The image file to be created (relative path, must end with .png, .jpg, or .jpeg)")
-        files: List<String>? = null,
+        files: List<String> = emptyList(),
         @Description("Additional files for context (e.g., reference images, style guides)")
         related_files: List<String>? = null,
         @Description("Detailed description of the image to generate including subject, style, composition, colors, mood, and any specific requirements")
@@ -82,7 +82,7 @@ class ImageGenerationTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript()
+        val transcript = task.newFileOutputStream(transcriptFile())
         try {
             transcript?.write("# Generate Image Task\n\n".toByteArray())
             val tabs = TabbedDisplay(task)

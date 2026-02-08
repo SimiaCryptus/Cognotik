@@ -17,7 +17,6 @@ import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.file.WriteHtmlTask
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel
@@ -56,11 +55,10 @@ class WriteHtmlAction : BaseAction() {
 
         if (dialog.showAndGet()) {
             try {
-                val taskConfig = dialog.getTaskConfig()
                 val orchestrationConfig = dialog.getOrchestrationConfig()
 
                 UITools.runAsync(e.project, "Initializing HTML Generation Task", true) { progress ->
-                    initializeTask(e, progress, orchestrationConfig, taskConfig, root)
+                    initializeTask(progress, orchestrationConfig, root)
                 }
             } catch (ex: Exception) {
                 log.error("Failed to initialize HTML generation task", ex)
@@ -70,10 +68,8 @@ class WriteHtmlAction : BaseAction() {
     }
 
     private fun initializeTask(
-        e: AnActionEvent,
         progress: ProgressIndicator,
         orchestrationConfig: OrchestrationConfig,
-        taskConfig: WriteHtmlTask.WriteHtmlTaskExecutionConfigData,
         root: File
     ) {
         progress.text = "Setting up session..."
@@ -82,7 +78,7 @@ class WriteHtmlAction : BaseAction() {
         DataStorage.sessionPaths[session] = root
 
         progress.text = "Starting server..."
-        setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId), taskConfig, root)
+        setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId))
 
         Thread {
             Thread.sleep(500)
@@ -101,17 +97,14 @@ class WriteHtmlAction : BaseAction() {
 
     private fun setupTaskSession(
         session: Session,
-        orchestrationConfig: OrchestrationConfig,
-        taskConfig: WriteHtmlTask.WriteHtmlTaskExecutionConfigData,
-        root: File
+        orchestrationConfig: OrchestrationConfig
     ) {
         val app = object : SingleTaskApp(
-            applicationName = "HTML Generation Task",
             path = "/writeHtmlTask",
-            showMenubar = false,
+            applicationName = "HTML Generation Task",
             taskType = WriteHtmlTask.WriteHtml,
-            taskConfig = listOf(taskConfig),
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
+            message = "Execute task"
         ) {
             override fun instance(model: ApiChatModel) =
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")
@@ -285,20 +278,6 @@ class WriteHtmlAction : BaseAction() {
             return null
         }
 
-        fun getTaskConfig(): WriteHtmlTask.WriteHtmlTaskExecutionConfigData {
-            val relatedFiles = relatedFilesField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-                .takeIf { it.isNotEmpty() }
-
-            return WriteHtmlTask.WriteHtmlTaskExecutionConfigData(
-                files = listOf(htmlFileField.text),
-                related_files = relatedFiles,
-                task_description = taskDescriptionArea.text,
-                generate_images = generateImagesCheckbox.isSelected,
-                image_count = imageCountSpinner.value as Int,
-                state = TaskState.Pending
-            )
-        }
-
         fun getOrchestrationConfig(): OrchestrationConfig {
             val selectedModel = modelCombo.selectedItem as? String
             val model = selectedModel?.let { modelName ->
@@ -330,9 +309,7 @@ class WriteHtmlAction : BaseAction() {
         private fun getVisibleModels() =
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
-                    model.provider == apiData.provider &&
-                            model.modelName?.isNotBlank() == true &&
-                            PlanConfigDialog.isVisible(model)
+                  model.provider == apiData.provider && model.modelName.isNotBlank() && PlanConfigDialog.isVisible(model)
                 } ?: listOf()
             }.distinctBy { it.modelName }.sortedBy { "${it.provider?.name} - ${it.modelName}" }
     }

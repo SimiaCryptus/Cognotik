@@ -106,12 +106,11 @@ class GeneratePresentationAction : BaseAction() {
         root: File
     ) {
         val app = object : SingleTaskApp(
-            applicationName = "Presentation Generation Task",
             path = "/generatePresentationTask",
-            showMenubar = false,
+            applicationName = "Presentation Generation Task",
             taskType = GeneratePresentationTask.GeneratePresentation,
-            taskConfig = listOf(taskConfig),
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
+            message = "Execute task"
         ) {
             override fun instance(model: ApiChatModel) =
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")

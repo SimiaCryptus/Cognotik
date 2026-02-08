@@ -1,3 +1,7 @@
+---
+specifies: ../webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/**/*.kt
+---
+
 # Cognotik Task Type Implementation Standards & Review Protocol
 
 ## 1. Purpose and Scope

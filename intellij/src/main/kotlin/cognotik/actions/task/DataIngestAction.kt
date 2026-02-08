@@ -53,11 +53,10 @@ class DataIngestAction : BaseAction() {
 
         if (dialog.showAndGet()) {
             try {
-                val taskConfig = dialog.getTaskConfig()
                 val orchestrationConfig = dialog.getOrchestrationConfig()
 
                 UITools.runAsync(e.project, "Initializing Data Ingestion Task", true) { progress ->
-                    initializeTask(e, progress, orchestrationConfig, taskConfig, root)
+                    initializeTask(progress, orchestrationConfig, root)
                 }
             } catch (ex: Exception) {
                 log.error("Failed to initialize Data Ingestion task", ex)
@@ -67,10 +66,8 @@ class DataIngestAction : BaseAction() {
     }
 
     private fun initializeTask(
-        event: AnActionEvent,
         progress: ProgressIndicator,
         orchestrationConfig: OrchestrationConfig,
-        taskConfig: DataIngestTask.DataIngestTaskExecutionConfigData,
         root: File
     ) {
         progress.text = "Setting up session..."
@@ -79,7 +76,7 @@ class DataIngestAction : BaseAction() {
         DataStorage.sessionPaths[session] = root
 
         progress.text = "Starting server..."
-        setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId), taskConfig, root)
+        setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId))
 
         Thread {
             Thread.sleep(500)
@@ -98,17 +95,14 @@ class DataIngestAction : BaseAction() {
 
     private fun setupTaskSession(
         session: Session,
-        orchestrationConfig: OrchestrationConfig,
-        taskConfig: DataIngestTask.DataIngestTaskExecutionConfigData,
-        root: File
+        orchestrationConfig: OrchestrationConfig
     ) {
         val app = object : SingleTaskApp(
-            applicationName = "Data Ingestion Task",
             path = "/dataIngestTask",
-            showMenubar = false,
+            applicationName = "Data Ingestion Task",
             taskType = DataIngestTask.DataIngest,
-            taskConfig = listOf(taskConfig),
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
+            message = "Execute task"
         ) {
             override fun instance(model: ApiChatModel) =
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")
@@ -281,9 +275,7 @@ class DataIngestAction : BaseAction() {
         private fun getVisibleModels() =
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
-                    model.provider == apiData.provider &&
-                            model.modelName?.isNotBlank() == true &&
-                            PlanConfigDialog.isVisible(model)
+                  model.provider == apiData.provider && model.modelName.isNotBlank() && PlanConfigDialog.isVisible(model)
                 } ?: listOf()
             }.distinctBy { it.modelName }.sortedBy { "${it.provider?.name} - ${it.modelName}" }
     }

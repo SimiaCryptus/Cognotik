@@ -26,7 +26,7 @@ class FileModificationTask(
 ) : AbstractFileTask<FileModificationTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
     class FileModificationTaskExecutionConfigData(
-        files: List<String>? = null,
+        files: List<String> = emptyList(),
         related_files: List<String>? = null,
         extractContent: Boolean = false,
         @Description("Specific modifications to be made to the files")
@@ -82,7 +82,7 @@ FileModification - Modify existing files or create new files
 
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
-        val transcript = task.transcript()
+        val transcript = task.newFileOutputStream(transcriptFile())
         val tabs = TabbedDisplay(task)
 
         try {

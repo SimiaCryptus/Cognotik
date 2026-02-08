@@ -6,12 +6,20 @@ import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
 import java.nio.file.PathMatcher
+import java.security.MessageDigest
+import java.time.Duration
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
@@ -25,24 +33,125 @@ import java.util.regex.Pattern
  * Additionally, a 'transforms' key can specify source->destination file transformations using regex
  * patterns with capture groups and backreferences.
  */
-open class DocProcessor(
+class DocProcessor(
   val root: File,
   val docsFolder: File,
   val overwriteMode: OverwriteMode = OverwriteModes.PatchToUpdate,
   val additionalContext: (DocSpec, File) -> List<String> = { _, _ -> emptyList() },
   val concurrencyLimit: Int = 4,
   val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
-  val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview
+  val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
+  val serverless: Boolean = false,
+  val openBrowser: Boolean = false,
+  val urlCacheDir: File = File(root, ".doc-processor-cache/url-cache")
 ) {
 
-  open fun executionConfig(
-    taskType: TaskType<*, *>,
-    data: ModificationTaskConfig
-  ): TaskExecutionConfig {
-    val map = mapOf(
-      "task_type" to taskType.name,
-    ) + data.jsonCast<Map<String, Any>>()
-    return map.jsonCast()
+  /**
+   * Check if a string is a URL (http or https)
+   */
+  fun isUrl(path: String): Boolean {
+    return path.startsWith("http://") || path.startsWith("https://")
+  }
+
+  /**
+   * Fetch a URL and cache its content locally. Returns the local cached file.
+   * If the URL has already been fetched, returns the cached version.
+   */
+  private fun fetchAndCacheUrl(url: String): File? {
+    try {
+      urlCacheDir.mkdirs()
+      val hash = MessageDigest.getInstance("SHA-256")
+        .digest(url.toByteArray())
+        .joinToString("") { "%02x".format(it) }
+        .take(16)
+      val safeName = url.substringAfterLast("/")
+        .substringBefore("?")
+        .replace(Regex("[^a-zA-Z0-9._-]"), "_")
+        .take(50)
+        .ifEmpty { "index" }
+      val cachedFile = File(urlCacheDir, "${hash}_${safeName}")
+      val metaFile = File(urlCacheDir, "${hash}_${safeName}.meta")
+
+      // Return cached version if it exists and is less than 1 hour old
+      if (cachedFile.exists() && metaFile.exists()) {
+        val cacheAge = System.currentTimeMillis() - cachedFile.lastModified()
+        if (cacheAge < 3600_000) {
+          log.debug("Using cached URL content for: $url")
+          return cachedFile
+        }
+      }
+
+      log.info("Fetching URL for related resource: $url")
+      val client = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(30))
+        .followRedirects(HttpClient.Redirect.NORMAL)
+        .build()
+      val request = HttpRequest.newBuilder()
+        .uri(URI.create(url))
+        .timeout(Duration.ofSeconds(60))
+        .header("User-Agent", "Mozilla/5.0 (compatible; CognotikBot/1.0)")
+        .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7")
+        .header("Accept-Language", "en-US,en;q=0.5")
+        .header("Accept-Charset", "utf-8, iso-8859-1;q=0.5")
+        .GET()
+        .build()
+
+      val response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
+      if (response.statusCode() !in 200..299) {
+        log.warn("Failed to fetch URL $url: HTTP ${response.statusCode()}")
+        return null
+      }
+
+      val contentType = response.headers().firstValue("Content-Type").orElse("")
+      val body = response.body() ?: ""
+
+      val content = if (contentType.startsWith("text/html") || contentType.isEmpty()) {
+        try {
+          HtmlSimplifier.scrubHtml(
+            str = body,
+            baseUrl = url,
+            includeCssData = false,
+            simplifyStructure = true,
+            keepObjectIds = false,
+            preserveWhitespace = false,
+            keepScriptElements = false,
+            keepInteractiveElements = false,
+            keepMediaElements = false,
+            keepEventHandlers = false
+          )
+        } catch (e: Exception) {
+          log.warn("HTML simplification failed for URL: $url, using raw content", e)
+          body.replace(Regex("<[^>]+>"), " ").replace(Regex("\\s+"), " ").trim()
+        }
+      } else {
+        body
+      }
+
+      cachedFile.writeText(content)
+      metaFile.writeText("url=$url\nfetched=${System.currentTimeMillis()}\ncontent-type=$contentType\n")
+      log.info("Cached URL content for $url (${content.length} chars) at ${cachedFile.absolutePath}")
+      return cachedFile
+    } catch (e: Exception) {
+      log.error("Failed to fetch and cache URL: $url", e)
+      return null
+    }
+  }
+
+  /**
+   * Resolve a related resource path. If it's a URL, fetch and cache it.
+   * If it's a local path, resolve it relative to the base directory.
+   * Returns the resolved File, or null if the resource couldn't be resolved.
+   */
+  fun resolveRelatedResource(baseDirOrDocFile: File, relatedPath: String): File? {
+    return if (isUrl(relatedPath)) {
+      fetchAndCacheUrl(relatedPath)
+    } else {
+      val resolved = baseDirOrDocFile.resolve(relatedPath)
+      if (resolved.exists()) resolved else {
+        log.debug("Related file does not exist: ${resolved.absolutePath}")
+        resolved // Return it anyway; downstream code may handle non-existent files
+      }
+    }
   }
 
   data class DocSpec(
@@ -56,7 +165,77 @@ open class DocProcessor(
     val frontmatter: Map<String, Any>,
     val taskConfigJson: String? = null,
     val taskType: String? = null,
-  )
+  ) {
+    fun rebase(prevRoot: File, newRoot: File) = DocSpec(
+      docFile = rebasePath(prevRoot, newRoot, docFile.relativeTo(prevRoot.canonicalFile).toString())
+        .let { newRoot.resolve(it) },
+      specifies = specifies.map { pattern ->
+        rebasePatternOrPath(prevRoot, newRoot, pattern)
+      },
+      documents = documents.map { pattern ->
+        rebasePatternOrPath(prevRoot, newRoot, pattern)
+      },
+      transforms = transforms.map { transform ->
+        // Transform patterns are regex, not file paths — they are relative to the doc file's parent,
+        // so they don't need rebasing since they're resolved relative to docFile at usage time
+        transform
+      },
+      generates = generates.map { generate ->
+        GenerateSpec(
+          output = rebasePath(prevRoot, newRoot, generate.output),
+          inputs = generate.inputs.map { inputPattern ->
+            rebasePatternOrPath(prevRoot, newRoot, inputPattern)
+          }
+        )
+      },
+      related = related.map { relatedPath ->
+        if (relatedPath.startsWith("http://") || relatedPath.startsWith("https://")) {
+          relatedPath // URLs are not rebased
+        } else {
+          rebasePath(prevRoot, newRoot, relatedPath)
+        }
+      },
+      content = content,
+      frontmatter = frontmatter,
+      taskConfigJson = taskConfigJson?.let { rebasePath(prevRoot, newRoot, it) },
+      taskType = taskType
+    )
+
+    companion object {
+      /**
+       * Rebase a concrete file path from prevRoot to newRoot.
+       * The path is assumed to be relative to prevRoot; the result is relative to newRoot.
+       */
+      private fun rebasePath(prevRoot: File, newRoot: File, relativePath: String): String {
+        val absoluteFile = prevRoot.canonicalFile.resolve(relativePath).canonicalFile
+        return absoluteFile.relativeTo(newRoot.canonicalFile).toString()
+      }
+
+      /**
+       * Rebase a pattern or literal path. Glob patterns (containing *, ?, [) are rebased
+       * by rebasing only the literal prefix directory portion. Literal paths are rebased directly.
+       */
+      private fun rebasePatternOrPath(prevRoot: File, newRoot: File, pattern: String): String {
+        if (!isGlobPattern(pattern) && !pattern.contains("**")) {
+          return rebasePath(prevRoot, newRoot, pattern)
+        }
+        // For glob patterns, rebase the literal directory prefix
+        val separatorIndex = maxOf(
+          pattern.lastIndexOf('/', pattern.indexOfFirst { it == '*' || it == '?' || it == '[' }),
+          pattern.lastIndexOf('\\', pattern.indexOfFirst { it == '*' || it == '?' || it == '[' }),
+          0
+        )
+        if (separatorIndex <= 0) {
+          // Pattern has no directory prefix (e.g., "*.kt"), no rebasing needed
+          return pattern
+        }
+        val dirPrefix = pattern.substring(0, separatorIndex)
+        val globSuffix = pattern.substring(separatorIndex)
+        val rebasedPrefix = rebasePath(prevRoot, newRoot, dirPrefix)
+        return rebasedPrefix + globSuffix
+      }
+    }
+  }
 
   /**
    * Represents a file transformation specification.
@@ -98,15 +277,53 @@ open class DocProcessor(
     val task_description: String = "",
     val template_file: String? = null,
     val data: Map<String, Any>? = null,
-  )
+  ) {
+    fun rebase(prevRoot: File, newRoot: File) = ModificationTaskConfig(
+      files = files?.map { filePath ->
+        prevRoot.canonicalFile.resolve(filePath).canonicalFile
+          .relativeTo(newRoot.canonicalFile).toString()
+      },
+      related_files = related_files?.map { relatedPath ->
+        if (relatedPath.startsWith("http://") || relatedPath.startsWith("https://")) {
+          relatedPath // URLs are not rebased
+        } else {
+          val resolvedFile = prevRoot.canonicalFile.resolve(relatedPath).canonicalFile
+          try {
+            resolvedFile.relativeTo(newRoot.canonicalFile).toString()
+          } catch (e: IllegalArgumentException) {
+            // File is outside newRoot, use absolute path
+            resolvedFile.absolutePath
+          }
+        }
+      },
+      task_description = task_description,
+      template_file = template_file?.let {
+        try {
+          prevRoot.canonicalFile.resolve(it).canonicalFile
+            .relativeTo(newRoot.canonicalFile).toString()
+        } catch (e: IllegalArgumentException) {
+          prevRoot.canonicalFile.resolve(it).canonicalFile.absolutePath
+        }
+      },
+      data = data
+    )
+  }
 
   data class ModificationTask(
     val data: ModificationTaskConfig = ModificationTaskConfig(),
+    val message: String = "",
     val patchProcessor: PatchProcessors = PatchProcessors.Fuzzy,
     val shouldDeleteTarget: Boolean = false,
     val taskType: TaskType<*, *> = FileModification
-  )
-
+  ) {
+    fun rebase(prevRoot: File, newRoot: File) = ModificationTask(
+      data = data.rebase(prevRoot, newRoot),
+      message = message,
+      patchProcessor = patchProcessor,
+      shouldDeleteTarget = shouldDeleteTarget,
+      taskType = taskType
+    )
+  }
 
   data class DocumentMatch(
     val docSpec: DocSpec,
@@ -127,7 +344,7 @@ open class DocProcessor(
     runAll(fileMods, concurrencyProcessor)
   }
 
-  open fun getAll(
+  fun getAll(
     vararg markdownFiles: File,
   ) = modificationTasks(markdownFiles.mapNotNull { parseMarkdownWithFrontmatter(it) })
 
@@ -160,17 +377,93 @@ open class DocProcessor(
         if (source == null) {
           return@map null
         }
+        val relatedFiles = allRelatedFiles(specs, targetFileObj, transforms, documents, generates)
         val patchProcessor = overwriteMode.prepare(
           source = source,
           target = targetFileObj,
-          relatedFiles = allRelatedFiles(specs, targetFileObj, transforms, documents, generates)
+          relatedFiles = relatedFiles
         )
         if (patchProcessor == null) {
           return@map null
         }
         val taskType = resolveTaskType(specs, transforms, documents, generates)
-        val executionConfigData = data(relativeTarget, specs, File(targetFile), transforms, documents, generates)
-        ModificationTask(executionConfigData, patchProcessor, taskType = taskType)
+        val targetFile1 = File(targetFile)
+        ModificationTask(
+          data = ModificationTaskConfig(
+            files = listOf(relativeTarget.toString()),
+            related_files = relatedFiles.map { file ->
+              try {
+                file.canonicalFile.relativeTo(root.canonicalFile).toString()
+              } catch (e: IllegalArgumentException) {
+                // File is outside the root (e.g., cached URL content), use absolute path
+                file.canonicalFile.absolutePath
+              }
+            }.distinct(),
+            task_description = buildCombinedTaskDescription(
+              specs,
+              transforms,
+              documents,
+              generates,
+              targetFile1,
+              taskType
+            ),
+            template_file = specs.mapNotNull { spec ->
+              (spec.frontmatter["template_file"] as? String)?.let { templatePath ->
+                spec.docFile.parentFile.resolve(templatePath).relativeTo(root.absoluteFile).toString()
+              }
+            }.firstOrNull(),
+            data = this.run {
+              // First check for explicit data_file in frontmatter
+              val explicitDataFile = specs.mapNotNull { spec ->
+                (spec.frontmatter["data_file"] as? String)?.let { dataPath ->
+                  spec.docFile.parentFile.resolve(dataPath).absolutePath
+                }
+              }.firstOrNull()
+              // If no explicit data_file, check if we have a transform with a JSON source file
+              val implicitDataFile = if (explicitDataFile == null && transforms.isNotEmpty()) {
+                transforms.firstOrNull {
+                  it.sourceFile.extension.equals(
+                    "json",
+                    ignoreCase = true
+                  )
+                }?.sourceFile?.absolutePath
+              } else null
+              (explicitDataFile ?: implicitDataFile)?.let { dataFilePath ->
+                val dataFile = File(dataFilePath)
+                if (dataFile.exists()) {
+                  JsonUtil.fromJson(dataFile.readText(), Map::class.java) as Map<String, Any>
+                } else {
+                  log.warn("Data file not found: $dataFilePath")
+                  null
+                }
+              }
+            }
+          ),
+          message = buildString {
+            when {
+              FileTaskExecutionConfig::class.java.isAssignableFrom(taskType.executionConfigClass) -> this.appendLine("Execute task.")
+              else -> {
+                relatedFiles.forEach { relatedFile ->
+                  this.appendLine("# Context file: $relatedFile")
+                  this.appendLine("```")
+                  val resolvedFile = if (File(relatedFile.toString()).isAbsolute) {
+                    File(relatedFile.toString())
+                  } else {
+                    root.resolve(relatedFile)
+                  }
+                  if (resolvedFile.exists()) {
+                    this.appendLine(resolvedFile.readText())
+                  } else {
+                    this.appendLine("<!-- File not found: $relatedFile -->")
+                  }
+                  this.appendLine("```")
+                }
+              }
+            }
+          },
+          patchProcessor = patchProcessor,
+          taskType = taskType
+        )
       } catch (e: Exception) {
         log.error("Error processing ${relativeTarget}", e)
         null
@@ -183,7 +476,7 @@ open class DocProcessor(
    * Priority: specs > transforms > documents > generates, first non-null wins.
    * Defaults to FileModification if no task type is specified.
    */
-  open fun resolveTaskType(
+  fun resolveTaskType(
     specs: List<DocSpec>,
     transforms: List<TransformMatch>,
     documents: List<DocumentMatch>,
@@ -205,72 +498,7 @@ open class DocProcessor(
     }
   }
 
-  open fun data(
-    relativeTarget: File,
-    specs: List<DocSpec>,
-    targetFile: File,
-    transforms: List<TransformMatch>,
-    documents: List<DocumentMatch>,
-    generates: List<GenerateMatch>
-  ): ModificationTaskConfig = ModificationTaskConfig(
-    files = listOf(relativeTarget.toString()),
-    related_files = (specs.flatMap { spec ->
-      listOf(spec.docFile.relativeTo(root.absoluteFile).toString()) +
-          spec.related.map { relatedPath ->
-            spec.docFile.parentFile.resolve(relatedPath).relativeTo(root.absoluteFile).toString()
-          } +
-          additionalContext(spec, targetFile)
-    } + transforms.flatMap { match ->
-      listOf(
-        match.spec.docFile.relativeTo(root.absoluteFile).toString(),
-        match.sourceFile.relativeTo(root.absoluteFile).toString()
-      ) + match.spec.related.map { relatedPath ->
-        match.spec.docFile.parentFile.resolve(relatedPath).relativeTo(root.absoluteFile).toString()
-      } + additionalContext(match.spec, targetFile)
-    } + documents.flatMap { docMatch ->
-      docMatch.supportingFiles.map { it.relativeTo(root.absoluteFile).toString() } +
-          docMatch.docSpec.related.map { relatedPath ->
-            docMatch.docSpec.docFile.parentFile.resolve(relatedPath).relativeTo(root.absoluteFile).toString()
-          } +
-          additionalContext(docMatch.docSpec, targetFile)
-    } + generates.flatMap { genMatch ->
-      listOf(genMatch.spec.docFile.relativeTo(root.absoluteFile).toString()) +
-          genMatch.inputFiles.map { it.relativeTo(root.absoluteFile).toString() } +
-          genMatch.spec.related.map { relatedPath ->
-            genMatch.spec.docFile.parentFile.resolve(relatedPath).relativeTo(root.absoluteFile).toString()
-          } +
-          additionalContext(genMatch.spec, targetFile)
-    }).distinct(),
-    task_description = buildCombinedTaskDescription(specs, transforms, documents, generates, targetFile),
-    template_file = specs.mapNotNull { spec ->
-      (spec.frontmatter["template_file"] as? String)?.let { templatePath ->
-        spec.docFile.parentFile.resolve(templatePath).relativeTo(root.absoluteFile).toString()
-      }
-    }.firstOrNull(),
-    data = run {
-      // First check for explicit data_file in frontmatter
-      val explicitDataFile = specs.mapNotNull { spec ->
-        (spec.frontmatter["data_file"] as? String)?.let { dataPath ->
-          spec.docFile.parentFile.resolve(dataPath).absolutePath
-        }
-      }.firstOrNull()
-      // If no explicit data_file, check if we have a transform with a JSON source file
-      val implicitDataFile = if (explicitDataFile == null && transforms.isNotEmpty()) {
-        transforms.firstOrNull { it.sourceFile.extension.equals("json", ignoreCase = true) }?.sourceFile?.absolutePath
-      } else null
-      (explicitDataFile ?: implicitDataFile)?.let { dataFilePath ->
-        val dataFile = File(dataFilePath)
-        if (dataFile.exists()) {
-          JsonUtil.fromJson(dataFile.readText(), Map::class.java) as Map<String, Any>
-        } else {
-          log.warn("Data file not found: $dataFilePath")
-          null
-        }
-      }
-    }
-  )
-
-  open fun primarySource(
+  fun primarySource(
     transforms: List<TransformMatch>,
     specs: List<DocSpec>,
     documents: List<DocumentMatch>,
@@ -283,7 +511,7 @@ open class DocProcessor(
     else -> null
   }
 
-  open fun allRelatedFiles(
+  fun allRelatedFiles(
     specs: List<DocSpec>,
     targetFile: File,
     transforms: List<TransformMatch>,
@@ -291,24 +519,41 @@ open class DocProcessor(
     generates: List<GenerateMatch>
   ): List<File> = (specs.flatMap { spec ->
     listOf(spec.docFile) +
-        spec.related.map { spec.docFile.parentFile.resolve(it) } +
+        spec.related.mapNotNull { relatedPath ->
+          resolveRelatedResource(spec.docFile.parentFile, relatedPath)?.let { file ->
+            // For URL-fetched files, return the absolute file so it won't be incorrectly relativized
+            if (isUrl(relatedPath)) file.absoluteFile else file
+          }
+        } +
         additionalContext(spec, targetFile).map { File(it) }
   } + transforms.flatMap { match ->
     listOf(match.spec.docFile, match.sourceFile) +
-        match.spec.related.map { match.spec.docFile.parentFile.resolve(it) } +
+        match.spec.related.mapNotNull { relatedPath ->
+          resolveRelatedResource(match.spec.docFile.parentFile, relatedPath)?.let { file ->
+            if (isUrl(relatedPath)) file.absoluteFile else file
+          }
+        } +
         additionalContext(match.spec, targetFile).map { File(it) }
   } + documents.flatMap { docMatch ->
     docMatch.supportingFiles +
-        docMatch.docSpec.related.map { docMatch.docSpec.docFile.parentFile.resolve(it) } +
+        docMatch.docSpec.related.mapNotNull { relatedPath ->
+          resolveRelatedResource(docMatch.docSpec.docFile.parentFile, relatedPath)?.let { file ->
+            if (isUrl(relatedPath)) file.absoluteFile else file
+          }
+        } +
         additionalContext(docMatch.docSpec, targetFile).map { File(it) }
   } + generates.flatMap { genMatch ->
     listOf(genMatch.spec.docFile) +
         genMatch.inputFiles +
-        genMatch.spec.related.map { genMatch.spec.docFile.parentFile.resolve(it) } +
+        genMatch.spec.related.mapNotNull { relatedPath ->
+          resolveRelatedResource(genMatch.spec.docFile.parentFile, relatedPath)?.let { file ->
+            if (isUrl(relatedPath)) file.absoluteFile else file
+          }
+        } +
         additionalContext(genMatch.spec, targetFile).map { File(it) }
   }).distinct()
 
-  open fun transformMatches(docSpecs: List<DocSpec>): Map<String, List<TransformMatch>> {
+  fun transformMatches(docSpecs: List<DocSpec>): Map<String, List<TransformMatch>> {
     val transformMatches = docSpecs
       .filter { it.transforms.isNotEmpty() }
       .flatMap { spec ->
@@ -320,7 +565,7 @@ open class DocProcessor(
     return transformMatches
   }
 
-  open fun generateMatches(docSpecs: List<DocSpec>): Map<String, List<GenerateMatch>> {
+  fun generateMatches(docSpecs: List<DocSpec>): Map<String, List<GenerateMatch>> {
     val generateMatches = docSpecs
       .filter { it.generates.isNotEmpty() }
       .flatMap { spec ->
@@ -345,8 +590,8 @@ open class DocProcessor(
     log.info("Found ${generateMatches.size} generate matches")
     return generateMatches
   }
-  
-  open fun documentMatches(docSpecs: List<DocSpec>): Map<String, List<DocumentMatch>> {
+
+  fun documentMatches(docSpecs: List<DocSpec>): Map<String, List<DocumentMatch>> {
     val documentMatches = docSpecs
       .filter { it.documents.isNotEmpty() }
       .map { spec ->
@@ -367,7 +612,7 @@ open class DocProcessor(
     return documentMatches
   }
 
-  open fun fileToSpecs(docSpecs: List<DocSpec>): Map<String, List<DocSpec>> {
+  fun fileToSpecs(docSpecs: List<DocSpec>): Map<String, List<DocSpec>> {
     // First, collect specs from 'specifies' patterns
     val specsFromSpecifies = docSpecs
       .filter { it.specifies.isNotEmpty() }
@@ -379,7 +624,7 @@ open class DocProcessor(
           targetFiles.map { targetFile -> targetFile.canonicalFile to spec }
         }
       }
-    
+
     // Also collect specs from 'transforms' patterns
     val specsFromTransforms = docSpecs
       .filter { it.transforms.isNotEmpty() }
@@ -390,55 +635,68 @@ open class DocProcessor(
           }
         }
       }
-    
+
     // Combine both sources and group by target file
     val fileToSpecs = (specsFromSpecifies + specsFromTransforms)
       .groupBy({ it.first.absolutePath }, { it.second })
       .mapValues { it.value.distinct() }
-    
+
     log.info("Grouped into ${fileToSpecs.size} unique target files from 'specifies'")
     return fileToSpecs
   }
 
-  open fun runAll(
+  fun runAll(
     fileMods: List<ModificationTask>,
     concurrencyProcessor: FixedConcurrencyProcessor
   ) {
-    if (fileMods.isEmpty()) {
-      log.info("No modification tasks to execute")
-      return
-    }
-    withHarness(root, javaClass.simpleName, fastModel, smartModel) { harness ->
-      try {
-        fileMods.map { mod ->
-          concurrencyProcessor.submit {
-            harness.runTask(
-              taskType = mod.taskType,
-              typeConfig = typeConfig(mod),
-              executionConfig = executionConfig(mod.taskType, mod.data),
-              timeoutMinutes = 5,
-              workspace = root.absoluteFile,
-              initSettings = { session ->
-                harness.initSettings(
-                  session = session,
-                  workspace = root.absoluteFile,
-                  autoFix = true,
+    if (fileMods.isNotEmpty()) {
+      object : UnifiedHarness(
+        fastModel = fastModel,
+        smartModel = smartModel,
+        serverless = serverless,
+        openBrowser = openBrowser,
+      ) {
+          override fun createTempDirectory(prefix: String) = root
+            .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
+            .apply { mkdirs() }
+      }.use { harness: UnifiedHarness ->
+        try {
+          fileMods
+            .map { mod ->
+              val newRoot = mod.root() ?: root
+              val mod = if(newRoot != root) mod.rebase(root, newRoot) else mod
+              concurrencyProcessor.submit {
+                val cfgJson = mapOf(
+                  "task_type" to mod.taskType.name,
+                ) + mod.data.jsonCast<Map<String, Any>>()
+                val executionConfig = cfgJson.jsonCast<TaskExecutionConfig>(mod.taskType.executionConfigClass)
+                harness.runTask(
                   taskType = mod.taskType,
-                  typeConfig = typeConfig(mod)
-                ).apply {
-                  processor = mod.patchProcessor
+                  timeoutMinutes = 30,
+                  message = mod.message,
+                  executionConfig = executionConfig
+                ) { session ->
+                  harness.initSettings(
+                    session = session,
+                    autoFix = true,
+                    typeConfig = TaskTypeConfig(task_type = mod.taskType.name),
+                    workingDir = newRoot.toString()
+                  ).apply {
+                    processor = mod.patchProcessor
+                  }
                 }
               }
-            )
-          }
-        }.toTypedArray().forEach { it.get() }
-      } finally {
-        concurrencyProcessor.shutdown()
+            }.toTypedArray().forEach { it.get() }
+        } finally {
+          concurrencyProcessor.shutdown()
+        }
       }
+    } else {
+      log.info("No modification tasks to execute")
     }
   }
 
-  private fun typeConfig(mod: ModificationTask): TaskTypeConfig = TaskTypeConfig(task_type = mod.taskType.name)
+  private fun ModificationTask.root(): File? = data.files?.firstOrNull()?.let { root.resolve(it).parentFile }
 
   /**
    * Sorts modification tasks so that dependencies are processed before dependents.
@@ -448,7 +706,7 @@ open class DocProcessor(
    * @param tasks The list of modification tasks to sort
    * @return A sorted list where dependencies come before their dependents
    */
-  open fun sortByDependencies(tasks: List<ModificationTask>): List<ModificationTask> {
+  fun sortByDependencies(tasks: List<ModificationTask>): List<ModificationTask> {
     if (tasks.isEmpty()) return tasks
     // Build a map from target file path to task
     val taskByTarget = tasks.associateBy { task ->
@@ -532,30 +790,30 @@ open class DocProcessor(
     val bodyContent = content.substring(endOfFrontmatter + 3).trim()
     // Parse YAML frontmatter (supports simple key: value and lists)
     val frontmatter = parseFrontmatter(frontmatterText)
-val specifies = parseSpecifies(frontmatter)
-     val documents = parseDocuments(frontmatter)
-     val transforms = parseTransforms(frontmatter)
-     val generates = parseGenerates(frontmatter)
-     val related = parseRelated(frontmatter)
-     val taskType = parseTaskType(frontmatter)
-     val taskConfigJson = parseTaskConfigJson(frontmatter)
-     // Return null if neither specifies nor transforms are present
-     if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty() && generates.isEmpty()) {
-       return null
-     }
-     return DocSpec(
-       docFile = file,
-       specifies = specifies,
-       documents = documents,
-       transforms = transforms,
-       generates = generates,
-       related = related,
-       content = bodyContent,
-       frontmatter = frontmatter,
-       taskType = taskType,
-       taskConfigJson = taskConfigJson
-     )
-   }
+    val specifies = parseSpecifies(frontmatter)
+    val documents = parseDocuments(frontmatter)
+    val transforms = parseTransforms(frontmatter)
+    val generates = parseGenerates(frontmatter)
+    val related = parseRelated(frontmatter)
+    val taskType = parseTaskType(frontmatter)
+    val taskConfigJson = parseTaskConfigJson(frontmatter)
+    // Return null if neither specifies nor transforms are present
+    if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty() && generates.isEmpty()) {
+      return null
+    }
+    return DocSpec(
+      docFile = file,
+      specifies = specifies,
+      documents = documents,
+      transforms = transforms,
+      generates = generates,
+      related = related,
+      content = bodyContent,
+      frontmatter = frontmatter,
+      taskType = taskType,
+      taskConfigJson = taskConfigJson
+    )
+  }
 
   /**
    * Parse 'task_type' from frontmatter.
@@ -573,17 +831,24 @@ val specifies = parseSpecifies(frontmatter)
     return frontmatter["task_config_json"] as? String
   }
 
-  /**
-   * Build a combined task description from multiple specs and transforms
-   */
-  open fun buildCombinedTaskDescription(
+  fun buildCombinedTaskDescription(
     specs: List<DocSpec>,
     transforms: List<TransformMatch>,
     documents: List<Any>, // Using Any to avoid inner class reference issues
     generates: List<Any>,
-    target: File
+    target: File,
+    taskType: TaskType<*, *>
   ) = buildString {
     when {
+      specs.size == 1 && specs.first().let { it.frontmatter["prompt"] } is String -> {
+        appendLine(specs.first().let { it.frontmatter["prompt"] } as String)
+      }
+
+      !FileTaskExecutionConfig::class.java.isAssignableFrom(taskType.executionConfigClass) -> {
+        appendLine("Process the file ${target.name} according to the task type ${taskType.name}.")
+        appendLine("Use the provided documentation and specifications as context for the processing.")
+      }
+
       specs.isNotEmpty() || transforms.isNotEmpty() -> {
         appendLine("Update the file ${target.name} based on the included documentation and specifications.")
         appendLine("Ensure the file conforms to all the patterns, standards, and requirements described.")
@@ -606,12 +871,14 @@ val specifies = parseSpecifies(frontmatter)
 
   companion object {
     private val log = LoggerFactory.getLogger(DocProcessor::class.java)
+
     /**
      * Check if a pattern contains glob wildcards
      */
     fun isGlobPattern(pattern: String): Boolean {
       return pattern.contains("*") || pattern.contains("?") || pattern.contains("[")
     }
+
     /**
      * Expand a pattern that may be either a glob or a literal file path.
      * For literal paths (no wildcards), returns the file even if it doesn't exist yet.
@@ -636,7 +903,6 @@ val specifies = parseSpecifies(frontmatter)
         listOf(targetFile)
       }
     }
-
 
     /**
      * Expand a simple glob pattern (e.g., *.kt) in a specific directory
@@ -715,15 +981,6 @@ val specifies = parseSpecifies(frontmatter)
         .filter { it.isFile && matcher.matches(it.toPath().fileName) }
     }
 
-
-
-
-
-
-
-
-
-
     /**
      * Parse 'transforms' from frontmatter.
      * Supports formats:
@@ -797,6 +1054,7 @@ val specifies = parseSpecifies(frontmatter)
                 @Suppress("UNCHECKED_CAST")
                 parseGenerateSpec(item as Map<String, Any>)
               }
+
               else -> null
             }
           }

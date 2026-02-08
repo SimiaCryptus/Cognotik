@@ -91,7 +91,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
       val overviewTask = tabs.newTask("Overview")
       overviewTask.header("Dialectical Reasoning Analysis", level = 1)
       task.ui.pool.submit {
-        val transcript = task.transcript()
+        val transcript = task.newFileOutputStream(transcriptFile())
         val startTime = System.currentTimeMillis()
         var stepStartTime = startTime
         log.info("Starting DialecticalReasoningTask analysis.")

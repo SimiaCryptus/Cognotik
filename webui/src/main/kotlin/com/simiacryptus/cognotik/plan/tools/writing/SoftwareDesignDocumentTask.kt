@@ -199,7 +199,7 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
     }
 
     val tabs = TabbedDisplay(task)
-    val transcriptStream = task.transcript()
+    val transcriptStream = task.newFileOutputStream(transcriptFile())
     val overviewTask = tabs.newTask("Overview")
 
     task.ui.pool.submit {

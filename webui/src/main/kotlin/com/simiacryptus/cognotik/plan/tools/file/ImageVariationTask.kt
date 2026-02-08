@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedImageAgent
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -22,18 +23,24 @@ import javax.imageio.ImageIO
 
 class ImageVariationTask(
   orchestrationConfig: OrchestrationConfig,
-  planTask: ImageVariationConfig?
+  planTask: ImageVariationConfig?,
 ) : AbstractFileTask<ImageVariationTask.ImageVariationConfig>(
   orchestrationConfig,
   planTask
 ) {
+
+  val describer: AbbrevWhitelistYamlDescriber = object : AbbrevWhitelistYamlDescriber(
+    "com.simiacryptus", "cognotik.actions"
+  ) {
+    override val includeMethods: Boolean get() = false
+  }
 
   class ImageVariationConfig(
     @Description("The input image file path")
     var input_file: String? = null,
     @Description("Number of distinct regions to modify")
     var num_subimages: Int = 7,
-    @Description("Number of alternate versions per region")
+    @Description("Number of alternate versions per region - at least 2")
     var num_subimage_alternates: Int = 2,
     @Description("Number of changes to apply per variation")
     var num_changes_per_variation: Int = 5,
@@ -56,7 +63,7 @@ class ImageVariationTask(
     override fun validate(): String? {
       if (input_file.isNullOrBlank()) return "Input file must be specified"
       if (num_subimages < 1) return "Must identify at least 1 region"
-      if (num_subimage_alternates < 1) return "Must generate at least 1 alternate per region"
+      if (num_subimage_alternates <= 1) return "Must generate at more than 1 alternate per region"
       if (num_variations < 1) return "Must generate at least 1 variation"
       return ValidatedObject.validateFields(this)
     }
@@ -121,43 +128,7 @@ ImageVariation - Creates 'Find the Differences' style image sets.
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-
-
-    val transcript = task.transcript()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    val transcript = task.newFileOutputStream(transcriptFile())
     task.ui.pool.submit {
       try {
         val inputFile = executionConfig?.input_file ?: return@submit resultFn("No input file")
@@ -189,13 +160,21 @@ ImageVariation - Creates 'Find the Differences' style image sets.
         logTab.add("Analyzing image structure...".renderMarkdown())
         val imageAgent = ParsedImageAgent(
           resultClass = RegionAnalysis::class.java,
+          exampleInstance = RegionAnalysis(
+            regions = listOf(
+              DetectedRegion(label = "Red Car", x = 100, y = 200, width = 150, height = 80),
+              DetectedRegion(label = "Tree", x = 400, y = 300, width = 120, height = 200),
+              DetectedRegion(label = "House", x = 600, y = 250, width = 200, height = 150),
+            )
+          ),
           model = analysisModel,
           prompt = """
               Analyze this image to identify distinct objects or regions that could be modified for a "Find the Differences" game.
               Identify at least ${numSubimages + 2} distinct regions.
               Avoid overlapping regions if possible.
               Output coordinates on a 0-1000 scale.
-            """.trimIndent()
+            """.trimIndent(),
+          describer = describer
         )
         val answer = imageAgent.answer(listOf(ImageAndText(text = "", image = baseImage)))
         val analysis = answer.obj
@@ -447,7 +426,7 @@ ImageVariation - Creates 'Find the Differences' style image sets.
       val html = template.replace("/*GAME_DATA*/", assets.toJson())
       val gameFile = root.resolve("${prefix}_game.html").toFile()
       gameFile.writeText(html)
-      task.transcript()?.write(buildString {
+      task.newFileOutputStream(transcriptFile())?.write(buildString {
         appendLine("## Interactive Game")
         appendLine("[Play 'Find the Differences'](${task.linkTo(gameFile.name)})")
       }.toByteArray())

@@ -69,7 +69,7 @@ class DecisionTreeTask(
     ) {
 
 
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
       try {
         val config = executionConfig ?: return
         val error = config.validate()

@@ -92,7 +92,7 @@ class MultiPerspectiveAnalysisTask(
     ) {
 
 
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
       try {
 

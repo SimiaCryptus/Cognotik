@@ -108,7 +108,7 @@ class ConstraintSatisfactionTask(
         orchestrationConfig: OrchestrationConfig
     ) {
 
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
       try {
         // Validate configuration before execution
         executionConfig?.validate()?.let { error ->

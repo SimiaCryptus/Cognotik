@@ -251,7 +251,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logStreams: MutableList<BufferedOutputStream>,
                 scheduledPool: ListeningScheduledExecutorService
             ): ImageClientInterface = OpenAIImageClient(
-                key = key.decrypt,
+                key = key.decrypt!!,
                 apiBase = base,
                 workPool = workPool,
                 logLevel = logLevel,

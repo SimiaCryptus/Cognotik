@@ -21,6 +21,10 @@ import com.simiacryptus.cognotik.plan.tools.writing.*
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.jsonCast
+import com.simiacryptus.cognotik.util.toJson
+import kotlin.collections.set
 
 @JsonDeserialize(using = TaskTypeDeserializer::class)
 @JsonSerialize(using = TaskTypeSerializer::class)
@@ -35,31 +39,29 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 ) : DynamicEnum<TaskType<*, *>>(name) {
     companion object {
 
-        private val taskConstructors by lazy {
-            val taskConstructors: MutableMap<TaskType<*, *>, (OrchestrationConfig, TaskExecutionConfig?) -> AbstractTask<out TaskExecutionConfig, TaskTypeConfig>> =
-                mutableMapOf()
+        private val _taskConstructors: MutableMap<TaskType<*, *>, (OrchestrationConfig, TaskExecutionConfig?) -> AbstractTask<out TaskExecutionConfig, TaskTypeConfig>> =
+            mutableMapOf()
 
-            fun <T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(
-                taskType: TaskType<T, U>
-            ) {
+        private inline fun <reified T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(
+            taskType: TaskType<T, U>
+        ) {
+            try {
+                val constructor = taskType.getConstructor()
+                _taskConstructors[taskType] = { settings: OrchestrationConfig, task: TaskExecutionConfig? ->
                 try {
-                    val constructor = taskType.getConstructor()
-                    taskConstructors[taskType] = { settings: OrchestrationConfig, task: TaskExecutionConfig? ->
-                        try {
-                            val t = task as T?
-                            val constructor1 = constructor(settings, t)
-                            constructor1 as AbstractTask<TaskExecutionConfig, TaskTypeConfig>
-                        } catch (e: ClassCastException) {
-                            throw RuntimeException("Failed to create task instance for task type: ${taskType.name}. Ensure that the task execution config class and task class are correctly paired.", e)
-                        }
-                    }
-                    register(taskType)
-                } catch (e: NoSuchMethodException) {
-                    throw RuntimeException("Failed to register task type: ${taskType.name}. Ensure that the task class has a constructor with parameters (OrchestrationConfig, ${taskType.executionConfigClass.name})", e)
+                  constructor(settings, task?.jsonCast<T>()) as AbstractTask<TaskExecutionConfig, TaskTypeConfig>
+                } catch (e: ClassCastException) {
+                  throw RuntimeException("Failed to create task instance for task type: ${taskType.name}. Ensure that the task execution config class and task class are correctly paired.", e)
                 }
-
+              }
+                register(taskType)
+            } catch (e: NoSuchMethodException) {
+                throw RuntimeException("Failed to register task type: ${taskType.name}. Ensure that the task class has a constructor with parameters (OrchestrationConfig, ${taskType.executionConfigClass.name})", e)
             }
 
+        }
+
+        val taskConstructors by lazy {
             registerConstructor(AbductiveReasoningTask.AbductiveReasoning)
             registerConstructor(AbstractionLadderTask.AbstractionLadder)
             registerConstructor(AdversarialReasoningTask.AdversarialReasoning)
@@ -147,8 +149,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(TemporalReasoningTask.TemporalReasoning)
             registerConstructor(TutorialGenerationTask.TutorialGeneration)
             registerConstructor(WriteHtmlTask.WriteHtml)
-
-            taskConstructors.toMap()
+            _taskConstructors.toMap()
         }
 
         fun values(): List<TaskType<*, *>> {
@@ -197,15 +198,20 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             return valueOf(TaskType::class.java, name)
         }
 
-        private fun register(taskType: TaskType<*, *>) = register(TaskType::class.java, taskType)
+        fun register(taskType: TaskType<*, *>) = register(TaskType::class.java, taskType)
     }
 
     fun getConstructor(): (OrchestrationConfig, @UnsafeVariance T?) -> AbstractTask<out T, out U> =
         taskClass.let { cls ->
-            val method =
-                cls.getDeclaredConstructor(OrchestrationConfig::class.java, executionConfigClass)
-            method.isAccessible = true
-            { settings: OrchestrationConfig, task: T? ->
+            require(AbstractTask::class.java.isAssignableFrom(cls)) { "Task class ${cls.name} must be a subclass of AbstractTask" }
+            val method = cls.getDeclaredConstructor(OrchestrationConfig::class.java, executionConfigClass).apply { isAccessible = true }!!
+            { settings, task ->
+                require(OrchestrationConfig::class.java.isAssignableFrom(settings.javaClass)) { "Settings must be an instance of OrchestrationConfig" }
+                var task = task
+                if(task != null && !executionConfigClass.isAssignableFrom(task.javaClass)) {
+                    //"Task execution config must be an instance of ${executionConfigClass.name} or null: found ${task?.javaClass?.name}"
+                    task = JsonUtil.fromJson<T>(task.toJson(), executionConfigClass)
+                }
                 method.newInstance(settings, task) as AbstractTask<T, U>
             }
         }

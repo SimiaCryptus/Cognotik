@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.apps
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.Session
@@ -29,9 +29,10 @@ abstract class SingleTaskApp(
     path: String,
     applicationName: String = "Single Task App",
     showMenubar: Boolean = false,
-    private val taskType: TaskType<*, *>,
-    private val taskConfig: List<TaskExecutionConfig>,
-    val instanceFn: ((ApiChatModel) -> ChatInterface)?
+    val taskType: TaskType<*, *>,
+    val taskConfig: TaskExecutionConfig = TaskExecutionConfig(task_type = taskType.name),
+    val instanceFn: ((ApiChatModel) -> ChatInterface)?,
+    var message: String
 ) : ApplicationServer(
     applicationName = applicationName,
     path = path,
@@ -53,14 +54,19 @@ abstract class SingleTaskApp(
         user: User, session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
-        startSession(session, user, socketManager)
+        startSession(
+            session,
+            user,
+            socketManager,
+        )
         return socketManager
     }
+
 
     protected fun startSession(
         session: Session,
         user: User,
-        socketManager: SocketManager
+        socketManager: SocketManager,
     ) {
         val orchestrationConfig = getOrchestrationConfig(session, user)
         if (null != instanceFn) OrchestrationConfig.instanceFn = instanceFn
@@ -80,7 +86,13 @@ abstract class SingleTaskApp(
     
               """.renderMarkdown()
         )
-        socketManager.pool.submit { executeTask(session, user, socketManager, orchestrationConfig) }
+        socketManager.pool.submit { executeTask(
+            session = session,
+            user = user,
+            ui = socketManager,
+            settings = orchestrationConfig,
+            message = message,
+        ) }
     }
 
     open fun getOrchestrationConfig(
@@ -92,39 +104,41 @@ abstract class SingleTaskApp(
     protected open fun onTaskError(e: Throwable) {}
 
     protected open fun executeTask(
-        session: Session, user: User = defaultUser, ui: SocketManager, settings: OrchestrationConfig?
+        session: Session,
+        user: User = defaultUser,
+        ui: SocketManager,
+        settings: OrchestrationConfig?,
+        message: String,
     ) {
         try {
             val orchestrationConfig = settings?.apply {
                 if(null == DataStorage.sessionPaths[session]) absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
-            taskConfig.forEach { taskConfig ->
-                val task = ui.newTask(true)
+            val task = ui.newTask(true)
 
-                // Get the task implementation
-                val taskImpl = orchestrationConfig.getImpl(
-                    taskType = taskType, cfg = taskConfig
-                )
+            // Get the task implementation
+            val taskImpl = orchestrationConfig.getImpl(
+                taskType = taskType, cfg = taskConfig
+            )
 
-                // Execute the task
-                taskImpl.run(
-                    agent = TaskOrchestrator(
-                        user = user,
-                        session = session,
-                        dataStorage = ui.dataStorage,
-                        root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: ui.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
-                    ),
-                    messages = listOf(taskConfig.task_description ?: "Execute task"),
-                    task = task,
-                    resultFn = { result ->
-                        task.complete(result.renderMarkdown(true))
-                        onTaskComplete(result, task)
-                    },
-                    orchestrationConfig = orchestrationConfig
-                )
-            }
+            // Execute the task
+            taskImpl.run(
+                agent = TaskOrchestrator(
+                    user = user,
+                    session = session,
+                    dataStorage = ui.dataStorage,
+                    root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
+                        ?: ui.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
+                ),
+                messages = listOf(message),
+                task = task,
+                resultFn = { result ->
+                    task.complete(result.renderMarkdown(true))
+                    onTaskComplete(result, task)
+                },
+                orchestrationConfig = orchestrationConfig
+            )
 
         } catch (e: Throwable) {
             log.error("Error executing task", e)

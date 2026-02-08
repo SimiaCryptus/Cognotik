@@ -367,7 +367,7 @@ class GameLevelDesignTask(
         val startTime = System.currentTimeMillis()
         log.info("Starting GameLevelDesignTask for level: '${executionConfig?.level_name}'")
 
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
         // Validate configuration
         executionConfig?.validate()?.let { validationError ->

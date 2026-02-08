@@ -265,7 +265,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
         val reportTopic = executionConfig?.report_topic
         log.info("Starting ReportGenerationTask. Topic: '$reportTopic'")
 
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         task.ui.pool.submit {
             try {
         // Read input from messages parameter

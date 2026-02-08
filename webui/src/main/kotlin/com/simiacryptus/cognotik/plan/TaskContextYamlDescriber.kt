@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 class TaskContextYamlDescriber(
     val orchestrationConfig: OrchestrationConfig
 ) : AbbrevWhitelistYamlDescriber(
-    "com.simiacryptus", "aicoder.actions"
+    "com.simiacryptus", "cognotik.actions"
 ) {
     override val includeMethods: Boolean get() = false
 

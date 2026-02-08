@@ -106,12 +106,11 @@ class PersuasiveEssayAction : BaseAction() {
         root: File
     ) {
         val app = object : SingleTaskApp(
-            applicationName = "Persuasive Essay Task",
             path = "/persuasiveEssayTask",
-            showMenubar = false,
+            applicationName = "Persuasive Essay Task",
             taskType = PersuasiveEssayTask.PersuasiveEssay,
-            taskConfig = listOf(taskConfig),
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
+            message = "Execute task"
         ) {
             override fun instance(model: ApiChatModel) =
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")

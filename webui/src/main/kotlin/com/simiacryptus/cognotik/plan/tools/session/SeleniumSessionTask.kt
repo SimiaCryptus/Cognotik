@@ -209,7 +209,7 @@ class SeleniumSessionTask(
           task.update()
 
           if (executionConfig.createTranscript) {
-            transcriptStream = task.transcript("Selenium Session")
+            transcriptStream = task.newFileOutputStream(transcriptFile("Selenium Session"))
             transcriptStream?.write("# Selenium Session Transcript\n\n".toByteArray())
           }
 

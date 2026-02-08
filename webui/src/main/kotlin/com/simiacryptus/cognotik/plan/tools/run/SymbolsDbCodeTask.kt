@@ -72,7 +72,7 @@ class SymbolsDbCodeTask(
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val transcript = task.transcript()
+    val transcript = task.newFileOutputStream(transcriptFile())
     try {
       log.info("Starting SymbolsDbCodeTask - Goal: ${executionConfig?.goal}")
       task.add("### Initializing Symbols Database".renderMarkdown())

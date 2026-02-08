@@ -1,31 +1,24 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.apps.SingleTaskApp
-import com.simiacryptus.cognotik.apps.UnifiedPlanApp
+import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.asApiChatModel
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.now
-import com.simiacryptus.cognotik.util.PlanHarness.Companion.trayIcon
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
@@ -34,9 +27,9 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.server.Server
 import java.awt.Desktop
-import java.awt.SystemTray
 import java.io.File
 import java.io.OutputStream
+import java.lang.AutoCloseable
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.concurrent.CountDownLatch
@@ -45,7 +38,7 @@ import kotlin.random.Random
 
 open class UnifiedHarness(
     val port: Int = Random.nextInt(1024, 65535),
-    val serverless: Boolean = false,
+    val serverless: Boolean = true,
     val openBrowser: Boolean = false,
     val captureMessages: Boolean = serverless,
     val redirectData: Boolean = serverless,
@@ -59,7 +52,7 @@ open class UnifiedHarness(
             onUsage = { model, usage ->
                 ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
                     session = session,
-                    UserSettingsManager.defaultUser,
+                    defaultUser,
                     model,
                     usage
                 )
@@ -70,7 +63,7 @@ open class UnifiedHarness(
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
     val temperature: Double = 0.0,
-) {
+) : AutoCloseable {
     private var jettyServer: Any? = null
     private var appServer: CognotikAppServer? = null
 
@@ -125,7 +118,7 @@ open class UnifiedHarness(
     ) {
         val completionLatch = CountDownLatch(1)
         val session = this.session
-        val planApp = object : UnifiedPlanApp(
+        val planApp = object : SinglePlanApp(
             path = "/test",
             applicationName = "Plan Test App",
             showMenubar = false,
@@ -218,21 +211,15 @@ open class UnifiedHarness(
             }
 
         } finally {
-            handleBrowserShutdown(session)
         }
     }
 
-
-    open fun <T : TaskExecutionConfig, U : TaskTypeConfig> runTask(
+    fun <T : TaskExecutionConfig, U : TaskTypeConfig> runTask(
         taskType: TaskType<T, U>,
-        typeConfig: U,
-        executionConfig: T,
         timeoutMinutes: Long = 30,
-        autoFix: Boolean = !openBrowser,
-        workspace: File? = null,
-        initSettings : (Session) -> OrchestrationConfig = { session ->
-            initSettings(session, workspace, autoFix, taskType, typeConfig)
-        }
+        message: String = "Execute task",
+        executionConfig: TaskExecutionConfig,
+        initSettings: (Session) -> OrchestrationConfig
     ) {
         val completionLatch = CountDownLatch(1)
         var error: Throwable? = null
@@ -241,8 +228,9 @@ open class UnifiedHarness(
         val singleTaskApp = object : SingleTaskApp(
             path = "/test",
             taskType = taskType,
-            taskConfig = listOf(executionConfig),
             instanceFn = { model -> modelInstanceFn(model,session) },
+            message = message,
+            taskConfig = executionConfig,
         ) {
             override fun instance(model: ApiChatModel) = modelInstanceFn(model,session)
 
@@ -272,15 +260,15 @@ open class UnifiedHarness(
                 if (serverless) {
                     val socketManager = ServerlessSocketManager(
                         session = session,
-                        messageEvents = getMessageLog(workspace),
+                        messageEvents = null,
                         owner = user,
                         clazz = this.javaClass
                     )
-                    startSession(session, user, socketManager)
-                    socketManager.resolveUserFile("task_${now()}.json")?.writeText(mapOf(
-                        "typeConfig" to typeConfig,
-                        "exeConfig" to executionConfig
-                    ).toJson())
+                    startSession(
+                        session,
+                        user,
+                        socketManager,
+                    )
                     return socketManager
                 } else {
                     return super.newSession(user, session)
@@ -298,37 +286,54 @@ open class UnifiedHarness(
             )
         }
 
-        try {
-            singleTaskApp.initSettings<Any>(session)
-            val socketManager = singleTaskApp.newSession(defaultUser, session)
-            
-            if (!serverless) {
-                SessionProxyServer.agents[session] = socketManager
-                val url = "http://localhost:$port/#$session"
-                log.info("Task available at $url")
+        singleTaskApp.initSettings<Any>(session)
+        val socketManager = singleTaskApp.newSession(defaultUser, session)
 
-                if (openBrowser) {
-                    try {
-                        Desktop.getDesktop().browse(URI(url))
-                    } catch (e: Exception) {
-                        log.warn("Failed to open browser", e)
-                    }
+        if (!serverless) {
+            SessionProxyServer.agents[session] = socketManager
+            val url = "http://localhost:$port/#$session"
+            log.info("Task available at $url")
+
+            if (openBrowser) {
+                try {
+                    Desktop.getDesktop().browse(URI(url))
+                } catch (e: Exception) {
+                    log.warn("Failed to open browser", e)
                 }
             }
+        }
 
-            log.info("Waiting for task completion...")
-            if (!completionLatch.await(timeoutMinutes, TimeUnit.MINUTES)) {
-                throw RuntimeException("Task timed out after $timeoutMinutes minutes")
-            }
+        log.info("Waiting for task completion...")
+        if (!completionLatch.await(timeoutMinutes, TimeUnit.MINUTES)) {
+            throw RuntimeException("Task timed out after $timeoutMinutes minutes")
+        }
 
-            if (error != null) {
-                throw RuntimeException("Task failed", error)
-            }
-
-        } finally {
-            handleBrowserShutdown(session)
+        if (error != null) {
+            throw RuntimeException("Task failed", error)
         }
     }
+
+    private fun <T : TaskExecutionConfig, U : TaskTypeConfig> initFn(
+        typeConfig: U,
+        executionConfig: T,
+        workspace: File?,
+        autoFix: Boolean,
+        taskType: TaskType<T, U>
+    ): (Session) -> OrchestrationConfig = { session ->
+        SessionProxyServer.agents[session]?.resolveUserFile("task_${now()}.json")?.writeText(
+            mapOf(
+                "typeConfig" to typeConfig,
+                "exeConfig" to executionConfig
+            ).toJson()
+        )
+        initSettings(
+            session,
+            autoFix,
+            typeConfig,
+            this@UnifiedHarness.getRoot(workspace, session, taskType.name).absolutePath
+        )
+    }
+
     open fun initSettings(
         session: Session,
         finalWorkspace: File,
@@ -345,15 +350,14 @@ open class UnifiedHarness(
         cognitiveSettings = cognitiveSettings,
     )
 
-    open fun <T : TaskExecutionConfig, U : TaskTypeConfig> initSettings(
+    open fun <U : TaskTypeConfig> initSettings(
         session: Session,
-        workspace: File?,
         autoFix: Boolean,
-        taskType: TaskType<T, U>,
-        typeConfig: U
+        typeConfig: U,
+        workingDir: String
     ): OrchestrationConfig = OrchestrationConfig(
         sessionId = session.sessionId,
-        workingDir = getRoot(workspace, session, taskType.name).absolutePath,
+        workingDir = workingDir,
         taskSettings = mutableMapOf(
             typeConfig.name!! to typeConfig
         ),
@@ -381,31 +385,16 @@ open class UnifiedHarness(
             parentFile?.mkdirs()
         }?.outputStream()?.buffered() else null
 
-    protected open fun handleBrowserShutdown(session: Session) {
-
-        if (openBrowser && !serverless) {
-            val pair = trayIcon()
-            val shutdownLatch = pair.first
-            val trayIcon = pair.second
-
-            try {
-                shutdownLatch.await()
-            } catch (e: InterruptedException) {
-                Thread.currentThread().interrupt()
-            }
-
-            if (trayIcon != null && SystemTray.isSupported()) {
-                SystemTray.getSystemTray().remove(trayIcon)
-            }
-        }
-    }
-
     protected open fun createTempDirectory(prefix: String): File {
         val time = SimpleDateFormat("yyyyMMdd_HHmmss").format(System.currentTimeMillis())
         return File(".").resolve("workspaces/$prefix/test-$time").apply {
             mkdirs()
             log.debug("Created temp directory: ${this.absolutePath}")
         }
+    }
+
+    override fun close() {
+        stop()
     }
 
     companion object {
@@ -440,23 +429,3 @@ fun ApiChatModel.findApi(): ApiData? {
     return (userSettings.apis.find { api -> api.provider?.name == provider?.name })
 }
 
-fun withHarness(
-    root: File,
-    testName: String,
-    fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
-    smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
-    function: (UnifiedHarness) -> Unit
-) {
-    val workingDir = root.resolve("workspaces/${testName}/test-${PlanHarness.Companion.now()}")
-    val harness = object : UnifiedHarness(fastModel = fastModel, smartModel = smartModel) {
-        override fun createTempDirectory(prefix: String): File {
-            return workingDir.apply { mkdirs() }
-        }
-    }
-    harness.start()
-    try {
-        function(harness)
-    } finally {
-        harness.stop()
-    }
-}

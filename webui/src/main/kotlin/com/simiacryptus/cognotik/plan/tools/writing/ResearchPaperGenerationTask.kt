@@ -365,7 +365,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
     ) {
         val startTime = System.currentTimeMillis()
         log.info("Starting ResearchPaperGenerationTask for topic: '{}'", executionConfig?.research_topic)
-        val markdownTranscript = task.transcript()
+      val markdownTranscript = task.newFileOutputStream(transcriptFile())
 
         // Read input from messages parameter
         val messageContext = messages.filter { it.isNotBlank() }.joinToString("\n\n").trim()

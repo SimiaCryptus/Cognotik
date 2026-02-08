@@ -32,7 +32,7 @@ class OCRTask(
 ) : AbstractFileTask<OCRTask.OCRTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
     class OCRTaskExecutionConfigData(
-        @Description("The files to process (PDF or images)") files: List<String>? = null,
+        @Description("The files to process (PDF or images)") files: List<String> = emptyList(),
         @Description("DPI for rendering pages (default: 150)") val dpi: Float = 150f,
         @Description("Extract figures as images") val extract_figures: Boolean = false,
         @Description("Extract form fields and metadata") val extract_metadata: Boolean = false,
@@ -91,7 +91,7 @@ OCR - Convert documents (PDF, Images) to Markdown text.
             return
         }
 
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
 
 

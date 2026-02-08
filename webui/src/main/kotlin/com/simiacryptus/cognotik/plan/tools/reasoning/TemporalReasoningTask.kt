@@ -144,7 +144,7 @@ TemporalReasoning - Analyze system evolution and predict future states.
 
         val api = defaultSmart ?: return
         val ui = task.ui
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
       task.ui.pool.submit {
         val startTime = System.currentTimeMillis()

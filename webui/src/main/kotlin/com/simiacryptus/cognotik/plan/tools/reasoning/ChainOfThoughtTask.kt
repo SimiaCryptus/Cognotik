@@ -107,7 +107,7 @@ class ChainOfThoughtTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
       // Create tabbed display for organized output
       val tabs = TabbedDisplay(task)
       // Overview tab

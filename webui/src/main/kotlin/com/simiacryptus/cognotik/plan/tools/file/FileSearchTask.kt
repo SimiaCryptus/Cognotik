@@ -74,7 +74,7 @@ FileSearch - Search for patterns in files and provide results with context
 
         log.info("Starting FileSearchTask with pattern: ${executionConfig?.search_pattern}")
         task.ui.pool.submit {
-            val transcript = task.transcript()
+          val transcript = task.newFileOutputStream(transcriptFile())
             try {
                 val searchResults = performSearch()
                 val formattedResults = formatSearchResults(searchResults)
