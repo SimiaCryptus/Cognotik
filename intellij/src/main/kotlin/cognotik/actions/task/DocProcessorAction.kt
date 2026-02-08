@@ -17,8 +17,8 @@ import com.intellij.ui.dsl.builder.selected
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
+import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import java.awt.Dimension
-import java.io.File
 import java.util.concurrent.Executors
 import javax.swing.JComponent
 
@@ -107,13 +107,25 @@ open class DocProcessorAction(
             if (dialog.showAndGet()) {
                 val selectedTasks = dialog.getSelectedTasks()
                 if (selectedTasks.isNotEmpty()) {
-                    UITools.runAsync(project, "Processing Documentation Tasks", true) { _ ->
-                        val concurrencyProcessor = FixedConcurrencyProcessor(
+                    val session = docProcessor.runAll(
+                        selectedTasks, FixedConcurrencyProcessor(
                             Executors.newCachedThreadPool(),
                             docProcessor.concurrencyLimit
                         )
-                        docProcessor.runAll(selectedTasks, concurrencyProcessor)
-                    }
+                    )
+                    Thread {
+                        Thread.sleep(500)
+                        try {
+                            BrowseUtil.browse(
+                                CognotikAppServer.getServer(
+                                    AppSettingsState.instance.listeningEndpoint,
+                                    AppSettingsState.instance.listeningPort
+                                ).server.uri.resolve("/#" + session)
+                            )
+                        } catch (e: Throwable) {
+                            log.warn("Error opening browser", e)
+                        }
+                    }.start()
                 }
             }
         }

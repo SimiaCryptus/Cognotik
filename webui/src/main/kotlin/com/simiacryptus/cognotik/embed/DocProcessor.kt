@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -21,6 +22,7 @@ import java.nio.file.PathMatcher
 import java.security.MessageDigest
 import java.time.Duration
 import java.util.*
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
 
@@ -648,52 +650,57 @@ class DocProcessor(
   fun runAll(
     fileMods: List<ModificationTask>,
     concurrencyProcessor: FixedConcurrencyProcessor
-  ) {
-    if (fileMods.isNotEmpty()) {
-      object : UnifiedHarness(
-        fastModel = fastModel,
-        smartModel = smartModel,
-        serverless = serverless,
-        openBrowser = openBrowser,
-      ) {
+  ): Session? {
+    val sessionPromise = CompletableFuture<Session>()
+    Thread{
+      if (fileMods.isNotEmpty()) {
+        object : UnifiedHarness(
+          fastModel = fastModel,
+          smartModel = smartModel,
+          serverless = serverless,
+          openBrowser = openBrowser,
+        ) {
           override fun createTempDirectory(prefix: String) = root
             .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
             .apply { mkdirs() }
-      }.use { harness: UnifiedHarness ->
-        try {
-          fileMods
-            .map { mod ->
-              val newRoot = mod.root() ?: root
-              val mod = if(newRoot != root) mod.rebase(root, newRoot) else mod
-              concurrencyProcessor.submit {
-                val cfgJson = mapOf(
-                  "task_type" to mod.taskType.name,
-                ) + mod.data.jsonCast<Map<String, Any>>()
-                val executionConfig = cfgJson.jsonCast<TaskExecutionConfig>(mod.taskType.executionConfigClass)
-                harness.runTask(
-                  taskType = mod.taskType,
-                  timeoutMinutes = 30,
-                  message = mod.message,
-                  executionConfig = executionConfig
-                ) { session ->
-                  harness.initSettings(
-                    session = session,
-                    autoFix = true,
-                    typeConfig = TaskTypeConfig(task_type = mod.taskType.name),
-                    workingDir = newRoot.toString()
-                  ).apply {
-                    processor = mod.patchProcessor
+        }.use { harness: UnifiedHarness ->
+          try {
+            fileMods
+              .map { mod ->
+                val newRoot = mod.root() ?: root
+                val mod = if(newRoot != root) mod.rebase(root, newRoot) else mod
+                concurrencyProcessor.submit {
+                  val cfgJson = mapOf(
+                    "task_type" to mod.taskType.name,
+                  ) + mod.data.jsonCast<Map<String, Any>>()
+                  val executionConfig = cfgJson.jsonCast<TaskExecutionConfig>(mod.taskType.executionConfigClass)
+                  harness.runTask(
+                    taskType = mod.taskType,
+                    timeoutMinutes = 30,
+                    message = mod.message,
+                    executionConfig = executionConfig
+                  ) { session ->
+                    sessionPromise.complete(session)
+                    harness.initSettings(
+                      session = session,
+                      autoFix = true,
+                      typeConfig = TaskTypeConfig(task_type = mod.taskType.name),
+                      workingDir = newRoot.toString()
+                    ).apply {
+                      processor = mod.patchProcessor
+                    }
                   }
                 }
-              }
-            }.toTypedArray().forEach { it.get() }
-        } finally {
-          concurrencyProcessor.shutdown()
+              }.toTypedArray().forEach { it.get() }
+          } finally {
+            concurrencyProcessor.shutdown()
+          }
         }
+      } else {
+        log.info("No modification tasks to execute")
       }
-    } else {
-      log.info("No modification tasks to execute")
-    }
+    }.start()
+    return sessionPromise.join()
   }
 
   private fun ModificationTask.root(): File? = data.files?.firstOrNull()?.let { root.resolve(it).parentFile }
