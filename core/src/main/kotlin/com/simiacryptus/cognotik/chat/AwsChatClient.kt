@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
@@ -15,7 +16,9 @@ import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.bedrock.BedrockClient
+import software.amazon.awssdk.services.bedrock.model.CustomModelSummary
 import software.amazon.awssdk.services.bedrock.model.FoundationModelSummary
+import software.amazon.awssdk.services.bedrock.model.ListCustomModelsRequest
 import software.amazon.awssdk.services.bedrock.model.ListFoundationModelsRequest
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient
 import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelRequest
@@ -61,17 +64,28 @@ class AwsChatClient(
         return try {
             log.info("Fetching available models from AWS Bedrock in region: ${awsAuth.region}")
 
-            val request = ListFoundationModelsRequest.builder().build()
-            val response = bedrockManagementClient.listFoundationModels(request)
+            val response: List<FoundationModelSummary> = bedrockManagementClient.listFoundationModels(
+                ListFoundationModelsRequest.builder().build()
+            ).modelSummaries()?.filterNotNull() ?: emptyList()
+            val response2: List<CustomModelSummary> = bedrockManagementClient.listCustomModels(
+                ListCustomModelsRequest.builder().build()
+            ).modelSummaries()?.filterNotNull() ?: emptyList()
 
-            val models = response.modelSummaries()?.mapNotNull { modelSummary ->
+            val models = (response?.mapNotNull { modelSummary ->
                 try {
                     mapAwsModelToChatModel(modelSummary)
                 } catch (e: Exception) {
                     log.warn("Failed to map AWS model ${modelSummary.modelId()}: ${e.message}")
                     null
                 }
-            } ?: emptyList()
+            } ?: emptyList()) + (response2?.mapNotNull { modelSummary ->
+                try {
+                    mapAwsModelToChatModel(modelSummary)
+                } catch (e: Exception) {
+                    log.warn("Failed to map AWS custom model ${modelSummary.modelArn()}: ${e.message}")
+                    null
+                }
+            } ?: emptyList())
 
             log.info("Found ${models.size} available models in AWS Bedrock")
 
@@ -89,11 +103,12 @@ class AwsChatClient(
     }
 
     private fun mapAwsModelToChatModel(modelSummary: FoundationModelSummary): ChatModel? {
-        val modelId = modelSummary.modelId() ?: return null
-        val (maxTokens, maxOutTokens, inputPrice, outputPrice) = getModelSpecifications(modelId)
+        val (maxTokens, maxOutTokens, inputPrice, outputPrice) = getModelSpecifications(
+            modelSummary.modelId() ?: return null
+        )
         return ChatModel(
-            name = modelSummary.modelName() ?: modelId,
-            modelName = modelId,
+            name = modelSummary.modelName() ?: (modelSummary.modelId() ?: return null),
+            modelName = modelSummary.modelId() ?: return null,
             maxTotalTokens = maxTokens,
             maxOutTokens = maxOutTokens,
             provider = APIProvider.AWS,
@@ -101,6 +116,10 @@ class AwsChatClient(
             outputTokenPricePerK = outputPrice
         )
     }
+
+    private fun mapAwsModelToChatModel(modelSummary: CustomModelSummary): ChatModel? = mapAwsModelToChatModel(
+        FoundationModelSummary.builder().modelId(modelSummary.modelArn()).modelName(modelSummary.modelName()).build()
+    )
 
     private fun getModelSpecifications(modelId: String): ModelSpecs {
         return when {
@@ -204,7 +223,7 @@ class AwsChatClient(
     override fun chat(
         chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
-        logStreams: MutableList<java.io.BufferedOutputStream>
+        logStreams: MutableList<BufferedOutputStream>
     ): ModelSchema.ChatResponse {
         validateChatRequest(chatRequest, model)
 
@@ -263,7 +282,7 @@ class AwsChatClient(
 
 
     companion object {
-        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(AwsChatClient::class.java)
+        private val log = LoggerFactory.getLogger(AwsChatClient::class.java)
         private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
 
         private data class ModelSpecs(

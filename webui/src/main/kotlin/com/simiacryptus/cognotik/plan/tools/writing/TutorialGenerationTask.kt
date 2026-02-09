@@ -179,7 +179,7 @@ class TutorialGenerationTask(
     @Description("Expected outcome description")
     val expected_outcome: String = "",
     @Description("Validation steps to verify success")
-    val validation_steps: List<String> = emptyList(),
+    val validation_steps: List<Any> = emptyList(),
     @Description("Screenshot placeholder locations")
     val screenshot_placeholders: List<String> = emptyList(),
     @Description("Common issues for this step")
@@ -216,12 +216,12 @@ class TutorialGenerationTask(
   data class TroubleshootingIssue(
     @Description("The problem or error")
     val problem: String = "",
-    @Description("Symptoms or error messages")
-    val symptoms: List<String> = emptyList(),
-    @Description("Possible causes")
-    val causes: List<String> = emptyList(),
-    @Description("Solutions to try")
-    val solutions: List<String> = emptyList()
+    @Description("A list of symptoms or error messages")
+    val symptoms: List<Any> = emptyList(),
+    @Description("A list of possible causes")
+    val causes: List<Any> = emptyList(),
+    @Description("A list of solutions to try")
+    val solutions: List<Any> = emptyList()
   ) : ValidatedObject {
     override fun validate(): String? {
       if (problem.isBlank()) return "problem must not be blank"

@@ -10,7 +10,9 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CheckBoxList
+import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
@@ -141,6 +143,9 @@ open class DocProcessorAction(
         var autoFix: Boolean = true
         private val checkBoxList = CheckBoxList<TaskItem>()
         private val taskItems: List<TaskItem>
+        private val searchField = JBTextField().apply {
+            emptyText.text = "Type to filter tasks..."
+        }
 
         init {
             title = "Select Documentation Tasks"
@@ -162,9 +167,36 @@ open class DocProcessorAction(
             
             checkBoxList.setItems(taskItems) { it.displayName }
             taskItems.forEach { checkBoxList.setItemSelected(it, true) }
+            searchField.document.addDocumentListener(object : DocumentAdapter() {
+                override fun textChanged(e: javax.swing.event.DocumentEvent) {
+                    filterTasks(searchField.text)
+                }
+            })
             
+
             init()
         }
+        private val selectedStates = mutableMapOf<Int, Boolean>()
+        private fun filterTasks(query: String) {
+            // Save current selection states
+            taskItems.forEach { item ->
+                selectedStates[item.index] = checkBoxList.isItemSelected(item)
+            }
+            val filteredItems = if (query.isBlank()) {
+                taskItems
+            } else {
+                val lowerQuery = query.lowercase()
+                taskItems.filter { item ->
+                    item.displayName.lowercase().contains(lowerQuery) ||
+                    item.description.lowercase().contains(lowerQuery)
+                }
+            }
+            checkBoxList.setItems(filteredItems) { it.displayName }
+            filteredItems.forEach { item ->
+                checkBoxList.setItemSelected(item, selectedStates.getOrDefault(item.index, true))
+            }
+        }
+
 
         override fun createCenterPanel(): JComponent = panel {
             row {
@@ -176,12 +208,22 @@ open class DocProcessorAction(
                 label("Select which file generation tasks to execute:")
             }
             row {
+                cell(searchField)
+                    .align(Align.FILL)
+            }
+            row {
                 button("Select All") {
-                    taskItems.forEach { checkBoxList.setItemSelected(it, true) }
+                    for (i in 0 until checkBoxList.itemsCount) {
+                        val item = checkBoxList.getItemAt(i)
+                        if (item != null) checkBoxList.setItemSelected(item, true)
+                    }
                     checkBoxList.repaint()
                 }
                 button("Deselect All") {
-                    taskItems.forEach { checkBoxList.setItemSelected(it, false) }
+                    for (i in 0 until checkBoxList.itemsCount) {
+                        val item = checkBoxList.getItemAt(i)
+                        if (item != null) checkBoxList.setItemSelected(item, false)
+                    }
                     checkBoxList.repaint()
                 }
             }
@@ -210,9 +252,18 @@ open class DocProcessorAction(
             }
         }
 
-        fun getSelectedTasks() = taskItems
-            .filter { checkBoxList.isItemSelected(it) }
-            .map { allTasks[it.index] }
+        fun getSelectedTasks(): List<ModificationTask> {
+            // Save current visible selection states
+            for (i in 0 until checkBoxList.itemsCount) {
+                val item = checkBoxList.getItemAt(i)
+                if (item != null) {
+                    selectedStates[item.index] = checkBoxList.isItemSelected(item)
+                }
+            }
+            return taskItems
+                .filter { selectedStates.getOrDefault(it.index, true) }
+                .map { allTasks[it.index] }
+        }
 
         data class TaskItem(
             val index: Int,

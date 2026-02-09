@@ -156,7 +156,7 @@ class SingleFixTask(
           } catch (e: Throwable) {
             subTask.error(e)
             log.error("Critical error during SingleFixTask execution", e)
-            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
+            markdownTranscript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
 
             if (orchestrationConfig.autoFix) {
               semaphore.release()
