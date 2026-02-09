@@ -46,7 +46,9 @@ class AwsChatClient(
         JsonUtil.fromJson(apiKey.decrypt!!, AWSAuth::class.java)
     }
     private val bedrockClient: BedrockRuntimeClient by lazy {
-        BedrockRuntimeClient.builder().credentialsProvider(awsCredentials(awsAuth)).region(Region.of(awsAuth.region))
+        BedrockRuntimeClient.builder()
+            .credentialsProvider(awsCredentials(awsAuth))
+            .region(Region.of(awsAuth.region))
             .build()
     }
     private val bedrockManagementClient: BedrockClient by lazy {
@@ -95,12 +97,15 @@ class AwsChatClient(
                     log.warn("Failed to map AWS custom model ${modelSummary.modelArn()}: ${e.message}")
                     null
                 }
-            } ?: emptyList()) + awsAuth.additionalModels.mapNotNull { modelId ->
+            } ?: emptyList()) + awsAuth.models.mapNotNull { (modelName, modelId) ->
                 try {
                     getModelSpecifications(modelId).let { specs ->
                         ChatModel(
-                            name = modelId, modelName = modelId, maxTotalTokens = specs.maxTotalTokens,
-                            maxOutTokens = specs.maxOutTokens, provider = APIProvider.AWS,
+                            name = modelName,
+                            modelId = modelId,
+                            maxTotalTokens = specs.maxTotalTokens,
+                            maxOutTokens = specs.maxOutTokens,
+                            provider = APIProvider.AWS,
                             inputTokenPricePerK = specs.inputTokenPricePerK,
                             outputTokenPricePerK = specs.outputTokenPricePerK
                         )
@@ -132,7 +137,7 @@ class AwsChatClient(
         )
         return ChatModel(
             name = modelSummary.modelName() ?: (modelSummary.modelId() ?: return null),
-            modelName = modelSummary.modelId() ?: return null,
+            modelId = modelSummary.modelId() ?: return null,
             maxTotalTokens = maxTokens,
             maxOutTokens = maxOutTokens,
             provider = APIProvider.AWS,
@@ -191,7 +196,7 @@ class AwsChatClient(
         return listOf(
             ChatModel(
                 name = "Claude 3 Sonnet",
-                modelName = "anthropic.claude-3-sonnet-20240229-v1:0",
+                modelId = "anthropic.claude-3-sonnet-20240229-v1:0",
                 maxTotalTokens = 200000,
                 maxOutTokens = 4096,
                 provider = APIProvider.AWS,
@@ -200,7 +205,7 @@ class AwsChatClient(
             ),
             ChatModel(
                 name = "Claude 3 Haiku",
-                modelName = "anthropic.claude-3-haiku-20240307-v1:0",
+                modelId = "anthropic.claude-3-haiku-20240307-v1:0",
                 maxTotalTokens = 200000,
                 maxOutTokens = 4096,
                 provider = APIProvider.AWS,
@@ -209,7 +214,7 @@ class AwsChatClient(
             ),
             ChatModel(
                 name = "Llama 3 70B Instruct",
-                modelName = "meta.llama3-70b-instruct-v1:0",
+                modelId = "meta.llama3-70b-instruct-v1:0",
                 maxTotalTokens = 8192,
                 maxOutTokens = 2048,
                 provider = APIProvider.AWS,
@@ -218,7 +223,7 @@ class AwsChatClient(
             ),
             ChatModel(
                 name = "Mistral 7B Instruct",
-                modelName = "mistral.mistral-7b-instruct-v0:2",
+                modelId = "mistral.mistral-7b-instruct-v0:2",
                 maxTotalTokens = 32000,
                 maxOutTokens = 4096,
                 provider = APIProvider.AWS,
@@ -227,7 +232,7 @@ class AwsChatClient(
             ),
             ChatModel(
                 name = "Amazon Titan Text Express",
-                modelName = "amazon.titan-text-express-v1",
+                modelId = "amazon.titan-text-express-v1",
                 maxTotalTokens = 8192,
                 maxOutTokens = 8192,
                 provider = APIProvider.AWS,
@@ -251,21 +256,21 @@ class AwsChatClient(
     ): ModelSchema.ChatResponse {
         validateChatRequest(chatRequest, model)
 
-        log.info("Starting AWS Bedrock chat with model: ${model.modelName}")
+        log.info("Starting AWS Bedrock chat with model: ${model.modelId}")
 
         return withReliability {
             withPerformanceLogging {
                 val invokeModelRequest = try {
                     toAWS(model, chatRequest)
                 } catch (e: Exception) {
-                    log.error("Failed to create AWS request for model: ${model.modelName}", e)
+                    log.error("Failed to create AWS request for model: ${model.modelId}", e)
                     throw RuntimeException("Failed to create AWS request", e)
                 }
 
                 val invokeModelResponse = try {
                     bedrockClient.invokeModel(invokeModelRequest)
                 } catch (e: Exception) {
-                    log.error("Failed to invoke AWS Bedrock model: ${model.modelName}", e)
+                    log.error("Failed to invoke AWS Bedrock model: ${model.modelId}", e)
                     throw RuntimeException("Failed to invoke AWS Bedrock model", e)
                 }
 
@@ -280,9 +285,9 @@ class AwsChatClient(
                 log.debug("AWS Bedrock response: $responseBody")
 
                 val result = try {
-                    fromAWS(responseBody, model.modelName ?: "")
+                    fromAWS(responseBody, model.modelId ?: "")
                 } catch (e: Exception) {
-                    log.error("Failed to parse AWS response for model: ${model.modelName}", e)
+                    log.error("Failed to parse AWS response for model: ${model.modelId}", e)
                     throw RuntimeException("Failed to parse AWS response", e)
                 }
 
@@ -300,7 +305,7 @@ class AwsChatClient(
 
     private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-        require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
+        require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
         require(awsAuth.region.isNotBlank()) { "AWS region must be specified" }
     }
 
@@ -325,94 +330,101 @@ class AwsChatClient(
         data class AWSAuth(
             val profile: String = "default",
             val region: String = Region.US_WEST_2.id(),
-            val additionalModels: List<String> = emptyList()
+            val models: Map<String,String> = emptyMap()
         )
 
         fun toAWS(model: LLMModel, chatRequest: ModelSchema.ChatRequest) =
-            InvokeModelRequest.builder().modelId(model.modelName).accept("application/json")
+            InvokeModelRequest.builder().modelId(model.modelId).accept("application/json")
                 .contentType("application/json")
                 .body(SdkBytes.fromString(JsonUtil.toJson(awsBody(model, chatRequest)), Charsets.UTF_8)).build()
 
         fun awsBody(
             model: LLMModel, chatRequest: ModelSchema.ChatRequest
-        ): Map<String, Any> = when {
-            model.modelName?.contains("llama") == true -> {
-                mapOf(
-                    "prompt" to toSimplePrompt(chatRequest),
-                    "max_gen_len" to model.maxOutTokens,
-                    "temperature" to chatRequest.temperature,
+        ): Map<String, Any> {
+            val modelId = model.modelId ?: ""
+            return when {
+                modelId.contains("llama") -> {
+                    mapOf(
+                        "prompt" to toSimplePrompt(chatRequest),
+                        "max_gen_len" to model.maxOutTokens,
+                        "temperature" to chatRequest.temperature,
 
-                    )
-            }
+                        )
+                }
 
-            model.modelName?.contains("mistral") == true -> {
-                mapOf(
-                    "prompt" to toSimplePrompt(chatRequest),
-                    "max_tokens" to model.maxOutTokens,
-                    "temperature" to chatRequest.temperature,
-                )
-            }
-
-            model.modelName?.contains("titan") == true -> {
-                mapOf(
-                    "inputText" to toSimplePrompt(chatRequest), "textGenerationConfig" to mapOf(
-                        "maxTokenCount" to model.maxTotalTokens,
-                        "stopSequences" to emptyList<String>(),
+                modelId.contains("mistral") -> {
+                    mapOf(
+                        "prompt" to toSimplePrompt(chatRequest),
+                        "max_tokens" to model.maxOutTokens,
                         "temperature" to chatRequest.temperature,
                     )
-                )
-            }
+                }
 
-            model.modelName?.contains("cohere") == true -> {
-                mapOf(
-                    "prompt" to toSimplePrompt(chatRequest),
-                    "max_tokens" to model.maxTotalTokens,
-                    "temperature" to chatRequest.temperature,
-                )
-            }
+                modelId.contains("titan") -> {
+                    mapOf(
+                        "inputText" to toSimplePrompt(chatRequest), "textGenerationConfig" to mapOf(
+                            "maxTokenCount" to model.maxTotalTokens,
+                            "stopSequences" to emptyList<String>(),
+                            "temperature" to chatRequest.temperature,
+                        )
+                    )
+                }
 
-            model.modelName?.contains("ai21") == true -> {
-                mapOf(
-                    "prompt" to toSimplePrompt(chatRequest),
-                    "maxTokens" to model.maxTotalTokens,
-                    "temperature" to chatRequest.temperature,
-                    "stopSequences" to emptyList<String>(),
-                    "countPenalty" to mapOf("scale" to 0),
-                    "presencePenalty" to mapOf("scale" to 0),
-                    "frequencyPenalty" to mapOf("scale" to 0),
-                )
-            }
+                modelId.contains("cohere") -> {
+                    mapOf(
+                        "prompt" to toSimplePrompt(chatRequest),
+                        "max_tokens" to model.maxTotalTokens,
+                        "temperature" to chatRequest.temperature,
+                    )
+                }
 
-            model.modelName?.contains("anthropic") == true -> {
-                val alternatingMessages = alternateMessagesRoles(chatRequest.messages)
+                modelId.contains("ai21") -> {
+                    mapOf(
+                        "prompt" to toSimplePrompt(chatRequest),
+                        "maxTokens" to model.maxTotalTokens,
+                        "temperature" to chatRequest.temperature,
+                        "stopSequences" to emptyList<String>(),
+                        "countPenalty" to mapOf("scale" to 0),
+                        "presencePenalty" to mapOf("scale" to 0),
+                        "frequencyPenalty" to mapOf("scale" to 0),
+                    )
+                }
+
+                modelId.contains("anthropic") -> {
+                    anthropicAwsBody(model, chatRequest)
+                }
+
+                else ->
+                    anthropicAwsBody(model, chatRequest)
+                    //throw RuntimeException("Unsupported model: $model")
+            }
+        }
+
+        private fun anthropicAwsBody(
+            model: LLMModel,
+            chatRequest: ModelSchema.ChatRequest
+        ): Map<String, Any> = mapOf(
+            "anthropic_version" to when {
+                else -> "bedrock-2023-05-31"
+
+            },
+            "max_tokens" to model.maxOutTokens,
+            "temperature" to chatRequest.temperature,
+            "messages" to alternateMessagesRoles(chatRequest.messages).filter {
+                when (it.role) {
+                    ModelSchema.Role.system -> false
+                    else -> true
+                }
+            }.map {
                 mapOf(
-                    "anthropic_version" to anthropic_version(model),
-                    "max_tokens" to model.maxOutTokens,
-                    "temperature" to chatRequest.temperature,
-                    "messages" to alternatingMessages.filter {
-                        when (it.role) {
-                            ModelSchema.Role.system -> false
-                            else -> true
-                        }
-                    }.map {
+                    "role" to it.role.toString(), "content" to it.content?.map {
                         mapOf(
-                            "role" to it.role.toString(), "content" to it.content?.map {
-                                mapOf(
-                                    "type" to "text", "text" to it.text
-                                )
-                            })
-                    },
-                    "system" to toSimplePrompt(chatRequest) { it.role == ModelSchema.Role.system },
-                )
-            }
-
-            else -> throw RuntimeException("Unsupported model: $model")
-        }
-
-        fun anthropic_version(model: LLMModel) = when {
-            else -> "bedrock-2023-05-31"
-
-        }
+                            "type" to "text", "text" to it.text
+                        )
+                    })
+            },
+            "system" to toSimplePrompt(chatRequest) { it.role == ModelSchema.Role.system },
+        )
 
         fun alternateMessagesRoles(messages: List<ModelSchema.ChatMessage>): List<ModelSchema.ChatMessage> {
             val alternatingMessages = mutableListOf<ModelSchema.ChatMessage>()

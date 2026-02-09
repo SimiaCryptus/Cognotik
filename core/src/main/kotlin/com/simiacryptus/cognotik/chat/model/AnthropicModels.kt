@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 object AnthropicModels {
     val Claude35Sonnet = ChatModel(
         name = "Claude35Sonnet",
-        modelName = "claude-3-5-sonnet-latest",
+        modelId = "claude-3-5-sonnet-latest",
         maxTotalTokens = 200000,
         maxOutTokens = 8192,
         provider = APIProvider.Anthropic,
@@ -14,7 +14,7 @@ object AnthropicModels {
     )
     val Claude35Haiku = ChatModel(
         name = "Claude35Haiku",
-        modelName = "claude-3-5-haiku-latest",
+        modelId = "claude-3-5-haiku-latest",
         maxTotalTokens = 200000,
         maxOutTokens = 8192,
         provider = APIProvider.Anthropic,
@@ -23,7 +23,7 @@ object AnthropicModels {
     )
     val Claude37Sonnet = ChatModel(
         name = "Claude37Sonnet",
-        modelName = "claude-3-7-sonnet-20250219",
+        modelId = "claude-3-7-sonnet-20250219",
         maxTotalTokens = 200000,
         maxOutTokens = 64000,
         provider = APIProvider.Anthropic,
@@ -32,7 +32,7 @@ object AnthropicModels {
     )
     val Claude45Sonnet = ChatModel(
         name = "Claude45Sonnet",
-        modelName = "claude-sonnet-4-5",
+        modelId = "claude-sonnet-4-5",
         maxTotalTokens = 200000,
         maxOutTokens = 64000,
         provider = APIProvider.Anthropic,
@@ -41,7 +41,7 @@ object AnthropicModels {
     )
     val Claude45Haiku = ChatModel(
         name = "Claude45Haiku",
-        modelName = "claude-haiku-4-5",
+        modelId = "claude-haiku-4-5",
         maxTotalTokens = 200000,
         maxOutTokens = 64000,
         provider = APIProvider.Anthropic,
@@ -50,7 +50,7 @@ object AnthropicModels {
     )
     val Claude46Opus = ChatModel(
         name = "Claude46Opus",
-        modelName = "claude-opus-4-6",
+        modelId = "claude-opus-4-6",
         maxTotalTokens = 200000,
         maxOutTokens = 128000,
         provider = APIProvider.Anthropic,

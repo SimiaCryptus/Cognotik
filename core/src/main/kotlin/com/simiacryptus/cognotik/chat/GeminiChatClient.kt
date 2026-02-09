@@ -46,13 +46,13 @@ class GeminiChatClient(
                 val baseModelId = model.name?.removePrefix("models/") ?: return@mapNotNull null
                 // Try to find a matching model in our predefined GoogleModels
                 GeminiModels.values.values.find {
-                    it.modelName == baseModelId || it.modelName == model.name
+                    it.modelId == baseModelId || it.modelId == model.name
                 } ?: run {
                     // If not found in predefined models, create a dynamic one
                     log.debug("Creating basic ChatModel for unknown Gemini model: ${baseModelId}")
                     ChatModel(
                         name = model.displayName ?: baseModelId,
-                        modelName = baseModelId,
+                        modelId = baseModelId,
                         maxTotalTokens = model.inputTokenLimit ?: 1048576,
                         maxOutTokens = model.outputTokenLimit ?: 8192,
                         provider = APIProvider.Gemini,
@@ -90,7 +90,7 @@ class GeminiChatClient(
             .writeValueAsString(geminiChatRequest)
 
         val responseBody = post(
-            "${apiBase}/v1beta/models/${model.modelName}:generateContent?key=${apiKey.decrypt}",
+            "${apiBase}/v1beta/models/${model.modelId}:generateContent?key=${apiKey.decrypt}",
             json,
             APIProvider.Gemini
         )

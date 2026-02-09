@@ -8,7 +8,7 @@ object MistralModels {
 
     val MistralLarge3 = ChatModel(
         name = "MistralLarge3",
-        modelName = "mistral-large-latest",
+        modelId = "mistral-large-latest",
         maxTotalTokens = 131072,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.002,
@@ -17,7 +17,7 @@ object MistralModels {
 
     val MistralMedium3_1 = ChatModel(
         name = "MistralMedium3_1",
-        modelName = "mistral-medium-latest",
+        modelId = "mistral-medium-latest",
         maxTotalTokens = 131072,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.0015,
@@ -26,7 +26,7 @@ object MistralModels {
 
     val MistralSmall3_2 = ChatModel(
         name = "MistralSmall3_2",
-        modelName = "mistral-small-latest",
+        modelId = "mistral-small-latest",
         maxTotalTokens = 131072,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.0001,
@@ -35,7 +35,7 @@ object MistralModels {
 
     val Ministral3_14B = ChatModel(
         name = "Ministral3_14B",
-        modelName = "ministral-14b-latest",
+        modelId = "ministral-14b-latest",
         maxTotalTokens = 32768,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.00009,
@@ -44,7 +44,7 @@ object MistralModels {
 
     val Ministral3_8B = ChatModel(
         name = "Ministral3_8B",
-        modelName = "ministral-8b-latest",
+        modelId = "ministral-8b-latest",
         maxTotalTokens = 32768,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.00009,
@@ -53,7 +53,7 @@ object MistralModels {
 
     val Ministral3_3B = ChatModel(
         name = "Ministral3_3B",
-        modelName = "ministral-3b-latest",
+        modelId = "ministral-3b-latest",
         maxTotalTokens = 32768,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.00004,
@@ -62,7 +62,7 @@ object MistralModels {
 
     val MagistralMedium = ChatModel(
         name = "MagistralMedium",
-        modelName = "magistral-medium-latest",
+        modelId = "magistral-medium-latest",
         maxTotalTokens = 131072,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.002,
@@ -70,7 +70,7 @@ object MistralModels {
     )
     val MagistralSmall = ChatModel(
         name = "MagistralSmall",
-        modelName = "magistral-small-latest",
+        modelId = "magistral-small-latest",
         maxTotalTokens = 131072,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.0001,
@@ -80,7 +80,7 @@ object MistralModels {
 
     val Codestral = ChatModel(
         name = "Codestral",
-        modelName = "codestral-latest",
+        modelId = "codestral-latest",
         maxTotalTokens = 262144,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.0003,
@@ -89,7 +89,7 @@ object MistralModels {
 
     val Devstral2 = ChatModel(
         name = "Devstral2",
-        modelName = "devstral-large-latest",
+        modelId = "devstral-large-latest",
         maxTotalTokens = 131072,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.002,
@@ -97,7 +97,7 @@ object MistralModels {
     )
     val DevstralSmall2 = ChatModel(
         name = "DevstralSmall2",
-        modelName = "devstral-small-latest",
+        modelId = "devstral-small-latest",
         maxTotalTokens = 131072,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.0001,
@@ -106,7 +106,7 @@ object MistralModels {
     // Other Models
     val MistralNemo = ChatModel(
         name = "MistralNemo",
-        modelName = "open-mistral-nemo",
+        modelId = "open-mistral-nemo",
         maxTotalTokens = 131071,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.00015,

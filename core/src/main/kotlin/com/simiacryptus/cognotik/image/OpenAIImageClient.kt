@@ -75,7 +75,7 @@ open class OpenAIImageClient(
             val response = post(httpRequest)
             checkError(response)
             log.info("Image creation response received")
-            val model = OpenAIImageModels.values.values.find { it.modelName.equals(request.model, true) }
+            val model = OpenAIImageModels.values.values.find { it.modelId.equals(request.model, true) }
             val dims = request.size?.split("x")
             onUsage(
                 model, Usage(

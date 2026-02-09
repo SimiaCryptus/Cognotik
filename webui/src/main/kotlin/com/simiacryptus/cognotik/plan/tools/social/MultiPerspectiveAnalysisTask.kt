@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.nio.charset.StandardCharsets
 
@@ -104,7 +105,7 @@ class MultiPerspectiveAnalysisTask(
 
             val subject = config.analysis_subject!!
             val perspectives = config.perspectives!!
-            val api = defaultSmart ?: throw IllegalStateException("No default smart model available")
+            val api = defaultSmart.getChildClient(task)
 
             log.info("Starting MultiPerspectiveAnalysis for subject: $subject")
 

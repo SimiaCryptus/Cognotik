@@ -70,7 +70,7 @@ class OllamaChatClient(
                 }
 
                 val ollamaRequest = OllamaChatRequest(
-                    model = chatRequest.model ?: model.modelName!!,
+                    model = chatRequest.model ?: model.modelId!!,
                     messages = ollamaMessages,
                     stream = false,
                     options = OllamaOptions(
@@ -149,7 +149,7 @@ class OllamaChatClient(
             modelsResponse.models.map { ollamaModel ->
                 ChatModel(
                     name = ollamaModel.name,
-                    modelName = ollamaModel.name,
+                    modelId = ollamaModel.name,
                     maxTotalTokens = 4096, // Default, could be model-specific
                     maxOutTokens = 4096,
                     provider = APIProvider.Ollama,
@@ -165,7 +165,7 @@ class OllamaChatClient(
 
     private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-        require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
+        require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
         require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
     }
 

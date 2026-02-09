@@ -164,21 +164,21 @@ class WriteHtmlAction : BaseAction() {
         private val visibleModelsCache by lazy { getVisibleModels() }
 
         private val modelCombo = ComboBox(
-            visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()
+            visibleModelsCache.distinctBy { it.modelId }.map { it.modelId }.toTypedArray()
         ).apply {
             maximumSize = Dimension(200, 30)
-            selectedItem = AppSettingsState.instance.smartModel?.model?.modelName
+            selectedItem = AppSettingsState.instance.smartModel?.model?.modelId
             toolTipText = "AI model to use for generating HTML, CSS, and JavaScript"
         }
 
         private val imageModelCombo = ComboBox(
             visibleModelsCache
-                .distinctBy { it.modelName }
-                .map { it.modelName }
+                .distinctBy { it.modelId }
+                .map { it.modelId }
                 .toTypedArray()
         ).apply {
             maximumSize = Dimension(200, 30)
-            selectedItem = AppSettingsState.instance.imageChatModel?.model?.modelName
+            selectedItem = AppSettingsState.instance.imageChatModel?.model?.modelId
             toolTipText = "AI model to use for generating images"
         }
 
@@ -281,12 +281,12 @@ class WriteHtmlAction : BaseAction() {
         fun getOrchestrationConfig(): OrchestrationConfig {
             val selectedModel = modelCombo.selectedItem as? String
             val model = selectedModel?.let { modelName ->
-                visibleModelsCache.find { it.modelName == modelName }?.toApiChatModel()
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel()
             }
 
             val selectedImageModel = imageModelCombo.selectedItem as? String
             val imageModel = selectedImageModel?.let { modelName ->
-                visibleModelsCache.find { it.modelName == modelName }?.toApiChatModel()
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel()
             }
 
             return OrchestrationConfig(
@@ -309,9 +309,9 @@ class WriteHtmlAction : BaseAction() {
         private fun getVisibleModels() =
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
-                  model.provider == apiData.provider && model.modelName.isNotBlank() && PlanConfigDialog.isVisible(model)
+                  model.provider == apiData.provider && model.modelId.isNotBlank() && PlanConfigDialog.isVisible(model)
                 } ?: listOf()
-            }.distinctBy { it.modelName }.sortedBy { "${it.provider?.name} - ${it.modelName}" }
+            }.distinctBy { it.modelId }.sortedBy { "${it.provider?.name} - ${it.modelId}" }
     }
 
 }

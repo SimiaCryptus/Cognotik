@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 object GeminiImageModels {
     val Imagen3Generate = ImageModel(
         name = "Imagen3Generate",
-        modelName = "imagen-3.0-generate-002",
+        modelId = "imagen-3.0-generate-002",
         maxPrompt = 2048,
         provider = APIProvider.Gemini,
         pricingFunction = { width, height ->
@@ -16,7 +16,7 @@ object GeminiImageModels {
 
     val Imagen4GeneratePreview = ImageModel(
         name = "Imagen4GeneratePreview",
-        modelName = "imagen-4.0-generate-preview-06-06",
+        modelId = "imagen-4.0-generate-preview-06-06",
         maxPrompt = 2048,
         provider = APIProvider.Gemini,
         pricingFunction = { width, height ->
@@ -25,7 +25,7 @@ object GeminiImageModels {
         })
     val Imagen4UltraGeneratePreview = ImageModel(
         name = "Imagen4UltraGeneratePreview",
-        modelName = "imagen-4.0-ultra-generate-preview-06-06",
+        modelId = "imagen-4.0-ultra-generate-preview-06-06",
         maxPrompt = 2048,
         provider = APIProvider.Gemini,
         pricingFunction = { width, height ->
@@ -34,7 +34,7 @@ object GeminiImageModels {
         })
     val Imagen4Generate = ImageModel(
         name = "Imagen4Generate",
-        modelName = "imagen-4.0-generate-001",
+        modelId = "imagen-4.0-generate-001",
         maxPrompt = 2048,
         provider = APIProvider.Gemini,
         pricingFunction = { width, height ->
@@ -43,7 +43,7 @@ object GeminiImageModels {
         })
     val Imagen4UltraGenerate = ImageModel(
         name = "Imagen4UltraGenerate",
-        modelName = "imagen-4.0-ultra-generate-001",
+        modelId = "imagen-4.0-ultra-generate-001",
         maxPrompt = 2048,
         provider = APIProvider.Gemini,
         pricingFunction = { width, height ->
@@ -52,7 +52,7 @@ object GeminiImageModels {
         })
     val Imagen4Fast = ImageModel(
         name = "Imagen4Fast",
-        modelName = "imagen-4.0-fast-generate-001",
+        modelId = "imagen-4.0-fast-generate-001",
         maxPrompt = 2048,
         provider = APIProvider.Gemini,
         pricingFunction = { width, height ->

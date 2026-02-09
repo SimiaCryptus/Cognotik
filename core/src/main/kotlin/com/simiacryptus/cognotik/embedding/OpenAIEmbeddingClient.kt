@@ -58,7 +58,7 @@ class OpenAIEmbeddingClient(
             withPerformanceLogging {
                 // OpenAI embedding request format
                 val openAIRequest = mapOf(
-                    "model" to (request.model ?: model.modelName),
+                    "model" to (request.model ?: model.modelId),
                     "input" to when {
                         request.input is String -> request.input
                         request.input is List<*> -> request.input
@@ -93,7 +93,7 @@ class OpenAIEmbeddingClient(
 
     private fun validateEmbeddingRequest(request: ModelSchema.EmbeddingRequest, model: EmbeddingModel) {
         require(request.input.toString().isNotBlank()) { "Embedding request input cannot be blank" }
-        require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
+        require(model.modelId.isNotBlank()) { "Model name cannot be blank" }
         val apiKey = this.apiKey.decrypt
         require(!apiKey.isNullOrBlank()) { "OpenAI API key is required" }
     }

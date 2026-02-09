@@ -63,7 +63,7 @@ class OpenAIChatClient(
 
     private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-        require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
+        require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
         require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
     }
 
@@ -73,13 +73,13 @@ class OpenAIChatClient(
             val modelsResponse = fetchModels()
             val models = modelsResponse.mapNotNull { modelInfo ->
                 val knownModels = OpenAIModels.values.values
-                    .filter { it.modelName == modelInfo.id }
+                    .filter { it.modelId == modelInfo.id }
                 if (knownModels.isNotEmpty()) {
                     knownModels.first()
                 } else if (modelInfo.id.startsWith("gpt") || modelInfo.id.startsWith("o1") || modelInfo.id.startsWith("o3")) {
                     ChatModel(
                         name = modelInfo.id,
-                        modelName = modelInfo.id,
+                        modelId = modelInfo.id,
                         provider = APIProvider.OpenAI,
                         maxTotalTokens = 128000,
                         inputTokenPricePerK = 0.0,

@@ -184,11 +184,13 @@ When a task needs structured LLM output (e.g., generating a plan, extracting ent
 
 ```kotlin
 // Inside a task's run() method:
+val smartClient = orchestrationConfig.defaultSmart.getChildClient(task)
+val fastClient = orchestrationConfig.defaultFast.getChildClient(task)
 val analysisAgent = ParsedAgent(
   clazz = AnalysisResult::class.java,
   prompt = "Analyze the following code and produce a structured report.",
-  model = orchestrationConfig.model,
-  parsingChatter = orchestrationConfig.parsingModel, // Optional: cheaper model for JSON formatting
+  model = smartClient, // Wrapped exactly once with getChildClient(task)
+  parsingChatter = fastClient, // Wrapped exactly once with getChildClient(task)
   describer = YamlDescriber() // Default; generates token-efficient schema
 )
 val response: ParsedResponse<AnalysisResult> = analysisAgent.answer(
@@ -222,6 +224,42 @@ task.add("Found ${result.issues.size} issues with severity ${result.severity}".r
     * Context limits are respected (via `FileSelectionUtils`).
 * **Dependencies:** The task must utilize `getPriorCode(executionState)` to retrieve results from upstream tasks defined
   in `task_dependencies`.
+### 4.2.1 API Client Wrapping (The "Wrap Once" Rule)
+When a task obtains a `ChatInterface` from the orchestration config (e.g., `orchestrationConfig.defaultSmart`, `orchestrationConfig.defaultFast`, or `orchestrationConfig.instance(model)`), it **must** wrap it exactly once using the `ChatInterface.getChildClient(task: SessionTask)` extension function defined in `SessionTask.kt`.
+*   **Purpose:** `getChildClient(task)` creates a child client and attaches a log stream from the current `SessionTask`. This ensures:
+    *   API calls are logged to the task's session-specific log file (visible via the "API log" link in the UI).
+    *   Client hierarchy is maintained for budget tracking and request attribution.
+    *   Each task gets its own isolated logging context.
+*   **Exactly Once:** The client must be wrapped exactly once per task. Wrapping zero times means API calls are not logged to the task's transcript. Wrapping more than once creates redundant nested clients and duplicate log streams, inflating log output and wasting resources.
+*   **Scope:** Wrap at the point of use within the `run()` method, not in constructors or field initializers, since the `SessionTask` is only available at execution time.
+```kotlin
+// ✗ BAD — Using the raw API client without wrapping; no task-level logging
+override fun run(agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig) {
+    val api = orchestrationConfig.defaultSmart
+    api.chat(request) // API call is not logged to the task's session
+}
+// ✗ BAD — Wrapping twice; duplicate log streams
+override fun run(agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig) {
+    val api = orchestrationConfig.defaultSmart.getChildClient(task).getChildClient(task)
+    api.chat(request) // Logged twice, nested client hierarchy is wasteful
+}
+// ✓ GOOD — Wrapped exactly once at the point of use
+override fun run(agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig) {
+    val api = orchestrationConfig.defaultSmart.getChildClient(task)
+    api.chat(request) // Properly logged to the task's session log
+}
+// ✓ GOOD — Wrapping when passing to a ParsedAgent or other consumer
+override fun run(agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig) {
+    val analysisAgent = ParsedAgent(
+        resultClass = AnalysisResult::class.java,
+        prompt = "Analyze the code.",
+        model = orchestrationConfig.defaultSmart.getChildClient(task),
+        parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+    )
+}
+```
+**Note:** The `OrchestrationConfig.planningActor()` method already follows this pattern internally (calling `defaultSmart.getChildClient(task)` and `defaultFast.getChildClient(task)`). All task implementations must do the same when they access API clients directly.
+
 
 ### 4.3 Output & Feedback
 
@@ -286,6 +324,7 @@ When reviewing a specific Task file (e.g., `MyNewTask.kt`), apply the following 
 | **R10**  | **Data**     | Are all fields in data classes annotated with `@Description`?                      | **Fail** if any public field used in LLM schema generation lacks `@Description`.                  |
 | **R11**  | **Data**     | Are data class fields `var` (not `val`)?                                           | **Fail** if `val` is used on fields that need deserialization or canonicalization.                 |
 | **R12**  | **Data**     | Do data class field names use `snake_case`?                                        | **Warn** if `camelCase` is used; **Fail** if names are ambiguous or misleading.                   |
+| **R13**  | **API**      | Are all `ChatInterface` instances obtained from config wrapped exactly once with `getChildClient(task)`? | **Fail** if raw config clients are used without wrapping, or if wrapped more than once.           |
 
 ## 6. Example: Compliant Task Structure
 
@@ -322,23 +361,30 @@ class ExampleTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        // 4. Detailed Logging via Transcript
+        // 4. Wrap API clients exactly once with getChildClient(task)
+        val smartApi = orchestrationConfig.defaultSmart.getChildClient(task)
+        val fastApi = orchestrationConfig.defaultFast.getChildClient(task)
+        
+        // 5. Detailed Logging via Transcript
         val transcript = task.transcript()
         
         try {
-            // 5. Offload heavy work to session pool
+            // 6. Offload heavy work to session pool
             task.ui.pool.submit {
                 try {
                     log.info("Starting ExampleTask analysis...")
                     
-                    // 6. Dependency Handling
+                    // 7. Dependency Handling
                     val context = getPriorCode(agent.executionState)
                     transcript?.write("# Analysis\n<details><summary>Context Data</summary>\n\n```\n$context\n```\n</details>\n".toByteArray())
 
-                    // 7. Streaming Feedback to UI
+                    // 8. Streaming Feedback to UI
                     task.add("Analyzing context...".renderMarkdown())
 
-                    // 8. Safety Check for Side Effects
+                    // 9. Use wrapped API client for LLM calls
+                    // smartApi.chat(request) // Properly logged to task session
+
+                    // 10. Safety Check for Side Effects
                     val output = "Proposed Change"
                     
                     // Switch back to UI thread for interaction if needed, or handle logic here

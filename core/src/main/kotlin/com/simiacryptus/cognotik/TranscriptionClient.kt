@@ -50,7 +50,7 @@ open class TranscriptionClient(
                 val entity = MultipartEntityBuilder.create()
                 entity.setMode(HttpMultipartMode.EXTENDED)
                 entity.addBinaryBody("file", wavAudio, ContentType.create("audio/x-wav"), "audio.wav")
-                entity.addTextBody("model", audioModel.modelName)
+                entity.addTextBody("model", audioModel.modelId)
                 entity.addTextBody("response_format", "json")
                 if (prompt.isNotEmpty()) entity.addTextBody("prompt", prompt)
                 request.entity = entity.build()

@@ -8,7 +8,7 @@ object PerplexityModels {
         val maxTotalTokens = 128 * 1024
         ChatModel(
             name = "SonarSmallChat128k",
-            modelName = "llama-3.1-sonar-small-128k-chat",
+            modelId = "llama-3.1-sonar-small-128k-chat",
             maxTotalTokens = maxTotalTokens,
             maxOutTokens = maxTotalTokens,
             provider = APIProvider.Companion.Perplexity,
@@ -21,7 +21,7 @@ object PerplexityModels {
         val maxTotalTokens = 128 * 1024
         ChatModel(
             name = "SonarSmallOnline128k",
-            modelName = "llama-3.1-sonar-small-128k-online",
+            modelId = "llama-3.1-sonar-small-128k-online",
             maxTotalTokens = maxTotalTokens,
             maxOutTokens = maxTotalTokens,
             provider = APIProvider.Companion.Perplexity,
@@ -34,7 +34,7 @@ object PerplexityModels {
         val maxTotalTokens = 128 * 1024
         ChatModel(
             name = "SonarLargeChat128k",
-            modelName = "llama-3.1-sonar-large-128k-chat",
+            modelId = "llama-3.1-sonar-large-128k-chat",
             maxTotalTokens = maxTotalTokens,
             maxOutTokens = maxTotalTokens,
             provider = APIProvider.Companion.Perplexity,
@@ -47,7 +47,7 @@ object PerplexityModels {
         val maxTotalTokens = 128 * 1024
         ChatModel(
             name = "SonarLargeOnline128k",
-            modelName = "llama-3.1-sonar-large-128k-online",
+            modelId = "llama-3.1-sonar-large-128k-online",
             maxTotalTokens = maxTotalTokens,
             maxOutTokens = maxTotalTokens,
             provider = APIProvider.Companion.Perplexity,

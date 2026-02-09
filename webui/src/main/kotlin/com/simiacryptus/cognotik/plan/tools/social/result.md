@@ -1,2 +1,2 @@
 ### Modifications Applied
-* <a href='fileIndex/G-20260208-WRnf/GameTheoryTask.kt'>GameTheoryTask.kt</a> Updated
+* <a href='fileIndex/G-20260209-XEeL/DialecticalReasoningTask.kt'>DialecticalReasoningTask.kt</a> Updated

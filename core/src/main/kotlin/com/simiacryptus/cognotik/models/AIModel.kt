@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.models
 
 interface AIModel {
-    val modelName: String?
+    val modelId: String?
     val provider: APIProvider?
 }

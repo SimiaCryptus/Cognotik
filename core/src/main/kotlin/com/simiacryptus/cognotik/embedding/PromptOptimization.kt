@@ -173,7 +173,7 @@ open class PromptOptimization(
         testCase: TestCase
     ): List<Pair<ChatResponse, Double>> {
         var chatRequest = ChatRequest(
-            model = model.modelType.modelName
+            model = model.modelType.modelId
         )
         var response = ChatResponse()
         chatRequest = chatRequest.copy(

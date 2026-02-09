@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 object OpenAIModels {
     val GPT4Turbo = ChatModel(
         name = "GPT4Turbo",
-        modelName = "gpt-4-turbo",
+        modelId = "gpt-4-turbo",
         maxTotalTokens = 128000,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 0.010,
@@ -14,7 +14,7 @@ object OpenAIModels {
 
     val GPT4o = ChatModel(
         name = "GPT4o",
-        modelName = "gpt-4o",
+        modelId = "gpt-4o",
         maxTotalTokens = 128000,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 0.0025,
@@ -23,7 +23,7 @@ object OpenAIModels {
 
     val GPT45 = ChatModel(
         name = "GPT45",
-        modelName = "gpt-4.5-preview-2025-02-27",
+        modelId = "gpt-4.5-preview-2025-02-27",
         maxTotalTokens = 128000,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 0.075,
@@ -32,7 +32,7 @@ object OpenAIModels {
 
     val GPT4oMini = ChatModel(
         name = "GPT4oMini",
-        modelName = "gpt-4o-mini",
+        modelId = "gpt-4o-mini",
         maxTotalTokens = 128000,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 0.00015,
@@ -41,7 +41,7 @@ object OpenAIModels {
 
     val O1Preview = ChatModel(
         name = "O1Preview",
-        modelName = "o1-preview",
+        modelId = "o1-preview",
         maxTotalTokens = 128 * 1024,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 0.0005,
@@ -50,7 +50,7 @@ object OpenAIModels {
 
     val O1 = ChatModel(
         name = "O1",
-        modelName = "o1",
+        modelId = "o1",
         maxTotalTokens = 128 * 1024,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 0.015,
@@ -59,7 +59,7 @@ object OpenAIModels {
 
     val O1Mini = ChatModel(
         name = "O1Mini",
-        modelName = "o1-mini",
+        modelId = "o1-mini",
         maxTotalTokens = 128 * 1024,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 0.00110,
@@ -68,7 +68,7 @@ object OpenAIModels {
 
     val O3Mini = ChatModel(
         name = "O3Mini",
-        modelName = "o3-mini",
+        modelId = "o3-mini",
         maxTotalTokens = 128 * 1024,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 0.00110,
@@ -76,7 +76,7 @@ object OpenAIModels {
     )
     val O4Mini = ChatModel(
         name = "O4Mini",
-        modelName = "o4-mini",
+        modelId = "o4-mini",
         maxTotalTokens = 200000,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 0.00110,
@@ -84,14 +84,14 @@ object OpenAIModels {
     )
     val O3 = ChatModel(
         name = "O3",
-        modelName = "o3",
+        modelId = "o3",
         maxTotalTokens = 200000,
         provider = APIProvider.OpenAI,
         outputTokenPricePerK = 0.010,
     )
     val GPT52 = ChatModel(
         name = "GPT-5.2",
-        modelName = "gpt-5.2",
+        modelId = "gpt-5.2",
         maxTotalTokens = 128000,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 1.75 / 1000,
@@ -99,7 +99,7 @@ object OpenAIModels {
     )
     val GPT52Pro = ChatModel(
         name = "GPT-5.2 Pro",
-        modelName = "gpt-5.2-pro",
+        modelId = "gpt-5.2-pro",
         maxTotalTokens = 128000,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 21.00 / 1000,
@@ -107,7 +107,7 @@ object OpenAIModels {
     )
     val GPT5Mini = ChatModel(
         name = "GPT-5 Mini",
-        modelName = "gpt-5-mini",
+        modelId = "gpt-5-mini",
         maxTotalTokens = 128000,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 0.25 / 1000,
@@ -117,7 +117,7 @@ object OpenAIModels {
 
     val GPT41 = ChatModel(
         name = "GPT 4.1",
-        modelName = "gpt-4.1-2025-04-14",
+        modelId = "gpt-4.1-2025-04-14",
         maxTotalTokens = 1048576,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 2.00 / 1000,
@@ -126,7 +126,7 @@ object OpenAIModels {
 
     val GPT41Mini = ChatModel(
         name = "GPT 4.1 Mini",
-        modelName = "gpt-4.1-mini-2025-04-14",
+        modelId = "gpt-4.1-mini-2025-04-14",
         maxTotalTokens = 1048576,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 0.40 / 1000,
@@ -135,7 +135,7 @@ object OpenAIModels {
 
     val GPT41Nano = ChatModel(
         name = "GPT 4.1 Nano",
-        modelName = "gpt-4.1-nano-2025-04-14",
+        modelId = "gpt-4.1-nano-2025-04-14",
         maxTotalTokens = 1048576,
         provider = APIProvider.OpenAI,
         inputTokenPricePerK = 0.10 / 1000,

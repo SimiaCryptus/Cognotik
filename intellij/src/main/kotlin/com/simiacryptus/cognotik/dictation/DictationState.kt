@@ -141,13 +141,13 @@ open class DictationState {
     fun setTranscriptionModel(model: AudioModels) {
         if (model == transcriptionModel) return
         transcriptionModel = model
-        AppSettingsState.instance.transcriptionModel = model.modelName
+        AppSettingsState.instance.transcriptionModel = model.modelId
         dictationManager.transcriptionModel = model
         configuration.notifyListeners()
     }
 }
 
-fun findAudioModel(model: String?) = audioModels().firstOrNull { it.modelName == model }
+fun findAudioModel(model: String?) = audioModels().firstOrNull { it.modelId == model }
 
 fun audioModels(): List<AudioModels> =
     ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap {

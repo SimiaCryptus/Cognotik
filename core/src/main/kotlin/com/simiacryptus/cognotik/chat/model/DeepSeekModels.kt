@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 object DeepSeekModels {
     val DeepSeekChat = ChatModel(
         name = "DeepSeekChat",
-        modelName = "deepseek-chat",
+        modelId = "deepseek-chat",
         maxTotalTokens = 64000,
         maxOutTokens = 4096,
         provider = APIProvider.Companion.DeepSeek,
@@ -14,7 +14,7 @@ object DeepSeekModels {
     )
     val DeepSeekCoder = ChatModel(
         name = "DeepSeekCoder",
-        modelName = "deepseek-coder",
+        modelId = "deepseek-coder",
         maxTotalTokens = 64000,
         maxOutTokens = 4096,
         provider = APIProvider.Companion.DeepSeek,
@@ -23,7 +23,7 @@ object DeepSeekModels {
     )
     val DeepSeekReasoner = ChatModel(
         name = "DeepSeekReasoner",
-        modelName = "deepseek-reasoner",
+        modelId = "deepseek-reasoner",
         maxTotalTokens = 64000,
         maxOutTokens = 4096,
         provider = APIProvider.Companion.DeepSeek,

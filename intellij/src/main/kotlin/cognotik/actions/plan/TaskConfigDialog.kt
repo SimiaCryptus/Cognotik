@@ -45,12 +45,12 @@ class TaskConfigDialog(
     }
 
     private val modelCombo = ComboBox(
-        availableModels.distinctBy { it.modelName }
-            .map { it.modelName }
+        availableModels.distinctBy { it.modelId }
+            .map { it.modelId }
             .toTypedArray()
     ).apply {
         preferredSize = Dimension(300, 30)
-        selectedItem = config.model?.model?.modelName
+        selectedItem = config.model?.model?.modelId
         toolTipText = "AI model to use for this task type"
     }
     private val configFields = mutableMapOf<String, JComponent>()
@@ -629,7 +629,7 @@ class TaskConfigDialog(
             }
             if (name == "model") {
                 val selectedModelName = modelCombo.selectedItem as? String
-                val selectedModel = availableModels.find { it.modelName == selectedModelName }
+                val selectedModel = availableModels.find { it.modelId == selectedModelName }
                 args[param] = selectedModel?.toApiChatModel()
                 continue
             }
@@ -689,7 +689,7 @@ class TaskConfigDialog(
 
     private fun getSubPlanConfig(): TaskTypeConfig {
         val selectedModelName = modelCombo.selectedItem as? String
-        val selectedModel = availableModels.find { it.modelName == selectedModelName }
+        val selectedModel = availableModels.find { it.modelId == selectedModelName }
         val subPlanConfig = config as SubPlanTask.SubPlanTaskTypeConfig
         return SubPlanTask.SubPlanTaskTypeConfig(
             name = configNameField.text.trim(),

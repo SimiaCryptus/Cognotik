@@ -191,7 +191,7 @@ open class ProxyAgent<T : Any>(
                         )
             )
         )
-        request = request.copy(model = model.modelType.modelName)
+        request = request.copy(model = model.modelType.modelId)
         request = request.copy(temperature = temperature)
         val json = JsonUtil.toJson(request)
         log.info("Request JSON: {}", json)
