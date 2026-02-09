@@ -33,7 +33,10 @@ public record DocumentationUpdater(
                 ( source, folder) -> new ArrayList<>(),
                 threads,
                 chatModel,
-                chatModel
+                chatModel,
+                false,
+                false,
+                new File(rootDir, ".doc-processor-cache/url-cache")
         ).run();
     }
 
