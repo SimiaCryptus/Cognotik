@@ -223,18 +223,7 @@ $codeResult
             log.error("Error in FileModificationTask", e) // 2. Log
 
             // 3. Transcript
-            transcript?.write("""
-
-## Error
-<details>
-<summary>Stack Trace</summary>
-
-```
-${e.stackTraceToString()}
-```
-</details>
-            """.toByteArray())
-
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             throw e
         } finally {
             transcript?.flush()

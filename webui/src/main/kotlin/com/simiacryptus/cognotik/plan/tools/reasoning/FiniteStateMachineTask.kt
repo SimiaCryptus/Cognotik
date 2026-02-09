@@ -572,8 +572,8 @@ Keep the summary concise but informative.
         } catch (e: Exception) {
             val duration = System.currentTimeMillis() - startTime
             log.error("FiniteStateMachineTask failed after ${duration}ms for concept: $conceptToModel", e)
-          transcript?.write("## Error\n\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
-            task.error(e)
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
+          task.error(e)
             resultFn("ERROR: FSM analysis failed - ${e.message}")
         } finally {
           transcript?.close()

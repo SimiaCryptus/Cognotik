@@ -1365,18 +1365,7 @@ Ensure variants maintain the core level design while adjusting challenge.
             // Triple Log Rule
             task.error(e)
             log.error("Error in GameLevelDesignTask for level: '$levelName'", e)
-            transcript?.write(
-                """
-                <details>
-                <summary>Stack Trace</summary>
-                ```
-                ${e.stackTraceToString()}
-                ```
-                </details>
-            """.trimIndent().toByteArray()
-            )
-
-
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             overviewTask.add(
               buildString {
                 appendLine()

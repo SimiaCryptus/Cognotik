@@ -340,18 +340,7 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
           val duration = System.currentTimeMillis() - startTime
           log.error("IllustrateDocumentTask failed for $documentFile after ${duration}ms", e)
           task.error(e)
-          transcript?.write(
-            """
-                    <details>
-                    <summary>Stack Trace</summary>
-                    
-                    ```
-                    ${e.stackTraceToString()}
-                    ```
-                    </details>
-                """.trimIndent().toByteArray()
-          )
-
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           val errorOutput = buildString {
             appendLine("# Error Illustrating Document")
             appendLine()

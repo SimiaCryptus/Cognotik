@@ -377,7 +377,7 @@ class DataTableCompilationTask(
         } catch (e: Exception) {
             task.error(e)
             log.error("Error in DataTableCompilationTask: ${e.message}", e)
-            transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             throw e
         } finally {
             transcript?.close()

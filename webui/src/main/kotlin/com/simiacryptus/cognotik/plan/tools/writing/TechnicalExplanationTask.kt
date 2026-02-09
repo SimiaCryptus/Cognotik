@@ -960,19 +960,7 @@ Provide the complete revised explanation.
                     }.renderMarkdown(true)
         )
         overviewTask.update()
-        transcript?.write(
-          """
-                |## Error
-                |<details>
-                |<summary>Stack Trace</summary>
-                |
-                |```
-                |${e.stackTraceToString()}
-                |```
-                |</details>
-                """.trimMargin().toByteArray(StandardCharsets.UTF_8)
-        )
-
+        transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
         val errorOutput = buildString {
           appendLine("# Error in Technical Explanation Generation")
           appendLine()

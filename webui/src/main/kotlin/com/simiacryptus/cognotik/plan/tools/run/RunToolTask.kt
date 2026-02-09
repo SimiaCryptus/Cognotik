@@ -161,7 +161,7 @@ class RunToolTask(
                         } catch (e: Exception) {
                             task.error(e)
                             log.error("Error in RunTool hrefLink", e)
-                            transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                         }
                     })
 
@@ -172,7 +172,7 @@ class RunToolTask(
             } catch (e: Exception) {
                 task.error(e)
                 log.error("Error running tool", e)
-                transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                 throw e
             } finally {
                 transcript?.close()

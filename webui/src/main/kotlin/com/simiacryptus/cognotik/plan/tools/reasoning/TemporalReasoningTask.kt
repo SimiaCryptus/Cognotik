@@ -506,19 +506,7 @@ TemporalReasoning - Analyze system evolution and predict future states.
           // Triple Log Rule
           task.error(e)
           log.error("TemporalReasoning failed for subject: $subject", e)
-          transcript?.write(
-            """
-                    |## ❌ Error
-                    |<details>
-                    |<summary>Stack Trace</summary>
-                    |
-                    |```
-                    |${e.stackTraceToString()}
-                    |```
-                    |</details>
-                """.trimMargin().toByteArray()
-          )
-
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           task.safeComplete("Analysis failed: ${e.message}", log)
             resultFn("ERROR: Temporal reasoning analysis failed - ${e.message}")
         } finally {

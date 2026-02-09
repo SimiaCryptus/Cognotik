@@ -1409,11 +1409,7 @@ class GameMechanicsDesignTask(
         // Triple Log Rule
         task.error(e)
         log.error("GameMechanicsDesignTask failed after ${duration}ms for concept: $gameConcept", e)
-        transcript?.write(
-          "\n\n## Error Occurred\n\n**Error:** ${e.message}\n\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n"
-            .toByteArray()
-        )
-
+        transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
         overviewTask.add(
           buildString {
             appendLine()

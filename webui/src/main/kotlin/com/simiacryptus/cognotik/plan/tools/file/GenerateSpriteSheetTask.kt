@@ -251,7 +251,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
           } catch (e: Exception) {
             task.error(e)
             log.error("Error in GenerateSpriteSheetTask async execution", e)
-            transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             resultFn("ERROR: ${e.message}")
           }
         }

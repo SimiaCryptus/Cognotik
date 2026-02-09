@@ -587,20 +587,7 @@ Be thorough yet concise in your final integration.
             // Triple Log Rule
             log.error("Error in DialecticalReasoningTask: ${e.message}", e)
             task.error(e)
-            transcript?.write(
-              """
-                    ## ❌ Error Occurred
-                    **Error:** ${e.message}
-                    <details>
-                    <summary>Stack Trace</summary>
-                    
-                    ```
-                    ${e.stackTraceToString()}
-                    ```
-                    </details>
-                    """.trimIndent().toByteArray()
-            )
-
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             overviewTask.add("\n--- \n## ❌ Error Occurred\n**Error:** ${e.message}".renderMarkdown(true))
             resultFn("Error during dialectical reasoning: ${e.message}")
           } finally {

@@ -220,19 +220,7 @@ ${if (!outputPath.isNullOrBlank()) "\n**Output saved to:** `$outputPath`" else "
       // Triple Log Rule
       task.error(e)
       log.error("Error in RenderErbTemplateTask", e)
-      transcript?.write(
-        """
-
-## Error
-<details>
-<summary>Stack Trace</summary>
-
-```
-${e.stackTraceToString()}
-```
-</details>
-            """.toByteArray()
-      )
+      transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
       throw e
     } finally {
       transcript?.flush()

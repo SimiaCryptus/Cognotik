@@ -250,7 +250,7 @@ OCR - Convert documents (PDF, Images) to Markdown text.
                     } catch (e: Exception) {
                         log.error("Error processing ${file.name}", e)
                         task.error(e)
-                        transcript?.write("\n## Error processing ${file.name}\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                        transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                     }
                 }
                 if (results.isEmpty()) {
@@ -291,7 +291,7 @@ OCR - Convert documents (PDF, Images) to Markdown text.
             } catch (e: Exception) {
                 log.error("OCR Task failed", e)
                 task.error(e)
-                transcript?.write("\n## Critical Task Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                 resultFn("Error: ${e.message}")
             } finally {
                 transcript?.close()

@@ -243,7 +243,7 @@ class CommandSessionTask(
                     resultBuffer.appendLine(errorResult)
                     log.error("Error in CommandSessionTask", e)
                     task.error(e)
-                  transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                  transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                     if (shouldComplete) {
                         resultFn(resultBuffer.toString())
                     }

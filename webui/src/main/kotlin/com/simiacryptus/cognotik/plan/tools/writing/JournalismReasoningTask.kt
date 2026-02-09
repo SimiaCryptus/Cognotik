@@ -1146,20 +1146,7 @@ Be concise, authoritative, and focused on journalistic value.
                 // Triple Log Rule
                 log.error("Error during journalism reasoning for story: '$storyTopic'", e)
                 task.error(e)
-
-
-                transcript?.write(
-                    """
-                    <details>
-                    <summary>Stack Trace</summary>
-                    
-                    ```
-                    ${e.stackTraceToString()}
-                    ```
-                    </details>
-                """.trimIndent().toByteArray()
-                )
-
+                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                 resultFn("Error in Journalism Investigation: ${e.message}")
             } finally {
                 transcript?.close()

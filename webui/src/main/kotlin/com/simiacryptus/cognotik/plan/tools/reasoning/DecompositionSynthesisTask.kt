@@ -673,11 +673,9 @@ class DecompositionSynthesisTask(
                     writeToTranscript(it, buildString {
                         appendLine("\n\n## ERROR")
                         appendLine("> ${e.message}")
-                        appendLine("\n<details><summary>Stack Trace</summary>\n")
                         appendLine("```")
                         appendLine(e.stackTraceToString())
                         appendLine("```")
-                        appendLine("\n</details>")
                     })
                 }
 

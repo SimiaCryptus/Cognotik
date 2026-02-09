@@ -1293,48 +1293,39 @@ Provide specific examples and recommendations for improvement.
                 resultFn(finalResult)
 
             } catch (e: Exception) {
-                log.error("Error during game narrative design", e)
-                // Triple Log Rule
-                task.error(e)
-                transcript?.write(
-                    """
-                    <details>
-                    <summary>Stack Trace</summary>
-                    ```
-                    ${e.stackTraceToString()}
-                    ```
-                    </details>
-                """.trimIndent().toByteArray()
-                )
+              log.error("Error during game narrative design", e)
+              // Triple Log Rule
+              task.error(e)
+              transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
 
-                overviewTask.add(
-                    buildString {
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("## ❌ Error Occurred")
-                        appendLine()
-                        appendLine("**Error:** ${e.message}")
-                        appendLine()
-                        appendLine("**Type:** ${e.javaClass.simpleName}")
-                    }.renderMarkdown()
-                )
-                task.update()
+              overviewTask.add(
+                buildString {
+                  appendLine()
+                  appendLine("---")
+                  appendLine()
+                  appendLine("## ❌ Error Occurred")
+                  appendLine()
+                  appendLine("**Error:** ${e.message}")
+                  appendLine()
+                  appendLine("**Type:** ${e.javaClass.simpleName}")
+                }.renderMarkdown()
+              )
+              task.update()
 
-                val errorOutput = buildString {
-                    appendLine("# Error in Game Narrative Design")
-                    appendLine()
-                    appendLine("**Game:** $gameTitle")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    if (resultBuilder.isNotEmpty()) {
-                        appendLine("## Partial Results")
-                        appendLine()
-                        appendLine(resultBuilder.toString())
-                    }
+              val errorOutput = buildString {
+                appendLine("# Error in Game Narrative Design")
+                appendLine()
+                appendLine("**Game:** $gameTitle")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                appendLine()
+                if (resultBuilder.isNotEmpty()) {
+                  appendLine("## Partial Results")
+                  appendLine()
+                  appendLine(resultBuilder.toString())
                 }
-                resultFn(errorOutput)
+              }
+              resultFn(errorOutput)
 
             } finally {
                 transcript?.close()

@@ -365,7 +365,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
     ) {
         val startTime = System.currentTimeMillis()
         log.info("Starting ResearchPaperGenerationTask for topic: '{}'", executionConfig?.research_topic)
-      val markdownTranscript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newFileOutputStream(transcriptFile())
 
         // Read input from messages parameter
         val messageContext = messages.filter { it.isNotBlank() }.joinToString("\n\n").trim()
@@ -383,7 +383,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             log.error("Configuration validation failed: {}", validationError)
             task.safeComplete("CONFIGURATION ERROR: $validationError", log)
             task.error(ValidatedObject.ValidationError(validationError, executionConfig))
-            markdownTranscript?.write(
+            transcript?.write(
                 """
                 ## Configuration Error
                 $validationError
@@ -441,7 +441,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             appendLine("### Phase 1: Research Analysis")
             appendLine("*Analyzing sources and identifying research gaps...*")
         }
-        markdownTranscript?.write(
+        transcript?.write(
             """
             # Research Paper Generation Started
             <details><summary>Initial Configuration</summary>$overviewContent</details>
@@ -489,7 +489,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                         }"
                     )
                 }
-                markdownTranscript?.write(
+                transcript?.write(
                     """
                     ## Research Sources & Context
                     <details><summary>Full Context Data</summary>$contextContent</details>
@@ -539,7 +539,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 appendLine()
                 appendLine("**Status:** ✅ Complete")
             }.trimIndent()
-            markdownTranscript?.write(
+            transcript?.write(
                 """
                 ## Phase 1: Research Analysis Complete
                 <details><summary>Analysis Results</summary>$analysisContent</details>
@@ -626,7 +626,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 appendLine()
                 appendLine("**Status:** ✅ Complete")
             }
-            markdownTranscript?.write(
+            transcript?.write(
                 """
                 ## Phase 2: Outline Generation Complete
                 <details><summary>Paper Outline</summary>$outlineContent</details>
@@ -741,7 +741,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                     }
                 sectionBuffer?.setLength(0)
                 sectionBuffer?.append(sectionContent.renderMarkdown(true))
-                markdownTranscript?.write(
+                transcript?.write(
                     """
                     ### Section ${sectionOutline.section_number}: ${sectionOutline.title}
                     <details><summary>Section Content</summary>$sectionContent</details>
@@ -821,7 +821,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             }
             bibBuffer?.setLength(0)
             bibBuffer?.append(bibliographyContent.renderMarkdown(true))
-            markdownTranscript?.write(
+            transcript?.write(
                 """
                 ## Phase 4: Bibliography Generation Complete
                 <details><summary>Bibliography Details</summary>$bibliographyContent</details>
@@ -903,7 +903,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 }
                 reviewBuffer?.setLength(0)
                 reviewBuffer?.append(reviewContent.renderMarkdown(true))
-                markdownTranscript?.write(
+                transcript?.write(
                     """
                     ## Phase 5: Peer Review Complete
                     <details><summary>Peer Review Report</summary>$reviewContent</details>
@@ -968,7 +968,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                         appendLine()
                       }.renderMarkdown(true)
                     )
-                    markdownTranscript?.write(
+                    transcript?.write(
                         """
                         ### Revision Pass ${passNum + 1}
                         <details><summary>Revision Details</summary>Revision pass ${passNum + 1} completed successfully.</details>
@@ -1028,7 +1028,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             val fileUrl = task.saveFile(filename, finalPaper.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             finalTask.add("<div class='mt-3'><a href='$fileUrl' class='btn btn-primary' target='_blank'>Download Markdown</a></div>")
 
-            markdownTranscript?.write(
+            transcript?.write(
                 """
                 ## Phase 7: Final Assembly Complete
                 <details><summary>Final Paper Content</summary>$finalPaper</details>
@@ -1062,7 +1062,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 )
               }.renderMarkdown(true)
             )
-            markdownTranscript?.write(
+            transcript?.write(
                 """
                 ## Generation Statistics
                 <details><summary>Final Stats</summary>$overviewTask</details>
@@ -1096,8 +1096,8 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 bibliography.size,
                 totalTime
             )
-            markdownTranscript?.write("\n\n---\n\n# Final Result\n\n${finalResult}".toByteArray(java.nio.charset.StandardCharsets.UTF_8))
-            markdownTranscript?.close()
+            transcript?.write("\n\n---\n\n# Final Result\n\n${finalResult}".toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            transcript?.close()
 
             if (orchestrationConfig.autoFix) {
                 task.safeComplete(
@@ -1128,16 +1128,8 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
         } catch (e: Exception) {
             log.error("Error during research paper generation for topic: {}", researchTopic, e)
             task.error(e)
-            markdownTranscript?.write(
-                """
-                ## Error Occurred
-                **Error:** ${e.message}
-                **Type:** ${e.javaClass.simpleName}
-                <details><summary>Stack Trace</summary>```${e.stackTraceToString()}```</details>
-            """.trimIndent().toByteArray(java.nio.charset.StandardCharsets.UTF_8)
-            )
-
-            overviewTask.add(
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
+          overviewTask.add(
               buildString {
                 appendLine()
                 appendLine("---")
@@ -1164,7 +1156,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                     appendLine(resultBuilder.toString())
                 }
             }
-            markdownTranscript?.close()
+            transcript?.close()
             resultFn(errorOutput)
         }
     }

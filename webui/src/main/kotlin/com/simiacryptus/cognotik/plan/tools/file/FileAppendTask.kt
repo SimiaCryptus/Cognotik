@@ -158,16 +158,7 @@ FileAppend - Append content to the end of an existing file
           // Triple Log Rule
             task.error(e)
           log.error("Error in FileAppendTask for $targetPath: ${e.message}", e)
-          transcript?.write(
-            """
-                <details>
-                <summary>Stack Trace</summary>
-                ```
-                ${e.stackTraceToString()}
-                ```
-                </details>
-            """.trimIndent().toByteArray()
-          )
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           overviewTab.add("❌ **Error:** ${e.message}".renderMarkdown())
           overviewTab.complete()
         } finally {

@@ -235,7 +235,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
         // Triple Log Rule
             task.error(e)
         log.error("Error in RunCodeTask: ${e.message}", e)
-            transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n\n".toByteArray())
+        transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
         throw e
         } finally {
             transcript?.write("\n## Task Completed\n".toByteArray())

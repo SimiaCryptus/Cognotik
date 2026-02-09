@@ -119,16 +119,7 @@ FileSearch - Search for patterns in files and provide results with context
             } catch (e: Exception) {
                 task.error(e)
                 log.error("Error in FileSearchTask", e)
-                transcript?.write(
-                    """
-                    <details>
-                    <summary>Stack Trace</summary>
-                    ```
-                    ${e.stackTraceToString()}
-                    ```
-                    </details>
-                """.trimIndent().toByteArray()
-                )
+                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             } finally {
                 transcript?.close()
                 task.complete()

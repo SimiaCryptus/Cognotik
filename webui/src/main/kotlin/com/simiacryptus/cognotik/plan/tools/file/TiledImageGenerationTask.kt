@@ -460,17 +460,7 @@ class TiledImageGenerationTask(
         // Triple Log Rule
         task.error(e)
         log.error("Error in TiledImageGenerationTask: ${e.message}")
-        transcript?.write(
-          """
-          <details>
-          <summary>Stack Trace</summary>
-
-          ```
-          ${e.stackTraceToString()}
-          ```
-          </details>
-        """.trimIndent().toByteArray()
-        )
+        transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
         resultFn("Error generating image: ${e.message}")
       } finally {
         transcript?.close()

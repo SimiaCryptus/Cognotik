@@ -833,16 +833,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
     private fun handleError(e: Exception, task: SessionTask, transcript: OutputStream?, resultFn: (String) -> Unit) {
         log.error("Error in GeneticOptimizationTask: ${e.message}", e)
         task.error(e)
-        transcript?.write(
-            """
-            ## Error
-            <details><summary>Stack Trace</summary>
-            ```
-            ${e.stackTraceToString()}
-            ```
-            </details>
-        """.trimIndent().toByteArray(StandardCharsets.UTF_8)
-        )
+        transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
         resultFn("ERROR: ${e.message}")
     }
 

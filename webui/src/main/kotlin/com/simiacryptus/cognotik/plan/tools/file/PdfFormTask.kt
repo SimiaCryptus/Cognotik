@@ -260,17 +260,7 @@ ${fieldList.lines().take(10).joinToString("\n")}${if (fieldList.lines().size > 1
         } catch (e: Exception) {
           task.error(e)
           log.error("Error in PdfFormTask", e)
-          transcript?.write(
-            """
-                    <details>
-                    <summary>Stack Trace</summary>
-                    
-                    ```
-                    ${e.stackTraceToString()}
-                    ```
-                    </details>
-                """.trimIndent().toByteArray()
-          )
+          transcript?.transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           throw e
         } finally {
           transcript?.close()

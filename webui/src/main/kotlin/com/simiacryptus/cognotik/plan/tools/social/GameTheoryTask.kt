@@ -29,6 +29,7 @@ class GameTheoryTask(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)
+
         @JvmStatic val GameTheory = TaskType(
           name = "GameTheory",
           category = "Reasoning",
@@ -439,7 +440,7 @@ GameTheory - Analyze strategic interactions using game theory
 
             val structureAnalysis = chatAgent.answer(toInput(structurePrompt))
             log.info("Structure analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${structureAnalysis.length} characters")
-          transcript?.write("## Game Structure Analysis\n<details><summary>Full Analysis</summary>\n\n$structureAnalysis\n</details>\n\n".toByteArray())
+          transcript?.write("## Game Structure Analysis\n${structureAnalysis.wrapInDetails("Full Analysis")}\n\n".toByteArray())
 
             structureLoading?.clear()
             structureTask.add(
@@ -465,7 +466,7 @@ GameTheory - Analyze strategic interactions using game theory
 
                 payoffMatrix = chatAgent.answer(toInput(payoffPrompt))
                 log.info("Payoff matrix generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${payoffMatrix.length} characters")
-              transcript?.write("## Payoff Matrix\n<details><summary>Full Matrix</summary>\n\n$payoffMatrix\n</details>\n\n".toByteArray())
+              transcript?.write("## Payoff Matrix\n${payoffMatrix.wrapInDetails("Full Matrix")}\n\n".toByteArray())
 
                 payoffLoading?.clear()
                 payoffTask.add(
@@ -492,7 +493,7 @@ GameTheory - Analyze strategic interactions using game theory
 
                 nashEquilibria = chatAgent.answer(toInput(nashPrompt))
                 log.info("Nash equilibria analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${nashEquilibria.length} characters")
-              transcript?.write("## Nash Equilibria Analysis\n<details><summary>Full Analysis</summary>\n\n$nashEquilibria\n</details>\n\n".toByteArray())
+              transcript?.write("## Nash Equilibria Analysis\n${nashEquilibria.wrapInDetails("Full Analysis")}\n\n".toByteArray())
 
                 nashLoading?.clear()
                 nashTask.add(
@@ -520,7 +521,7 @@ GameTheory - Analyze strategic interactions using game theory
 
                 dominantStrategies = chatAgent.answer(toInput(dominantPrompt))
                 log.info("Dominant strategies analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${dominantStrategies.length} characters")
-              transcript?.write("## Dominant Strategies Analysis\n<details><summary>Full Analysis</summary>\n\n$dominantStrategies\n</details>\n\n".toByteArray())
+              transcript?.write("## Dominant Strategies Analysis\n${dominantStrategies.wrapInDetails("Full Analysis")}\n\n".toByteArray())
 
                 dominantLoading?.clear()
                 dominantTask.add(
@@ -548,7 +549,7 @@ GameTheory - Analyze strategic interactions using game theory
 
                 paretoOptimal = chatAgent.answer(toInput(paretoPrompt))
                 log.info("Pareto optimality analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${paretoOptimal.length} characters")
-              transcript?.write("## Pareto Optimality Analysis\n<details><summary>Full Analysis</summary>\n\n$paretoOptimal\n</details>\n\n".toByteArray())
+              transcript?.write("## Pareto Optimality Analysis\n${paretoOptimal.wrapInDetails("Full Analysis")}\n\n".toByteArray())
 
                 paretoLoading?.clear()
                 paretoTask.add(
@@ -577,7 +578,7 @@ GameTheory - Analyze strategic interactions using game theory
 
                 repeatedGameAnalysis = chatAgent.answer(toInput(repeatedPrompt))
                 log.info("Repeated game analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${repeatedGameAnalysis.length} characters")
-              transcript?.write("## Repeated Game Analysis\n<details><summary>Full Analysis</summary>\n\n$repeatedGameAnalysis\n</details>\n\n".toByteArray())
+              transcript?.write("## Repeated Game Analysis\n${repeatedGameAnalysis.wrapInDetails("Full Analysis")}\n\n".toByteArray())
 
                 repeatedLoading?.clear()
                 repeatedTask.add(
@@ -606,7 +607,7 @@ GameTheory - Analyze strategic interactions using game theory
 
                 recommendations = chatAgent.answer(toInput(recommendPrompt))
                 log.info("Recommendations generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${recommendations.length} characters")
-              transcript?.write("## Strategic Recommendations\n<details><summary>Full Recommendations</summary>\n\n$recommendations\n</details>\n\n".toByteArray())
+              transcript?.write("## Strategic Recommendations\n${recommendations.wrapInDetails("Full Recommendations")}\n\n".toByteArray())
 
                 recommendLoading?.clear()
                 recommendTask.add(
@@ -640,7 +641,7 @@ GameTheory - Analyze strategic interactions using game theory
 
             val gameAnalysis = parsedAgent.answer(toInput(summaryPrompt)).obj
             log.info("Structured summary generated in ${System.currentTimeMillis() - stepStartTime}ms")
-          transcript?.write("## Game Theory Analysis Summary\n<details><summary>Structured Data</summary>\n\n$gameAnalysis\n</details>\n\n".toByteArray())
+          transcript?.write("## Game Theory Analysis Summary\n${gameAnalysis.toString().wrapInDetails("Structured Data")}\n\n".toByteArray())
 
             summaryLoading?.clear()
             summaryTask.add(
@@ -718,7 +719,7 @@ GameTheory - Analyze strategic interactions using game theory
           } catch (_: Exception) {
             // UI error reporting is best-effort
           }
-          transcript?.write("\n---\n**ERROR:** ${e.message}\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           resultFn("ERROR: Game theory analysis failed - ${e.message}")
         } finally {
           try {
@@ -848,3 +849,5 @@ GameTheory - Analyze strategic interactions using game theory
         .replace("{context}", context)
     }
 }
+
+

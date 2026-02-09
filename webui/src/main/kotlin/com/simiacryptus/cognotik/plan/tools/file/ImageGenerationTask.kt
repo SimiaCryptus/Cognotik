@@ -194,16 +194,7 @@ class ImageGenerationTask(
                     // Triple Log Rule
                     log.error("Error in ImageGenerationTask for $imageOutputFile", e)
                     previewTask.error(e)
-                    val errorDetails = """
-                        <details>
-                        <summary>Stack Trace</summary>
-
-                        ```
-                        ${e.stackTraceToString()}
-                        ```
-                        </details>
-                    """.trimIndent()
-                    transcript?.write("## Error\n\n${e.message}\n$errorDetails\n".toByteArray())
+                    transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                     resultFn("ERROR: ${e.message}")
                 } finally {
                     transcript?.close()

@@ -568,19 +568,9 @@ Consider both the strength of evidence and its reliability.
             transcript?.write("\n---\n\n".toByteArray())
             transcript?.write("## Error Occurred\n\n".toByteArray())
             transcript?.write("**Error:** ${e.message}\n\n".toByteArray())
-          transcript?.write(
-            """
-                <details>
-                <summary>Stack Trace</summary>
-                
-                ```
-                ${e.stackTraceToString()}
-                ```
-                </details>
-            """.trimIndent().toByteArray()
-          )
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
 
-            overviewTask.add(
+          overviewTask.add(
               """
                 ---
                 ## ❌ Error Occurred

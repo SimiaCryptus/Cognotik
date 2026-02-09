@@ -41,46 +41,6 @@ fun SessionTask.safeComplete(message: String, log: Logger) {
     }
 }
 
-/**
- * Implements the "Triple Log Rule" from Cognotik IO Best Practices.
- * Logs to UI, SLF4J, and the Task Transcript.
- */
-fun SessionTask.tripleLog(
-    e: Throwable,
-    log: Logger,
-    transcript: OutputStream? = null,
-    contextMessage: String = "An error occurred"
-) {
-    // 1. UI: Visual feedback for the user
-    this.error(e)
-
-    // 2. SLF4J: System operational layer (Single line preferred)
-    log.error("$contextMessage: ${e.message}")
-
-    // 3. Transcript: Audit trail with stack trace in <details> tag
-    if (transcript != null) {
-        try {
-            val errorEntry = """
-                ## Error: $contextMessage
-                
-                **Message:** `${e.message}`
-                
-                <details>
-                <summary>Stack Trace</summary>
-                
-                ```
-                ${e.stackTraceToString()}
-                ```
-                </details>
-            """.trimIndent()
-            transcript.write(errorEntry.toByteArray())
-        } catch (transcriptEx: Exception) {
-            log.warn("Failed to write to transcript: ${transcriptEx.message}")
-        }
-    }
-}
-
-
 fun ChatModel.toApiChatModel(): ApiChatModel {
     val apis = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis
     return ApiChatModel(

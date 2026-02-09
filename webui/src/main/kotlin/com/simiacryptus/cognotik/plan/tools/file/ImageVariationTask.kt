@@ -370,18 +370,7 @@ ImageVariation - Creates 'Find the Differences' style image sets.
       } catch (e: Throwable) {
         log.error("Error in ImageVariationTask: ${e.message}", e)
         task.error(e)
-        transcript?.write(
-          """
-          ## Error
-          <details>
-          <summary>Stack Trace</summary>
-
-          ```
-          ${e.stackTraceToString()}
-          ```
-          </details>
-        """.trimIndent().toByteArray()
-        )
+        transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
         resultFn("Error: ${e.message}")
       } finally {
         transcript?.close()

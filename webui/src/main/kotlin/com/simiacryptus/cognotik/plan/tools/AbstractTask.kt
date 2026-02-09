@@ -60,6 +60,11 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
     }
 
 
+  @Suppress("unused")
+  fun String.wrapInDetails(summary: String): String {
+    //return "<details><summary>$summary</summary>\n\n${this}\n</details>"
+    return this
+  }
     protected open fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
         val footerTask = ui.newTask(false)
         lateinit var textHandle: StringBuilder

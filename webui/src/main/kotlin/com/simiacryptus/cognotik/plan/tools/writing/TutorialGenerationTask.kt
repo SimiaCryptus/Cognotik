@@ -1210,8 +1210,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
           log.error("Error during tutorial generation: ${e.message}")
           task.error(e)
           transcript?.write("\n## Error Occurred\n\n".toByteArray())
-          transcript?.write("<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
-
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           overviewTask.add(
             buildString {
               appendLine()

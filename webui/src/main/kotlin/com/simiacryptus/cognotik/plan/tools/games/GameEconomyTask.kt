@@ -1073,7 +1073,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
                 )
                 overviewTask.update()
                 transcript?.write("\n---\n**ERROR:** ${e.message}\n".toByteArray())
-                transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                 task.error(e)
                 task.safeComplete("Design failed: ${e.message}", log)
                 resultFn("ERROR: Game economy design failed - ${e.message}")

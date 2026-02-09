@@ -120,10 +120,10 @@ class AutoFixTask(
                     subTask.add(transcript.second.renderMarkdown())
                     val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
                         ?: defaultSmart).getChildClient(subTask)
-                    val markdownTranscript = transcript.first
+                    val transcript1 = transcript.first
                     try {
-                        markdownTranscript?.write("## Self-Healing Task Execution\n\n".toByteArray())
-                        markdownTranscript?.write("## Commands\n".toByteArray())
+                        transcript1?.write("## Self-Healing Task Execution\n\n".toByteArray())
+                        transcript1?.write("## Commands\n".toByteArray())
                         CmdPatchApp(
                             root = agent.root,
                             settings = PatchApp.Settings(
@@ -163,7 +163,7 @@ class AutoFixTask(
                         ).run(
                             task = subTask, model = model
                         ).apply {
-                            markdownTranscript?.write("\n### Execution Result\n* **Exit Code:** ${this.exitCode}\n".toByteArray())
+                            transcript1?.write("\n### Execution Result\n* **Exit Code:** ${this.exitCode}\n".toByteArray())
                             when {
                                 this.exitCode == 0 -> {
                                     if (orchestrationConfig.autoFix) {
@@ -197,14 +197,14 @@ class AutoFixTask(
                         // Triple Log Rule: UI, SLF4J, and Transcript
                         subTask.error(e)
                         log.error("Critical error during AutoFixTask execution", e)
-                        markdownTranscript?.write("\n### Execution Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
+                        transcript1?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
 
                         if (orchestrationConfig.autoFix) {
                             semaphore.release()
                             subTask.complete()
                         }
                     } finally {
-                        markdownTranscript?.close()
+                        transcript1?.close()
                     }
                 }
             }

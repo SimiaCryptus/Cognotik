@@ -49,11 +49,11 @@ open class SessionTask(
         val buffered = createFile?.outputStream()?.buffered()
             ?: throw RuntimeException("Failed to create log file at path: $relativePath")
         buffered.write("API Logging Started\n".toByteArray())
-        buffered.write("<details><summary>Stack Trace</summary>\n\n```text\n".toByteArray())
+        buffered.write("## Stack Trace\n\n```text\n".toByteArray())
         Thread.currentThread().stackTrace.forEach { element ->
             buffered.write("  ${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
         }
-        buffered.write("```\n</details>\n".toByteArray())
+        buffered.write("```\n\n".toByteArray())
         verbose("""<a href='${file.removeSuffix(".md")}.html' target='_blank'>$name</a>: <input type="text" value="${createFile.absolutePath}" id="file-path-${messageID}"/>""".trimMargin())
         return buffered
     }

@@ -1177,17 +1177,7 @@ Provide the complete revised report.
                 appendLine("**Type:** ${e.javaClass.simpleName}")
               }.renderMarkdown(true)
             )
-            transcript?.write(
-                """
-                <details>
-                <summary>Stack Trace</summary>
-                
-                ```
-                ${e.stackTraceToString()}
-                ```
-                </details>
-            """.trimIndent().toByteArray()
-            )
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             task.update()
 
             val errorOutput = buildString {

@@ -198,17 +198,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
         } catch (e: Throwable) {
             task.error(e)
             log.error("Error in IterativeFileModificationTask", e)
-            transcript?.write("""
-
-## Error
-<details>
-<summary>Stack Trace</summary>
-
-```
-${e.stackTraceToString()}
-```
-</details>
-            """.toByteArray())
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             throw e
         } finally {
             transcript?.close()

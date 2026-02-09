@@ -199,7 +199,7 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
     }
 
     val tabs = TabbedDisplay(task)
-    val transcriptStream = task.newFileOutputStream(transcriptFile())
+    val transcript = task.newFileOutputStream(transcriptFile())
     val overviewTask = tabs.newTask("Overview")
 
     task.ui.pool.submit {
@@ -237,7 +237,7 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
         val statusBuffer = overviewTask.add("**Status:** 🔄 Gathering context...".renderMarkdown(true))
         updateChecklist()
 
-        transcriptStream?.write(
+        transcript?.write(
           "# Software Design Document: $projectName\n\n**System:** $systemDescription\n\n**Generated:** ${
             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
           }\n\n---\n\n".toByteArray()
@@ -248,7 +248,7 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
         log.debug("Gathering context from prior tasks and input files")
         val priorContext = getPriorCode(agent.executionState)
         val inputFileContext = getInputFileCode()
-        transcriptStream?.write(
+        transcript?.write(
           """
                     <details>
                     <summary>Input Context Data</summary>
@@ -350,7 +350,7 @@ Provide detailed, actionable use case documentation.
                         }.renderMarkdown(true)
           )
           useCaseTask.update()
-          transcriptStream?.write("## Use Cases & Actors\n\n$useCaseAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## Use Cases & Actors\n\n$useCaseAnalysis\n\n---\n\n".toByteArray())
 
           // Extract epics from use cases
           extractEpicsFromUseCases(useCaseAnalysis, collectedEpics)
@@ -425,7 +425,7 @@ Provide detailed, prioritized requirements.
                         }.renderMarkdown(true)
           )
           requirementsTask.update()
-          transcriptStream?.write("## Requirements Specification\n\n$requirementsAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## Requirements Specification\n\n$requirementsAnalysis\n\n---\n\n".toByteArray())
 
           // Extract tasks from requirements
 //               extractTasksFrom requirements(requirementsAnalysis, collectedTasks, collectedEpics)
@@ -533,7 +533,7 @@ Provide detailed architecture documentation with all diagrams.
                         }.renderMarkdown(true)
           )
           architectureTask.update()
-          transcriptStream?.write("## System Architecture\n\n$architectureAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## System Architecture\n\n$architectureAnalysis\n\n---\n\n".toByteArray())
 
           // Add architecture epic
           collectedEpics.add(
@@ -636,7 +636,7 @@ Provide complete data model documentation.
                         }.renderMarkdown(true)
           )
           dataModelTask.update()
-          transcriptStream?.write("## Data Model & ERD\n\n$dataModelAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## Data Model & ERD\n\n$dataModelAnalysis\n\n---\n\n".toByteArray())
           checklist["Data Model & ERD"] = "✅"
           updateChecklist()
         }
@@ -725,7 +725,7 @@ Provide detailed flow documentation for all critical paths.
                         }.renderMarkdown(true)
           )
           flowTask.update()
-          transcriptStream?.write("## Flow Diagrams\n\n$flowAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## Flow Diagrams\n\n$flowAnalysis\n\n---\n\n".toByteArray())
           checklist["Flow Diagrams"] = "✅"
           updateChecklist()
         }
@@ -814,7 +814,7 @@ Provide actionable test documentation.
                         }.renderMarkdown(true)
           )
           testPlanTask.update()
-          transcriptStream?.write("## Test Plan\n\n$testPlanAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## Test Plan\n\n$testPlanAnalysis\n\n---\n\n".toByteArray())
 
           // Add testing epic
           collectedEpics.add(
@@ -917,7 +917,7 @@ Provide detailed phase planning with realistic timelines.
                         }.renderMarkdown(true)
           )
           phasePlanTask.update()
-          transcriptStream?.write("## Phase Plan\n\n$phasePlanAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## Phase Plan\n\n$phasePlanAnalysis\n\n---\n\n".toByteArray())
 
           // Extract milestones from phase plan
           extractMilestonesFromPhasePlan(phasePlanAnalysis, collectedMilestones)
@@ -1051,7 +1051,7 @@ Provide comprehensive, realistic project breakdown.
                         }.renderMarkdown(true)
           )
           projectDataTask.update()
-          transcriptStream?.write(
+          transcript?.write(
             """
                     ## Project Data
                     Generated JSON file: $jsonFileName
@@ -1114,20 +1114,7 @@ Provide comprehensive, realistic project breakdown.
       } catch (e: Exception) {
         task.error(e)
         log.error("SoftwareDesignDocumentTask failed for project: $projectName", e)
-        transcriptStream?.write(
-          """
-                ## Error Occurred
-                **Error:** ${e.message}
-                **Type:** ${e.javaClass.simpleName}
-                <details>
-                <summary>Stack Trace</summary>
-                ```
-                ${e.stackTraceToString()}
-                ```
-                </details>
-            """.trimIndent().toByteArray()
-        )
-
+        transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
         overviewTask.add(
           buildString {
                       appendLine("## ❌ Error Occurred")
@@ -1142,8 +1129,8 @@ Provide comprehensive, realistic project breakdown.
 
         resultFn("Error generating software design document: ${e.message}")
       } finally {
-        transcriptStream?.flush()
-        transcriptStream?.close()
+        transcript?.flush()
+        transcript?.close()
       }
     }
   }

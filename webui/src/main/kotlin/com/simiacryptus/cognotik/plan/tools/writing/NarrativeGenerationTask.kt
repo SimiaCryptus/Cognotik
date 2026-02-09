@@ -1055,7 +1055,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
             } catch (e: Exception) {
                 log.error("Error during narrative generation", e)
                 task.error(e)
-                transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n\n")
+                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```")
                 transcript?.flush()
                 val errorOutput = buildString {
                     appendLine("# Error in Narrative Generation")

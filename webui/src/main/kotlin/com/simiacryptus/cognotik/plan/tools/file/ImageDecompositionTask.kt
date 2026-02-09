@@ -433,7 +433,7 @@ If a region looks like it contains smaller details (text, faces, objects) that a
       } catch (e: Exception) {
         log.error("Error in IterativeImageDecomposition", e)
         task.error(e)
-        transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+        transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
         resultFn("Error analyzing image: ${e.message}")
       } finally {
         transcript?.close()

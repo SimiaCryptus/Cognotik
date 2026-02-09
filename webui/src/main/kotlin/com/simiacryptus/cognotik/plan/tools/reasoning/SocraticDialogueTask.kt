@@ -231,12 +231,14 @@ Provide substantive, well-reasoned responses that advance the dialogue.
     fullDialogueBuilder.append("$initialQuestion\n\n")
 
     if (combinedContext.isNotBlank()) {
-      fullDialogueBuilder.append("## Context from Previous Tasks\n\n")
-      fullDialogueBuilder.append("$combinedContext\n\n")
-      transcriptWriter?.apply {
-        write("## Context from Previous Tasks\n\n")
-        write("$combinedContext\n\n")
-        flush()
+      if(verbose) {
+        fullDialogueBuilder.append("## Context from Previous Tasks\n\n")
+        fullDialogueBuilder.append("$combinedContext\n\n")
+        transcriptWriter?.apply {
+          write("## Context from Previous Tasks\n\n")
+          write("$combinedContext\n\n")
+          flush()
+        }
       }
       // Add context tab
       val contextTask = tabs.newTask("Context")
