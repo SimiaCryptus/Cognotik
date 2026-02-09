@@ -34,8 +34,9 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
     open val typeConfig: U?
         get() = taskType.let { task_type -> orchestrationConfig.taskSettings.values.firstOrNull { it.task_type == task_type } as? U }
+    val verbose : Boolean get() = typeConfig?.verbose == true
 
-    open val defaultSmart: ChatInterface
+  open val defaultSmart: ChatInterface
         get() = typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.defaultSmart
 
     open val defaultFast: ChatInterface
@@ -129,23 +130,16 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         return markdownTranscript
     }
 
-    fun transcriptFile(name: String): String =
-        "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    fun transcriptFile(name: String): String = "transcript/${name}_${now()}.md"
 
-    fun transcriptFile(): String = mainOuputFile(this@AbstractTask.taskType)
+    fun transcriptFile(): String = getOutputFile(".md") ?: transcriptFile(taskType)
 
-    open fun mainOuputFile(name: String = this@AbstractTask.taskType) = executionConfig?.files?.let {
-         when {
-            it.size == 1 && it.first().endsWith(".md") ->
-                when(executionConfig) {
-                    is RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig -> null
-                    is AbstractFileTask.FileTaskExecutionConfig -> null
-                    else -> it[0]
-                }
-            it.isNotEmpty() -> null
-            else -> null
-        }
-    } ?: "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    fun getOutputFile(extension: String): String? = executionConfig?.files?.let { when {
+            executionConfig is RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig -> null
+            executionConfig is AbstractFileTask.FileTaskExecutionConfig -> null
+            it.filter { it.endsWith(extension) }.size == 1 -> it.first { it.endsWith(extension) }
+      else -> null
+        } }
 
 
     open fun initializeTranscript(task: SessionTask, name: String = this@AbstractTask.taskType): Pair<String, FileOutputStream?> {
@@ -170,5 +164,6 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
     companion object {
         val log = LoggerFactory.getLogger(AbstractTask::class.java)
+        private fun now(): String? = SimpleDateFormat("yyyyMMddHHmmss").format(Date())
     }
 }

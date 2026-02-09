@@ -1,5 +1,8 @@
 ---
 specifies: ../webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/**/*.kt
+related:
+  - agent_types.md
+  - user_interface.md
 ---
 
 # Cognotik Task Type Implementation Standards & Review Protocol
@@ -36,6 +39,13 @@ architecturally sound, planner-compatible, and user-safe.
 * **Mutability & Scripting:**
     * **Mutable Fields:** All fields in both `TaskExecutionConfig` and `TaskTypeConfig` subclasses must be mutable (`var`) and provide sensible default values.
     * **Reasoning:** This is strictly required for interoperability with scripting environments (e.g., Groovy), where configurations are often instantiated and then modified dynamically via property setters.
+* **No-Argument Constructor Requirement:**
+  * All configuration data classes **must** have a no-argument constructor. This means every field must have a default
+    value.
+  * **Reasoning:** Jackson deserialization (used by `ParsedAgent` and the planning pipeline) requires a no-arg
+    constructor to instantiate objects before populating fields. Without defaults, deserialization will fail at runtime.
+  * *Bad:* `class MyConfig(val target_file: String) : TaskExecutionConfig()`
+  * *Good:* `class MyConfig(var target_file: String? = null) : TaskExecutionConfig()`
 *   **Prompt Configuration:**
     *   **Hardcoding Forbidden:** Do not hardcode prompt templates or system instructions inside the class.
     *   **Config Fields:** Define prompt strings, templates, and formatters within the `TaskTypeConfig`. This allows users to tune the "personality" or specific instructions of a tool without recompiling.
@@ -57,6 +67,143 @@ The Planner (LLM) relies entirely on text descriptions to understand how to use 
 * **Purpose:** The `TaskType` definition in `TaskType.kt` must provide a `description` string.
 * **Content:** This description must concisely explain the task's capability to the Planner. It should highlight
   expected inputs and the nature of the output.
+
+## 3.3 Structured Output with `ParsedAgent` and Typed Data Classes
+
+Many tasks use `ParsedAgent<T>` to extract structured data from LLM responses. When defining the target data class `T`,
+strict adherence to the following rules is required to ensure reliable parsing.
+
+### Data Class Design Rules
+
+1. **Default Values on All Fields (No-Arg Constructor):**
+   Every field must have a default value. `ParsedAgent` relies on Jackson deserialization, which instantiates the object
+   via a no-arg constructor and then sets properties. A missing default will cause a runtime
+   `MissingKotlinParameterException`.
+   ```kotlin
+   // ✗ BAD — No no-arg constructor; ParsedAgent will fail to deserialize
+   data class AnalysisResult(
+       val summary: String,
+       val issues: List<String>,
+       val severity: Int
+   )
+   // ✓ GOOD — All fields have defaults; safe for ParsedAgent
+   data class AnalysisResult(
+       var summary: String = "",
+       var issues: List<String> = emptyList(),
+       var severity: Int = 0
+   )
+   ```
+2. **Use `var`, Not `val`:**
+   Fields should be mutable (`var`). This is required for:
+  * Jackson property-based deserialization.
+  * `ValidatedObject` canonicalization (e.g., trimming strings, clamping ranges).
+  * Scripting environment interoperability (Groovy, etc.).
+3. **`@Description` on Every Field:**
+   The `TypeDescriber` reads `@Description` annotations to generate the schema that tells the LLM what each field means.
+   Without descriptions, the LLM must guess from field names alone, which is unreliable for domain-specific semantics.
+   ```kotlin
+   // ✗ BAD — LLM has no guidance on what these fields mean
+   data class RefactorPlan(
+       var files: List<String> = emptyList(),
+       var strategy: String = ""
+   )
+   // ✓ GOOD — LLM understands the purpose and constraints of each field
+   data class RefactorPlan(
+       @Description("List of relative file paths to refactor. Must exist in the working directory.")
+       var files: List<String> = emptyList(),
+       @Description("The refactoring strategy to apply. One of: 'extract_method', 'inline', 'rename'.")
+       var strategy: String = ""
+   )
+   ```
+4. **JSON-Style Field Naming:**
+   Use `snake_case` for field names rather than `camelCase`. LLMs produce more reliable JSON when field names follow
+   JSON conventions.
+   ```kotlin
+   // ✗ Avoid: camelCase field names
+   var targetFile: String = ""
+   // ✓ Prefer: snake_case field names
+   var target_file: String = ""
+   ```
+5. **Nullable Types for Optional Fields:**
+   Use nullable types (`String?`) with a `null` default for fields that the LLM may legitimately omit. This prevents the
+   parser from failing when the LLM doesn't include an optional field.
+   ```kotlin
+   data class SearchConfig(
+       @Description("The search query string")
+       var query: String = "",
+       @Description("Optional regex filter to apply to results. Null means no filtering.")
+       var regex_filter: String? = null
+   )
+   ```
+6. **Implement `ValidatedObject` for Robustness:**
+   LLMs are probabilistic and will occasionally produce out-of-range values, wrong types, or malformed strings. Use
+   `ValidatedObject` to canonicalize and recover rather than reject.
+   ```kotlin
+   data class PaginationConfig(
+       @Description("Number of results per page. Must be between 1 and 100.")
+       var page_size: Int = 10
+   ) : ValidatedObject {
+       override fun validate(): String? {
+           // Canonicalize: clamp to valid range instead of rejecting
+           page_size = page_size.coerceIn(1, 100)
+           return null // null means valid
+       }
+   }
+   ```
+7. **Nested Types Follow the Same Rules:**
+   If your data class contains nested objects, those nested types must also have no-arg constructors, `@Description`
+   annotations, and `var` fields.
+   ```kotlin
+   data class DeploymentPlan(
+       @Description("The target environment configuration")
+       var environment: EnvironmentConfig = EnvironmentConfig(),
+       @Description("List of services to deploy")
+       var services: List<ServiceConfig> = emptyList()
+   )
+   data class EnvironmentConfig(
+       @Description("Environment name (e.g., 'staging', 'production')")
+       var name: String = "staging",
+       @Description("AWS region for deployment")
+       var region: String = "us-east-1"
+   )
+   data class ServiceConfig(
+       @Description("The service identifier")
+       var service_id: String = "",
+       @Description("Docker image tag to deploy")
+       var image_tag: String = "latest"
+   )
+   ```
+8. **Avoid `Any` Unless Truly Dynamic:**
+   While `Any` types are supported (deserialized as `List`/`Map` by Jackson), prefer explicit types whenever possible.
+   Explicit types produce better schemas and more reliable LLM output.
+
+### Using `ParsedAgent` in Task Implementations
+
+When a task needs structured LLM output (e.g., generating a plan, extracting entities, producing a typed report), use
+`ParsedAgent<T>` rather than manually parsing raw text.
+
+```kotlin
+// Inside a task's run() method:
+val analysisAgent = ParsedAgent(
+  clazz = AnalysisResult::class.java,
+  prompt = "Analyze the following code and produce a structured report.",
+  model = orchestrationConfig.model,
+  parsingChatter = orchestrationConfig.parsingModel, // Optional: cheaper model for JSON formatting
+  describer = YamlDescriber() // Default; generates token-efficient schema
+)
+val response: ParsedResponse<AnalysisResult> = analysisAgent.answer(
+  listOf("Analyze this code:\n```\n$codeContent\n```")
+)
+val result: AnalysisResult = response.obj
+task.add("Found ${result.issues.size} issues with severity ${result.severity}".renderMarkdown())
+```
+
+**Key considerations when using `ParsedAgent` in tasks:**
+
+* **`exampleInstance`:** Provide an example instance to improve schema adherence for complex types.
+* **`parsingChatter`:** Use a faster/cheaper model for the JSON extraction step to reduce cost.
+* **`deserializerRetries`:** Set to 2-3 for production tasks to handle occasional malformed JSON.
+* **Error Handling:** Wrap `ParsedAgent` calls in try-catch and apply the Triple Log Rule (UI, SLF4J, Transcript).
 
 ## 4. Implementation Standards (`AbstractTask`)
 
@@ -135,6 +282,10 @@ When reviewing a specific Task file (e.g., `MyNewTask.kt`), apply the following 
 | **R6**   | **Docs**     | Is there a `tooltipHtml` or `description` provided in the `TaskType` definition?   | **Fail** if null or empty.                                                                        |
 | **R7**   | **Debug**    | Is the transcript used with `<details>` for verbose data?                          | **Fail** if raw dumps clutter the main view or if transcript is missing.                          |
 | **R8**   | **Async**    | Are heavy ops offloaded to `task.ui.pool`?                                         | **Fail** if `Thread.sleep` or blocking I/O occurs on the main thread.                             |
+| **R9**   | **Data**     | Do all `ParsedAgent` target classes have no-arg constructors (all fields defaulted)? | **Fail** if any field lacks a default value.                                                      |
+| **R10**  | **Data**     | Are all fields in data classes annotated with `@Description`?                      | **Fail** if any public field used in LLM schema generation lacks `@Description`.                  |
+| **R11**  | **Data**     | Are data class fields `var` (not `val`)?                                           | **Fail** if `val` is used on fields that need deserialization or canonicalization.                 |
+| **R12**  | **Data**     | Do data class field names use `snake_case`?                                        | **Warn** if `camelCase` is used; **Fail** if names are ambiguous or misleading.                   |
 
 ## 6. Example: Compliant Task Structure
 
@@ -386,11 +537,11 @@ Create a class extending `TaskExecutionConfig`. Use `@Description` heavily.
 
 ```kotlin
 class MyNewTaskConfig(
-    @Description("The primary file to analyze")
-    val target_file: String? = null,
+  @Description("The primary file to analyze. Must be a relative path within the working directory.")
+  var target_file: String? = null,
 
-    @Description("How aggressive the analysis should be (low/medium/high)")
-    val intensity: String = "medium"
+  @Description("How aggressive the analysis should be. One of: 'low', 'medium', 'high'.")
+  var intensity: String = "medium"
 ) : TaskExecutionConfig(task_type = "MyNewTask")
 ```
 
@@ -403,13 +554,11 @@ class MyNewTask(
     task: MyNewTaskConfig?
 ) : AbstractTask<MyNewTaskConfig, TaskTypeConfig>(config, task) {
 
-    override fun promptSegment(): String {
-        return """
-        MyNewTask - Analyzes a specific file with configurable intensity.
-          ** Specify the target_file path
-          ** Set intensity (default: medium)
-          ** Use this when the user asks for deep code inspection.
-        """.trimIndent()
+    override fun promptSegment(): String = buildString {
+        appendLine("MyNewTask - Analyzes a specific file with configurable intensity.")
+        appendLine("  ** Specify the target_file path")
+        appendLine("  ** Set intensity (default: medium)")
+        appendLine("  ** Use this when the user asks for deep code inspection.")
     }
 
     override fun run(...) {
@@ -478,10 +627,52 @@ Tasks can be recursive. A `SubPlanningTask` is a specific `TaskType` that spins 
 
 ## 6. Maintenance Best Practices
 
-1.  **Keep Prompts Concise:** The `promptSegment` consumes context tokens. Be brief. Do not explain *how* the code works, only *what* it does and *what* it needs.
+*   **Keep Prompts Concise:** The `promptSegment` consumes context tokens. Be brief. Do not explain *how* the code works, only *what* it does and *what* it needs.
 2.  **Validate Aggressively:** LLMs are probabilistic. They *will* occasionally send `null` for a non-nullable field or "five" instead of `5`. Use the `ValidatedObject` interface to catch these early and return clear error messages so the LLM can self-correct.
 3.  **IO Discipline:** Follow the "Triple Log Rule":
-  *   **UI:** Visual updates for the user.
-  *   **Transcript:** Detailed data dumps for audit.
-  *   **ResultFn:** Summarized, markdown-formatted text for the LLM's next thought process.
-4.  **Deprecation:** If changing a `TaskExecutionConfig` field, remember that old plans or saved sessions might fail to deserialize. Handle backward compatibility or version your tasks if necessary.
+  * **UI:** Visual updates for the user.
+  * **Transcript:** Detailed data dumps for audit.
+  * **ResultFn:** Summarized, markdown-formatted text for the LLM's next thought process.
+4.  **Multi-Line String Literals:**
+    * **`trimMargin` / `trimIndent` Forbidden:** Do not use `trimMargin()` or `trimIndent()` on multi-line string literals (triple-quoted strings). When these strings are included in larger prompt compositions or multiline template inclusions, the margin/indent stripping interacts unpredictably with the surrounding indentation context, producing malformed output.
+    * **Use `buildString` Instead:** Construct multi-line strings using `buildString { ... }` with explicit `appendLine()` calls. This makes the output deterministic regardless of how the code is indented or where the string is included.
+    * **Use `String.indent(spaceTxt)` for Indentation:** When a block of text needs to be indented (e.g., for embedding inside a larger template), use the `String.indent(spaceTxt)` extension function rather than relying on source-code indentation tricks.
+    * **Examples:**
+    ```kotlin
+    // ✗ BAD — trimIndent will break when this string is composed into a larger prompt
+    override fun promptSegment(): String = """
+        MyTask - Does something useful.
+          ** Specify the target_file path
+          ** Set intensity (default: medium)
+    """.trimIndent()
+
+    // ✗ BAD — trimMargin has the same fragility problem
+    override fun promptSegment(): String = """
+        |MyTask - Does something useful.
+        |  ** Specify the target_file path
+        |  ** Set intensity (default: medium)
+    """.trimMargin()
+
+    // ✓ GOOD — deterministic output, safe for composition
+    override fun promptSegment(): String = buildString {
+        appendLine("MyTask - Does something useful.")
+        appendLine("  ** Specify the target_file path")
+        appendLine("  ** Set intensity (default: medium)")
+    }
+
+    // ✓ GOOD — using indent() to nest content inside a template
+    val details = buildString {
+        appendLine("- Item A")
+        appendLine("- Item B")
+    }
+    val wrapped = buildString {
+        appendLine("Available options:")
+        append(details.indent("    "))
+    }
+    ```
+5.  **Deprecation:** If changing a `TaskExecutionConfig` field, remember that old plans or saved sessions might fail to deserialize. Handle backward compatibility or version your tasks if necessary.
+6. **Data Class Hygiene:** When modifying data classes used with `ParsedAgent`:
+  * Never remove a default value from a field.
+  * Never change a `var` to a `val`.
+  * When adding new fields, always provide a default value to maintain backward compatibility.
+  * When renaming fields, consider adding a `@JsonAlias` for the old name to support deserialization of existing plans.

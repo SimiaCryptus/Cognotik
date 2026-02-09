@@ -45,33 +45,39 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
   }
 
   data class ComicScript(
-    val title: String = "",
-    val premise: String = "",
-    val characters: List<CharacterProfile> = emptyList(),
-    val pages: List<PageScript> = emptyList()
+    @Description("The title of the comic book") val title: String = "",
+    @Description("The premise or synopsis of the comic book story") val premise: String = "",
+    @Description("List of character profiles appearing in the comic") val characters: List<CharacterProfile> = emptyList(),
+    @Description("List of pages comprising the comic book") val pages: List<PageScript> = emptyList()
   )
 
   data class CharacterProfile(
-    val name: String = "", val description: String = "", val visual_traits: String = ""
+    @Description("The name of the character") val name: String = "",
+    @Description("A textual description of the character's personality and role") val description: String = "",
+    @Description("Visual traits for the artist to reference when drawing the character") val visual_traits: String = ""
   )
 
   data class PageScript(
-    val page_number: Int = 1, val rows: List<RowScript> = emptyList()
+    @Description("The page number within the comic book") val page_number: Int = 1,
+    @Description("List of rows (strips) on this page") val rows: List<RowScript> = emptyList()
   )
 
   data class RowScript(
-    val row_number: Int = 1, val frames: List<FrameScript> = emptyList(), val visual_description: String = ""
+    @Description("The row number within the page") val row_number: Int = 1,
+    @Description("List of frames (panels) in this row") val frames: List<FrameScript> = emptyList(),
+    @Description("A visual description summarizing the row for an artist to draw as a strip") val visual_description: String = ""
   )
 
   data class FrameScript(
-    val frame_number: Int = 1,
-    val description: String = "",
-    val dialog: List<DialogLine> = emptyList(),
-    val caption: String? = null
+    @Description("The frame (panel) number within the row") val frame_number: Int = 1,
+    @Description("Visual description of what is happening in this frame") val description: String = "",
+    @Description("List of dialog lines spoken by characters in this frame") val dialog: List<DialogLine> = emptyList(),
+    @Description("Optional narrative caption text for this frame") val caption: String? = null
   )
 
   data class DialogLine(
-    val character: String = "", val text: String = ""
+    @Description("The name of the character speaking") val character: String = "",
+    @Description("The dialog text spoken by the character") val text: String = ""
   )
 
   override fun promptSegment(): String {
@@ -163,7 +169,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
 
         val scriptTask = tabs.newTask("Script")
         scriptTask.add(scriptContent.renderMarkdown(true))
-        transcript?.write("## Generated Script\n<details><summary>Expand Script Content</summary>\n\n$scriptContent\n\n</details>\n".toByteArray())
+        transcript?.write("## Generated Script\n\n$scriptContent\n\n".toByteArray())
         task.update()
 
         statusBuffer?.setLength(0)

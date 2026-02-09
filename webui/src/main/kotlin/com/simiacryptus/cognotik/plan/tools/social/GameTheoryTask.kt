@@ -5,17 +5,14 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
-import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.AbstractTask
-import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
-import com.simiacryptus.cognotik.plan.tools.TaskType
-import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.tools.*
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.File
+import java.io.OutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -24,7 +21,7 @@ import java.time.format.DateTimeFormatter
 class GameTheoryTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: GameTheoryTaskExecutionConfigData?
-) : AbstractTask<GameTheoryTask.GameTheoryTaskExecutionConfigData, TaskTypeConfig>(
+) : AbstractTask<GameTheoryTask.GameTheoryTaskExecutionConfigData, GameTheoryTask.GameTheoryTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
@@ -37,7 +34,7 @@ class GameTheoryTask(
           category = "Reasoning",
           taskClass = GameTheoryTask::class.java,
           executionConfigClass = GameTheoryTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
+          taskSettingsClass = GameTheoryTypeConfig::class.java,
           description = "Analyze strategic interactions using game theory",
           tooltipHtml = """
                         Performs comprehensive game theory analysis of strategic situations.
@@ -81,22 +78,154 @@ class GameTheoryTask(
                 "Error reading file: ${e2.message}"
             }
         }
-
-
     }
 
-    data class GameAnalysis(
-        val game_type: String? = null,
-        val players: List<String>? = null,
-        val strategies: Map<String, List<String>>? = null,
-        val payoff_matrix: String? = null,
-        val nash_equilibria: List<String>? = null,
-        val dominant_strategies: Map<String, String>? = null,
-        val pareto_optimal_outcomes: List<String>? = null,
-        val recommendations: Map<String, String>? = null
-    )
+  class GameTheoryTypeConfig(
+    var analysis_temperature: Double = 0.3,
+    var summary_temperature: Double = 0.2,
+    var structure_prompt_template: String = """
+You are an expert in game theory and strategic analysis. Your task is to analyze a strategic interaction using game theory principles.
+## Game Scenario:
+{game_scenario}
+## Players:
+{players}
+{strategies_section}
+## Game Type:
+{game_type}
+{context}
+## Analysis Instructions:
+1. **Identify the Game Structure**:
+   - What type of game is this? (cooperative, non-cooperative, zero-sum, constant-sum, sequential, simultaneous)
+   - Is it a one-shot game or repeated game?
+   - Is there perfect or imperfect information?
+   - Are there any asymmetries between players?
+2. **Define Strategy Spaces**:
+   - What are the available strategies for each player?
+   - Are strategies discrete or continuous?
+   - Are there any constraints on strategy choices?
+3. **Characterize Payoffs**:
+   - What are the objectives of each player?
+   - How do outcomes depend on strategy combinations?
+   - Are payoffs transferable or non-transferable?
+4. **Identify Key Features**:
+   - Are there opportunities for commitment or signaling?
+   - Can players communicate or coordinate?
+   - Are there information asymmetries?
+   - What is the timing of moves?
+Provide a comprehensive analysis of the game structure.
+Generate the game structure analysis now:
+        """.trimIndent(),
+    var payoff_matrix_prompt: String = """
+Based on the game structure analysis above, construct a detailed payoff matrix.
+For each combination of strategies, provide:
+- The outcome for each player
+- Numerical payoffs if possible (or qualitative rankings)
+- Brief explanation of why these payoffs result
+Format the matrix clearly using markdown tables or a structured format.
+If the game has more than 2 players or complex strategy spaces, provide representative examples.
+Generate the payoff matrix now:
+        """.trimIndent(),
+    var nash_equilibria_prompt: String = """
+Based on the game structure and payoff matrix above, identify all Nash equilibria.
+For each Nash equilibrium:
+1. Describe the strategy profile (what each player does)
+2. Explain why it's a Nash equilibrium (no player can improve by deviating unilaterally)
+3. Classify it as pure strategy or mixed strategy equilibrium
+4. Assess its stability and likelihood
+If there are multiple equilibria, discuss:
+- Which is most likely to occur
+- Coordination problems between equilibria
+- Pareto dominance relationships
+Generate the Nash equilibrium analysis now:
+        """.trimIndent(),
+    var dominant_strategies_prompt: String = """
+Based on the game analysis above, identify any dominant or dominated strategies.
+For each player, determine:
+1. **Strictly Dominant Strategies**: Strategies that are always better regardless of what others do
+2. **Weakly Dominant Strategies**: Strategies that are at least as good, and sometimes better
+3. **Dominated Strategies**: Strategies that are always worse than some alternative
+4. **Iteratively Eliminated Strategies**: Strategies that can be eliminated through iterated dominance
+Explain the strategic implications of these findings.
+Generate the dominant strategy analysis now:
+        """.trimIndent(),
+    var pareto_optimal_prompt: String = """
+Based on the game analysis above, identify Pareto optimal outcomes.
+For each outcome, determine:
+1. Whether it is Pareto optimal (no player can be made better off without making another worse off)
+2. Compare Pareto optimal outcomes to Nash equilibria
+3. Identify any Pareto improvements over equilibrium outcomes
+4. Discuss efficiency vs. equilibrium trade-offs
+If there are opportunities for cooperation or coordination to reach Pareto improvements, explain them.
+Generate the Pareto optimality analysis now:
+        """.trimIndent(),
+    var repeated_game_prompt_template: String = """
+Analyze this game as a repeated game with {iterations} iterations.
+Consider:
+1. **Folk Theorem**: What outcomes can be sustained as equilibria in the repeated game?
+2. **Trigger Strategies**: How can players use punishment strategies to enforce cooperation?
+3. **Reputation Effects**: How does reputation building affect strategic choices?
+4. **Discount Factors**: How does the value of future payoffs affect current decisions?
+5. **Finite vs. Infinite Horizon**: Implications of the game ending after {iterations} rounds
+Provide specific strategy recommendations for the repeated game context.
+Generate the repeated game analysis now:
+        """.trimIndent(),
+    var recommendations_prompt_template: String = """
+Based on the complete game theory analysis above, provide strategic recommendations for each player.
+For each player ({players}), recommend:
+1. **Optimal Strategy**: What strategy should they play and why?
+2. **Contingent Strategies**: How should they respond to different opponent actions?
+3. **Risk Assessment**: What are the risks of their recommended strategy?
+4. **Coordination Opportunities**: Are there opportunities for beneficial coordination?
+5. **Information Considerations**: How should they use or reveal information?
+Also provide:
+- **Overall Strategic Insights**: Key takeaways from the analysis
+- **Potential Pitfalls**: Common mistakes to avoid
+- **Implementation Guidance**: How to execute the recommended strategies
+Generate the strategic recommendations now:
+        """.trimIndent(),
+    var summary_prompt: String = """
+Based on all the analysis above, provide a structured summary of the game theory analysis.
+Extract and organize:
+- Game type and key characteristics
+- Players and their strategies
+- Payoff structure (brief summary)
+- Nash equilibria found
+- Dominant strategies identified
+- Pareto optimal outcomes
+- Key recommendations for each player
+Provide this in a clear, structured format.
+        """.trimIndent()
+  ) : TaskTypeConfig()
 
-    protected val codeFiles = mutableMapOf<Path, String>()
+
+    data class GameAnalysis(
+      @Description("The type of game identified (e.g., cooperative, non-cooperative, zero-sum, sequential)")
+      var game_type: String? = null,
+      @Description("List of players/agents identified in the game")
+      var players: List<String>? = null,
+      @Description("Map of player names to their available strategies")
+      var strategies: Map<String, List<String>>? = null,
+      @Description("Summary of the payoff matrix or payoff structure")
+      var payoff_matrix: String? = null,
+      @Description("List of Nash equilibria identified, described as strategy profiles")
+      var nash_equilibria: List<String>? = null,
+      @Description("Map of player names to their dominant strategy, if any")
+      var dominant_strategies: Map<String, String>? = null,
+      @Description("List of Pareto optimal outcomes identified")
+      var pareto_optimal_outcomes: List<String>? = null,
+      @Description("Map of player names to their strategic recommendation")
+      var recommendations: Map<String, String>? = null
+    ) : ValidatedObject {
+      override fun validate(): String? {
+        game_type = game_type?.trim()?.ifBlank { null }
+        players = players?.filter { it.isNotBlank() }?.map { it.trim() }
+        nash_equilibria = nash_equilibria?.filter { it.isNotBlank() }?.map { it.trim() }
+        pareto_optimal_outcomes = pareto_optimal_outcomes?.filter { it.isNotBlank() }?.map { it.trim() }
+        return null
+      }
+    }
+
+  private val codeFiles = mutableMapOf<Path, String>()
 
     class GameTheoryTaskExecutionConfigData(
         @Description("The strategic situation or game to analyze")
@@ -135,27 +264,16 @@ class GameTheoryTask(
         state = state
     ), ValidatedObject {
         override fun validate(): String? {
-            if (game_scenario.isNullOrBlank()) {
-                return "game_scenario must not be null or blank"
-            }
-            if (players.isNullOrEmpty()) {
-                return "players list must not be null or empty"
-            }
-            if (players?.any { it.isBlank() } == true) {
-                return "players list must not contain blank entries"
-            }
-            if (game_type.isNullOrBlank()) {
-                return "game_type must not be null or blank"
-            }
-            if (game_type?.isBlank() != false) {
-                return "game_type must not be blank"
-            }
-            if (iterations < 1) {
-                return "iterations must be at least 1"
-            }
+          game_scenario = game_scenario?.trim()
+          if (game_scenario.isNullOrBlank()) return "game_scenario must not be null or blank"
+          players = players?.map { it.trim() }?.filter { it.isNotBlank() }
+          if (players.isNullOrEmpty()) return "players list must not be null or empty"
+          game_type = game_type?.trim()?.ifBlank { null } ?: "non-cooperative"
+          iterations = iterations.coerceIn(1, 1000)
             if (repeated_game_analysis && iterations < 2) {
-                return "repeated_game_analysis requires at least 2 iterations"
+              iterations = 2
             }
+          additional_context = additional_context?.trim()?.ifBlank { null }
             return ValidatedObject.validateFields(this)
         }
     }
@@ -187,7 +305,6 @@ GameTheory - Analyze strategic interactions using game theory
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-
       val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
       val gameScenario = executionConfig?.game_scenario
       val players = executionConfig?.players
@@ -210,15 +327,16 @@ GameTheory - Analyze strategic interactions using game theory
             return
         }
 
-        val api = defaultSmart ?: return
+      val api = defaultSmart
+      val effectiveTypeConfig = typeConfig ?: GameTheoryTypeConfig()
 
       task.ui.pool.submit {
-        val transcript = task.newFileOutputStream(transcriptFile())
+        var transcript: OutputStream? = null
+        try {
+          transcript = task.newFileOutputStream(transcriptFile())
         val tabs = TabbedDisplay(task)
         val overviewTask = tabs.newTask("Overview")
-        task.ui
 
-        try {
           transcript?.write("# Game Theory Analysis\n\n".toByteArray())
           transcript?.write(
             "**Started:** ${
@@ -226,7 +344,7 @@ GameTheory - Analyze strategic interactions using game theory
             }\n\n".toByteArray()
           )
 
-          var overviewTaskStatus = overviewTask.add(
+          val overviewTaskStatus = overviewTask.add(
                     """
             |## Game Theory Analysis
             |
@@ -269,7 +387,6 @@ GameTheory - Analyze strategic interactions using game theory
             |
             |$priorContext
             """.trimMargin().renderMarkdown()
-
               )
                 transcript?.write(
                     """
@@ -279,7 +396,7 @@ GameTheory - Analyze strategic interactions using game theory
           |
           |""".trimMargin().toByteArray()
                 )
-                contextTask.update()
+              contextTask.complete()
             }
 
             if (executionConfig.additional_context?.isNotBlank() == true) {
@@ -290,7 +407,7 @@ GameTheory - Analyze strategic interactions using game theory
 
             // Update overview
             overviewTaskStatus?.clear()
-            overviewTaskStatus = overviewTask.add(
+          overviewTask.add(
               """
             |## Game Theory Analysis
             |
@@ -311,20 +428,18 @@ GameTheory - Analyze strategic interactions using game theory
             val structureTask = tabs.newTask("Game Structure")
           val structureLoading =
             structureTask.add("## Game Structure\n\n🔄 Analyzing game structure and strategies...".renderMarkdown())
-            structureTask.update()
 
             val structurePrompt = buildStructurePrompt(gameScenario, players, contextBuilder.toString())
 
             val chatAgent = ChatAgent(
                 prompt = structurePrompt,
                 model = api,
-                temperature = 0.3
+              temperature = effectiveTypeConfig.analysis_temperature
             )
 
             val structureAnalysis = chatAgent.answer(toInput(structurePrompt))
             log.info("Structure analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${structureAnalysis.length} characters")
           transcript?.write("## Game Structure Analysis\n<details><summary>Full Analysis</summary>\n\n$structureAnalysis\n</details>\n\n".toByteArray())
-
 
             structureLoading?.clear()
             structureTask.add(
@@ -337,7 +452,6 @@ GameTheory - Analyze strategic interactions using game theory
             """.trimMargin().renderMarkdown()
             )
           structureTask.complete()
-            structureTask.update()
 
             // Step 2: Build payoff matrix if requested
             var payoffMatrix = ""
@@ -346,26 +460,12 @@ GameTheory - Analyze strategic interactions using game theory
                 log.debug("Building payoff matrix")
                 val payoffTask = tabs.newTask("Payoff Matrix")
               val payoffLoading = payoffTask.add("## Payoff Matrix\n\n🔄 Constructing payoff matrix...".renderMarkdown())
-                payoffTask.update()
 
-                val payoffPrompt = """
-Based on the game structure analysis above, construct a detailed payoff matrix.
-
-For each combination of strategies, provide:
-- The outcome for each player
-- Numerical payoffs if possible (or qualitative rankings)
-- Brief explanation of why these payoffs result
-
-Format the matrix clearly using markdown tables or a structured format.
-If the game has more than 2 players or complex strategy spaces, provide representative examples.
-
-Generate the payoff matrix now:
-        """.trimIndent()
+              val payoffPrompt = effectiveTypeConfig.payoff_matrix_prompt
 
                 payoffMatrix = chatAgent.answer(toInput(payoffPrompt))
                 log.info("Payoff matrix generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${payoffMatrix.length} characters")
               transcript?.write("## Payoff Matrix\n<details><summary>Full Matrix</summary>\n\n$payoffMatrix\n</details>\n\n".toByteArray())
-
 
                 payoffLoading?.clear()
                 payoffTask.add(
@@ -378,7 +478,6 @@ Generate the payoff matrix now:
             """.trimMargin().renderMarkdown()
                 )
               payoffTask.complete()
-                payoffTask.update()
             }
 
             // Step 3: Find Nash equilibria if requested
@@ -388,29 +487,12 @@ Generate the payoff matrix now:
                 log.debug("Finding Nash equilibria")
                 val nashTask = tabs.newTask("Nash Equilibria")
               val nashLoading = nashTask.add("## Nash Equilibria\n\n🔄 Identifying Nash equilibria...".renderMarkdown())
-                nashTask.update()
 
-                val nashPrompt = """
-Based on the game structure and payoff matrix above, identify all Nash equilibria.
-
-For each Nash equilibrium:
-1. Describe the strategy profile (what each player does)
-2. Explain why it's a Nash equilibrium (no player can improve by deviating unilaterally)
-3. Classify it as pure strategy or mixed strategy equilibrium
-4. Assess its stability and likelihood
-
-If there are multiple equilibria, discuss:
-- Which is most likely to occur
-- Coordination problems between equilibria
-- Pareto dominance relationships
-
-Generate the Nash equilibrium analysis now:
-        """.trimIndent()
+              val nashPrompt = effectiveTypeConfig.nash_equilibria_prompt
 
                 nashEquilibria = chatAgent.answer(toInput(nashPrompt))
                 log.info("Nash equilibria analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${nashEquilibria.length} characters")
               transcript?.write("## Nash Equilibria Analysis\n<details><summary>Full Analysis</summary>\n\n$nashEquilibria\n</details>\n\n".toByteArray())
-
 
                 nashLoading?.clear()
                 nashTask.add(
@@ -423,7 +505,6 @@ Generate the Nash equilibrium analysis now:
             """.trimMargin().renderMarkdown()
                 )
               nashTask.complete()
-                nashTask.update()
             }
 
             // Step 4: Analyze dominant strategies if requested
@@ -434,26 +515,12 @@ Generate the Nash equilibrium analysis now:
                 val dominantTask = tabs.newTask("Dominant Strategies")
               val dominantLoading =
                 dominantTask.add("## Dominant Strategies\n\n🔄 Analyzing dominant strategies...".renderMarkdown())
-                dominantTask.update()
 
-                val dominantPrompt = """
-Based on the game analysis above, identify any dominant or dominated strategies.
-
-For each player, determine:
-1. **Strictly Dominant Strategies**: Strategies that are always better regardless of what others do
-2. **Weakly Dominant Strategies**: Strategies that are at least as good, and sometimes better
-3. **Dominated Strategies**: Strategies that are always worse than some alternative
-4. **Iteratively Eliminated Strategies**: Strategies that can be eliminated through iterated dominance
-
-Explain the strategic implications of these findings.
-
-Generate the dominant strategy analysis now:
-        """.trimIndent()
+              val dominantPrompt = effectiveTypeConfig.dominant_strategies_prompt
 
                 dominantStrategies = chatAgent.answer(toInput(dominantPrompt))
                 log.info("Dominant strategies analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${dominantStrategies.length} characters")
               transcript?.write("## Dominant Strategies Analysis\n<details><summary>Full Analysis</summary>\n\n$dominantStrategies\n</details>\n\n".toByteArray())
-
 
                 dominantLoading?.clear()
                 dominantTask.add(
@@ -466,7 +533,6 @@ Generate the dominant strategy analysis now:
             """.trimMargin().renderMarkdown()
                 )
               dominantTask.complete()
-                dominantTask.update()
             }
 
             // Step 5: Find Pareto optimal outcomes if requested
@@ -477,26 +543,12 @@ Generate the dominant strategy analysis now:
                 val paretoTask = tabs.newTask("Pareto Optimality")
               val paretoLoading =
                 paretoTask.add("## Pareto Optimality\n\n🔄 Identifying Pareto optimal outcomes...".renderMarkdown())
-                paretoTask.update()
 
-                val paretoPrompt = """
-Based on the game analysis above, identify Pareto optimal outcomes.
-
-For each outcome, determine:
-1. Whether it is Pareto optimal (no player can be made better off without making another worse off)
-2. Compare Pareto optimal outcomes to Nash equilibria
-3. Identify any Pareto improvements over equilibrium outcomes
-4. Discuss efficiency vs. equilibrium trade-offs
-
-If there are opportunities for cooperation or coordination to reach Pareto improvements, explain them.
-
-Generate the Pareto optimality analysis now:
-        """.trimIndent()
+              val paretoPrompt = effectiveTypeConfig.pareto_optimal_prompt
 
                 paretoOptimal = chatAgent.answer(toInput(paretoPrompt))
                 log.info("Pareto optimality analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${paretoOptimal.length} characters")
               transcript?.write("## Pareto Optimality Analysis\n<details><summary>Full Analysis</summary>\n\n$paretoOptimal\n</details>\n\n".toByteArray())
-
 
                 paretoLoading?.clear()
                 paretoTask.add(
@@ -509,7 +561,6 @@ Generate the Pareto optimality analysis now:
             """.trimMargin().renderMarkdown()
                 )
               paretoTask.complete()
-                paretoTask.update()
             }
 
             // Step 6: Repeated game analysis if requested
@@ -520,27 +571,13 @@ Generate the Pareto optimality analysis now:
                 val repeatedTask = tabs.newTask("Repeated Game")
               val repeatedLoading =
                 repeatedTask.add("## Repeated Game Analysis\n\n🔄 Analyzing repeated game dynamics...".renderMarkdown())
-                repeatedTask.update()
 
-                val repeatedPrompt = """
-Analyze this game as a repeated game with ${executionConfig.iterations} iterations.
-
-Consider:
-1. **Folk Theorem**: What outcomes can be sustained as equilibria in the repeated game?
-2. **Trigger Strategies**: How can players use punishment strategies to enforce cooperation?
-3. **Reputation Effects**: How does reputation building affect strategic choices?
-4. **Discount Factors**: How does the value of future payoffs affect current decisions?
-5. **Finite vs. Infinite Horizon**: Implications of the game ending after ${executionConfig.iterations} rounds
-
-Provide specific strategy recommendations for the repeated game context.
-
-Generate the repeated game analysis now:
-        """.trimIndent()
+              val repeatedPrompt = effectiveTypeConfig.repeated_game_prompt_template
+                .replace("{iterations}", executionConfig.iterations.toString())
 
                 repeatedGameAnalysis = chatAgent.answer(toInput(repeatedPrompt))
                 log.info("Repeated game analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${repeatedGameAnalysis.length} characters")
               transcript?.write("## Repeated Game Analysis\n<details><summary>Full Analysis</summary>\n\n$repeatedGameAnalysis\n</details>\n\n".toByteArray())
-
 
                 repeatedLoading?.clear()
                 repeatedTask.add(
@@ -553,7 +590,6 @@ Generate the repeated game analysis now:
             """.trimMargin().renderMarkdown()
                 )
               repeatedTask.complete()
-                repeatedTask.update()
             }
 
             // Step 7: Provide strategic recommendations if requested
@@ -564,30 +600,13 @@ Generate the repeated game analysis now:
                 val recommendTask = tabs.newTask("Recommendations")
               val recommendLoading =
                 recommendTask.add("## Strategic Recommendations\n\n🔄 Generating recommendations...".renderMarkdown())
-                recommendTask.update()
 
-                val recommendPrompt = """
-Based on the complete game theory analysis above, provide strategic recommendations for each player.
-
-For each player (${players.joinToString(", ")}), recommend:
-1. **Optimal Strategy**: What strategy should they play and why?
-2. **Contingent Strategies**: How should they respond to different opponent actions?
-3. **Risk Assessment**: What are the risks of their recommended strategy?
-4. **Coordination Opportunities**: Are there opportunities for beneficial coordination?
-5. **Information Considerations**: How should they use or reveal information?
-
-Also provide:
-- **Overall Strategic Insights**: Key takeaways from the analysis
-- **Potential Pitfalls**: Common mistakes to avoid
-- **Implementation Guidance**: How to execute the recommended strategies
-
-Generate the strategic recommendations now:
-        """.trimIndent()
+              val recommendPrompt = effectiveTypeConfig.recommendations_prompt_template
+                .replace("{players}", players.joinToString(", "))
 
                 recommendations = chatAgent.answer(toInput(recommendPrompt))
                 log.info("Recommendations generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${recommendations.length} characters")
               transcript?.write("## Strategic Recommendations\n<details><summary>Full Recommendations</summary>\n\n$recommendations\n</details>\n\n".toByteArray())
-
 
                 recommendLoading?.clear()
                 recommendTask.add(
@@ -600,7 +619,6 @@ Generate the strategic recommendations now:
             """.trimMargin().renderMarkdown()
                 )
               recommendTask.complete()
-                recommendTask.update()
             }
 
             // Step 8: Generate comprehensive summary using ParsedAgent
@@ -608,35 +626,21 @@ Generate the strategic recommendations now:
             log.debug("Generating structured summary")
             val summaryTask = tabs.newTask("Summary")
           val summaryLoading = summaryTask.add("## Summary\n\n🔄 Generating comprehensive summary...".renderMarkdown())
-            summaryTask.update()
 
-            val summaryPrompt = """
-Based on all the analysis above, provide a structured summary of the game theory analysis.
-
-Extract and organize:
-- Game type and key characteristics
-- Players and their strategies
-- Payoff structure (brief summary)
-- Nash equilibria found
-- Dominant strategies identified
-- Pareto optimal outcomes
-- Key recommendations for each player
-
-Provide this in a clear, structured format.
-      """.trimIndent()
+          val summaryPrompt = effectiveTypeConfig.summary_prompt
 
             val parsedAgent = ParsedAgent(
                 resultClass = GameAnalysis::class.java,
                 prompt = summaryPrompt,
                 model = api,
-                temperature = 0.2,
+              temperature = effectiveTypeConfig.summary_temperature,
                 parsingChatter = defaultFast,
+              deserializerRetries = 2,
             )
 
             val gameAnalysis = parsedAgent.answer(toInput(summaryPrompt)).obj
             log.info("Structured summary generated in ${System.currentTimeMillis() - stepStartTime}ms")
           transcript?.write("## Game Theory Analysis Summary\n<details><summary>Structured Data</summary>\n\n$gameAnalysis\n</details>\n\n".toByteArray())
-
 
             summaryLoading?.clear()
             summaryTask.add(
@@ -665,121 +669,126 @@ Provide this in a clear, structured format.
             """.trimMargin().renderMarkdown()
             )
           summaryTask.complete()
-            summaryTask.update()
 
-            // Update overview with completion
-            overviewTaskStatus?.clear()
-            overviewTask.add(
-              """
-            |## Game Theory Analysis
-            |
-            |**Scenario:** $gameScenario
-            |
-            |**Players:** ${players.joinToString(", ")}
-            |
-            |**Game Type:** ${executionConfig?.game_type}
-            |
-            |**Status:** ✅ Analysis complete
-            |
-            |**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
-        """.trimMargin().renderMarkdown()
-            )
-          overviewTask.complete()
-            overviewTask.update()
+          // Build final result
+          val finalResult = buildFinalResult(
+            gameScenario, players, executionConfig,
+            structureAnalysis, payoffMatrix, nashEquilibria,
+            dominantStrategies, paretoOptimal, repeatedGameAnalysis,
+            recommendations, startTime
+          )
 
-            // Build final result
-            val finalResult = buildString {
-                appendLine("# Game Theory Analysis: $gameScenario")
-                appendLine()
-                appendLine("## Players")
-                appendLine(players.joinToString(", "))
-                appendLine()
-                appendLine("## Game Type")
-              appendLine(executionConfig?.game_type)
-                appendLine()
-
-                if (structureAnalysis.isNotEmpty()) {
-                    appendLine("## Game Structure")
-                    appendLine(structureAnalysis.truncateForDisplay(maxOutputLengthPerField))
-                    appendLine()
-                }
-                if (payoffMatrix.isNotEmpty()) {
-                    appendLine("## Payoff Matrix")
-                    appendLine(payoffMatrix.truncateForDisplay(maxOutputLengthPerField))
-                    appendLine()
-                }
-
-
-                if (nashEquilibria.isNotEmpty()) {
-                    appendLine("## Nash Equilibria")
-                    appendLine(nashEquilibria.truncateForDisplay(maxOutputLengthPerField))
-                    appendLine()
-                }
-                if (paretoOptimal.isNotEmpty()) {
-                    appendLine("## Pareto Optimality")
-                    appendLine(paretoOptimal.truncateForDisplay(maxOutputLengthPerField))
-                    appendLine()
-                }
-
-
-                if (dominantStrategies.isNotEmpty()) {
-                    appendLine("## Dominant Strategies")
-                    appendLine(dominantStrategies.truncateForDisplay(maxOutputLengthPerField))
-                    appendLine()
-                }
-                if (repeatedGameAnalysis.isNotEmpty()) {
-                    appendLine("## Repeated Game Analysis")
-                    appendLine(repeatedGameAnalysis.truncateForDisplay(maxOutputLengthPerField))
-                    appendLine()
-                }
-
-
-                if (recommendations.isNotEmpty()) {
-                    appendLine("## Key Recommendations")
-                    appendLine(recommendations.truncateForDisplay(maxOutputLengthPerField))
-                    appendLine()
-                }
-
-                appendLine("---")
-                appendLine("**Analysis completed in ${(System.currentTimeMillis() - startTime) / 1000}s**")
-            }
-
-            val duration = System.currentTimeMillis() - startTime
-            val summary = "Game theory analysis completed for scenario: $gameScenario"
+          val duration = System.currentTimeMillis() - startTime
+          val summary = "Game theory analysis completed for scenario: $gameScenario"
           log.info("$summary (duration: ${duration}ms, players: ${players.size}, game_type: ${executionConfig?.game_type})")
-            transcript?.write("\n---\n".toByteArray())
-            transcript?.write("**Analysis completed in ${duration / 1000}s**\n".toByteArray())
+          transcript?.write("\n---\n".toByteArray())
+          transcript?.write("**Analysis completed in ${duration / 1000}s**\n".toByteArray())
           transcript?.write(
             "**Finished:** ${
               LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
             }\n".toByteArray()
           )
-            transcript?.close()
+
+          // Update overview with completion (after transcript write, before resultFn)
+            overviewTask.add(
+              """
+## Game Theory Analysis
+
+**Scenario:** $gameScenario
+
+**Players:** ${players.joinToString(", ")}
+
+**Game Type:** ${executionConfig?.game_type}
+
+**Status:** ✅ Analysis complete
+
+**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
+        """.renderMarkdown()
+            )
+          overviewTask.complete()
 
           task.complete()
-            resultFn(finalResult)
+          resultFn(finalResult)
 
         } catch (e: Exception) {
           val duration = System.currentTimeMillis() - startTime
           log.error("GameTheory task failed after ${duration}ms for scenario: $gameScenario", e)
-          overviewTask.add(
-                    """
-            |## Game Theory Analysis
-            |
-            |**Status:** ❌ Analysis Failed
-            |
-            |**Error:** ${e.message}
-            """.trimMargin().renderMarkdown()
-                )
-          overviewTask.complete()
-          overviewTask.update()
+          try {
+            task.error(e)
+          } catch (_: Exception) {
+            // UI error reporting is best-effort
+          }
           transcript?.write("\n---\n**ERROR:** ${e.message}\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
-          transcript?.close()
-          task.error(e)
           resultFn("ERROR: Game theory analysis failed - ${e.message}")
+        } finally {
+          try {
+            transcript?.close()
+          } catch (e: Exception) {
+            log.warn("Failed to close transcript", e)
+          }
         }
       }
     }
+
+  private fun buildFinalResult(
+    gameScenario: String,
+    players: List<String>,
+    executionConfig: GameTheoryTaskExecutionConfigData?,
+    structureAnalysis: String,
+    payoffMatrix: String,
+    nashEquilibria: String,
+    dominantStrategies: String,
+    paretoOptimal: String,
+    repeatedGameAnalysis: String,
+    recommendations: String,
+    startTime: Long
+  ): String = buildString {
+    appendLine("# Game Theory Analysis: $gameScenario")
+    appendLine()
+    appendLine("## Players")
+    appendLine(players.joinToString(", "))
+    appendLine()
+    appendLine("## Game Type")
+    appendLine(executionConfig?.game_type)
+    appendLine()
+    if (structureAnalysis.isNotEmpty()) {
+      appendLine("## Game Structure")
+      appendLine(structureAnalysis.truncateForDisplay(maxOutputLengthPerField))
+      appendLine()
+    }
+    if (payoffMatrix.isNotEmpty()) {
+      appendLine("## Payoff Matrix")
+      appendLine(payoffMatrix.truncateForDisplay(maxOutputLengthPerField))
+      appendLine()
+    }
+    if (nashEquilibria.isNotEmpty()) {
+      appendLine("## Nash Equilibria")
+      appendLine(nashEquilibria.truncateForDisplay(maxOutputLengthPerField))
+      appendLine()
+    }
+    if (dominantStrategies.isNotEmpty()) {
+      appendLine("## Dominant Strategies")
+      appendLine(dominantStrategies.truncateForDisplay(maxOutputLengthPerField))
+      appendLine()
+    }
+    if (paretoOptimal.isNotEmpty()) {
+      appendLine("## Pareto Optimality")
+      appendLine(paretoOptimal.truncateForDisplay(maxOutputLengthPerField))
+      appendLine()
+    }
+    if (repeatedGameAnalysis.isNotEmpty()) {
+      appendLine("## Repeated Game Analysis")
+      appendLine(repeatedGameAnalysis.truncateForDisplay(maxOutputLengthPerField))
+      appendLine()
+    }
+    if (recommendations.isNotEmpty()) {
+      appendLine("## Key Recommendations")
+      appendLine(recommendations.truncateForDisplay(maxOutputLengthPerField))
+      appendLine()
+    }
+    appendLine("---")
+    appendLine("**Analysis completed in ${(System.currentTimeMillis() - startTime) / 1000}s**")
+  }
 
   private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
@@ -818,7 +827,7 @@ Provide this in a clear, structured format.
         context: String
     ): String {
         val strategiesSection = if (executionConfig?.player_strategies?.isNotEmpty() == true) {
-            """
+          """
             |## Known Strategies:
             |${
                 executionConfig.player_strategies?.entries?.joinToString("\n") { (player, strategies) ->
@@ -830,48 +839,12 @@ Provide this in a clear, structured format.
             "## Note: Identify available strategies for each player from the scenario."
         }
 
-        return """
-You are an expert in game theory and strategic analysis. Your task is to analyze a strategic interaction using game theory principles.
-
-## Game Scenario:
-$gameScenario
-
-## Players:
-${players.joinToString("\n") { "- $it" }}
-
-$strategiesSection
-
-## Game Type:
-${executionConfig?.game_type}
-
-$context
-
-## Analysis Instructions:
-1. **Identify the Game Structure**:
-   - What type of game is this? (cooperative, non-cooperative, zero-sum, constant-sum, sequential, simultaneous)
-   - Is it a one-shot game or repeated game?
-   - Is there perfect or imperfect information?
-   - Are there any asymmetries between players?
-
-2. **Define Strategy Spaces**:
-   - What are the available strategies for each player?
-   - Are strategies discrete or continuous?
-   - Are there any constraints on strategy choices?
-
-3. **Characterize Payoffs**:
-   - What are the objectives of each player?
-   - How do outcomes depend on strategy combinations?
-   - Are payoffs transferable or non-transferable?
-
-4. **Identify Key Features**:
-   - Are there opportunities for commitment or signaling?
-   - Can players communicate or coordinate?
-   - Are there information asymmetries?
-   - What is the timing of moves?
-
-Provide a comprehensive analysis of the game structure.
-
-Generate the game structure analysis now:
-        """.trimIndent()
+      val effectiveTypeConfig = typeConfig ?: GameTheoryTypeConfig()
+      return effectiveTypeConfig.structure_prompt_template
+        .replace("{game_scenario}", gameScenario)
+        .replace("{players}", players.joinToString("\n") { "- $it" })
+        .replace("{strategies_section}", strategiesSection)
+        .replace("{game_type}", executionConfig?.game_type ?: "non-cooperative")
+        .replace("{context}", context)
     }
 }

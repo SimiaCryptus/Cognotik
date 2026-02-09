@@ -92,7 +92,7 @@ open class DocProcessorAction(
             smartModel = AppSettingsState.instance.smartModel?.model
                 ?: throw IllegalStateException("Smart model not configured"),
             serverless = false,
-            openBrowser = true,
+            openBrowser = false,
         )
         val allTasks = docProcessor.getAll(*selectedFiles.toTypedArray())
 
@@ -107,13 +107,13 @@ open class DocProcessorAction(
             if (dialog.showAndGet()) {
                 val selectedTasks = dialog.getSelectedTasks()
                 if (selectedTasks.isNotEmpty()) {
-                    val session = docProcessor.runAll(
-                        selectedTasks, FixedConcurrencyProcessor(
-                            Executors.newCachedThreadPool(),
-                            docProcessor.concurrencyLimit
-                        )
-                    )
                     Thread {
+                        val session = docProcessor.runAll(
+                            selectedTasks, FixedConcurrencyProcessor(
+                                Executors.newCachedThreadPool(),
+                                docProcessor.concurrencyLimit
+                            )
+                        )
                         Thread.sleep(500)
                         try {
                             BrowseUtil.browse(

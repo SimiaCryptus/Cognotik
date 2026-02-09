@@ -106,6 +106,7 @@ class IllustrateDocumentAction : BaseAction() {
             path = "/illustrateDocumentTask",
             applicationName = "Document Illustration Task",
             taskType = IllustrateDocumentTask.IllustrateDocument,
+            taskConfig = taskConfig,
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
             message = "Execute task"
         ) {

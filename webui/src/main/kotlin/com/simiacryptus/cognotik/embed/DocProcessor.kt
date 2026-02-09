@@ -3,6 +3,8 @@ package com.simiacryptus.cognotik.util
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.diff.PatchProcessors
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
@@ -670,10 +672,45 @@ class DocProcessor(
                 val newRoot = mod.root() ?: root
                 val mod = if(newRoot != root) mod.rebase(root, newRoot) else mod
                 concurrencyProcessor.submit {
-                  val cfgJson = mapOf(
-                    "task_type" to mod.taskType.name,
-                  ) + mod.data.jsonCast<Map<String, Any>>()
-                  val executionConfig = cfgJson.jsonCast<TaskExecutionConfig>(mod.taskType.executionConfigClass)
+                  val executionConfig = if (FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass)) {
+                    // For file-based tasks, directly cast the config
+                    val cfgJson = mapOf(
+                      "task_type" to mod.taskType.name,
+                    ) + mod.data.jsonCast<Map<String, Any>>()
+                    cfgJson.jsonCast<TaskExecutionConfig>(mod.taskType.executionConfigClass)
+                  } else {
+                    // For non-file tasks (e.g. ImageVariation), use requestToTask to generate proper config
+                    val orchestrationConfig = harness.initSettings(
+                      session = sessionPromise.getNow(null) ?: Session.newGlobalID(),
+                      autoFix = true,
+                      typeConfig = TaskTypeConfig(task_type = mod.taskType.name),
+                      workingDir = newRoot.toString()
+                    )
+                    val defaultModel = orchestrationConfig.defaultSmart
+                    val fastModelClient = orchestrationConfig.defaultFast
+                    val contextMessages = buildList {
+                      add("Task type: ${mod.taskType.name}")
+                      add("Task description: ${mod.data.task_description}")
+                      mod.data.files?.forEach { add("Target file: $it") }
+                      mod.data.related_files?.forEach { relatedFile ->
+                        val resolvedFile = if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
+                        if (resolvedFile.exists()) {
+                          add("Related file ($relatedFile):\n```\n${resolvedFile.readText()}\n```")
+                        }
+                      }
+                      if (mod.message.isNotBlank()) add(mod.message)
+                    }
+                    val (_, taskConfig) = ConversationalMode.requestToTask(
+                      defaultModel = defaultModel,
+                      fastModel = fastModelClient,
+                      userMessage = mod.data.task_description,
+                      orchestrationConfig = orchestrationConfig,
+                      prompt = "Execute the following task based on the provided context.",
+                      history = contextMessages,
+                      singleStage = true
+                    )
+                    taskConfig
+                  }
                   harness.runTask(
                     taskType = mod.taskType,
                     timeoutMinutes = 30,
