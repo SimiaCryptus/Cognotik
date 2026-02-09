@@ -64,12 +64,22 @@ class AwsChatClient(
         return try {
             log.info("Fetching available models from AWS Bedrock in region: ${awsAuth.region}")
 
-            val response: List<FoundationModelSummary> = bedrockManagementClient.listFoundationModels(
-                ListFoundationModelsRequest.builder().build()
-            ).modelSummaries()?.filterNotNull() ?: emptyList()
-            val response2: List<CustomModelSummary> = bedrockManagementClient.listCustomModels(
-                ListCustomModelsRequest.builder().build()
-            ).modelSummaries()?.filterNotNull() ?: emptyList()
+            val response: List<FoundationModelSummary> = try {
+                bedrockManagementClient.listFoundationModels(
+                    ListFoundationModelsRequest.builder().build()
+                ).modelSummaries()?.filterNotNull() ?: emptyList()
+            } catch (e: Exception) {
+                log.error("Failed to list foundation models from AWS Bedrock: ${e.message}", e)
+                emptyList()
+            }
+            val response2: List<CustomModelSummary> = try {
+                bedrockManagementClient.listCustomModels(
+                    ListCustomModelsRequest.builder().build()
+                ).modelSummaries()?.filterNotNull() ?: emptyList()
+            } catch (e: Exception) {
+                log.error("Failed to list custom models from AWS Bedrock: ${e.message}", e)
+                emptyList()
+            }
 
             val models = (response?.mapNotNull { modelSummary ->
                 try {
