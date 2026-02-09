@@ -85,7 +85,21 @@ class AwsChatClient(
                     log.warn("Failed to map AWS custom model ${modelSummary.modelArn()}: ${e.message}")
                     null
                 }
-            } ?: emptyList())
+            } ?: emptyList()) + awsAuth.additionalModels.mapNotNull { modelId ->
+                try {
+                    getModelSpecifications(modelId).let { specs ->
+                        ChatModel(
+                            name = modelId, modelName = modelId, maxTotalTokens = specs.maxTotalTokens,
+                            maxOutTokens = specs.maxOutTokens, provider = APIProvider.AWS,
+                            inputTokenPricePerK = specs.inputTokenPricePerK,
+                            outputTokenPricePerK = specs.outputTokenPricePerK
+                        )
+                    }
+                } catch (e: Exception) {
+                    log.warn("Failed to add additional AWS model $modelId: ${e.message}")
+                    null
+                }
+            }
 
             log.info("Found ${models.size} available models in AWS Bedrock")
 
@@ -301,6 +315,7 @@ class AwsChatClient(
         data class AWSAuth(
             val profile: String = "default",
             val region: String = Region.US_WEST_2.id(),
+            val additionalModels: List<String> = emptyList()
         )
 
         fun toAWS(model: LLMModel, chatRequest: ModelSchema.ChatRequest) =
