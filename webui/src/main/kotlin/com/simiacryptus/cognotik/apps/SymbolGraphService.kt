@@ -12,6 +12,9 @@ import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Description("Service for managing a graph-based representation of code symbols, files, and their relationships. It uses an in-memory TinkerGraph to store vertices representing Files, Symbols, Languages, Libraries, and Packages, and edges representing relationships like DEFINED_IN, REFERENCES, WRITTEN_IN, IN_LIBRARY, and IN_PACKAGE.")
 class SymbolGraphService {
@@ -639,5 +642,314 @@ class SymbolGraphService {
                 endOffset?.let { map["endOffset"] = it }
                 return map
             }
+    }
+    // ==================== Report Generation ====================
+    @Synchronized
+    @Description("Generates markdown reports with Mermaid diagrams documenting package and file dependencies.")
+    fun generateReports(outputDir: File) {
+        outputDir.mkdirs()
+        // Generate index/overview report
+        generateOverviewReport(File(outputDir, "00_overview.md"))
+        // Generate package dependency report
+        generatePackageDependencyReport(File(outputDir, "01_package_dependencies.md"))
+        // Generate file dependency reports by package
+        val packages = listPackages()
+        packages.forEachIndexed { index, pkg ->
+            val safeFileName = pkg.replace(".", "_").take(100)
+            generateFileDependencyReport(pkg, File(outputDir, "pkg_${String.format("%03d", index)}_$safeFileName.md"))
+        }
+        // Generate language statistics report
+        generateLanguageReport(File(outputDir, "02_languages.md"))
+        // Generate library dependencies report
+        generateLibraryReport(File(outputDir, "03_libraries.md"))
+    }
+    private fun generateOverviewReport(file: File) {
+        val sb = StringBuilder()
+        sb.appendLine("# Symbol Graph Overview")
+        sb.appendLine()
+        sb.appendLine("Generated: ${DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(Instant.now().atZone(ZoneId.systemDefault()))}")
+        sb.appendLine()
+        sb.appendLine("## Statistics")
+        sb.appendLine()
+        sb.appendLine("| Metric | Count |")
+        sb.appendLine("|--------|-------|")
+        sb.appendLine("| Files | ${getFiles().size} |")
+        sb.appendLine("| Symbols | ${listSymbols().size} |")
+        sb.appendLine("| Packages | ${listPackages().size} |")
+        sb.appendLine("| Libraries | ${listLibraries().size} |")
+        sb.appendLine("| Languages | ${listLanguages().size} |")
+        sb.appendLine()
+        sb.appendLine("## Node Types")
+        sb.appendLine()
+        sb.appendLine("| Type | Count |")
+        sb.appendLine("|------|-------|")
+        listNodeTypes().forEach { nodeType ->
+            val count = getSymbolsByNodeType(nodeType).size
+            sb.appendLine("| $nodeType | $count |")
+        }
+        sb.appendLine()
+        sb.appendLine("## Report Index")
+        sb.appendLine()
+        sb.appendLine("- [Package Dependencies](01_package_dependencies.md)")
+        sb.appendLine("- [Languages](02_languages.md)")
+        sb.appendLine("- [Libraries](03_libraries.md)")
+        sb.appendLine()
+        sb.appendLine("### Package Reports")
+        sb.appendLine()
+        listPackages().forEachIndexed { index, pkg ->
+            val safeFileName = pkg.replace(".", "_").take(100)
+            sb.appendLine("- [$pkg](pkg_${String.format("%03d", index)}_$safeFileName.md)")
+        }
+        file.writeText(sb.toString())
+    }
+    private fun generatePackageDependencyReport(file: File) {
+        val sb = StringBuilder()
+        sb.appendLine("# Package Dependencies")
+        sb.appendLine()
+        sb.appendLine("[← Back to Overview](00_overview.md)")
+        sb.appendLine()
+        // Build package dependency map
+        val packageDeps = mutableMapOf<String, MutableSet<String>>()
+        val packages = listPackages().toSet()
+        for (pkg in packages) {
+            packageDeps[pkg] = mutableSetOf()
+            val symbols = getSymbolsByPackage(pkg)
+            for (symbol in symbols) {
+                for (ref in symbol.references()) {
+                    val targetPkg = ref.targetSymbol.packageName()
+                    if (targetPkg != null && targetPkg != pkg && targetPkg in packages) {
+                        packageDeps[pkg]!!.add(targetPkg)
+                    }
+                }
+            }
+        }
+        // Generate Mermaid diagram
+        sb.appendLine("## Dependency Graph")
+        sb.appendLine()
+        sb.appendLine("```mermaid")
+        sb.appendLine("graph LR")
+        // Create short IDs for packages to keep diagram readable
+        val packageIds = packages.mapIndexed { index, pkg -> pkg to "P$index" }.toMap()
+        // Add nodes with labels
+        packages.forEach { pkg ->
+            val shortName = pkg.substringAfterLast(".")
+            sb.appendLine("    ${packageIds[pkg]}[\"$shortName\"]")
+        }
+        // Add edges
+        packageDeps.forEach { (from, tos) ->
+            tos.forEach { to ->
+                sb.appendLine("    ${packageIds[from]} --> ${packageIds[to]}")
+            }
+        }
+        sb.appendLine("```")
+        sb.appendLine()
+        // Add legend
+        sb.appendLine("### Package Legend")
+        sb.appendLine()
+        sb.appendLine("| ID | Package |")
+        sb.appendLine("|----|---------|")
+        packageIds.forEach { (pkg, id) ->
+            sb.appendLine("| $id | $pkg |")
+        }
+        sb.appendLine()
+        // Dependency table
+        sb.appendLine("## Dependency Table")
+        sb.appendLine()
+        sb.appendLine("| Package | Dependencies | Dependents |")
+        sb.appendLine("|---------|--------------|------------|")
+        val dependents = mutableMapOf<String, MutableSet<String>>()
+        packageDeps.forEach { (from, tos) ->
+            tos.forEach { to ->
+                dependents.getOrPut(to) { mutableSetOf() }.add(from)
+            }
+        }
+        packages.sorted().forEach { pkg ->
+            val deps = packageDeps[pkg]?.size ?: 0
+            val depBy = dependents[pkg]?.size ?: 0
+            sb.appendLine("| $pkg | $deps | $depBy |")
+        }
+        file.writeText(sb.toString())
+    }
+    private fun generateFileDependencyReport(packageName: String, file: File) {
+        val sb = StringBuilder()
+        sb.appendLine("# Package: $packageName")
+        sb.appendLine()
+        sb.appendLine("[← Back to Overview](00_overview.md) | [Package Dependencies](01_package_dependencies.md)")
+        sb.appendLine()
+        val symbols = getSymbolsByPackage(packageName)
+        val filesInPackage = symbols.mapNotNull { it.fileId }.toSet()
+        sb.appendLine("## Statistics")
+        sb.appendLine()
+        sb.appendLine("| Metric | Count |")
+        sb.appendLine("|--------|-------|")
+        sb.appendLine("| Files | ${filesInPackage.size} |")
+        sb.appendLine("| Symbols | ${symbols.size} |")
+        sb.appendLine()
+        // Build file dependency map
+        val fileDeps = mutableMapOf<String, MutableSet<String>>()
+        val externalDeps = mutableMapOf<String, MutableSet<String>>()
+        for (fileId in filesInPackage) {
+            fileDeps[fileId] = mutableSetOf()
+            externalDeps[fileId] = mutableSetOf()
+            val fileSymbols = getSymbolsByFile(fileId)
+            for (symbol in fileSymbols) {
+                for (ref in symbol.references()) {
+                    val targetFile = ref.targetSymbol.fileId
+                    if (targetFile != null && targetFile != fileId) {
+                        if (targetFile in filesInPackage) {
+                            fileDeps[fileId]!!.add(targetFile)
+                        } else {
+                            externalDeps[fileId]!!.add(targetFile)
+                        }
+                    }
+                }
+            }
+        }
+        // Generate Mermaid diagram for internal dependencies
+        if (filesInPackage.isNotEmpty()) {
+            sb.appendLine("## Internal File Dependencies")
+            sb.appendLine()
+            sb.appendLine("```mermaid")
+            sb.appendLine("graph TD")
+            val fileIds = filesInPackage.mapIndexed { index, f -> f to "F$index" }.toMap()
+            filesInPackage.forEach { f ->
+                val shortName = f.substringAfterLast("/").take(30)
+                sb.appendLine("    ${fileIds[f]}[\"$shortName\"]")
+            }
+            fileDeps.forEach { (from, tos) ->
+                tos.forEach { to ->
+                    sb.appendLine("    ${fileIds[from]} --> ${fileIds[to]}")
+                }
+            }
+            sb.appendLine("```")
+            sb.appendLine()
+            // File legend
+            sb.appendLine("### File Legend")
+            sb.appendLine()
+            sb.appendLine("| ID | File |")
+            sb.appendLine("|----|------|")
+            fileIds.forEach { (f, id) ->
+                sb.appendLine("| $id | ${f.substringAfterLast("/")} |")
+            }
+            sb.appendLine()
+        }
+        // Files table
+        sb.appendLine("## Files")
+        sb.appendLine()
+        sb.appendLine("| File | Symbols | Internal Deps | External Deps |")
+        sb.appendLine("|------|---------|---------------|---------------|")
+        filesInPackage.sorted().forEach { f ->
+            val symbolCount = getSymbolsByFile(f).size
+            val intDeps = fileDeps[f]?.size ?: 0
+            val extDeps = externalDeps[f]?.size ?: 0
+            val shortName = f.substringAfterLast("/")
+            sb.appendLine("| $shortName | $symbolCount | $intDeps | $extDeps |")
+        }
+        sb.appendLine()
+        // Symbols table
+        sb.appendLine("## Symbols")
+        sb.appendLine()
+        sb.appendLine("| Symbol | Type | File | Line | References | Referenced By |")
+        sb.appendLine("|--------|------|------|------|------------|---------------|")
+        symbols.sortedBy { it.name }.forEach { symbol ->
+            val refs = symbol.references().size
+            val refBy = symbol.referencedBy().size
+            val fileName = symbol.fileId?.substringAfterLast("/") ?: "-"
+            sb.appendLine("| ${symbol.name ?: "-"} | ${symbol.nodeType ?: "-"} | $fileName | ${symbol.line ?: "-"} | $refs | $refBy |")
+        }
+        file.writeText(sb.toString())
+    }
+    private fun generateLanguageReport(file: File) {
+        val sb = StringBuilder()
+        sb.appendLine("# Languages")
+        sb.appendLine()
+        sb.appendLine("[← Back to Overview](00_overview.md)")
+        sb.appendLine()
+        sb.appendLine("## Language Distribution")
+        sb.appendLine()
+        sb.appendLine("```mermaid")
+        sb.appendLine("pie title Symbol Distribution by Language")
+        listLanguages().forEach { lang ->
+            val count = getSymbolsByLanguage(lang).size
+            if (count > 0) {
+                sb.appendLine("    \"$lang\" : $count")
+            }
+        }
+        sb.appendLine("```")
+        sb.appendLine()
+        sb.appendLine("## Details")
+        sb.appendLine()
+        sb.appendLine("| Language | Symbols | Files |")
+        sb.appendLine("|----------|---------|-------|")
+        listLanguages().forEach { lang ->
+            val symbols = getSymbolsByLanguage(lang)
+            val files = symbols.mapNotNull { it.fileId }.toSet().size
+            sb.appendLine("| $lang | ${symbols.size} | $files |")
+        }
+        file.writeText(sb.toString())
+    }
+    private fun generateLibraryReport(file: File) {
+        val sb = StringBuilder()
+        sb.appendLine("# Libraries")
+        sb.appendLine()
+        sb.appendLine("[← Back to Overview](00_overview.md)")
+        sb.appendLine()
+        // Build library dependency map
+        val libraries = listLibraries()
+        val libraryDeps = mutableMapOf<String, MutableSet<String>>()
+        for (lib in libraries) {
+            libraryDeps[lib] = mutableSetOf()
+            val symbols = getSymbolsByLibrary(lib)
+            for (symbol in symbols) {
+                for (ref in symbol.references()) {
+                    val targetLib = ref.targetSymbol.libraryName()
+                    if (targetLib != null && targetLib != lib && targetLib in libraries) {
+                        libraryDeps[lib]!!.add(targetLib)
+                    }
+                }
+            }
+        }
+        // Generate Mermaid diagram (limit to libraries with dependencies to keep it readable)
+        val librariesWithDeps = libraries.filter {
+            (libraryDeps[it]?.isNotEmpty() == true) ||
+            libraryDeps.values.any { deps -> it in deps }
+        }.take(50) // Limit for readability
+        if (librariesWithDeps.isNotEmpty()) {
+            sb.appendLine("## Library Dependency Graph")
+            sb.appendLine()
+            sb.appendLine("```mermaid")
+            sb.appendLine("graph LR")
+            val libIds = librariesWithDeps.mapIndexed { index, lib -> lib to "L$index" }.toMap()
+            librariesWithDeps.forEach { lib ->
+                val shortName = lib.substringBeforeLast(".").take(20)
+                sb.appendLine("    ${libIds[lib]}[\"$shortName\"]")
+            }
+            libraryDeps.filter { it.key in librariesWithDeps }.forEach { (from, tos) ->
+                tos.filter { it in librariesWithDeps }.forEach { to ->
+                    sb.appendLine("    ${libIds[from]} --> ${libIds[to]}")
+                }
+            }
+            sb.appendLine("```")
+            sb.appendLine()
+            sb.appendLine("### Library Legend")
+            sb.appendLine()
+            sb.appendLine("| ID | Library |")
+            sb.appendLine("|----|---------|")
+            libIds.forEach { (lib, id) ->
+                sb.appendLine("| $id | $lib |")
+            }
+            sb.appendLine()
+        }
+        sb.appendLine("## All Libraries")
+        sb.appendLine()
+        sb.appendLine("| Library | Symbols | Packages | Dependencies |")
+        sb.appendLine("|---------|---------|----------|--------------|")
+        libraries.sorted().forEach { lib ->
+            val symbols = getSymbolsByLibrary(lib)
+            val packages = symbols.mapNotNull { it.packageName() }.toSet().size
+            val deps = libraryDeps[lib]?.size ?: 0
+            sb.appendLine("| $lib | ${symbols.size} | $packages | $deps |")
+        }
+        file.writeText(sb.toString())
     }
 }

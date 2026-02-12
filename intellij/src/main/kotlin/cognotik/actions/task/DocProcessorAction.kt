@@ -7,6 +7,9 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CheckBoxList
@@ -21,7 +24,6 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import java.awt.Dimension
-import java.util.concurrent.Executors
 import javax.swing.JComponent
 
 /**
@@ -87,7 +89,6 @@ open class DocProcessorAction(
         val docProcessor = DocProcessor(
             root = root,
             docsFolder = root,
-            concurrencyLimit = 4,
             overwriteMode = mode,
             fastModel = AppSettingsState.instance.fastModel?.model
                 ?: throw IllegalStateException("Fast model not configured"),
@@ -109,25 +110,37 @@ open class DocProcessorAction(
             if (dialog.showAndGet()) {
                 val selectedTasks = dialog.getSelectedTasks()
                 if (selectedTasks.isNotEmpty()) {
-                    Thread {
-                        val session = docProcessor.runAll(
-                            selectedTasks, FixedConcurrencyProcessor(
-                                Executors.newCachedThreadPool(),
-                                docProcessor.concurrencyLimit
-                            )
-                        )
-                        Thread.sleep(500)
-                        try {
-                            BrowseUtil.browse(
-                                CognotikAppServer.getServer(
-                                    AppSettingsState.instance.listeningEndpoint,
-                                    AppSettingsState.instance.listeningPort
-                                ).server.uri.resolve("/#" + session)
-                            )
-                        } catch (e: Throwable) {
-                            log.warn("Error opening browser", e)
+                    val totalTasks = selectedTasks.size
+                    ProgressManager.getInstance().run(object : Task.Backgroundable(
+                        project,
+                        "Processing Documentation Tasks",
+                        true
+                    ) {
+                        override fun run(indicator: ProgressIndicator) {
+                            indicator.isIndeterminate = false
+                            indicator.fraction = 0.0
+                            indicator.text = "Processing $totalTasks documentation task(s)..."
+                            val completedTasks = java.util.concurrent.atomic.AtomicInteger(0)
+                            docProcessor.runAll(selectedTasks) { session ->
+                                val completed = completedTasks.incrementAndGet()
+                                indicator.fraction = completed.toDouble() / totalTasks
+                                indicator.text = "Processing task $completed of $totalTasks..."
+                                indicator.text2 = "Session: $session"
+                                try {
+                                    BrowseUtil.browse(
+                                        CognotikAppServer.getServer(
+                                            AppSettingsState.instance.listeningEndpoint,
+                                            AppSettingsState.instance.listeningPort
+                                        ).server.uri.resolve("/#" + session)
+                                    )
+                                } catch (e: Throwable) {
+                                    log.warn("Error opening browser", e)
+                                }
+                            }
+                            indicator.fraction = 1.0
+                            indicator.text = "Documentation processing complete"
                         }
-                    }.start()
+                    })
                 }
             }
         }

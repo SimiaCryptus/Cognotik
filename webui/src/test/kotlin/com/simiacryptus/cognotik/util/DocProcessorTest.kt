@@ -1,25 +1,18 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+import com.simiacryptus.cognotik.util.DocProcessor.*
 import com.simiacryptus.cognotik.util.DocProcessor.Companion.expandPatternOrLiteral
 import com.simiacryptus.cognotik.util.DocProcessor.Companion.expandRecursiveGlob
 import com.simiacryptus.cognotik.util.DocProcessor.Companion.expandSimpleGlob
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.isGlobPattern
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseFrontmatter
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseSpecifies
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseDocuments
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseRelated
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseTransforms
-import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseGenerates
 import com.simiacryptus.cognotik.util.DocProcessor.Companion.expandTransformPattern
-import com.simiacryptus.cognotik.util.DocProcessor.TransformSpec
-import com.simiacryptus.cognotik.util.DocProcessor.GenerateSpec
-import com.simiacryptus.cognotik.util.DocProcessor.TransformMatch
-import com.simiacryptus.cognotik.util.DocProcessor.GenerateMatch
-import com.simiacryptus.cognotik.util.DocProcessor.DocumentMatch
-import com.simiacryptus.cognotik.util.DocProcessor.DocSpec
-import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
-import com.simiacryptus.cognotik.util.DocProcessor.ModificationTaskConfig
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.isGlobPattern
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseDocuments
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseFrontmatter
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseGenerates
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseRelated
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseSpecifies
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.parseTransforms
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -1344,38 +1337,6 @@ class DocProcessorTest {
     }
 
     // ========================================================================
-    // Tests for DocSpec.rebase
-    // ========================================================================
-    @Nested
-    inner class DocSpecRebaseTests {
-        @Test
-        fun `rebases doc spec to new root`() {
-            val oldRoot = File(tempDir, "old").also { it.mkdirs() }
-            val newRoot = File(tempDir, "new").also { it.mkdirs() }
-            val oldDocs = File(oldRoot, "docs").also { it.mkdirs() }
-            val docFile = File(oldDocs, "spec.md").also { it.writeText("") }
-
-            val spec = DocSpec(
-                docFile = docFile,
-                specifies = listOf("../src/Main.kt"),
-                documents = listOf("../src/**/*.kt"),
-                transforms = listOf(TransformSpec("(.+)\\.json", "\$1.yaml")),
-                generates = listOf(GenerateSpec("../src/Gen.kt", listOf("../src/*.kt"))),
-                related = listOf("../config.yaml", "https://example.com/spec"),
-                content = "Content",
-                frontmatter = mapOf("key" to "value")
-            )
-
-            val rebased = spec.rebase(oldRoot, newRoot)
-            // URLs should not be rebased
-            assertTrue(rebased.related.any { it.startsWith("https://") })
-            // Content and frontmatter should be preserved
-            assertEquals("Content", rebased.content)
-            assertEquals(mapOf("key" to "value"), rebased.frontmatter)
-        }
-    }
-
-    // ========================================================================
     // Tests for ModificationTask.rebase
     // ========================================================================
     @Nested
@@ -1757,12 +1718,7 @@ class DocProcessorTest {
         @Test
         fun `runAll with empty list does not throw`() {
             val processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
-            val concurrencyProcessor = FixedConcurrencyProcessor(
-                java.util.concurrent.Executors.newCachedThreadPool(), 4
-            )
-            assertDoesNotThrow {
-                processor.runAll(emptyList(), concurrencyProcessor)
-            }
+          assertDoesNotThrow { processor.runAll(emptyList()) }
         }
     }
 }

@@ -146,21 +146,6 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
       else -> null
         } }
 
-
-    open fun initializeTranscript(task: SessionTask, name: String = this@AbstractTask.taskType): Pair<String, FileOutputStream?> {
-        val transcriptFile = transcriptFile(name)
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.add(
-            MarkdownUtil.renderMarkdown(
-                "Writing transcript to <a href='$link' target='_blank'>transcript.md</a> " +
-                        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a>",
-                ui = task.ui
-            )
-        )
-        return Pair(link, markdownTranscript)
-    }
-
     fun createTabbedDisplay(task: SessionTask) = TabbedDisplay(task)
     open fun writeToTranscript(stream: FileOutputStream, string: String) {
         stream.write(string.toByteArray())

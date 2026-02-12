@@ -108,7 +108,7 @@ open class UnifiedHarness(
         autoFix: Boolean = !openBrowser,
         workspace: File? = null,
         config: (Session, File) -> OrchestrationConfig = { session: Session, finalWorkspace: File ->
-            initSettings(
+            createSettings(
                 session,
                 finalWorkspace,
                 autoFix,
@@ -326,7 +326,7 @@ open class UnifiedHarness(
                 "exeConfig" to executionConfig
             ).toJson()
         )
-        initSettings(
+        createSettings(
             session,
             autoFix,
             typeConfig,
@@ -334,7 +334,7 @@ open class UnifiedHarness(
         )
     }
 
-    open fun initSettings(
+    open fun createSettings(
         session: Session,
         finalWorkspace: File,
         autoFix: Boolean,
@@ -350,7 +350,7 @@ open class UnifiedHarness(
         cognitiveSettings = cognitiveSettings,
     )
 
-    open fun <U : TaskTypeConfig> initSettings(
+    open fun <U : TaskTypeConfig> createSettings(
         session: Session,
         autoFix: Boolean,
         typeConfig: U,

@@ -449,7 +449,6 @@ Do NOT generate the actual file contents. Generate specifications that describe 
         root = root.toFile(),
         docsFolder = specsDir.toFile(),
         overwriteMode = config.defaultOverwriteMode,
-        concurrencyLimit = 4,
         fastModel = orchestrationConfig.defaultFast.modelType,
         smartModel = orchestrationConfig.defaultSmart.modelType
       )

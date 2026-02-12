@@ -151,10 +151,8 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
         val api = defaultSmart ?: return
 
-        val (transcriptLink, transcript) = initializeTranscript(task, "MetaReflection")
-        transcript?.let { stream ->
-
-
+      val transcript = task.newFileOutputStream(transcriptFile())
+      transcript?.let { stream ->
             writeToTranscript(stream, "# Meta-Cognitive Reflection Transcript\n\n")
             writeToTranscript(stream, "## Subject Task: `$subjectTaskId`\n\n")
             writeToTranscript(stream, "**Timestamp**: ${java.time.Instant.now()}\n\n")

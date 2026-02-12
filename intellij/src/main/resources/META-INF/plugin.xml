@@ -48,10 +48,12 @@
                     description="Initiate a general-purpose chat session to discuss coding concepts, get assistance with programming tasks, or explore software development ideas">
             </action>
             <action class="cognotik.actions.analysis.SymbolExtractionAction"
+                    id="SymbolExtraction"
                     text="📊 Extract Symbols"
                     description="Extract symbol definitions and references across the project into a JSON report">
             </action>
             <action class="cognotik.actions.SymbolGraphAction"
+                    id="SymbolGraph"
                     text="📈 Browse Symbol Graph"
                     description="Create a visual graph of symbol definitions and references across the project to aid in code comprehension">
             </action>
@@ -136,6 +138,10 @@
                    popup="true"
                    text="⚡ More"
                    description="Additional single-task actions">
+                <action class="cognotik.actions.analysis.SymbolExtractionAction"
+                        text="📊 Extract Symbols"
+                        description="Extract symbol definitions and references across the project into a JSON report">
+                </action>
                 <action class="cognotik.actions.task.FileModificationTaskAction"
                         text="📝 File Modification"
                         description="Modify or create files with AI assistance using custom configuration">

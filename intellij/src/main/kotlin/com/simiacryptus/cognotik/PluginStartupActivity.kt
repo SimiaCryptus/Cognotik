@@ -36,6 +36,7 @@ class PluginStartupActivity : ProjectActivity {
 //        setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")
         setLogInfo("com.simiacryptus")
+        setLogDebug("com.simiacryptus.cognotik.chat")
 //        setLogDebug("com.simiacryptus.cognotik.plan")
 //        setLogInfo("com.simiacryptus.cognotik.plan.tools.online.CrawlerAgent)
 //        setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")

@@ -3,13 +3,13 @@ package com.simiacryptus.cognotik.util
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.diff.PatchProcessors
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
@@ -24,8 +24,8 @@ import java.nio.file.PathMatcher
 import java.security.MessageDigest
 import java.time.Duration
 import java.util.*
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executors
+import java.util.concurrent.CompletableFuture.allOf
+import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
 /**
@@ -42,7 +42,6 @@ class DocProcessor(
   val docsFolder: File,
   val overwriteMode: OverwriteMode = OverwriteModes.PatchToUpdate,
   val additionalContext: (DocSpec, File) -> List<String> = { _, _ -> emptyList() },
-  val concurrencyLimit: Int = 4,
   val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
   val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
   val serverless: Boolean = false,
@@ -169,77 +168,7 @@ class DocProcessor(
     val frontmatter: Map<String, Any>,
     val taskConfigJson: String? = null,
     val taskType: String? = null,
-  ) {
-    fun rebase(prevRoot: File, newRoot: File) = DocSpec(
-      docFile = rebasePath(prevRoot, newRoot, docFile.relativeTo(prevRoot.canonicalFile).toString())
-        .let { newRoot.resolve(it) },
-      specifies = specifies.map { pattern ->
-        rebasePatternOrPath(prevRoot, newRoot, pattern)
-      },
-      documents = documents.map { pattern ->
-        rebasePatternOrPath(prevRoot, newRoot, pattern)
-      },
-      transforms = transforms.map { transform ->
-        // Transform patterns are regex, not file paths — they are relative to the doc file's parent,
-        // so they don't need rebasing since they're resolved relative to docFile at usage time
-        transform
-      },
-      generates = generates.map { generate ->
-        GenerateSpec(
-          output = rebasePath(prevRoot, newRoot, generate.output),
-          inputs = generate.inputs.map { inputPattern ->
-            rebasePatternOrPath(prevRoot, newRoot, inputPattern)
-          }
-        )
-      },
-      related = related.map { relatedPath ->
-        if (relatedPath.startsWith("http://") || relatedPath.startsWith("https://")) {
-          relatedPath // URLs are not rebased
-        } else {
-          rebasePath(prevRoot, newRoot, relatedPath)
-        }
-      },
-      content = content,
-      frontmatter = frontmatter,
-      taskConfigJson = taskConfigJson?.let { rebasePath(prevRoot, newRoot, it) },
-      taskType = taskType
-    )
-
-    companion object {
-      /**
-       * Rebase a concrete file path from prevRoot to newRoot.
-       * The path is assumed to be relative to prevRoot; the result is relative to newRoot.
-       */
-      private fun rebasePath(prevRoot: File, newRoot: File, relativePath: String): String {
-        val absoluteFile = prevRoot.canonicalFile.resolve(relativePath).canonicalFile
-        return absoluteFile.relativeTo(newRoot.canonicalFile).toString()
-      }
-
-      /**
-       * Rebase a pattern or literal path. Glob patterns (containing *, ?, [) are rebased
-       * by rebasing only the literal prefix directory portion. Literal paths are rebased directly.
-       */
-      private fun rebasePatternOrPath(prevRoot: File, newRoot: File, pattern: String): String {
-        if (!isGlobPattern(pattern) && !pattern.contains("**")) {
-          return rebasePath(prevRoot, newRoot, pattern)
-        }
-        // For glob patterns, rebase the literal directory prefix
-        val separatorIndex = maxOf(
-          pattern.lastIndexOf('/', pattern.indexOfFirst { it == '*' || it == '?' || it == '[' }),
-          pattern.lastIndexOf('\\', pattern.indexOfFirst { it == '*' || it == '?' || it == '[' }),
-          0
-        )
-        if (separatorIndex <= 0) {
-          // Pattern has no directory prefix (e.g., "*.kt"), no rebasing needed
-          return pattern
-        }
-        val dirPrefix = pattern.substring(0, separatorIndex)
-        val globSuffix = pattern.substring(separatorIndex)
-        val rebasedPrefix = rebasePath(prevRoot, newRoot, dirPrefix)
-        return rebasedPrefix + globSuffix
-      }
-    }
-  }
+  )
 
   /**
    * Represents a file transformation specification.
@@ -320,7 +249,8 @@ class DocProcessor(
     val shouldDeleteTarget: Boolean = false,
     val taskType: TaskType<*, *> = FileModification
   ) {
-    fun rebase(prevRoot: File, newRoot: File) = ModificationTask(
+    fun rebase(prevRoot: File, newRoot: File) = if (newRoot != prevRoot) this
+    else ModificationTask(
       data = data.rebase(prevRoot, newRoot),
       message = message,
       patchProcessor = patchProcessor,
@@ -335,7 +265,6 @@ class DocProcessor(
   )
 
   fun run() {
-    val concurrencyProcessor = FixedConcurrencyProcessor(Executors.newCachedThreadPool(), concurrencyLimit)
     val markdownFiles = docsFolder.listFilesRecursively()
       .filter { it.isFile && it.extension in setOf("md", "markdown") }
     log.info("Found ${markdownFiles.size} markdown files in ${docsFolder.absolutePath}")
@@ -345,7 +274,7 @@ class DocProcessor(
     }
     val docSpecs = markdownFiles.mapNotNull { parseMarkdownWithFrontmatter(it) }
     val fileMods = modificationTasks(docSpecs)
-    runAll(fileMods, concurrencyProcessor)
+    runAll(fileMods)
   }
 
   fun getAll(
@@ -361,7 +290,7 @@ class DocProcessor(
     val allTargetFiles =
       (fileToSpecs.keys + transformMatches.keys + documentMatches.keys + generateMatches.keys).distinct()
     log.info("Total unique target files: ${allTargetFiles.size}")
-    return allTargetFiles.map { targetFile ->
+    val map = allTargetFiles.map { targetFile ->
       val specs = (fileToSpecs[targetFile] ?: emptyList()).toMutableList()
       val transforms = transformMatches[targetFile] ?: emptyList()
       val documents = documentMatches[targetFile] ?: emptyList()
@@ -472,7 +401,8 @@ class DocProcessor(
         log.error("Error processing ${relativeTarget}", e)
         null
       }
-    }.filterNotNull().let { sortByDependencies(it) }
+    }.filterNotNull()
+    return map
   }
 
   /**
@@ -649,13 +579,65 @@ class DocProcessor(
     return fileToSpecs
   }
 
+  fun separateQueues(
+    fileMods: List<ModificationTask>,
+  ): List<List<ModificationTask>> {
+    val fileToMods = fileMods.groupBy { mod ->
+      mod.data.files?.firstOrNull()?.let { File(root, it).canonicalPath } ?: ""
+    }.filterKeys { it.isNotEmpty() }
+    val queues = mutableListOf<List<ModificationTask>>()
+    val processedFiles = mutableSetOf<String>()
+
+    for (mod in fileMods) {
+      val targetFile = mod.data.files?.firstOrNull()?.let { File(root, it).canonicalPath }
+      if (targetFile != null) {
+        val relatedFiles = mod.data.related_files?.mapNotNull { relatedPath ->
+          try {
+            File(root, relatedPath).canonicalPath
+          } catch (e: Exception) {
+            log.warn("Failed to resolve related file path: $relatedPath", e)
+            null
+          }
+        } ?: emptyList()
+
+        // Check if this mod is related to any already processed file
+        if (targetFile in processedFiles || relatedFiles.any { it in processedFiles }) {
+          // If so, start a new queue
+          queues.add(mutableListOf(mod))
+          processedFiles.add(targetFile)
+          processedFiles.addAll(relatedFiles)
+        } else {
+          // Otherwise, add to the current queue
+          if (queues.isEmpty()) {
+            queues.add(mutableListOf(mod))
+          } else {
+            (queues.last() as MutableList).add(mod)
+          }
+          processedFiles.add(targetFile)
+          processedFiles.addAll(relatedFiles)
+        }
+      } else {
+        // If no target file, just add to the last queue
+        if (queues.isEmpty()) {
+          queues.add(mutableListOf(mod))
+        } else {
+          (queues.last() as MutableList).add(mod)
+        }
+      }
+    }
+
+    log.info("Separated into ${queues.size} queues based on file relationships")
+    return queues
+  }
+
   fun runAll(
     fileMods: List<ModificationTask>,
-    concurrencyProcessor: FixedConcurrencyProcessor
-  ): Session? {
-    val sessionPromise = CompletableFuture<Session>()
-    Thread{
-      if (fileMods.isNotEmpty()) {
+    onNewSession: (Session) -> Unit = { _ -> }
+  ): Array<Session> {
+    val sessions = mutableListOf<Session>()
+    val pool = FixedConcurrencyProcessor(ApplicationServices.threadPoolManager.getPool(Session.newUserID()), 4)
+    separateQueues(fileMods).map { sortByDependencies(it) }.filter{fileMods.isNotEmpty()}.map { fileMods ->
+      pool.submit {
         object : UnifiedHarness(
           fastModel = fastModel,
           smartModel = smartModel,
@@ -665,76 +647,79 @@ class DocProcessor(
           override fun createTempDirectory(prefix: String) = root
             .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
             .apply { mkdirs() }
-        }.use { harness: UnifiedHarness ->
-          fileMods
-            .map { mod ->
-              val newRoot = mod.root() ?: root
-              val mod = if(newRoot != root) mod.rebase(root, newRoot) else mod
-              concurrencyProcessor.submit {
-                val executionConfig = if (FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass)) {
-                  // For file-based tasks, directly cast the config
-                  val cfgJson = mapOf(
-                    "task_type" to mod.taskType.name,
-                  ) + mod.data.jsonCast<Map<String, Any>>()
-                  cfgJson.jsonCast<TaskExecutionConfig>(mod.taskType.executionConfigClass)
-                } else {
-                  // For non-file tasks (e.g. ImageVariation), use requestToTask to generate proper config
-                  val orchestrationConfig = harness.initSettings(
-                    session = sessionPromise.getNow(null) ?: Session.newGlobalID(),
-                    autoFix = true,
-                    typeConfig = TaskTypeConfig(task_type = mod.taskType.name),
-                    workingDir = newRoot.toString()
-                  )
-                  val defaultModel = orchestrationConfig.defaultSmart
-                  val fastModelClient = orchestrationConfig.defaultFast
-                  val contextMessages = buildList {
-                    add("Task type: ${mod.taskType.name}")
-                    add("Task description: ${mod.data.task_description}")
-                    mod.data.files?.forEach { add("Target file: $it") }
-                    mod.data.related_files?.forEach { relatedFile ->
-                      val resolvedFile = if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
-                      if (resolvedFile.exists()) {
-                        add("Related file ($relatedFile):\n```\n${resolvedFile.readText()}\n```")
-                      }
-                    }
-                    if (mod.message.isNotBlank()) add(mod.message)
-                  }
-                  val (_, taskConfig) = ConversationalMode.requestToTask(
-                    defaultModel = defaultModel,
-                    fastModel = fastModelClient,
-                    userMessage = mod.data.task_description,
-                    orchestrationConfig = orchestrationConfig,
-                    prompt = "Execute the following task based on the provided context.",
-                    history = contextMessages,
-                    singleStage = true
-                  )
-                  taskConfig
-                }
-                harness.runTask(
-                  taskType = mod.taskType,
-                  timeoutMinutes = 30,
-                  message = mod.message,
-                  executionConfig = executionConfig
-                ) { session ->
-                  sessionPromise.complete(session)
-                  harness.initSettings(
-                    session = session,
-                    autoFix = true,
-                    typeConfig = TaskTypeConfig(task_type = mod.taskType.name),
-                    workingDir = newRoot.toString()
-                  ).apply {
-                    processor = mod.patchProcessor
-                  }
-                }
+        }.use { harness ->
+          fileMods.map { it.rebase(root, it.root() ?: root) }.map { mod ->
+            harness.resetSession()
+            harness.runTask(
+              taskType = mod.taskType,
+              timeoutMinutes = 30,
+              message = mod.message,
+              executionConfig = executionConfig(mod, harness)
+            ) { session ->
+              onNewSession(session)
+              sessions += session
+              harness.createSettings(
+                session = session,
+                autoFix = true,
+                typeConfig = TaskTypeConfig(task_type = mod.taskType.name),
+                workingDir = mod.root().toString()
+              ).apply {
+                processor = mod.patchProcessor
               }
-            }.toTypedArray().forEach { it.get() }
+            }
+          }
         }
-      } else {
-        log.info("No modification tasks to execute")
-        sessionPromise.complete(null)
       }
-    }.start()
-    return sessionPromise.join()
+    }.toTypedArray().let {
+      allOf(*it).get(90, TimeUnit.MINUTES)
+    }
+    return sessions.toTypedArray()
+  }
+
+  private fun executionConfig(
+    mod: ModificationTask,
+    harness: UnifiedHarness
+  ): TaskExecutionConfig {
+    val newRoot = mod.root() ?: root
+    return if (FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass)) {
+      // For file-based tasks, directly cast the config
+      val cfgJson = mapOf(
+        "task_type" to mod.taskType.name,
+      ) + mod.data.jsonCast<Map<String, Any>>()
+      cfgJson.jsonCast(mod.taskType.executionConfigClass)
+    } else {
+      // For non-file tasks (e.g. ImageVariation), use requestToTask to generate proper config
+      val orchestrationConfig = harness.createSettings(
+        session = Session.newGlobalID(),
+        autoFix = true,
+        typeConfig = TaskTypeConfig(task_type = mod.taskType.name),
+        workingDir = newRoot.toString()
+      )
+      val defaultModel = orchestrationConfig.defaultSmart
+      val fastModelClient = orchestrationConfig.defaultFast
+      val contextMessages = buildList {
+        add("Task type: ${mod.taskType.name}")
+        add("Task description: ${mod.data.task_description}")
+        mod.data.files?.forEach { add("Target file: $it") }
+        mod.data.related_files?.forEach { relatedFile ->
+          val resolvedFile = if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
+          if (resolvedFile.exists()) {
+            add("Related file ($relatedFile):\n```\n${resolvedFile.readText()}\n```")
+          }
+        }
+        if (mod.message.isNotBlank()) add(mod.message)
+      }
+      val (_, taskConfig) = ConversationalMode.requestToTask(
+        defaultModel = defaultModel,
+        fastModel = fastModelClient,
+        userMessage = mod.data.task_description,
+        orchestrationConfig = orchestrationConfig,
+        prompt = "Execute the following task based on the provided context.",
+        history = contextMessages,
+        singleStage = true
+      )
+      taskConfig
+    }
   }
 
   private fun ModificationTask.root(): File? = data.files?.firstOrNull()?.let { root.resolve(it).parentFile }

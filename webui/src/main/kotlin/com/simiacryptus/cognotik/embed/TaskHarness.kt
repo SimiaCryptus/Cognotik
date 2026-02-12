@@ -83,7 +83,7 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
         taskType: TaskType<T, U>,
         typeConfig: U,
         harness: UnifiedHarness
-    ) = harness.initSettings(
+    ) = harness.createSettings(
         session = session,
         autoFix = autoFix,
         typeConfig = typeConfig,

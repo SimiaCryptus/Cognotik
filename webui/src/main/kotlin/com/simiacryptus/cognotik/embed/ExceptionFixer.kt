@@ -30,7 +30,7 @@ class ExceptionFixer(
           timeoutMinutes = 5,
           executionConfig = TaskExecutionConfig(task_type = FileModification.name)
         ) { session ->
-          harness.initSettings(
+          harness.createSettings(
             session = session,
             autoFix = true,
             typeConfig = TaskTypeConfig(task_type = FileModification.name),

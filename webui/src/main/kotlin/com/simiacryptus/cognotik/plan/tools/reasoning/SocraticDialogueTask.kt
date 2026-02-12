@@ -209,7 +209,7 @@ Provide substantive, well-reasoned responses that advance the dialogue.
     val dialogueBuilder = StringBuilder()
     val fullDialogueBuilder = StringBuilder()
     // Create transcript file
-    val (transcriptLink, transcriptStream) = initializeTranscript(task)
+    val transcriptStream = task.newFileOutputStream(transcriptFile())
     val transcriptWriter = transcriptStream?.bufferedWriter()
     transcriptWriter?.apply {
       write("# Socratic Dialogue Transcript\n\n")
@@ -502,23 +502,7 @@ Provide a structured synthesis.
       )
 
       task.complete("Completed $maxDepth exchanges in ${totalTime / 1000}s. Concise analysis: ${finalResult.length} chars.")
-
-      val summaryMessage = buildString {
-        appendLine(finalResult)
-        appendLine("\n---\n")
-        appendLine(
-          "Full dialogue transcript: <a href='$transcriptLink' target='_blank'>$transcriptLink</a> <a href='${
-            transcriptLink.removeSuffix(
-              ".md"
-            )
-          }.html' target='_blank'>html</a> <a href='${
-            transcriptLink.removeSuffix(
-              ".md"
-            )
-          }.pdf' target='_blank'>pdf</a>"
-        )
-      }
-      resultFn(summaryMessage)
+      resultFn(finalResult)
 
     } catch (e: Exception) {
       log.error("Error during Socratic dialogue", e)

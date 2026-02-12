@@ -16,9 +16,11 @@ data class Session(
     fun isGlobal(): Boolean = sessionId.startsWith("G-")
 
     companion object {
-        fun long64() =
-            Base64.getEncoder().encodeToString(ByteBuffer.allocate(8).putLong(Random.Default.nextLong()).array())
+        fun long64(): String {
+            val src = ByteBuffer.allocate(8).putLong(Random.nextLong()).array()
+            return Base64.getEncoder().encodeToString(src)
                 .toString().replace("=", "").replace("/", ".").replace("+", "-")
+        }
 
         fun validateSessionId(session: Session) {
             session.validateSessionId()
