@@ -2,13 +2,9 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.AbstractTask
-import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
-import com.simiacryptus.cognotik.plan.tools.TaskType
-import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.tools.*
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -321,14 +317,8 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
             val duration = System.currentTimeMillis() - startTime
             log.info("MetaCognitiveReflection task completed successfully for subject_task_id: $subjectTaskId in ${duration}ms. Summary length: ${summary.length}")
-            val finalOutput =
-                "Meta-cognitive reflection completed. View detailed analysis: <a href='$transcriptLink' target='_blank'>transcript.md</a> <a href='${
-                    transcriptLink.removeSuffix(".md")
-                }.html' target='_blank'>html</a>\n\n$summary"
-            resultFn(finalOutput)
+            resultFn(summary)
             transcript?.close()
-
-
         } catch (e: Exception) {
             log.error("Error during meta-cognitive reflection", e)
             transcript?.let { stream ->
