@@ -8,11 +8,6 @@ open class Retryable(
     val process: (StringBuilder) -> String
 ) : TabbedDisplay(task) {
 
-//    constructor(
-//        task: SessionTask,
-//        process: (SessionTask) -> Unit?,
-//    ) : this(task, process.async(task.ui))
-
     init {
         init()
     }

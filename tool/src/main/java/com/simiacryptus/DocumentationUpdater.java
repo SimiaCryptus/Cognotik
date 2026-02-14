@@ -2,20 +2,14 @@ package com.simiacryptus;
 
 import com.simiacryptus.cognotik.chat.model.AnthropicModels;
 import com.simiacryptus.cognotik.chat.model.ChatModel;
-import com.simiacryptus.cognotik.chat.model.GeminiModels;
 import com.simiacryptus.cognotik.util.DocProcessor;
-import com.simiacryptus.cognotik.util.FileGenerator;
 import com.simiacryptus.cognotik.util.OverwriteModes;
 import com.simiacryptus.cognotik.util.UnifiedHarness;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
 
 import static com.simiacryptus.CognotikUtils.configureEnvironmentalKeys;
-import static com.simiacryptus.CognotikUtils.relativize;
 
 public record DocumentationUpdater(
         String overwriteMode,
@@ -25,19 +19,18 @@ public record DocumentationUpdater(
     public void run() {
         OverwriteModes mode = OverwriteModes.valueOf(overwriteMode);
         //ChatModel chatModel = GeminiModels.getGeminiFlash_30_Preview();
-        ChatModel chatModel = AnthropicModels.INSTANCE.getClaude45Haiku();
+        ChatModel chatModel = AnthropicModels.getClaude45Haiku();
         new DocProcessor(
                 new File(rootDir),
                 new File(rootDir),
                 mode,
                 ( source, folder) -> new ArrayList<>(),
-                threads,
                 chatModel,
                 chatModel,
                 false,
                 false,
-                new File(rootDir, ".doc-processor-cache/url-cache")
-        ).run();
+                new File(rootDir, ".doc-processor-cache/url-cache"),
+                true).run();
     }
 
     public static final String DEFAULT_ROOT = ".";

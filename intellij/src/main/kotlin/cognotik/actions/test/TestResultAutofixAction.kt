@@ -8,15 +8,18 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isGitignore
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -204,15 +207,18 @@ class TestResultAutofixAction : BaseAction() {
                         return@Retryable task.placeholder
                     }
 
-                    task.add(
-                        AgentPatterns.displayMapInTabs(
-                            mapOf(
-                              "Text" to plan.text.renderMarkdown(true),
-                              "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(
-                                true
-                              ),
-                            )
-                        )
+                  val map = mapOf(
+                    "Text" to plan.text.renderMarkdown(true),
+                    "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(
+                      true
+                    ),
+                  )
+                  task.add(
+                    TabbedDisplay.displayMapInTabs(
+                      map,
+                      null,
+                      map.entries.map { it.value.length + it.key.length }.sum() > 10000
+                    )
                     )
 
                     plan.obj.errors?.forEach { error ->
@@ -273,8 +279,14 @@ $projectStructure
             ).answer(listOf(error.message ?: ""))
             task.add("Processing suggested fixes...")
 
-            val markdown = AddApplyFileDiffLinks(processor = AppSettingsState.instance.processor).instrument(
+          val markdown = DiffInstrumentor(
+            AppSettingsState.instance.processor,
+            SocketManagerUIRenderer(
               socketManager = socketManager,
+              sessionId = socketManager.sessionId
+            ),
+            RealFileSystem()
+          ).instrument(
               root = root.toPath(),
               response = response,
               handle = { newCodeMap: Map<Path, String> ->
@@ -282,7 +294,8 @@ $projectStructure
                   task.add("Applying changes to $path...")
                   task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                 }
-              }
+              },
+            resolver = ::resolveToRelativePath,
             )
             task.add("<div>${renderMarkdown(markdown)}</div>")
         }

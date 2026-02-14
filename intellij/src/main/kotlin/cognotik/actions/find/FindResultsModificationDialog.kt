@@ -7,8 +7,7 @@ import com.intellij.ui.dsl.builder.*
 import javax.swing.JComponent
 
 class FindResultsModificationDialog(
-    project: Project,
-    matchCount: Int
+    project: Project
 ) : DialogWrapper(project) {
 
     private var replacementText = "Please modify this code to: "

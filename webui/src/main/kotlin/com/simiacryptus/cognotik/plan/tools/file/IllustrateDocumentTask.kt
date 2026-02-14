@@ -11,8 +11,12 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
@@ -494,10 +498,14 @@ Generate the patches now.
                     log.debug("Patch generation response: $response")
                     if (orchestrationConfig.autoFix) {
                         subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
-                          AddApplyFileDiffLinks(
-                            orchestrationConfig.processor
+                          DiffInstrumentor(
+                            orchestrationConfig.processor,
+                            SocketManagerUIRenderer(
+                              socketManager = subTask.ui,
+                              sessionId = subTask.ui.sessionId
+                            ),
+                            RealFileSystem()
                           ).instrument(
-                            socketManager = subTask.ui,
                             root = root,
                             response = it,
                             handle = { newCodeMap: Map<Path, String> ->
@@ -507,17 +515,21 @@ Generate the patches now.
                               patchResult = "Patches applied successfully"
                             },
                             shouldAutoApply = { it: Path -> true },
-                            model = chatChatter,
-                            defaultFile = documentFile
+                            defaultFile = documentFile,
+                            resolver = ::resolveToRelativePath,
                           ) + "\n\n## Auto-applied image insertion patches"
                         })
                         semaphore.release()
                     } else {
                         subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
-                          AddApplyFileDiffLinks(
-                            processor = orchestrationConfig.processor
+                          DiffInstrumentor(
+                            orchestrationConfig.processor,
+                            SocketManagerUIRenderer(
+                              socketManager = subTask.ui,
+                              sessionId = subTask.ui.sessionId
+                            ),
+                            RealFileSystem()
                           ).instrument(
-                            socketManager = subTask.ui,
                             root = root,
                             response = it,
                             handle = { newCodeMap: Map<Path, String> ->
@@ -526,8 +538,8 @@ Generate the patches now.
                               }
                               patchResult = "Patches applied successfully"
                             },
-                            model = chatChatter,
-                            defaultFile = documentFile
+                            defaultFile = documentFile,
+                            resolver = ::resolveToRelativePath,
                           ) + acceptButtonFooter(subTask.ui) {
                                 subTask.complete()
                                 semaphore.release()

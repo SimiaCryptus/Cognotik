@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.util.AgentPatterns.displayMapInTabs
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
@@ -39,17 +38,18 @@ object MarkdownUtil {
             markdown.isBlank() -> ""
             asHtml == rawMarkdown -> asHtml
             tabs -> {
-                displayMapInTabs(
-                    mapOf(
-                        "HTML" to "$RENDERED_MARKER\n${stackTrace()}\n$asHtml",
-                        "Markdown" to """<pre><code class="language-markdown">${
-                            rawMarkdown.replace("&", "&amp;")
-                                .replace("<", "&lt;")
-                                .replace(">", "&gt;")
-                        }</code></pre>""",
-                        "Hide" to "",
-                    ), ui = ui
-                )
+              val map = mapOf(
+                "HTML" to "$RENDERED_MARKER\n${stackTrace()}\n$asHtml",
+                "Markdown" to """<pre><code class="language-markdown">${
+                  rawMarkdown.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                }</code></pre>""",
+                "Hide" to "",
+              )
+              TabbedDisplay.displayMapInTabs(
+                map, ui = ui
+              )
             }
 
             else -> "$RENDERED_MARKER\n${stackTrace()}\n$asHtml"

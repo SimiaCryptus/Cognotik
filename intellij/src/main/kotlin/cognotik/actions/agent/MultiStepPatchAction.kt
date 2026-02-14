@@ -9,7 +9,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
@@ -21,11 +20,15 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -193,12 +196,15 @@ class MultiStepPatchAction : BaseAction() {
                 initialResponse = { it: String -> designActor.answer(toInput(it)) },
                 outputFn = { design: ParsedResponse<TaskList> ->
 
-                    AgentPatterns.displayMapInTabs(
-                        mapOf(
-                          "Text" to design.text.renderMarkdown(true),
-                          "JSON" to "```json\n${toJson(design.obj)}\n```".renderMarkdown(true),
-                        )
+                    val map = mapOf(
+                      "Text" to design.text.renderMarkdown(true),
+                      "JSON" to "```json\n${toJson(design.obj)}\n```".renderMarkdown(true),
                     )
+                  TabbedDisplay.displayMapInTabs(
+                    map,
+                    null,
+                    map.entries.map { it.value.length + it.key.length }.sum() > 10000
+                  )
                 },
                 reviseResponse = { userMessages: List<Pair<String, Role>> ->
                     designActor.respond(
@@ -242,8 +248,14 @@ class MultiStepPatchAction : BaseAction() {
                   """.trimIndent() + (paths?.joinToString("\n") ?: "")
                                 }
                                 renderMarkdown(
-                                  AddApplyFileDiffLinks(processor = processor).instrument(
-                                    socketManager = ui,
+                                  DiffInstrumentor(
+                                    processor,
+                                    SocketManagerUIRenderer(
+                                      socketManager = ui,
+                                      sessionId = ui.sessionId
+                                    ),
+                                    RealFileSystem()
+                                  ).instrument(
                                     root = root,
                                     response = taskActor.answer(
                                       listOf(
@@ -262,7 +274,8 @@ class MultiStepPatchAction : BaseAction() {
                                       newCodeMap.forEach { (path, newCode) ->
                                         task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                       }
-                                    }
+                                    },
+                                    resolver = ::resolveToRelativePath,
                                   )
                                 )
                             } catch (e: Exception) {

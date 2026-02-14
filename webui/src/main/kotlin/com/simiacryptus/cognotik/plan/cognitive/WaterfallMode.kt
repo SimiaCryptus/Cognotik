@@ -13,10 +13,10 @@ import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.get
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AgentPatterns
 import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -215,17 +215,18 @@ open class WaterfallMode(
 
     fun render(
         withPrompt: TaskBreakdownWithPrompt
-    ) = AgentPatterns.displayMapInTabs(
-        mapOf(
-            "Text" to withPrompt.planText.renderMarkdown(),
-            "JSON" to "${TRIPLE_TILDE}json\n${JsonUtil.toJson(withPrompt)}\n${TRIPLE_TILDE}".renderMarkdown(),
-            "Diagram" to (("```mermaid\n" + buildMermaidGraph(
-                (filterPlan {
-                    withPrompt.plan
-                } ?: emptyMap()).toMutableMap()
-            ) + "\n```\n").renderMarkdown())
-        )
-    )
+    ): String {
+      val map = mapOf(
+        "Text" to withPrompt.planText.renderMarkdown(),
+        "JSON" to "${TRIPLE_TILDE}json\n${JsonUtil.toJson(withPrompt)}\n${TRIPLE_TILDE}".renderMarkdown(),
+        "Diagram" to (("```mermaid\n" + buildMermaidGraph(
+          (filterPlan {
+            withPrompt.plan
+          } ?: emptyMap()).toMutableMap()
+        ) + "\n```\n").renderMarkdown())
+      )
+      return TabbedDisplay.displayMapInTabs(map)
+    }
 
     open fun newPlan(
         orchestrationConfig: OrchestrationConfig,

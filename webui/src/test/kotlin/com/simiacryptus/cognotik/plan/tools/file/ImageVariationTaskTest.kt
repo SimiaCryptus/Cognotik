@@ -26,7 +26,7 @@ class ImageVariationTaskTest {
     val harness = TaskHarness(
       taskType = ImageVariationTask.ImageVariation,
       executionConfig = ImageVariationConfig(
-        input_file = inputFile,
+        files = inputFile,
         num_subimages = 10,
         num_subimage_alternates = 3,
         num_changes_per_variation = 5,

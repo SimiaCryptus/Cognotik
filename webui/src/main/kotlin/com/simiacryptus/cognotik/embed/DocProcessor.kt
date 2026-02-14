@@ -46,7 +46,8 @@ class DocProcessor(
   val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
   val serverless: Boolean = false,
   val openBrowser: Boolean = false,
-  val urlCacheDir: File = File(root, ".doc-processor-cache/url-cache")
+  val urlCacheDir: File = File(root, ".doc-processor-cache/url-cache"),
+  val autoFix: Boolean
 ) {
 
   /**
@@ -211,35 +212,38 @@ class DocProcessor(
     val template_file: String? = null,
     val data: Map<String, Any>? = null,
   ) {
-    fun rebase(prevRoot: File, newRoot: File) = ModificationTaskConfig(
-      files = files?.map { filePath ->
-        prevRoot.canonicalFile.resolve(filePath).canonicalFile
-          .relativeTo(newRoot.canonicalFile).toString()
-      },
-      related_files = related_files?.map { relatedPath ->
-        if (relatedPath.startsWith("http://") || relatedPath.startsWith("https://")) {
-          relatedPath // URLs are not rebased
-        } else {
-          val resolvedFile = prevRoot.canonicalFile.resolve(relatedPath).canonicalFile
-          try {
-            resolvedFile.relativeTo(newRoot.canonicalFile).toString()
-          } catch (e: IllegalArgumentException) {
-            // File is outside newRoot, use absolute path
-            resolvedFile.absolutePath
-          }
-        }
-      },
-      task_description = task_description,
-      template_file = template_file?.let {
-        try {
-          prevRoot.canonicalFile.resolve(it).canonicalFile
+    fun rebase(prevRoot: File, newRoot: File): ModificationTaskConfig {
+      val rebased = ModificationTaskConfig(
+        files = files?.map { filePath ->
+          prevRoot.canonicalFile.resolve(filePath).canonicalFile
             .relativeTo(newRoot.canonicalFile).toString()
-        } catch (e: IllegalArgumentException) {
-          prevRoot.canonicalFile.resolve(it).canonicalFile.absolutePath
-        }
-      },
-      data = data
-    )
+        },
+        related_files = related_files?.map { relatedPath ->
+          if (relatedPath.startsWith("http://") || relatedPath.startsWith("https://")) {
+            relatedPath // URLs are not rebased
+          } else {
+            val resolvedFile = prevRoot.canonicalFile.resolve(relatedPath).canonicalFile
+            try {
+              resolvedFile.relativeTo(newRoot.canonicalFile).toString()
+            } catch (e: IllegalArgumentException) {
+              // File is outside newRoot, use absolute path
+              resolvedFile.absolutePath
+            }
+          }
+        },
+        task_description = task_description,
+        template_file = template_file?.let {
+          try {
+            prevRoot.canonicalFile.resolve(it).canonicalFile
+              .relativeTo(newRoot.canonicalFile).toString()
+          } catch (e: IllegalArgumentException) {
+            prevRoot.canonicalFile.resolve(it).canonicalFile.absolutePath
+          }
+        },
+        data = data
+      )
+      return rebased
+    }
   }
 
   data class ModificationTask(
@@ -249,7 +253,7 @@ class DocProcessor(
     val shouldDeleteTarget: Boolean = false,
     val taskType: TaskType<*, *> = FileModification
   ) {
-    fun rebase(prevRoot: File, newRoot: File) = if (newRoot != prevRoot) this
+    fun rebase(prevRoot: File, newRoot: File) = if (newRoot == prevRoot) this
     else ModificationTask(
       data = data.rebase(prevRoot, newRoot),
       message = message,
@@ -632,10 +636,10 @@ class DocProcessor(
 
   fun runAll(
     fileMods: List<ModificationTask>,
+    pool: FixedConcurrencyProcessor = newProcessor(),
     onNewSession: (Session) -> Unit = { _ -> }
   ): Array<Session> {
     val sessions = mutableListOf<Session>()
-    val pool = FixedConcurrencyProcessor(ApplicationServices.threadPoolManager.getPool(Session.newUserID()), 4)
     separateQueues(fileMods).map { sortByDependencies(it) }.filter{fileMods.isNotEmpty()}.map { fileMods ->
       pool.submit {
         object : UnifiedHarness(
@@ -648,7 +652,9 @@ class DocProcessor(
             .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
             .apply { mkdirs() }
         }.use { harness ->
-          fileMods.map { it.rebase(root, it.root() ?: root) }.map { mod ->
+          fileMods.map { mod ->
+            val newRoot = mod.data.files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
+            val mod = mod.rebase(root, newRoot)
             harness.resetSession()
             harness.runTask(
               taskType = mod.taskType,
@@ -660,9 +666,9 @@ class DocProcessor(
               sessions += session
               harness.createSettings(
                 session = session,
-                autoFix = true,
+                autoFix = autoFix,
                 typeConfig = TaskTypeConfig(task_type = mod.taskType.name),
-                workingDir = mod.root().toString()
+                workingDir = newRoot.toString()
               ).apply {
                 processor = mod.patchProcessor
               }
@@ -680,7 +686,7 @@ class DocProcessor(
     mod: ModificationTask,
     harness: UnifiedHarness
   ): TaskExecutionConfig {
-    val newRoot = mod.root() ?: root
+    val newRoot = mod.data.files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root ?: root
     return if (FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass)) {
       // For file-based tasks, directly cast the config
       val cfgJson = mapOf(
@@ -722,7 +728,6 @@ class DocProcessor(
     }
   }
 
-  private fun ModificationTask.root(): File? = data.files?.firstOrNull()?.let { root.resolve(it).parentFile }
 
   /**
    * Sorts modification tasks so that dependencies are processed before dependents.
@@ -1201,5 +1206,7 @@ class DocProcessor(
         }
       }
     }
+    fun newProcessor(session: Session = Session.newUserID(), concurrency: Int = 4): FixedConcurrencyProcessor =
+      FixedConcurrencyProcessor(ApplicationServices.threadPoolManager.getPool(session), concurrency)
   }
 }

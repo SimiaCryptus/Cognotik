@@ -14,15 +14,18 @@ import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -236,13 +239,16 @@ class ReplicateCommitAction : BaseAction() {
                         "We want to create a change based on the following prior commit:\n\n$tripleTilde\n$diffInfo\n$tripleTilde\n\nThe change should implement the user's request:\n\n$tripleTilde\n$userMessage\n$tripleTilde"
                     ),
                 )
-                task.add(
-                    AgentPatterns.displayMapInTabs(
-                        mapOf(
-                          "Text" to plan.text.renderMarkdown(true),
-                          "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(true),
-                        )
-                    )
+              val map = mapOf(
+                "Text" to plan.text.renderMarkdown(true),
+                "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown(true),
+              )
+              task.add(
+                TabbedDisplay.displayMapInTabs(
+                  map,
+                  null,
+                  map.entries.map { it.value.length + it.key.length }.sum() > 10000
+                )
                 )
                 plan.obj.errors?.map { planTask ->
                     Retryable(task) {
@@ -275,15 +281,21 @@ class ReplicateCommitAction : BaseAction() {
                             ),
                         )
                         val markdown =
-                          AddApplyFileDiffLinks(processor = AppSettingsState.instance.processor).instrument(
-                            socketManager = ui,
+                            DiffInstrumentor(
+                                AppSettingsState.instance.processor,
+                                SocketManagerUIRenderer(
+                                    socketManager = ui,
+                                    sessionId = ui.sessionId
+                                ), RealFileSystem()
+                            ).instrument(
                             root = root.toPath(),
                             response = response,
                             handle = { newCodeMap: Map<Path, String> ->
                               newCodeMap.forEach { (path, newCode) ->
                                 task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                               }
-                                              }
+                            },
+                                resolver = ::resolveToRelativePath,
                           )
                         task.add(renderMarkdown(markdown))
                         task.placeholder

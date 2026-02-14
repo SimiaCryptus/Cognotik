@@ -87,15 +87,14 @@ open class DocProcessorAction(
         }
 
         val docProcessor = DocProcessor(
-            root = root,
-            docsFolder = root,
-            overwriteMode = mode,
-            fastModel = AppSettingsState.instance.fastModel?.model
-                ?: throw IllegalStateException("Fast model not configured"),
-            smartModel = AppSettingsState.instance.smartModel?.model
-                ?: throw IllegalStateException("Smart model not configured"),
-            serverless = false,
-            openBrowser = false,
+          root = root,
+          docsFolder = root,
+          overwriteMode = mode,
+          fastModel = AppSettingsState.instance.fastModel?.model
+            ?: throw IllegalStateException("Fast model not configured"),
+          smartModel = AppSettingsState.instance.smartModel?.model
+            ?: throw IllegalStateException("Smart model not configured"),
+          autoFix = true,
         )
         val allTasks = docProcessor.getAll(*selectedFiles.toTypedArray())
 

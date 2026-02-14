@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.chat.model
 import com.simiacryptus.cognotik.models.APIProvider
 
 object AnthropicModels {
+  @JvmStatic
     val Claude35Sonnet = ChatModel(
         name = "Claude35Sonnet",
         modelId = "claude-3-5-sonnet-latest",
@@ -12,6 +13,8 @@ object AnthropicModels {
         inputTokenPricePerK = 3.0 / 1000.0,
         outputTokenPricePerK = 15.0 / 1000.0,
     )
+
+  @JvmStatic
     val Claude35Haiku = ChatModel(
         name = "Claude35Haiku",
         modelId = "claude-3-5-haiku-latest",
@@ -21,6 +24,8 @@ object AnthropicModels {
         inputTokenPricePerK = 0.80 / 1000.0,
         outputTokenPricePerK = 4.0 / 1000.0,
     )
+
+  @JvmStatic
     val Claude37Sonnet = ChatModel(
         name = "Claude37Sonnet",
         modelId = "claude-3-7-sonnet-20250219",
@@ -30,6 +35,8 @@ object AnthropicModels {
         inputTokenPricePerK = 3.0 / 1000.0,
         outputTokenPricePerK = 15.0 / 1000.0,
     )
+
+  @JvmStatic
     val Claude45Sonnet = ChatModel(
         name = "Claude45Sonnet",
         modelId = "claude-sonnet-4-5",
@@ -39,6 +46,8 @@ object AnthropicModels {
         inputTokenPricePerK = 3.0 / 1000.0,
         outputTokenPricePerK = 15.0 / 1000.0,
     )
+
+  @JvmStatic
     val Claude45Haiku = ChatModel(
         name = "Claude45Haiku",
         modelId = "claude-haiku-4-5",
@@ -48,6 +57,8 @@ object AnthropicModels {
         inputTokenPricePerK = 1.0 / 1000.0,
         outputTokenPricePerK = 5.0 / 1000.0,
     )
+
+  @JvmStatic
     val Claude46Opus = ChatModel(
         name = "Claude46Opus",
         modelId = "claude-opus-4-6",
@@ -59,6 +70,7 @@ object AnthropicModels {
     )
 
 
+  @JvmStatic
     val values = mapOf(
         "Claude35Sonnet" to Claude35Sonnet,
         "Claude35Haiku" to Claude35Haiku,

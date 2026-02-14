@@ -36,8 +36,8 @@ class ImageVariationTask(
   }
 
   class ImageVariationConfig(
-    @Description("The input image file path")
-    var input_file: String? = null,
+    @Description("The input image file")
+    override var files: List<String> = emptyList(),
     @Description("Number of distinct regions to modify")
     var num_subimages: Int = 7,
     @Description("Number of alternate versions per region - at least 2")
@@ -48,20 +48,18 @@ class ImageVariationTask(
     var num_variations: Int = 11,
     @Description("Output filename prefix")
     var output_prefix: String = "variation",
-    @Description("Output image format (png/jpg)")
-    var extension: String = "png",
     @Description("Whether to use image patch localization to align the generated variation with the original image")
     var retarget_subimages: Boolean = false,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = ImageVariation.name,
-    task_description = "Generate ${num_variations} variations with ${num_subimages}x${num_subimage_alternates} potential changes from $input_file",
+    task_description = "Generate ${num_variations} variations with ${num_subimages}x${num_subimage_alternates} potential changes from $files",
     task_dependencies = task_dependencies,
     state = state
   ) {
     override fun validate(): String? {
-      if (input_file.isNullOrBlank()) return "Input file must be specified"
+      if (files.isEmpty()) return "Must specify an input image file"
       if (num_subimages < 1) return "Must identify at least 1 region"
       if (num_subimage_alternates <= 1) return "Must generate at more than 1 alternate per region"
       if (num_variations < 1) return "Must generate at least 1 variation"
@@ -131,14 +129,12 @@ ImageVariation - Creates 'Find the Differences' style image sets.
     val transcript = task.newFileOutputStream(transcriptFile())
     task.ui.pool.submit {
       try {
-        val inputFile = executionConfig?.input_file ?: return@submit resultFn("No input file")
-        val numSubimages = executionConfig.num_subimages
+        val inputFile = primaryImageFile() ?: return@submit resultFn("No input file")
+        val numSubimages = executionConfig!!.num_subimages
         val numSubimageAlternates = executionConfig.num_subimage_alternates
         val numChangesPerVariation = executionConfig.num_changes_per_variation
         val numVariations = executionConfig.num_variations
         val prefix = executionConfig.output_prefix
-        val ext = executionConfig.extension
-
         val analysisModel = orchestrationConfig.defaultSmart.getChildClient(task)
         val imageModel = orchestrationConfig.defaultImage.getChildClient(task)
 
@@ -205,7 +201,7 @@ ImageVariation - Creates 'Find the Differences' style image sets.
           gDebug.drawString(r.label, x - 1, y - 6)
         }
         gDebug.dispose()
-        val debugLink = saveImage(debugImg, "${prefix}_analysis.$ext", task)
+        val debugLink = saveImage(debugImg, "${prefix}_analysis.png", task)
         tabs["Analysis Map"] = """<img src="$debugLink" style="max-width: 100%;" />"""
 
         // 3. Generate N Changes
@@ -253,7 +249,7 @@ ImageVariation - Creates 'Find the Differences' style image sets.
 
             if (result.image != null) {
               val changeId = "change_${regionIdx}_${altIdx}_${region.label.replace(" ", "_")}"
-              val changeFilename = "${prefix}_$changeId.$ext"
+              val changeFilename = "${prefix}_$changeId.png"
               saveImage(result.image!!, changeFilename, task)
 
               generatedChanges.add(
@@ -336,7 +332,7 @@ ImageVariation - Creates 'Find the Differences' style image sets.
           }
           g.dispose()
 
-          val varFilename = "${prefix}_v${varIdx}.$ext"
+          val varFilename = "${prefix}_v${varIdx}.png"
           val varLink = saveImage(canvas, varFilename, task)
 
           // Save JSON Manifest
@@ -378,6 +374,14 @@ ImageVariation - Creates 'Find the Differences' style image sets.
     }
   }
 
+  private fun primaryImageFile(): String? {
+    return executionConfig?.files?.filter { it.endsWith(".png") }?.let {
+      if (it.isEmpty()) null else it[0]
+    } ?: executionConfig?.related_files?.filter { it.endsWith(".png") }?.let {
+      if (it.isEmpty()) null else it[0]
+    }
+  }
+
   private fun generateGame(
     baseImage: String,
     variations: List<Pair<String, VariationManifest>>,
@@ -413,7 +417,8 @@ ImageVariation - Creates 'Find the Differences' style image sets.
       }
 
       val html = template.replace("/*GAME_DATA*/", assets.toJson())
-      val gameFile = root.resolve("${prefix}_game.html").toFile()
+      //val gameFile = root.resolve("${prefix}_game.html").toFile()
+      val gameFile = root.resolve(baseImage.substringBeforeLast(".") + ".html").toFile()
       gameFile.writeText(html)
       task.newFileOutputStream(transcriptFile())?.write(buildString {
         appendLine("## Interactive Game")
@@ -427,7 +432,7 @@ ImageVariation - Creates 'Find the Differences' style image sets.
 
   private fun saveImage(image: BufferedImage, name: String, task: SessionTask): String {
     val file = root.resolve(name)
-    ImageIO.write(image, executionConfig?.extension ?: "png", file.toFile())
+    ImageIO.write(image, "png", file.toFile())
     return task.linkTo(name)
   }
 

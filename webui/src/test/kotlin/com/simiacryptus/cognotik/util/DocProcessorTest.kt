@@ -380,7 +380,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -739,7 +739,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -779,7 +779,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -853,7 +853,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -908,7 +908,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -964,7 +964,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -995,7 +995,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -1089,7 +1089,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -1141,7 +1141,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -1264,7 +1264,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -1377,7 +1377,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -1412,7 +1412,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -1431,7 +1431,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -1484,7 +1484,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -1519,7 +1519,7 @@ class DocProcessorTest {
     inner class RunPipelineTests {
         @Test
         fun `run does not throw with empty docs folder`() {
-            val processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          val processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
             // Should not throw, just log a warning
             assertDoesNotThrow { processor.run() }
         }
@@ -1527,7 +1527,7 @@ class DocProcessorTest {
         @Test
         fun `run does not throw with docs that have no frontmatter`() {
             File(docsFolder, "plain.md").writeText("# Just a plain markdown file\nNo frontmatter.")
-            val processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          val processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
             assertDoesNotThrow { processor.run() }
         }
     }
@@ -1541,7 +1541,7 @@ class DocProcessorTest {
 
         @BeforeEach
         fun setUp() {
-            processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
         }
 
         @Test
@@ -1700,9 +1700,10 @@ class DocProcessorTest {
         fun `cache directory is created when fetching URLs`() {
             val cacheDir = File(tempDir, ".test-cache/url-cache")
             val processor = DocProcessor(
-                root = tempDir,
-                docsFolder = docsFolder,
-                urlCacheDir = cacheDir
+              root = tempDir,
+              docsFolder = docsFolder,
+              urlCacheDir = cacheDir,
+              autoFix = true
             )
             // We can't easily test actual URL fetching, but we can verify the cache dir setup
             // The fetchAndCacheUrl method creates the directory
@@ -1717,7 +1718,7 @@ class DocProcessorTest {
     inner class RunAllTests {
         @Test
         fun `runAll with empty list does not throw`() {
-            val processor = DocProcessor(root = tempDir, docsFolder = docsFolder)
+          val processor = DocProcessor(root = tempDir, docsFolder = docsFolder, autoFix = true)
           assertDoesNotThrow { processor.runAll(emptyList()) }
         }
     }
