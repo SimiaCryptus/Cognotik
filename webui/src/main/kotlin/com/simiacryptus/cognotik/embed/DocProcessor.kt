@@ -720,7 +720,7 @@ class DocProcessor(
         fastModel = fastModelClient,
         userMessage = mod.data.task_description,
         orchestrationConfig = orchestrationConfig,
-        prompt = "Execute the following task based on the provided context.",
+        prompt = "Execute the following task based on the provided context. Task type: ${mod.taskType.name}",
         history = contextMessages,
         singleStage = true
       )

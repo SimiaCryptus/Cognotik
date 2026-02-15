@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
@@ -9,16 +8,31 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.*
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTaskPrompts.finalNarrative
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTaskPrompts.finalResult
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTaskPrompts.highLevelContent
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTaskPrompts.highLevelPrompt
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTaskPrompts.imageHtml
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTaskPrompts.outlineContent
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTaskPrompts.overviewContent
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTaskPrompts.revisionPrompt
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTaskPrompts.sceneContent
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTaskPrompts.sceneExpansionPrompt
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTaskPrompts.scenePromptText
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTaskPrompts.taskPrompt
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import java.io.ByteArrayOutputStream
+import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.io.Writer
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import javax.imageio.ImageIO
+import kotlin.collections.component1
+import kotlin.collections.component2
+import java.util.concurrent.Semaphore
 
 open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerationTaskExecutionConfigData>(
     orchestrationConfig: OrchestrationConfig,
@@ -31,6 +45,9 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
     open class NarrativeGenerationTaskExecutionConfigData(
 
         @Description("The subject or scenario to develop into a full narrative")
+        override var task_description: String? = null,
+
+        @Description("The subject or scenario to develop into a full narrative (alias for task_description)")
         var subject: String? = null,
 
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the narrative")
@@ -50,6 +67,9 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
 
         @Description("Writing style (e.g., 'literary', 'thriller', 'technical', 'conversational')")
         var writing_style: String = "literary",
+        @Description("Additional style details or guidelines for the narrative voice")
+        var style_details: String = "",
+
 
         @Description("Point of view (e.g., 'first person', 'third person limited', 'third person omniscient')")
         var point_of_view: String = "third person limited",
@@ -74,12 +94,17 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
 
         @Description("Whether to generate a cover image for the narrative")
         var generate_cover_image: Boolean = true,
+        @Description("Optional character references with images and detailed descriptions for visual and narrative consistency")
+        var character_references: List<NarrativeCharacterReference> = emptyList(),
+        @Description("Optional plot continuity details to guide narrative structure and consistency")
+        var plot_continuity: NarrativePlotContinuityDetails? = null,
+
 
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
     ) : TaskExecutionConfig(
         task_type = NarrativeGeneration.name,
-        task_description = "Generate full narrative for '$subject'",
+        task_description = task_description ?: "Generate full narrative for '$subject'",
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     ), ValidatedObject {
@@ -89,9 +114,56 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
             number_of_acts = number_of_acts.coerceIn(1, 10)
             scenes_per_act = scenes_per_act.coerceIn(1, 20)
             revision_passes = revision_passes.coerceIn(0, 5)
+            writing_style = writing_style.trim().ifBlank { "literary" }
+            // Sync subject and task_description
+            if (subject.isNullOrBlank() && !task_description.isNullOrBlank()) subject = task_description
+            if (task_description.isNullOrBlank() && !subject.isNullOrBlank()) task_description = subject
             return null
         }
     }
+    data class NarrativeCharacterReference(
+        @Description("The name of the character this reference is for")
+        var character_name: String = "",
+        @Description("Path or URL to a reference image for this character")
+        var reference_image_path: String? = null,
+        @Description("Detailed visual description of the character")
+        var visual_description: String? = null,
+        @Description("Personality traits and behavioral notes")
+        var personality_notes: String? = null,
+        @Description("Character's role in the story (e.g., 'protagonist', 'antagonist', 'supporting')")
+        var role: String? = null,
+        @Description("Backstory or background information")
+        var backstory: String? = null,
+        @Description("Relationships with other characters")
+        var relationships: String? = null
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            character_name = character_name.trim()
+            if (character_name.isBlank()) return "character_name must not be blank"
+            return null
+        }
+    }
+    data class NarrativePlotContinuityDetails(
+        @Description("Overall story arc or narrative structure (e.g., 'three-act structure', 'hero's journey')")
+        var narrative_structure: String = "",
+        @Description("Key plot points that must be included, in order")
+        var key_plot_points: List<String> = emptyList(),
+        @Description("Setting details (time period, location, world-building notes)")
+        var setting_details: String = "",
+        @Description("Themes or motifs to weave throughout the story")
+        var themes: List<String> = emptyList(),
+        @Description("Tone and mood guidelines")
+        var tone: String = "",
+        @Description("Previously established story context or backstory that this narrative continues from")
+        var prior_story_context: String = "",
+        @Description("Specific continuity constraints")
+        var continuity_constraints: List<String> = emptyList(),
+        @Description("Desired ending or resolution notes")
+        var ending_notes: String = "",
+        @Description("Any additional requirements or notes")
+        var additional_notes: String = ""
+    )
+
 
     data class NarrativeOutline(
         @Description("The title of the narrative")
@@ -157,7 +229,6 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
         @Description("Estimated number of scenes in this act")
         var estimated_scenes: Int = 3
     )
-
 
     data class ActOutline(
         @Description("The sequential number of this act (1-based)")
@@ -231,6 +302,16 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
         val startTime = System.currentTimeMillis()
         log.info("Starting NarrativeGenerationTask - Subject: '${executionConfig?.subject}', Target words: ${executionConfig?.target_word_count}")
         val transcript = task.newFileOutputStream(transcriptFile())?.let { OutputStreamWriter(it) }
+        val dataDir = (getOutputFile(".md")?.let {
+            if (it.endsWith(".md")) it.removeSuffix(".md") else null
+        } ?: "comic").apply {
+            val dir = task.resolveUserFile(this)
+            if (dir != null && !dir.exists()) {
+                dir.mkdirs()
+            }
+        }
+        val dataFile = getOutputFile(".md")?.let { it.removeSuffix(".md") + ".narrative.json" } ?: "narrative.narrative.json"
+
         val genConfig = executionConfig
 
         try {
@@ -272,7 +353,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
 
             if (inputFileContext.isNotBlank()) {
                 log.debug("Loaded input file context: ${inputFileContext.length} characters")
-                if(verbose) {
+                if (verbose) {
                     transcript?.write("## Input Files Context\n\n$inputFileContext\n\n")
                     transcript?.flush()
                 }
@@ -280,7 +361,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
             }
             // Combine messages with input files
             val combinedMessages = messages + listOf(inputFileContext).filter { it.isNotBlank() }
-            if(verbose) {
+            if (verbose) {
                 transcript?.write("## Input Messages\n\n${combinedMessages.joinToString("\n\n")}\n\n")
                 transcript?.flush()
             }
@@ -288,34 +369,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
 
             // Overview tab
             val overviewTask = tabs.newTask("Overview")
-            val overviewContent = buildString {
-                appendLine("# Narrative Generation")
-                appendLine()
-                appendLine("**Subject:** $subject")
-                appendLine()
-                appendLine("## Configuration")
-                appendLine("- Target Word Count: ${genConfig.target_word_count}")
-                appendLine("- Structure: ${genConfig.number_of_acts} acts, ~${genConfig.scenes_per_act} scenes per act")
-                appendLine("- Writing Style: ${genConfig.writing_style}")
-                appendLine("- Point of View: ${genConfig.point_of_view}")
-                appendLine("- Tone: ${genConfig.tone}")
-                appendLine("- Detailed Descriptions: ${if (genConfig.detailed_descriptions) "✓" else "✗"}")
-                appendLine("- Include Dialogue: ${if (genConfig.include_dialogue) "✓" else "✗"}")
-                appendLine("- Internal Thoughts: ${if (genConfig.show_internal_thoughts) "✓" else "✗"}")
-                appendLine()
-                appendLine(
-                    "**Started:** ${
-                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                    }"
-                )
-                appendLine()
-                appendLine("---")
-                appendLine()
-                appendLine("## Progress")
-                appendLine()
-                appendLine("### Phase 1: Narrative Analysis")
-                appendLine("*Running base narrative reasoning analysis...*")
-            }
+            val overviewContent = overviewContent(subject, genConfig)
             overviewTask.add(overviewContent.renderMarkdown(true))
             transcript?.write("\n## Overview\n\n$overviewContent\n\n")
             transcript?.flush()
@@ -369,7 +423,8 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                         title = subject,
                         premise = analysisResult.toString().take(500),
                         transcriptWriter = transcript,
-                        orchestrationConfig = orchestrationConfig
+                        orchestrationConfig = orchestrationConfig,
+                        dataDir = dataDir
                     )
                     if (coverImagePath != null) {
                         overviewTask.add(
@@ -390,62 +445,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                 // Pass 1: High-level outline with characters and settings
                 log.info("Phase 2.1: Generating high-level outline")
 
-                val highLevelPrompt = buildString {
-                    appendLine("You are a master story architect. Based on the narrative analysis, create a high-level narrative structure.")
-                    appendLine()
-                    appendLine("Subject: $subject")
-                    appendLine()
-                    appendLine("Narrative Analysis:")
-                    appendLine(analysisResult.toString().truncateForDisplay(8000))
-                    appendLine()
-                    appendLine("Narrative Elements:")
-                    appendLine(genConfig.narrative_elements?.entries?.joinToString("\n") { (key, value) -> "- $key: $value" }
-                        ?: "")
-                    appendLine()
-                    appendLine("- ${genConfig.number_of_acts} acts")
-                    appendLine("- Approximately ${genConfig.scenes_per_act} scenes per act (total ~$totalScenes scenes)")
-                    appendLine("- Target: ${genConfig.target_word_count} total words (~$wordsPerScene words per scene)")
-                    appendLine()
-                    appendLine("For each scene, specify:")
-                    appendLine("- Scene number and title")
-                    appendLine("- Purpose (what this scene accomplishes)")
-                    appendLine("- Key events (what happens)")
-                    appendLine("- Emotional arc (how characters feel/change)")
-                    appendLine("- Setting (choose from available settings or describe a new one)")
-                    appendLine("- Characters present (from the character list)")
-                    appendLine("- Estimated word count (~$wordsPerScene words)")
-                    appendLine()
-                    appendLine("Ensure the outline:")
-                    appendLine("- Has clear cause-and-effect between scenes")
-                    appendLine("- Matches the ${genConfig.tone} tone and ${genConfig.writing_style} style")
-                    appendLine()
-                    appendLine("Create a high-level outline with:")
-                    appendLine("1. **Characters**: Define all major characters with:")
-                    appendLine("   - Name")
-                    appendLine("   - Detailed description (appearance, personality, background)")
-                    appendLine("   - Role in the story (protagonist, antagonist, supporting, etc.)")
-                    appendLine("   - Key traits and motivations")
-                    appendLine("2. **Settings**: Define all major locations/settings with:")
-                    appendLine("   - Name")
-                    appendLine("   - Detailed description (visual details, atmosphere)")
-                    appendLine("   - Atmosphere/mood")
-                    appendLine("   - Significance to the story")
-                    appendLine("3. **Act Structure**: Create ${genConfig.number_of_acts} acts with:")
-                    appendLine("   - Act number and title")
-                    appendLine("   - Purpose (what this act accomplishes in the story)")
-                    appendLine("   - Key developments (major plot points and character changes)")
-                    appendLine("   - Estimated number of scenes (approximately ${genConfig.scenes_per_act} per act)")
-                    appendLine("Target: ${genConfig.target_word_count} total words")
-                    appendLine("Style: ${genConfig.writing_style}")
-                    appendLine("Tone: ${genConfig.tone}")
-                    appendLine("POV: ${genConfig.point_of_view}")
-                    appendLine("Ensure the structure:")
-                    appendLine("- Has well-defined, memorable characters")
-                    appendLine("- Uses vivid, atmospheric settings")
-                    appendLine("- Follows classic story structure (setup, rising action, climax, falling action, resolution)")
-                    appendLine("- Builds tension and stakes progressively")
-                    appendLine("- Matches the ${genConfig.tone} tone and ${genConfig.writing_style} style")
-                }
+                val highLevelPrompt = highLevelPrompt(subject, analysisResult, genConfig, totalScenes, wordsPerScene)
 
                 val highLevelAgent = ParsedAgent(
                     resultClass = HighLevelOutline::class.java,
@@ -467,62 +467,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                 log.info("Generated high-level outline: ${highLevelOutline.acts.size} acts, ${highLevelOutline.characters.size} characters, ${highLevelOutline.settings.size} settings")
 
                 // Display high-level outline
-                val highLevelContent = buildString {
-                    appendLine("## ${highLevelOutline.title}")
-                    appendLine()
-                    appendLine("**Premise:** ${highLevelOutline.premise}")
-                    appendLine()
-                    appendLine("**Estimated Word Count:** ${highLevelOutline.estimated_word_count}")
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("### Characters")
-                    appendLine()
-                    highLevelOutline.characters.forEach { char ->
-                        appendLine("#### ${char.name}")
-                        appendLine()
-                        appendLine("**Role:** ${char.role}")
-                        appendLine()
-                        appendLine("**Description:** ${char.description}")
-                        appendLine()
-                        appendLine("**Traits:** ${char.traits.joinToString(", ")}")
-                        appendLine()
-                    }
-                    appendLine("---")
-                    appendLine()
-                    appendLine("### Settings")
-                    appendLine()
-                    highLevelOutline.settings.forEach { setting ->
-                        appendLine("#### ${setting.setting_id}")
-                        appendLine()
-                        appendLine("**Description:** ${setting.description}")
-                        appendLine()
-                        appendLine("**Atmosphere:** ${setting.atmosphere}")
-                        appendLine()
-                        appendLine("**Significance:** ${setting.significance}")
-                        appendLine()
-                    }
-                    appendLine("---")
-                    appendLine()
-                    appendLine("### Act Structure")
-                    appendLine()
-                    highLevelOutline.acts.forEach { act ->
-                        appendLine("#### Act ${act.act_number}: ${act.title}")
-                        appendLine()
-                        appendLine("**Purpose:** ${act.purpose}")
-                        appendLine()
-                        appendLine("**Estimated Scenes:** ${act.estimated_scenes}")
-                        appendLine()
-                        appendLine("**Key Developments:**")
-                        act.key_developments.forEach { dev ->
-                            appendLine("- $dev")
-                        }
-                        appendLine()
-                    }
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Status:** ✅ Pass 1 Complete")
-                }
+                val highLevelContent = highLevelContent(highLevelOutline)
                 outlineTask.add(highLevelContent.renderMarkdown(true))
                 transcript?.write("\n## High-Level Outline\n\n$highLevelContent\n\n")
                 transcript?.flush()
@@ -538,26 +483,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                 highLevelOutline.acts.forEach { actSummary ->
                     log.info("Expanding Act ${actSummary.act_number}: ${actSummary.title}")
 
-                    val sceneExpansionPrompt = buildString {
-                        appendLine("You are a master story architect. Expand this act into detailed scenes.")
-                        appendLine()
-                        appendLine("**High-Level Narrative Context:**")
-                        appendLine(highLevelOutline.toJson().indent("  "))
-                        appendLine()
-                        appendLine("**Act:**")
-                        appendLine(actSummary.toJson().indent("  "))
-                        appendLine()
-                        appendLine("**Previous Acts Context:**")
-                        appendLine(
-                            detailedActs.joinToString("\n") { act -> "Act ${act.act_number}: ${act.title} - ${act.scenes?.size ?: 0} scenes" }
-                                .indent("  ")
-                        )
-                        appendLine()
-                        appendLine("Create approximately ${actSummary.estimated_scenes} scenes for this act. For each scene specify:")
-                        appendLine("- Fulfills the act's purpose and key developments")
-                        appendLine("- Appropriate setting_id from defined settings")
-                        appendLine("- Characters present from defined characters")
-                    }
+                    val sceneExpansionPrompt = sceneExpansionPrompt(highLevelOutline, actSummary, detailedActs)
 
                     val sceneExpansionAgent = ParsedAgent(
                         resultClass = ActOutline::class.java,
@@ -596,42 +522,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                 log.info("Complete outline: ${outline.acts.size} acts, ${outline.acts.sumOf { it.scenes?.size ?: 0 }} scenes")
 
                 // Display complete detailed outline
-                val outlineContent = buildString {
-                    appendLine("## ${outline.title}")
-                    appendLine()
-                    appendLine("**Premise:** ${outline.premise}")
-                    appendLine()
-                    appendLine("**Estimated Word Count:** ${outline.estimated_word_count}")
-                    appendLine()
-                    appendLine("**Total Scenes:** ${outline.acts.sumOf { it.scenes?.size ?: 0 }}")
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("### Detailed Scene Breakdown")
-                    appendLine()
-                    outline.acts.forEach { act ->
-                        appendLine("### Act ${act.act_number}: ${act.title}")
-                        appendLine()
-                        appendLine("**Purpose:** ${act.purpose}")
-                        appendLine()
-                        act.scenes?.forEach { scene ->
-                            appendLine("#### Scene ${scene.scene_number}: ${scene.title}")
-                            appendLine()
-                            appendLine("- **Setting:** ${scene.setting_id}")
-                            appendLine("- **Characters:** ${scene.characters.joinToString(", ")}")
-                            appendLine("- **Purpose:** ${scene.purpose}")
-                            appendLine("- **Emotional Arc:** ${scene.emotional_arc}")
-                            appendLine("- **Est. Words:** ${scene.estimated_word_count}")
-                            appendLine()
-                            appendLine("**Key Events:**")
-                            appendLine(scene.key_events?.toJson()?.indent("  ") ?: "None")
-                            appendLine()
-                        }
-                        appendLine("---")
-                        appendLine()
-                    }
-                    appendLine("**Status:** ✅ Complete")
-                }
+                val outlineContent = outlineContent(outline)
                 outlineTask.add(outlineContent.renderMarkdown(true))
                 transcript?.write("\n## Outline\n\n$outlineContent\n\n")
                 transcript?.flush()
@@ -677,7 +568,8 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                             transcriptWriter = transcript,
                             orchestrationConfig = orchestrationConfig,
                             settingProfile = setting,
-                            coverImagePath = coverImagePath
+                            coverImagePath = coverImagePath,
+                            dataDir = dataDir
                         )
                         if (settingImagePath != null) {
                             settingImages[setting.setting_id] = settingImagePath
@@ -693,7 +585,8 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                             characterProfile = character,
                             transcriptWriter = transcript,
                             orchestrationConfig = orchestrationConfig,
-                            coverImagePath = coverImagePath
+                            coverImagePath = coverImagePath,
+                            dataDir = dataDir
                         )
                         if (characterImagePath != null) {
                             characterImages[character.name] = characterImagePath
@@ -762,54 +655,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                         "This is the opening scene."
                     }
 
-                    val scenePromptText = buildString {
-                        appendLine("You are a skilled ${genConfig.writing_style} writer. Write Scene ${sceneOutline.scene_number} of the narrative.")
-                        appendLine("This is Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}.")
-                        appendLine()
-                        appendLine("Overall Story: ${outline.title}")
-                        appendLine("Premise: ${outline.premise}")
-                        appendLine()
-                        appendLine("Scene Outline:")
-                        appendLine(sceneOutline.toJson().indent("  "))
-                        appendLine()
-                        appendLine(recentContext)
-                        appendLine()
-                        appendLine("Writing Guidelines:")
-                        appendLine("- Point of View: ${genConfig.point_of_view}")
-                        appendLine("- Tone: ${genConfig.tone}")
-                        appendLine("- Style: ${genConfig.writing_style}")
-                        if (genConfig.detailed_descriptions) {
-                            appendLine("- Include vivid, sensory descriptions of setting and action")
-                        } else {
-                            appendLine("- Keep descriptions concise")
-                        }
-                        if (genConfig.include_dialogue) {
-                            appendLine("- Include natural, character-appropriate dialogue")
-                        } else {
-                            appendLine("- Minimize dialogue, focus on narration")
-                        }
-                        if (genConfig.show_internal_thoughts) {
-                            appendLine("- Show character internal thoughts and feelings")
-                        } else {
-                            appendLine("- Show emotions through action and dialogue only")
-                        }
-                        appendLine()
-                        appendLine("Write the complete scene with:")
-                        appendLine("- A strong opening that connects to the previous scene (if any)")
-                        appendLine("- Clear progression through the key events")
-                        appendLine("- Character development and emotional depth")
-                        appendLine("- Sensory details and atmosphere")
-                        appendLine("- A compelling ending that sets up the next scene")
-                        appendLine("- Approximately ${sceneOutline.estimated_word_count} words")
-                        appendLine()
-                        appendLine("After writing, provide:")
-                        appendLine("- The scene content")
-                        appendLine("- Actual word count")
-                        appendLine("- Key moments (3-5 bullet points of what happened)")
-                        appendLine("- Character states (how each character ends the scene emotionally/physically)")
-                        appendLine()
-                        appendLine("Make the writing engaging, immersive, and true to the characters and story.")
-                    }
+                    val scenePromptText = scenePromptText(genConfig, sceneOutline, outline, recentContext)
 
                     val sceneAgent = ParsedAgent(
                         resultClass = GeneratedScene::class.java,
@@ -828,30 +674,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                         repeat(genConfig.revision_passes) { revisionNum ->
                             log.debug("Revision pass ${revisionNum + 1} for Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}")
 
-                            val revisionPrompt = buildString {
-                                appendLine("You are an expert editor. Review and improve this scene while maintaining its core events and purpose.")
-                                appendLine()
-                                appendLine("Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}: ${sceneOutline.title}")
-                                appendLine()
-                                appendLine("Current Version:")
-                                appendLine(generatedScene.content)
-                                appendLine()
-                                appendLine("Improve:")
-                                appendLine("- Prose quality and flow")
-                                appendLine("- Character voice consistency")
-                                appendLine("- Sensory details and atmosphere")
-                                appendLine("- Pacing and tension")
-                                appendLine("- Dialogue naturalness")
-                                appendLine("- Emotional impact")
-                                appendLine()
-                                appendLine("Maintain:")
-                                appendLine("- All key events and plot points")
-                                appendLine("- Character states and development")
-                                appendLine("- Word count (currently ${generatedScene.word_count}, target ${sceneOutline.estimated_word_count})")
-                                appendLine("- Tone and style")
-                                appendLine()
-                                appendLine("Provide the revised scene content only.")
-                            }
+                            val revisionPrompt = revisionPrompt(sceneOutline, generatedScene)
 
                             val revisionAgent = ChatAgent(
                                 prompt = revisionPrompt,
@@ -870,35 +693,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                     generatedScenes.add(generatedScene)
                     cumulativeWordCount += generatedScene.word_count
 
-                    val sceneContent = buildString {
-                        appendLine("## ${sceneOutline.title}")
-                        appendLine()
-                        appendLine("**Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}**")
-                        appendLine()
-                        appendLine("**Setting:** ${sceneOutline.setting_id}")
-                        appendLine()
-                        appendLine("**Characters:** ${sceneOutline.characters.joinToString(", ")}")
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine(generatedScene.content)
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("**Word Count:** ${generatedScene.word_count}")
-                        appendLine()
-                        appendLine("**Key Moments:**")
-                        generatedScene.key_moments.forEach { moment ->
-                            appendLine("- $moment")
-                        }
-                        appendLine()
-                        appendLine("**Character States:**")
-                        generatedScene.character_states.forEach { (char, state) ->
-                            appendLine("- **$char:** $state")
-                        }
-                        appendLine()
-                        appendLine("**Status:** ✅ Complete")
-                    }
+                    val sceneContent = sceneContent(sceneOutline, generatedScene)
                     sceneTask.add(sceneContent.renderMarkdown(true))
                     transcript?.write("\n## $sceneContent\n\n")
                     transcript?.flush()
@@ -929,7 +724,8 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                                 char to (characterImages[char] ?: return@mapNotNull null)
                             }.toMap(),
                             transcriptWriter = transcript,
-                            orchestrationConfig = orchestrationConfig
+                            orchestrationConfig = orchestrationConfig,
+                            dataDir = dataDir
                         )
                     }
                 }
@@ -946,38 +742,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                 log.info("Phase 4: Assembling final narrative")
                 val finalTask = tabs.newTask("Complete Narrative")
 
-                val finalNarrative = buildString {
-                    appendLine("# ${outline.title}")
-                    appendLine()
-                    appendLine("*${outline.premise}*")
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-
-                    outline.acts.forEach { act ->
-                        appendLine("# Act ${act.act_number}: ${act.title}")
-                        appendLine()
-
-                        val actScenes = generatedScenes.filter { scene ->
-                            act.scenes?.any { it.scene_number == scene.scene_number } == true
-                        }
-
-                        actScenes.forEach { scene ->
-                            appendLine("## ${scene.title}")
-                            appendLine()
-                            appendLine(scene.content)
-                            appendLine()
-                            appendLine("---")
-                            appendLine()
-                        }
-                    }
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**THE END**")
-                    appendLine()
-                    appendLine("*Total Word Count: $cumulativeWordCount*")
-                }
+                val finalNarrative = finalNarrative(outline, generatedScenes, cumulativeWordCount)
                 finalTask.add(finalNarrative.renderMarkdown(true))
                 finalTask.update()
                 finalTask.complete()
@@ -987,39 +752,19 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                     if (generatedScenes.isNotEmpty()) cumulativeWordCount / generatedScenes.size else 0
 
                 overviewTask.add(
-                    buildString {
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("## ✅ Generation Complete")
-                        appendLine()
-                        appendLine("**Statistics:**")
-                        appendLine("- Total Scenes: ${generatedScenes.size}")
-                        appendLine("- Total Word Count: $cumulativeWordCount")
-                        appendLine("- Average Words/Scene: $avgWordsPerScene")
-                        appendLine("- Target Word Count: ${genConfig.target_word_count}")
-                        appendLine("- Completion: ${(cumulativeWordCount.toFloat() / genConfig.target_word_count * 100).toInt()}%")
-                        appendLine("- Total Time: ${totalTime / 1000.0}s")
-                        appendLine()
-                        appendLine(
-                            "**Completed:** ${
-                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                            }"
-                        )
-                    }.renderMarkdown(true)
+                    taskPrompt(
+                        generatedScenes,
+                        cumulativeWordCount,
+                        avgWordsPerScene,
+                        genConfig,
+                        totalTime
+                    ).renderMarkdown(true)
                 )
                 overviewTask.update()
                 overviewTask.complete()
                 transcript?.write("\n## Final Statistics\n\n- Total Scenes: ${generatedScenes.size}\n- Total Word Count: $cumulativeWordCount\n- Time: ${totalTime / 1000.0}s\n\n")
 
-                val finalResult = buildString {
-                    appendLine("# Narrative Generation Summary: ${outline.title}")
-                    appendLine()
-                    appendLine("A complete narrative of **$cumulativeWordCount words** across **${generatedScenes.size} scenes** was generated in **${totalTime / 1000.0}s**.")
-                    appendLine("> The full narrative and detailed transcript are available in the UI tabs for review.")
-                    appendLine()
-                    appendLine(outlineContent.substringBeforeLast("\n**Status:**").trim())
-                }
+                val finalResult = finalResult(outline, cumulativeWordCount, generatedScenes, totalTime, outlineContent)
                 log.info("NarrativeGenerationTask completed: scenes=${generatedScenes.size}, words=$cumulativeWordCount, time=${totalTime}ms")
                 val narrativeData = mapOf(
                     "config" to genConfig,
@@ -1037,11 +782,11 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                         "durationMs" to totalTime
                     )
                 )
-                task.resolveUserFile("narrative_data.json")?.let { jsonFile ->
+                task.resolveUserFile(dataFile)?.let { jsonFile ->
                     jsonFile.writeText(narrativeData.toJson())
                     log.info("Saved narrative data to ${jsonFile.absolutePath}")
                     overviewTask.add(
-                        "\n**Data:** Saved full narrative data to `narrative_data.json`\n".renderMarkdown(
+                        "\n**Data:** Saved full narrative data to `${dataFile}`\n".renderMarkdown(
                             true
                         )
                     )
@@ -1083,18 +828,19 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
         title: String,
         premise: String,
         transcriptWriter: Writer?,
-        orchestrationConfig: OrchestrationConfig
+        orchestrationConfig: OrchestrationConfig,
+        dataDir: String
     ): String? {
         try {
             log.info("Generating cover image for: $title")
             val coverTask = tabs.newTask("Cover Image")
             coverTask.add(
                 buildString {
-                appendLine("# Cover Image")
-                appendLine()
-                appendLine("**Status:** Generating cover image...")
-                appendLine()
-              }.renderMarkdown(true)
+                    appendLine("# Cover Image")
+                    appendLine()
+                    appendLine("**Status:** Generating cover image...")
+                    appendLine()
+                }.renderMarkdown(true)
             )
             coverTask.update()
             val imageAgent = ImageProcessingAgent(
@@ -1106,22 +852,14 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
             val result = imageAgent.answer(listOf(ImageAndText(coverPrompt)))
             val image = result.image
             // Save image
-            val relativePath = "00_cover_image.png"
+            val relativePath = "$dataDir/00_cover_image.png"
             val imageFile = parentTask.resolveUserFile(relativePath)!!
+            imageFile.parentFile?.mkdirs()
             ImageIO.write(image, "png", imageFile)
             log.debug("Saved cover image to: ${imageFile.absolutePath}")
             // Create display link
             val link = parentTask.linkTo(relativePath)
-            val imageHtml = buildString {
-                appendLine("<div class='cover-image'>")
-                appendLine("  <h3>$title</h3>")
-                appendLine("  <p><em>$premise</em></p>")
-                appendLine("  <p><strong>Image Prompt:</strong> ${result.text}</p>")
-                appendLine("  <a href='$link' target='_blank'>")
-                appendLine("    <img src='$link' alt='Cover' style='max-width: 600px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);' />")
-                appendLine("  </a>")
-                appendLine("</div>")
-            }
+            val imageHtml = imageHtml(title, premise, result, link)
             coverTask.add(imageHtml.renderMarkdown(true))
             coverTask.update()
             // Write to transcript
@@ -1151,18 +889,19 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
         settingProfile: SettingProfile,
         transcriptWriter: Writer?,
         orchestrationConfig: OrchestrationConfig,
-        coverImagePath: String?
+        coverImagePath: String?,
+        dataDir: String
     ): String? {
         return try {
             log.info("Generating reference image for setting: ${settingProfile.setting_id}")
             val settingTask = tabs.newTask("Setting: ${settingProfile.setting_id}")
             settingTask.add(
                 buildString {
-                appendLine("# Setting Reference: ${settingProfile.setting_id}")
-                appendLine()
-                appendLine("**Status:** Generating setting visualization...")
-                appendLine()
-              }.renderMarkdown(true)
+                    appendLine("# Setting Reference: ${settingProfile.setting_id}")
+                    appendLine()
+                    appendLine("**Status:** Generating setting visualization...")
+                    appendLine()
+                }.renderMarkdown(true)
             )
             settingTask.update()
 
@@ -1203,24 +942,15 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
             val image = result.image
             // Save image with sanitized filename
             val sanitizedName = settingProfile.setting_id.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(50)
-            val relativePath = "setting_${sanitizedName}_ref.png"
+            val relativePath = "$dataDir/setting_${sanitizedName}_ref.png"
             val imageFile = parentTask.resolveUserFile(relativePath)!!
+            imageFile.parentFile?.mkdirs()
             ImageIO.write(image, "png", imageFile)
             log.debug("Saved setting reference image to: ${imageFile.absolutePath}")
 
             // Create display link
             val link = parentTask.linkTo(relativePath)
-            val imageHtml = buildString {
-                appendLine("<div class='setting-reference'>")
-                appendLine("  <h4>${settingProfile.setting_id}</h4>")
-                appendLine("  <p><strong>Description:</strong> ${settingProfile.description}</p>")
-                appendLine("  <p><strong>Atmosphere:</strong> ${settingProfile.atmosphere}</p>")
-                appendLine("  <p><strong>Image Prompt:</strong> ${result.text}</p>")
-                appendLine("  <a href='$link' target='_blank'>")
-                appendLine("    <img src='$link' alt='${settingProfile.setting_id}' style='max-width: 400px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' />")
-                appendLine("  </a>")
-                appendLine("</div>")
-            }
+            val imageHtml = imageHtml(settingProfile, result, link)
             settingTask.add(imageHtml.renderMarkdown(true))
             settingTask.update()
             // Write to transcript
@@ -1250,18 +980,19 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
         characterProfile: CharacterProfile,
         transcriptWriter: Writer?,
         orchestrationConfig: OrchestrationConfig,
-        coverImagePath: String?
+        coverImagePath: String?,
+        dataDir: String
     ): String? {
         return try {
             log.info("Generating reference image for character: ${characterProfile.name}")
             val charTask = tabs.newTask("Character: ${characterProfile.name}")
             charTask.add(
                 buildString {
-                appendLine("# Character Reference: ${characterProfile.name}")
-                appendLine()
-                appendLine("**Status:** Generating character visualization...")
-                appendLine()
-              }.renderMarkdown(true)
+                    appendLine("# Character Reference: ${characterProfile.name}")
+                    appendLine()
+                    appendLine("**Status:** Generating character visualization...")
+                    appendLine()
+                }.renderMarkdown(true)
             )
             charTask.update()
 
@@ -1303,8 +1034,9 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
             val image = result.image
             // Save image with sanitized filename
             val sanitizedName = characterProfile.name.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(50)
-            val relativePath = "character_${sanitizedName}_ref.png"
+            val relativePath = "$dataDir/character_${sanitizedName}_ref.png"
             val imageFile = parentTask.resolveUserFile(relativePath)!!
+            imageFile.parentFile?.mkdirs()
             ImageIO.write(image, "png", imageFile)
             log.debug("Saved character reference image to: ${imageFile.absolutePath}")
 
@@ -1356,18 +1088,19 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
         settingImagePath: String?,
         characterImagePaths: Map<String, String>,
         transcriptWriter: Writer?,
-        orchestrationConfig: OrchestrationConfig
+        orchestrationConfig: OrchestrationConfig,
+        dataDir: String
     ) {
         try {
             log.info("Generating image for Act $actNumber, Scene $sceneNumber: $sceneTitle")
             val sceneImageTask = tabs.newTask("Act $actNumber Scene $sceneNumber Image")
             sceneImageTask.add(
                 buildString {
-                appendLine("# Act $actNumber, Scene $sceneNumber Image")
-                appendLine()
-                appendLine("**Status:** Generating scene visualization...")
-                appendLine()
-              }.renderMarkdown(true)
+                    appendLine("# Act $actNumber, Scene $sceneNumber Image")
+                    appendLine()
+                    appendLine("**Status:** Generating scene visualization...")
+                    appendLine()
+                }.renderMarkdown(true)
             )
             sceneImageTask.update()
             val imageAgent = ImageProcessingAgent(
@@ -1429,22 +1162,14 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
             val result = imageAgent.answer(imageInputs)
             val image = result.image
             // Save image
-            val relativePath = "act_${actNumber}_scene_${sceneNumber}_image.png"
+            val relativePath = "$dataDir/act_${actNumber}_scene_${sceneNumber}_image.png"
             val imageFile = parentTask.resolveUserFile(relativePath)!!
+            imageFile.parentFile?.mkdirs()
             ImageIO.write(image, "png", imageFile)
             log.debug("Saved scene image to: ${imageFile.absolutePath}")
             // Create display link
             val link = parentTask.linkTo(relativePath)
-            val imageHtml = buildString {
-                appendLine("<div class='scene-image'>")
-                appendLine("  <h4>Act $actNumber, Scene $sceneNumber: $sceneTitle</h4>")
-                appendLine("  <p><strong>Setting:</strong> $setting</p>")
-                appendLine("  <p><strong>Image Prompt:</strong> ${result.text}</p>")
-                appendLine("  <a href='$link' target='_blank'>")
-                appendLine("    <img src='$link' alt='Act $actNumber Scene $sceneNumber' style='max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' />")
-                appendLine("  </a>")
-                appendLine("</div>")
-            }
+            val imageHtml = imageHtml(actNumber, sceneNumber, sceneTitle, setting, result, link)
             sceneImageTask.add(imageHtml.renderMarkdown(true))
             sceneImageTask.update()
             // Write to transcript
@@ -1469,13 +1194,15 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(NarrativeGenerationTask::class.java)
-        @JvmStatic val NarrativeGeneration = TaskType(
-          name = "NarrativeGeneration",
-          category = "Writing",
-          taskClass = NarrativeGenerationTask::class.java,
-          executionConfigClass = NarrativeGenerationTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Generate complete narratives from analysis and outlines",
+
+        @JvmStatic
+        val NarrativeGeneration = TaskType(
+            name = "NarrativeGeneration",
+            category = "Writing",
+            taskClass = NarrativeGenerationTask::class.java,
+            executionConfigClass = NarrativeGenerationTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Generate complete narratives from analysis and outlines",
             tooltipHtml = buildString {
                 appendLine("Extends NarrativeReasoning to generate complete, publication-ready narratives.")
                 appendLine("<ul>")
@@ -1485,11 +1212,13 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
                 appendLine("  <li>Maintains consistency by feeding previous scenes into each generation</li>")
                 appendLine("  <li>Supports configurable structure (acts, scenes, word count)</li>")
                 appendLine("  <li>Customizable writing style, POV, tone, and narrative elements</li>")
+                appendLine("  <li>Supports character reference images and plot continuity details</li>")
                 appendLine("  <li>Optional revision passes for quality improvement</li>")
                 appendLine("  <li>Produces complete, coherent narrative with consistent style and voice</li>")
                 appendLine("  <li>Ideal for story generation, scenario planning, user journey narratives</li>")
                 appendLine("</ul>")
             },
         )
+
     }
 }

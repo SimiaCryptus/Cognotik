@@ -27,15 +27,15 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
     @Description("The name of the character this reference is for")
     var character_name: String = "",
     @Description("Path or URL to a reference image for this character")
-    var reference_image_path: String = "",
+    var reference_image_path: String? = null,
     @Description("Detailed visual description of the character (appearance, clothing, distinguishing features, color palette, etc.)")
-    var visual_description: String = "",
+    var visual_description: String? = null,
     @Description("Personality traits and behavioral notes to inform how the character is depicted")
-    var personality_notes: String = "",
+    var personality_notes: String? = null,
     @Description("Character's role in the story (e.g., protagonist, antagonist, supporting)")
-    var role: String = "",
+    var role: String? = null,
     @Description("Relationships with other characters")
-    var relationships: String = ""
+    var relationships: String? = null
   ) : ValidatedObject {
     override fun validate(): String? {
       character_name = character_name.trim()
@@ -168,10 +168,10 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
       appendLine("The following characters have been pre-defined. Use these details to ensure consistency:")
       refs.forEach { ref ->
         appendLine("\n### ${ref.character_name}")
-        if (ref.visual_description.isNotBlank()) appendLine("- **Visual Description:** ${ref.visual_description}")
-        if (ref.personality_notes.isNotBlank()) appendLine("- **Personality:** ${ref.personality_notes}")
-        if (ref.role.isNotBlank()) appendLine("- **Role:** ${ref.role}")
-        if (ref.relationships.isNotBlank()) appendLine("- **Relationships:** ${ref.relationships}")
+        if (ref.visual_description?.isNotBlank() == true) appendLine("- **Visual Description:** ${ref.visual_description}")
+        if (ref.personality_notes?.isNotBlank() == true) appendLine("- **Personality:** ${ref.personality_notes}")
+        if (ref.role?.isNotBlank() == true) appendLine("- **Role:** ${ref.role}")
+        if (ref.relationships?.isNotBlank() == true) appendLine("- **Relationships:** ${ref.relationships}")
       }
     }
   }
@@ -180,10 +180,10 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
     if (continuity == null) return ""
     return buildString {
       appendLine("\n## Plot Continuity & Narrative Guidelines")
-      if (continuity.narrative_structure.isNotBlank()) appendLine("- **Narrative Structure:** ${continuity.narrative_structure}")
-      if (continuity.setting_details.isNotBlank()) appendLine("- **Setting:** ${continuity.setting_details}")
-      if (continuity.tone.isNotBlank()) appendLine("- **Tone/Mood:** ${continuity.tone}")
-      if (continuity.prior_story_context.isNotBlank()) appendLine("- **Prior Story Context:** ${continuity.prior_story_context}")
+      if (continuity.narrative_structure?.isNotBlank() == true) appendLine("- **Narrative Structure:** ${continuity.narrative_structure}")
+      if (continuity.setting_details?.isNotBlank() == true) appendLine("- **Setting:** ${continuity.setting_details}")
+      if (continuity.tone?.isNotBlank() == true) appendLine("- **Tone/Mood:** ${continuity.tone}")
+      if (continuity.prior_story_context?.isNotBlank() == true) appendLine("- **Prior Story Context:** ${continuity.prior_story_context}")
       if (continuity.themes.isNotEmpty()) appendLine("- **Themes:** ${continuity.themes.joinToString(", ")}")
       if (continuity.key_plot_points.isNotEmpty()) {
         appendLine("- **Key Plot Points (in order):**")
@@ -193,8 +193,8 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
         appendLine("- **Continuity Constraints:**")
         continuity.continuity_constraints.forEach { appendLine("  - $it") }
       }
-      if (continuity.ending_notes.isNotBlank()) appendLine("- **Ending/Resolution Notes:** ${continuity.ending_notes}")
-      if (continuity.additional_notes.isNotBlank()) appendLine("- **Additional Notes:** ${continuity.additional_notes}")
+      if (continuity.ending_notes?.isNotBlank() == true) appendLine("- **Ending/Resolution Notes:** ${continuity.ending_notes}")
+      if (continuity.additional_notes?.isNotBlank() == true) appendLine("- **Additional Notes:** ${continuity.additional_notes}")
     }
   }
 
@@ -207,6 +207,18 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
   ) {
     val transcript = task.newFileOutputStream(transcriptFile())
     task.ui.pool.submit {
+      val dataDir = (getOutputFile(".md")?.let {
+        if (it.endsWith(".md")) it.removeSuffix(".md") else null
+      } ?: "comic").apply {
+        val dir = task.resolveUserFile(this)
+        if (dir != null && !dir.exists()) {
+          dir.mkdirs()
+        }
+      }
+      val dataFile = getOutputFile(".md")?.let {
+        if (it.endsWith(".md")) it.removeSuffix(".md") + ".comic.json" else null
+      } ?: "comic_book.json"
+
       try {
         val subject = messages.firstOrNull() ?: executionConfig?.task_description
         log.info("Task 'ComicBookGeneration' started for subject: $subject")
@@ -237,7 +249,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
           appendLine("**Subject:** $subject")
           appendLine("**Target Pages:** ${executionConfig!!.target_pages}")
           appendLine("**Style:** ${executionConfig.art_style}")
-          if (executionConfig.style_details.isNotBlank()) appendLine("Style Details: ${executionConfig.style_details}")
+          if (executionConfig.style_details?.isNotBlank() == true) appendLine("Style Details: ${executionConfig.style_details}")
           append(characterRefPrompt)
           append(plotContinuityPrompt)
           appendLine()
@@ -257,7 +269,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
           appendLine("- Captions (if any)")
           appendLine()
           appendLine("For each row, provide a 'visual_description' that summarizes the row for an artist to draw as a strip. Include lighting, mood, and composition details. Ensure visual consistency across panels.")
-          if (plotContinuityPrompt.isNotBlank()) {
+          if (plotContinuityPrompt?.isNotBlank() == true) {
             appendLine()
             appendLine("IMPORTANT: Follow the plot continuity guidelines strictly. Ensure all key plot points are addressed in order, continuity constraints are respected, and the narrative maintains the specified tone and themes throughout.")
           }
@@ -306,15 +318,16 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
         // Pre-load any user-provided character reference images
         val preloadedCharacterRefImages = mutableMapOf<String, java.awt.image.BufferedImage>()
         executionConfig?.character_references?.forEach { ref ->
-          if (ref.reference_image_path.isNotBlank()) {
+          val referenceImagePath = ref.reference_image_path
+          if (referenceImagePath?.isNotBlank() == true) {
             try {
-              val img = ImageIO.read(task.resolveUserFile(ref.reference_image_path))
+              val img = ImageIO.read(task.resolveUserFile(referenceImagePath))
               if (img != null) {
                 preloadedCharacterRefImages[ref.character_name] = img
-                log.info("Loaded reference image for character '${ref.character_name}' from ${ref.reference_image_path}")
+                log.info("Loaded reference image for character '${ref.character_name}' from $referenceImagePath")
               }
             } catch (e: Exception) {
-              log.warn("Failed to load reference image for character '${ref.character_name}' from ${ref.reference_image_path}", e)
+              log.warn("Failed to load reference image for character '${ref.character_name}' from $referenceImagePath", e)
               transcript?.write("**Warning:** Failed to load reference image for '${ref.character_name}': ${e.message}\n\n".toByteArray())
             }
           }
@@ -343,7 +356,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
           charRefTask.header("Character References", 1)
           val charPromptText = buildString {
             appendLine("Create a character sheet for a comic book.")
-            appendLine("Style: ${executionConfig?.art_style} ${executionConfig?.style_details}")
+            appendLine("Style: ${executionConfig.art_style} ${executionConfig.style_details}")
           }
 
           val charAgent = ImageProcessingAgent(
@@ -353,7 +366,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
           )
 
           // Build a lookup map from character references for easy access
-          val charRefLookup = executionConfig?.character_references?.associateBy { it.character_name.lowercase() }!!
+          val charRefLookup = executionConfig.character_references?.associateBy { it.character_name.lowercase() }!!
 
           script.characters.forEach { char ->
             try {
@@ -361,8 +374,8 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
               val enhancedVisualTraits = buildString {
                 append(char.visual_traits)
                 if (matchedRef != null) {
-                  if (matchedRef.visual_description.isNotBlank()) append(" ${matchedRef.visual_description}")
-                  if (matchedRef.personality_notes.isNotBlank()) append(" Personality: ${matchedRef.personality_notes}")
+                  if (matchedRef.visual_description?.isNotBlank() == true) append(" ${matchedRef.visual_description}")
+                  if (matchedRef.personality_notes?.isNotBlank() == true) append(" Personality: ${matchedRef.personality_notes}")
                 }
               }
 
@@ -390,7 +403,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
               val relativePath = "char_${char.name.replace(Regex("[^a-zA-Z0-9]"), "_")}.png"
               val baos = ByteArrayOutputStream()
               ImageIO.write(image, "png", baos)
-              val link = task.saveFile(relativePath, baos.toByteArray())
+              val link = task.saveFile("$dataDir/$relativePath", baos.toByteArray())
               characterImages[char.name] = relativePath
 
               charRefTask.header(char.name, 2)
@@ -415,7 +428,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
           task.update()
           val imageAgentPrompt = buildString {
             appendLine("Create a comic book strip based on the description.")
-            appendLine("Style: ${executionConfig?.art_style} ${executionConfig?.style_details}")
+            appendLine("Style: ${executionConfig.art_style} ${executionConfig.style_details}")
           }
 
           val imageAgent = ImageProcessingAgent(
@@ -468,7 +481,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
                     val path = characterImages[char.name]
                     if (path != null) {
                       try {
-                        val img = ImageIO.read(task.resolveUserFile(path))
+                        val img = ImageIO.read(task.resolveUserFile("$dataDir/$path"))
                         if (img != null) {
                           imageInputs.add(
                             ImageAndText(
@@ -497,7 +510,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
                 val relativePath = "page_${page.page_number}_row_${row.row_number}.png"
                 val baos = ByteArrayOutputStream()
                 ImageIO.write(image, "png", baos)
-                val link = task.saveFile(relativePath, baos.toByteArray())
+                val link = task.saveFile("$dataDir/$relativePath", baos.toByteArray())
                 rowImages["${page.page_number}_${row.row_number}"] = relativePath
 
                 val rowHtml = buildString {
@@ -544,7 +557,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
             appendLine("* **Character References Provided:** ${executionConfig?.character_references?.size}")
             appendLine("* **Plot Continuity:** ${if (executionConfig?.plot_continuity != null) "Configured" else "Not specified"}")
             appendLine("* **Artifacts:**")
-            appendLine("  * Full Metadata: `comic_book.json`")
+            appendLine("  * Full Metadata: `${dataFile}`")
             appendLine("  * Character Images: ${characterImages.size} files")
             appendLine("  * Page Strips: ${rowImages.size} files")
           }
@@ -553,7 +566,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
           resultFn("## Comic Book Script Generated\nTitle: ${script.title}\nPages: ${script.pages.size}\nVisual generation was disabled.")
         }
         task.saveFile(
-          "comic_book.json", JsonUtil.toJson(
+          dataFile, JsonUtil.toJson(
             mapOf(
               "config" to executionConfig,
               "script" to script,
