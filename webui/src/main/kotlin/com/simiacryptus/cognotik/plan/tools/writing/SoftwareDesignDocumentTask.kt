@@ -2,23 +2,16 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.AbstractTask
-import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
-import com.simiacryptus.cognotik.plan.tools.TaskType
-import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.tools.*
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.nio.file.FileSystems
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 class SoftwareDesignDocumentTask(
   orchestrationConfig: OrchestrationConfig,
@@ -27,8 +20,6 @@ class SoftwareDesignDocumentTask(
   orchestrationConfig,
   planTask
 ) {
-
-  val maxDescriptionLength = 2000
 
   class SoftwareDesignDocumentTaskExecutionConfigData(
     @Description("The name/title of the software project")
@@ -237,11 +228,18 @@ class SoftwareDesignDocumentTask(
     orchestrationConfig: OrchestrationConfig
   ) {
 
-    val projectName = executionConfig?.project_name ?: "Unnamed Project"
+    val config = executionConfig ?: run {
+      val errorMsg = "CONFIGURATION ERROR: No execution config provided"
+      log.error(errorMsg)
+      task.safeComplete(errorMsg, log)
+      resultFn(errorMsg)
+      return
+    }
+    val projectName = config.project_name ?: "Unnamed Project"
     log.info("Task 'SoftwareDesignDocument' started for project: $projectName")
     val startTime = System.currentTimeMillis()
 
-    val systemDescription = executionConfig?.system_description
+    val systemDescription = config.system_description
     if (systemDescription.isNullOrBlank()) {
       val errorMsg = "CONFIGURATION ERROR: No system description specified"
       log.error(errorMsg)
@@ -251,12 +249,12 @@ class SoftwareDesignDocumentTask(
     }
 
     val tabs = TabbedDisplay(task)
-    val transcript = task.newFileOutputStream(transcriptFile())
     val overviewTask = tabs.newTask("Overview")
 
     task.ui.pool.submit {
+      val transcript = task.newFileOutputStream(transcriptFile())
       try {
-        val api = defaultSmart.getChildClient(task)
+        val api = orchestrationConfig.defaultSmart.getChildClient(task)
         overviewTask.header("Software Design Document: $projectName")
         val checklist = mutableMapOf<String, String>()
         fun updateChecklist() {
@@ -267,17 +265,17 @@ class SoftwareDesignDocumentTask(
           overviewTask.add(content.renderMarkdown(true))
         }
 
-        if (executionConfig.generate_use_cases) checklist["Use Cases & Actors"] = "⏳"
-        if (executionConfig.generate_requirements) checklist["Requirements Specification"] = "⏳"
-        if (executionConfig.generate_architecture) checklist["Architecture Diagrams"] = "⏳"
-        if (executionConfig.generate_data_model) checklist["Data Model & ERD"] = "⏳"
-        if (executionConfig.generate_flow_diagrams) checklist["Flow Diagrams"] = "⏳"
-        if (executionConfig.generate_test_plan) checklist["Test Plan"] = "⏳"
-        if (executionConfig.generate_phase_plan) checklist["Phase Planning"] = "⏳"
-        if (executionConfig.generate_project_data) checklist["Project Data JSON"] = "⏳"
+        if (config.generate_use_cases) checklist["Use Cases & Actors"] = "⏳"
+        if (config.generate_requirements) checklist["Requirements Specification"] = "⏳"
+        if (config.generate_architecture) checklist["Architecture Diagrams"] = "⏳"
+        if (config.generate_data_model) checklist["Data Model & ERD"] = "⏳"
+        if (config.generate_flow_diagrams) checklist["Flow Diagrams"] = "⏳"
+        if (config.generate_test_plan) checklist["Test Plan"] = "⏳"
+        if (config.generate_phase_plan) checklist["Phase Planning"] = "⏳"
+        if (config.generate_project_data) checklist["Project Data JSON"] = "⏳"
 
 
-        val targetAudience = executionConfig.target_audience ?: "general users"
+        val targetAudience = config.target_audience ?: "general users"
 
         overviewTask.add(
           buildString {
@@ -329,9 +327,9 @@ class SoftwareDesignDocumentTask(
             projectName = projectName,
             systemDescription = systemDescription,
             targetAudience = targetAudience,
-            stakeholders = executionConfig.stakeholders ?: emptyList(),
-            techStack = executionConfig.technology_stack ?: emptyList(),
-            constraints = executionConfig.constraints ?: emptyList(),
+            stakeholders = config.stakeholders ?: emptyList(),
+            techStack = config.technology_stack ?: emptyList(),
+            constraints = config.constraints ?: emptyList(),
             priorContext = priorContext,
             inputFileContext = inputFileContext
           ),
@@ -346,7 +344,7 @@ class SoftwareDesignDocumentTask(
         val collectedDependencies = mutableListOf<Dependency>()
 
         // Section 1: Use Cases
-        if (executionConfig.generate_use_cases) {
+        if (config.generate_use_cases) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Generating Use Cases...".renderMarkdown(true))
           log.debug("Generating use cases and actor documentation")
@@ -426,7 +424,7 @@ class SoftwareDesignDocumentTask(
         }
 
         // Section 2: Requirements
-        if (executionConfig.generate_requirements) {
+        if (config.generate_requirements) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Defining Requirements...".renderMarkdown(true))
           log.debug("Generating requirements specification")
@@ -504,7 +502,7 @@ class SoftwareDesignDocumentTask(
         }
 
         // Section 3: Architecture
-        if (executionConfig.generate_architecture) {
+        if (config.generate_architecture) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Designing Architecture...".renderMarkdown(true))
           log.debug("Generating architectural diagrams")
@@ -627,7 +625,7 @@ class SoftwareDesignDocumentTask(
         }
 
         // Section 4: Data Model
-        if (executionConfig.generate_data_model) {
+        if (config.generate_data_model) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Designing Data Model...".renderMarkdown(true))
           log.debug("Generating data model and ERD")
@@ -726,7 +724,7 @@ class SoftwareDesignDocumentTask(
         }
 
         // Section 5: Flow Diagrams
-        if (executionConfig.generate_flow_diagrams) {
+        if (config.generate_flow_diagrams) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Mapping Flow Diagrams...".renderMarkdown(true))
           log.debug("Generating sequence and activity diagrams")
@@ -822,7 +820,7 @@ class SoftwareDesignDocumentTask(
         }
 
         // Section 6: Test Plan
-        if (executionConfig.generate_test_plan) {
+        if (config.generate_test_plan) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Creating Test Plan...".renderMarkdown(true))
           log.debug("Generating test plan")
@@ -931,7 +929,7 @@ class SoftwareDesignDocumentTask(
         }
 
         // Section 7: Phase Planning
-        if (executionConfig.generate_phase_plan) {
+        if (config.generate_phase_plan) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Planning Phases...".renderMarkdown(true))
           log.debug("Generating phase plan")
@@ -940,8 +938,8 @@ class SoftwareDesignDocumentTask(
           val phasePlanBuffer =
             phasePlanTask.add("## Phase Plan\n\n🔄 Planning development phases...".renderMarkdown(true))
           task.update()
-          val sprintCount = executionConfig.sprint_count
-          val sprintDuration = executionConfig.sprint_duration_weeks
+          val sprintCount = config.sprint_count
+          val sprintDuration = config.sprint_duration_weeks
 
           val phasePlanAnalysis = designAgent.answer(
             listOf(
@@ -1034,7 +1032,7 @@ class SoftwareDesignDocumentTask(
         }
 
         // Section 8: Project Data JSON
-        if (executionConfig.generate_project_data) {
+        if (config.generate_project_data) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Generating Project Data...".renderMarkdown(true))
           log.debug("Generating project data JSON")
@@ -1043,8 +1041,8 @@ class SoftwareDesignDocumentTask(
           val projectDataBuffer =
             projectDataTask.add("## Project Data\n\n🔄 Generating structured project data...".renderMarkdown(true))
           task.update()
-          val sprintCount = executionConfig.sprint_count
-          val sprintDuration = executionConfig.sprint_duration_weeks
+          val sprintCount = config.sprint_count
+          val sprintDuration = config.sprint_duration_weeks
 
           // Generate detailed tasks and sprints
           val projectDataAnalysis = designAgent.answer(
@@ -1131,7 +1129,11 @@ class SoftwareDesignDocumentTask(
 
           // Write JSON file
           val jsonContent = JsonUtil.toJson(projectData)
-          val jsonFileName = "${projectName.replace(" ", "_").lowercase()}_project_data.json"
+          val baseFileName = getOutputFile(".md")?.let {
+            if (it.endsWith(".md")) it.removeSuffix(".md") else null
+          }
+          val jsonFileName = baseFileName?.let { "${it}.project_data.json" }
+            ?: "${projectName.replace(" ", "_").lowercase()}_project_data.json"
 
           val jsonLink = task.saveFile(jsonFileName, jsonContent.toByteArray())
           projectDataBuffer?.setLength(0)
@@ -1198,10 +1200,8 @@ class SoftwareDesignDocumentTask(
         overviewTask.complete()
         task.update()
 
-        val relativePath = "${
-          projectName.replace(" ", "_").lowercase()
-        }_design_document_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (transcriptLink, _) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
+        val transcriptPath = transcriptFile()
+        val transcriptLink = task.linkTo(transcriptPath)
         task.safeComplete(
           "Software design document generated in ${duration / 1000}s. " +
               "View document: <a href='$transcriptLink' target='_blank'>markdown</a> " +
@@ -1216,14 +1216,14 @@ class SoftwareDesignDocumentTask(
           appendLine("**System:** ${systemDescription.truncateForDisplay(500)}")
           appendLine()
           appendLine("## Generated Sections")
-          if (executionConfig.generate_use_cases) appendLine("- ✅ Use Cases & Actors")
-          if (executionConfig.generate_requirements) appendLine("- ✅ Requirements Specification")
-          if (executionConfig.generate_architecture) appendLine("- ✅ Architecture Diagrams")
-          if (executionConfig.generate_data_model) appendLine("- ✅ Data Model & ERD")
-          if (executionConfig.generate_flow_diagrams) appendLine("- ✅ Flow Diagrams")
-          if (executionConfig.generate_test_plan) appendLine("- ✅ Test Plan")
-          if (executionConfig.generate_phase_plan) appendLine("- ✅ Phase Planning")
-          if (executionConfig.generate_project_data) appendLine("- ✅ Project Data JSON (${collectedTasks.size} tasks, ${collectedEpics.size} epics)")
+          if (config.generate_use_cases) appendLine("- ✅ Use Cases & Actors")
+          if (config.generate_requirements) appendLine("- ✅ Requirements Specification")
+          if (config.generate_architecture) appendLine("- ✅ Architecture Diagrams")
+          if (config.generate_data_model) appendLine("- ✅ Data Model & ERD")
+          if (config.generate_flow_diagrams) appendLine("- ✅ Flow Diagrams")
+          if (config.generate_test_plan) appendLine("- ✅ Test Plan")
+          if (config.generate_phase_plan) appendLine("- ✅ Phase Planning")
+          if (config.generate_project_data) appendLine("- ✅ Project Data JSON (${collectedTasks.size} tasks, ${collectedEpics.size} epics)")
         }
         resultFn(finalResult)
 
@@ -1566,27 +1566,27 @@ class SoftwareDesignDocumentTask(
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(SoftwareDesignDocumentTask::class.java)
-    @JvmStatic val SoftwareDesignDocument = TaskType(
+
+    @JvmStatic
+    val SoftwareDesignDocument = TaskType(
         name = "SoftwareDesignDocument",
         category = "Writing",
         taskClass = SoftwareDesignDocumentTask::class.java,
         executionConfigClass = SoftwareDesignDocumentTaskExecutionConfigData::class.java,
         taskSettingsClass = TaskTypeConfig::class.java,
         description = "Generate comprehensive software design documentation",
-        tooltipHtml = """
-                        Creates complete software design documentation with Mermaid diagrams.
-                        <ul>
-                          <li>Use case diagrams and actor documentation</li>
-                          <li>Functional and non-functional requirements</li>
-                          <li>Architecture diagrams (C4, component, deployment)</li>
-                          <li>Data model and ERD diagrams</li>
-                          <li>Sequence and activity flow diagrams</li>
-                          <li>Test plan and test case documentation</li>
-                          <li>Phase planning with Gantt charts</li>
-                          <li>Project data JSON with tasks, epics, sprints, releases</li>
-                          <li>All diagrams use Mermaid syntax</li>
-                        </ul>
-                      """,
+      tooltipHtml = "Creates complete software design documentation with Mermaid diagrams." +
+              "<ul>" +
+              "<li>Use case diagrams and actor documentation</li>" +
+              "<li>Functional and non-functional requirements</li>" +
+              "<li>Architecture diagrams (C4, component, deployment)</li>" +
+              "<li>Data model and ERD diagrams</li>" +
+              "<li>Sequence and activity flow diagrams</li>" +
+              "<li>Test plan and test case documentation</li>" +
+              "<li>Phase planning with Gantt charts</li>" +
+              "<li>Project data JSON with tasks, epics, sprints, releases</li>" +
+              "<li>All diagrams use Mermaid syntax</li>" +
+              "</ul>",
     )
   }
 }

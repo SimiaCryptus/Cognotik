@@ -33,8 +33,12 @@ class ResponseParser(private val processor: PatchProcessor) {
     var lastEnd = 0
 
     for ((lang, code) in codeBlocks) {
-      val codeBlockPattern = buildCodeBlockPattern(lang, code)
-      val match = codeBlockPattern.find(normalizedResponse, lastEnd) ?: continue
+      val codeBlockPattern = buildCodeBlockPattern(lang, code, normalizedResponse.substring(lastEnd))
+      val match = codeBlockPattern.find(normalizedResponse, lastEnd)
+      if (match == null) {
+        log.warn("Code block not found in response: lang='{}', code='{}'", lang, code)
+        continue
+      }
 
       // Add preceding markdown
       if (match.range.first > lastEnd) {
@@ -124,8 +128,18 @@ class ResponseParser(private val processor: PatchProcessor) {
     return diffLineCount > lines.size / 2
   }
 
-  private fun buildCodeBlockPattern(lang: String, code: String): Regex {
-    val escapedCode = Regex.escape(code)
-    return Regex("```${Regex.escape(lang)}\\s*\\n${escapedCode}\\s*\\n```")
+  private fun buildCodeBlockPattern(lang: String, code: String, shouldAppearIn: String?): Regex {
+    val regex = Regex("""```${Regex.escape(lang.trim())}\s*\n${Regex.escape(code.trim())}\s*\n```""")
+    if (shouldAppearIn != null) {
+      val occurrences = regex.findAll(shouldAppearIn).toList()
+      if (occurrences.isEmpty()) {
+        log.warn("Code block not found in response: lang='{}', code='{}'", lang, code)
+      } else if (occurrences.size > 1) {
+        log.warn("Multiple code blocks found in response for lang='{}', code='{}'. Using first occurrence.", lang, code)
+      } else {
+        log.debug("Code block found in response at position {}: lang='{}'", occurrences.first().range, lang)
+      }
+    }
+    return regex
   }
 }

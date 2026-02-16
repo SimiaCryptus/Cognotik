@@ -166,10 +166,7 @@ $codeResult
 </details>
 
                 """.toByteArray())
-
                 val autoFix = orchestrationConfig.autoFix
-
-                // 5. Render and Instrument
                 val markdown = renderMarkdown(codeResult, ui = mainTask.ui) {
                   DiffInstrumentor(
                     orchestrationConfig.processor,
@@ -191,7 +188,7 @@ $codeResult
                         }
                       }
                     },
-                    shouldAutoApply = { it: Path -> autoFix },
+                    shouldAutoApply = { autoFix },
                     defaultFile = defaultFile,
                     resolver = ::resolveToRelativePath,
                   )

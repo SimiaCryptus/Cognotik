@@ -362,6 +362,40 @@ the UI, and downstream tasks can reference it.
 | Task modifies existing source files    | Use `files` to list the target source files (not the transcript); generate a separate transcript via `transcriptFile(taskType)` |
 | Task produces multiple artifacts       | List all artifacts in `files`; use `transcriptFile(taskType)` for the process log                                               |
 | Task produces no file artifacts        | Leave `files` empty; transcript is auto-generated under `transcript/`                                                           |
+#### Theming Auxiliary Output Around the Primary Filename
+When a task produces multiple artifacts (images, data files, sub-reports) in addition to its primary output, the primary output filename declared in `files` should be used as the **naming theme** for all related artifacts. This creates a cohesive, discoverable output structure.
+**Pattern:** Strip the extension from the primary output file and use the resulting base name to derive:
+1. **A directory** for auxiliary artifacts (images, generated assets, intermediate files).
+2. **Companion data files** with the same base name but different extensions or suffixes.
+**Example from `ComicBookGenerationTask`:**
+If the planner specifies `files: ["my_story.md"]`, the task derives:
+- `dataDir = "my_story"` — a directory for character images (`my_story/char_Hero.png`) and page strips (`my_story/page_1_row_1.png`)
+- `dataFile = "my_story.comic.json"` — structured metadata saved alongside the primary markdown output
+```kotlin
+// Deriving themed paths from the primary output file
+val dataDir = (getOutputFile(".md")?.let {
+    if (it.endsWith(".md")) it.removeSuffix(".md") else null
+} ?: "comic").apply {
+    val dir = task.resolveUserFile(this)
+    if (dir != null && !dir.exists()) dir.mkdirs()
+}
+val dataFile = getOutputFile(".md")?.let {
+    if (it.endsWith(".md")) it.removeSuffix(".md") + ".comic.json" else null
+} ?: "comic_book.json"
+```
+**Why this matters:**
+- **User discoverability:** All artifacts related to a task are grouped under a predictable name. A user who sees `my_story.md` in their workspace can intuit that `my_story/` contains the images and `my_story.comic.json` contains the structured data.
+- **Planner context:** Downstream tasks can predict artifact locations based on the declared output file, enabling reliable cross-task references.
+- **Cleanup:** Themed naming makes it trivial to identify and remove all artifacts from a specific task run.
+**Guidelines for themed output:**
+| Artifact Type | Naming Convention | Example (primary file: `report.md`) |
+|:---|:---|:---|
+| Auxiliary directory | `{base}/` | `report/` |
+| Generated images | `{base}/{descriptive_name}.png` | `report/chart_revenue.png` |
+| Structured data | `{base}.{task_suffix}.json` | `report.analysis.json` |
+| Sub-reports | `{base}/{section_name}.md` | `report/appendix_a.md` |
+**Fallback:** Always provide a sensible default when `getOutputFile()` returns `null` (i.e., when the planner didn't specify a primary file). The comic book task falls back to `"comic"` for the directory and `"comic_book.json"` for the data file.
+
 
 #### Anti-Patterns
 
@@ -371,6 +405,8 @@ the UI, and downstream tasks can reference it.
   `transcriptFile()` to unify them when the transcript *is* the deliverable.
 * **Not closing the stream:** Always close the `FileOutputStream` in a `finally` block. An unclosed stream can result in
   truncated output files.
+* **Unthemed auxiliary files:** Generating auxiliary artifacts with names unrelated to the primary output file (e.g., writing to `output_images/img1.png` when the primary file is `my_story.md`). This breaks discoverability and makes it impossible for downstream tasks or users to associate artifacts with their source task.
+* **Missing fallback defaults:** Relying on `getOutputFile()` without a fallback. If the planner doesn't specify a file, the task should still produce coherently named output using a hardcoded default base name.
 
 * **Markdown Rendering:**
     * **Extension Method:** When sending content to the UI (via `task.add` or `task.complete`), always use the `String.renderMarkdown` extension method (e.g., `myString.renderMarkdown`).
@@ -783,6 +819,9 @@ Tasks can be recursive. A `SubPlanningTask` is a specific `TaskType` that spins 
     execution config so the Planner and UI can find it.
   * **Unify Transcript and Output:** When the task's deliverable is a text document (report, analysis, research notes),
     use `transcriptFile()` to write the deliverable as the transcript itself, avoiding duplicate files.
+  * **Theme Auxiliary Output:** When producing multiple artifacts, derive directory names and companion file names from
+    the primary output file's base name (see "Theming Auxiliary Output Around the Primary Filename" above). Always
+    provide a sensible fallback default when no primary file is specified.
   * **Close Streams:** Always close `FileOutputStream` in a `finally` block. Use the pattern:
     `val transcript = task.newFileOutputStream(transcriptFile())` at the top of `run()`, with `transcript?.close()` in
     `finally`.
