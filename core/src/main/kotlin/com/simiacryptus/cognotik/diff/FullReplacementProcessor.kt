@@ -51,7 +51,7 @@ class FullReplacementProcessor : PatchProcessor {
         val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*?)\n```""".toRegex()
         return codeblockPattern.findAll(response).map { match ->
             val language = match.groupValues[1]
-            val code = match.groupValues[2].trim()
+            val code = match.groupValues[2]
             language to code
         }.toList()
     }

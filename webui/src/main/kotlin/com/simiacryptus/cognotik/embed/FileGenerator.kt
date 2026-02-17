@@ -19,8 +19,7 @@ open class FileGenerator {
         .map { it.relativeTo(root.absoluteFile) }
     },
     targetFile: (File) -> File = { it },
-    overwriteMode: OverwriteMode = OverwriteModes.SkipExisting,
-    relatedFiles: (File) -> List<String>,
+    updateMode: UpdateMode = UpdateModes.SkipExisting,
     generationPrompt: (File, File) -> String,
     concurrencyLimit: Int = 4
   ) {
@@ -39,7 +38,7 @@ open class FileGenerator {
       (listFiles)(root, folder).shuffled()
         .map { source ->
           val target = (targetFile)(source)
-          overwriteMode.prepare(source, target)?.let { patchProcessor ->
+          updateMode.prepare(source, target)?.let { patchProcessor ->
             concurrencyProcessor.submit {
               try {
                 harness.runTask(
@@ -53,7 +52,7 @@ open class FileGenerator {
                     typeConfig = TaskTypeConfig(task_type = FileModification.name),
                     workingDir = harness.getRoot(root, session, FileModification.name).absolutePath
                   ).apply {
-                    processor = patchProcessor
+                    processor = patchProcessor.patchProcessor
                   }
                 }
               } catch (e: Exception) {
@@ -68,9 +67,6 @@ open class FileGenerator {
 
   companion object {
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
-    fun File.lastModified(
-      relatedFiles: List<File>,
-    ): Long = maxOf(this.lastModified(), relatedFiles.maxOfOrNull { it.lastModified() } ?: 0L)
   }
 }
 

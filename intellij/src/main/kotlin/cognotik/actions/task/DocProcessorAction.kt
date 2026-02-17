@@ -35,7 +35,7 @@ import javax.swing.JComponent
  * 3. Executes the selected tasks using DocProcessor infrastructure
  */
 open class DocProcessorAction(
-    val mode: OverwriteMode = OverwriteModes.PatchExisting,
+    val mode: UpdateMode = UpdateModes.PatchExisting,
 ) : BaseAction() {
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -43,22 +43,26 @@ open class DocProcessorAction(
         /**
          * Returns a pretty label for each overwrite mode
          */
-        fun getModeLabel(mode: OverwriteModes): String = when (mode) {
-            OverwriteModes.SkipExisting -> "🚫 Skip Existing Files"
-            OverwriteModes.OverwriteExisting -> "🔄 Overwrite All Files"
-            OverwriteModes.OverwriteToUpdate -> "📅 Overwrite Outdated Files"
-            OverwriteModes.PatchExisting -> "🩹 Patch Existing Files"
-            OverwriteModes.PatchToUpdate -> "📝 Patch Outdated Files"
+        fun getModeLabel(mode: UpdateModes): String = when (mode) {
+            UpdateModes.SkipExisting -> "🚫 Skip Existing Files"
+            UpdateModes.OverwriteExisting -> "🔄 Overwrite All Files"
+            UpdateModes.OverwriteToUpdate -> "📅 Overwrite Outdated Files"
+            UpdateModes.PatchExisting -> "🩹 Patch Existing Files"
+            UpdateModes.PatchToUpdate -> "📝 Patch Outdated Files"
+            UpdateModes.ForceOverwrite -> "🔥 Force Overwrite (Dangerous)"
+            UpdateModes.ForceUpdate -> "⚡ Force Update (Dangerous)"
         }
         /**
          * Returns a description for each overwrite mode
          */
-        fun getModeDescription(mode: OverwriteModes): String = when (mode) {
-            OverwriteModes.SkipExisting -> "Skip files that already exist, only create new files"
-            OverwriteModes.OverwriteExisting -> "Replace all target files with newly generated content"
-            OverwriteModes.OverwriteToUpdate -> "Replace only files older than their source documentation"
-            OverwriteModes.PatchExisting -> "Apply intelligent patches to existing files"
-            OverwriteModes.PatchToUpdate -> "Apply patches only to files older than their source documentation"
+        fun getModeDescription(mode: UpdateModes): String = when (mode) {
+            UpdateModes.SkipExisting -> "Skip files that already exist, only create new files"
+            UpdateModes.OverwriteExisting -> "Replace all target files with newly generated content"
+            UpdateModes.OverwriteToUpdate -> "Replace only files older than their source documentation"
+            UpdateModes.PatchExisting -> "Apply intelligent patches to existing files"
+            UpdateModes.PatchToUpdate -> "Apply patches only to files older than their source documentation"
+            UpdateModes.ForceOverwrite -> "Delete all target files before generation (use with caution)"
+            UpdateModes.ForceUpdate -> "Delete target files older than their source documentation before generation (use with caution)"
         }
     }
 
@@ -89,7 +93,7 @@ open class DocProcessorAction(
         val docProcessor = DocProcessor(
           root = root,
           docsFolder = root,
-          overwriteMode = mode,
+          updateMode = mode,
           fastModel = AppSettingsState.instance.fastModel?.model
             ?: throw IllegalStateException("Fast model not configured"),
           smartModel = AppSettingsState.instance.smartModel?.model
@@ -120,24 +124,27 @@ open class DocProcessorAction(
                             indicator.fraction = 0.0
                             indicator.text = "Processing $totalTasks documentation task(s)..."
                             val completedTasks = java.util.concurrent.atomic.AtomicInteger(0)
-                            docProcessor.runAll(selectedTasks) { session ->
-                                val completed = completedTasks.incrementAndGet()
-                                indicator.fraction = completed.toDouble() / totalTasks
-                                indicator.text = "Processing task $completed of $totalTasks..."
-                                indicator.text2 = "Session: $session"
-                                try {
-                                    BrowseUtil.browse(
-                                        CognotikAppServer.getServer(
-                                            AppSettingsState.instance.listeningEndpoint,
-                                            AppSettingsState.instance.listeningPort
-                                        ).server.uri.resolve("/#" + session)
-                                    )
-                                } catch (e: Throwable) {
-                                    log.warn("Error opening browser", e)
+                            try {
+                                docProcessor.runAll(selectedTasks) { session ->
+                                    val completed = completedTasks.incrementAndGet()
+                                    indicator.fraction = completed.toDouble() / totalTasks
+                                    indicator.text = "Processing task $completed of $totalTasks..."
+                                    indicator.text2 = "Session: $session"
+                                    try {
+                                        BrowseUtil.browse(
+                                            CognotikAppServer.getServer(
+                                                AppSettingsState.instance.listeningEndpoint,
+                                                AppSettingsState.instance.listeningPort
+                                            ).server.uri.resolve("/#" + session)
+                                        )
+                                    } catch (e: Throwable) {
+                                        log.warn("Error opening browser", e)
+                                    }
                                 }
+                            } finally {
+                                indicator.fraction = 1.0
+                                indicator.text = "Documentation processing complete"
                             }
-                            indicator.fraction = 1.0
-                            indicator.text = "Documentation processing complete"
                         }
                     })
                 }
@@ -300,7 +307,7 @@ class DocProcessorActionGroup : DefaultActionGroup() {
     }
 
     override fun getChildren(e: AnActionEvent?): Array<AnAction> {
-        return OverwriteModes.entries.map { mode ->
+        return UpdateModes.entries.map { mode ->
             object : DocProcessorAction(mode) {
                 init {
                     templatePresentation.text = getModeLabel(mode)

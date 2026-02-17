@@ -62,7 +62,7 @@ class PythonPatcher : PatchProcessor {
         }
         return matches.map { match ->
             val language = match.groupValues[1]
-            val code = match.groupValues[2].trim()
+            val code = match.groupValues[2]
             language to code
         }
     }

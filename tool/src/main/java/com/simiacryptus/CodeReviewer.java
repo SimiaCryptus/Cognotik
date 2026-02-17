@@ -1,7 +1,7 @@
 package com.simiacryptus;
 
 import com.simiacryptus.cognotik.util.FileGenerator;
-import com.simiacryptus.cognotik.util.OverwriteModes;
+import com.simiacryptus.cognotik.util.UpdateModes;
 import com.simiacryptus.cognotik.util.UnifiedHarness;
 
 import java.io.File;
@@ -25,8 +25,7 @@ public record CodeReviewer(
                 new File(srcDir),
                 (root, folder) -> Arrays.stream(Objects.requireNonNull(folder.listFiles())).map(file -> relativize(root, file)).toList(),
                 (source) -> source,
-                OverwriteModes.valueOf(overwriteMode),
-                (source) -> Arrays.asList(docsArg.split(",")),
+                UpdateModes.valueOf(overwriteMode),
                 (source, target) -> promptTemplate.contains("%s") ? promptTemplate.replace("%s", target.toString()) : promptTemplate + " (" + target + ")",
                 threads
         );

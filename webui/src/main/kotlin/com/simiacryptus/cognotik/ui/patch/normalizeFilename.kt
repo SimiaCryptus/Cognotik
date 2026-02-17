@@ -3,8 +3,12 @@ package com.simiacryptus.cognotik.ui.patch
 
 val log = org.slf4j.LoggerFactory.getLogger("DiffInstrumentor")
 
-fun normalizeFilename(filename: String, maxIterations: Int = 10) =
-  repeat(filename, maxIterations) {
+fun normalizeFilename(filename: String, maxIterations: Int = 10): String {
+  if (filename.isBlank()) {
+    log.debug("normalizeFilename called with blank input")
+    return ""
+  }
+  val result = repeat(filename, maxIterations) {
     it.trim()
       // Remove common prefixes
       .removePrefix("Code:")
@@ -51,6 +55,11 @@ fun normalizeFilename(filename: String, maxIterations: Int = 10) =
       }
       .trim()
   }
+  if (result != filename) {
+    log.debug("normalizeFilename: '{}' -> '{}'", filename, result)
+  }
+  return result
+}
 
 fun <T> repeat(
   original: T,
@@ -63,6 +72,6 @@ fun <T> repeat(
     if (next == current) return current
     current = next
   }
+  log.debug("repeat() reached max iterations ({})", maxIterations)
   return current
 }
-

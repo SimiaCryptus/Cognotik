@@ -53,7 +53,7 @@ open class FrontmatterOrchestrationMode(
     /** Whether to automatically run DocProcessor after generating specs */
     var autoExecute: Boolean = true,
     /** Default overwrite mode for generated specifications */
-    var defaultOverwriteMode: OverwriteModes = OverwriteModes.PatchToUpdate,
+    var defaultOverwriteMode: UpdateModes = UpdateModes.PatchToUpdate,
     /** File extension for specification documents */
     var specFileExtension: String = ".spec.md",
     /** Whether to keep specification files after execution */
@@ -450,7 +450,7 @@ Do NOT generate the actual file contents. Generate specifications that describe 
       val processor = DocProcessor(
         root = root.toFile(),
         docsFolder = specsDir.toFile(),
-        overwriteMode = config.defaultOverwriteMode,
+        updateMode = config.defaultOverwriteMode,
         fastModel = orchestrationConfig.defaultFast.modelType,
         smartModel = orchestrationConfig.defaultSmart.modelType,
         autoFix = true

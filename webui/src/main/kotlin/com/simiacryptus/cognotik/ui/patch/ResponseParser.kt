@@ -13,11 +13,17 @@ class ResponseParser(private val processor: PatchProcessor) {
     response: String,
     defaultFile: String? = null
   ): List<ResponseSegment> {
+    log.debug("Parsing response: {} chars, defaultFile={}", response.length, defaultFile)
+    if (response.isBlank()) {
+      log.debug("Response is blank, returning empty list")
+      return emptyList()
+    }
     val initiator = processor.getInitiatorPattern()
     // Auto-close unclosed code blocks
     val normalizedResponse = if (response.contains(initiator) &&
       !response.split(initiator, 2)[1].contains("\n```(?![^\n])".toRegex())
     ) {
+      log.debug("Auto-closing unclosed code block in response")
       response + "\n```\n"
     } else {
       response
@@ -25,14 +31,18 @@ class ResponseParser(private val processor: PatchProcessor) {
 
     val codeBlocks = processor.extractCodeBlocks(normalizedResponse)
     if (codeBlocks.isEmpty()) {
+      log.debug("No code blocks found in response")
       return listOf(ResponseSegment.Markdown(normalizedResponse))
     }
+    log.debug("Found {} code blocks in response", codeBlocks.size)
 
     val headers = collectHeaders(normalizedResponse)
+    log.debug("Found {} headers in response", headers.size)
     val segments = mutableListOf<ResponseSegment>()
     var lastEnd = 0
 
     for ((lang, code) in codeBlocks) {
+      log.debug("Processing code block: lang='{}', code length={}", lang, code.length)
       val codeBlockPattern = buildCodeBlockPattern(lang, code, normalizedResponse.substring(lastEnd))
       val match = codeBlockPattern.find(normalizedResponse, lastEnd)
       if (match == null) {
@@ -50,11 +60,14 @@ class ResponseParser(private val processor: PatchProcessor) {
 
       val headerFilename = findHeaderBefore(headers, match.range.first)
       val filename = resolveFilename(headerFilename, defaultFile)
+      log.debug("Resolved filename for code block: headerFilename='{}', resolved='{}'", headerFilename, filename)
 
       if (filename != null) {
         val normalizedName = normalizeFilename(filename)
+        log.debug("Normalized filename: '{}' -> '{}'", filename, normalizedName)
         if (normalizedName.isNotBlank()) {
           val isDiff = isDiffContent(lang, code)
+          log.debug("Code block isDiff={} for file '{}'", isDiff, normalizedName)
           if (isDiff) {
             segments.add(
               ResponseSegment.DiffBlock(
@@ -74,9 +87,11 @@ class ResponseParser(private val processor: PatchProcessor) {
             )
           }
         } else {
+          log.debug("Normalized filename is blank, treating code block as markdown")
           segments.add(ResponseSegment.Markdown(match.value))
         }
       } else {
+        log.debug("No filename resolved, treating code block as markdown")
         segments.add(ResponseSegment.Markdown(match.value))
       }
 
@@ -90,6 +105,7 @@ class ResponseParser(private val processor: PatchProcessor) {
         segments.add(ResponseSegment.Markdown(trailing))
       }
     }
+    log.debug("Parsed {} total segments from response", segments.size)
 
     return segments
   }
@@ -129,7 +145,7 @@ class ResponseParser(private val processor: PatchProcessor) {
   }
 
   private fun buildCodeBlockPattern(lang: String, code: String, shouldAppearIn: String?): Regex {
-    val regex = Regex("""```${Regex.escape(lang.trim())}\s*\n${Regex.escape(code.trim())}\s*\n```""")
+    val regex = Regex("""```${Regex.escape(lang)}\s*\n${Regex.escape(code)}\s*\n```""")
     if (shouldAppearIn != null) {
       val occurrences = regex.findAll(shouldAppearIn).toList()
       if (occurrences.isEmpty()) {
