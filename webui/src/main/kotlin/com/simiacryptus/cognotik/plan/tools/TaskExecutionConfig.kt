@@ -19,6 +19,7 @@ open class TaskExecutionConfig(
     @Description("Ignore.")
     var state: AbstractTask.TaskState? = null
 ) {
+    @Description("The files to be generated as output for the task (relative paths)") open var files: List<String> = emptyList()
 
     class PlanTaskTypeIdResolver : TypeIdResolverBase() {
         override fun idFromValue(value: Any) = when (value) {

@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.nio.charset.StandardCharsets
 
@@ -92,7 +93,7 @@ class MultiPerspectiveAnalysisTask(
     ) {
 
 
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
       try {
 
@@ -104,7 +105,7 @@ class MultiPerspectiveAnalysisTask(
 
             val subject = config.analysis_subject!!
             val perspectives = config.perspectives!!
-            val api = defaultSmart ?: throw IllegalStateException("No default smart model available")
+            val api = defaultSmart.getChildClient(task)
 
             log.info("Starting MultiPerspectiveAnalysis for subject: $subject")
 
@@ -232,17 +233,7 @@ class MultiPerspectiveAnalysisTask(
           } catch (e: Exception) {
             task.error(e)
             log.error("Error in MultiPerspectiveAnalysisTask", e)
-            transcript?.write(
-              """
-                        <details>
-                        <summary>Stack Trace</summary>
-
-                        ```
-                        ${e.stackTraceToString()}
-                        ```
-                        </details>
-                    """.trimIndent().toByteArray()
-            )
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             resultFn("Error: ${e.message}")
           } finally {
             transcript?.close()

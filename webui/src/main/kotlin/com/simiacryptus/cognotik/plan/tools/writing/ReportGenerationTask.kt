@@ -265,7 +265,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
         val reportTopic = executionConfig?.report_topic
         log.info("Starting ReportGenerationTask. Topic: '$reportTopic'")
 
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         task.ui.pool.submit {
             try {
         // Read input from messages parameter
@@ -1177,17 +1177,7 @@ Provide the complete revised report.
                 appendLine("**Type:** ${e.javaClass.simpleName}")
               }.renderMarkdown(true)
             )
-            transcript?.write(
-                """
-                <details>
-                <summary>Stack Trace</summary>
-                
-                ```
-                ${e.stackTraceToString()}
-                ```
-                </details>
-            """.trimIndent().toByteArray()
-            )
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             task.update()
 
             val errorOutput = buildString {

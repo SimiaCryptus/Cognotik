@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 object OpenAIImageModels {
     val DallE2 = ImageModel(
         name = "DallE2",
-        modelName = "dall-e-2",
+        modelId = "dall-e-2",
         maxPrompt = 1000,
         provider = APIProvider.OpenAI,
         pricingFunction = { width, height ->
@@ -19,7 +19,7 @@ object OpenAIImageModels {
 
     val DallE3 = ImageModel(
         name = "DallE3",
-        modelName = "dall-e-3",
+        modelId = "dall-e-3",
         maxPrompt = 1000,
         provider = APIProvider.OpenAI,
         pricingFunction = { width, height ->
@@ -33,7 +33,7 @@ object OpenAIImageModels {
 
     val DallE3_HD = ImageModel(
         name = "DallE3_HD",
-        modelName = "dall-e-3",
+        modelId = "dall-e-3",
         maxPrompt = 1000,
         provider = APIProvider.OpenAI,
         quality = "hd",

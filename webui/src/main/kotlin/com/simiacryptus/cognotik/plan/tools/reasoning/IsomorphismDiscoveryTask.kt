@@ -122,7 +122,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         try {
             log.info("Starting IsomorphismDiscoveryTask. Source: ${executionConfig?.source_domain}, Target: ${executionConfig?.target_domain}")
 
@@ -269,10 +269,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
 
                 } catch (e: Exception) {
                     log.error("Error in IsomorphismDiscoveryTask execution", e)
-                    writeToTranscript(
-                        transcript,
-                        "## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n\n"
-                    )
+                    transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                     task.error(e)
                     task.safeComplete("Failed with error: ${e.message}", log)
                     resultFn("ERROR: ${e.message}")

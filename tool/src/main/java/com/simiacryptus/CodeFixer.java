@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.util.List;
+import java.util.Objects;
 
 import static com.simiacryptus.CognotikUtils.*;
 
@@ -29,6 +30,8 @@ public record CodeFixer(String taskDescription, List<String> relatedFiles) {
         new CodeFixer(taskDescription, relatedFiles).run();
     }
 
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(CodeFixer.class);
+
     public void run() {
         ChatModel chatModel = GeminiModels.getGeminiFlash_30_Preview();
 
@@ -41,7 +44,7 @@ public record CodeFixer(String taskDescription, List<String> relatedFiles) {
                 fileModification,
                 new TaskTypeConfig(fileModification.getName(), fileModification.getName(), getChatModel(chatModel)),
                 config,
-                (model, session) -> getInterface(getChatModel(model.getModel()), session),
+                (model, session) -> getInterface(getChatModel(Objects.requireNonNull(model.getModel())), session),
                 PORT,
                 true,
                 false,
@@ -62,8 +65,6 @@ public record CodeFixer(String taskDescription, List<String> relatedFiles) {
             }
         }.run();
     }
-
-    private static Logger log = org.slf4j.LoggerFactory.getLogger(CodeFixer.class);
 
 
 }

@@ -81,7 +81,7 @@ class DiscussionTask(
     ) {
 
 
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         task.ui.pool.submit {
             try {
                 log.info("Starting DiscussionTask: ${executionConfig?.task_description ?: "Unnamed"}")
@@ -185,7 +185,7 @@ class DiscussionTask(
             } catch (e: Exception) {
                 task.error(e)
                 log.error("Error in DiscussionTask: ${e.message}", e)
-                transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                 resultFn("Error: ${e.message}")
             } finally {
                 transcript?.close()

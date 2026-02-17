@@ -2,15 +2,21 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.FileOutputStream
@@ -23,7 +29,7 @@ class IterativeFileModificationTask(
 ) : AbstractFileTask<IterativeFileModificationTask.IterativeFileModificationTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
     class IterativeFileModificationTaskExecutionConfigData(
-        files: List<String>? = null,
+        files: List<String> = emptyList(),
         related_files: List<String>? = null,
         extractContent: Boolean = false,
         @Description("High-level description of the overall modification goal")
@@ -123,7 +129,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
     ) {
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         val tabs = TabbedDisplay(task)
 
         try {
@@ -199,17 +205,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
         } catch (e: Throwable) {
             task.error(e)
             log.error("Error in IterativeFileModificationTask", e)
-            transcript?.write("""
-
-## Error
-<details>
-<summary>Stack Trace</summary>
-
-```
-${e.stackTraceToString()}
-```
-</details>
-            """.toByteArray())
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             throw e
         } finally {
             transcript?.close()
@@ -375,22 +371,26 @@ $implementationResponse
         // Render with diff application links
         val autoFix = orchestrationConfig.autoFix
         val markdown = renderMarkdown(implementationResponse, ui = task.ui) {
-            AddApplyFileDiffLinks(
-                processor = orchestrationConfig.processor
+            DiffInstrumentor(
+                orchestrationConfig.processor,
+                SocketManagerUIRenderer(
+                    socketManager = task.ui,
+                    sessionId = task.ui.sessionId
+                ), RealFileSystem()
             ).instrument(
-                socketManager = task.ui,
                 root = agent.root,
                 response = it,
                 handle = { newCodeMap: Map<Path, String> ->
                     newCodeMap.forEach { (path, _) ->
-                        val note = "Change ${change.index} - <a href='fileIndex/${agent.session}/$path'>$path</a> Updated"
+                        val note =
+                            "Change ${change.index} - <a href='fileIndex/${agent.session}/$path'>$path</a> Updated"
                         completionNotes += note
                         transcript?.write("- $note\n".toByteArray())
                     }
                 },
-                shouldAutoApply = { autoFix },
-                model = chatInterface,
-                defaultFile = change.targetFiles.firstOrNull()
+                shouldAutoApply = { it: Path -> autoFix },
+                defaultFile = change.targetFiles.firstOrNull(),
+                resolver = ::resolveToRelativePath,
             )
         }
 

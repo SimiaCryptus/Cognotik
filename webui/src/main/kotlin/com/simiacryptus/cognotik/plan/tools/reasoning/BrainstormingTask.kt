@@ -176,7 +176,7 @@ Brainstorming - Generate and analyze multiple solution options
 
         try {
             // Initialize transcript
-            transcriptStream = task.transcript()
+          transcriptStream = task.newFileOutputStream(transcriptFile())
             transcriptStream?.write("# Brainstorming Session Transcript\n\n".toByteArray())
             transcriptStream?.write("**Input Files:** ${executionConfig.input_files?.joinToString(", ") ?: "none"}\n\n".toByteArray())
             transcriptStream?.write("**Problem Statement:** $problemStatement\n\n".toByteArray())

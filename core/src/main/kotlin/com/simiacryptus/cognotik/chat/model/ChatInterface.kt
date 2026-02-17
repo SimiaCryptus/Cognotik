@@ -43,7 +43,7 @@ class ChatInterface(
         onUsageListeners.add { model, usage -> onUsage(model, usage) }
     }.chat(
         chatRequest = ChatRequest(
-            model = modelType.modelName,
+            model = modelType.modelId,
             messages = messages,
             temperature = temperature,
         ),

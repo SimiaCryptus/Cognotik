@@ -78,7 +78,7 @@ data class UserSettings(
         get() = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
             val provider = APIProvider.values().find { apiData.provider == it }
                 ?: return@flatMap emptyList<Pair<String, ChatModel>>()
-            provider.getChatModels(apiData.key ?: "".encrypt, apiData.baseUrl).map { model -> model.modelName to model }
+            provider.getChatModels(apiData.key ?: "".encrypt, apiData.baseUrl).map { model -> model.modelId to model }
         }.toMap()
 
 }
@@ -162,7 +162,7 @@ class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
                     val modelName = p.readValueAs(String::class.java)
                     // Handle string format - find model by name/key
                     val model = chatModels.entries.find {
-                        it.key == modelName || it.value.name == modelName || it.value.modelName == modelName
+                        it.key == modelName || it.value.name == modelName || it.value.modelId == modelName
                     }?.value ?: throw IllegalArgumentException("Unknown model: $modelName")
                     ApiChatModel(model, null)
                 } catch (e: Exception) {
@@ -180,7 +180,7 @@ class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
                         ApiChatModel(model, provider)
                     } else if (node.has("modelName")) {
                         val modelName = node.get("modelName").asText()
-                        val model = chatModels.values.firstOrNull { it.modelName == modelName }
+                        val model = chatModels.values.firstOrNull { it.modelId == modelName }
                             ?: throw IllegalArgumentException("Unknown model: $modelName")
                         ApiChatModel(model, null)
                     } else {

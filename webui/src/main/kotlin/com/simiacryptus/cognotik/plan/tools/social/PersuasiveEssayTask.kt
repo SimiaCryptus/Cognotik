@@ -211,7 +211,7 @@ class PersuasiveEssayTask(
         task.ui.pool.submit {
             val startTime = System.currentTimeMillis()
             log.info("Starting PersuasiveEssayTask for thesis: '${executionConfig?.thesis}'")
-            val transcript = task.transcript()
+          val transcript = task.newFileOutputStream(transcriptFile())
             try {
                 transcript?.write("# Persuasive Essay Generation Transcript\n\n".toByteArray())
                 transcript?.write(

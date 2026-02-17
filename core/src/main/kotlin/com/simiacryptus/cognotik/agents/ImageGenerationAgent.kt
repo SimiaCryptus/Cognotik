@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.models.ModelSchema.ImageGenerationRequest
 import com.simiacryptus.cognotik.util.toChatMessage
 import com.simiacryptus.cognotik.util.toContentList
 import java.awt.image.BufferedImage
-import java.io.Serializable
 import java.net.URL
 import javax.imageio.ImageIO
 
@@ -47,7 +46,7 @@ open class ImageGenerationAgent(
         val data = api.createImage(
             ImageGenerationRequest(
                 prompt = text,
-                model = imageModel?.modelName ?: throw RuntimeException("No image model configured"),
+                model = imageModel?.modelId ?: throw RuntimeException("No image model configured"),
                 size = "${width}x$height"
             )
         ).data

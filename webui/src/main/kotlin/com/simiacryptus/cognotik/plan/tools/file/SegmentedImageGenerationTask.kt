@@ -110,7 +110,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
     val writeModel = orchestrationConfig.defaultImage.getChildClient(task)
     val planModel = orchestrationConfig.defaultSmart.getChildClient(task)
 
-    val transcript = task.transcript()
+    val transcript = task.newFileOutputStream(transcriptFile())
     val tabs = TabbedDisplay(task)
     val logTab = tabs.newTask("Progress")
     val semaphore = Semaphore(0)
@@ -437,7 +437,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
       } catch (e: Exception) {
         task.error(e)
         log.error("Error in SegmentedImageGeneration", e)
-        transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+        transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
         resultFn("Error generating image: ${e.message}")
       } finally {
         transcript?.close()

@@ -109,7 +109,7 @@ class SubPlanTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
         try {
           log.info("Starting SubPlanningTask. Goal: ${executionConfig?.planning_goal ?: "N/A"}")
@@ -259,9 +259,7 @@ class SubPlanTask(
   ) {
     task.error(e)
     log.error("Error in SubPlanningTask: ${e.message}", e)
-    val errorLog =
-      "\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n"
-    transcript?.write(errorLog.toByteArray())
+    transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
     resultFn("Error in sub-planning: ${e.message}")
     }
 

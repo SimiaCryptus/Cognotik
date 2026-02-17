@@ -294,7 +294,7 @@ class MathematicalReasoningTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
       task.ui.pool.submit {
         try {
             val startTime = System.currentTimeMillis()
@@ -556,18 +556,8 @@ class MathematicalReasoningTask(
         } catch (e: Exception) {
             task.error(e)
           log.error("MathematicalReasoningTask failed: ${e.message}", e)
-          transcript?.write(
-            """
-                <details>
-                <summary>Error Stack Trace</summary>
-                
-                ```
-                ${e.stackTraceToString()}
-                ```
-                </details>
-            """.trimIndent().toByteArray(StandardCharsets.UTF_8)
-          )
-            resultFn("ERROR: ${e.message}")
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
+          resultFn("ERROR: ${e.message}")
         } finally {
           transcript?.close()
         }

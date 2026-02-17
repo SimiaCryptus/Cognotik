@@ -5,12 +5,12 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.util.LoggerFactory
 
 class ImageModel(
-    val name: String,
-    override val modelName: String,
-    val maxPrompt: Int,
-    override val provider: APIProvider,
-    val quality: String = "standard",
-    val pricingFunction: (width: Int, height: Int) -> Double
+  val name: String,
+  override val modelId: String,
+  val maxPrompt: Int,
+  override val provider: APIProvider,
+  val quality: String = "standard",
+  val pricingFunction: (width: Int, height: Int) -> Double
 ) : AIModel {
 
     fun pricing(width: Int, height: Int): Double = pricingFunction(width, height)

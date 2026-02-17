@@ -61,7 +61,7 @@ class MistralChatClient(
         model: ChatModel,
         logStreams: MutableList<java.io.BufferedOutputStream>
     ): ModelSchema.ChatResponse {
-        log.info("Starting Mistral chat with model: ${model.modelName}")
+        log.info("Starting Mistral chat with model: ${model.modelId}")
 
         return withReliability {
             withPerformanceLogging {

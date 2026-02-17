@@ -69,7 +69,7 @@ class DecisionTreeTask(
     ) {
 
 
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
       try {
         val config = executionConfig ?: return
         val error = config.validate()
@@ -110,7 +110,7 @@ class DecisionTreeTask(
             } catch (e: Exception) {
               executionTask.error(e)
               log.error("Error loading data", e)
-              transcript?.write("### Error Loading Data\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
+              transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
               return@submit
             }
 
@@ -201,7 +201,7 @@ class DecisionTreeTask(
           } catch (e: Exception) {
             executionTask.error(e)
             log.error("Error in DecisionTreeTask execution", e)
-            transcript?.write("## Execution Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           } finally {
             executionTask.complete()
             task.complete()

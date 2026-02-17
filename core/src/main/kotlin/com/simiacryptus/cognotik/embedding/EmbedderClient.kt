@@ -10,7 +10,7 @@ class EmbedderClient(
 ) : Embedder {
     override fun embed(input: String): DoubleArray {
         val request = ModelSchema.EmbeddingRequest(
-            model = model.modelName,
+            model = model.modelId,
             input = input
         )
         val response = embeddingClient.createEmbedding(request, model)

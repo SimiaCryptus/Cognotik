@@ -33,15 +33,15 @@ open class EmbeddingModel(
     provider: APIProvider? = null,
     private val tokenPricePerK: Double = 0.0,
 ) : LLMModel(
-    modelName = modelName,
+    modelId = modelName,
     provider = provider,
     maxTotalTokens = maxTokens
 ) {
     private val log = LoggerFactory.getLogger(EmbeddingModel::class.java)
-    override fun toString() = modelName
+    override fun toString() = modelId
 
     override fun pricing(usage: ModelSchema.Usage) = usage.prompt_tokens * tokenPricePerK / 1000.0
-        .also { log.info("Calculated pricing for model: $modelName with prompt tokens: ${usage.prompt_tokens}, price: $it") }
+        .also { log.info("Calculated pricing for model: $modelId with prompt tokens: ${usage.prompt_tokens}, price: $it") }
 
     fun instance(
         key: SecureString = "".encrypt,
@@ -86,7 +86,7 @@ open class EmbeddingModel(
 class EmbeddingModelsSerializer : StdSerializer<EmbeddingModel>(EmbeddingModel::class.java) {
     override fun serialize(value: EmbeddingModel, gen: JsonGenerator, provider: SerializerProvider) {
         val modelKey = EmbeddingModel.values().entries.find { it.value == value }?.key
-        gen.writeString(modelKey ?: value.modelName)
+        gen.writeString(modelKey ?: value.modelId)
     }
 }
 
@@ -96,7 +96,7 @@ class EmbeddingModelsDeserializer : JsonDeserializer<EmbeddingModel>() {
             JsonToken.VALUE_STRING -> {
                 val modelName = p.readValueAs(String::class.java)
                 EmbeddingModel.values().entries.find {
-                    it.key == modelName || it.value.modelName == modelName
+                    it.key == modelName || it.value.modelId == modelName
                 }?.value ?: throw IllegalArgumentException("Unknown embedding model: $modelName")
             }
 
@@ -105,7 +105,7 @@ class EmbeddingModelsDeserializer : JsonDeserializer<EmbeddingModel>() {
                 val modelName = node.get("modelName")?.asText() ?: node.get("name")?.asText()
                 ?: throw IllegalArgumentException("Object format must contain 'modelName' or 'name' field")
                 EmbeddingModel.values().entries.find {
-                    it.key == modelName || it.value.modelName == modelName
+                    it.key == modelName || it.value.modelId == modelName
                 }?.value ?: throw IllegalArgumentException("Unknown embedding model: $modelName")
             }
 

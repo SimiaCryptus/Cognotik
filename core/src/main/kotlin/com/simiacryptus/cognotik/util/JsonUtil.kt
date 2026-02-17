@@ -31,7 +31,9 @@ object JsonUtil {
             .disable(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES)
             .disable(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES)
             .disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
-
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .enable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
 
             .enable(JsonParser.Feature.ALLOW_COMMENTS)
             .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
@@ -121,6 +123,6 @@ fun <T:Any> T.jsonCopy(): T {
     return JsonUtil.toJson(this).let { JsonUtil.fromJson<T>(it, this.javaClass) }
 }
 
-inline fun <reified T> Any.jsonCast(): T {
-    return JsonUtil.toJson(this).let { JsonUtil.fromJson<T>(it, T::class.java) }
-}
+inline fun <reified T> Any.jsonCast(): T = JsonUtil.fromJson(JsonUtil.toJson(this), T::class.java)
+
+fun <T> Any.jsonCast(type: Type): T = JsonUtil.fromJson(JsonUtil.toJson(this), type)

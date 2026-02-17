@@ -12,14 +12,18 @@ import com.intellij.openapi.util.TextRange
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.InMemoryFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.AddApplyDiffLinks.Companion.addApplyDiffLinks
+
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.intellij.lang.annotations.Language
+import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import com.intellij.openapi.application.ApplicationManager as IntellijAppManager
 
@@ -126,21 +130,35 @@ class DiffChatAction : BaseAction() {
 
             override fun renderResponse(response: String, task: SessionTask): String = """<div>${
                 renderMarkdown(response, tabs=true) {
-                    addApplyDiffLinks(
-                        this,
-                        code = {
-                            editor.document.getText(TextRange(selectionStart, selectionEnd))
-                        },
-                        response = response,
-                        handle = { newCode: String ->
-                            WriteCommandAction.runWriteCommandAction(editor.project) {
-                                selectionEnd = selectionStart + newCode.length
-                                document.replaceString(selectionStart, selectionStart + rawText.length, newCode)
-                            }
-                        },
-                        task = task,
-                        processor = AppSettingsState.instance.processor
-                    )
+                  val virtualFs = InMemoryFileSystem()
+                  val virtualRoot = Paths.get("/virtual")
+                  val virtualFile = virtualRoot.resolve("file.txt")
+                  virtualFs.putFile(virtualFile, editor.document.getText(TextRange(selectionStart, selectionEnd)))
+                  val renderer = SocketManagerUIRenderer(
+                    this,
+                    sessionId
+                  )
+                  val instrumentor = DiffInstrumentor(
+                    processor = AppSettingsState.instance.processor,
+                    renderer = renderer,
+                    fs = virtualFs
+                  )
+                  instrumentor.instrument(
+                    root = virtualRoot,
+                    response = response,
+                    handle = { changes ->
+                      changes.values.firstOrNull()?.let { newCode ->
+                        WriteCommandAction.runWriteCommandAction(editor.project) {
+                          selectionEnd = selectionStart + newCode.length
+                          document.replaceString(selectionStart, selectionStart + rawText.length, newCode)
+                        }
+                        virtualFs.putFile(virtualFile, newCode)
+                      }
+                    },
+                    shouldAutoApply = { false },
+                    defaultFile = "file.txt",
+                    resolver = { root, _ -> "file.txt" },
+                  )
                 }                
             }</div>"""
         }

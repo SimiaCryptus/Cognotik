@@ -18,7 +18,6 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 import java.util.Locale.getDefault
 
 
@@ -180,7 +179,7 @@ class TutorialGenerationTask(
     @Description("Expected outcome description")
     val expected_outcome: String = "",
     @Description("Validation steps to verify success")
-    val validation_steps: List<String> = emptyList(),
+    val validation_steps: List<Any> = emptyList(),
     @Description("Screenshot placeholder locations")
     val screenshot_placeholders: List<String> = emptyList(),
     @Description("Common issues for this step")
@@ -217,12 +216,12 @@ class TutorialGenerationTask(
   data class TroubleshootingIssue(
     @Description("The problem or error")
     val problem: String = "",
-    @Description("Symptoms or error messages")
-    val symptoms: List<String> = emptyList(),
-    @Description("Possible causes")
-    val causes: List<String> = emptyList(),
-    @Description("Solutions to try")
-    val solutions: List<String> = emptyList()
+    @Description("A list of symptoms or error messages")
+    val symptoms: List<Any> = emptyList(),
+    @Description("A list of possible causes")
+    val causes: List<Any> = emptyList(),
+    @Description("A list of solutions to try")
+    val solutions: List<Any> = emptyList()
   ) : ValidatedObject {
     override fun validate(): String? {
       if (problem.isBlank()) return "problem must not be blank"
@@ -266,7 +265,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
     task.ui.pool.submit {
       val startTime = System.currentTimeMillis()
       log.info("Starting TutorialGenerationTask for goal: '${executionConfig?.goal}'")
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
       // Validate configuration
       executionConfig?.validate()?.let { validationError ->
@@ -1211,8 +1210,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
           log.error("Error during tutorial generation: ${e.message}")
           task.error(e)
           transcript?.write("\n## Error Occurred\n\n".toByteArray())
-          transcript?.write("<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
-
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           overviewTask.add(
             buildString {
               appendLine()

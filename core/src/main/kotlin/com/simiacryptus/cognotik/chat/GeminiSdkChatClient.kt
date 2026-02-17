@@ -76,13 +76,13 @@ class GeminiSdkChatClient(
                 val model = it.name().get()
                 val baseModelId = model.removePrefix("models/")
                 GeminiModels.values.values.find {
-                    it.modelName == baseModelId || it.modelName == model
+                    it.modelId == baseModelId || it.modelId == model
                 } ?: run {
                     // If not found in predefined models, create a dynamic one
                     log.debug("Creating basic ChatModel for unknown Gemini model: ${baseModelId}")
                     ChatModel(
                         name = model,
-                        modelName = baseModelId,
+                        modelId = baseModelId,
                         maxTotalTokens = it.inputTokenLimit().get() + it.outputTokenLimit().get(),
                         maxOutTokens = it.outputTokenLimit().get(),
                         provider = APIProvider.Gemini,
@@ -113,12 +113,12 @@ class GeminiSdkChatClient(
             val contentStr = contents.joinToString("\n\n") { it.toMarkdown() }
             val toJson = toJson(config).indent("  ")
             val msg =
-                "\n<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelName} (${requestID})</summary>\n\n```json\n$toJson\n```\n\nSystem Prompt:\n```\n${sysInstruct}\n```\n\n$contentStr\n</details>"
+                "\n<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelId} (${requestID})</summary>\n\n```json\n$toJson\n```\n\nSystem Prompt:\n```\n${sysInstruct}\n```\n\n$contentStr\n</details>"
             log(
                 msg,
                 logStreams
             )
-            val response = client.models.generateContent(model.modelName, contents, config)
+            val response = client.models.generateContent(model.modelId, contents, config)
             // Log response
             log(
                 "\n<details>\n<summary>Gemini SDK Response (${requestID})</summary>\n\n${

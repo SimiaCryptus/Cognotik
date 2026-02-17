@@ -110,11 +110,11 @@ class ControlPanel(
         border = JBUI.Borders.emptyRight(5)
         audioModels().filter { it.type == AudioModels.AudioModelType.Transcription }.forEach(::addItem)
         selectedItem = settings.transcriptionModel
-        setRenderer { _, value, _, _, _ -> JBLabel(value?.modelName ?: "N/A") }
+        setRenderer { _, value, _, _, _ -> JBLabel(value?.modelId ?: "N/A") }
         addActionListener {
             val selected = selectedItem as? AudioModels ?: return@addActionListener
             settings.setTranscriptionModel(selected)
-            AppSettingsState.instance.transcriptionModel = selected.modelName
+            AppSettingsState.instance.transcriptionModel = selected.modelId
         }
     }
 

@@ -190,7 +190,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
     ) {
         val startTime = System.currentTimeMillis()
         log.info("Starting LLMPollSimulationTask execution")
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
         // Create tabbed display
         val tabs = TabbedDisplay(task)
@@ -654,7 +654,7 @@ Be specific and reference the data provided.
         } catch (e: Exception) {
             log.error("Error during poll simulation: ${e.message}")
             task.error(e)
-            transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
 
             transcript?.apply {
                 write("\n\n---\n\n## ❌ Error Occurred\n\n".toByteArray())

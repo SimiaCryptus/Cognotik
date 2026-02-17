@@ -69,6 +69,8 @@ Converts natural language input into a specific class instance (`T`).
 *   **Output:** `ParsedResponse<T>` (Contains the raw text and the deserialized object `obj`).
 *   **Key Features:**
     *   **Schema Generation:** Uses `TypeDescriber` (see [Type Describers](type_describers.md)) to generate a YAML schema of class `T` and injects it into the system prompt.
+    *   **Example Instance:** Accepts an `exampleInstance` of `T` to provide a few-shot example in the system prompt, improving adherence to complex schemas.
+    *   **Parsing Chatter:** Accepts a separate `parsingChatter` (ChatInterface). This allows using a high-reasoning model for the logic and a faster/cheaper model for the JSON formatting step.
     *   **Validation:** If `T` implements `ValidatedObject`, the agent runs validation logic after deserialization.
     *   **Retries:** If JSON parsing fails, it can retry with adjusted parameters (`deserializerRetries`).
     *   **Single vs. Two-Stage:**
@@ -76,6 +78,14 @@ Converts natural language input into a specific class instance (`T`).
         *   `singleStage = false` (default): Uses a dedicated parser agent to extract and format JSON from the response.
     *   **Custom Parser Prompt:** The `parserPrompt` parameter allows you to provide additional instructions to the parser agent.
 *   **Best For:** Data extraction, converting unstructured text to structured data, API payload generation.
+### `parserCast` Utility
+**File:** `ParsedAgent.kt`
+A global extension function that allows you to quickly cast any object to a different type using an LLM.
+```kotlin
+val summary: Summary = myLargeDocument.parserCast<Summary>(model)
+```
+It creates a temporary `ParsedAgent` to transform the JSON representation of the input object into the target class `T`.
+
 
 ### `ParsedResponse<T>`
 **File:** `ParsedResponse.kt`
@@ -121,7 +131,7 @@ This is a "Magic" agent. It creates a dynamic Java Proxy for a given interface o
 *   **Key Features:**
     *   **Dynamic Proxy Creation:** Uses Java reflection to intercept method calls.
     *   **Automatic Serialization:** Arguments are converted to JSON and sent to the LLM.
-    *   **Retry Logic:** Automatically retries failed calls with adjusted temperature (`maxRetries`).
+    *   **Retry Logic:** Automatically retries failed calls (`maxRetries`). On each retry, the temperature is adjusted (decayed) to encourage deterministic results.
     *   **Validation:** If the return type implements `ValidatedObject`, validation is performed.
     *   **Examples:** You can provide example input/output pairs via `addExample()` to improve accuracy.
     *   **Metrics:** Track performance via the `metrics` property, which includes request counts per method.
@@ -173,10 +183,12 @@ An autonomous agent capable of writing, executing, and fixing code in a sandboxe
 *   **Key Components:**
     *   **`CodeRuntime`:** The environment where code runs (e.g., a Kotlin script engine, JavaScript engine).
     *   **`symbols`:** A map of objects injected into the script context (allows the agent to control your application).
+    *   **`runtimeSymbols`:** Additional symbols injected into the runtime that are not necessarily described to the LLM (useful for internal utilities).
     *   **`language`:** Automatically determined from the `CodeRuntime` (e.g., "kotlin", "javascript").
     *   **`codeInterceptor`:** A function that can transform generated code before execution (useful for logging, sanitization, or instrumentation).
     *   **`evalFormat`:** When true, instructs the LLM to structure code as parameterized functions with a final invocation.
     *   **`fallbackModel`:** An optional secondary model to use if the primary model fails to generate valid code.
+    *   **`details`:** A string field to inject arbitrary additional context or instructions into the system prompt.
     *   **`describer`:** A `TypeDescriber` that generates API documentation for the injected symbols.
 *   **Self-Correction Loop:** If `autoEvaluate` is true, the agent executes the code. If it throws an exception, the agent feeds the error back to the LLM to generate a fix (up to `fixIterations` times). If the code still fails, it retries the entire process (up to `fixRetries` times).
 *   **Prompt Strategy:** The prompt is dynamically generated to include:
@@ -320,4 +332,3 @@ agent.addExample(SentimentResult(score = 0.1, label = "negative")) { proxy ->
 
 val finalProxy = agent.create()
 ```
-

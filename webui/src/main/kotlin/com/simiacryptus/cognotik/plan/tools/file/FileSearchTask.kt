@@ -74,7 +74,7 @@ FileSearch - Search for patterns in files and provide results with context
 
         log.info("Starting FileSearchTask with pattern: ${executionConfig?.search_pattern}")
         task.ui.pool.submit {
-            val transcript = task.transcript()
+          val transcript = task.newFileOutputStream(transcriptFile())
             try {
                 val searchResults = performSearch()
                 val formattedResults = formatSearchResults(searchResults)
@@ -119,16 +119,7 @@ FileSearch - Search for patterns in files and provide results with context
             } catch (e: Exception) {
                 task.error(e)
                 log.error("Error in FileSearchTask", e)
-                transcript?.write(
-                    """
-                    <details>
-                    <summary>Stack Trace</summary>
-                    ```
-                    ${e.stackTraceToString()}
-                    ```
-                    </details>
-                """.trimIndent().toByteArray()
-                )
+                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             } finally {
                 transcript?.close()
                 task.complete()

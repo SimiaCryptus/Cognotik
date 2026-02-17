@@ -1,15 +1,17 @@
 package cognotik.actions.agent
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -733,8 +735,14 @@ class CustomFileSetPatchServer(
         val design = mainActor.answer(toInput(userMessage)).toContentList().firstOrNull()?.text ?: ""
         if (design.isNotBlank()) {
             task.add(
-              AddApplyFileDiffLinks(processor = processor).instrument(
-                socketManager = socketManager,
+                DiffInstrumentor(
+                    processor,
+                    SocketManagerUIRenderer(
+                        socketManager = socketManager,
+                        sessionId = socketManager.sessionId
+                    ),
+                    RealFileSystem()
+                ).instrument(
                 root = _root ?: throw IllegalStateException("Root directory is not set"),
                 response = design,
                 handle = { newCodeMap: Map<Path, String> ->
@@ -743,9 +751,9 @@ class CustomFileSetPatchServer(
                   }
                 },
                 shouldAutoApply = { it: Path -> autoApply },
-                model = AppSettingsState.instance.fastChatClient,
                 defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
-                  ?: ""
+                    ?: "",
+                    resolver = ::resolveToRelativePath,
               ).renderMarkdown(true))
         } else {
             task.complete("No changes suggested.")
@@ -831,8 +839,14 @@ class CustomFileSetPatchServer(
             CustomFileSetPatchAction.OutputMode.EDIT_FILES -> {
                 """<div>${
                     renderMarkdown(design) {
-                      AddApplyFileDiffLinks(processor = processor).instrument(
-                        socketManager = socketManager,
+                        DiffInstrumentor(
+                            processor,
+                            SocketManagerUIRenderer(
+                                socketManager = socketManager,
+                                sessionId = socketManager.sessionId
+                            ),
+                            RealFileSystem()
+                        ).instrument(
                         root = _root ?: throw IllegalStateException("Root directory is not set"),
                         response = design,
                         handle = { newCodeMap: Map<Path, String> ->
@@ -840,9 +854,9 @@ class CustomFileSetPatchServer(
                             fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                           }
                         },
-                        model = AppSettingsState.instance.fastChatClient,
                         defaultFile = fileSet.files.firstOrNull()
-                          ?.let { (_root?.relativize(it) ?: it).toString() } ?: ""
+                            ?.let { (_root?.relativize(it) ?: it).toString() } ?: "",
+                            resolver = ::resolveToRelativePath,
                       )
                     }
                 }</div>"""

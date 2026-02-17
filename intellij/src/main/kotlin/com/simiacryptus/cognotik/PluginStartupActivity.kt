@@ -8,7 +8,9 @@ import com.intellij.openapi.startup.ProjectActivity
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
@@ -18,7 +20,7 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLock
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
@@ -32,8 +34,9 @@ class PluginStartupActivity : ProjectActivity {
         initDynamicEnums()
         log.info("Starting Cognotik plugin initialization for project: ${project.name}")
 //        setLogInfo("org.apache.hc.client5.http")
-//        setLogInfo("org.eclipse.jetty")
+        setLogInfo("org.eclipse.jetty")
         setLogInfo("com.simiacryptus")
+        setLogDebug("com.simiacryptus.cognotik.chat")
 //        setLogDebug("com.simiacryptus.cognotik.plan")
 //        setLogInfo("com.simiacryptus.cognotik.plan.tools.online.CrawlerAgent)
 //        setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
@@ -144,6 +147,8 @@ class PluginStartupActivity : ProjectActivity {
                 }
             }
         }
+        OrchestrationConfig.instanceFn =
+            { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ApplicationServices.authorizationManager = object : AuthorizationInterface {
             override fun isAuthorized(
                 applicationClass: Class<*>?,

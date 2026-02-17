@@ -6,6 +6,8 @@ import com.simiacryptus.cognotik.docs.isDocumentFile
 import com.simiacryptus.cognotik.plan.ExecutionState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
+import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -32,8 +34,9 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
     open val typeConfig: U?
         get() = taskType.let { task_type -> orchestrationConfig.taskSettings.values.firstOrNull { it.task_type == task_type } as? U }
+    val verbose : Boolean get() = typeConfig?.verbose == true
 
-    open val defaultSmart: ChatInterface
+  open val defaultSmart: ChatInterface
         get() = typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.defaultSmart
 
     open val defaultFast: ChatInterface
@@ -57,6 +60,11 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
     }
 
 
+  @Suppress("unused")
+  fun String.wrapInDetails(summary: String): String {
+    //return "<details><summary>$summary</summary>\n\n${this}\n</details>"
+    return this
+  }
     protected open fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
         val footerTask = ui.newTask(false)
         lateinit var textHandle: StringBuilder
@@ -120,27 +128,23 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
             }
         }
 
-    fun SessionTask.transcript(name: String = this@AbstractTask.taskType): FileOutputStream? {
-        val transcriptFile: String = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    fun SessionTask.newFileOutputStream(transcriptFile: String): FileOutputStream? {
         val (link, file) = Pair(linkTo(transcriptFile), resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
         add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
         return markdownTranscript
     }
 
-    open fun initializeTranscript(task: SessionTask, name: String = this@AbstractTask.taskType): Pair<String, FileOutputStream?> {
-        val transcriptFile = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.add(
-            MarkdownUtil.renderMarkdown(
-                "Writing transcript to <a href='$link' target='_blank'>transcript.md</a> " +
-                        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a>",
-                ui = task.ui
-            )
-        )
-        return Pair(link, markdownTranscript)
-    }
+    fun transcriptFile(name: String): String = "transcript/${name}_${now()}.md"
+
+    fun transcriptFile(): String = getOutputFile(".md") ?: transcriptFile(taskType)
+
+    fun getOutputFile(extension: String): String? = executionConfig?.files?.let { when {
+            executionConfig is RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig -> null
+            executionConfig is AbstractFileTask.FileTaskExecutionConfig -> null
+            it.filter { it.endsWith(extension) }.size == 1 -> it.first { it.endsWith(extension) }
+      else -> null
+        } }
 
     fun createTabbedDisplay(task: SessionTask) = TabbedDisplay(task)
     open fun writeToTranscript(stream: FileOutputStream, string: String) {
@@ -150,5 +154,6 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
     companion object {
         val log = LoggerFactory.getLogger(AbstractTask::class.java)
+        private fun now(): String? = SimpleDateFormat("yyyyMMddHHmmss").format(Date())
     }
 }

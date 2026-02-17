@@ -1,13 +1,15 @@
 ---
 documents:
-  - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/DocProcessor.kt
-  - ../webui/src/main/kotlin/com/simiacryptus/cognotik/util/OverwriteModes.kt
+  - ../intellij/src/main/kotlin/cognotik/actions/task/DocProcessorAction.kt
+  - ../webui/src/main/kotlin/com/simiacryptus/cognotik/embed/DocProcessor.kt
+  - ../webui/src/test/kotlin/com/simiacryptus/cognotik/util/DocProcessorTest.kt
 specifies: ../site/cognotik.com/frontmatter.html
 ---
 
 # Frontmatter Schema for DocProcessor
 
-This document describes the YAML frontmatter schema used by `DocProcessor` (located in `com.simiacryptus.cognotik.util`)
+This document describes the YAML frontmatter schema used by `DocProcessor` (located in `com.simiacryptus.cognotik.util`,
+source file at `com.simiacryptus.cognotik.embed.DocProcessor`)
 to process markdown documentation files and manage relationships between documentation and source code.
 
 ## Overview
@@ -15,6 +17,9 @@ to process markdown documentation files and manage relationships between documen
 `DocProcessor` processes markdown files that contain YAML frontmatter blocks. The frontmatter specifies how the
 documentation relates to source files - either as specifications that drive code generation, as documentation that
 should be updated based on source files, or as transformation rules between files.
+The processor also supports fetching and caching URL-based related resources, allowing documentation to reference
+external web content as context.
+
 
 ## Frontmatter Format
 
@@ -64,6 +69,9 @@ specifies:
 - Simple patterns: `*.kt`, `helper.kt`
 - Recursive patterns: `**/*.kt` (matches files in all subdirectories)
 - Paths are resolved relative to the markdown file's directory
+- Bracket patterns: `file[0-9].txt` (matches character ranges)
+- Question mark patterns: `file?.txt` (matches single character)
+- Literal paths (without wildcards) are returned even if the file doesn't exist yet, enabling creation of new files
 
 ---
 
@@ -124,7 +132,13 @@ transforms:
 - `$0` - The entire matched string
 - `$1`, `$2`, etc. - Captured groups from the regex pattern
 
+**Note:** Transform source patterns use Java regex syntax (not glob patterns). The regex is matched against file paths
+relative to the documentation file's parent directory. When rebasing, transform patterns are preserved as-is since they
+are resolved relative to the doc file at usage time.
+**Data File Detection:** If a transform matches a JSON source file, it can be automatically used as a data source for
+template processing (see `data_file` under implicit frontmatter keys).
 ---
+
 
 ### `generates`
 
@@ -170,6 +184,10 @@ generates:
 - Simple globs: `*.kt`, `models/*.kt`
 - Recursive globs: `**/*.kt` (matches files in all subdirectories)
 - Paths are resolved relative to the markdown file's directory
+- A single string input is also accepted (converted to a single-element list)
+
+**Validation:** A generate spec requires both `output` and `inputs` fields. Specs missing either field are skipped
+with a warning.
 
 **Use Case:** Generate aggregate files, combined outputs, or files that depend on multiple input sources.
 
@@ -177,8 +195,8 @@ generates:
 
 ### `related`
 
-Specifies additional files to include as context when processing modification tasks. These files are not targets but
-provide supplementary information.
+Specifies additional files or URLs to include as context when processing modification tasks. These resources are not
+targets but provide supplementary information.
 
 **Type:** `String` or `List<String>`
 
@@ -190,23 +208,32 @@ related: ../shared/constants.kt
 ```
 
 ```yaml
-# Multiple related files
+# Multiple related files and URLs
 related:
   - ../shared/constants.kt
   - ../config/settings.yaml
   - ./helper-docs.md
+  - https://example.com/api-spec
 ```
 
-**Use Case:
-** Include configuration files, shared constants, or related documentation that provides context for the AI when processing the target files.
+**URL Support:** Related resources can be URLs (http:// or https://). URLs are automatically fetched, cached locally
+(with a 1-hour cache TTL), and their HTML content is simplified before being included as context. The URL cache is
+stored in `.doc-processor-cache/url-cache` within the root directory.
+
+**Use Case:** Include configuration files, shared constants, related documentation, or external web resources that
+provide context for the AI when processing the target files.
+
 ---
 
 ### `task_type`
 
 Specifies which task type to use for processing the target files. This allows customization of how the AI processes the
 modification task.
+
 **Type:** `String`
+
 **Default:** `FileModification`
+
 **Examples:**
 
 ```yaml
@@ -227,8 +254,12 @@ order:
 3. `documents` frontmatter (first non-null)
 4. `generates` frontmatter (first non-null)
 5. Default: `FileModification`
-   **Use Case:** Customize the AI's behavior when processing files. Different task types may have different prompts,
-   validation rules, or processing strategies.
+
+**Task Type Resolution:** The task type name is resolved using `TaskType.valueOf()` with spaces removed. Unknown task
+type names log a warning and fall back to `FileModification`.
+
+**Use Case:** Customize the AI's behavior when processing files. Different task types may have different prompts,
+validation rules, or processing strategies.
 
 ---
 
@@ -236,7 +267,9 @@ order:
 
 Specifies a relative file path to a JSON file containing additional task type configuration. This allows for more
 complex configuration that would be unwieldy in YAML frontmatter.
+
 **Type:** `String`
+
 **Examples:**
 
 ```yaml
@@ -249,42 +282,106 @@ task_config_json: ./config/my-task-config.json
 task_config_json: ../shared/task-settings.json
 ```
 
-**Use Case:
-** Provide detailed task configuration without cluttering the frontmatter. Useful for complex task types that require many parameters or when sharing configuration across multiple documentation files.
+**Use Case:** Provide detailed task configuration without cluttering the frontmatter. Useful for complex task types that
+require many parameters or when sharing configuration across multiple documentation files.
+
 ---
 
 ### `overwrite`
 
 Specifies the overwrite mode for this documentation file's targets. This controls how existing files are handled during
 processing.
+
 **Type:** `String`
+
 **Valid Values:**
 
-- `Skip` - Skip files that already exist (no processing)
-- `Overwrite` - Always overwrite existing files with full replacement
-- `OverwriteIfOlder` - Overwrite only if source/related files are newer than target
-- `Patch` - Always apply fuzzy patch to existing files
-- `PatchIfOlder` - Apply fuzzy patch only if source/related files are newer than target (default)
-  **Examples:**
+- `SkipExisting` - Skip files that already exist (no processing)
+- `OverwriteExisting` - Always overwrite existing files with full replacement
+- `OverwriteToUpdate` - Overwrite only if source/related files are newer than target
+- `PatchExisting` - Always apply fuzzy patch to existing files
+- `PatchToUpdate` - Apply fuzzy patch only if source/related files are newer than target (default)
+
+**Examples:**
 
 ```yaml
 # Always apply patches to existing files
-overwrite: Patch
+overwrite: PatchExisting
 ```
 
 ```yaml
 # Skip processing if target exists
-overwrite: Skip
+overwrite: SkipExisting
 ```
 
 ```yaml
 # Always fully overwrite
-overwrite: Overwrite
+overwrite: OverwriteExisting
 ```
 
-**Use Case:** Control how the processor handles existing target files. Use `Patch` or
-`PatchIfOlder` for incremental updates that preserve manual changes. Use `Overwrite` or
-`OverwriteIfOlder` for complete regeneration. Use `Skip` to prevent accidental overwrites.
+**Use Case:** Control how the processor handles existing target files. Use `PatchExisting` or
+`PatchToUpdate` for incremental updates that preserve manual changes. Use `OverwriteExisting` or
+`OverwriteToUpdate` for complete regeneration. Use `SkipExisting` to prevent accidental overwrites.
+
+---
+
+### `prompt`
+
+Specifies a custom prompt string to use as the task description instead of the auto-generated one. Only used when
+there is exactly one spec for the target file.
+
+**Type:** `String`
+
+**Examples:**
+
+```yaml
+# Custom prompt for the AI
+specifies: ../src/Main.kt
+prompt: Refactor this file to use coroutines instead of callbacks
+```
+
+**Use Case:** Override the default task description with a specific instruction for the AI.
+
+---
+
+### `template_file`
+
+Specifies a template file to use when processing the target. The path is resolved relative to the markdown file's
+directory.
+
+**Type:** `String`
+
+**Examples:**
+
+```yaml
+specifies: ../src/Generated.kt
+template_file: ./templates/class-template.kt
+```
+
+**Use Case:** Provide a template that guides the structure of generated files.
+
+---
+
+### `data_file`
+
+Specifies a JSON data file to use as structured data input for template processing. The path is resolved relative to
+the markdown file's directory.
+
+**Type:** `String`
+
+**Examples:**
+
+```yaml
+specifies: ../src/Generated.kt
+template_file: ./templates/class-template.kt
+data_file: ./data/model-config.json
+```
+
+**Implicit Detection:** If no explicit `data_file` is specified and a transform matches a JSON source file, that JSON
+file is automatically used as the data source.
+
+**Use Case:** Provide structured data that can be used in conjunction with templates for code generation.
+
 ---
 
 ---
@@ -307,9 +404,11 @@ generates:
 related:
   - ../config/api-config.yaml
   - ./api-conventions.md
-overwrite: Patch
+  - https://example.com/api-spec
+overwrite: PatchExisting
 task_type: FileModification
 task_config_json: ./config/api-task-config.json
+prompt: Update the API layer to conform to the latest specification
 ---
 
 # API Documentation
@@ -320,7 +419,7 @@ This document specifies the API layer implementation...
 ## Processing Behavior
 
 1. **Dependency Resolution:** Tasks are sorted topologically so dependencies are processed before dependents. Cycles are
-   detected and broken automatically.
+   detected and broken automatically by selecting the task with the minimum remaining dependencies.
 
 2. **File Resolution:** All paths in frontmatter are resolved relative to the markdown file's parent directory.
 
@@ -329,18 +428,21 @@ This document specifies the API layer implementation...
 - Simple globs (`*.kt`) match files in the specified directory
 - Recursive globs (`**/*.kt`) match files in all subdirectories
 - For `transforms`, the source pattern is a regex (not a glob) that matches against file paths relative to the doc
+- Bracket patterns (`file[0-9].txt`) match character ranges
+- Question mark patterns (`file?.txt`) match single characters
   file's directory
+- Literal paths (without wildcards) are returned even if the target file doesn't exist, enabling file creation
 
 4. **Multiple Specifications:** A single target file can be specified by multiple documentation files. All
    specifications are combined when processing.
 
 5. **Overwrite Modes:** The processor supports different overwrite strategies for handling existing files:
 
-- `Skip` - Skip files that already exist (no processing)
-- `Overwrite` - Always overwrite existing files with full replacement
-- `OverwriteIfOlder` - Overwrite only if source/related files are newer than target
-- `Patch` - Always apply fuzzy patch to existing files
-- `PatchIfOlder` - Apply fuzzy patch only if source/related files are newer than target (default)
+- `SkipExisting` - Skip files that already exist (no processing)
+- `OverwriteExisting` - Always overwrite existing files with full replacement
+- `OverwriteToUpdate` - Overwrite only if source/related files are newer than target
+- `PatchExisting` - Always apply fuzzy patch to existing files
+- `PatchToUpdate` - Apply fuzzy patch only if source/related files are newer than target (default)
 
 6. **Task Description Generation:** The processor automatically generates appropriate task descriptions based on the
    frontmatter type:
@@ -348,6 +450,8 @@ This document specifies the API layer implementation...
 - For `specifies`/`transforms`: Updates target files based on documentation and specifications
 - For `documents`: Updates documentation to reflect current source code state
 - For `generates`: Generates output files based on documentation and input files
+- If a single spec has a `prompt` frontmatter key, that prompt is used directly as the task description
+- For non-file task types: Processes the file according to the task type with documentation as context
 
 7. **File Modification Time Checking:** For `OverwriteIfOlder` and `PatchIfOlder` modes, the processor compares the
    target file's last modified time against:
@@ -356,24 +460,38 @@ This document specifies the API layer implementation...
 - All related files specified in the frontmatter
 - All source/input files that contribute to the target
   If any of these are newer than the target, the target will be processed.
+8. **URL Fetching and Caching:** Related resources specified as URLs (http:// or https://) are automatically fetched
+   and cached locally:
+- Cache location: `.doc-processor-cache/url-cache` within the root directory
+- Cache TTL: 1 hour (cached content older than 1 hour is re-fetched)
+- HTML content is automatically simplified (scripts, styles, interactive elements removed)
+- Non-HTML content is stored as-is
+- Failed fetches log a warning and return null (the resource is skipped)
+- Cache files use a SHA-256 hash prefix for uniqueness
+9. **Rebasing:** Both `DocSpec` and `ModificationTask` support rebasing from one root directory to another. This is
+   used when the IntelliJ action needs to adjust paths for a different working directory. URL-based related resources
+   are preserved as-is during rebasing.
+
 
 ## Data Structures
 
 The frontmatter is parsed into a `DocSpec` containing:
 
-| Field            | Type                  | Description                                                                  |
-|------------------|-----------------------|------------------------------------------------------------------------------|
-| `docFile`        | `File?`               | The markdown file itself (nullable)                                          |
-| `specifies`      | `List<String>`        | Glob patterns for files this doc specifies                                   |
-| `documents`      | `List<String>`        | Glob patterns for files this doc describes                                   |
-| `transforms`     | `List<TransformSpec>` | Source-to-destination transformation rules                                   |
-| `generates`      | `List<GenerateSpec>`  | Explicit generation specifications                                           |
-| `related`        | `List<String>`        | Additional context files                                                     |
-| `overwrite`      | `OverwriteModes?`     | Overwrite mode for this doc's targets (nullable, defaults to `PatchIfOlder`) |
-| `taskType`       | `String?`             | Task type to use for processing (nullable, defaults to `FileModification`)   |
-| `taskConfigJson` | `String?`             | Path to JSON file with additional task configuration (nullable)              |
-| `content`        | `String`              | The markdown body (after frontmatter)                                        |
-| `frontmatter`    | `Map<String, Any>`    | Raw parsed frontmatter                                                       |
+| Field            | Type                  | Description                                                                |
+|------------------|-----------------------|----------------------------------------------------------------------------|
+| `docFile`        | `File`                | The markdown file itself                                                   |
+| `specifies`      | `List<String>`        | Glob patterns for files this doc specifies                                 |
+| `documents`      | `List<String>`        | Glob patterns for files this doc describes                                 |
+| `transforms`     | `List<TransformSpec>` | Source-to-destination transformation rules                                 |
+| `generates`      | `List<GenerateSpec>`  | Explicit generation specifications                                         |
+| `related`        | `List<String>`        | Additional context files or URLs                                           |
+| `taskType`       | `String?`             | Task type to use for processing (nullable, defaults to `FileModification`) |
+| `taskConfigJson` | `String?`             | Path to JSON file with additional task configuration (nullable)            |
+| `content`        | `String`              | The markdown body (after frontmatter)                                      |
+| `frontmatter`    | `Map<String, Any>`    | Raw parsed frontmatter                                                     |
+
+**Note:** The `overwrite` mode is not stored in `DocSpec` — it is configured at the `DocProcessor` level and applies
+to all targets processed by that instance.
 
 ### TransformSpec
 
@@ -388,6 +506,25 @@ The frontmatter is parsed into a `DocSpec` containing:
 |----------|----------------|---------------------------------------------|
 | `output` | `String`       | The output file path (relative to doc file) |
 | `inputs` | `List<String>` | Glob patterns for input files               |
+### ModificationTaskConfig
+Represents the configuration for a single modification task:
+| Field              | Type               | Description                                          |
+|--------------------|--------------------|------------------------------------------------------|
+| `files`            | `List<String>?`    | Target file paths (relative to root)                 |
+| `related_files`    | `List<String>?`    | Related/context file paths (relative to root)        |
+| `task_description` | `String`           | Generated or custom task description                 |
+| `template_file`    | `String?`          | Path to template file (nullable)                     |
+| `data`             | `Map<String, Any>?`| Structured data from data_file or JSON source (nullable) |
+### ModificationTask
+Represents a complete modification task ready for execution:
+| Field                | Type                   | Description                                      |
+|----------------------|------------------------|--------------------------------------------------|
+| `data`               | `ModificationTaskConfig` | Task configuration                             |
+| `message`            | `String`               | Message content (context files or execute command)|
+| `patchProcessor`     | `PatchProcessors`      | Patch processing strategy (default: Fuzzy)       |
+| `shouldDeleteTarget` | `Boolean`              | Whether to delete the target file (default: false)|
+| `taskType`           | `TaskType<*, *>`       | The resolved task type (default: FileModification)|
+
 
 ## Additional Processing Classes
 
@@ -424,11 +561,20 @@ Represents a documentation update specification:
 
 ### Frontmatter Parsing
 
-The frontmatter is parsed using SnakeYAML. The parser handles the following value types:
+The frontmatter is parsed using a custom simple YAML parser (not SnakeYAML). The parser handles the following value
+types:
 
 - **String values**: Converted directly
 - **List values**: Each element is converted to a string
-- **Map values** (for `generates`): Parsed into `GenerateSpec` objects with `output` and `inputs` fields
+- **Map values** (for `generates`): Parsed into `GenerateSpec` objects with `output` and `inputs` fields (note: the
+  simple parser may have limitations with deeply nested YAML structures like maps within lists)
+
+**Parser Behavior:**
+- Lines are split on the first colon to extract key-value pairs
+- Lines without colons are ignored
+- If the value after the colon is empty, the parser looks for subsequent list items (lines starting with `- `)
+- Empty keys (colon with no value and no subsequent list items) are not added to the result map
+- Values are trimmed of whitespace
 
 ### Transform Pattern Matching
 
@@ -439,6 +585,13 @@ file's directory. When a match is found:
 2. Capture groups are extracted from the match
 3. Backreferences (`$0`, `$1`, etc.) in the destination pattern are replaced with the captured values
 4. The destination path is resolved relative to the documentation file's directory
+### Primary Source Resolution
+When determining the primary source file for overwrite mode checks, the priority is:
+1. First transform's source file
+2. First spec's doc file
+3. First document match's first supporting file (or doc file if no supporting files)
+4. First generate match's first input file (or doc file if no input files)
+
 
 ### Error Handling
 
@@ -447,3 +600,23 @@ file's directory. When a match is found:
 - Invalid regex patterns in `transforms` will cause matching to fail for those rules
 - Unknown `task_type` values will log a warning and fall back to `FileModification`
 - Invalid `task_config_json` paths will be stored but may cause errors during task execution
+- Files without frontmatter (not starting with `---`) return null (silently skipped)
+- Files with unclosed frontmatter (no closing `---`) return null
+- Files with frontmatter but no `specifies`, `transforms`, `documents`, or `generates` keys return null
+- Non-existent files referenced in `related` are still returned (downstream code handles them)
+- URL fetch failures log a warning and return null (the resource is skipped)
+- Errors processing individual target files are caught and logged; other targets continue processing
+### IntelliJ Integration
+The `DocProcessorAction` provides an IntelliJ IDE action that:
+1. Filters selected files to markdown files (`.md` or `.markdown` extensions)
+2. Creates a `DocProcessor` instance with the configured fast and smart models
+3. Calls `getAll()` to collect all modification tasks from the selected files
+4. Shows a `DocProcessorTaskDialog` with a checklist of tasks for user selection
+5. Executes the first selected task via `SingleTaskApp` in a browser session
+The action is available through the `DocProcessorActionGroup` which provides a submenu with all overwrite mode options:
+- 🚫 Skip Existing Files (`SkipExisting`)
+- 🔄 Overwrite All Files (`OverwriteExisting`)
+- 📅 Overwrite Outdated Files (`OverwriteToUpdate`)
+- 🩹 Patch Existing Files (`PatchExisting`)
+- 📝 Patch Outdated Files (`PatchToUpdate`)
+The dialog includes an "Auto-fix issues" checkbox and displays task details including target files and related files.

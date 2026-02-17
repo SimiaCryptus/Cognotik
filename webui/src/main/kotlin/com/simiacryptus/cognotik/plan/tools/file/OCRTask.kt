@@ -32,7 +32,7 @@ class OCRTask(
 ) : AbstractFileTask<OCRTask.OCRTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
     class OCRTaskExecutionConfigData(
-        @Description("The files to process (PDF or images)") files: List<String>? = null,
+        @Description("The files to process (PDF or images)") files: List<String> = emptyList(),
         @Description("DPI for rendering pages (default: 150)") val dpi: Float = 150f,
         @Description("Extract figures as images") val extract_figures: Boolean = false,
         @Description("Extract form fields and metadata") val extract_metadata: Boolean = false,
@@ -91,7 +91,7 @@ OCR - Convert documents (PDF, Images) to Markdown text.
             return
         }
 
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
 
 
@@ -250,7 +250,7 @@ OCR - Convert documents (PDF, Images) to Markdown text.
                     } catch (e: Exception) {
                         log.error("Error processing ${file.name}", e)
                         task.error(e)
-                        transcript?.write("\n## Error processing ${file.name}\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                        transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                     }
                 }
                 if (results.isEmpty()) {
@@ -291,7 +291,7 @@ OCR - Convert documents (PDF, Images) to Markdown text.
             } catch (e: Exception) {
                 log.error("OCR Task failed", e)
                 task.error(e)
-                transcript?.write("\n## Critical Task Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                 resultFn("Error: ${e.message}")
             } finally {
                 transcript?.close()

@@ -2,14 +2,16 @@ package cognotik.actions.agent
 
 import com.google.common.util.concurrent.Futures
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -99,10 +101,13 @@ class DocumentedMassPatchServer(
                             mainActor.answer(toInput(userMessage)).toContentList().firstOrNull()?.text ?: ""
                         if (design.isNotBlank()) {
                             fileTask.add(
-                              AddApplyFileDiffLinks(
-                                processor = processor
+                              DiffInstrumentor(
+                                processor,
+                                SocketManagerUIRenderer(
+                                  socketManager = socketManager,
+                                  sessionId = socketManager.sessionId
+                                ), RealFileSystem()
                               ).instrument(
-                                socketManager = socketManager,
                                 root = _root,
                                 response = design,
                                 handle = { newCodeMap: Map<Path, String> ->
@@ -111,8 +116,8 @@ class DocumentedMassPatchServer(
                                   }
                                 },
                                 shouldAutoApply = { it: Path -> autoApply },
-                                model = AppSettingsState.instance.fastChatClient,
-                                defaultFile = path.toString()
+                                defaultFile = path.toString(),
+                                resolver = ::resolveToRelativePath,
                               ).renderMarkdown(true)
                             )
                         } else {
@@ -129,10 +134,13 @@ class DocumentedMassPatchServer(
                             outputFn = { design: String ->
                                 """<div>${
                                     renderMarkdown(design) {
-                                      AddApplyFileDiffLinks(
-                                        processor = processor
+                                      DiffInstrumentor(
+                                        processor,
+                                        SocketManagerUIRenderer(
+                                          socketManager = socketManager,
+                                          sessionId = socketManager.sessionId
+                                        ), RealFileSystem()
                                       ).instrument(
-                                        socketManager = socketManager,
                                         root = _root,
                                         response = design,
                                         handle = { newCodeMap: Map<Path, String> ->
@@ -141,8 +149,8 @@ class DocumentedMassPatchServer(
                                           }
                                         },
                                         shouldAutoApply = { it: Path -> autoApply },
-                                        model = AppSettingsState.instance.fastChatClient,
-                                        defaultFile = path.toString()
+                                        defaultFile = path.toString(),
+                                        resolver = ::resolveToRelativePath,
                                       )
                                     }
                                 }</div>"""

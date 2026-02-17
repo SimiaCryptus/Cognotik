@@ -31,7 +31,7 @@ class GenerateSpriteSheetTask(
 
     class GenerateSpriteSheetTaskExecutionConfigData(
         @Description("The sprite sheet image file to be created (relative path, must end with .png)")
-        files: List<String>? = null,
+        files: List<String> = emptyList(),
         @Description("The JSON metadata file to be created (relative path, must end with .json)")
         var metadata_file: String? = null,
         @Description("Detailed description of the sprites to generate (e.g., 'A pixel art warrior walking animation, 4 frames, side view')")
@@ -94,7 +94,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
         val metadataFile = executionConfig?.metadata_file ?: return resultFn("No metadata file specified")
         val description = executionConfig?.task_description ?: "Generate a sprite sheet"
 
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
       try {
 
@@ -251,7 +251,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
           } catch (e: Exception) {
             task.error(e)
             log.error("Error in GenerateSpriteSheetTask async execution", e)
-            transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             resultFn("ERROR: ${e.message}")
           }
         }

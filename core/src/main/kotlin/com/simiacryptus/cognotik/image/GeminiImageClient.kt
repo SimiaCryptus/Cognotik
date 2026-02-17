@@ -81,7 +81,7 @@ class GeminiImageClient(
                         }
                     }
 
-                    val model = GeminiImageModels.values.values.find { it.modelName.equals(request.model, true) }
+                    val model = GeminiImageModels.values.values.find { it.modelId.equals(request.model, true) }
                     val dims = request.size?.split("x")
                     if (model != null) {
                         onUsage(

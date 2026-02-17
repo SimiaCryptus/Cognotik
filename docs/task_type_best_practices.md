@@ -1,3 +1,10 @@
+---
+specifies: ../webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/**/*.kt
+related:
+  - agent_types.md
+  - user_interface.md
+---
+
 # Cognotik Task Type Implementation Standards & Review Protocol
 
 ## 1. Purpose and Scope
@@ -32,6 +39,13 @@ architecturally sound, planner-compatible, and user-safe.
 * **Mutability & Scripting:**
     * **Mutable Fields:** All fields in both `TaskExecutionConfig` and `TaskTypeConfig` subclasses must be mutable (`var`) and provide sensible default values.
     * **Reasoning:** This is strictly required for interoperability with scripting environments (e.g., Groovy), where configurations are often instantiated and then modified dynamically via property setters.
+* **No-Argument Constructor Requirement:**
+  * All configuration data classes **must** have a no-argument constructor. This means every field must have a default
+    value.
+  * **Reasoning:** Jackson deserialization (used by `ParsedAgent` and the planning pipeline) requires a no-arg
+    constructor to instantiate objects before populating fields. Without defaults, deserialization will fail at runtime.
+  * *Bad:* `class MyConfig(val target_file: String) : TaskExecutionConfig()`
+  * *Good:* `class MyConfig(var target_file: String? = null) : TaskExecutionConfig()`
 *   **Prompt Configuration:**
     *   **Hardcoding Forbidden:** Do not hardcode prompt templates or system instructions inside the class.
     *   **Config Fields:** Define prompt strings, templates, and formatters within the `TaskTypeConfig`. This allows users to tune the "personality" or specific instructions of a tool without recompiling.
@@ -54,6 +68,145 @@ The Planner (LLM) relies entirely on text descriptions to understand how to use 
 * **Content:** This description must concisely explain the task's capability to the Planner. It should highlight
   expected inputs and the nature of the output.
 
+## 3.3 Structured Output with `ParsedAgent` and Typed Data Classes
+
+Many tasks use `ParsedAgent<T>` to extract structured data from LLM responses. When defining the target data class `T`,
+strict adherence to the following rules is required to ensure reliable parsing.
+
+### Data Class Design Rules
+
+1. **Default Values on All Fields (No-Arg Constructor):**
+   Every field must have a default value. `ParsedAgent` relies on Jackson deserialization, which instantiates the object
+   via a no-arg constructor and then sets properties. A missing default will cause a runtime
+   `MissingKotlinParameterException`.
+   ```kotlin
+   // ✗ BAD — No no-arg constructor; ParsedAgent will fail to deserialize
+   data class AnalysisResult(
+       val summary: String,
+       val issues: List<String>,
+       val severity: Int
+   )
+   // ✓ GOOD — All fields have defaults; safe for ParsedAgent
+   data class AnalysisResult(
+       var summary: String = "",
+       var issues: List<String> = emptyList(),
+       var severity: Int = 0
+   )
+   ```
+2. **Use `var`, Not `val`:**
+   Fields should be mutable (`var`). This is required for:
+  * Jackson property-based deserialization.
+  * `ValidatedObject` canonicalization (e.g., trimming strings, clamping ranges).
+  * Scripting environment interoperability (Groovy, etc.).
+3. **`@Description` on Every Field:**
+   The `TypeDescriber` reads `@Description` annotations to generate the schema that tells the LLM what each field means.
+   Without descriptions, the LLM must guess from field names alone, which is unreliable for domain-specific semantics.
+   ```kotlin
+   // ✗ BAD — LLM has no guidance on what these fields mean
+   data class RefactorPlan(
+       var files: List<String> = emptyList(),
+       var strategy: String = ""
+   )
+   // ✓ GOOD — LLM understands the purpose and constraints of each field
+   data class RefactorPlan(
+       @Description("List of relative file paths to refactor. Must exist in the working directory.")
+       var files: List<String> = emptyList(),
+       @Description("The refactoring strategy to apply. One of: 'extract_method', 'inline', 'rename'.")
+       var strategy: String = ""
+   )
+   ```
+4. **JSON-Style Field Naming:**
+   Use `snake_case` for field names rather than `camelCase`. LLMs produce more reliable JSON when field names follow
+   JSON conventions.
+   ```kotlin
+   // ✗ Avoid: camelCase field names
+   var targetFile: String = ""
+   // ✓ Prefer: snake_case field names
+   var target_file: String = ""
+   ```
+5. **Nullable Types for Optional Fields:**
+   Use nullable types (`String?`) with a `null` default for fields that the LLM may legitimately omit. This prevents the
+   parser from failing when the LLM doesn't include an optional field.
+   ```kotlin
+   data class SearchConfig(
+       @Description("The search query string")
+       var query: String = "",
+       @Description("Optional regex filter to apply to results. Null means no filtering.")
+       var regex_filter: String? = null
+   )
+   ```
+6. **Implement `ValidatedObject` for Robustness:**
+   LLMs are probabilistic and will occasionally produce out-of-range values, wrong types, or malformed strings. Use
+   `ValidatedObject` to canonicalize and recover rather than reject.
+   ```kotlin
+   data class PaginationConfig(
+       @Description("Number of results per page. Must be between 1 and 100.")
+       var page_size: Int = 10
+   ) : ValidatedObject {
+       override fun validate(): String? {
+           // Canonicalize: clamp to valid range instead of rejecting
+           page_size = page_size.coerceIn(1, 100)
+           return null // null means valid
+       }
+   }
+   ```
+7. **Nested Types Follow the Same Rules:**
+   If your data class contains nested objects, those nested types must also have no-arg constructors, `@Description`
+   annotations, and `var` fields.
+   ```kotlin
+   data class DeploymentPlan(
+       @Description("The target environment configuration")
+       var environment: EnvironmentConfig = EnvironmentConfig(),
+       @Description("List of services to deploy")
+       var services: List<ServiceConfig> = emptyList()
+   )
+   data class EnvironmentConfig(
+       @Description("Environment name (e.g., 'staging', 'production')")
+       var name: String = "staging",
+       @Description("AWS region for deployment")
+       var region: String = "us-east-1"
+   )
+   data class ServiceConfig(
+       @Description("The service identifier")
+       var service_id: String = "",
+       @Description("Docker image tag to deploy")
+       var image_tag: String = "latest"
+   )
+   ```
+8. **Avoid `Any` Unless Truly Dynamic:**
+   While `Any` types are supported (deserialized as `List`/`Map` by Jackson), prefer explicit types whenever possible.
+   Explicit types produce better schemas and more reliable LLM output.
+
+### Using `ParsedAgent` in Task Implementations
+
+When a task needs structured LLM output (e.g., generating a plan, extracting entities, producing a typed report), use
+`ParsedAgent<T>` rather than manually parsing raw text.
+
+```kotlin
+// Inside a task's run() method:
+val smartClient = orchestrationConfig.defaultSmart.getChildClient(task)
+val fastClient = orchestrationConfig.defaultFast.getChildClient(task)
+val analysisAgent = ParsedAgent(
+  clazz = AnalysisResult::class.java,
+  prompt = "Analyze the following code and produce a structured report.",
+  model = smartClient, // Wrapped exactly once with getChildClient(task)
+  parsingChatter = fastClient, // Wrapped exactly once with getChildClient(task)
+  describer = YamlDescriber() // Default; generates token-efficient schema
+)
+val response: ParsedResponse<AnalysisResult> = analysisAgent.answer(
+  listOf("Analyze this code:\n```\n$codeContent\n```")
+)
+val result: AnalysisResult = response.obj
+task.add("Found ${result.issues.size} issues with severity ${result.severity}".renderMarkdown())
+```
+
+**Key considerations when using `ParsedAgent` in tasks:**
+
+* **`exampleInstance`:** Provide an example instance to improve schema adherence for complex types.
+* **`parsingChatter`:** Use a faster/cheaper model for the JSON extraction step to reduce cost.
+* **`deserializerRetries`:** Set to 2-3 for production tasks to handle occasional malformed JSON.
+* **Error Handling:** Wrap `ParsedAgent` calls in try-catch and apply the Triple Log Rule (UI, SLF4J, Transcript).
+
 ## 4. Implementation Standards (`AbstractTask`)
 
 ### 4.1 User Safety & Side Effects
@@ -71,6 +224,42 @@ The Planner (LLM) relies entirely on text descriptions to understand how to use 
     * Context limits are respected (via `FileSelectionUtils`).
 * **Dependencies:** The task must utilize `getPriorCode(executionState)` to retrieve results from upstream tasks defined
   in `task_dependencies`.
+### 4.2.1 API Client Wrapping (The "Wrap Once" Rule)
+When a task obtains a `ChatInterface` from the orchestration config (e.g., `orchestrationConfig.defaultSmart`, `orchestrationConfig.defaultFast`, or `orchestrationConfig.instance(model)`), it **must** wrap it exactly once using the `ChatInterface.getChildClient(task: SessionTask)` extension function defined in `SessionTask.kt`.
+*   **Purpose:** `getChildClient(task)` creates a child client and attaches a log stream from the current `SessionTask`. This ensures:
+    *   API calls are logged to the task's session-specific log file (visible via the "API log" link in the UI).
+    *   Client hierarchy is maintained for budget tracking and request attribution.
+    *   Each task gets its own isolated logging context.
+*   **Exactly Once:** The client must be wrapped exactly once per task. Wrapping zero times means API calls are not logged to the task's transcript. Wrapping more than once creates redundant nested clients and duplicate log streams, inflating log output and wasting resources.
+*   **Scope:** Wrap at the point of use within the `run()` method, not in constructors or field initializers, since the `SessionTask` is only available at execution time.
+```kotlin
+// ✗ BAD — Using the raw API client without wrapping; no task-level logging
+override fun run(agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig) {
+    val api = orchestrationConfig.defaultSmart
+    api.chat(request) // API call is not logged to the task's session
+}
+// ✗ BAD — Wrapping twice; duplicate log streams
+override fun run(agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig) {
+    val api = orchestrationConfig.defaultSmart.getChildClient(task).getChildClient(task)
+    api.chat(request) // Logged twice, nested client hierarchy is wasteful
+}
+// ✓ GOOD — Wrapped exactly once at the point of use
+override fun run(agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig) {
+    val api = orchestrationConfig.defaultSmart.getChildClient(task)
+    api.chat(request) // Properly logged to the task's session log
+}
+// ✓ GOOD — Wrapping when passing to a ParsedAgent or other consumer
+override fun run(agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig) {
+    val analysisAgent = ParsedAgent(
+        resultClass = AnalysisResult::class.java,
+        prompt = "Analyze the code.",
+        model = orchestrationConfig.defaultSmart.getChildClient(task),
+        parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+    )
+}
+```
+**Note:** The `OrchestrationConfig.planningActor()` method already follows this pattern internally (calling `defaultSmart.getChildClient(task)` and `defaultFast.getChildClient(task)`). All task implementations must do the same when they access API clients directly.
+
 
 ### 4.3 Output & Feedback
 
@@ -88,6 +277,137 @@ The Planner (LLM) relies entirely on text descriptions to understand how to use 
   what downstream tasks will see.
 * **Artifacts:** If the task generates files, the output text passed to `resultFn` should list the paths of created
   files to maintain context for the Planner.
+
+### 4.3.1 Output File Convention (The "Single Main File" Rule)
+
+Tasks should, whenever possible, produce a **single main output file** whose path is declared in the `files` field of
+the task's `TaskExecutionConfig`. This convention serves multiple purposes:
+
+* **Planner Visibility:** The `files` field is inspected by the Planner and downstream tasks. By declaring the output
+  file path upfront, other tasks in the plan can reference it as an input dependency without guessing.
+* **User Discoverability:** The UI renders links to files listed in `files`, giving the user a clear artifact to inspect
+  after the task completes.
+* **Transcript Unification:** For many tasks, the "main output file" *is* the transcript itself. This avoids the
+  anti-pattern of producing both a transcript and a separate output file with overlapping content.
+
+#### How It Works
+
+The `AbstractTask` base class provides a `transcriptFile()` method that checks whether the `files` field contains
+exactly one file with a `.md` extension. If so, that path is used as the transcript destination. Otherwise, a default
+timestamped path under `transcript/` is generated.
+
+```kotlin
+// In AbstractTask:
+fun transcriptFile(): String = getOutputFile(".md") ?: transcriptFile(taskType)
+fun getOutputFile(extension: String): String? = executionConfig?.files?.let { when {
+    // Excluded for tasks that define their own file semantics
+    executionConfig is RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig -> null
+    executionConfig is AbstractFileTask.FileTaskExecutionConfig -> null
+    // If exactly one file matches the extension, use it
+    it.filter { it.endsWith(extension) }.size == 1 -> it.first { it.endsWith(extension) }
+    else -> null
+} }
+```
+
+#### Standard Pattern for Task Implementations
+
+When implementing a task that produces a report, analysis, or any textual artifact, follow this pattern:
+
+```kotlin
+override fun run(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    resultFn: (String) -> Unit,
+    orchestrationConfig: OrchestrationConfig
+) {
+    // transcriptFile() returns the path from `files` if a single .md file is specified,
+    // otherwise falls back to a generated path like "transcript/MyTask_20240101120000.md"
+    val transcript = task.newFileOutputStream(transcriptFile())
+    try {
+        // ... task logic ...
+        transcript?.write("# My Task Output\n\n".toByteArray())
+        transcript?.write("Results go here...\n".toByteArray())
+        // ... more output ...
+        resultFn("Task completed. Output written to ${transcriptFile()}")
+    } finally {
+        transcript?.close()
+    }
+}
+```
+
+#### When the Planner Specifies the Output File
+
+The Planner can control where a task writes its output by populating the `files` field in the execution config. For
+example, a plan might specify:
+
+```json
+{
+    "task_type": "Inquiry",
+    "task_description": "Research the authentication options and write a report",
+    "files": ["docs/auth_research.md"],
+    "task_dependencies": []
+}
+```
+
+In this case, `transcriptFile()` returns `"docs/auth_research.md"`, and the task's transcript (which *is* the research
+report) is written directly to the user-specified location. The user sees a clickable link to `docs/auth_research.md` in
+the UI, and downstream tasks can reference it.
+
+#### Guidelines
+
+| Scenario                               | Recommended Approach                                                                                                            |
+|:---------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------|
+| Task produces a single report/analysis | Declare one `.md` file in `files`; use `transcriptFile()` as the output path                                                    |
+| Task modifies existing source files    | Use `files` to list the target source files (not the transcript); generate a separate transcript via `transcriptFile(taskType)` |
+| Task produces multiple artifacts       | List all artifacts in `files`; use `transcriptFile(taskType)` for the process log                                               |
+| Task produces no file artifacts        | Leave `files` empty; transcript is auto-generated under `transcript/`                                                           |
+#### Theming Auxiliary Output Around the Primary Filename
+When a task produces multiple artifacts (images, data files, sub-reports) in addition to its primary output, the primary output filename declared in `files` should be used as the **naming theme** for all related artifacts. This creates a cohesive, discoverable output structure.
+**Pattern:** Strip the extension from the primary output file and use the resulting base name to derive:
+1. **A directory** for auxiliary artifacts (images, generated assets, intermediate files).
+2. **Companion data files** with the same base name but different extensions or suffixes.
+**Example from `ComicBookGenerationTask`:**
+If the planner specifies `files: ["my_story.md"]`, the task derives:
+- `dataDir = "my_story"` — a directory for character images (`my_story/char_Hero.png`) and page strips (`my_story/page_1_row_1.png`)
+- `dataFile = "my_story.comic.json"` — structured metadata saved alongside the primary markdown output
+```kotlin
+// Deriving themed paths from the primary output file
+val dataDir = (getOutputFile(".md")?.let {
+    if (it.endsWith(".md")) it.removeSuffix(".md") else null
+} ?: "comic").apply {
+    val dir = task.resolveUserFile(this)
+    if (dir != null && !dir.exists()) dir.mkdirs()
+}
+val dataFile = getOutputFile(".md")?.let {
+    if (it.endsWith(".md")) it.removeSuffix(".md") + ".comic.json" else null
+} ?: "comic_book.json"
+```
+**Why this matters:**
+- **User discoverability:** All artifacts related to a task are grouped under a predictable name. A user who sees `my_story.md` in their workspace can intuit that `my_story/` contains the images and `my_story.comic.json` contains the structured data.
+- **Planner context:** Downstream tasks can predict artifact locations based on the declared output file, enabling reliable cross-task references.
+- **Cleanup:** Themed naming makes it trivial to identify and remove all artifacts from a specific task run.
+**Guidelines for themed output:**
+| Artifact Type | Naming Convention | Example (primary file: `report.md`) |
+|:---|:---|:---|
+| Auxiliary directory | `{base}/` | `report/` |
+| Generated images | `{base}/{descriptive_name}.png` | `report/chart_revenue.png` |
+| Structured data | `{base}.{task_suffix}.json` | `report.analysis.json` |
+| Sub-reports | `{base}/{section_name}.md` | `report/appendix_a.md` |
+**Fallback:** Always provide a sensible default when `getOutputFile()` returns `null` (i.e., when the planner didn't specify a primary file). The comic book task falls back to `"comic"` for the directory and `"comic_book.json"` for the data file.
+
+
+#### Anti-Patterns
+
+* **Ignoring `files` entirely:** Writing output to a hardcoded or random path while `files` specifies a destination. The
+  Planner and downstream tasks will look for the file at the declared path and find nothing.
+* **Duplicate output:** Writing the same content to both a transcript file and a separate output file. Use
+  `transcriptFile()` to unify them when the transcript *is* the deliverable.
+* **Not closing the stream:** Always close the `FileOutputStream` in a `finally` block. An unclosed stream can result in
+  truncated output files.
+* **Unthemed auxiliary files:** Generating auxiliary artifacts with names unrelated to the primary output file (e.g., writing to `output_images/img1.png` when the primary file is `my_story.md`). This breaks discoverability and makes it impossible for downstream tasks or users to associate artifacts with their source task.
+* **Missing fallback defaults:** Relying on `getOutputFile()` without a fallback. If the planner doesn't specify a file, the task should still produce coherently named output using a hardcoded default base name.
+
 * **Markdown Rendering:**
     * **Extension Method:** When sending content to the UI (via `task.add` or `task.complete`), always use the `String.renderMarkdown` extension method (e.g., `myString.renderMarkdown`).
 ### 4.5 Concurrency & Threading
@@ -121,16 +441,23 @@ The Planner (LLM) relies entirely on text descriptions to understand how to use 
 
 When reviewing a specific Task file (e.g., `MyNewTask.kt`), apply the following checks:
 
-| Check ID | Category     | Requirement                                                                        | Pass/Fail Criteria                                                                                |
-|:---------|:-------------|:-----------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------|
-| **R1**   | **Config**   | Are all `TaskExecutionConfig` fields annotated with `@Description`?                | **Fail** if any public field lacks description.                                                   |
-| **R2**   | **Safety**   | Does the task modify state (files/system)? If yes, is there an approval mechanism? | **Fail** if `File.write` or `ProcessBuilder` is used without `acceptButtonFooter` or user prompt. |
-| **R3**   | **UI**       | Does the task provide visual feedback via `SessionTask`?                           | **Fail** if the task runs silently until completion.                                              |
-| **R4**   | **Context**  | Does the task handle `task_dependencies`?                                          | **Fail** if upstream data is ignored.                                                             |
-| **R5**   | **Registry** | Is the task registered in `TaskType.kt`?                                           | **Fail** if the `TaskType` enum or constructor map is missing the entry.                          |
-| **R6**   | **Docs**     | Is there a `tooltipHtml` or `description` provided in the `TaskType` definition?   | **Fail** if null or empty.                                                                        |
-| **R7**   | **Debug**    | Is the transcript used with `<details>` for verbose data?                          | **Fail** if raw dumps clutter the main view or if transcript is missing.                          |
-| **R8**   | **Async**    | Are heavy ops offloaded to `task.ui.pool`?                                         | **Fail** if `Thread.sleep` or blocking I/O occurs on the main thread.                             |
+| Check ID | Category     | Requirement                                                                                              | Pass/Fail Criteria                                                                                                                                  |
+|:---------|:-------------|:---------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------|
+| **R1**   | **Config**   | Are all `TaskExecutionConfig` fields annotated with `@Description`?                                      | **Fail** if any public field lacks description.                                                                                                     |
+| **R2**   | **Safety**   | Does the task modify state (files/system)? If yes, is there an approval mechanism?                       | **Fail** if `File.write` or `ProcessBuilder` is used without `acceptButtonFooter` or user prompt.                                                   |
+| **R3**   | **UI**       | Does the task provide visual feedback via `SessionTask`?                                                 | **Fail** if the task runs silently until completion.                                                                                                |
+| **R4**   | **Context**  | Does the task handle `task_dependencies`?                                                                | **Fail** if upstream data is ignored.                                                                                                               |
+| **R5**   | **Registry** | Is the task registered in `TaskType.kt`?                                                                 | **Fail** if the `TaskType` enum or constructor map is missing the entry.                                                                            |
+| **R6**   | **Docs**     | Is there a `tooltipHtml` or `description` provided in the `TaskType` definition?                         | **Fail** if null or empty.                                                                                                                          |
+| **R7**   | **Debug**    | Is the transcript used with `<details>` for verbose data?                                                | **Fail** if raw dumps clutter the main view or if transcript is missing.                                                                            |
+| **R8**   | **Async**    | Are heavy ops offloaded to `task.ui.pool`?                                                               | **Fail** if `Thread.sleep` or blocking I/O occurs on the main thread.                                                                               |
+| **R9**   | **Data**     | Do all `ParsedAgent` target classes have no-arg constructors (all fields defaulted)?                     | **Fail** if any field lacks a default value.                                                                                                        |
+| **R10**  | **Data**     | Are all fields in data classes annotated with `@Description`?                                            | **Fail** if any public field used in LLM schema generation lacks `@Description`.                                                                    |
+| **R11**  | **Data**     | Are data class fields `var` (not `val`)?                                                                 | **Fail** if `val` is used on fields that need deserialization or canonicalization.                                                                  |
+| **R12**  | **Data**     | Do data class field names use `snake_case`?                                                              | **Warn** if `camelCase` is used; **Fail** if names are ambiguous or misleading.                                                                     |
+| **R13**  | **API**      | Are all `ChatInterface` instances obtained from config wrapped exactly once with `getChildClient(task)`? | **Fail** if raw config clients are used without wrapping, or if wrapped more than once.                                                             |
+| **R14**  | **Output**   | Does the task use `transcriptFile()` for its main output when producing a single file artifact?          | **Warn** if a hardcoded path is used when `files` contains a single `.md` entry. **Fail** if `files` declares a path but the task writes elsewhere. |
+| **R15**  | **Output**   | Is the transcript `FileOutputStream` closed in a `finally` block?                                        | **Fail** if the stream can be left open on exception paths.                                                                                         |
 
 ## 6. Example: Compliant Task Structure
 
@@ -167,23 +494,31 @@ class ExampleTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        // 4. Detailed Logging via Transcript
-        val transcript = task.transcript()
+        // 4. Wrap API clients exactly once with getChildClient(task)
+        val smartApi = orchestrationConfig.defaultSmart.getChildClient(task)
+        val fastApi = orchestrationConfig.defaultFast.getChildClient(task)
+        
+        // 5. Detailed Logging via Transcript
+        // Uses the path from `files` if a single .md is specified; otherwise auto-generates
+        val transcript = task.newFileOutputStream(transcriptFile())
         
         try {
-            // 5. Offload heavy work to session pool
+            // 6. Offload heavy work to session pool
             task.ui.pool.submit {
                 try {
                     log.info("Starting ExampleTask analysis...")
                     
-                    // 6. Dependency Handling
+                    // 7. Dependency Handling
                     val context = getPriorCode(agent.executionState)
                     transcript?.write("# Analysis\n<details><summary>Context Data</summary>\n\n```\n$context\n```\n</details>\n".toByteArray())
 
-                    // 7. Streaming Feedback to UI
+                    // 8. Streaming Feedback to UI
                     task.add("Analyzing context...".renderMarkdown())
 
-                    // 8. Safety Check for Side Effects
+                    // 9. Use wrapped API client for LLM calls
+                    // smartApi.chat(request) // Properly logged to task session
+
+                    // 10. Safety Check for Side Effects
                     val output = "Proposed Change"
                     
                     // Switch back to UI thread for interaction if needed, or handle logic here
@@ -382,11 +717,11 @@ Create a class extending `TaskExecutionConfig`. Use `@Description` heavily.
 
 ```kotlin
 class MyNewTaskConfig(
-    @Description("The primary file to analyze")
-    val target_file: String? = null,
+  @Description("The primary file to analyze. Must be a relative path within the working directory.")
+  var target_file: String? = null,
 
-    @Description("How aggressive the analysis should be (low/medium/high)")
-    val intensity: String = "medium"
+  @Description("How aggressive the analysis should be. One of: 'low', 'medium', 'high'.")
+  var intensity: String = "medium"
 ) : TaskExecutionConfig(task_type = "MyNewTask")
 ```
 
@@ -399,13 +734,11 @@ class MyNewTask(
     task: MyNewTaskConfig?
 ) : AbstractTask<MyNewTaskConfig, TaskTypeConfig>(config, task) {
 
-    override fun promptSegment(): String {
-        return """
-        MyNewTask - Analyzes a specific file with configurable intensity.
-          ** Specify the target_file path
-          ** Set intensity (default: medium)
-          ** Use this when the user asks for deep code inspection.
-        """.trimIndent()
+    override fun promptSegment(): String = buildString {
+        appendLine("MyNewTask - Analyzes a specific file with configurable intensity.")
+        appendLine("  ** Specify the target_file path")
+        appendLine("  ** Set intensity (default: medium)")
+        appendLine("  ** Use this when the user asks for deep code inspection.")
     }
 
     override fun run(...) {
@@ -474,10 +807,65 @@ Tasks can be recursive. A `SubPlanningTask` is a specific `TaskType` that spins 
 
 ## 6. Maintenance Best Practices
 
-1.  **Keep Prompts Concise:** The `promptSegment` consumes context tokens. Be brief. Do not explain *how* the code works, only *what* it does and *what* it needs.
+*   **Keep Prompts Concise:** The `promptSegment` consumes context tokens. Be brief. Do not explain *how* the code works, only *what* it does and *what* it needs.
 2.  **Validate Aggressively:** LLMs are probabilistic. They *will* occasionally send `null` for a non-nullable field or "five" instead of `5`. Use the `ValidatedObject` interface to catch these early and return clear error messages so the LLM can self-correct.
 3.  **IO Discipline:** Follow the "Triple Log Rule":
-  *   **UI:** Visual updates for the user.
-  *   **Transcript:** Detailed data dumps for audit.
-  *   **ResultFn:** Summarized, markdown-formatted text for the LLM's next thought process.
-4.  **Deprecation:** If changing a `TaskExecutionConfig` field, remember that old plans or saved sessions might fail to deserialize. Handle backward compatibility or version your tasks if necessary.
+  * **UI:** Visual updates for the user.
+  * **Transcript:** Detailed data dumps for audit.
+  * **ResultFn:** Summarized, markdown-formatted text for the LLM's next thought process.
+
+4. **Output File Discipline:**
+  * **Declare Before You Write:** If your task produces a file artifact, declare its path in the `files` field of the
+    execution config so the Planner and UI can find it.
+  * **Unify Transcript and Output:** When the task's deliverable is a text document (report, analysis, research notes),
+    use `transcriptFile()` to write the deliverable as the transcript itself, avoiding duplicate files.
+  * **Theme Auxiliary Output:** When producing multiple artifacts, derive directory names and companion file names from
+    the primary output file's base name (see "Theming Auxiliary Output Around the Primary Filename" above). Always
+    provide a sensible fallback default when no primary file is specified.
+  * **Close Streams:** Always close `FileOutputStream` in a `finally` block. Use the pattern:
+    `val transcript = task.newFileOutputStream(transcriptFile())` at the top of `run()`, with `transcript?.close()` in
+    `finally`.
+5. **Multi-Line String Literals:**
+    * **`trimMargin` / `trimIndent` Forbidden:** Do not use `trimMargin()` or `trimIndent()` on multi-line string literals (triple-quoted strings). When these strings are included in larger prompt compositions or multiline template inclusions, the margin/indent stripping interacts unpredictably with the surrounding indentation context, producing malformed output.
+    * **Use `buildString` Instead:** Construct multi-line strings using `buildString { ... }` with explicit `appendLine()` calls. This makes the output deterministic regardless of how the code is indented or where the string is included.
+    * **Use `String.indent(spaceTxt)` for Indentation:** When a block of text needs to be indented (e.g., for embedding inside a larger template), use the `String.indent(spaceTxt)` extension function rather than relying on source-code indentation tricks.
+    * **Examples:**
+    ```kotlin
+    // ✗ BAD — trimIndent will break when this string is composed into a larger prompt
+    override fun promptSegment(): String = """
+        MyTask - Does something useful.
+          ** Specify the target_file path
+          ** Set intensity (default: medium)
+    """.trimIndent()
+
+    // ✗ BAD — trimMargin has the same fragility problem
+    override fun promptSegment(): String = """
+        |MyTask - Does something useful.
+        |  ** Specify the target_file path
+        |  ** Set intensity (default: medium)
+    """.trimMargin()
+
+    // ✓ GOOD — deterministic output, safe for composition
+    override fun promptSegment(): String = buildString {
+        appendLine("MyTask - Does something useful.")
+        appendLine("  ** Specify the target_file path")
+        appendLine("  ** Set intensity (default: medium)")
+    }
+
+    // ✓ GOOD — using indent() to nest content inside a template
+    val details = buildString {
+        appendLine("- Item A")
+        appendLine("- Item B")
+    }
+    val wrapped = buildString {
+        appendLine("Available options:")
+        append(details.indent("    "))
+    }
+    ```
+6. **Deprecation:** If changing a `TaskExecutionConfig` field, remember that old plans or saved sessions might fail to
+   deserialize. Handle backward compatibility or version your tasks if necessary.
+7. **Data Class Hygiene:** When modifying data classes used with `ParsedAgent`:
+  * Never remove a default value from a field.
+  * Never change a `var` to a `val`.
+  * When adding new fields, always provide a default value to maintain backward compatibility.
+  * When renaming fields, consider adding a `@JsonAlias` for the old name to support deserialization of existing plans.

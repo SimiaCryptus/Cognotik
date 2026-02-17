@@ -361,7 +361,7 @@ class NeuralNetworkLayerTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         task.ui.pool.submit {
-            val transcript = task.transcript()
+          val transcript = task.newFileOutputStream(transcriptFile())
             try {
             val startTime = System.currentTimeMillis()
                 log.info("Starting NeuralNetworkLayerTask for layer: ${executionConfig?.layer_name}")
@@ -1152,11 +1152,7 @@ class NeuralNetworkLayerTask(
             } catch (e: Exception) {
                 task.error(e)
                 log.error("Error during NeuralNetworkLayerTask execution for layer: ${executionConfig?.layer_name}", e)
-                transcript?.write(
-                    "\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray(
-                        StandardCharsets.UTF_8
-                    )
-                )
+                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                 resultFn("ERROR: ${e.message}")
             } finally {
                 transcript?.close()

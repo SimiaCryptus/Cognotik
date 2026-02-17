@@ -17,9 +17,13 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -151,10 +155,14 @@ class FindResultsModificationAction(
                         ),
                     ).replace(Regex("""/\* L\d+ \*/"""), "")
                         .replace(Regex("""/\* <<< \*/"""), "")
-                  AddApplyFileDiffLinks(
-                    processor = AppSettingsState.instance.processor
-                  ).instrument(
-                    socketManager = socketManager,
+                    DiffInstrumentor(
+                        AppSettingsState.instance.processor,
+                        SocketManagerUIRenderer(
+                            socketManager = socketManager,
+                            sessionId = socketManager.sessionId
+                        ),
+                        RealFileSystem()
+                    ).instrument(
                     root = root.toPath(),
                     response = response,
                     handle = { newCodeMap: Map<Path, String> ->
@@ -163,7 +171,8 @@ class FindResultsModificationAction(
                       }
                     },
                     shouldAutoApply = { it: Path -> modificationParams.autoApply },
-                    defaultFile = file?.toFile?.path
+                        defaultFile = file?.toFile?.path,
+                        resolver = ::resolveToRelativePath,
                   ).apply {
                         task.complete(renderMarkdown(this))
                     }
@@ -237,7 +246,7 @@ class FindResultsModificationAction(
     }
 
     private fun showModificationDialog(project: Project, vararg usages: Usage): ModificationParams? {
-        val dialog = FindResultsModificationDialog(project, usages.size)
+        val dialog = FindResultsModificationDialog(project)
         val config = dialog.showAndGetConfig()
         return if (config != null) {
             ModificationParams(

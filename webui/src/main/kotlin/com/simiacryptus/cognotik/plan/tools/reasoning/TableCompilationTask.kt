@@ -87,7 +87,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
 
 
@@ -187,7 +187,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
                             }
                         } catch (e: Exception) {
                             log.error("Error processing partition $completedPartitions", e)
-                            transcript?.write("### Error in Partition $completedPartitions\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
+                            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                             partitionCells.forEach { (rowIdx, colIdx, _) ->
                                 cellResults[rowIdx][colIdx] = "Error: ${e.message}"
                             }
@@ -244,7 +244,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
             } catch (e: Exception) {
                 task.error(e)
                 log.error("TableCompilationTask failed", e)
-                transcript?.write("\n## Critical Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             } finally {
                 transcript?.close()
             }

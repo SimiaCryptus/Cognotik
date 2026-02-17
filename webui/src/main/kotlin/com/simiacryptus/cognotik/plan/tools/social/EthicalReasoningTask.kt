@@ -141,7 +141,7 @@ class EthicalReasoningTask(
         val context = executionConfig?.context ?: ""
 
         val api = defaultSmart ?: return
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         val tabs = TabbedDisplay(task)
 
       task.ui.pool.submit {
@@ -394,19 +394,7 @@ Provide a detailed synthesis and a clear final recommendation.
 
         } catch (e: Exception) {
           log.error("EthicalReasoning task failed", e)
-          transcript?.write(
-            """
-                ## ERROR
-                <details>
-                <summary>Stack Trace</summary>
-                ```
-                ${e.stackTraceToString()}
-                ```
-                </details>
-            """.trimIndent().toByteArray()
-          )
-
-
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           overviewTask.add(
                     """
             |## Ethical Reasoning Analysis

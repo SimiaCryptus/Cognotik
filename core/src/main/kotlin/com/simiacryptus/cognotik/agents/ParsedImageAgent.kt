@@ -18,7 +18,7 @@ open class ParsedImageAgent<T : Any>(
     val deserializerRetries: Int = 2,
     val validation: Boolean = true,
     open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
-        "com.simiacryptus", "aicoder.actions"
+        "com.simiacryptus", "cognotik.actions"
     ) {
         override val includeMethods: Boolean get() = false
     },

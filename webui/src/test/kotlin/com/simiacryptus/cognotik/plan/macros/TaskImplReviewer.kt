@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.macros
 
 import com.simiacryptus.cognotik.util.FileGenerator
-import com.simiacryptus.cognotik.util.OverwriteModes
+import com.simiacryptus.cognotik.util.UpdateModes
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import java.io.File
 
@@ -11,14 +11,7 @@ object TaskImplReviewer : FileGenerator() {
     run(
       root = File("."),
       folder = File("webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools"),
-      overwriteMode = OverwriteModes.PatchExisting,
-      relatedFiles = {
-        listOf(
-          "docs/task_type_best_practices.md",
-          "docs/user_interface.md",
-          "docs/agentic_io_best_practices.md",
-        )
-      },
+      updateMode = UpdateModes.PatchExisting,
       generationPrompt = { source, target ->
         "Update implementation file ($target) according to the standards documents"
       }

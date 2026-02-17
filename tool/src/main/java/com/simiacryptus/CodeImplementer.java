@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.simiacryptus.CognotikUtils.*;
 
@@ -34,13 +35,9 @@ public record CodeImplementer(String prompt, int port, boolean headless, int tim
             var fileModification = FileModificationTask.getFileModification();
             tasks.put(fileModification.getName(), new TaskTypeConfig(fileModification.getName(), fileModification.getName(), getChatModel(chatModel)));
 
-//            var autoFixConfig = new AutoFixTask.AutoFixTaskTypeConfig();
-//            autoFixConfig.setModel(getChatModel(chatModel));
-//            tasks.put(AutoFixTask.getAutoFix().getName(), autoFixConfig);
-
             new PlanHarness(this.prompt(),
                     new WaterfallModeConfig(),
-                    (model, session) -> getInterface(getChatModel(model.getModel()), session),
+                    (model, session) -> getInterface(getChatModel(Objects.requireNonNull(model.getModel())), session),
                     this.port(),
                     this.headless(),
                     false,

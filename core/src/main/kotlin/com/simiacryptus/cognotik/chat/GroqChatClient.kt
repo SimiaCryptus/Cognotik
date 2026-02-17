@@ -84,13 +84,13 @@ class GroqChatClient(
             val response = JsonUtil.objectMapper().readValue(result, GroqModelsResponse::class.java)
             val models = response.data.filter { it.active }.mapNotNull { groqModel ->
                 // Try to find existing ChatModel definition first
-                ChatModel.values().values.find { it.modelName == groqModel.id }
+                ChatModel.values().values.find { it.modelId == groqModel.id }
                     ?: run {
                         // Create a basic ChatModel for unknown models
                         log.debug("Creating basic ChatModel for unknown Groq model: ${groqModel.id}")
                         ChatModel(
                             name = groqModel.id,
-                            modelName = groqModel.id,
+                            modelId = groqModel.id,
                             maxTotalTokens = groqModel.context_window,
                             maxOutTokens = minOf(groqModel.context_window, 8192), // Conservative default
                             provider = APIProvider.Groq,
@@ -123,7 +123,7 @@ class GroqChatClient(
         model: ChatModel,
         logStreams: MutableList<java.io.BufferedOutputStream>
     ): ModelSchema.ChatResponse {
-        log.info("Starting Groq chat with model: ${model.modelName}")
+        log.info("Starting Groq chat with model: ${model.modelId}")
 
         return withReliability {
             withPerformanceLogging {

@@ -65,7 +65,7 @@ FileAppend - Append content to the end of an existing file
             ?: defaultSmart).getChildClient(task)
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         val tabs = TabbedDisplay(task)
         val overviewTab = tabs.newTask("Overview")
 
@@ -158,16 +158,7 @@ FileAppend - Append content to the end of an existing file
           // Triple Log Rule
             task.error(e)
           log.error("Error in FileAppendTask for $targetPath: ${e.message}", e)
-          transcript?.write(
-            """
-                <details>
-                <summary>Stack Trace</summary>
-                ```
-                ${e.stackTraceToString()}
-                ```
-                </details>
-            """.trimIndent().toByteArray()
-          )
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           overviewTab.add("❌ **Error:** ${e.message}".renderMarkdown())
           overviewTab.complete()
         } finally {

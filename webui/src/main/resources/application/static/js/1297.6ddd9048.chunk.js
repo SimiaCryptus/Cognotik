@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkskyenet_ui=self.webpackChunkskyenet_ui||[]).push([[1297],{1297:(e,s,c)=>{c.d(s,{createArchitectureServices:()=>t.S});var t=c(4564);c(4455)}}]);

@@ -179,7 +179,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
             val tabs = TabbedDisplay(task)
             val api = defaultSmart ?: return
             // Initialize transcript
-            transcriptStream = task.transcript()
+          transcriptStream = task.newFileOutputStream(transcriptFile())
             transcriptStream?.let { stream ->
                 writeTranscriptHeader(stream, sourceDomain, targetProblem, numAnalogies, validateMappings)
             }

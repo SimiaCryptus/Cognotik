@@ -7,7 +7,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import com.jetbrains.rd.generator.nova.GenerationSpec.Companion.nullIfEmpty
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.docs.getDocumentReader
@@ -16,8 +15,11 @@ import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
 import com.simiacryptus.cognotik.models.ModelSchema.ContentPart
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -163,15 +165,21 @@ class ImageChatAction : BaseAction() {
 
         override fun renderResponse(response: String, task: SessionTask) = """<div>${
             renderMarkdown(response, tabs=true) { html ->
-              AddApplyFileDiffLinks(processor = AppSettingsState.instance.processor).instrument(
-                socketManager = this,
+                DiffInstrumentor(
+                    AppSettingsState.instance.processor,
+                    SocketManagerUIRenderer(
+                        socketManager = this,
+                        sessionId = sessionId
+                    ), RealFileSystem()
+                ).instrument(
                 root = root.toPath(),
                 response = html,
                 handle = { newCodeMap: Map<Path, String> ->
                   newCodeMap.forEach { (path, newCode) ->
                     task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
                   }
-                }
+                },
+                    resolver = ::resolveToRelativePath,
               )
             }
         }</div>"""

@@ -4,12 +4,14 @@ package com.simiacryptus.cognotik.plan.cognitive
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -51,7 +53,7 @@ open class FrontmatterOrchestrationMode(
     /** Whether to automatically run DocProcessor after generating specs */
     var autoExecute: Boolean = true,
     /** Default overwrite mode for generated specifications */
-    var defaultOverwriteMode: OverwriteModes = OverwriteModes.PatchToUpdate,
+    var defaultOverwriteMode: UpdateModes = UpdateModes.PatchToUpdate,
     /** File extension for specification documents */
     var specFileExtension: String = ".spec.md",
     /** Whether to keep specification files after execution */
@@ -448,10 +450,10 @@ Do NOT generate the actual file contents. Generate specifications that describe 
       val processor = DocProcessor(
         root = root.toFile(),
         docsFolder = specsDir.toFile(),
-        overwriteMode = config.defaultOverwriteMode,
-        concurrencyLimit = 4,
+        updateMode = config.defaultOverwriteMode,
         fastModel = orchestrationConfig.defaultFast.modelType,
-        smartModel = orchestrationConfig.defaultSmart.modelType
+        smartModel = orchestrationConfig.defaultSmart.modelType,
+        autoFix = true
       )
 
       task.add("Starting DocProcessor on `${specsDir}`...".renderMarkdown())
@@ -471,13 +473,12 @@ Do NOT generate the actual file contents. Generate specifications that describe 
   }
 
   private fun renderSpecPlan(planWithPrompt: SpecificationPlanWithPrompt): String {
-    return AgentPatterns.displayMapInTabs(
-      mapOf(
-        "Specs" to renderSpecList(planWithPrompt.plan),
-        "Diagram" to ("```mermaid\n${buildSpecDiagram(planWithPrompt.plan)}\n```").renderMarkdown(),
-        "JSON" to "```json\n${JsonUtil.toJson(planWithPrompt)}\n```".renderMarkdown()
-      )
+    val map = mapOf(
+      "Specs" to renderSpecList(planWithPrompt.plan),
+      "Diagram" to ("```mermaid\n${buildSpecDiagram(planWithPrompt.plan)}\n```").renderMarkdown(),
+      "JSON" to "```json\n${JsonUtil.toJson(planWithPrompt)}\n```".renderMarkdown()
     )
+    return TabbedDisplay.displayMapInTabs(map)
   }
 
   private fun renderSpecList(plan: SpecificationPlan): String {

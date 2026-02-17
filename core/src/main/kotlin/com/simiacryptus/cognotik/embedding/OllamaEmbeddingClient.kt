@@ -43,7 +43,7 @@ class OllamaEmbeddingClient(
         request.addHeader("Accept", "application/json")
         // Ollama typically doesn't require authorization for local instances
         val apiKey = this.apiKey.decrypt
-        if (apiKey.isNotBlank()) {
+        if (!apiKey.isNullOrBlank()) {
             request.addHeader("Authorization", "Bearer $apiKey")
         }
     }
@@ -58,7 +58,7 @@ class OllamaEmbeddingClient(
             withPerformanceLogging {
                 // Convert OpenAI-style request to Ollama format
                 val ollamaRequest = mapOf(
-                    "model" to (request.model ?: model.modelName),
+                    "model" to (request.model ?: model.modelId),
                     "prompt" to when {
                         request.input is String -> request.input
                         else -> request.input.toString()
@@ -84,7 +84,7 @@ class OllamaEmbeddingClient(
                             `object` = "embedding"
                         )
                     ),
-                    model = request.model ?: model.modelName,
+                    model = request.model ?: model.modelId,
                     `object` = "list",
                     usage = ModelSchema.Usage(
                         prompt_tokens = estimateTokens(request.input.toString()).toLong(),
@@ -104,7 +104,7 @@ class OllamaEmbeddingClient(
 
     private fun validateEmbeddingRequest(request: ModelSchema.EmbeddingRequest, model: EmbeddingModel) {
         require(request.input.toString().isNotBlank()) { "Embedding request input cannot be blank" }
-        require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
+        require(model.modelId.isNotBlank()) { "Model name cannot be blank" }
     }
 
     private fun estimateTokens(text: String): Int {

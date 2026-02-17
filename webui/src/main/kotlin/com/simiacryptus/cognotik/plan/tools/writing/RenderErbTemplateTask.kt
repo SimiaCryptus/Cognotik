@@ -30,7 +30,7 @@ class RenderErbTemplateTask(
     @Description("Optional: Override the template file path from type config")
     var template_file: String? = null,
     @Description("List of output file paths to write the rendered content to (only one supported)")
-    var files: List<String> = emptyList(),
+    override var files: List<String> = emptyList(),
     task_description: String? = null,
     task_dependencies: MutableList<String>? = null,
     state: TaskState? = null
@@ -76,7 +76,7 @@ RenderErbTemplate - Render ERB-style templates with dynamic data
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val transcript = task.transcript()
+    val transcript = task.newFileOutputStream(transcriptFile())
     val gson = Gson()
 
     try {
@@ -220,19 +220,7 @@ ${if (!outputPath.isNullOrBlank()) "\n**Output saved to:** `$outputPath`" else "
       // Triple Log Rule
       task.error(e)
       log.error("Error in RenderErbTemplateTask", e)
-      transcript?.write(
-        """
-
-## Error
-<details>
-<summary>Stack Trace</summary>
-
-```
-${e.stackTraceToString()}
-```
-</details>
-            """.toByteArray()
-      )
+      transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
       throw e
     } finally {
       transcript?.flush()

@@ -4,99 +4,135 @@ import com.simiacryptus.cognotik.models.APIProvider
 
 object MistralModels {
 
-    val Mistral7B = ChatModel(
-        name = "Mistral7B",
-        modelName = "open-mistral-7b",
+    // Frontier Generalist Models
+
+    val MistralLarge3 = ChatModel(
+        name = "MistralLarge3",
+        modelId = "mistral-large-latest",
+        maxTotalTokens = 131072,
+        provider = APIProvider.Companion.Mistral,
+        inputTokenPricePerK = 0.002,
+        outputTokenPricePerK = 0.006
+    )
+
+    val MistralMedium3_1 = ChatModel(
+        name = "MistralMedium3_1",
+        modelId = "mistral-medium-latest",
+        maxTotalTokens = 131072,
+        provider = APIProvider.Companion.Mistral,
+        inputTokenPricePerK = 0.0015,
+        outputTokenPricePerK = 0.0045
+    )
+
+    val MistralSmall3_2 = ChatModel(
+        name = "MistralSmall3_2",
+        modelId = "mistral-small-latest",
+        maxTotalTokens = 131072,
+        provider = APIProvider.Companion.Mistral,
+        inputTokenPricePerK = 0.0001,
+        outputTokenPricePerK = 0.0003
+    )
+
+    val Ministral3_14B = ChatModel(
+        name = "Ministral3_14B",
+        modelId = "ministral-14b-latest",
         maxTotalTokens = 32768,
         provider = APIProvider.Companion.Mistral,
-        inputTokenPricePerK = 0.0005,
-        outputTokenPricePerK = 0.0015
+        inputTokenPricePerK = 0.00009,
+        outputTokenPricePerK = 0.00009
     )
 
-    val Mixtral8x7B = ChatModel(
-        name = "Mixtral8x7B",
-        modelName = "open-mixtral-8x7b",
+    val Ministral3_8B = ChatModel(
+        name = "Ministral3_8B",
+        modelId = "ministral-8b-latest",
         maxTotalTokens = 32768,
         provider = APIProvider.Companion.Mistral,
-        inputTokenPricePerK = 0.0005,
-        outputTokenPricePerK = 0.0015
+        inputTokenPricePerK = 0.00009,
+        outputTokenPricePerK = 0.00009
     )
-    val Mixtral8x22B = ChatModel(
-        name = "Mixtral8x22B",
-        modelName = "open-mixtral-8x22b",
-        maxTotalTokens = 65536,
-        provider = APIProvider.Companion.Mistral,
-        inputTokenPricePerK = 0.0005,
 
-        outputTokenPricePerK = 0.0015
-
-    )
-    val MistralSmall = ChatModel(
-        name = "MistralSmall",
-        modelName = "mistral-small-latest",
+    val Ministral3_3B = ChatModel(
+        name = "Ministral3_3B",
+        modelId = "ministral-3b-latest",
         maxTotalTokens = 32768,
         provider = APIProvider.Companion.Mistral,
-        inputTokenPricePerK = 0.0005,
-        outputTokenPricePerK = 0.0015
+        inputTokenPricePerK = 0.00004,
+        outputTokenPricePerK = 0.00004
     )
-    val MistralMedium = ChatModel(
-        name = "MistralMedium",
-        modelName = "mistral-medium-latest",
-        maxTotalTokens = 32768,
+
+    val MagistralMedium = ChatModel(
+        name = "MagistralMedium",
+        modelId = "magistral-medium-latest",
+        maxTotalTokens = 131072,
         provider = APIProvider.Companion.Mistral,
-        inputTokenPricePerK = 0.0005,
-        outputTokenPricePerK = 0.0015
+        inputTokenPricePerK = 0.002,
+        outputTokenPricePerK = 0.006
     )
-    val MistralLarge = ChatModel(
-        name = "MistralLarge",
-        modelName = "mistral-large-latest",
-        maxTotalTokens = 32768,
+    val MagistralSmall = ChatModel(
+        name = "MagistralSmall",
+        modelId = "magistral-small-latest",
+        maxTotalTokens = 131072,
         provider = APIProvider.Companion.Mistral,
-        inputTokenPricePerK = 0.0005,
-
-        outputTokenPricePerK = 0.0015
-
+        inputTokenPricePerK = 0.0001,
+        outputTokenPricePerK = 0.0003
     )
-    val MistralNemo = ChatModel(
-        name = "MistralNemo",
-        modelName = "open-mistral-nemo",
-        maxTotalTokens = 128 * 1024 - 1,
-        provider = APIProvider.Companion.Mistral,
-        inputTokenPricePerK = 0.0005,
+    // Specialist Models
 
-        outputTokenPricePerK = 0.0015
-
-    )
     val Codestral = ChatModel(
         name = "Codestral",
-        modelName = "codestral-latest",
-        maxTotalTokens = 32768,
+        modelId = "codestral-latest",
+        maxTotalTokens = 262144,
         provider = APIProvider.Companion.Mistral,
-        inputTokenPricePerK = 0.0005,
-
-        outputTokenPricePerK = 0.0015
-
+        inputTokenPricePerK = 0.0003,
+        outputTokenPricePerK = 0.0009
     )
-    val CodestralMamba = ChatModel(
-        name = "CodestralMamba",
-        modelName = "open-codestral-mamba",
-        maxTotalTokens = 128 * 1024 - 1,
+
+    val Devstral2 = ChatModel(
+        name = "Devstral2",
+        modelId = "devstral-large-latest",
+        maxTotalTokens = 131072,
         provider = APIProvider.Companion.Mistral,
-        inputTokenPricePerK = 0.0005,
-
-        outputTokenPricePerK = 0.0015
-
+        inputTokenPricePerK = 0.002,
+        outputTokenPricePerK = 0.006
     )
+    val DevstralSmall2 = ChatModel(
+        name = "DevstralSmall2",
+        modelId = "devstral-small-latest",
+        maxTotalTokens = 131072,
+        provider = APIProvider.Companion.Mistral,
+        inputTokenPricePerK = 0.0001,
+        outputTokenPricePerK = 0.0003
+    )
+    // Other Models
+    val MistralNemo = ChatModel(
+        name = "MistralNemo",
+        modelId = "open-mistral-nemo",
+        maxTotalTokens = 131071,
+        provider = APIProvider.Companion.Mistral,
+        inputTokenPricePerK = 0.00015,
+        outputTokenPricePerK = 0.00015
+    )
+
     val values = mapOf(
-        "Mistral7B" to Mistral7B,
-        "Mixtral8x7B" to Mixtral8x7B,
-        "Mixtral8x22B" to Mixtral8x22B,
-        "MistralSmall" to MistralSmall,
-        "MistralMedium" to MistralMedium,
-        "MistralLarge" to MistralLarge,
-        "MistralNemo" to MistralNemo,
+        // Frontier Generalist
+        "MistralLarge3" to MistralLarge3,
+        "MistralMedium3_1" to MistralMedium3_1,
+        "MistralSmall3_2" to MistralSmall3_2,
+        "Ministral3_14B" to Ministral3_14B,
+        "Ministral3_8B" to Ministral3_8B,
+        "Ministral3_3B" to Ministral3_3B,
+        "MagistralMedium" to MagistralMedium,
+        "MagistralSmall" to MagistralSmall,
+        // Specialist
         "Codestral" to Codestral,
-        "CodestralMamba" to CodestralMamba,
+        "Devstral2" to Devstral2,
+        "DevstralSmall2" to DevstralSmall2,
+        // Other
+        "MistralNemo" to MistralNemo,
+        // Legacy aliases for backward compatibility
+        "MistralSmall" to MistralSmall3_2,
+        "MistralMedium" to MistralMedium3_1,
+        "MistralLarge" to MistralLarge3,
     )
 
 }

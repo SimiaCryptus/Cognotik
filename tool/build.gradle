@@ -11,8 +11,6 @@ dependencies {
     implementation 'software.amazon.awssdk:kms:2.41.7'
     implementation 'software.amazon.awssdk:s3:2.41.7'
 
-//    implementation 'com.cognotik:core:2.0.45'
-//    implementation 'com.cognotik:webui:2.0.45'
     implementation project(':core')
     implementation project(':webui')
 

@@ -7,32 +7,23 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CheckBoxList
+import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
-import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.tools.TaskType
-import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
-import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import java.awt.Dimension
-import java.text.SimpleDateFormat
 import javax.swing.JComponent
 
 /**
@@ -44,7 +35,7 @@ import javax.swing.JComponent
  * 3. Executes the selected tasks using DocProcessor infrastructure
  */
 open class DocProcessorAction(
-    val mode: OverwriteMode = OverwriteModes.PatchExisting,
+    val mode: UpdateMode = UpdateModes.PatchExisting,
 ) : BaseAction() {
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -52,22 +43,26 @@ open class DocProcessorAction(
         /**
          * Returns a pretty label for each overwrite mode
          */
-        fun getModeLabel(mode: OverwriteModes): String = when (mode) {
-            OverwriteModes.SkipExisting -> "🚫 Skip Existing Files"
-            OverwriteModes.OverwriteExisting -> "🔄 Overwrite All Files"
-            OverwriteModes.OverwriteToUpdate -> "📅 Overwrite Outdated Files"
-            OverwriteModes.PatchExisting -> "🩹 Patch Existing Files"
-            OverwriteModes.PatchToUpdate -> "📝 Patch Outdated Files"
+        fun getModeLabel(mode: UpdateModes): String = when (mode) {
+            UpdateModes.SkipExisting -> "🚫 Skip Existing Files"
+            UpdateModes.OverwriteExisting -> "🔄 Overwrite All Files"
+            UpdateModes.OverwriteToUpdate -> "📅 Overwrite Outdated Files"
+            UpdateModes.PatchExisting -> "🩹 Patch Existing Files"
+            UpdateModes.PatchToUpdate -> "📝 Patch Outdated Files"
+            UpdateModes.ForceOverwrite -> "🔥 Force Overwrite (Dangerous)"
+            UpdateModes.ForceUpdate -> "⚡ Force Update (Dangerous)"
         }
         /**
          * Returns a description for each overwrite mode
          */
-        fun getModeDescription(mode: OverwriteModes): String = when (mode) {
-            OverwriteModes.SkipExisting -> "Skip files that already exist, only create new files"
-            OverwriteModes.OverwriteExisting -> "Replace all target files with newly generated content"
-            OverwriteModes.OverwriteToUpdate -> "Replace only files older than their source documentation"
-            OverwriteModes.PatchExisting -> "Apply intelligent patches to existing files"
-            OverwriteModes.PatchToUpdate -> "Apply patches only to files older than their source documentation"
+        fun getModeDescription(mode: UpdateModes): String = when (mode) {
+            UpdateModes.SkipExisting -> "Skip files that already exist, only create new files"
+            UpdateModes.OverwriteExisting -> "Replace all target files with newly generated content"
+            UpdateModes.OverwriteToUpdate -> "Replace only files older than their source documentation"
+            UpdateModes.PatchExisting -> "Apply intelligent patches to existing files"
+            UpdateModes.PatchToUpdate -> "Apply patches only to files older than their source documentation"
+            UpdateModes.ForceOverwrite -> "Delete all target files before generation (use with caution)"
+            UpdateModes.ForceUpdate -> "Delete target files older than their source documentation before generation (use with caution)"
         }
     }
 
@@ -96,14 +91,14 @@ open class DocProcessorAction(
         }
 
         val docProcessor = DocProcessor(
-            root = root,
-            docsFolder = root,
-            concurrencyLimit = 4,
-            overwriteMode = mode,
-            fastModel = AppSettingsState.instance.fastModel?.model
-                ?: throw IllegalStateException("Fast model not configured"),
-            smartModel = AppSettingsState.instance.smartModel?.model
-                ?: throw IllegalStateException("Smart model not configured")
+          root = root,
+          docsFolder = root,
+          updateMode = mode,
+          fastModel = AppSettingsState.instance.fastModel?.model
+            ?: throw IllegalStateException("Fast model not configured"),
+          smartModel = AppSettingsState.instance.smartModel?.model
+            ?: throw IllegalStateException("Smart model not configured"),
+          autoFix = true,
         )
         val allTasks = docProcessor.getAll(*selectedFiles.toTypedArray())
 
@@ -118,79 +113,43 @@ open class DocProcessorAction(
             if (dialog.showAndGet()) {
                 val selectedTasks = dialog.getSelectedTasks()
                 if (selectedTasks.isNotEmpty()) {
-                    UITools.runAsync(project, "Processing Documentation Tasks", true) { innerProgress ->
-                        executeTasks(docProcessor, selectedTasks, dialog.autoFix, selectedTasks.first().taskType)
-                    }
+                    val totalTasks = selectedTasks.size
+                    ProgressManager.getInstance().run(object : Task.Backgroundable(
+                        project,
+                        "Processing Documentation Tasks",
+                        true
+                    ) {
+                        override fun run(indicator: ProgressIndicator) {
+                            indicator.isIndeterminate = false
+                            indicator.fraction = 0.0
+                            indicator.text = "Processing $totalTasks documentation task(s)..."
+                            val completedTasks = java.util.concurrent.atomic.AtomicInteger(0)
+                            try {
+                                docProcessor.runAll(selectedTasks) { session ->
+                                    val completed = completedTasks.incrementAndGet()
+                                    indicator.fraction = completed.toDouble() / totalTasks
+                                    indicator.text = "Processing task $completed of $totalTasks..."
+                                    indicator.text2 = "Session: $session"
+                                    try {
+                                        BrowseUtil.browse(
+                                            CognotikAppServer.getServer(
+                                                AppSettingsState.instance.listeningEndpoint,
+                                                AppSettingsState.instance.listeningPort
+                                            ).server.uri.resolve("/#" + session)
+                                        )
+                                    } catch (e: Throwable) {
+                                        log.warn("Error opening browser", e)
+                                    }
+                                }
+                            } finally {
+                                indicator.fraction = 1.0
+                                indicator.text = "Documentation processing complete"
+                            }
+                        }
+                    })
                 }
             }
         }
-    }
-
-    private fun executeTasks(
-        docProcessor: DocProcessor,
-        tasks: List<ModificationTask>,
-        autoFix: Boolean,
-        taskType: TaskType<*,*>
-    ) {
-        val session = Session.newGlobalID()
-        DataStorage.sessionPaths[session] = docProcessor.root
-        val orchestrationConfig = OrchestrationConfig(
-            sessionId = session.toString(),
-            defaultSmartModel = AppSettingsState.instance.smartModel
-            ?: throw IllegalStateException("No model configured"),
-            defaultFastModel = AppSettingsState.instance.fastModel
-                ?: throw IllegalStateException("Fast model not configured"),
-            defaultImageModel = AppSettingsState.instance.imageChatModel,
-            temperature = AppSettingsState.instance.temperature,
-            autoFix = autoFix,
-            workingDir = docProcessor.root.toString(),
-            shellCmd = listOf(
-                if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
-            ),
-            taskSettings = mutableMapOf(
-                taskType.name to TaskTypeConfig(
-                    name = "File Modification Task",
-                    task_type = taskType.name)
-            )
-        )
-
-        val app = object : SingleTaskApp(
-            applicationName = "Doc Update Processor",
-            path = "/docUpdate",
-            showMenubar = autoFix,
-            taskType = taskType,
-            taskConfig = tasks.map { docProcessor.executionConfig(it.taskType, it.data) },
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
-        ) {
-            override fun instance(model: ApiChatModel) =
-                model.instance() ?: throw IllegalStateException("Model or Provider not set")
-
-            override fun getOrchestrationConfig(
-                session: Session,
-                user: User
-            ) = super.getOrchestrationConfig(session, user)?.apply {
-                processor = tasks.first().patchProcessor
-            }
-        }
-
-        app.getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())
-        SessionProxyServer.chats[session] = app
-        ApplicationServer.appInfoMap[session] = AppInfoData(
-            applicationName = "Document Illustration Task",
-            inputCnt = 0,
-            stickyInput = autoFix,
-            showMenubar = autoFix
-        )
-        SessionProxyServer.metadataStorage.setSessionName(
-            null, session, "Document Illustration @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
-        )
-
-        val uri = CognotikAppServer.getServer(
-            AppSettingsState.instance.listeningEndpoint,
-            AppSettingsState.instance.listeningPort
-        ).server.uri.resolve("/#$session")
-        log.info("Opening browser to $uri")
-        browse(uri)
     }
 
     /**
@@ -200,10 +159,12 @@ open class DocProcessorAction(
         project: Project?,
         private val allTasks: List<ModificationTask>
     ) : DialogWrapper(project) {
-
         var autoFix: Boolean = true
         private val checkBoxList = CheckBoxList<TaskItem>()
         private val taskItems: List<TaskItem>
+        private val searchField = JBTextField().apply {
+            emptyText.text = "Type to filter tasks..."
+        }
 
         init {
             title = "Select Documentation Tasks"
@@ -225,9 +186,36 @@ open class DocProcessorAction(
             
             checkBoxList.setItems(taskItems) { it.displayName }
             taskItems.forEach { checkBoxList.setItemSelected(it, true) }
+            searchField.document.addDocumentListener(object : DocumentAdapter() {
+                override fun textChanged(e: javax.swing.event.DocumentEvent) {
+                    filterTasks(searchField.text)
+                }
+            })
             
+
             init()
         }
+        private val selectedStates = mutableMapOf<Int, Boolean>()
+        private fun filterTasks(query: String) {
+            // Save current selection states
+            taskItems.forEach { item ->
+                selectedStates[item.index] = checkBoxList.isItemSelected(item)
+            }
+            val filteredItems = if (query.isBlank()) {
+                taskItems
+            } else {
+                val lowerQuery = query.lowercase()
+                taskItems.filter { item ->
+                    item.displayName.lowercase().contains(lowerQuery) ||
+                    item.description.lowercase().contains(lowerQuery)
+                }
+            }
+            checkBoxList.setItems(filteredItems) { it.displayName }
+            filteredItems.forEach { item ->
+                checkBoxList.setItemSelected(item, selectedStates.getOrDefault(item.index, true))
+            }
+        }
+
 
         override fun createCenterPanel(): JComponent = panel {
             row {
@@ -239,12 +227,22 @@ open class DocProcessorAction(
                 label("Select which file generation tasks to execute:")
             }
             row {
+                cell(searchField)
+                    .align(Align.FILL)
+            }
+            row {
                 button("Select All") {
-                    taskItems.forEach { checkBoxList.setItemSelected(it, true) }
+                    for (i in 0 until checkBoxList.itemsCount) {
+                        val item = checkBoxList.getItemAt(i)
+                        if (item != null) checkBoxList.setItemSelected(item, true)
+                    }
                     checkBoxList.repaint()
                 }
                 button("Deselect All") {
-                    taskItems.forEach { checkBoxList.setItemSelected(it, false) }
+                    for (i in 0 until checkBoxList.itemsCount) {
+                        val item = checkBoxList.getItemAt(i)
+                        if (item != null) checkBoxList.setItemSelected(item, false)
+                    }
                     checkBoxList.repaint()
                 }
             }
@@ -273,9 +271,18 @@ open class DocProcessorAction(
             }
         }
 
-        fun getSelectedTasks() = taskItems
-            .filter { checkBoxList.isItemSelected(it) }
-            .map { allTasks[it.index] }
+        fun getSelectedTasks(): List<ModificationTask> {
+            // Save current visible selection states
+            for (i in 0 until checkBoxList.itemsCount) {
+                val item = checkBoxList.getItemAt(i)
+                if (item != null) {
+                    selectedStates[item.index] = checkBoxList.isItemSelected(item)
+                }
+            }
+            return taskItems
+                .filter { selectedStates.getOrDefault(it.index, true) }
+                .map { allTasks[it.index] }
+        }
 
         data class TaskItem(
             val index: Int,
@@ -300,7 +307,7 @@ class DocProcessorActionGroup : DefaultActionGroup() {
     }
 
     override fun getChildren(e: AnActionEvent?): Array<AnAction> {
-        return OverwriteModes.entries.map { mode ->
+        return UpdateModes.entries.map { mode ->
             object : DocProcessorAction(mode) {
                 init {
                     templatePresentation.text = getModeLabel(mode)

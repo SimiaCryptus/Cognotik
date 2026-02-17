@@ -107,7 +107,7 @@ class ChainOfThoughtTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
       // Create tabbed display for organized output
       val tabs = TabbedDisplay(task)
       // Overview tab
@@ -413,8 +413,7 @@ class ChainOfThoughtTask(
                 }
             }
             resultFn(errorOutput)
-          // Triple Log: Transcript
-          transcript?.write("\n\n# Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
         } finally {
             transcript?.close()
           task.complete()

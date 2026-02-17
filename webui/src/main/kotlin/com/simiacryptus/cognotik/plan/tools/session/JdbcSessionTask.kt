@@ -86,7 +86,7 @@ class JdbcSessionTask(
 
         val execute: (Boolean) -> Unit = { shouldComplete ->
             task.ui.pool.submit {
-                val transcript = task.transcript()
+              val transcript = task.newFileOutputStream(transcriptFile())
                 
                 try {
                   log.info("Starting JDBC execution for session: ${executionConfig.sessionId ?: "transient"}")
@@ -144,17 +144,7 @@ class JdbcSessionTask(
                           log.error("SQL execution failed: ${e.message}")
                             task.error(e)
                             resultBuffer.appendLine(errorMsg)
-                          transcript?.write(
-                            """
-                                #### SQL Error
-                                <details>
-                                <summary>Stack Trace</summary>
-                                ```
-                                ${e.stackTraceToString()}
-                                ```
-                                </details>
-                            """.trimIndent().toByteArray()
-                          )
+                          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                         }
                     }
 
@@ -177,18 +167,8 @@ class JdbcSessionTask(
                     resultBuffer.appendLine(errorResult)
                   log.error("JDBC Task failed: ${e.message}")
                     task.error(e)
-                  transcript?.write(
-                    """
-                        ### Task Failure
-                        <details>
-                        <summary>Stack Trace</summary>
-                        ```
-                        ${e.stackTraceToString()}
-                        ```
-                        </details>
-                    """.trimIndent().toByteArray()
-                  )
-                    if (shouldComplete) {
+                  transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
+                  if (shouldComplete) {
                         resultFn(resultBuffer.toString())
                     }
                 } finally {

@@ -222,6 +222,23 @@ class SymbolExtractionAction : BaseAction() {
             }
         })
     }
+    private fun isSourceFile(file: VirtualFile): Boolean {
+        val extension = file.extension?.lowercase() ?: return false
+        return extension in setOf(
+            "java", "kt", "kts", "groovy", "scala",  // JVM languages
+            "js", "ts", "jsx", "tsx",                 // JavaScript/TypeScript
+            "py", "pyw",                              // Python
+            "rb",                                     // Ruby
+            "go",                                     // Go
+            "rs",                                     // Rust
+            "c", "cpp", "cc", "cxx", "h", "hpp",     // C/C++
+            "cs",                                     // C#
+            "swift",                                  // Swift
+            "php",                                    // PHP
+            "xml", "json", "yaml", "yml"             // Config files
+        )
+    }
+
     private fun extractModifiers(element: PsiElement): Triple<String?, String?, String?> {
 //        if (element is PsiModifierListOwner) {
 //            val modifierList = element.modifierList

@@ -24,7 +24,7 @@ object ComicBookGenerationTaskTest {
                 task_type = ComicBookGenerationTask.ComicBookGeneration.name
             ),
             executionConfig = ComicBookGenerationTaskExecutionConfigData(
-                subject = "A robot discovering a forgotten garden in a cyberpunk city",
+                task_description = "A robot discovering a forgotten garden in a cyberpunk city",
                 target_pages = 1,
                 art_style = "cyberpunk noir",
                 style_details = "High contrast, neon lights, rain-slicked surfaces",

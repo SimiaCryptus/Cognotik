@@ -72,7 +72,7 @@ class ApiProviderServlet : HttpServlet() {
                                 baseUrl = apiConfig.baseUrl
                             ).map { model ->
                                 ModelInfo(
-                                    name = model.modelName,
+                                    name = model.modelId,
                                     maxTokens = model.maxTotalTokens
                                 )
                             }

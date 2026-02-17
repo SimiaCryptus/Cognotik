@@ -21,6 +21,7 @@ open class TaskTypeConfig(
 ) {
     var name: String? = name
         get() = field ?: task_type
+    var verbose: Boolean = false
 
     class PlanTaskTypeIdResolver : TypeIdResolverBase() {
         override fun idFromValue(value: Any): String? {

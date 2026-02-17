@@ -188,7 +188,7 @@ class SeleniumSessionTask(
 
       task.ui.pool.submit {
         var selenium: Selenium? = null
-        var transcriptStream: FileOutputStream? = null
+        var transcript: FileOutputStream? = null
         try {
           task.header("Selenium Session Execution")
           val statusBuffer = task.add("Initializing browser session...".renderMarkdown())
@@ -209,8 +209,8 @@ class SeleniumSessionTask(
           task.update()
 
           if (executionConfig.createTranscript) {
-            transcriptStream = task.transcript("Selenium Session")
-            transcriptStream?.write("# Selenium Session Transcript\n\n".toByteArray())
+            transcript = task.newFileOutputStream(transcriptFile("Selenium Session"))
+            transcript?.write("# Selenium Session Transcript\n\n".toByteArray())
           }
 
           log.info("Starting Selenium session ${executionConfig.sessionId ?: "temporary"}")
@@ -222,26 +222,26 @@ class SeleniumSessionTask(
               statusBuffer?.append("Navigating to: `${executionConfig.url}`".renderMarkdown())
               task.update()
               selenium.navigate(executionConfig.url)
-              transcriptStream?.write("## Navigation\nNavigated to: ${executionConfig.url}\n\n".toByteArray())
+              transcript?.write("## Navigation\nNavigated to: ${executionConfig.url}\n\n".toByteArray())
             }
 
             val results = executionConfig.commands.mapIndexed { index, command ->
               try {
                 log.debug("Executing command: $command")
                 task.add("Executing command ${index + 1}...".renderMarkdown())
-                transcriptStream?.write("### Command ${index + 1}\n```javascript\n$command\n```\n\n".toByteArray())
+                transcript?.write("### Command ${index + 1}\n```javascript\n$command\n```\n\n".toByteArray())
 
                 val startTime = System.currentTimeMillis()
                 val result = selenium.executeScript(command)?.toString() ?: "null"
                 val duration = System.currentTimeMillis() - startTime
 
                 task.expandable("Result (${duration}ms)", "<pre><code>$result</code></pre>")
-                transcriptStream?.write("<details><summary>Result (${duration}ms)</summary>\n\n```\n$result\n```\n</details>\n\n".toByteArray())
+                transcript?.write("<details><summary>Result (${duration}ms)</summary>\n\n```\n$result\n```\n</details>\n\n".toByteArray())
                 result
               } catch (e: Exception) {
                 task.error(e)
                 log.error("Command failed: $command", e)
-                transcriptStream?.write("#### Error\n```\n${e.message}\n```\n\n".toByteArray())
+                transcript?.write("#### Error\n```\n${e.message}\n```\n\n".toByteArray())
                 "Error: ${e.message}"
               }
             }
@@ -271,8 +271,8 @@ class SeleniumSessionTask(
               pageSource.take(50000)
             }</code></pre></details>"
 
-            transcriptStream?.write("## Final State\n**URL:** ${selenium.getCurrentUrl()}\n\n".toByteArray())
-            transcriptStream?.write("<details><summary>Final Page Source</summary>\n\n```html\n$pageSource\n```\n</details>\n".toByteArray())
+            transcript?.write("## Final State\n**URL:** ${selenium.getCurrentUrl()}\n\n".toByteArray())
+            transcript?.write("<details><summary>Final Page Source</summary>\n\n```html\n$pageSource\n```\n</details>\n".toByteArray())
 
             resultFn(formatResults(executionConfig, selenium, results))
             task.complete()
@@ -296,15 +296,13 @@ class SeleniumSessionTask(
           task.error(e)
           log.error("Selenium task failed: ${e.message}")
           try {
-
-
-            transcriptStream?.write("\n## Critical Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           } catch (_: Exception) {
           }
           throw e
         } finally {
-          transcriptStream?.flush()
-          transcriptStream?.close()
+          transcript?.flush()
+          transcript?.close()
           if ((executionConfig.sessionId == null || executionConfig.closeSession) && selenium != null) {
             log.info("Closing Selenium session")
             try {

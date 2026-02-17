@@ -233,7 +233,7 @@ class CrawlerAgentTask(
         try {
             transcriptStream = if (typeConfig?.generate_transcript != false) {
                 try {
-                    task.transcript("crawler_transcript")
+                  task.newFileOutputStream(transcriptFile("crawler_transcript"))
                 } catch (e: Exception) {
                     log.error("Failed to initialize transcript", e)
                     null

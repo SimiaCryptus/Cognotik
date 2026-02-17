@@ -11,8 +11,12 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
@@ -51,7 +55,7 @@ class IllustrateDocumentTask(
     }
 
     class IllustrateDocumentTaskExecutionConfigData(
-        @Description("The document file to illustrate (must be .md or .html)") files: List<String>? = null,
+        @Description("The document file to illustrate (must be .md or .html)") files: List<String> = emptyList(),
         @Description("Maximum number of images to generate (default: 5)") val maxImages: Int = 5,
         @Description("Image format to use (png or jpg, default: png)") val imageFormat: String = "png",
         @Description("Whether to automatically insert image references into the document") val autoInsert: Boolean = true,
@@ -112,7 +116,7 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
       task.ui.pool.submit {
         val startTime = System.currentTimeMillis()
         val documentFile = executionConfig?.files?.firstOrNull()
-        val transcript = task.transcript()
+        val transcript = task.newFileOutputStream(transcriptFile())
 
         try {
           if (documentFile == null) {
@@ -340,18 +344,7 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
           val duration = System.currentTimeMillis() - startTime
           log.error("IllustrateDocumentTask failed for $documentFile after ${duration}ms", e)
           task.error(e)
-          transcript?.write(
-            """
-                    <details>
-                    <summary>Stack Trace</summary>
-                    
-                    ```
-                    ${e.stackTraceToString()}
-                    ```
-                    </details>
-                """.trimIndent().toByteArray()
-          )
-
+          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           val errorOutput = buildString {
             appendLine("# Error Illustrating Document")
             appendLine()
@@ -505,10 +498,14 @@ Generate the patches now.
                     log.debug("Patch generation response: $response")
                     if (orchestrationConfig.autoFix) {
                         subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
-                          AddApplyFileDiffLinks(
-                            orchestrationConfig.processor
+                          DiffInstrumentor(
+                            orchestrationConfig.processor,
+                            SocketManagerUIRenderer(
+                              socketManager = subTask.ui,
+                              sessionId = subTask.ui.sessionId
+                            ),
+                            RealFileSystem()
                           ).instrument(
-                            socketManager = subTask.ui,
                             root = root,
                             response = it,
                             handle = { newCodeMap: Map<Path, String> ->
@@ -518,17 +515,21 @@ Generate the patches now.
                               patchResult = "Patches applied successfully"
                             },
                             shouldAutoApply = { it: Path -> true },
-                            model = chatChatter,
-                            defaultFile = documentFile
+                            defaultFile = documentFile,
+                            resolver = ::resolveToRelativePath,
                           ) + "\n\n## Auto-applied image insertion patches"
                         })
                         semaphore.release()
                     } else {
                         subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
-                          AddApplyFileDiffLinks(
-                            processor = orchestrationConfig.processor
+                          DiffInstrumentor(
+                            orchestrationConfig.processor,
+                            SocketManagerUIRenderer(
+                              socketManager = subTask.ui,
+                              sessionId = subTask.ui.sessionId
+                            ),
+                            RealFileSystem()
                           ).instrument(
-                            socketManager = subTask.ui,
                             root = root,
                             response = it,
                             handle = { newCodeMap: Map<Path, String> ->
@@ -537,8 +538,8 @@ Generate the patches now.
                               }
                               patchResult = "Patches applied successfully"
                             },
-                            model = chatChatter,
-                            defaultFile = documentFile
+                            defaultFile = documentFile,
+                            resolver = ::resolveToRelativePath,
                           ) + acceptButtonFooter(subTask.ui) {
                                 subTask.complete()
                                 semaphore.release()

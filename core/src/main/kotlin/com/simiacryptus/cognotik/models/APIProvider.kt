@@ -251,7 +251,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logStreams: MutableList<BufferedOutputStream>,
                 scheduledPool: ListeningScheduledExecutorService
             ): ImageClientInterface = OpenAIImageClient(
-                key = key.decrypt,
+                key = key.decrypt!!,
                 apiBase = base,
                 workPool = workPool,
                 logLevel = logLevel,
@@ -264,9 +264,9 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 baseUrl: String
             ): List<AudioModels> {
                 return listOf(
-                    AudioModels(modelName = "gpt-4o-transcribe", provider = this),
-                    AudioModels(modelName = "gpt-4o-mini-transcribe", provider = this),
-                    AudioModels(modelName = "whisper-1", provider = this)
+                    AudioModels(modelId = "gpt-4o-transcribe", provider = this),
+                    AudioModels(modelId = "gpt-4o-mini-transcribe", provider = this),
+                    AudioModels(modelId = "whisper-1", provider = this)
                 )
             }
         }
@@ -371,8 +371,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 baseUrl: String
             ): List<AudioModels> {
                 return listOf(
-                    AudioModels(modelName = "whisper-large-v3", provider = this),
-                    AudioModels(modelName = "whisper-large-v3-turbo", provider = this),
+                    AudioModels(modelId = "whisper-large-v3", provider = this),
+                    AudioModels(modelId = "whisper-large-v3-turbo", provider = this),
                 )
             }
         }

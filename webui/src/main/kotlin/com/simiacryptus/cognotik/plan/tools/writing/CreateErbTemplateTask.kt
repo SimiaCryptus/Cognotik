@@ -114,7 +114,7 @@ CreateErbTemplate - Generate ERB-style templates for document generation
         ?: defaultSmart).getChildClient(task)
 
     val semaphore = Semaphore(0)
-    val transcript = task.transcript()
+    val transcript = task.newFileOutputStream(transcriptFile())
     val tabs = TabbedDisplay(task)
 
     try {
@@ -297,19 +297,7 @@ $extractedTemplate
       // Triple Log Rule
       task.error(e)
       log.error("Error in CreateErbTemplateTask", e)
-      transcript?.write(
-        """
-
-## Error
-<details>
-<summary>Stack Trace</summary>
-
-```
-${e.stackTraceToString()}
-```
-</details>
-            """.toByteArray()
-      )
+      transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
       throw e
     } finally {
       transcript?.flush()

@@ -9,8 +9,12 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
+
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -26,7 +30,7 @@ class FileModificationTask(
 ) : AbstractFileTask<FileModificationTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
     class FileModificationTaskExecutionConfigData(
-        files: List<String>? = null,
+        files: List<String> = emptyList(),
         related_files: List<String>? = null,
         extractContent: Boolean = false,
         @Description("Specific modifications to be made to the files")
@@ -82,7 +86,7 @@ FileModification - Modify existing files or create new files
 
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
-        val transcript = task.transcript()
+        val transcript = task.newFileOutputStream(transcriptFile())
         val tabs = TabbedDisplay(task)
 
         try {
@@ -162,32 +166,32 @@ $codeResult
 </details>
 
                 """.toByteArray())
-
                 val autoFix = orchestrationConfig.autoFix
-
-                // 5. Render and Instrument
                 val markdown = renderMarkdown(codeResult, ui = mainTask.ui) {
-                    AddApplyFileDiffLinks(
-                        processor = orchestrationConfig.processor
-                    ).instrument(
-                        socketManager = task.ui,
-                        root = agent.root,
-                        response = it,
-                        handle = { newCodeMap: Map<Path, String> ->
-                            newCodeMap.forEach { (path, _) ->
-                                val note = "<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated"
-                                completionNotes += note
-                                try {
-                                    transcript?.write("- $note\n".toByteArray())
-                                } catch (e: Exception) {
-                                    log.warn("Failed to write to transcript for file: $path", e)
-                                }
-                            }
-                        },
-                        shouldAutoApply = { it: Path -> autoFix },
-                        model = chatInterface,
-                        defaultFile = defaultFile
-                    )
+                  DiffInstrumentor(
+                    orchestrationConfig.processor,
+                    SocketManagerUIRenderer(
+                      socketManager = task.ui,
+                      sessionId = task.ui.sessionId
+                    ), RealFileSystem()
+                  ).instrument(
+                    root = agent.root,
+                    response = it,
+                    handle = { newCodeMap: Map<Path, String> ->
+                      newCodeMap.forEach { (path, _) ->
+                        val note = "<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated"
+                        completionNotes += note
+                        try {
+                          transcript?.write("- $note\n".toByteArray())
+                        } catch (e: Exception) {
+                          log.warn("Failed to write to transcript for file: $path", e)
+                        }
+                      }
+                    },
+                    shouldAutoApply = { autoFix },
+                    defaultFile = defaultFile,
+                    resolver = ::resolveToRelativePath,
+                  )
                 }
 
                 if (autoFix) {
@@ -223,18 +227,7 @@ $codeResult
             log.error("Error in FileModificationTask", e) // 2. Log
 
             // 3. Transcript
-            transcript?.write("""
-
-## Error
-<details>
-<summary>Stack Trace</summary>
-
-```
-${e.stackTraceToString()}
-```
-</details>
-            """.toByteArray())
-
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             throw e
         } finally {
             transcript?.flush()

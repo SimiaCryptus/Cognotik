@@ -50,14 +50,14 @@ class AnthropicChatClient(
             val modelsResponse = fetchAllModels()
             val models = modelsResponse.mapNotNull { modelInfo ->
                 val models = AnthropicModels.values.values
-                    .filter { it.name == modelInfo.id || it.modelName == modelInfo.id }
+                    .filter { it.name == modelInfo.id || it.modelId == modelInfo.id }
                 when {
                     models.size == 1 -> models.first()
                     else -> {
                         log.debug("Unknown Anthropic model: ${modelInfo.id}")
                         ChatModel(
                             name = modelInfo.display_name,
-                            modelName = modelInfo.id,
+                            modelId = modelInfo.id,
                             provider = APIProvider.Anthropic,
                             maxTotalTokens = 200000,
                             maxOutTokens = 64000,
@@ -110,9 +110,9 @@ class AnthropicChatClient(
                 val anthropicChatRequest = try {
                     val chatMessages = chatRequest.messages
                     require(chatMessages.isNotEmpty()) { "Messages cannot be empty" }
-                    require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
+                    require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
                     val max_tokens = chatRequest.max_tokens ?: model.maxOutTokens
-                    val model = chatRequest.model ?: model.modelName
+                    val model = chatRequest.model ?: model.modelId
                     val temperature = chatRequest.temperature
                     val system = chatMessages
                         .firstOrNull { it.role == ModelSchema.Role.system }
@@ -205,7 +205,7 @@ class AnthropicChatClient(
 
     private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-        require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
+        require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
         require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
     }
 

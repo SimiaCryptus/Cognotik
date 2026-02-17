@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.macros
 
-import com.simiacryptus.cognotik.util.OverwriteModes
+import com.simiacryptus.cognotik.util.UpdateModes
 import java.io.File
 
 object TaskProductPageGenerator : com.simiacryptus.cognotik.util.FileGenerator() {
@@ -10,16 +10,7 @@ object TaskProductPageGenerator : com.simiacryptus.cognotik.util.FileGenerator()
       root = File("."),
       folder = File("webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools"),
       targetFile = { file -> File("site/cognotik.com").resolve(file.nameWithoutExtension + ".html") },
-      overwriteMode = OverwriteModes.PatchExisting,
-      relatedFiles = {
-        listOf(
-          it.toString(),
-          it.toString().replace("/main/", "/test/"),
-          "docs/embedding.md",
-          "docs/task_product_page.md",
-          "site/cognotik.com/task_product_page_template.html",
-        )
-      },
+      updateMode = UpdateModes.PatchExisting,
       generationPrompt = { source, target ->
         """Update the product page HTML file ($target) to reflect the latest implementation in ${source.name}."""
       }

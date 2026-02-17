@@ -6,20 +6,22 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProviderChain
-import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider
-import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.bedrock.BedrockClient
+import software.amazon.awssdk.services.bedrock.model.CustomModelSummary
 import software.amazon.awssdk.services.bedrock.model.FoundationModelSummary
+import software.amazon.awssdk.services.bedrock.model.ListCustomModelsRequest
 import software.amazon.awssdk.services.bedrock.model.ListFoundationModelsRequest
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient
-import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelRequest
+import software.amazon.awssdk.services.bedrockruntime.model.*
 import java.io.BufferedOutputStream
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 
@@ -40,60 +42,129 @@ class AwsChatClient(
     scheduledPool = scheduledPool
 ) {
     private val awsAuth: AWSAuth by lazy {
-        JsonUtil.fromJson(apiKey.decrypt, AWSAuth::class.java)
+        JsonUtil.fromJson(apiKey.decrypt!!, AWSAuth::class.java)
     }
     private val bedrockClient: BedrockRuntimeClient by lazy {
-        BedrockRuntimeClient.builder().credentialsProvider(awsCredentials(awsAuth)).region(Region.of(awsAuth.region))
+        BedrockRuntimeClient.builder()
+            .credentialsProvider(awsCredentials(awsAuth))
+            .region(Region.of(awsAuth.region))
+            .overrideConfiguration { config ->
+                config.apiCallTimeout(Duration.ofMinutes(10))
+                config.apiCallAttemptTimeout(Duration.ofMinutes(5))
+            }
             .build()
     }
     private val bedrockManagementClient: BedrockClient by lazy {
         BedrockClient.builder()
             .credentialsProvider(awsCredentials(awsAuth))
             .region(Region.of(awsAuth.region))
+            .overrideConfiguration { config ->
+                config.apiCallTimeout(Duration.ofMinutes(5))
+                config.apiCallAttemptTimeout(Duration.ofMinutes(3))
+            }
             .build()
     }
 
     override fun getModels(): List<ChatModel>? {
         // Check cache first
         val cacheKey = "${awsAuth.region}:${awsAuth.profile}"
-        modelsCache[cacheKey]?.let { return it }
+        modelsCache[cacheKey]?.let {
+            log.debug("Returning ${it.size} cached models for region=${awsAuth.region}, profile=${awsAuth.profile}")
+            return it
+        }
 
         return try {
             log.info("Fetching available models from AWS Bedrock in region: ${awsAuth.region}")
 
-            val request = ListFoundationModelsRequest.builder().build()
-            val response = bedrockManagementClient.listFoundationModels(request)
+            val response = try {
+                log.debug("Listing foundation models from AWS Bedrock...")
+                val listFoundationModels = bedrockManagementClient.listFoundationModels(
+                    ListFoundationModelsRequest.builder().build()
+                )
+                val summaries = listFoundationModels.modelSummaries()?.filterNotNull() ?: emptyList()
+                log.debug("Found ${summaries.size} foundation models from AWS Bedrock")
+                summaries.mapNotNull { modelSummary ->
+                    try {
+                        mapAwsModelToChatModel(modelSummary)
+                    } catch (e: Exception) {
+                        log.warn("Failed to map AWS model ${modelSummary.modelId()}: ${e.message}")
+                        null
+                    }
+                }
+            } catch (e: Exception) {
+                log.error("Failed to list foundation models from AWS Bedrock: ${e.message}", e)
+                emptyList()
+            }
+            val response2 = try {
+                log.debug("Listing custom models from AWS Bedrock...")
+                val listCustomModels = bedrockManagementClient.listCustomModels(
+                    ListCustomModelsRequest.builder().build()
+                )
+                val summaries = listCustomModels.modelSummaries()?.filterNotNull() ?: emptyList()
+                log.debug("Found ${summaries.size} custom models from AWS Bedrock")
+                summaries.mapNotNull { modelSummary ->
+                    try {
+                        mapAwsModelToChatModel(modelSummary)
+                    } catch (e: Exception) {
+                        log.warn("Failed to map AWS custom model ${modelSummary.modelArn()}: ${e.message}")
+                        null
+                    }
+                }
+            } catch (e: Exception) {
+                log.error("Failed to list custom models from AWS Bedrock: ${e.message}", e)
+                emptyList()
+            }
+            log.debug("Processing ${awsAuth.models.size} configured model mappings")
 
-            val models = response.modelSummaries()?.mapNotNull { modelSummary ->
+            val modelsCfg = awsAuth.models.mapNotNull { (modelName, modelId) ->
                 try {
-                    mapAwsModelToChatModel(modelSummary)
+                    getModelSpecifications(modelId).let { specs ->
+                        log.debug("Mapped configured model: name=$modelName, id=$modelId, maxTokens=${specs.maxTotalTokens}")
+                        ChatModel(
+                            name = modelName,
+                            modelId = modelId,
+                            maxTotalTokens = specs.maxTotalTokens,
+                            maxOutTokens = specs.maxOutTokens,
+                            provider = APIProvider.AWS,
+                            inputTokenPricePerK = specs.inputTokenPricePerK,
+                            outputTokenPricePerK = specs.outputTokenPricePerK
+                        )
+                    }
                 } catch (e: Exception) {
-                    log.warn("Failed to map AWS model ${modelSummary.modelId()}: ${e.message}")
+                    log.warn("Failed to add additional AWS model $modelId: ${e.message}")
                     null
                 }
-            } ?: emptyList()
+            }
+            val models = response + response2 + modelsCfg
 
-            log.info("Found ${models.size} available models in AWS Bedrock")
+            log.info("Found ${models.size} available models in AWS Bedrock (${response.size} foundation, ${response2.size} custom, ${modelsCfg.size} configured)")
 
             // Cache the result
             models.takeIf { it.isNotEmpty() }?.let {
+                log.debug("Caching ${it.size} models for key=$cacheKey")
                 modelsCache[cacheKey] = it
             }
 
             models
         } catch (e: Exception) {
             log.error("Failed to fetch models from AWS Bedrock: ${e.message}", e)
-            // Return a default list of known AWS models as fallback
+            log.warn("Returning default fallback list of AWS Bedrock models")
             getDefaultAwsModels()
         }
     }
 
     private fun mapAwsModelToChatModel(modelSummary: FoundationModelSummary): ChatModel? {
-        val modelId = modelSummary.modelId() ?: return null
-        val (maxTokens, maxOutTokens, inputPrice, outputPrice) = getModelSpecifications(modelId)
+        val modelId = modelSummary.modelId() ?: run {
+            log.warn("Skipping foundation model with null modelId: ${modelSummary.modelName()}")
+            return null
+        }
+        log.debug("Mapping foundation model: id=$modelId, name=${modelSummary.modelName()}")
+        val (maxTokens, maxOutTokens, inputPrice, outputPrice) = getModelSpecifications(
+            modelId
+        )
         return ChatModel(
             name = modelSummary.modelName() ?: modelId,
-            modelName = modelId,
+            modelId = modelId,
             maxTotalTokens = maxTokens,
             maxOutTokens = maxOutTokens,
             provider = APIProvider.AWS,
@@ -102,15 +173,20 @@ class AwsChatClient(
         )
     }
 
+    private fun mapAwsModelToChatModel(modelSummary: CustomModelSummary): ChatModel? {
+        log.debug("Mapping custom model: arn=${modelSummary.modelArn()}, name=${modelSummary.modelName()}")
+        return mapAwsModelToChatModel(
+            FoundationModelSummary.builder().modelId(modelSummary.modelArn()).modelName(modelSummary.modelName()).build()
+        )
+    }
+
     private fun getModelSpecifications(modelId: String): ModelSpecs {
-        return when {
+        val modelId = modelId.lowercase()
+        val specs = when {
             // Anthropic Claude models
-            modelId.contains("claude-3-opus") -> ModelSpecs(200000, 4096, 0.015, 0.075)
-            modelId.contains("claude-3-sonnet") -> ModelSpecs(200000, 4096, 0.003, 0.015)
-            modelId.contains("claude-3-haiku") -> ModelSpecs(200000, 4096, 0.00025, 0.00125)
-            modelId.contains("claude-2.1") -> ModelSpecs(200000, 4096, 0.008, 0.024)
-            modelId.contains("claude-2") -> ModelSpecs(100000, 4096, 0.008, 0.024)
-            modelId.contains("claude-instant") -> ModelSpecs(100000, 4096, 0.0008, 0.0024)
+            modelId.contains("opus") -> ModelSpecs(200000, 64000, 0.015, 0.075)
+            modelId.contains("sonnet") -> ModelSpecs(200000, 64000, 0.003, 0.015)
+            modelId.contains("haiku") -> ModelSpecs(200000, 64000, 0.00025, 0.00125)
 
             // Meta Llama models
             modelId.contains("llama3-70b") -> ModelSpecs(8192, 2048, 0.00265, 0.0035)
@@ -139,8 +215,13 @@ class AwsChatClient(
             modelId.contains("j2-mid") -> ModelSpecs(8192, 8192, 0.0125, 0.0125)
 
             // Default values for unknown models
-            else -> ModelSpecs(4096, 2048, 0.001, 0.002)
+            else -> {
+                log.debug("Using default model specifications for unknown model: $modelId")
+                ModelSpecs(200000, 64000, 0.001, 0.002)
+            }
         }
+        log.trace("Model specs for $modelId: maxTotal=${specs.maxTotalTokens}, maxOut=${specs.maxOutTokens}, inputPrice=${specs.inputTokenPricePerK}, outputPrice=${specs.outputTokenPricePerK}")
+        return specs
     }
 
     private fun getDefaultAwsModels(): List<ChatModel> {
@@ -148,7 +229,7 @@ class AwsChatClient(
         return listOf(
             ChatModel(
                 name = "Claude 3 Sonnet",
-                modelName = "anthropic.claude-3-sonnet-20240229-v1:0",
+                modelId = "anthropic.sonnet-20240229-v1:0",
                 maxTotalTokens = 200000,
                 maxOutTokens = 4096,
                 provider = APIProvider.AWS,
@@ -157,7 +238,7 @@ class AwsChatClient(
             ),
             ChatModel(
                 name = "Claude 3 Haiku",
-                modelName = "anthropic.claude-3-haiku-20240307-v1:0",
+                modelId = "anthropic.haiku-20240307-v1:0",
                 maxTotalTokens = 200000,
                 maxOutTokens = 4096,
                 provider = APIProvider.AWS,
@@ -166,7 +247,7 @@ class AwsChatClient(
             ),
             ChatModel(
                 name = "Llama 3 70B Instruct",
-                modelName = "meta.llama3-70b-instruct-v1:0",
+                modelId = "meta.llama3-70b-instruct-v1:0",
                 maxTotalTokens = 8192,
                 maxOutTokens = 2048,
                 provider = APIProvider.AWS,
@@ -175,7 +256,7 @@ class AwsChatClient(
             ),
             ChatModel(
                 name = "Mistral 7B Instruct",
-                modelName = "mistral.mistral-7b-instruct-v0:2",
+                modelId = "mistral.mistral-7b-instruct-v0:2",
                 maxTotalTokens = 32000,
                 maxOutTokens = 4096,
                 provider = APIProvider.AWS,
@@ -184,7 +265,7 @@ class AwsChatClient(
             ),
             ChatModel(
                 name = "Amazon Titan Text Express",
-                modelName = "amazon.titan-text-express-v1",
+                modelId = "amazon.titan-text-express-v1",
                 maxTotalTokens = 8192,
                 maxOutTokens = 8192,
                 provider = APIProvider.AWS,
@@ -197,73 +278,70 @@ class AwsChatClient(
     override fun authorize(
         request: HttpRequest, apiProvider: APIProvider
     ) {
-        // AWS Bedrock uses SDK authentication, not HTTP headers
-        // This method is not used for AWS authentication
+        log.debug("authorize() called but AWS Bedrock uses SDK authentication, not HTTP headers - skipping")
     }
 
     override fun chat(
         chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
-        logStreams: MutableList<java.io.BufferedOutputStream>
+        logStreams: MutableList<BufferedOutputStream>
     ): ModelSchema.ChatResponse {
         validateChatRequest(chatRequest, model)
 
-        log.info("Starting AWS Bedrock chat with model: ${model.modelName}")
+        val messageCount = chatRequest.messages.size
+        val totalContentLength = chatRequest.messages.sumOf { msg ->
+            msg.content?.sumOf { it.text?.length ?: 0 } ?: 0
+        }
+        log.info("Starting AWS Bedrock chat with model: ${model.modelId}, messages=$messageCount, contentLength=$totalContentLength, temperature=${chatRequest.temperature}")
 
         return withReliability {
             withPerformanceLogging {
-                val invokeModelRequest = try {
-                    toAWS(model, chatRequest)
+                val converseRequest = try {
+                    log.debug("Building AWS Converse request for model: ${model.modelId}")
+                    toConverseRequest(model, chatRequest)
                 } catch (e: Exception) {
-                    log.error("Failed to create AWS request for model: ${model.modelName}", e)
+                    log.error("Failed to create AWS request for model: ${model.modelId}", e)
                     throw RuntimeException("Failed to create AWS request", e)
                 }
 
-                val invokeModelResponse = try {
-                    bedrockClient.invokeModel(invokeModelRequest)
+                val converseResponse = try {
+                    log.debug("Invoking AWS Bedrock converse for model: ${model.modelId}")
+                    val startTime = System.currentTimeMillis()
+                    val response = bedrockClient.converse(converseRequest)
+                    val elapsed = System.currentTimeMillis() - startTime
+                    log.debug("AWS Bedrock converse completed in ${elapsed}ms for model: ${model.modelId}, stopReason=${response.stopReason()}")
+                    response
                 } catch (e: Exception) {
-                    log.error("Failed to invoke AWS Bedrock model: ${model.modelName}", e)
+                    log.error("Failed to invoke AWS Bedrock model: ${model.modelId}", e)
                     throw RuntimeException("Failed to invoke AWS Bedrock model", e)
                 }
 
-                val responseBody = try {
-                    invokeModelResponse.body()?.asString(Charsets.UTF_8)
-                        ?: throw RuntimeException("Empty response body from AWS Bedrock")
-                } catch (e: Exception) {
-                    log.error("Failed to read AWS response body", e)
-                    throw RuntimeException("Failed to read AWS response body", e)
-                }
 
-                log.debug("AWS Bedrock response: $responseBody")
 
-                val result = try {
-                    fromAWS(responseBody, model.modelName ?: "")
-                } catch (e: Exception) {
-                    log.error("Failed to parse AWS response for model: ${model.modelName}", e)
-                    throw RuntimeException("Failed to parse AWS response", e)
-                }
 
-                val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
+                val response = fromConverseResponse(converseResponse)
 
                 if (response.usage != null && model is ChatModel) {
+                    log.debug("Usage for model ${model.modelId}: prompt_tokens=${response.usage?.prompt_tokens}, completion_tokens=${response.usage?.completion_tokens}, total_tokens=${response.usage?.total_tokens}")
                     onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
                 }
 
-                log.info("AWS Bedrock chat completed successfully")
+                log.info("AWS Bedrock chat completed successfully for model: ${model.modelId}, choices=${response.choices?.size ?: 0}")
                 response
             }
         }
     }
 
     private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
+        log.debug("Validating chat request: messages=${chatRequest.messages.size}, model=${model.modelId}, region=${awsAuth.region}")
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-        require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
+        require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
         require(awsAuth.region.isNotBlank()) { "AWS region must be specified" }
     }
 
 
     companion object {
-        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(AwsChatClient::class.java)
+        private val log = LoggerFactory.getLogger(AwsChatClient::class.java)
         private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
 
         private data class ModelSpecs(
@@ -275,102 +353,94 @@ class AwsChatClient(
 
         fun awsCredentials(awsAuth: AWSAuth): AwsCredentialsProviderChain =
             AwsCredentialsProviderChain.builder().credentialsProviders(
-                InstanceProfileCredentialsProvider.create(),
                 ProfileCredentialsProvider.create(awsAuth.profile),
             ).build()
 
         data class AWSAuth(
             val profile: String = "default",
             val region: String = Region.US_WEST_2.id(),
+            val models: Map<String,String> = emptyMap()
         )
 
-        fun toAWS(model: LLMModel, chatRequest: ModelSchema.ChatRequest) =
-            InvokeModelRequest.builder().modelId(model.modelName).accept("application/json")
-                .contentType("application/json")
-                .body(SdkBytes.fromString(JsonUtil.toJson(awsBody(model, chatRequest)), Charsets.UTF_8)).build()
-
-        fun awsBody(
-            model: LLMModel, chatRequest: ModelSchema.ChatRequest
-        ): Map<String, Any> = when {
-            model.modelName?.contains("llama") == true -> {
-                mapOf(
-                    "prompt" to toSimplePrompt(chatRequest),
-                    "max_gen_len" to model.maxOutTokens,
-                    "temperature" to chatRequest.temperature,
-
-                    )
+        fun toConverseRequest(model: LLMModel, chatRequest: ModelSchema.ChatRequest): ConverseRequest {
+            log.debug("Creating AWS ConverseRequest: modelId=${model.modelId}")
+            val systemMessages = chatRequest.messages.filter { it.role == ModelSchema.Role.system }
+            val nonSystemMessages = alternateMessagesRoles(chatRequest.messages).filter {
+                it.role != ModelSchema.Role.system
             }
 
-            model.modelName?.contains("mistral") == true -> {
-                mapOf(
-                    "prompt" to toSimplePrompt(chatRequest),
-                    "max_tokens" to model.maxOutTokens,
-                    "temperature" to chatRequest.temperature,
-                )
+            val systemContent = systemMessages.flatMap { msg ->
+                msg.content?.mapNotNull { part ->
+                    part.text?.takeIf { it.isNotEmpty() }?.let { SystemContentBlock.fromText(it) }
+                } ?: emptyList()
             }
 
-            model.modelName?.contains("titan") == true -> {
-                mapOf(
-                    "inputText" to toSimplePrompt(chatRequest), "textGenerationConfig" to mapOf(
-                        "maxTokenCount" to model.maxTotalTokens,
-                        "stopSequences" to emptyList<String>(),
-                        "temperature" to chatRequest.temperature,
-                    )
-                )
+            val messages = nonSystemMessages.map { msg ->
+                val contentBlocks = msg.content?.mapNotNull { part ->
+                    part.text?.takeIf { it.isNotEmpty() }?.let { ContentBlock.fromText(it) }
+                } ?: emptyList()
+                val role = when (msg.role) {
+                    ModelSchema.Role.assistant -> ConversationRole.ASSISTANT
+                    else -> ConversationRole.USER
+                }
+                Message.builder()
+                    .role(role)
+                    .content(contentBlocks)
+                    .build()
             }
 
-            model.modelName?.contains("cohere") == true -> {
-                mapOf(
-                    "prompt" to toSimplePrompt(chatRequest),
-                    "max_tokens" to model.maxTotalTokens,
-                    "temperature" to chatRequest.temperature,
-                )
+            val inferenceConfig = InferenceConfiguration.builder()
+                .maxTokens(model.maxOutTokens)
+                .temperature(chatRequest.temperature.toFloat())
+                .build()
+
+            log.debug("Converse request: ${messages.size} messages, ${systemContent.size} system blocks, maxTokens=${model.maxOutTokens}, temperature=${chatRequest.temperature}")
+
+            val builder = ConverseRequest.builder()
+                .modelId(model.modelId)
+                .messages(messages)
+                .inferenceConfig(inferenceConfig)
+
+            if (systemContent.isNotEmpty()) {
+                builder.system(systemContent)
             }
 
-            model.modelName?.contains("ai21") == true -> {
-                mapOf(
-                    "prompt" to toSimplePrompt(chatRequest),
-                    "maxTokens" to model.maxTotalTokens,
-                    "temperature" to chatRequest.temperature,
-                    "stopSequences" to emptyList<String>(),
-                    "countPenalty" to mapOf("scale" to 0),
-                    "presencePenalty" to mapOf("scale" to 0),
-                    "frequencyPenalty" to mapOf("scale" to 0),
-                )
-            }
-
-            model.modelName?.contains("anthropic") == true -> {
-                val alternatingMessages = alternateMessagesRoles(chatRequest.messages)
-                mapOf(
-                    "anthropic_version" to anthropic_version(model),
-                    "max_tokens" to model.maxOutTokens,
-                    "temperature" to chatRequest.temperature,
-                    "messages" to alternatingMessages.filter {
-                        when (it.role) {
-                            ModelSchema.Role.system -> false
-                            else -> true
-                        }
-                    }.map {
-                        mapOf(
-                            "role" to it.role.toString(), "content" to it.content?.map {
-                                mapOf(
-                                    "type" to "text", "text" to it.text
-                                )
-                            })
-                    },
-                    "system" to toSimplePrompt(chatRequest) { it.role == ModelSchema.Role.system },
-                )
-            }
-
-            else -> throw RuntimeException("Unsupported model: $model")
+            return builder.build()
         }
 
-        fun anthropic_version(model: LLMModel) = when {
-            else -> "bedrock-2023-05-31"
+        fun fromConverseResponse(response: ConverseResponse): ModelSchema.ChatResponse {
+            log.debug("Parsing converse response: stopReason=${response.stopReason()}")
+            val outputMessage = response.output()?.message()
+            val contentText = outputMessage?.content()?.joinToString("") { block ->
+                block.text() ?: ""
+            } ?: ""
 
+            val usage = response.usage()
+            val promptTokens = usage?.inputTokens()?.toLong() ?: 0
+            val completionTokens = usage?.outputTokens()?.toLong() ?: 0
+            val totalTokens = usage?.totalTokens()?.toLong() ?: (promptTokens + completionTokens)
+
+            log.debug("Converse response: contentLength=${contentText.length}, promptTokens=$promptTokens, completionTokens=$completionTokens, totalTokens=$totalTokens")
+
+            return ModelSchema.ChatResponse(
+                choices = listOf(
+                    ModelSchema.ChatChoice(
+                        message = ModelSchema.ChatMessageResponse(
+                            content = contentText,
+                        ),
+                        index = 0
+                    )
+                ),
+                usage = ModelSchema.Usage(
+                    prompt_tokens = promptTokens,
+                    completion_tokens = completionTokens,
+                    total_tokens = totalTokens
+                )
+            )
         }
 
         fun alternateMessagesRoles(messages: List<ModelSchema.ChatMessage>): List<ModelSchema.ChatMessage> {
+            log.debug("Alternating message roles for ${messages.size} messages")
             val alternatingMessages = mutableListOf<ModelSchema.ChatMessage>()
             val messagesCopy = messages.toMutableList()
             var isFirst = true
@@ -392,8 +462,19 @@ class AwsChatClient(
                 }
                 alternatingMessages.add(consolidatedMessage ?: ModelSchema.ChatMessage())
             }
+            log.debug("Alternated messages: ${messages.size} -> ${alternatingMessages.size} messages")
             return alternatingMessages
         }
+
+
+
+
+
+
+
+
+
+
 
         fun takeAll(
             messagesCopy: MutableList<ModelSchema.ChatMessage>, thisRole: ModelSchema.Role?
@@ -406,6 +487,24 @@ class AwsChatClient(
             return consolidatedMessage
         }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         fun concat(
             acc: ModelSchema.ChatMessage, chatMessage: ModelSchema.ChatMessage
         ) = ModelSchema.ChatMessage(
@@ -415,222 +514,6 @@ class AwsChatClient(
                         "\n"
                     ) { it.text ?: "" })
             )
-        )
-
-        fun toSimplePrompt(
-            chatRequest: ModelSchema.ChatRequest, filterFn: (ModelSchema.ChatMessage) -> Boolean = { true }
-        ) = if (chatRequest.messages.filter(filterFn).map { it.role }.distinct().size <= 1) {
-            chatRequest.messages.filter(filterFn).joinToString("\n\n") {
-                it.content?.joinToString("\n") { it.text ?: "" } ?: ""
-            }
-        } else {
-            chatRequest.messages.filter(filterFn).joinToString("\n\n") {
-                "${it.role}: \n" + it.content?.joinToString("\n") { "\t" + (it.text ?: "") }
-            }
-        }
-
-        fun fromAWS(responseBody: String, model: String): String {
-            require(responseBody.isNotBlank()) { "Response body cannot be blank" }
-            require(model.isNotBlank()) { "Model name cannot be blank" }
-
-            return when {
-                model.contains("llama") -> {
-                    val fromJson = try {
-                        JsonUtil.fromJson<AwsResponseLlama2>(responseBody, AwsResponseLlama2::class.java)
-                    } catch (e: Exception) {
-                        throw RuntimeException("Failed to parse Llama response", e)
-                    }
-                    JsonUtil.toJson(
-                        ModelSchema.ChatResponse(
-                            choices = listOf(
-                                ModelSchema.ChatChoice(
-                                    message = ModelSchema.ChatMessageResponse(
-                                        content = fromJson.generation ?: "",
-                                    ), index = 0
-                                )
-                            ), usage = ModelSchema.Usage(
-                                prompt_tokens = fromJson.prompt_token_count?.toLong() ?: 0,
-                                completion_tokens = fromJson.generation_token_count?.toLong() ?: 0,
-                                total_tokens = (fromJson.prompt_token_count?.toLong()
-                                    ?: 0) + (fromJson.generation_token_count?.toLong() ?: 0)
-                            )
-                        )
-                    )
-                }
-
-                model.contains("mistral") -> {
-                    val fromJson = JsonUtil.fromJson<AwsResponseMistral>(responseBody, AwsResponseMistral::class.java)
-                    JsonUtil.toJson(
-                        ModelSchema.ChatResponse(
-                            choices = listOf(
-                                ModelSchema.ChatChoice(
-                                    message = ModelSchema.ChatMessageResponse(
-                                        content = fromJson.outputs?.firstOrNull()?.text ?: "",
-                                    ), index = 0
-                                )
-                            )
-                        )
-                    )
-                }
-
-                model.contains("titan") -> {
-                    val fromJson = JsonUtil.fromJson<AwsResponseTitan>(responseBody, AwsResponseTitan::class.java)
-                    JsonUtil.toJson(
-                        ModelSchema.ChatResponse(
-                            choices = listOf(
-                                ModelSchema.ChatChoice(
-                                    message = ModelSchema.ChatMessageResponse(
-                                        content = fromJson.results?.firstOrNull()?.outputText ?: "",
-                                    ), index = 0
-                                )
-                            )
-                        )
-                    )
-                }
-
-                model.contains("cohere") -> {
-                    val fromJson = JsonUtil.fromJson<AwsResponseCohere>(responseBody, AwsResponseCohere::class.java)
-                    JsonUtil.toJson(
-                        ModelSchema.ChatResponse(
-                            choices = listOf(
-                                ModelSchema.ChatChoice(
-                                    message = ModelSchema.ChatMessageResponse(
-                                        content = fromJson.generations?.firstOrNull()?.text ?: "",
-                                    ), index = 0
-                                )
-                            )
-                        )
-                    )
-                }
-
-                model.contains("ai21") -> {
-                    val fromJson = JsonUtil.objectMapper().readValue(responseBody, Ai21ChatResponse::class.java)
-                    return JsonUtil.toJson(
-                        ModelSchema.ChatResponse(
-                            choices = fromJson.completions?.mapIndexed { index, completion ->
-                                ModelSchema.ChatChoice(
-                                    message = ModelSchema.ChatMessageResponse(
-                                        content = completion.data?.text ?: "",
-                                    ), index = index
-                                )
-                            } ?: emptyList(),
-                        ))
-                }
-
-                model.contains("anthropic") -> {
-                    val fromJson = try {
-                        JsonUtil.fromJson<AwsResponseAnthropic>(responseBody, AwsResponseAnthropic::class.java)
-                    } catch (e: Exception) {
-                        throw RuntimeException("Failed to parse Anthropic response", e)
-                    }
-                    JsonUtil.toJson(
-                        ModelSchema.ChatResponse(
-                            choices = listOf(
-                                ModelSchema.ChatChoice(
-                                    message = ModelSchema.ChatMessageResponse(
-                                        content = fromJson.content?.firstOrNull()?.text ?: "",
-                                    ), index = 0
-                                )
-                            ), usage = ModelSchema.Usage(
-                                prompt_tokens = fromJson.usage?.input_tokens?.toLong() ?: 0,
-                                completion_tokens = fromJson.usage?.output_tokens?.toLong() ?: 0,
-                                total_tokens = (fromJson.usage?.input_tokens?.toLong()
-                                    ?: 0) + (fromJson.usage?.output_tokens?.toLong() ?: 0)
-                            )
-                        )
-                    )
-                }
-
-                else -> throw IllegalArgumentException("Unsupported AWS model: $model")
-            }
-        }
-
-        data class AwsResponseAnthropic(
-            val id: String? = null,
-            val type: String? = null,
-            val role: String? = null,
-            val content: List<AwsResponseAnthropicContent>? = null,
-            val model: String? = null,
-            val stop_reason: String? = null,
-            val stop_sequence: String? = null,
-            val usage: AwsResponseAnthropicUsage? = null
-        )
-
-        data class AwsResponseAnthropicContent(
-            val type: String? = null, val text: String? = null
-        )
-
-        data class AwsResponseAnthropicUsage(
-            val input_tokens: Int? = null, val output_tokens: Int? = null
-        )
-
-        data class Ai21ChatResponse(
-            val id: Int? = null, val prompt: Ai21Prompt? = null, val completions: List<Ai21Completion>? = null
-        )
-
-        data class Ai21Completion(
-            val data: Ai21Data? = null, val finishReason: Ai21FinishReason? = null
-        )
-
-        data class Ai21FinishReason(
-            val reason: String? = null
-        )
-
-        data class Ai21Data(
-            val text: String? = null, val tokens: List<Ai21Token>? = null
-        )
-
-        data class Ai21Prompt(
-            val text: String? = null, val tokens: List<Ai21Token>? = null
-        )
-
-        data class Ai21Token(
-            val generatedToken: Ai21GeneratedToken? = null,
-            val topTokens: List<Ai21TopToken>? = null,
-            val textRange: Ai21TextRange? = null
-        )
-
-        data class Ai21GeneratedToken(
-            val token: String? = null, val logprob: Double? = null, val raw_logprob: Double? = null
-        )
-
-        data class Ai21TopToken(
-            val token: String? = null, val logprob: Double? = null, val raw_logprob: Double? = null
-        )
-
-        data class Ai21TextRange(
-            val start: Int? = null, val end: Int? = null
-        )
-
-        data class AwsResponseCohere(
-            val generations: List<AwsResponseCohereGeneration>?
-        )
-
-        data class AwsResponseCohereGeneration(
-            val text: String? = null
-        )
-
-        data class AwsResponseMistral(
-            val outputs: List<AwsResponseMistralOutput>?
-        )
-
-        data class AwsResponseMistralOutput(
-            val text: String? = null, val stop_reason: String? = null
-        )
-
-        data class AwsResponseTitan(
-            val inputTextTokenCount: Int? = null, val results: List<AwsResponseTitanResult>?
-        )
-
-        data class AwsResponseTitanResult(
-            val tokenCount: Int? = null, val outputText: String? = null, val completionReason: String? = null
-        )
-
-        data class AwsResponseLlama2(
-            val generation: String? = null,
-            val prompt_token_count: Int? = null,
-            val generation_token_count: Int? = null,
-            val stop_reason: String? = null
         )
 
     }

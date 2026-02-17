@@ -108,7 +108,7 @@ class ConstraintSatisfactionTask(
         orchestrationConfig: OrchestrationConfig
     ) {
 
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
       try {
         // Validate configuration before execution
         executionConfig?.validate()?.let { error ->
@@ -272,19 +272,7 @@ class ConstraintSatisfactionTask(
   private fun handleError(e: Exception, task: SessionTask, transcript: FileOutputStream?, resultFn: (String) -> Unit) {
     log.error("Error in Constraint Satisfaction Task: ${e.message}", e)
     task.error(e)
-    transcript?.write(
-      """
-            |
-            |## ❌ Error
-            |<details>
-            |<summary>Stack Trace</summary>
-            |
-            |```
-            |${e.stackTraceToString()}
-            |```
-            |</details>
-        """.trimMargin().toByteArray()
-    )
+    transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
     resultFn("ERROR: Failed to generate constraint satisfaction solution - ${e.message}")
     }
 

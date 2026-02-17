@@ -25,19 +25,19 @@ import java.util.concurrent.Executors
 @JsonSerialize(using = ChatModelsSerializer::class)
 open class ChatModel(
     val name: String = "",
-    modelName: String = name,
+    modelId: String = name,
     maxTotalTokens: Int = -1,
     maxOutTokens: Int = maxTotalTokens,
     provider: APIProvider? = null,
     val inputTokenPricePerK: Double = 0.0,
     val outputTokenPricePerK: Double = inputTokenPricePerK,
 ) : LLMModel(
-    modelName = modelName,
+    modelId = modelId,
     maxTotalTokens = maxTotalTokens,
     maxOutTokens = maxOutTokens,
     provider = provider,
 ) {
-    override fun toString() = modelName
+    override fun toString() = modelId
 
     override fun pricing(usage: Usage): Double {
         val promptCost = usage.prompt_tokens * inputTokenPricePerK
@@ -93,7 +93,7 @@ class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {
     override fun serialize(value: ChatModel, gen: JsonGenerator, provider: SerializerProvider) {
         gen.writeStartObject()
         gen.writeStringField("name", value.name)
-        gen.writeStringField("modelName", value.modelName)
+        gen.writeStringField("modelName", value.modelId)
         gen.writeNumberField("maxTotalTokens", value.maxTotalTokens)
         gen.writeNumberField("maxOutTokens", value.maxOutTokens)
         value.provider?.let { gen.writeStringField("provider", it.name) }
@@ -120,7 +120,7 @@ class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
 
                 return ChatModel(
                     name = name,
-                    modelName = modelName,
+                    modelId = modelName,
                     maxTotalTokens = maxTotalTokens,
                     maxOutTokens = maxOutTokens,
                     provider = provider,

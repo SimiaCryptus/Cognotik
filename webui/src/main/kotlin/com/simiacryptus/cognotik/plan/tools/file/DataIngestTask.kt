@@ -98,7 +98,7 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
         val ui = task.ui
         val tabs = TabbedDisplay(task)
         val logTask = task.newTask()
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
         tabs["Log"] = logTask.placeholder
 
         fun log(msg: String) {
@@ -360,18 +360,7 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
             } catch (e: Exception) {
                 task.error(e)
                 log.error("DataIngestTask failed: ${e.message}", e)
-                transcript?.write(
-                    """
-                    ## Error
-                    <details>
-                    <summary>Stack Trace</summary>
-                    
-                    ```
-                    ${e.stackTraceToString()}
-                    ```
-                    </details>
-                """.trimIndent().toByteArray()
-                )
+                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                 resultFn("Error during data ingestion: ${e.message}")
             } finally {
                 transcript?.close()

@@ -106,12 +106,11 @@ class PersuasiveEssayAction : BaseAction() {
         root: File
     ) {
         val app = object : SingleTaskApp(
-            applicationName = "Persuasive Essay Task",
             path = "/persuasiveEssayTask",
-            showMenubar = false,
+            applicationName = "Persuasive Essay Task",
             taskType = PersuasiveEssayTask.PersuasiveEssay,
-            taskConfig = listOf(taskConfig),
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
+            message = "Execute task"
         ) {
             override fun instance(model: ApiChatModel) =
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")
@@ -203,10 +202,10 @@ class PersuasiveEssayAction : BaseAction() {
         private val visibleModelsCache by lazy { getVisibleModels() }
 
         private val modelCombo = ComboBox(
-            visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()
+            visibleModelsCache.distinctBy { it.modelId }.map { it.modelId }.toTypedArray()
         ).apply {
             maximumSize = Dimension(200, 30)
-            selectedItem = AppSettingsState.instance.smartModel?.model?.modelName
+            selectedItem = AppSettingsState.instance.smartModel?.model?.modelId
             toolTipText = "AI model to use for generating the essay"
         }
 
@@ -370,7 +369,7 @@ class PersuasiveEssayAction : BaseAction() {
         fun getOrchestrationConfig(): OrchestrationConfig {
             val selectedModel = modelCombo.selectedItem as? String
             val model = selectedModel?.let { modelName ->
-                visibleModelsCache.find { it.modelName == modelName }?.toApiChatModel()
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel()
             }
 
             return OrchestrationConfig(
@@ -392,10 +391,10 @@ class PersuasiveEssayAction : BaseAction() {
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
                     model.provider == apiData.provider &&
-                            model.modelName?.isNotBlank() == true &&
+                            model.modelId?.isNotBlank() == true &&
                             PlanConfigDialog.isVisible(model)
                 } ?: listOf()
-            }.distinctBy { it.modelName }.sortedBy { "${it.provider?.name} - ${it.modelName}" }
+            }.distinctBy { it.modelId }.sortedBy { "${it.provider?.name} - ${it.modelId}" }
     }
 
 }

@@ -52,13 +52,13 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
 
     override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ModelSchema.Usage) {
         try {
-            log.debug("Incrementing usage for session: {}, user: {}, model: {}", session, user.email, model.modelName)
+            log.debug("Incrementing usage for session: {}, user: {}, model: {}", session, user.email, model.modelId)
             val usageKey = UsageInterface.UsageKey(session, user, model)
             val usageValues = UsageInterface.UsageValues()
 
             usageValues.addAndGet(tokens)
             saveUsageValues(usageKey, usageValues)
-            log.debug("Usage incremented for session: {}, user: {}, model: {}", session, user.email, model.modelName)
+            log.debug("Usage incremented for session: {}, user: {}, model: {}", session, user.email, model.modelId)
         } catch (e: Exception) {
             log.error("Error incrementing usage", e)
         }
@@ -104,7 +104,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
             "Saving usage values for session: {}, user: {}, model: {}",
             usageKey.session,
             usageKey.user?.email,
-            usageKey.model.modelName
+            usageKey.model.modelId
         )
         val statement = connection.prepareStatement(
             """
@@ -114,7 +114,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
         )
         statement.setString(1, usageKey.session.sessionId)
         statement.setString(2, usageKey.user?.email ?: "")
-        statement.setString(3, usageKey.model.modelName)
+        statement.setString(3, usageKey.model.modelId)
         statement.setLong(4, usageValues.inputTokens.get())
         statement.setLong(5, usageValues.outputTokens.get())
         statement.setDouble(6, usageValues.cost.get())
@@ -124,7 +124,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
             "With parameters: {}, {}, {}, {}, {}, {}",
             usageKey.session,
             usageKey.user?.email,
-            usageKey.model.modelName,
+            usageKey.model.modelId,
             usageValues.inputTokens.get(),
             usageValues.outputTokens.get(),
             usageValues.cost.get()

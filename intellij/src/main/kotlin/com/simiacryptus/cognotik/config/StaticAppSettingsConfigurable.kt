@@ -23,7 +23,6 @@ import java.io.FileWriter
 import javax.swing.*
 import javax.swing.filechooser.FileNameExtensionFilter
 import javax.swing.table.DefaultTableModel
-import javax.swing.table.DefaultTableCellRenderer
 
 class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     override fun apply() {
@@ -423,10 +422,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.listeningEndpoint.text = settings.listeningEndpoint
             component.suppressErrors.isSelected = settings.suppressErrors
             component.disableAutoOpenUrls.isSelected = settings.disableAutoOpenUrls
-            settings.fastModel?.model?.let { component.fastModel.selectedItem = it.modelName }
-            settings.smartModel?.model?.let { component.smartModel.selectedItem = it.modelName }
-            settings.imageChatModel?.model?.let { component.imageChatModel.selectedItem = it.modelName }
-            settings.imageModel?.model?.let { component.mainImageModel.selectedItem = it.modelName }
+            settings.fastModel?.model?.let { component.fastModel.selectedItem = it.modelId }
+            settings.smartModel?.model?.let { component.smartModel.selectedItem = it.modelId }
+            settings.imageChatModel?.model?.let { component.imageChatModel.selectedItem = it.modelId }
+            settings.imageModel?.model?.let { component.mainImageModel.selectedItem = it.modelId }
             component.devActions.isSelected = settings.devActions
             component.temperature.text = settings.temperature.toString()
             component.embeddingModel.selectedItem = settings.embeddingModel
@@ -468,23 +467,23 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             val imageModelName = component.mainImageModel.selectedItem as String?
             log.debug("Selected models - fast: $fastModelName, smart: $smartModelName, imageChat: $imageChatModelName")
 
-            val chatModels = userSettings.apis.flatMap { apiData ->
+            val chatModels = userSettings.apis.filter { it.key?.decrypt != null }.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl) ?: emptyList()
             }
             val imageModels = userSettings.apis.flatMap { apiData ->
                 apiData.provider?.getImageModels(apiData.key!!, apiData.baseUrl) ?: emptyList()
             }
             val fastChatModel =
-                chatModels.find { model -> model.modelName == fastModelName || model.name == fastModelName }
+                chatModels.find { model -> model.modelId == fastModelName || model.name == fastModelName }
             val fastApiData = userSettings.apis.find { it.provider == fastChatModel?.provider }
             val smartChatModel =
-                chatModels.find { model -> model.modelName == smartModelName || model.name == smartModelName }
+                chatModels.find { model -> model.modelId == smartModelName || model.name == smartModelName }
             val smartApiData = userSettings.apis.find { it.provider == smartChatModel?.provider }
             val imageChatModel =
-                chatModels.find { model -> model.modelName == imageChatModelName || model.name == imageChatModelName }
+                chatModels.find { model -> model.modelId == imageChatModelName || model.name == imageChatModelName }
             val imageChatApiData = userSettings.apis.find { it.provider == imageChatModel?.provider }
             val imageModel =
-                imageModels.find { model -> model.modelName == imageModelName || model.name == imageModelName }
+                imageModels.find { model -> model.modelId == imageModelName || model.name == imageModelName }
             val imageApiData = userSettings.apis.find { it.provider == imageModel?.provider }
 
             settings.fastModel = ApiChatModel(fastChatModel, fastApiData)

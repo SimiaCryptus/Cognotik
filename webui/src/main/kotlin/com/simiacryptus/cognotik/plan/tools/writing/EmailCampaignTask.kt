@@ -250,7 +250,7 @@ EmailCampaign - Generate multi-email marketing or outreach sequences.
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
 
 
@@ -999,7 +999,7 @@ Provide the complete revised email body only.
                 } catch (e: Exception) {
                     log.error("Error during email campaign generation: ${e.message}", e)
                     task.error(e)
-                    transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                    transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                     resultFn("Error during email campaign generation: ${e.message}")
                 }
             }

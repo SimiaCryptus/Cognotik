@@ -131,13 +131,13 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
             val providers = pairs
                 .filter { userSettings.isVisible(it) }
-                .sortedBy { "${it.second.provider?.name} - ${it.second.modelName}" }
+                .sortedBy { "${it.second.provider?.name} - ${it.second.name}" }
                 .groupBy { it.second.provider }
 
             for ((provider, models) in providers) {
                 val providerNode = DefaultMutableTreeNode(provider?.name)
                 for (model in models) {
-                    val modelNode = DefaultMutableTreeNode(model.second.modelName)
+                    val modelNode = DefaultMutableTreeNode(model.second.name)
                     providerNode.add(modelNode)
                 }
 
@@ -173,10 +173,10 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     val apis = userSettings.apis
                     val apiData = apis.find { apiData ->
                         apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
-                            ?.find { modelName == it.modelName } != null
+                            ?.find { modelName == it.name } != null
                     }
                     val chatModel = apiData?.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
-                        ?.find { it.modelName == modelName }
+                        ?.find { it.name == modelName }
                     when (title) {
                         "Smart Model" -> AppSettingsState.instance.smartModel =
                             ApiChatModel(chatModel, apiData)
@@ -193,7 +193,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
             if (selectedModel?.model != null) {
                 SwingUtilities.invokeLater {
-                    setSelectedModel(tree, selectedModel.model!!.modelName ?: "")
+                    setSelectedModel(tree, selectedModel.model!!.name ?: "")
                 }
             }
             return tree
@@ -398,13 +398,13 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     recreateModelTrees()
                     SwingUtilities.invokeLater {
                         AppSettingsState.instance.smartModel?.model.let { model ->
-                            setSelectedModel(getSmartModelTree(), model?.modelName ?: "")
+                            setSelectedModel(getSmartModelTree(), model?.name ?: "")
                         }
                         AppSettingsState.instance.fastModel?.model.let { model ->
-                            setSelectedModel(getFastModelTree(), model?.modelName ?: "")
+                            setSelectedModel(getFastModelTree(), model?.name ?: "")
                         }
                         AppSettingsState.instance.imageChatModel?.model.let { model ->
-                            setSelectedModel(getImageChatModelTree(), model?.modelName ?: "")
+                            setSelectedModel(getImageChatModelTree(), model?.name ?: "")
                         }
                     }
                 }.start()
@@ -412,17 +412,17 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             Thread {
                 AppSettingsState.instance.smartModel?.model.let { model ->
                     SwingUtilities.invokeLater {
-                        setSelectedModel(getSmartModelTree(), model?.modelName ?: "")
+                        setSelectedModel(getSmartModelTree(), model?.name ?: "")
                     }
                 }
                 AppSettingsState.instance.fastModel?.model.let { model ->
                     SwingUtilities.invokeLater {
-                        setSelectedModel(getFastModelTree(), model?.modelName ?: "")
+                        setSelectedModel(getFastModelTree(), model?.name ?: "")
                     }
                 }
                 AppSettingsState.instance.imageChatModel?.model.let { model ->
                     SwingUtilities.invokeLater {
-                        setSelectedModel(getImageChatModelTree(), model?.modelName ?: "")
+                        setSelectedModel(getImageChatModelTree(), model?.name ?: "")
                     }
                 }
             }.start()
@@ -530,13 +530,13 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         override fun getSelectedValue(): String {
-            return AppSettingsState.instance.smartModel?.model?.modelName ?: "Uninitialized"
+            return AppSettingsState.instance.smartModel?.model?.name ?: "Uninitialized"
         }
 
         override fun getTooltipText() = """
-    Smart Model: ${AppSettingsState.instance.smartModel?.model?.modelName ?: "Not configured"}<br/>
-    Fast Model: ${AppSettingsState.instance.fastModel?.model?.modelName ?: "Not configured"}<br/>
-    Image Chat Model: ${AppSettingsState.instance.imageChatModel?.model?.modelName ?: "Not configured"}<br/>
+    Smart Model: ${AppSettingsState.instance.smartModel?.model?.name ?: "Not configured"}<br/>
+    Fast Model: ${AppSettingsState.instance.fastModel?.model?.name ?: "Not configured"}<br/>
+    Image Chat Model: ${AppSettingsState.instance.imageChatModel?.model?.name ?: "Not configured"}<br/>
     Patch Processor: ${AppSettingsState.instance.processor.label}<br/>
     Temperature: ${AppSettingsState.instance.temperature}<br/>
     ${
@@ -559,7 +559,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             fun UserSettings.isVisible(
                 model: Pair<String, ChatModel>
             ): Boolean = apis.any { api ->
-                api.provider?.name == model.second.provider?.name && api.key != null
+                api.provider?.name == model.second.provider?.name && api.key?.decrypt != null
             }
         }
 

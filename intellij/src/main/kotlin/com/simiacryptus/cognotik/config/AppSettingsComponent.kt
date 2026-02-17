@@ -556,7 +556,7 @@ class AppSettingsComponent : Disposable {
             // Get all available models from APIs with valid keys
             val availableChatModels = try {
                 apis.filter { api ->
-                    api.key != null
+                    api.key?.decrypt != null
                 }.flatMap { api ->
                     try {
                         api.provider?.getChatModels(api.key!!, api.baseUrl)?.filter { model ->
@@ -572,9 +572,9 @@ class AppSettingsComponent : Disposable {
                 emptyMap()
             }
             availableChatModels.forEach {
-                this.smartModel.addItem(it.value.modelName)
-                this.fastModel.addItem(it.value.modelName)
-                this.imageChatModel.addItem(it.value.modelName)
+                this.smartModel.addItem(it.value.modelId)
+                this.fastModel.addItem(it.value.modelId)
+                this.imageChatModel.addItem(it.value.modelId)
             }
         } catch (e: Exception) {
             log.error("Error loading models: ${e.message}", e)
@@ -582,14 +582,14 @@ class AppSettingsComponent : Disposable {
         try {
             val availableImageModels = try {
                 apis.filter { api ->
-                    api.key != null
+                    api.key?.decrypt != null
                 }.flatMap { api ->
                     try {
                         val imageModels: List<ImageModel>? =
                             api.provider?.getImageModels(api.key!!, api.baseUrl)
                         imageModels?.filter { model ->
                             isVisible(model)
-                        }?.map { it.modelName to it } ?: emptyList()
+                        }?.map { it.modelId to it } ?: emptyList()
                     } catch (e: Exception) {
                         log.warn("Failed to get chat models for provider ${api.provider?.name}: ${e.message}")
                         emptyList()
@@ -600,7 +600,7 @@ class AppSettingsComponent : Disposable {
                 emptyMap()
             }
             availableImageModels.forEach {
-                this.mainImageModel.addItem(it.value.modelName)
+                this.mainImageModel.addItem(it.value.modelId)
             }
         } catch (e: Exception) {
             log.error("Error loading models: ${e.message}", e)
@@ -608,14 +608,14 @@ class AppSettingsComponent : Disposable {
         try {
             val availableEmbeddingModels = try {
                 apis.filter { api ->
-                    api.key != null
+                    api.key?.decrypt != null
                 }.flatMap { api ->
                     try {
                         val embeddingModels: List<EmbeddingModel>? =
                             api.provider?.getEmbeddingModels(api.key!!, api.baseUrl)
                         embeddingModels?.filter { model ->
                             isVisible(model)
-                        }?.map { it.modelName to it } ?: emptyList()
+                        }?.map { it.modelId to it } ?: emptyList()
                     } catch (e: Exception) {
                         log.warn("Failed to get chat models for provider ${api.provider?.name}: ${e.message}")
                         emptyList()
@@ -626,7 +626,7 @@ class AppSettingsComponent : Disposable {
                 emptyMap()
             }
             availableEmbeddingModels.forEach {
-                this.embeddingModel.addItem(it.value.modelName)
+                this.embeddingModel.addItem(it.value.modelId)
             }
         } catch (e: Exception) {
             log.error("Error loading models: ${e.message}", e)
@@ -641,8 +641,8 @@ class AppSettingsComponent : Disposable {
 
 
         val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }.filter { modelItem ->
-            val chatModel = apis.filter { it.key != null }.firstNotNullOfOrNull { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem }
+            val chatModel = apis.filter { it.key?.decrypt != null }.firstNotNullOfOrNull { apiData ->
+                apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelId == modelItem }
             }
             if (chatModel == null) {
                 false
@@ -652,20 +652,20 @@ class AppSettingsComponent : Disposable {
             }
         }.filterNotNull().sortedBy { modelItem ->
             val model =
-                apis.filter { it.key != null }
+                apis.filter { it.key?.decrypt != null }
                     .find { apiData ->
                         apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
-                            ?.any { it.modelName == modelItem } == true
+                            ?.any { it.modelId == modelItem } == true
                     }
                     ?.let { apiData ->
                         apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
-                            ?.find { it.modelName == modelItem }
+                            ?.find { it.modelId == modelItem }
                     }!!
-            "${model.provider?.name} - ${model.modelName}"
+            "${model.provider?.name} - ${model.modelId}"
         }.toList()
         val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }.filter { modelItem ->
-            val chatModel = apis.filter { it.key != null }.firstNotNullOfOrNull { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem }
+            val chatModel = apis.filter { it.key?.decrypt != null }.firstNotNullOfOrNull { apiData ->
+                apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelId == modelItem }
             }
             if (chatModel == null) {
                 false
@@ -676,21 +676,21 @@ class AppSettingsComponent : Disposable {
         }.filterNotNull().sortedBy { modelItem ->
             val model =
                 //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
-                apis.filter { it.key != null }
+                apis.filter { it.key?.decrypt != null }
                     .find { apiData ->
                         apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
-                            ?.any { it.modelName == modelItem } == true
+                            ?.any { it.modelId == modelItem } == true
                     }
                     ?.let { apiData ->
                         apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
-                            ?.find { it.modelName == modelItem }
+                            ?.find { it.modelId == modelItem }
                     }
-            "${model?.provider?.name} - ${model?.modelName}"
+            "${model?.provider?.name} - ${model?.modelId}"
         }.toList()
         val imageChatModelItems =
             (0 until imageChatModel.itemCount).map { imageChatModel.getItemAt(it) }.filter { modelItem ->
-                val chatModel = apis.filter { it.key != null }.firstNotNullOfOrNull { apiData ->
-                    apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem }
+                val chatModel = apis.filter { it.key?.decrypt != null }.firstNotNullOfOrNull { apiData ->
+                    apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelId == modelItem }
                 }
                 if (chatModel == null) {
                     false
@@ -700,16 +700,16 @@ class AppSettingsComponent : Disposable {
                 }
             }.filterNotNull().sortedBy { modelItem ->
                 val model =
-                    apis.filter { it.key != null }
+                    apis.filter { it.key?.decrypt != null }
                         .find { apiData ->
                             apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
-                                ?.any { it.modelName == modelItem } == true
+                                ?.any { it.modelId == modelItem } == true
                         }
                         ?.let { apiData ->
                             apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
-                                ?.find { it.modelName == modelItem }
+                                ?.find { it.modelId == modelItem }
                         }
-                "${model?.provider?.name} - ${model?.modelName}"
+                "${model?.provider?.name} - ${model?.modelId}"
             }.toList()
         smartModel.removeAllItems()
         fastModel.removeAllItems()
@@ -731,13 +731,13 @@ class AppSettingsComponent : Disposable {
         this.patchProcessor.renderer = getPatchProcessorRenderer()
         // Set current selections
         AppSettingsState.instance.smartModel?.model?.let { model ->
-            this.smartModel.selectedItem = model.modelName
+            this.smartModel.selectedItem = model.modelId
         }
         AppSettingsState.instance.fastModel?.model?.let { model ->
-            this.fastModel.selectedItem = model.modelName
+            this.fastModel.selectedItem = model.modelId
         }
         AppSettingsState.instance.imageChatModel?.model?.let { model ->
-            this.imageChatModel.selectedItem = model.modelName
+            this.imageChatModel.selectedItem = model.modelId
         }
         AppSettingsState.instance.embeddingModel?.let { model ->
             this.embeddingModel.selectedItem = model
@@ -805,13 +805,13 @@ class AppSettingsComponent : Disposable {
                 val fileApplicationServices = fileApplicationServices(AppSettingsState.Companion.pluginHome)
                 val userSettings = fileApplicationServices.userSettingsManager.getUserSettings()
                 val model = userSettings.apis
-                    .filter { it.key != null }
+                    .filter { it.key?.decrypt != null }
                     .find { apiData ->
                         apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
-                            ?.any { it.modelName == value } == true
+                            ?.any { it.modelId == value } == true
                     }
                     ?.let { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == value }
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelId == value }
                     }
                 text = "${model?.provider?.name} - $value"
             }

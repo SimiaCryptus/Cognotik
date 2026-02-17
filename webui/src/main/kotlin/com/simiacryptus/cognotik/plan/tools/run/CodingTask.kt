@@ -63,16 +63,7 @@ open class CodingTask<T : CodeRuntime>(
                     innerTask.error(e)
                   val transcript = innerTask.transcript()
                   try {
-                    transcript?.write(
-                      """
-                            # Error
-                            <details><summary>Stack Trace</summary>
-                            ```text
-                            ${e.stackTraceToString()}
-                            ```
-                            </details>
-                        """.trimIndent().toByteArray()
-                    )
+                    transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                   } finally {
                     transcript?.close()
                   }
@@ -93,16 +84,7 @@ open class CodingTask<T : CodeRuntime>(
                     subTask.error(e)
                   val transcript = subTask.transcript()
                   try {
-                    transcript?.write(
-                      """
-                            # Error
-                            <details><summary>Stack Trace</summary>
-                            ```text
-                            ${e.stackTraceToString()}
-                            ```
-                            </details>
-                        """.trimIndent().toByteArray()
-                    )
+                    transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
                   } finally {
                     transcript?.close()
                   }
@@ -159,17 +141,7 @@ open class CodingTask<T : CodeRuntime>(
           task.error(e)
           val transcript = task.transcript()
           try {
-            transcript?.write(
-              """
-                    # Error in displayCode
-                    <details><summary>Stack Trace</summary>
-                    
-                    ```text
-                    ${e.stackTraceToString()}
-                    ```
-                    </details>
-                """.trimIndent().toByteArray()
-            )
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           } finally {
             transcript?.close()
           }
@@ -211,17 +183,7 @@ open class CodingTask<T : CodeRuntime>(
             task.error(e)
           val transcript = task.transcript()
           try {
-            transcript?.write(
-              """
-                    # Error in displayCodeAndFeedback
-                    <details><summary>Stack Trace</summary>
-                    
-                    ```text
-                    ${e.stackTraceToString()}
-                    ```
-                    </details>
-                """.trimIndent().toByteArray()
-            )
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           } finally {
             transcript?.close()
           }
@@ -317,16 +279,7 @@ open class CodingTask<T : CodeRuntime>(
           task.error(e)
           val transcript = task.transcript()
           try {
-            transcript?.write(
-              """
-                    # Execution Error
-                    <details><summary>Stack Trace</summary>
-                    ```text
-                    ${e.stackTraceToString()}
-                    ```
-                    </details>
-                """.trimIndent().toByteArray()
-            )
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
           } finally {
             transcript?.close()
           }

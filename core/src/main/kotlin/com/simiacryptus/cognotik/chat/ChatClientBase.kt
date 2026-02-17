@@ -41,7 +41,7 @@ abstract class SingleProviderChatClient(
         client.execute(HttpGet(url).let {
             provider.authorize(
                 request = it,
-                key = apiKey.decrypt,
+                key = apiKey.decrypt!!,
                 apiBase = apiBase
             )
             it

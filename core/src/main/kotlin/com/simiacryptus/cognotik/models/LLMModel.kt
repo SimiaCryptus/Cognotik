@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.models.ModelSchema.Usage
 @JsonDeserialize(using = LLMModelDeserializer::class)
 @JsonSerialize(using = LLMModelSerializer::class)
 open class LLMModel(
-    override val modelName: String,
+    override val modelId: String,
     override val provider: APIProvider?,
     val maxTotalTokens: Int = -1,
     val maxOutTokens: Int = maxTotalTokens,
@@ -26,7 +26,7 @@ class LLMModelSerializer : com.fasterxml.jackson.databind.ser.std.StdSerializer<
         ((listOf(
             ChatModel.values(),
             EmbeddingModel.values(),
-        ).flatMap { it.entries }.find { it.value == value }?.key) ?: value.modelName)
+        ).flatMap { it.entries }.find { it.value == value }?.key) ?: value.modelId)
             .let { gen.writeString(it) }
     }
 }

@@ -8,11 +8,14 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
+import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -336,17 +339,16 @@ abstract class PatchApp(
             log.info("Parsed ${parsedErrors.errors?.size ?: 0} errors from output")
             lastParsedErrors = parsedErrors
             val progressHeader = fixTask.header("Processing tasks...", 3)
-            fixTask.add(
-                AgentPatterns.displayMapInTabs(
-                    mapOf(
-                      "Text" to plan.text.renderMarkdown(true),
-                      "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(parsedErrors)}\n$tripleTilde".renderMarkdown(true),
-                      "Process Details" to "Exit Code: ${outputResult.exitCode}\nCommand Output:\n$tripleTilde\n${outputResult.output}\n$tripleTilde".renderMarkdown(
-                        true
-                      )
-                    ).filter { it.value.isNotBlank() },
-                )
+          val map = mapOf(
+            "Text" to plan.text.renderMarkdown(true),
+            "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(parsedErrors)}\n$tripleTilde".renderMarkdown(true),
+            "Process Details" to "Exit Code: ${outputResult.exitCode}\nCommand Output:\n$tripleTilde\n${outputResult.output}\n$tripleTilde".renderMarkdown(
+              true
             )
+          ).filter { it.value.isNotBlank() }
+          fixTask.add(
+            TabbedDisplay.displayMapInTabs(map)
+          )
             previousParsedErrorsRecords.add(ParsedErrorRecord(parsedErrors, iteration = iteration))
             log.info("Starting to fix all errors")
             fixAllErrors(
@@ -616,10 +618,13 @@ abstract class PatchApp(
             )
         }
 
-        val markdown = AddApplyFileDiffLinks(
-          processor = processor
+        val markdown = DiffInstrumentor(
+            processor,
+            SocketManagerUIRenderer(
+                socketManager = task.ui,
+                sessionId = task.ui.sessionId
+            ), RealFileSystem()
         ).instrument(
-          socketManager = task.ui,
           root = root.toPath(),
           response = fixResponse,
           shouldAutoApply = { path: Path ->
@@ -631,7 +636,7 @@ abstract class PatchApp(
               false
             }
           },
-          model = model
+            resolver = ::resolveToRelativePath,
         )
         log.info("Instrumented file diffs with apply links")
         task.verbose(

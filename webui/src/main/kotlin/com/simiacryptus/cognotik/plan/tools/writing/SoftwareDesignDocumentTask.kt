@@ -2,23 +2,16 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.AbstractTask
-import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
-import com.simiacryptus.cognotik.plan.tools.TaskType
-import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.tools.*
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.nio.file.FileSystems
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 class SoftwareDesignDocumentTask(
   orchestrationConfig: OrchestrationConfig,
@@ -27,8 +20,6 @@ class SoftwareDesignDocumentTask(
   orchestrationConfig,
   planTask
 ) {
-
-  val maxDescriptionLength = 2000
 
   class SoftwareDesignDocumentTaskExecutionConfigData(
     @Description("The name/title of the software project")
@@ -81,100 +72,152 @@ class SoftwareDesignDocumentTask(
 
   // Data classes for project planning JSON output
   data class ProjectData(
-    val project_name: String = "",
-    val description: String = "",
-    val created_date: String = "",
-    val epics: List<Epic> = emptyList(),
-    val releases: List<Release> = emptyList(),
-    val sprints: List<Sprint> = emptyList(),
-    val tasks: List<Task> = emptyList(),
-    val milestones: List<Milestone> = emptyList(),
-    val dependencies: List<Dependency> = emptyList()
+    @Description("The name of the project")
+    var project_name: String = "",
+    @Description("High-level description of the project")
+    var description: String = "",
+    @Description("ISO date-time when the project data was created")
+    var created_date: String = "",
+    @Description("List of epics in the project")
+    var epics: List<Epic> = emptyList(),
+    @Description("List of planned releases")
+    var releases: List<Release> = emptyList(),
+    @Description("List of sprints in the project")
+    var sprints: List<Sprint> = emptyList(),
+    @Description("List of tasks in the project")
+    var tasks: List<Task> = emptyList(),
+    @Description("List of project milestones")
+    var milestones: List<Milestone> = emptyList(),
+    @Description("List of dependencies between project items")
+    var dependencies: List<Dependency> = emptyList()
   )
 
   data class Epic(
-    val id: String = "",
-    val name: String = "",
-    val description: String = "",
-    val priority: String = "Medium",
-    val status: String = "Planned",
-    val story_points: Int? = null
+    @Description("Unique identifier for the epic (e.g., EPIC-001)")
+    var id: String = "",
+    @Description("Name of the epic")
+    var name: String = "",
+    @Description("Description of the epic's scope and goals")
+    var description: String = "",
+    @Description("Priority level: Critical, High, Medium, or Low")
+    var priority: String = "Medium",
+    @Description("Current status: Planned, In Progress, or Done")
+    var status: String = "Planned",
+    @Description("Estimated story points for the epic")
+    var story_points: Int? = null
   )
 
   data class Release(
-    val id: String = "",
-    val name: String = "",
-    val version: String = "",
-    val target_date: String = "",
-    val description: String = "",
-    val epic_ids: List<String> = emptyList(),
-    val status: String = "Planned"
+    @Description("Unique identifier for the release (e.g., REL-001)")
+    var id: String = "",
+    @Description("Name of the release")
+    var name: String = "",
+    @Description("Semantic version number (e.g., 1.0.0)")
+    var version: String = "",
+    @Description("Target release date in ISO format")
+    var target_date: String = "",
+    @Description("Description of the release scope")
+    var description: String = "",
+    @Description("List of epic IDs included in this release")
+    var epic_ids: List<String> = emptyList(),
+    @Description("Current status: Planned, In Progress, or Released")
+    var status: String = "Planned"
   )
 
   data class Sprint(
-    val id: String = "",
-    val name: String = "",
-    val number: Int = 0,
-    val start_date: String = "",
-    val end_date: String = "",
-    val goals: List<String> = emptyList(),
-    val capacity_points: Int = 0,
-    val task_ids: List<String> = emptyList(),
-    val status: String = "Planned"
+    @Description("Unique identifier for the sprint (e.g., SPRINT-1)")
+    var id: String = "",
+    @Description("Name of the sprint")
+    var name: String = "",
+    @Description("Sprint number in sequence")
+    var number: Int = 0,
+    @Description("Sprint start date in ISO format")
+    var start_date: String = "",
+    @Description("Sprint end date in ISO format")
+    var end_date: String = "",
+    @Description("List of sprint goals")
+    var goals: List<String> = emptyList(),
+    @Description("Total capacity in story points")
+    var capacity_points: Int = 0,
+    @Description("List of task IDs assigned to this sprint")
+    var task_ids: List<String> = emptyList(),
+    @Description("Current status: Planned, Active, or Completed")
+    var status: String = "Planned"
   )
 
   data class Task(
-    val id: String = "",
-    val title: String = "",
-    val description: String = "",
-    val type: String = "Feature", // "Feature", "Bug", "Chore", "Spike"
-    val epic_id: String? = null,
+    @Description("Unique identifier for the task (e.g., TASK-001)")
+    var id: String = "",
+    @Description("Title of the task")
+    var title: String = "",
+    @Description("Detailed description of the task")
+    var description: String = "",
+    @Description("Type of task: Feature, Bug, Chore, or Spike")
+    var type: String = "Feature",
+    @Description("ID of the parent epic, if any")
+    var epic_id: String? = null,
+    @Description("ID of the sprint this task is assigned to, if any")
     var sprint_id: String? = null,
-    val priority: String = "Medium", // "Low", "Medium", "High", "Critical"
-    val story_points: Int? = null,
-    val status: String = "Backlog",
-    val acceptance_criteria: List<String>? = null,
-    val labels: List<String>? = null
+    @Description("Priority level: Low, Medium, High, or Critical")
+    var priority: String = "Medium",
+    @Description("Estimated story points (1, 2, 3, 5, 8, 13)")
+    var story_points: Int? = null,
+    @Description("Current status: Backlog, To Do, In Progress, Done")
+    var status: String = "Backlog",
+    @Description("List of acceptance criteria for the task")
+    var acceptance_criteria: List<String>? = null,
+    @Description("Labels or tags for categorization")
+    var labels: List<String>? = null
   )
 
   data class Milestone(
-    val id: String = "",
-    val name: String = "",
-    val target_date: String = "",
-    val description: String = "",
-    val deliverables: List<String> = emptyList(),
-    val status: String = "Planned"
+    @Description("Unique identifier for the milestone (e.g., MS-1)")
+    var id: String = "",
+    @Description("Name of the milestone")
+    var name: String = "",
+    @Description("Target date in ISO format")
+    var target_date: String = "",
+    @Description("Description of the milestone")
+    var description: String = "",
+    @Description("List of deliverables expected at this milestone")
+    var deliverables: List<String> = emptyList(),
+    @Description("Current status: Planned, Reached, or Missed")
+    var status: String = "Planned"
   )
 
   data class Dependency(
-    val id: String = "",
-    val source_id: String = "",
-    val source_type: String = "", // "task", "epic", "milestone"
-    val target_id: String = "",
-    val target_type: String = "", // "task", "epic", "milestone"
-    val dependency_type: String = "" // "blocks", "depends_on", "relates_to"
+    @Description("Unique identifier for the dependency (e.g., DEP-1)")
+    var id: String = "",
+    @Description("ID of the source item")
+    var source_id: String = "",
+    @Description("Type of the source item: task, epic, or milestone")
+    var source_type: String = "",
+    @Description("ID of the target item")
+    var target_id: String = "",
+    @Description("Type of the target item: task, epic, or milestone")
+    var target_type: String = "",
+    @Description("Type of dependency: blocks, depends_on, or relates_to")
+    var dependency_type: String = ""
   )
 
-  override fun promptSegment(): String {
-    return """
-SoftwareDesignDocument - Generate comprehensive software design documentation
-  ** Specify the project name and system description
-  ** Generate use case diagrams and actor documentation
-  ** Create functional and non-functional requirements
-  ** Produce architectural diagrams (C4, component, deployment)
-  ** Design data models with ERD diagrams
-  ** Create sequence and activity diagrams for key flows
-  ** Generate test plans and test case documentation
-  ** Plan development phases with milestones
-  ** Output project data JSON with tasks, epics, sprints, releases
-  ** All diagrams use Mermaid syntax for easy rendering
-  ** Useful for:
-     - Project kickoff documentation
-     - Technical specification creation
-     - Sprint and release planning
-     - Stakeholder communication
-     - Development team onboarding
-        """.trimIndent()
+  override fun promptSegment(): String = buildString {
+    appendLine("SoftwareDesignDocument - Generate comprehensive software design documentation")
+    appendLine("  ** Specify the project name and system description")
+    appendLine("  ** Generate use case diagrams and actor documentation")
+    appendLine("  ** Create functional and non-functional requirements")
+    appendLine("  ** Produce architectural diagrams (C4, component, deployment)")
+    appendLine("  ** Design data models with ERD diagrams")
+    appendLine("  ** Create sequence and activity diagrams for key flows")
+    appendLine("  ** Generate test plans and test case documentation")
+    appendLine("  ** Plan development phases with milestones")
+    appendLine("  ** Output project data JSON with tasks, epics, sprints, releases")
+    appendLine("  ** All diagrams use Mermaid syntax for easy rendering")
+    appendLine("  ** Useful for:")
+    appendLine("     - Project kickoff documentation")
+    appendLine("     - Technical specification creation")
+    appendLine("     - Sprint and release planning")
+    appendLine("     - Stakeholder communication")
+    appendLine("     - Development team onboarding")
   }
 
   override fun run(
@@ -185,11 +228,18 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
     orchestrationConfig: OrchestrationConfig
   ) {
 
-    val projectName = executionConfig?.project_name ?: "Unnamed Project"
+    val config = executionConfig ?: run {
+      val errorMsg = "CONFIGURATION ERROR: No execution config provided"
+      log.error(errorMsg)
+      task.safeComplete(errorMsg, log)
+      resultFn(errorMsg)
+      return
+    }
+    val projectName = config.project_name ?: "Unnamed Project"
     log.info("Task 'SoftwareDesignDocument' started for project: $projectName")
     val startTime = System.currentTimeMillis()
 
-    val systemDescription = executionConfig?.system_description
+    val systemDescription = config.system_description
     if (systemDescription.isNullOrBlank()) {
       val errorMsg = "CONFIGURATION ERROR: No system description specified"
       log.error(errorMsg)
@@ -199,12 +249,12 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
     }
 
     val tabs = TabbedDisplay(task)
-    val transcriptStream = task.transcript()
     val overviewTask = tabs.newTask("Overview")
 
     task.ui.pool.submit {
+      val transcript = task.newFileOutputStream(transcriptFile())
       try {
-        val api = defaultSmart.getChildClient(task)
+        val api = orchestrationConfig.defaultSmart.getChildClient(task)
         overviewTask.header("Software Design Document: $projectName")
         val checklist = mutableMapOf<String, String>()
         fun updateChecklist() {
@@ -215,17 +265,17 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
           overviewTask.add(content.renderMarkdown(true))
         }
 
-        if (executionConfig.generate_use_cases) checklist["Use Cases & Actors"] = "⏳"
-        if (executionConfig.generate_requirements) checklist["Requirements Specification"] = "⏳"
-        if (executionConfig.generate_architecture) checklist["Architecture Diagrams"] = "⏳"
-        if (executionConfig.generate_data_model) checklist["Data Model & ERD"] = "⏳"
-        if (executionConfig.generate_flow_diagrams) checklist["Flow Diagrams"] = "⏳"
-        if (executionConfig.generate_test_plan) checklist["Test Plan"] = "⏳"
-        if (executionConfig.generate_phase_plan) checklist["Phase Planning"] = "⏳"
-        if (executionConfig.generate_project_data) checklist["Project Data JSON"] = "⏳"
+        if (config.generate_use_cases) checklist["Use Cases & Actors"] = "⏳"
+        if (config.generate_requirements) checklist["Requirements Specification"] = "⏳"
+        if (config.generate_architecture) checklist["Architecture Diagrams"] = "⏳"
+        if (config.generate_data_model) checklist["Data Model & ERD"] = "⏳"
+        if (config.generate_flow_diagrams) checklist["Flow Diagrams"] = "⏳"
+        if (config.generate_test_plan) checklist["Test Plan"] = "⏳"
+        if (config.generate_phase_plan) checklist["Phase Planning"] = "⏳"
+        if (config.generate_project_data) checklist["Project Data JSON"] = "⏳"
 
 
-        val targetAudience = executionConfig.target_audience ?: "general users"
+        val targetAudience = config.target_audience ?: "general users"
 
         overviewTask.add(
           buildString {
@@ -237,10 +287,17 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
         val statusBuffer = overviewTask.add("**Status:** 🔄 Gathering context...".renderMarkdown(true))
         updateChecklist()
 
-        transcriptStream?.write(
-          "# Software Design Document: $projectName\n\n**System:** $systemDescription\n\n**Generated:** ${
-            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-          }\n\n---\n\n".toByteArray()
+        transcript?.write(
+          buildString {
+            appendLine("# Software Design Document: $projectName")
+            appendLine()
+            appendLine("**System:** $systemDescription")
+            appendLine()
+            appendLine("**Generated:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+            appendLine()
+            appendLine("---")
+            appendLine()
+          }.toByteArray()
         )
         task.update()
 
@@ -248,16 +305,19 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
         log.debug("Gathering context from prior tasks and input files")
         val priorContext = getPriorCode(agent.executionState)
         val inputFileContext = getInputFileCode()
-        transcriptStream?.write(
-          """
-                    <details>
-                    <summary>Input Context Data</summary>
-                    ### Prior Task Context
-                    $priorContext
-                    ### Input File Context
-                    $inputFileContext
-                    </details>
-                """.trimIndent().toByteArray()
+        transcript?.write(
+          buildString {
+            appendLine("<details>")
+            appendLine("<summary>Input Context Data</summary>")
+            appendLine()
+            appendLine("### Prior Task Context")
+            appendLine(priorContext)
+            appendLine()
+            appendLine("### Input File Context")
+            appendLine(inputFileContext)
+            appendLine()
+            appendLine("</details>")
+          }.toByteArray()
         )
 
         // Initialize design agent
@@ -267,9 +327,9 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
             projectName = projectName,
             systemDescription = systemDescription,
             targetAudience = targetAudience,
-//                  stakeholders = stakeholders,
-//                  techStack = techStack,
-//                  constraints = constraints,
+            stakeholders = config.stakeholders ?: emptyList(),
+            techStack = config.technology_stack ?: emptyList(),
+            constraints = config.constraints ?: emptyList(),
             priorContext = priorContext,
             inputFileContext = inputFileContext
           ),
@@ -284,7 +344,7 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
         val collectedDependencies = mutableListOf<Dependency>()
 
         // Section 1: Use Cases
-        if (executionConfig.generate_use_cases) {
+        if (config.generate_use_cases) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Generating Use Cases...".renderMarkdown(true))
           log.debug("Generating use cases and actor documentation")
@@ -295,47 +355,52 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
 
           val useCaseAnalysis = designAgent.answer(
             listOf(
-              """
-Generate comprehensive use case documentation:
 
-1. **Actor Identification**
-   - List all actors (users, systems, external services)
-   - Describe each actor's role and goals
-   - Identify actor relationships
 
-2. **Use Case Catalog**
-   For each major use case:
-   - UC-ID and Name
-   - Primary Actor
-   - Preconditions
-   - Main Success Scenario (numbered steps)
-   - Alternative Flows
-   - Postconditions
-   - Business Rules
 
-3. **Use Case Diagram** (Mermaid)
-   Create a use case diagram showing actors and their interactions with the system.
-   Use this format:
-   ```mermaid
-   graph LR
-       subgraph Actors
-           A1[Actor 1]
-           A2[Actor 2]
-       end
-       subgraph System
-           UC1((Use Case 1))
-           UC2((Use Case 2))
-       end
-       A1 --> UC1
-       A1 --> UC2
-       A2 --> UC2
-   ```
 
-4. **Actor-Use Case Matrix**
-   Show which actors participate in which use cases.
 
-Provide detailed, actionable use case documentation.
-                        """.trimIndent()
+              buildString {
+                appendLine("Generate comprehensive use case documentation:")
+                appendLine()
+                appendLine("1. **Actor Identification**")
+                appendLine("   - List all actors (users, systems, external services)")
+                appendLine("   - Describe each actor's role and goals")
+                appendLine("   - Identify actor relationships")
+                appendLine()
+                appendLine("2. **Use Case Catalog**")
+                appendLine("   For each major use case:")
+                appendLine("   - UC-ID and Name")
+                appendLine("   - Primary Actor")
+                appendLine("   - Preconditions")
+                appendLine("   - Main Success Scenario (numbered steps)")
+                appendLine("   - Alternative Flows")
+                appendLine("   - Postconditions")
+                appendLine("   - Business Rules")
+                appendLine()
+                appendLine("3. **Use Case Diagram** (Mermaid)")
+                appendLine("   Create a use case diagram showing actors and their interactions with the system.")
+                appendLine("   Use this format:")
+                appendLine("   ```mermaid")
+                appendLine("   graph LR")
+                appendLine("       subgraph Actors")
+                appendLine("           A1[Actor 1]")
+                appendLine("           A2[Actor 2]")
+                appendLine("       end")
+                appendLine("       subgraph System")
+                appendLine("           UC1((Use Case 1))")
+                appendLine("           UC2((Use Case 2))")
+                appendLine("       end")
+                appendLine("       A1 --> UC1")
+                appendLine("       A1 --> UC2")
+                appendLine("       A2 --> UC2")
+                appendLine("   ```")
+                appendLine()
+                appendLine("4. **Actor-Use Case Matrix**")
+                appendLine("   Show which actors participate in which use cases.")
+                appendLine()
+                appendLine("Provide detailed, actionable use case documentation.")
+              }
             )
           )
 
@@ -350,7 +415,7 @@ Provide detailed, actionable use case documentation.
                         }.renderMarkdown(true)
           )
           useCaseTask.update()
-          transcriptStream?.write("## Use Cases & Actors\n\n$useCaseAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## Use Cases & Actors\n\n$useCaseAnalysis\n\n---\n\n".toByteArray())
 
           // Extract epics from use cases
           extractEpicsFromUseCases(useCaseAnalysis, collectedEpics)
@@ -359,7 +424,7 @@ Provide detailed, actionable use case documentation.
         }
 
         // Section 2: Requirements
-        if (executionConfig.generate_requirements) {
+        if (config.generate_requirements) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Defining Requirements...".renderMarkdown(true))
           log.debug("Generating requirements specification")
@@ -375,42 +440,47 @@ Provide detailed, actionable use case documentation.
 
           val requirementsAnalysis = designAgent.answer(
             listOf(
-              """
-Generate comprehensive requirements documentation:
 
-1. **Functional Requirements**
-   For each requirement:
-   - FR-ID: Unique identifier
-   - Description: Clear, testable statement
-   - Priority: Must Have / Should Have / Could Have / Won't Have (MoSCoW)
-   - Source: Which use case or stakeholder
-   - Acceptance Criteria: Specific, measurable criteria
 
-2. **Non-Functional Requirements**
-   Categories to cover:
-   - Performance (response times, throughput)
-   - Scalability (users, data volume)
-   - Security (authentication, authorization, data protection)
-   - Reliability (uptime, recovery)
-   - Usability (accessibility, UX standards)
-   - Maintainability (code quality, documentation)
-   - Compatibility (browsers, devices, integrations)
 
-3. **Requirements Traceability Matrix**
-   Show relationships between:
-   - Use Cases → Requirements
-   - Requirements → Test Cases (placeholder IDs)
 
-4. **Requirements Dependency Diagram** (Mermaid)
-   ```mermaid
-   graph TD
-       FR1[FR-001: User Login] --> FR2[FR-002: Session Management]
-       FR2 --> FR3[FR-003: Access Control]
-       NFR1[NFR-001: Response Time] -.-> FR1
-   ```
 
-Provide detailed, prioritized requirements.
-                        """.trimIndent()
+              buildString {
+                appendLine("Generate comprehensive requirements documentation:")
+                appendLine()
+                appendLine("1. **Functional Requirements**")
+                appendLine("   For each requirement:")
+                appendLine("   - FR-ID: Unique identifier")
+                appendLine("   - Description: Clear, testable statement")
+                appendLine("   - Priority: Must Have / Should Have / Could Have / Won't Have (MoSCoW)")
+                appendLine("   - Source: Which use case or stakeholder")
+                appendLine("   - Acceptance Criteria: Specific, measurable criteria")
+                appendLine()
+                appendLine("2. **Non-Functional Requirements**")
+                appendLine("   Categories to cover:")
+                appendLine("   - Performance (response times, throughput)")
+                appendLine("   - Scalability (users, data volume)")
+                appendLine("   - Security (authentication, authorization, data protection)")
+                appendLine("   - Reliability (uptime, recovery)")
+                appendLine("   - Usability (accessibility, UX standards)")
+                appendLine("   - Maintainability (code quality, documentation)")
+                appendLine("   - Compatibility (browsers, devices, integrations)")
+                appendLine()
+                appendLine("3. **Requirements Traceability Matrix**")
+                appendLine("   Show relationships between:")
+                appendLine("   - Use Cases → Requirements")
+                appendLine("   - Requirements → Test Cases (placeholder IDs)")
+                appendLine()
+                appendLine("4. **Requirements Dependency Diagram** (Mermaid)")
+                appendLine("   ```mermaid")
+                appendLine("   graph TD")
+                appendLine("       FR1[FR-001: User Login] --> FR2[FR-002: Session Management]")
+                appendLine("       FR2 --> FR3[FR-003: Access Control]")
+                appendLine("       NFR1[NFR-001: Response Time] -.-> FR1")
+                appendLine("   ```")
+                appendLine()
+                appendLine("Provide detailed, prioritized requirements.")
+              }
             )
           )
 
@@ -425,16 +495,14 @@ Provide detailed, prioritized requirements.
                         }.renderMarkdown(true)
           )
           requirementsTask.update()
-          transcriptStream?.write("## Requirements Specification\n\n$requirementsAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## Requirements Specification\n\n$requirementsAnalysis\n\n---\n\n".toByteArray())
 
-          // Extract tasks from requirements
-//               extractTasksFrom requirements(requirementsAnalysis, collectedTasks, collectedEpics)
           checklist["Requirements Specification"] = "✅"
           updateChecklist()
         }
 
         // Section 3: Architecture
-        if (executionConfig.generate_architecture) {
+        if (config.generate_architecture) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Designing Architecture...".renderMarkdown(true))
           log.debug("Generating architectural diagrams")
@@ -446,79 +514,86 @@ Provide detailed, prioritized requirements.
 
           val architectureAnalysis = designAgent.answer(
             listOf(
-              """
-Generate comprehensive architecture documentation:
 
-1. **System Context Diagram (C4 Level 1)**
-   Show the system and its relationships with users and external systems.
-   ```mermaid
-   graph TB
-       subgraph External
-           U[Users]
-           ES1[External System 1]
-       end
-       S[System Name]
-       U --> S
-       S --> ES1
-   ```
 
-2. **Container Diagram (C4 Level 2)**
-   Show high-level technology choices and container responsibilities.
-   ```mermaid
-   graph TB
-       subgraph System
-           WA[Web Application<br/>React]
-           API[API Server<br/>Node.js]
-           DB[(Database<br/>PostgreSQL)]
-           CACHE[(Cache<br/>Redis)]
-       end
-       WA --> API
-       API --> DB
-       API --> CACHE
-   ```
 
-3. **Component Diagram (C4 Level 3)**
-   For key containers, show internal components.
 
-4. **Deployment Diagram**
-   Show infrastructure and deployment topology.
-   ```mermaid
-   graph TB
-       subgraph Cloud Provider
-           subgraph Production
-               LB[Load Balancer]
-               subgraph App Tier
-                   APP1[App Server 1]
-                   APP2[App Server 2]
-               end
-               subgraph Data Tier
-                   DB1[(Primary DB)]
-                   DB2[(Replica DB)]
-               end
-           end
-       end
-       LB --> APP1
-       LB --> APP2
-       APP1 --> DB1
-       APP2 --> DB1
-       DB1 --> DB2
-   ```
 
-5. **Technology Stack Summary**
-   - Frontend technologies
-   - Backend technologies
-   - Data storage
-   - Infrastructure
-   - DevOps tools
 
-6. **Architecture Decision Records (ADRs)**
-   Document key architectural decisions with:
-   - Context
-   - Decision
-   - Consequences
 
-Provide detailed architecture documentation with all diagrams.
-                        """.trimIndent()
+              buildString {
+                appendLine("Generate comprehensive architecture documentation:")
+                appendLine()
+                appendLine("1. **System Context Diagram (C4 Level 1)**")
+                appendLine("   Show the system and its relationships with users and external systems.")
+                appendLine("   ```mermaid")
+                appendLine("   graph TB")
+                appendLine("       subgraph External")
+                appendLine("           U[Users]")
+                appendLine("           ES1[External System 1]")
+                appendLine("       end")
+                appendLine("       S[System Name]")
+                appendLine("       U --> S")
+                appendLine("       S --> ES1")
+                appendLine("   ```")
+                appendLine()
+                appendLine("2. **Container Diagram (C4 Level 2)**")
+                appendLine("   Show high-level technology choices and container responsibilities.")
+                appendLine("   ```mermaid")
+                appendLine("   graph TB")
+                appendLine("       subgraph System")
+                appendLine("           WA[Web Application<br/>React]")
+                appendLine("           API[API Server<br/>Node.js]")
+                appendLine("           DB[(Database<br/>PostgreSQL)]")
+                appendLine("           CACHE[(Cache<br/>Redis)]")
+                appendLine("       end")
+                appendLine("       WA --> API")
+                appendLine("       API --> DB")
+                appendLine("       API --> CACHE")
+                appendLine("   ```")
+                appendLine()
+                appendLine("3. **Component Diagram (C4 Level 3)**")
+                appendLine("   For key containers, show internal components.")
+                appendLine()
+                appendLine("4. **Deployment Diagram**")
+                appendLine("   Show infrastructure and deployment topology.")
+                appendLine("   ```mermaid")
+                appendLine("   graph TB")
+                appendLine("       subgraph Cloud Provider")
+                appendLine("           subgraph Production")
+                appendLine("               LB[Load Balancer]")
+                appendLine("               subgraph App Tier")
+                appendLine("                   APP1[App Server 1]")
+                appendLine("                   APP2[App Server 2]")
+                appendLine("               end")
+                appendLine("               subgraph Data Tier")
+                appendLine("                   DB1[(Primary DB)]")
+                appendLine("                   DB2[(Replica DB)]")
+                appendLine("               end")
+                appendLine("           end")
+                appendLine("       end")
+                appendLine("       LB --> APP1")
+                appendLine("       LB --> APP2")
+                appendLine("       APP1 --> DB1")
+                appendLine("       APP2 --> DB1")
+                appendLine("       DB1 --> DB2")
+                appendLine("   ```")
+                appendLine()
+                appendLine("5. **Technology Stack Summary**")
+                appendLine("   - Frontend technologies")
+                appendLine("   - Backend technologies")
+                appendLine("   - Data storage")
+                appendLine("   - Infrastructure")
+                appendLine("   - DevOps tools")
+                appendLine()
+                appendLine("6. **Architecture Decision Records (ADRs)**")
+                appendLine("   Document key architectural decisions with:")
+                appendLine("   - Context")
+                appendLine("   - Decision")
+                appendLine("   - Consequences")
+                appendLine()
+                appendLine("Provide detailed architecture documentation with all diagrams.")
+              }
             )
           )
 
@@ -533,7 +608,7 @@ Provide detailed architecture documentation with all diagrams.
                         }.renderMarkdown(true)
           )
           architectureTask.update()
-          transcriptStream?.write("## System Architecture\n\n$architectureAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## System Architecture\n\n$architectureAnalysis\n\n---\n\n".toByteArray())
 
           // Add architecture epic
           collectedEpics.add(
@@ -550,7 +625,7 @@ Provide detailed architecture documentation with all diagrams.
         }
 
         // Section 4: Data Model
-        if (executionConfig.generate_data_model) {
+        if (config.generate_data_model) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Designing Data Model...".renderMarkdown(true))
           log.debug("Generating data model and ERD")
@@ -561,67 +636,74 @@ Provide detailed architecture documentation with all diagrams.
 
           val dataModelAnalysis = designAgent.answer(
             listOf(
-              """
-Generate comprehensive data model documentation:
 
-1. **Entity-Relationship Diagram**
-   ```mermaid
-   erDiagram
-       USER ||--o{ ORDER : places
-       USER {
-           int id PK
-           string email UK
-           string name
-           datetime created_at
-       }
-       ORDER ||--|{ ORDER_ITEM : contains
-       ORDER {
-           int id PK
-           int user_id FK
-           decimal total
-           string status
-           datetime created_at
-       }
-       ORDER_ITEM {
-           int id PK
-           int order_id FK
-           int product_id FK
-           int quantity
-           decimal price
-       }
-       PRODUCT ||--o{ ORDER_ITEM : "ordered in"
-       PRODUCT {
-           int id PK
-           string name
-           string description
-           decimal price
-           int stock
-       }
-   ```
 
-2. **Entity Descriptions**
-   For each entity:
-   - Purpose and business meaning
-   - Attributes with types and constraints
-   - Relationships and cardinality
-   - Indexes and performance considerations
 
-3. **Data Dictionary**
-   | Entity | Attribute | Type | Constraints | Description |
-   |--------|-----------|------|-------------|-------------|
-   | User | id | INT | PK, AUTO | Unique identifier |
 
-4. **Data Flow Diagram**
-   Show how data moves through the system.
 
-5. **Data Validation Rules**
-   Business rules for data integrity.
 
-6. **Data Migration Considerations**
-   If migrating from existing systems.
 
-Provide complete data model documentation.
-                        """.trimIndent()
+              buildString {
+                appendLine("Generate comprehensive data model documentation:")
+                appendLine()
+                appendLine("1. **Entity-Relationship Diagram**")
+                appendLine("   ```mermaid")
+                appendLine("   erDiagram")
+                appendLine("       USER ||--o{ ORDER : places")
+                appendLine("       USER {")
+                appendLine("           int id PK")
+                appendLine("           string email UK")
+                appendLine("           string name")
+                appendLine("           datetime created_at")
+                appendLine("       }")
+                appendLine("       ORDER ||--|{ ORDER_ITEM : contains")
+                appendLine("       ORDER {")
+                appendLine("           int id PK")
+                appendLine("           int user_id FK")
+                appendLine("           decimal total")
+                appendLine("           string status")
+                appendLine("           datetime created_at")
+                appendLine("       }")
+                appendLine("       ORDER_ITEM {")
+                appendLine("           int id PK")
+                appendLine("           int order_id FK")
+                appendLine("           int product_id FK")
+                appendLine("           int quantity")
+                appendLine("           decimal price")
+                appendLine("       }")
+                appendLine("       PRODUCT ||--o{ ORDER_ITEM : \"ordered in\"")
+                appendLine("       PRODUCT {")
+                appendLine("           int id PK")
+                appendLine("           string name")
+                appendLine("           string description")
+                appendLine("           decimal price")
+                appendLine("           int stock")
+                appendLine("       }")
+                appendLine("   ```")
+                appendLine()
+                appendLine("2. **Entity Descriptions**")
+                appendLine("   For each entity:")
+                appendLine("   - Purpose and business meaning")
+                appendLine("   - Attributes with types and constraints")
+                appendLine("   - Relationships and cardinality")
+                appendLine("   - Indexes and performance considerations")
+                appendLine()
+                appendLine("3. **Data Dictionary**")
+                appendLine("   | Entity | Attribute | Type | Constraints | Description |")
+                appendLine("   |--------|-----------|------|-------------|-------------|")
+                appendLine("   | User | id | INT | PK, AUTO | Unique identifier |")
+                appendLine()
+                appendLine("4. **Data Flow Diagram**")
+                appendLine("   Show how data moves through the system.")
+                appendLine()
+                appendLine("5. **Data Validation Rules**")
+                appendLine("   Business rules for data integrity.")
+                appendLine()
+                appendLine("6. **Data Migration Considerations**")
+                appendLine("   If migrating from existing systems.")
+                appendLine()
+                appendLine("Provide complete data model documentation.")
+              }
             )
           )
 
@@ -636,13 +718,13 @@ Provide complete data model documentation.
                         }.renderMarkdown(true)
           )
           dataModelTask.update()
-          transcriptStream?.write("## Data Model & ERD\n\n$dataModelAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## Data Model & ERD\n\n$dataModelAnalysis\n\n---\n\n".toByteArray())
           checklist["Data Model & ERD"] = "✅"
           updateChecklist()
         }
 
         // Section 5: Flow Diagrams
-        if (executionConfig.generate_flow_diagrams) {
+        if (config.generate_flow_diagrams) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Mapping Flow Diagrams...".renderMarkdown(true))
           log.debug("Generating sequence and activity diagrams")
@@ -653,64 +735,71 @@ Provide complete data model documentation.
 
           val flowAnalysis = designAgent.answer(
             listOf(
-              """
-Generate flow diagrams for key system interactions:
 
-1. **Sequence Diagrams**
-   For 3-5 critical user journeys, create sequence diagrams:
-   ```mermaid
-   sequenceDiagram
-       participant U as User
-       participant W as Web App
-       participant A as API Server
-       participant D as Database
        
-       U->>W: Login Request
-       W->>A: POST /auth/login
-       A->>D: Query User
-       D-->>A: User Data
-       A->>A: Validate Credentials
-       A->>A: Generate JWT
-       A-->>W: JWT Token
-       W-->>U: Login Success
-   ```
 
-2. **Activity Diagrams**
-   For complex business processes:
-   ```mermaid
-   graph TD
-       A[Start] --> B{User Authenticated?}
-       B -->|Yes| C[Load Dashboard]
-       B -->|No| D[Show Login]
-       D --> E[Enter Credentials]
-       E --> F{Valid?}
-       F -->|Yes| C
-       F -->|No| G[Show Error]
-       G --> D
-       C --> H[End]
-   ```
 
-3. **State Diagrams**
-   For entities with complex state transitions:
-   ```mermaid
-   stateDiagram-v2
-       [*] --> Draft
-       Draft --> Submitted: Submit
-       Submitted --> UnderReview: Assign Reviewer
-       UnderReview --> Approved: Approve
-       UnderReview --> Rejected: Reject
-       Rejected --> Draft: Revise
-       Approved --> [*]
-   ```
 
-4. **Integration Flow Diagrams**
-   Show data flow between systems.
 
-5. **Error Handling Flows**
-   Document how errors propagate and are handled.
 
-Provide detailed flow documentation for all critical paths.
-                        """.trimIndent()
+              buildString {
+                appendLine("Generate flow diagrams for key system interactions:")
+                appendLine()
+                appendLine("1. **Sequence Diagrams**")
+                appendLine("   For 3-5 critical user journeys, create sequence diagrams:")
+                appendLine("   ```mermaid")
+                appendLine("   sequenceDiagram")
+                appendLine("       participant U as User")
+                appendLine("       participant W as Web App")
+                appendLine("       participant A as API Server")
+                appendLine("       participant D as Database")
+                appendLine("       ")
+                appendLine("       U->>W: Login Request")
+                appendLine("       W->>A: POST /auth/login")
+                appendLine("       A->>D: Query User")
+                appendLine("       D-->>A: User Data")
+                appendLine("       A->>A: Validate Credentials")
+                appendLine("       A->>A: Generate JWT")
+                appendLine("       A-->>W: JWT Token")
+                appendLine("       W-->>U: Login Success")
+                appendLine("   ```")
+                appendLine()
+                appendLine("2. **Activity Diagrams**")
+                appendLine("   For complex business processes:")
+                appendLine("   ```mermaid")
+                appendLine("   graph TD")
+                appendLine("       A[Start] --> B{User Authenticated?}")
+                appendLine("       B -->|Yes| C[Load Dashboard]")
+                appendLine("       B -->|No| D[Show Login]")
+                appendLine("       D --> E[Enter Credentials]")
+                appendLine("       E --> F{Valid?}")
+                appendLine("       F -->|Yes| C")
+                appendLine("       F -->|No| G[Show Error]")
+                appendLine("       G --> D")
+                appendLine("       C --> H[End]")
+                appendLine("   ```")
+                appendLine()
+                appendLine("3. **State Diagrams**")
+                appendLine("   For entities with complex state transitions:")
+                appendLine("   ```mermaid")
+                appendLine("   stateDiagram-v2")
+                appendLine("       [*] --> Draft")
+                appendLine("       Draft --> Submitted: Submit")
+                appendLine("       Submitted --> UnderReview: Assign Reviewer")
+                appendLine("       UnderReview --> Approved: Approve")
+                appendLine("       UnderReview --> Rejected: Reject")
+                appendLine("       Rejected --> Draft: Revise")
+                appendLine("       Approved --> [*]")
+                appendLine("   ```")
+                appendLine()
+                appendLine("4. **Integration Flow Diagrams**")
+                appendLine("   Show data flow between systems.")
+                appendLine()
+                appendLine("5. **Error Handling Flows**")
+                appendLine("   Document how errors propagate and are handled.")
+                appendLine()
+                appendLine("Provide detailed flow documentation for all critical paths.")
+              }
             )
           )
 
@@ -725,13 +814,13 @@ Provide detailed flow documentation for all critical paths.
                         }.renderMarkdown(true)
           )
           flowTask.update()
-          transcriptStream?.write("## Flow Diagrams\n\n$flowAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## Flow Diagrams\n\n$flowAnalysis\n\n---\n\n".toByteArray())
           checklist["Flow Diagrams"] = "✅"
           updateChecklist()
         }
 
         // Section 6: Test Plan
-        if (executionConfig.generate_test_plan) {
+        if (config.generate_test_plan) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Creating Test Plan...".renderMarkdown(true))
           log.debug("Generating test plan")
@@ -742,64 +831,73 @@ Provide detailed flow documentation for all critical paths.
 
           val testPlanAnalysis = designAgent.answer(
             listOf(
-              """
-Generate comprehensive test plan documentation:
 
-1. **Test Strategy Overview**
-   - Testing objectives
-   - Testing scope (in-scope/out-of-scope)
-   - Testing approach
-   - Entry/Exit criteria
 
-2. **Test Levels**
-   - Unit Testing: Coverage targets, frameworks
-   - Integration Testing: API testing, component integration
-   - System Testing: End-to-end scenarios
-   - Acceptance Testing: UAT criteria
 
-3. **Test Case Catalog**
-   | TC-ID | Requirement | Description | Steps | Expected Result | Priority |
-   |-------|-------------|-------------|-------|-----------------|----------|
-   | TC-001 | FR-001 | User login with valid credentials | 1. Navigate to login... | User is authenticated | High |
 
-4. **Test Coverage Matrix**
-   ```mermaid
-   graph LR
-       subgraph Requirements
-           FR1[FR-001]
-           FR2[FR-002]
-           FR3[FR-003]
-       end
-       subgraph Test Cases
-           TC1[TC-001]
-           TC2[TC-002]
-           TC3[TC-003]
-           TC4[TC-004]
-       end
-       FR1 --> TC1
-       FR1 --> TC2
-       FR2 --> TC3
-       FR3 --> TC4
-   ```
 
-5. **Non-Functional Test Cases**
-   - Performance test scenarios
-   - Security test scenarios
-   - Usability test scenarios
 
-6. **Test Environment Requirements**
-   - Hardware/software requirements
-   - Test data requirements
-   - Tool requirements
 
-7. **Test Schedule**
-   Timeline for test phases.
 
-8. **Risk Assessment**
-   Testing risks and mitigation strategies.
 
-Provide actionable test documentation.
-                        """.trimIndent()
+              buildString {
+                appendLine("Generate comprehensive test plan documentation:")
+                appendLine()
+                appendLine("1. **Test Strategy Overview**")
+                appendLine("   - Testing objectives")
+                appendLine("   - Testing scope (in-scope/out-of-scope)")
+                appendLine("   - Testing approach")
+                appendLine("   - Entry/Exit criteria")
+                appendLine()
+                appendLine("2. **Test Levels**")
+                appendLine("   - Unit Testing: Coverage targets, frameworks")
+                appendLine("   - Integration Testing: API testing, component integration")
+                appendLine("   - System Testing: End-to-end scenarios")
+                appendLine("   - Acceptance Testing: UAT criteria")
+                appendLine()
+                appendLine("3. **Test Case Catalog**")
+                appendLine("   | TC-ID | Requirement | Description | Steps | Expected Result | Priority |")
+                appendLine("   |-------|-------------|-------------|-------|-----------------|----------|")
+                appendLine("   | TC-001 | FR-001 | User login with valid credentials | 1. Navigate to login... | User is authenticated | High |")
+                appendLine()
+                appendLine("4. **Test Coverage Matrix**")
+                appendLine("   ```mermaid")
+                appendLine("   graph LR")
+                appendLine("       subgraph Requirements")
+                appendLine("           FR1[FR-001]")
+                appendLine("           FR2[FR-002]")
+                appendLine("           FR3[FR-003]")
+                appendLine("       end")
+                appendLine("       subgraph Test Cases")
+                appendLine("           TC1[TC-001]")
+                appendLine("           TC2[TC-002]")
+                appendLine("           TC3[TC-003]")
+                appendLine("           TC4[TC-004]")
+                appendLine("       end")
+                appendLine("       FR1 --> TC1")
+                appendLine("       FR1 --> TC2")
+                appendLine("       FR2 --> TC3")
+                appendLine("       FR3 --> TC4")
+                appendLine("   ```")
+                appendLine()
+                appendLine("5. **Non-Functional Test Cases**")
+                appendLine("   - Performance test scenarios")
+                appendLine("   - Security test scenarios")
+                appendLine("   - Usability test scenarios")
+                appendLine()
+                appendLine("6. **Test Environment Requirements**")
+                appendLine("   - Hardware/software requirements")
+                appendLine("   - Test data requirements")
+                appendLine("   - Tool requirements")
+                appendLine()
+                appendLine("7. **Test Schedule**")
+                appendLine("   Timeline for test phases.")
+                appendLine()
+                appendLine("8. **Risk Assessment**")
+                appendLine("   Testing risks and mitigation strategies.")
+                appendLine()
+                appendLine("Provide actionable test documentation.")
+              }
             )
           )
 
@@ -814,7 +912,7 @@ Provide actionable test documentation.
                         }.renderMarkdown(true)
           )
           testPlanTask.update()
-          transcriptStream?.write("## Test Plan\n\n$testPlanAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## Test Plan\n\n$testPlanAnalysis\n\n---\n\n".toByteArray())
 
           // Add testing epic
           collectedEpics.add(
@@ -831,7 +929,7 @@ Provide actionable test documentation.
         }
 
         // Section 7: Phase Planning
-        if (executionConfig.generate_phase_plan) {
+        if (config.generate_phase_plan) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Planning Phases...".renderMarkdown(true))
           log.debug("Generating phase plan")
@@ -840,69 +938,77 @@ Provide actionable test documentation.
           val phasePlanBuffer =
             phasePlanTask.add("## Phase Plan\n\n🔄 Planning development phases...".renderMarkdown(true))
           task.update()
-          val sprintCount = executionConfig.sprint_count
-          val sprintDuration = executionConfig.sprint_duration_weeks
+          val sprintCount = config.sprint_count
+          val sprintDuration = config.sprint_duration_weeks
 
           val phasePlanAnalysis = designAgent.answer(
             listOf(
-              """
-Generate development phase planning:
 
-1. **Project Timeline Overview**
-   ```mermaid
-   gantt
-       title Project Timeline
-       dateFormat  YYYY-MM-DD
-       section Phase 1: Foundation
-       Architecture Setup    :a1, 2024-01-01, 2w
-       Core Infrastructure   :a2, after a1, 2w
-       section Phase 2: Core Features
-       User Management       :b1, after a2, 3w
-       Core Business Logic   :b2, after b1, 4w
-       section Phase 3: Integration
-       External Integrations :c1, after b2, 3w
-       API Development       :c2, after b2, 3w
-       section Phase 4: Polish
-       UI/UX Refinement      :d1, after c1, 2w
-       Performance Tuning    :d2, after c2, 2w
-       section Phase 5: Launch
-       UAT                   :e1, after d1, 2w
-       Production Deployment :e2, after e1, 1w
-   ```
 
-2. **Phase Descriptions**
-   For each phase:
-   - Phase name and duration
-   - Objectives and deliverables
-   - Key activities
-   - Dependencies
-   - Success criteria
-   - Risks and mitigations
 
-3. **Milestone Schedule**
-   | Milestone | Target Date | Deliverables | Success Criteria |
-   |-----------|-------------|--------------|------------------|
-   | M1: Architecture Complete | Week 4 | Architecture docs, infra setup | All diagrams approved |
 
-4. **Resource Allocation**
-   Team structure and responsibilities per phase.
 
-5. **Sprint Planning Overview**
-   For $sprintCount sprints of $sprintDuration weeks each:
-   - Sprint goals
-   - Capacity planning
-   - Key deliverables
 
-6. **Release Plan**
-   - Release versions and dates
-   - Features per release
-   - Release criteria
 
-7. **Risk Timeline**
-   When risks are highest and mitigation windows.
 
-Provide detailed phase planning with realistic timelines.
-                        """.trimIndent()
+              buildString {
+                appendLine("Generate development phase planning:")
+                appendLine()
+                appendLine("1. **Project Timeline Overview**")
+                appendLine("   ```mermaid")
+                appendLine("   gantt")
+                appendLine("       title Project Timeline")
+                appendLine("       dateFormat  YYYY-MM-DD")
+                appendLine("       section Phase 1: Foundation")
+                appendLine("       Architecture Setup    :a1, 2024-01-01, 2w")
+                appendLine("       Core Infrastructure   :a2, after a1, 2w")
+                appendLine("       section Phase 2: Core Features")
+                appendLine("       User Management       :b1, after a2, 3w")
+                appendLine("       Core Business Logic   :b2, after b1, 4w")
+                appendLine("       section Phase 3: Integration")
+                appendLine("       External Integrations :c1, after b2, 3w")
+                appendLine("       API Development       :c2, after b2, 3w")
+                appendLine("       section Phase 4: Polish")
+                appendLine("       UI/UX Refinement      :d1, after c1, 2w")
+                appendLine("       Performance Tuning    :d2, after c2, 2w")
+                appendLine("       section Phase 5: Launch")
+                appendLine("       UAT                   :e1, after d1, 2w")
+                appendLine("       Production Deployment :e2, after e1, 1w")
+                appendLine("   ```")
+                appendLine()
+                appendLine("2. **Phase Descriptions**")
+                appendLine("   For each phase:")
+                appendLine("   - Phase name and duration")
+                appendLine("   - Objectives and deliverables")
+                appendLine("   - Key activities")
+                appendLine("   - Dependencies")
+                appendLine("   - Success criteria")
+                appendLine("   - Risks and mitigations")
+                appendLine()
+                appendLine("3. **Milestone Schedule**")
+                appendLine("   | Milestone | Target Date | Deliverables | Success Criteria |")
+                appendLine("   |-----------|-------------|--------------|------------------|")
+                appendLine("   | M1: Architecture Complete | Week 4 | Architecture docs, infra setup | All diagrams approved |")
+                appendLine()
+                appendLine("4. **Resource Allocation**")
+                appendLine("   Team structure and responsibilities per phase.")
+                appendLine()
+                appendLine("5. **Sprint Planning Overview**")
+                appendLine("   For $sprintCount sprints of $sprintDuration weeks each:")
+                appendLine("   - Sprint goals")
+                appendLine("   - Capacity planning")
+                appendLine("   - Key deliverables")
+                appendLine()
+                appendLine("6. **Release Plan**")
+                appendLine("   - Release versions and dates")
+                appendLine("   - Features per release")
+                appendLine("   - Release criteria")
+                appendLine()
+                appendLine("7. **Risk Timeline**")
+                appendLine("   When risks are highest and mitigation windows.")
+                appendLine()
+                appendLine("Provide detailed phase planning with realistic timelines.")
+              }
             )
           )
 
@@ -917,7 +1023,7 @@ Provide detailed phase planning with realistic timelines.
                         }.renderMarkdown(true)
           )
           phasePlanTask.update()
-          transcriptStream?.write("## Phase Plan\n\n$phasePlanAnalysis\n\n---\n\n".toByteArray())
+          transcript?.write("## Phase Plan\n\n$phasePlanAnalysis\n\n---\n\n".toByteArray())
 
           // Extract milestones from phase plan
           extractMilestonesFromPhasePlan(phasePlanAnalysis, collectedMilestones)
@@ -926,7 +1032,7 @@ Provide detailed phase planning with realistic timelines.
         }
 
         // Section 8: Project Data JSON
-        if (executionConfig.generate_project_data) {
+        if (config.generate_project_data) {
           statusBuffer?.setLength(0)
           statusBuffer?.append("**Status:** 🔄 Generating Project Data...".renderMarkdown(true))
           log.debug("Generating project data JSON")
@@ -935,53 +1041,59 @@ Provide detailed phase planning with realistic timelines.
           val projectDataBuffer =
             projectDataTask.add("## Project Data\n\n🔄 Generating structured project data...".renderMarkdown(true))
           task.update()
-          val sprintCount = executionConfig.sprint_count
-          val sprintDuration = executionConfig.sprint_duration_weeks
+          val sprintCount = config.sprint_count
+          val sprintDuration = config.sprint_duration_weeks
 
           // Generate detailed tasks and sprints
           val projectDataAnalysis = designAgent.answer(
             listOf(
-              """
-Generate a detailed breakdown of all project work items. For each item provide:
 
-1. **Epics** (high-level features/initiatives)
-   - ID (EPIC-XXX format)
-   - Name
-   - Description
-   - Priority (Critical/High/Medium/Low)
-   - Estimated story points
 
-2. **User Stories/Tasks** (for each epic)
-   - ID (TASK-XXX format)
-   - Title
-   - Description
-   - Type (story/task/spike/bug)
-   - Parent Epic ID
-   - Priority
-   - Story points (1, 2, 3, 5, 8, 13)
-   - Acceptance criteria (list)
-   - Labels/tags
 
-3. **Sprint Assignments**
-   Distribute tasks across $sprintCount sprints, each $sprintDuration weeks.
-   Consider:
-   - Dependencies between tasks
-   - Team velocity (assume ~40 points per sprint)
-   - Risk distribution
 
-4. **Releases**
-   - ID (REL-XXX format)
-   - Version number
-   - Target date
-   - Included epics
-   - Release notes summary
 
-5. **Dependencies**
-   List all dependencies between tasks, epics, and milestones.
-   Format: SOURCE_ID blocks/depends_on/relates_to TARGET_ID
 
-Provide comprehensive, realistic project breakdown.
-                        """.trimIndent()
+              buildString {
+                appendLine("Generate a detailed breakdown of all project work items. For each item provide:")
+                appendLine()
+                appendLine("1. **Epics** (high-level features/initiatives)")
+                appendLine("   - ID (EPIC-XXX format)")
+                appendLine("   - Name")
+                appendLine("   - Description")
+                appendLine("   - Priority (Critical/High/Medium/Low)")
+                appendLine("   - Estimated story points")
+                appendLine()
+                appendLine("2. **User Stories/Tasks** (for each epic)")
+                appendLine("   - ID (TASK-XXX format)")
+                appendLine("   - Title")
+                appendLine("   - Description")
+                appendLine("   - Type (story/task/spike/bug)")
+                appendLine("   - Parent Epic ID")
+                appendLine("   - Priority")
+                appendLine("   - Story points (1, 2, 3, 5, 8, 13)")
+                appendLine("   - Acceptance criteria (list)")
+                appendLine("   - Labels/tags")
+                appendLine()
+                appendLine("3. **Sprint Assignments**")
+                appendLine("   Distribute tasks across $sprintCount sprints, each $sprintDuration weeks.")
+                appendLine("   Consider:")
+                appendLine("   - Dependencies between tasks")
+                appendLine("   - Team velocity (assume ~40 points per sprint)")
+                appendLine("   - Risk distribution")
+                appendLine()
+                appendLine("4. **Releases**")
+                appendLine("   - ID (REL-XXX format)")
+                appendLine("   - Version number")
+                appendLine("   - Target date")
+                appendLine("   - Included epics")
+                appendLine("   - Release notes summary")
+                appendLine()
+                appendLine("5. **Dependencies**")
+                appendLine("   List all dependencies between tasks, epics, and milestones.")
+                appendLine("   Format: SOURCE_ID blocks/depends_on/relates_to TARGET_ID")
+                appendLine()
+                appendLine("Provide comprehensive, realistic project breakdown.")
+              }
             )
           )
 
@@ -1017,7 +1129,11 @@ Provide comprehensive, realistic project breakdown.
 
           // Write JSON file
           val jsonContent = JsonUtil.toJson(projectData)
-          val jsonFileName = "${projectName.replace(" ", "_").lowercase()}_project_data.json"
+          val baseFileName = getOutputFile(".md")?.let {
+            if (it.endsWith(".md")) it.removeSuffix(".md") else null
+          }
+          val jsonFileName = baseFileName?.let { "${it}.project_data.json" }
+            ?: "${projectName.replace(" ", "_").lowercase()}_project_data.json"
 
           val jsonLink = task.saveFile(jsonFileName, jsonContent.toByteArray())
           projectDataBuffer?.setLength(0)
@@ -1051,17 +1167,19 @@ Provide comprehensive, realistic project breakdown.
                         }.renderMarkdown(true)
           )
           projectDataTask.update()
-          transcriptStream?.write(
-            """
-                    ## Project Data
-                    Generated JSON file: $jsonFileName
-                    <details>
-                    <summary>Raw JSON Content</summary>
-                    ```json
-                    $jsonContent
-                    ```
-                    </details>
-                """.trimIndent().toByteArray()
+          transcript?.write(
+            buildString {
+              appendLine("## Project Data")
+              appendLine("Generated JSON file: $jsonFileName")
+              appendLine("<details>")
+              appendLine("<summary>Raw JSON Content</summary>")
+              appendLine()
+              appendLine("```json")
+              appendLine(jsonContent)
+              appendLine("```")
+              appendLine()
+              appendLine("</details>")
+            }.toByteArray()
           )
           checklist["Project Data JSON"] = "✅"
           updateChecklist()
@@ -1082,10 +1200,8 @@ Provide comprehensive, realistic project breakdown.
         overviewTask.complete()
         task.update()
 
-        val relativePath = "${
-          projectName.replace(" ", "_").lowercase()
-        }_design_document_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (transcriptLink, _) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
+        val transcriptPath = transcriptFile()
+        val transcriptLink = task.linkTo(transcriptPath)
         task.safeComplete(
           "Software design document generated in ${duration / 1000}s. " +
               "View document: <a href='$transcriptLink' target='_blank'>markdown</a> " +
@@ -1100,34 +1216,34 @@ Provide comprehensive, realistic project breakdown.
           appendLine("**System:** ${systemDescription.truncateForDisplay(500)}")
           appendLine()
           appendLine("## Generated Sections")
-          if (executionConfig.generate_use_cases) appendLine("- ✅ Use Cases & Actors")
-          if (executionConfig.generate_requirements) appendLine("- ✅ Requirements Specification")
-          if (executionConfig.generate_architecture) appendLine("- ✅ Architecture Diagrams")
-          if (executionConfig.generate_data_model) appendLine("- ✅ Data Model & ERD")
-          if (executionConfig.generate_flow_diagrams) appendLine("- ✅ Flow Diagrams")
-          if (executionConfig.generate_test_plan) appendLine("- ✅ Test Plan")
-          if (executionConfig.generate_phase_plan) appendLine("- ✅ Phase Planning")
-          if (executionConfig.generate_project_data) appendLine("- ✅ Project Data JSON (${collectedTasks.size} tasks, ${collectedEpics.size} epics)")
+          if (config.generate_use_cases) appendLine("- ✅ Use Cases & Actors")
+          if (config.generate_requirements) appendLine("- ✅ Requirements Specification")
+          if (config.generate_architecture) appendLine("- ✅ Architecture Diagrams")
+          if (config.generate_data_model) appendLine("- ✅ Data Model & ERD")
+          if (config.generate_flow_diagrams) appendLine("- ✅ Flow Diagrams")
+          if (config.generate_test_plan) appendLine("- ✅ Test Plan")
+          if (config.generate_phase_plan) appendLine("- ✅ Phase Planning")
+          if (config.generate_project_data) appendLine("- ✅ Project Data JSON (${collectedTasks.size} tasks, ${collectedEpics.size} epics)")
         }
         resultFn(finalResult)
 
       } catch (e: Exception) {
+        // Triple Log Rule: UI, SLF4J, Transcript
         task.error(e)
         log.error("SoftwareDesignDocumentTask failed for project: $projectName", e)
-        transcriptStream?.write(
-          """
-                ## Error Occurred
-                **Error:** ${e.message}
-                **Type:** ${e.javaClass.simpleName}
-                <details>
-                <summary>Stack Trace</summary>
-                ```
-                ${e.stackTraceToString()}
-                ```
-                </details>
-            """.trimIndent().toByteArray()
+        transcript?.write(
+          buildString {
+            appendLine("## Error")
+            appendLine("<details>")
+            appendLine("<summary>Stack Trace</summary>")
+            appendLine()
+            appendLine("```")
+            appendLine(e.stackTraceToString())
+            appendLine("```")
+            appendLine()
+            appendLine("</details>")
+          }.toByteArray()
         )
-
         overviewTask.add(
           buildString {
                       appendLine("## ❌ Error Occurred")
@@ -1142,8 +1258,8 @@ Provide comprehensive, realistic project breakdown.
 
         resultFn("Error generating software design document: ${e.message}")
       } finally {
-        transcriptStream?.flush()
-        transcriptStream?.close()
+        transcript?.flush()
+        transcript?.close()
       }
     }
   }
@@ -1157,47 +1273,71 @@ Provide comprehensive, realistic project breakdown.
     constraints: List<String> = emptyList(),
     priorContext: String,
     inputFileContext: String
-  ): String {
-    return """
-You are an expert software architect and technical writer. Your role is to create comprehensive software design documentation with detailed Mermaid diagrams.
 
-## Project: $projectName
 
-## System Description:
-$systemDescription
 
-## Target Audience:
-$targetAudience
 
-${if (stakeholders.isNotEmpty()) "## Stakeholders:\n${stakeholders.joinToString("\n") { "- $it" }}\n" else ""}
 
-${if (techStack.isNotEmpty()) "## Technology Stack:\n${techStack.joinToString("\n") { "- $it" }}\n" else ""}
 
-${if (constraints.isNotEmpty()) "## Constraints:\n${constraints.joinToString("\n") { "- $it" }}\n" else ""}
 
-${if (priorContext.isNotBlank()) "## Context from Prior Tasks:\n$priorContext\n" else ""}
 
-${if (inputFileContext.isNotBlank()) "## Input Files:\n$inputFileContext\n" else ""}
 
-## Documentation Standards:
-1. Use clear, professional technical writing
-2. Include Mermaid diagrams for all visual representations
-3. Use consistent ID formats (FR-XXX, UC-XXX, TC-XXX, etc.)
-4. Provide actionable, specific details
-5. Consider scalability, security, and maintainability
-6. Include traceability between artifacts
-7. Make all acceptance criteria testable
 
-## Mermaid Diagram Types to Use:
-- `graph TD/LR` for flowcharts and architecture
-- `sequenceDiagram` for interactions
-- `erDiagram` for data models
-- `stateDiagram-v2` for state machines
-- `gantt` for timelines
-- `classDiagram` for class structures
 
-Provide comprehensive, production-ready documentation.
-        """.trimIndent()
+  ): String = buildString {
+    appendLine("You are an expert software architect and technical writer. Your role is to create comprehensive software design documentation with detailed Mermaid diagrams.")
+    appendLine()
+    appendLine("## Project: $projectName")
+    appendLine()
+    appendLine("## System Description:")
+    appendLine(systemDescription)
+    appendLine()
+    appendLine("## Target Audience:")
+    appendLine(targetAudience)
+    appendLine()
+    if (stakeholders.isNotEmpty()) {
+      appendLine("## Stakeholders:")
+      stakeholders.forEach { appendLine("- $it") }
+      appendLine()
+    }
+    if (techStack.isNotEmpty()) {
+      appendLine("## Technology Stack:")
+      techStack.forEach { appendLine("- $it") }
+      appendLine()
+    }
+    if (constraints.isNotEmpty()) {
+      appendLine("## Constraints:")
+      constraints.forEach { appendLine("- $it") }
+      appendLine()
+    }
+    if (priorContext.isNotBlank()) {
+      appendLine("## Context from Prior Tasks:")
+      appendLine(priorContext)
+      appendLine()
+    }
+    if (inputFileContext.isNotBlank()) {
+      appendLine("## Input Files:")
+      appendLine(inputFileContext)
+      appendLine()
+    }
+    appendLine("## Documentation Standards:")
+    appendLine("1. Use clear, professional technical writing")
+    appendLine("2. Include Mermaid diagrams for all visual representations")
+    appendLine("3. Use consistent ID formats (FR-XXX, UC-XXX, TC-XXX, etc.)")
+    appendLine("4. Provide actionable, specific details")
+    appendLine("5. Consider scalability, security, and maintainability")
+    appendLine("6. Include traceability between artifacts")
+    appendLine("7. Make all acceptance criteria testable")
+    appendLine()
+    appendLine("## Mermaid Diagram Types to Use:")
+    appendLine("- `graph TD/LR` for flowcharts and architecture")
+    appendLine("- `sequenceDiagram` for interactions")
+    appendLine("- `erDiagram` for data models")
+    appendLine("- `stateDiagram-v2` for state machines")
+    appendLine("- `gantt` for timelines")
+    appendLine("- `classDiagram` for class structures")
+    appendLine()
+    appendLine("Provide comprehensive, production-ready documentation.")
   }
 
   private fun extractEpicsFromUseCases(analysis: String, epics: MutableList<Epic>) {
@@ -1426,27 +1566,27 @@ Provide comprehensive, production-ready documentation.
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(SoftwareDesignDocumentTask::class.java)
-    @JvmStatic val SoftwareDesignDocument = TaskType(
+
+    @JvmStatic
+    val SoftwareDesignDocument = TaskType(
         name = "SoftwareDesignDocument",
         category = "Writing",
         taskClass = SoftwareDesignDocumentTask::class.java,
         executionConfigClass = SoftwareDesignDocumentTaskExecutionConfigData::class.java,
         taskSettingsClass = TaskTypeConfig::class.java,
         description = "Generate comprehensive software design documentation",
-        tooltipHtml = """
-                        Creates complete software design documentation with Mermaid diagrams.
-                        <ul>
-                          <li>Use case diagrams and actor documentation</li>
-                          <li>Functional and non-functional requirements</li>
-                          <li>Architecture diagrams (C4, component, deployment)</li>
-                          <li>Data model and ERD diagrams</li>
-                          <li>Sequence and activity flow diagrams</li>
-                          <li>Test plan and test case documentation</li>
-                          <li>Phase planning with Gantt charts</li>
-                          <li>Project data JSON with tasks, epics, sprints, releases</li>
-                          <li>All diagrams use Mermaid syntax</li>
-                        </ul>
-                      """,
+      tooltipHtml = "Creates complete software design documentation with Mermaid diagrams." +
+              "<ul>" +
+              "<li>Use case diagrams and actor documentation</li>" +
+              "<li>Functional and non-functional requirements</li>" +
+              "<li>Architecture diagrams (C4, component, deployment)</li>" +
+              "<li>Data model and ERD diagrams</li>" +
+              "<li>Sequence and activity flow diagrams</li>" +
+              "<li>Test plan and test case documentation</li>" +
+              "<li>Phase planning with Gantt charts</li>" +
+              "<li>Project data JSON with tasks, epics, sprints, releases</li>" +
+              "<li>All diagrams use Mermaid syntax</li>" +
+              "</ul>",
     )
   }
 }

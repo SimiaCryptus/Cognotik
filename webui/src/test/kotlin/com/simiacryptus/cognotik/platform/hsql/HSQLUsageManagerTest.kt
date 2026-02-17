@@ -41,9 +41,9 @@ abstract class UsageTest(private val impl: UsageInterface) {
         log.info("Incrementing usage for session {} with model {}", session, model)
         impl.incrementUsage(session, testUser, model, usage)
         val usageSummary: Map<String, ModelSchema.Usage> = impl.getSessionUsageSummary(session)
-        Assertions.assertEquals(usage, usageSummary[model.modelName])
+        Assertions.assertEquals(usage, usageSummary[model.modelId])
         val userUsageSummary = impl.getUserUsageSummary(testUser)
-        Assertions.assertEquals(usage, userUsageSummary[model.modelName])
+        Assertions.assertEquals(usage, userUsageSummary[model.modelId])
     }
 
     @Test
@@ -59,7 +59,7 @@ abstract class UsageTest(private val impl: UsageInterface) {
         log.info("Incrementing usage for user {} with model {}", testUser.email, model)
         impl.incrementUsage(session, testUser, model, usage)
         val userUsageSummary: Map<String, ModelSchema.Usage> = impl.getUserUsageSummary(testUser)
-        Assertions.assertEquals(usage, userUsageSummary[model.modelName])
+        Assertions.assertEquals(usage, userUsageSummary[model.modelId])
     }
 
     @Test
@@ -103,11 +103,11 @@ abstract class UsageTest(private val impl: UsageInterface) {
         impl.incrementUsage(session, testUser, model2, usage2)
         log.debug("Verifying usage summaries for session and user")
         val usageSummary: Map<String, ModelSchema.Usage> = impl.getSessionUsageSummary(session)
-        Assertions.assertEquals(usage1, usageSummary[model1.modelName])
-        Assertions.assertEquals(usage2, usageSummary[model2.modelName])
+        Assertions.assertEquals(usage1, usageSummary[model1.modelId])
+        Assertions.assertEquals(usage2, usageSummary[model2.modelId])
         val userUsageSummary: Map<String, ModelSchema.Usage> = impl.getUserUsageSummary(testUser)
-        Assertions.assertEquals(usage1, userUsageSummary[model1.modelName])
-        Assertions.assertEquals(usage2, userUsageSummary[model2.modelName])
+        Assertions.assertEquals(usage1, userUsageSummary[model1.modelId])
+        Assertions.assertEquals(usage2, userUsageSummary[model2.modelId])
     }
 
     @Test
@@ -135,9 +135,9 @@ abstract class UsageTest(private val impl: UsageInterface) {
             completion_tokens = 30,
             cost = 45.0,
         )
-        Assertions.assertEquals(expectedUsage, usageSummary[model.modelName])
+        Assertions.assertEquals(expectedUsage, usageSummary[model.modelId])
         val userUsageSummary: Map<String, ModelSchema.Usage> = impl.getUserUsageSummary(testUser)
-        Assertions.assertEquals(expectedUsage, userUsageSummary[model.modelName])
+        Assertions.assertEquals(expectedUsage, userUsageSummary[model.modelId])
     }
 
     @Test

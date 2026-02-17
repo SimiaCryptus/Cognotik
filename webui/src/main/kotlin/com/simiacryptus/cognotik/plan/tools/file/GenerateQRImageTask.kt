@@ -32,7 +32,7 @@ class GenerateQRImageTask(
 
     class GenerateQRImageTaskExecutionConfigData(
         @Description("The output image file to be created (relative path, must end with .png, .jpg, or .jpeg)")
-        files: List<String>? = null,
+        files: List<String> = emptyList(),
         @Description("Additional files for context (e.g., reference images, style guides)")
         related_files: List<String>? = null,
         @Description("The data/text content to encode in the QR code")

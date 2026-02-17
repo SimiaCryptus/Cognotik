@@ -113,7 +113,7 @@ CausalInference - Identify causal relationships and root causes
       val startTime = System.currentTimeMillis()
 
 
-      val transcript = task.transcript()
+      val transcript = task.newFileOutputStream(transcriptFile())
 
       try {
 
@@ -254,19 +254,7 @@ CausalInference - Identify causal relationships and root causes
             // Triple Log Rule
             task.error(e)
             log.error("CausalInference task failed", e)
-            transcript?.write(
-              """
-                        ## Error
-                        <details>
-                        <summary>Stack Trace</summary>
-
-                        ```
-                        ${e.stackTraceToString()}
-                        ```
-                        </details>
-                    """.trimIndent().toByteArray()
-            )
-
+            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             task.complete("Analysis failed: ${e.message}")
             resultFn("ERROR: Causal inference analysis failed - ${e.message}")
           } finally {

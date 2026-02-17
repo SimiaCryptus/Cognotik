@@ -256,7 +256,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
         orchestrationConfig: OrchestrationConfig
     ) {
         task.ui.pool.submit {
-            val transcript = task.transcript()
+          val transcript = task.newFileOutputStream(transcriptFile())
             try {
                 val startTime = System.currentTimeMillis()
             log.info("Starting LateralThinkingTask for problem='${executionConfig?.problem?.take(50)}...', techniques=${executionConfig?.techniques}")
@@ -777,8 +777,8 @@ Provide a structured evaluation.
         } catch (e: Exception) {
             log.error("Error during LateralThinkingTask execution", e)
             task.error(e)
-                transcript?.write("\n## Error\n<details>\n<summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
-            task.safeComplete("Failed with error: ${e.message}", log)
+              transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
+              task.safeComplete("Failed with error: ${e.message}", log)
             resultFn("ERROR: ${e.message}")
             } finally {
                 transcript?.close()

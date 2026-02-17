@@ -6,7 +6,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
-import com.simiacryptus.cognotik.apps.UnifiedPlanApp
+import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -130,7 +130,7 @@ open class UnifiedPlanAction(
         session: Session,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val app = object : UnifiedPlanApp(
+        val app = object : SinglePlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",
             showMenubar = false
