@@ -14,8 +14,8 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
-import java.io.File
 import java.io.FileOutputStream
 
 class CounterfactualAnalysisTask(
@@ -62,22 +62,20 @@ class CounterfactualAnalysisTask(
         }
     }
 
-    override fun promptSegment(): String {
-        return """
-CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relationships and decision impacts
-  ** Specify the actual scenario or decision that occurred
-  ** Provide a list of alternative conditions to explore (counterfactuals)
-  ** Optionally specify factors to hold constant across scenarios for controlled comparison
-  ** Enable outcome comparison to see differences between scenarios
-  ** Useful for:
-     - Risk analysis and mitigation planning
-     - Decision validation and retrospective analysis
-     - Understanding causal relationships
-     - Exploring alternative strategies
-     - Impact assessment of different choices
-  ** Related files can include historical data, previous analyses, or context documents
-  ** Output includes detailed analysis of each scenario and comparative insights
-        """.trimIndent()
+    override fun promptSegment(): String = buildString {
+        appendLine("CounterfactualAnalysis - Explore \"what-if\" scenarios to understand causal relationships and decision impacts")
+        appendLine("  ** Specify the actual scenario or decision that occurred")
+        appendLine("  ** Provide a list of alternative conditions to explore (counterfactuals)")
+        appendLine("  ** Optionally specify factors to hold constant across scenarios for controlled comparison")
+        appendLine("  ** Enable outcome comparison to see differences between scenarios")
+        appendLine("  ** Useful for:")
+        appendLine("     - Risk analysis and mitigation planning")
+        appendLine("     - Decision validation and retrospective analysis")
+        appendLine("     - Understanding causal relationships")
+        appendLine("     - Exploring alternative strategies")
+        appendLine("     - Impact assessment of different choices")
+        appendLine("  ** Related files can include historical data, previous analyses, or context documents")
+        appendLine("  ** Output includes detailed analysis of each scenario and comparative insights")
     }
 
     override fun run(
@@ -111,6 +109,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
                     val err = "CONFIGURATION ERROR: No actual scenario specified"
                     log.error(err)
                     task.error(Exception(err))
+                    transcript?.write("\n## Error\n\n$err\n".toByteArray())
                     resultFn(err)
                     return@submit
                 }
@@ -119,40 +118,29 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
                     val err = "CONFIGURATION ERROR: No counterfactual scenarios specified"
                     log.error(err)
                     task.error(Exception(err))
+                    transcript?.write("\n## Error\n\n$err\n".toByteArray())
                     resultFn(err)
                     return@submit
                 }
 
-                val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
-                transcript?.write("# Counterfactual Analysis Transcript\n\n".toByteArray())
-                val api = defaultSmart ?: return@submit
+                transcript?.write("# Counterfactual Analysis\n\n".toByteArray())
+                val api = (defaultSmart ?: return@submit).getChildClient(task)
 
                 val tabs = TabbedDisplay(task)
                 val overviewTask = tabs.newTask("Overview")
 
-                overviewTask.add(
-                    """
-                    |## Counterfactual Analysis
-                    |
-                    |**Actual Scenario:** ${actualScenario.truncateForDisplay(maxDescriptionLength)}
-                    |
-                    |**Counterfactuals:** ${counterfactuals.size}
-                    |
-                    |**Status:** 🔄 Starting analysis...
-                    """.trimMargin().renderMarkdown()
-                )
-                transcript?.write(
-                    """
-                    |## Counterfactual Analysis
-                    |
-                    |**Actual Scenario:** ${actualScenario.truncateForDisplay(maxDescriptionLength)}
-                    |
-                    |**Counterfactuals:** ${counterfactuals.size}
-                    |
-                    |**Status:** 🔄 Starting analysis...
-                    |
-                    """.trimMargin().toByteArray()
-                )
+                val overviewText = buildString {
+                    appendLine("## Counterfactual Analysis")
+                    appendLine()
+                    appendLine("**Actual Scenario:** ${actualScenario.truncateForDisplay(maxDescriptionLength)}")
+                    appendLine()
+                    appendLine("**Counterfactuals:** ${counterfactuals.size}")
+                    appendLine()
+                    appendLine("**Status:** \uD83D\uDD04 Starting analysis...")
+                }
+                overviewTask.add(overviewText.renderMarkdown())
+                transcript?.write("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+                transcript?.write("$overviewText\n\n".toByteArray())
 
                 val contextFiles = getContextFiles()
                 val priorCode = getPriorCode(agent.executionState)
@@ -166,7 +154,6 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
                     priorCode,
                     api,
                     actualTab,
-                    toInput,
                     transcript
                 )
                 transcript?.write("\n## Actual Scenario Analysis\n\n".toByteArray())
@@ -184,7 +171,6 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
                         priorCode,
                         api,
                         counterfactualTab,
-                        toInput,
                         transcript
                     )
                     transcript?.write("**Analysis:**\n\n$analysis\n\n".toByteArray())
@@ -204,8 +190,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
                         contextFiles = contextFiles,
                         priorCode = priorCode,
                         api = api,
-                        comparisonTab,
-                        toInput = toInput,
+                        tab = comparisonTab,
                         transcript = transcript
                     )
                     transcript?.write(comparison.toByteArray())
@@ -213,6 +198,8 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
                 } else {
                     ""
                 }
+                transcript?.write("\n</div>\n\n".toByteArray())
+                transcript?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
 
                 val fullReport = buildString {
                     appendLine("# Counterfactual Analysis Results")
@@ -238,23 +225,23 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
                         appendLine(comparisonAnalysis)
                     }
                 }
+                transcript?.write(fullReport.toByteArray())
+                transcript?.write("\n</div>\n\n".toByteArray())
                 transcript?.write("\n---\n\n**Analysis Complete**\n".toByteArray())
 
-                val (link, file) = task.createFile("analysis_results.md")
-                file?.writeText(fullReport)
-                task.complete("Analysis complete. Full results written to <a href='$link' target='_blank'>$link</a>")
+                task.complete("Analysis complete. Full results written to ${transcriptFile()}".renderMarkdown())
 
-                val summaryMessage = """
-                    ## Counterfactual Analysis Complete
-                    * **Scenario:** `${actualScenario.truncateForDisplay(50)}`
-                    * **Alternatives Analyzed:** ${counterfactuals.size}
-                    * **Report:** [Download Analysis Results]($link)
-                """.trimIndent()
+                val summaryMessage = buildString {
+                    appendLine("## Counterfactual Analysis Complete")
+                    appendLine("* **Scenario:** `${actualScenario.truncateForDisplay(50)}`")
+                    appendLine("* **Alternatives Analyzed:** ${counterfactuals.size}")
+                    appendLine("* **Report:** ${transcriptFile()}")
+                }
                 resultFn(summaryMessage)
             } catch (e: Exception) {
                 task.error(e)
                 log.error("Error in CounterfactualAnalysisTask", e)
-                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
+                transcript?.write("\n## Error\n\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
             } finally {
                 transcript?.close()
             }
@@ -268,33 +255,38 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
         priorCode: String,
         api: ChatInterface,
         tab: SessionTask,
-        toInput: (String) -> List<String>,
         transcript: FileOutputStream?
     ): String {
-        val prompt = """
- Analyze the following scenario in detail:
 
-## Scenario: $scenarioName
-$scenario
 
-## Context from Related Files:
-$contextFiles
 
-## Previous Task Results:
-$priorCode
 
-## Control Factors:
-${executionConfig?.control_factors?.joinToString("\n") { "- $it" } ?: "None specified"}
 
-## Instructions:
-1. Describe the key elements and conditions of this scenario
-2. Identify the main actors, decisions, and constraints
-3. Analyze potential outcomes and their likelihood
-4. Identify risks, opportunities, and trade-offs
-5. Consider both short-term and long-term implications
-6. Highlight any assumptions or uncertainties
-7. Provide insights on causal relationships
-        """.trimIndent()
+        val controlFactorsText = executionConfig?.control_factors?.joinToString("\n") { "- $it" } ?: "None specified"
+        val prompt = buildString {
+            appendLine("Analyze the following scenario in detail:")
+            appendLine()
+            appendLine("## Scenario: $scenarioName")
+            appendLine(scenario)
+            appendLine()
+            appendLine("## Context from Related Files:")
+            appendLine(contextFiles)
+            appendLine()
+            appendLine("## Previous Task Results:")
+            appendLine(priorCode)
+            appendLine()
+            appendLine("## Control Factors:")
+            appendLine(controlFactorsText)
+            appendLine()
+            appendLine("## Instructions:")
+            appendLine("1. Describe the key elements and conditions of this scenario")
+            appendLine("2. Identify the main actors, decisions, and constraints")
+            appendLine("3. Analyze potential outcomes and their likelihood")
+            appendLine("4. Identify risks, opportunities, and trade-offs")
+            appendLine("5. Consider both short-term and long-term implications")
+            appendLine("6. Highlight any assumptions or uncertainties")
+            appendLine("7. Provide insights on causal relationships")
+        }
         transcript?.write("\n<details><summary>Prompt for $scenarioName</summary>\n\n```\n$prompt\n```\n</details>\n\n".toByteArray())
 
 
@@ -303,7 +295,7 @@ ${executionConfig?.control_factors?.joinToString("\n") { "- $it" } ?: "None spec
             model = api,
         )
 
-        var result: String? = chatAgent.answer(listOf("Provide a comprehensive analysis"))
+        val result: String? = chatAgent.answer(listOf("Provide a comprehensive analysis"))
         transcript?.write("<details><summary>Response for $scenarioName</summary>\n\n${result ?: "(No response)"}\n\n</details>\n\n".toByteArray())
         tab.add("## $scenarioName\n\n${result ?: "No analysis generated."}".renderMarkdown(true))
         tab.update()
@@ -320,47 +312,53 @@ ${executionConfig?.control_factors?.joinToString("\n") { "- $it" } ?: "None spec
         priorCode: String,
         api: ChatInterface,
         tab: SessionTask,
-        toInput: (String) -> List<String>,
         transcript: FileOutputStream?
     ): String {
         val scenarioComparisons = counterfactuals.zip(counterfactualAnalyses)
             .mapIndexed { index, (counterfactual, analysis) ->
-                """
-## Counterfactual ${index + 1}
-**Scenario:** $counterfactual
-**Analysis:** $analysis
-                """.trimIndent()
+                buildString {
+                    appendLine("## Counterfactual ${index + 1}")
+                    appendLine("**Scenario:** $counterfactual")
+                    appendLine("**Analysis:** $analysis")
+                }
             }.joinToString("\n\n")
 
-        val prompt = """
-Compare the following scenarios and provide insights on their differences:
 
-## Actual Scenario
-**Description:** $actualScenario
-**Analysis:** ${actualAnalysisTokens.joinToString(" ")}
 
-$scenarioComparisons
 
-## Control Factors (held constant):
-${controlFactors?.joinToString("\n") { "- $it" } ?: "None specified"}
 
-## Context from Related Files:
-$contextFiles
 
-## Previous Task Results:
-$priorCode
 
-## Instructions:
-1. Compare outcomes across all scenarios
-2. Identify key differences and their causes
-3. Assess which factors had the most impact
-4. Evaluate risks and benefits of each alternative
-5. Determine which scenario(s) would have been preferable and why
-6. Identify lessons learned and actionable insights
-7. Highlight any surprising or counterintuitive findings
-8. Provide recommendations based on the analysis
 
-        """.trimIndent()
+        val controlFactorsText = controlFactors?.joinToString("\n") { "- $it" } ?: "None specified"
+        val prompt = buildString {
+            appendLine("Compare the following scenarios and provide insights on their differences:")
+            appendLine()
+            appendLine("## Actual Scenario")
+            appendLine("**Description:** $actualScenario")
+            appendLine("**Analysis:** ${actualAnalysisTokens.joinToString(" ")}")
+            appendLine()
+            appendLine(scenarioComparisons)
+            appendLine()
+            appendLine("## Control Factors (held constant):")
+            appendLine(controlFactorsText)
+            appendLine()
+            appendLine("## Context from Related Files:")
+            appendLine(contextFiles)
+            appendLine()
+            appendLine("## Previous Task Results:")
+            appendLine(priorCode)
+            appendLine()
+            appendLine("## Instructions:")
+            appendLine("1. Compare outcomes across all scenarios")
+            appendLine("2. Identify key differences and their causes")
+            appendLine("3. Assess which factors had the most impact")
+            appendLine("4. Evaluate risks and benefits of each alternative")
+            appendLine("5. Determine which scenario(s) would have been preferable and why")
+            appendLine("6. Identify lessons learned and actionable insights")
+            appendLine("7. Highlight any surprising or counterintuitive findings")
+            appendLine("8. Provide recommendations based on the analysis")
+        }
         transcript?.write("\n<details><summary>Comparison Prompt</summary>\n\n```\n$prompt\n```\n</details>\n\n".toByteArray())
 
 
@@ -369,7 +367,7 @@ $priorCode
             model = api,
         )
 
-        var result: String? = chatAgent.answer(listOf("Provide a comprehensive comparative analysis"))
+        val result: String? = chatAgent.answer(listOf("Provide a comprehensive comparative analysis"))
         transcript?.write("<details><summary>Comparison Response</summary>\n\n${result ?: "(No response)"}\n\n</details>\n\n".toByteArray())
         tab.add("## Comparative Analysis\n\n${result ?: "No comparison generated."}".renderMarkdown(true))
         tab.update()
@@ -426,7 +424,7 @@ $priorCode
             }
         }
 
-    private fun isTextFile(file: File): Boolean {
+    private fun isTextFile(file: java.io.File): Boolean {
         val textExtensions = setOf(
             "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
             "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
@@ -434,7 +432,7 @@ $priorCode
         return textExtensions.contains(file.extension.lowercase())
     }
 
-    private fun extractDocumentContent(file: File) = try {
+    private fun extractDocumentContent(file: java.io.File) = try {
         file.readText()
     } catch (e: Exception) {
         log.warn("Failed to extract content from ${file.name}", e)
@@ -451,17 +449,15 @@ $priorCode
             executionConfigClass = CounterfactualAnalysisTaskExecutionConfigData::class.java,
             taskSettingsClass = TaskTypeConfig::class.java,
             description = "Explore what-if scenarios to understand causal relationships and decision impacts",
-            tooltipHtml = """
-                        Performs counterfactual analysis to explore alternative scenarios and outcomes.
-                        <ul>
-                          <li>Analyzes actual scenarios and alternative conditions</li>
-                          <li>Compares outcomes across different scenarios</li>
-                          <li>Identifies causal relationships and key factors</li>
-                          <li>Supports controlled comparison with constant factors</li>
-                          <li>Provides insights for risk analysis and decision validation</li>
-                          <li>Useful for retrospective analysis and strategic planning</li>
-                        </ul>
-                      """,
+            tooltipHtml = "Performs counterfactual analysis to explore alternative scenarios and outcomes." +
+                "<ul>" +
+                "<li>Analyzes actual scenarios and alternative conditions</li>" +
+                "<li>Compares outcomes across different scenarios</li>" +
+                "<li>Identifies causal relationships and key factors</li>" +
+                "<li>Supports controlled comparison with constant factors</li>" +
+                "<li>Provides insights for risk analysis and decision validation</li>" +
+                "<li>Useful for retrospective analysis and strategic planning</li>" +
+                "</ul>",
         )
     }
 }

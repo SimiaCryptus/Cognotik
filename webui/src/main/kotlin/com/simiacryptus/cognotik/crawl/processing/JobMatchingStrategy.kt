@@ -612,7 +612,7 @@ class JobMatchingStrategy : DefaultSummarizerStrategy() {
     }
 
     override fun analysisGoal(context: PageProcessingStrategy.ProcessingContext): String = when {
-        context.executionConfig.content_queries != null -> context.executionConfig.content_queries.toJson()
+        context.executionConfig.content_queries != null -> context.executionConfig.content_queries?.toJson()
         context.executionConfig.task_description?.isNotBlank() == true -> context.executionConfig.task_description!!
         else -> "Analyze the content and provide insights."
     } + " - Identify pages that contain or are likely to lead to job postings matching the user's experience and target roles."

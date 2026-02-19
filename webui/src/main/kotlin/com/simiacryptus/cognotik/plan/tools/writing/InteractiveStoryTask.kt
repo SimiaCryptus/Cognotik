@@ -13,8 +13,10 @@ import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.io.File
+import java.io.OutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -31,48 +33,48 @@ class InteractiveStoryTask(
 
     class InteractiveStoryTaskExecutionConfigData(
         @Description("The premise or starting scenario for the interactive story")
-        val premise: String? = null,
+        var premise: String? = null,
 
-        @Description("The genre of the story (e.g., 'fantasy', 'sci-fi', 'mystery', 'horror', 'romance')")
-        val genre: String = "fantasy",
+        @Description("The genre of the story. One of: 'fantasy', 'sci-fi', 'mystery', 'horror', 'romance'.")
+        var genre: String = "fantasy",
 
-        @Description("The target audience (e.g., 'children', 'young_adult', 'adult')")
-        val target_audience: String = "young_adult",
+        @Description("The target audience for the story. One of: 'children', 'young_adult', 'adult'.")
+        var target_audience: String = "young_adult",
 
-        @Description("The tone of the story (e.g., 'lighthearted', 'serious', 'dark', 'humorous')")
-        val tone: String = "serious",
+        @Description("The tone of the story. One of: 'lighthearted', 'serious', 'dark', 'humorous'.")
+        var tone: String = "serious",
 
         @Description("Number of major decision points in the story")
-        val num_decision_points: Int = 5,
+        var num_decision_points: Int = 5,
 
         @Description("Number of choices at each decision point")
-        val choices_per_decision: Int = 3,
+        var choices_per_decision: Int = 3,
 
         @Description("Whether to track state variables (inventory, relationships, stats)")
-        val track_state_variables: Boolean = true,
+        var track_state_variables: Boolean = true,
 
-        @Description("State variables to track (e.g., 'health', 'reputation', 'gold', 'ally_trust')")
-        val state_variables: List<String>? = null,
+        @Description("State variables to track. Examples: 'health', 'reputation', 'gold', 'ally_trust'. Null means use defaults.")
+        var state_variables: List<String>? = null,
 
         @Description("Whether to ensure all paths lead to meaningful endings")
-        val prevent_dead_ends: Boolean = true,
+        var prevent_dead_ends: Boolean = true,
 
         @Description("Number of distinct endings to create")
-        val num_endings: Int = 3,
+        var num_endings: Int = 3,
 
         @Description("Whether to optimize for replay value with distinct experiences")
-        val optimize_replay_value: Boolean = true,
+        var optimize_replay_value: Boolean = true,
 
         @Description("Average word count per story segment")
-        val segment_word_count: Int = 300,
-        @Description("Writing style (e.g., 'descriptive', 'action-packed', 'dialogue-heavy', 'introspective')")
-        val writing_style: String = "descriptive",
+        var segment_word_count: Int = 300,
 
-        @Description("Point of view (e.g., 'second_person', 'first_person', 'third_person')")
-        val point_of_view: String = "second_person",
-        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the story")
-        val input_files: List<String>? = null,
+        @Description("Writing style for the narrative. One of: 'descriptive', 'action-packed', 'dialogue-heavy', 'introspective'.")
+        var writing_style: String = "descriptive",
 
+        @Description("Point of view for the narrative. One of: 'second_person', 'first_person', 'third_person'.")
+        var point_of_view: String = "second_person",
+        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the story. Null means no file context.")
+        var input_files: List<String>? = null,
 
         task_description: String? = null,
         task_dependencies: List<String>? = null,
@@ -87,26 +89,18 @@ class InteractiveStoryTask(
             if (premise.isNullOrBlank()) {
                 return "premise must not be null or blank"
             }
-            if (num_decision_points < 1 || num_decision_points > 20) {
-                return "num_decision_points must be between 1 and 20, got: $num_decision_points"
-            }
-            if (choices_per_decision < 2 || choices_per_decision > 5) {
-                return "choices_per_decision must be between 2 and 5, got: $choices_per_decision"
-            }
-            if (num_endings < 1 || num_endings > 10) {
-                return "num_endings must be between 1 and 10, got: $num_endings"
-            }
-            if (segment_word_count < 100 || segment_word_count > 1000) {
-                return "segment_word_count must be between 100 and 1000, got: $segment_word_count"
-            }
-            if (genre.isNullOrBlank()) {
+            num_decision_points = num_decision_points.coerceIn(1, 20)
+            choices_per_decision = choices_per_decision.coerceIn(2, 5)
+            num_endings = num_endings.coerceIn(1, 10)
+            segment_word_count = segment_word_count.coerceIn(100, 1000)
+            if (genre.isBlank()) {
                 return "genre must not be null or blank"
             }
             if (point_of_view.isBlank()) {
                 return "point_of_view must not be blank"
             }
             if (!input_files.isNullOrEmpty()) {
-                input_files.forEach { pattern ->
+                input_files?.forEach { pattern ->
                     if (pattern.isBlank()) {
                         return "input_files patterns must not be blank"
                     }
@@ -118,15 +112,15 @@ class InteractiveStoryTask(
 
     data class StoryStructure(
         @Description("The story title")
-        val title: String = "",
+        var title: String = "",
         @Description("Opening segment that sets the scene")
-        val opening: String = "",
+        var opening: String = "",
         @Description("Decision points in the story")
-        val decision_points: List<DecisionPoint> = emptyList(),
+        var decision_points: List<DecisionPoint> = emptyList(),
         @Description("Possible endings")
-        val endings: List<Ending> = emptyList(),
+        var endings: List<Ending> = emptyList(),
         @Description("State variables being tracked")
-        val tracked_variables: Map<String, String> = emptyMap()
+        var tracked_variables: Map<String, String> = emptyMap()
     ) : ValidatedObject {
         override fun validate(): String? {
             if (title.isBlank()) return "title must not be blank"
@@ -139,15 +133,15 @@ class InteractiveStoryTask(
 
     data class DecisionPoint(
         @Description("Unique identifier for this decision point")
-        val id: String = "",
+        var id: String = "",
         @Description("The narrative segment leading to this decision")
-        val narrative: String = "",
+        var narrative: String = "",
         @Description("The question or situation requiring a choice")
-        val decision_prompt: String = "",
+        var decision_prompt: String = "",
         @Description("Available choices")
-        val choices: List<Choice> = emptyList(),
+        var choices: List<Choice> = emptyList(),
         @Description("Current state variable values at this point")
-        val state_snapshot: Map<String, Int> = emptyMap()
+        var state_snapshot: Map<String, Int> = emptyMap()
     ) : ValidatedObject {
         override fun validate(): String? {
             if (id.isBlank()) return "id must not be blank"
@@ -160,15 +154,15 @@ class InteractiveStoryTask(
 
     data class Choice(
         @Description("The choice text presented to the reader")
-        val text: String = "",
+        var text: String = "",
         @Description("ID of the next decision point or ending this leads to")
-        val leads_to: String = "",
+        var leads_to: String = "",
         @Description("State variable changes from this choice")
-        val state_changes: Map<String, Int> = emptyMap(),
+        var state_changes: Map<String, Int> = emptyMap(),
         @Description("Immediate consequence description")
-        val immediate_consequence: String = "",
+        var immediate_consequence: String = "",
         @Description("Long-term impact on the story")
-        val long_term_impact: String = ""
+        var long_term_impact: String = ""
     ) : ValidatedObject {
         override fun validate(): String? {
             if (text.isBlank()) return "text must not be blank"
@@ -179,15 +173,15 @@ class InteractiveStoryTask(
 
     data class Ending(
         @Description("Unique identifier for this ending")
-        val id: String = "",
+        var id: String = "",
         @Description("Type of ending (e.g., 'triumph', 'tragedy', 'bittersweet', 'twist')")
-        val ending_type: String = "",
+        var ending_type: String = "",
         @Description("The final narrative segment")
-        val narrative: String = "",
+        var narrative: String = "",
         @Description("Required state conditions to reach this ending")
-        val required_conditions: Map<String, String> = emptyMap(),
+        var required_conditions: Map<String, String> = emptyMap(),
         @Description("Choices that led to this ending")
-        val path_summary: List<String> = emptyList()
+        var path_summary: List<String> = emptyList()
     ) : ValidatedObject {
         override fun validate(): String? {
             if (id.isBlank()) return "id must not be blank"
@@ -198,30 +192,28 @@ class InteractiveStoryTask(
     }
 
     data class StorySegment(
-        @Description("The segment ID")
-        val id: String = "",
+        @Description("The unique segment identifier")
+        var id: String = "",
         @Description("The narrative content")
-        val content: String = "",
+        var content: String = "",
         @Description("Word count")
-        val word_count: Int = 0,
+        var word_count: Int = 0,
         @Description("State changes in this segment")
-        val state_changes: Map<String, Int> = emptyMap()
+        var state_changes: Map<String, Int> = emptyMap()
     ) : ValidatedObject
 
-    override fun promptSegment(): String {
-        return """
- InteractiveStory - Create choose-your-own-adventure narratives with branching paths
-  ** Optionally, list input files (supports glob patterns) to be examined for context
-  ** Specify the premise or starting scenario
-  ** Define genre, tone, and target audience
-  ** Set number of decision points and choices per decision
-  ** Enable state variable tracking (health, reputation, inventory, etc.)
-  ** Prevent dead ends to ensure all paths lead somewhere meaningful
-  ** Create multiple distinct endings based on player choices
-  ** Optimize for replay value with different experiences
-  ** Track consequences across choices for coherent storytelling
-  ** Produces complete interactive narrative with decision tree
-        """.trimIndent()
+    override fun promptSegment(): String = buildString {
+        appendLine("InteractiveStory - Create choose-your-own-adventure narratives with branching paths")
+        appendLine("  ** Optionally, list input files (supports glob patterns) to be examined for context")
+        appendLine("  ** Specify the premise or starting scenario")
+        appendLine("  ** Define genre, tone, and target audience")
+        appendLine("  ** Set number of decision points and choices per decision")
+        appendLine("  ** Enable state variable tracking (health, reputation, inventory, etc.)")
+        appendLine("  ** Prevent dead ends to ensure all paths lead somewhere meaningful")
+        appendLine("  ** Create multiple distinct endings based on player choices")
+        appendLine("  ** Optimize for replay value with different experiences")
+        appendLine("  ** Track consequences across choices for coherent storytelling")
+        appendLine("  ** Produces complete interactive narrative with decision tree")
     }
 
     override fun run(
@@ -232,104 +224,98 @@ class InteractiveStoryTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         val startTime = System.currentTimeMillis()
-        // Initialize transcript
-        val transcriptStream = task.newLogStream("Transcript")
-        val transcriptWriter = transcriptStream.bufferedWriter()
-        // Gather input context from files and messages
-        val inputContext = getInputFileCode() +
-                if (messages.isNotEmpty()) "\n\n## User Input\n\n${messages.joinToString("\n\n")}" else ""
-
-
-        log.info("Starting InteractiveStoryTask for premise: '${executionConfig?.premise}'")
-
-        // Validate configuration
-        executionConfig?.validate()?.let { validationError ->
-            log.error("Configuration validation failed: $validationError")
-            task.safeComplete("CONFIGURATION ERROR: $validationError", log)
-            task.error(ValidatedObject.ValidationError(validationError, executionConfig))
-            transcriptWriter.close()
-            resultFn("CONFIGURATION ERROR: $validationError")
-            return
-        }
-
-        val premise = executionConfig?.premise
-        if (premise.isNullOrBlank()) {
-            log.error("No premise specified for interactive story")
-            task.safeComplete("CONFIGURATION ERROR: No premise specified", log)
-            transcriptWriter.close()
-            resultFn("CONFIGURATION ERROR: No premise specified")
-            return
-        }
-
-        val api = defaultSmart ?: return
-
+        val transcript: OutputStream? = task.newFileOutputStream(transcriptFile())
+        val smartApi = orchestrationConfig.defaultSmart.getChildClient(task)
+        val fastApi = orchestrationConfig.defaultFast.getChildClient(task)
         val tabs = TabbedDisplay(task)
-
-        // Overview tab
-        val overviewTask = tabs.newTask("Overview")
-
-        val overviewContent = buildString {
-            appendLine("# Interactive Story Generation")
-            appendLine()
-            appendLine("**Premise:** $premise")
-            appendLine()
-            appendLine("## Configuration")
-            appendLine("- Genre: ${executionConfig.genre}")
-            appendLine("- Target Audience: ${executionConfig.target_audience}")
-            appendLine("- Tone: ${executionConfig.tone}")
-            appendLine("- Point of View: ${executionConfig.point_of_view}")
-            appendLine("- Writing Style: ${executionConfig.writing_style}")
-            appendLine("- Decision Points: ${executionConfig.num_decision_points}")
-            appendLine("- Choices per Decision: ${executionConfig.choices_per_decision}")
-            appendLine("- Number of Endings: ${executionConfig.num_endings}")
-            appendLine("- Track State Variables: ${if (executionConfig.track_state_variables) "✓" else "✗"}")
-            if (executionConfig.track_state_variables && !executionConfig.state_variables.isNullOrEmpty()) {
-                appendLine("- State Variables: ${executionConfig.state_variables.joinToString(", ")}")
+        val storyBuilder = StringBuilder()
+        try {
+            // Gather input context from files and messages
+            val inputContext = getInputFileCode() +
+                    if (messages.isNotEmpty()) "\n\n## User Input\n\n${messages.joinToString("\n\n")}" else ""
+            log.info("Starting InteractiveStoryTask for premise: '${executionConfig?.premise}'")
+            // Validate configuration
+            executionConfig?.validate()?.let { validationError ->
+                log.error("Configuration validation failed: $validationError")
+                task.safeComplete("CONFIGURATION ERROR: $validationError", log)
+                task.error(ValidatedObject.ValidationError(validationError, executionConfig))
+                transcript?.write("# CONFIGURATION ERROR\n\n$validationError\n".toByteArray())
+                resultFn("CONFIGURATION ERROR: $validationError")
+                return
             }
-            appendLine("- Prevent Dead Ends: ${if (executionConfig.prevent_dead_ends) "✓" else "✗"}")
-            appendLine("- Optimize Replay Value: ${if (executionConfig.optimize_replay_value) "✓" else "✗"}")
-            appendLine()
-            appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
-            appendLine()
-            appendLine("---")
-            appendLine()
-            appendLine("## Progress")
-            appendLine()
-            appendLine("### Phase 1: Story Structure Planning")
-            appendLine("*Creating decision tree and story architecture...*")
-        }
-        // Write to transcript
-        transcriptWriter.apply {
-            write("# Interactive Story Generation Transcript\n\n")
-            write("**Premise:** $premise\n\n")
-            write("## Configuration\n\n")
-            write("- Genre: ${executionConfig.genre}\n")
-            write("- Target Audience: ${executionConfig.target_audience}\n")
-            write("- Tone: ${executionConfig.tone}\n")
-            write("- Point of View: ${executionConfig.point_of_view}\n")
-            write("- Writing Style: ${executionConfig.writing_style}\n")
-            write("- Decision Points: ${executionConfig.num_decision_points}\n")
-            write("- Choices per Decision: ${executionConfig.choices_per_decision}\n")
-            write("- Number of Endings: ${executionConfig.num_endings}\n")
-            write("- Track State Variables: ${if (executionConfig.track_state_variables) "✓" else "✗"}\n")
-            if (executionConfig.track_state_variables && !executionConfig.state_variables.isNullOrEmpty()) {
-                write("- State Variables: ${executionConfig.state_variables.joinToString(", ")}\n")
+            val premise = executionConfig?.premise
+            if (premise.isNullOrBlank()) {
+                log.error("No premise specified for interactive story")
+                task.safeComplete("CONFIGURATION ERROR: No premise specified", log)
+                transcript?.write("# CONFIGURATION ERROR\n\nNo premise specified\n".toByteArray())
+                resultFn("CONFIGURATION ERROR: No premise specified")
+                return
             }
-            write(
-                "\n**Started:** ${
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                }\n\n"
-            )
-            write("---\n\n")
-            flush()
-        }
-        overviewTask.add(overviewContent.renderMarkdown())
-        task.update()
+            // Overview tab
+            val overviewTask = tabs.newTask("Overview")
+            val overviewContent = buildString {
+                appendLine("# Interactive Story Generation")
+                appendLine()
+                appendLine("**Premise:** $premise")
+                appendLine()
+                appendLine("## Configuration")
+                appendLine("- Genre: ${executionConfig.genre}")
+                appendLine("- Target Audience: ${executionConfig.target_audience}")
+                appendLine("- Tone: ${executionConfig.tone}")
+                appendLine("- Point of View: ${executionConfig.point_of_view}")
+                appendLine("- Writing Style: ${executionConfig.writing_style}")
+                appendLine("- Decision Points: ${executionConfig.num_decision_points}")
+                appendLine("- Choices per Decision: ${executionConfig.choices_per_decision}")
+                appendLine("- Number of Endings: ${executionConfig.num_endings}")
+                appendLine("- Track State Variables: ${if (executionConfig.track_state_variables) "✓" else "✗"}")
+                if (executionConfig.track_state_variables && !executionConfig.state_variables.isNullOrEmpty()) {
+                    appendLine("- State Variables: ${executionConfig.state_variables?.joinToString(", ")}")
+                }
+                appendLine("- Prevent Dead Ends: ${if (executionConfig.prevent_dead_ends) "✓" else "✗"}")
+                appendLine("- Optimize Replay Value: ${if (executionConfig.optimize_replay_value) "✓" else "✗"}")
+                appendLine()
+                appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## Progress")
+                appendLine()
+                appendLine("### Phase 1: Story Structure Planning")
+                appendLine("*Creating decision tree and story architecture...*")
+            }
+            // Write transcript header with tabbed structure
+            transcript?.write(buildString {
+                appendLine("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">")
+                appendLine()
+                appendLine("# Interactive Story Generation Transcript")
+                appendLine()
+                appendLine("**Premise:** $premise")
+                appendLine()
+                appendLine("## Configuration")
+                appendLine()
+                appendLine("- Genre: ${executionConfig.genre}")
+                appendLine("- Target Audience: ${executionConfig.target_audience}")
+                appendLine("- Tone: ${executionConfig.tone}")
+                appendLine("- Point of View: ${executionConfig.point_of_view}")
+                appendLine("- Writing Style: ${executionConfig.writing_style}")
+                appendLine("- Decision Points: ${executionConfig.num_decision_points}")
+                appendLine("- Choices per Decision: ${executionConfig.choices_per_decision}")
+                appendLine("- Number of Endings: ${executionConfig.num_endings}")
+                appendLine("- Track State Variables: ${if (executionConfig.track_state_variables) "✓" else "✗"}")
+                if (executionConfig.track_state_variables && !executionConfig.state_variables.isNullOrEmpty()) {
+                    appendLine("- State Variables: ${executionConfig.state_variables?.joinToString(", ")}")
+                }
+                appendLine()
+                appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+                appendLine()
+                appendLine("---")
+                appendLine()
+            }.toByteArray())
+            overviewTask.add(overviewContent.renderMarkdown())
+            task.update()
 
-            val storyBuilder = StringBuilder()
             storyBuilder.append("# Interactive Story: $premise\n\n")
 
-        try {
             // Gather context from input files and messages
             val priorContext = getPriorCode(agent.executionState)
             val combinedContext = (if (inputContext.isNotBlank()) inputContext else "") +
@@ -337,12 +323,16 @@ class InteractiveStoryTask(
 
             // Gather context
             if (priorContext.isNotBlank()) {
-                transcriptWriter.apply {
-                    write("## Context from Previous Tasks\n\n")
-                    write(priorContext.truncateForDisplay(2000))
-                    write("\n\n---\n\n")
-                    flush()
-                }
+                transcript?.write(buildString {
+                    appendLine("<details><summary>Context from Previous Tasks</summary>")
+                    appendLine()
+                    appendLine(priorContext.truncateForDisplay(2000))
+                    appendLine()
+                    appendLine("</details>")
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                }.toByteArray())
                 log.debug("Found prior context: ${priorContext.length} chars")
                 val contextTask = tabs.newTask("Context")
                 contextTask.add(
@@ -356,11 +346,7 @@ class InteractiveStoryTask(
             }
 
             // Phase 1: Create story structure and decision tree
-            transcriptWriter.apply {
-                write("## Phase 1: Story Structure Planning\n\n")
-                write("Creating decision tree and story architecture...\n\n")
-                flush()
-            }
+            transcript?.write("## Phase 1: Story Structure Planning\n\nCreating decision tree and story architecture...\n\n".toByteArray())
             log.info("Phase 1: Creating story structure")
             val structureTask = tabs.newTask("Story Structure")
 
@@ -379,38 +365,47 @@ class InteractiveStoryTask(
             } else {
                 emptyList()
             }
-            // First, create a high-level outline
+
+            // First, create a high-level outline using wrapped API client
+            val outlinePrompt = buildString {
+                appendLine("You are an expert interactive fiction designer. Create a high-level outline for a branching story.")
+                appendLine("Premise: $premise")
+                appendLine("Story Parameters:")
+                appendLine("- Genre: ${executionConfig.genre}")
+                appendLine("- Target Audience: ${executionConfig.target_audience}")
+                appendLine("- Tone: ${executionConfig.tone}")
+                appendLine("- Decision Points: ${executionConfig.num_decision_points}")
+                appendLine("- Choices per Decision: ${executionConfig.choices_per_decision}")
+                appendLine("- Number of Endings: ${executionConfig.num_endings}")
+                if (combinedContext.isNotBlank()) {
+                    appendLine("Additional Context:")
+                    appendLine(combinedContext.truncateForDisplay(1000))
+                }
+                appendLine("Create a brief outline with:")
+                appendLine("1. A compelling title")
+                appendLine("2. A one-paragraph opening concept")
+                appendLine("3. List of ${executionConfig.num_decision_points} decision point IDs and brief descriptions (e.g., \"decision_1: Choose path in forest\")")
+                appendLine("4. List of ${executionConfig.num_endings} ending IDs and types (e.g., \"ending_triumph: Hero succeeds\")")
+                appendLine("5. A simple flow showing how decisions connect (decision_1 -> decision_2 or ending_1)")
+                appendLine("Keep it concise - just the structure, not full narratives.")
+            }
             val outlineAgent = ChatAgent(
-                prompt = """
- You are an expert interactive fiction designer. Create a high-level outline for a branching story.
- Premise: $premise
- Story Parameters:
-- Genre: ${executionConfig.genre}
-- Target Audience: ${executionConfig.target_audience}
-- Tone: ${executionConfig.tone}
-- Decision Points: ${executionConfig.num_decision_points}
-- Choices per Decision: ${executionConfig.choices_per_decision}
-- Number of Endings: ${executionConfig.num_endings}
-${if (combinedContext.isNotBlank()) "Additional Context:\n${combinedContext.truncateForDisplay(1000)}\n" else ""}
-Create a brief outline with:
-1. A compelling title
-2. A one-paragraph opening concept
-3. List of ${executionConfig.num_decision_points} decision point IDs and brief descriptions (e.g., "decision_1: Choose path in forest")
-4. List of ${executionConfig.num_endings} ending IDs and types (e.g., "ending_triumph: Hero succeeds")
-5. A simple flow showing how decisions connect (decision_1 -> decision_2 or ending_1)
-Keep it concise - just the structure, not full narratives.
-          """.trimIndent(),
-                model = api,
+                prompt = outlinePrompt,
+                model = smartApi,
                 temperature = 0.7
             )
             val outline = outlineAgent.answer(listOf("Create outline"))
             log.debug("Generated outline: ${outline.length} chars")
-            transcriptWriter.apply {
-                write("### Story Outline\n\n")
-                write(outline)
-                write("\n\n")
-                flush()
-            }
+            transcript?.write(buildString {
+                appendLine("### Story Outline")
+                appendLine()
+                appendLine("<details><summary>Generated Outline</summary>")
+                appendLine()
+                appendLine(outline)
+                appendLine()
+                appendLine("</details>")
+                appendLine()
+            }.toByteArray())
             structureTask.add(
                 buildString {
                     appendLine("## Story Outline")
@@ -424,42 +419,45 @@ Keep it concise - just the structure, not full narratives.
                 }.renderMarkdown()
             )
             task.update()
-            // Now create the detailed structure in smaller pieces
+            // Now create the detailed structure
+            val structurePrompt = buildString {
+                appendLine("You are an expert interactive fiction designer. Create a detailed story structure based on this outline.")
+                appendLine()
+                appendLine("OUTLINE:")
+                appendLine(outline)
+                appendLine()
+                appendLine("Story Parameters:")
+                appendLine("- Genre: ${executionConfig.genre}")
+                appendLine("- Target Audience: ${executionConfig.target_audience}")
+                appendLine("- Tone: ${executionConfig.tone}")
+                if (executionConfig.track_state_variables) {
+                    appendLine("- State Variables to Track: ${stateVars.joinToString(", ")}")
+                }
+                appendLine()
+                appendLine("Expand the outline into a complete structure with:")
+                appendLine("1. The title from the outline")
+                appendLine("2. A brief opening description (2-3 sentences, NOT the full narrative)")
+                appendLine("3. Decision points with:")
+                appendLine("   - A unique ID (e.g., \"decision_1\", \"decision_2\" - use snake_case for compatibility)")
+                appendLine("   - A brief narrative description (1-2 sentences)")
+                appendLine("   - A clear decision prompt")
+                appendLine("   - ${executionConfig.choices_per_decision} meaningful choices")
+                appendLine("   - Each choice should lead to another decision point or an ending")
+                appendLine("4. Endings with unique IDs and types")
+                if (executionConfig.track_state_variables) {
+                    appendLine("5. State variable definitions and how they're affected by choices")
+                }
+                appendLine()
+                appendLine("IMPORTANT: Keep descriptions brief. Full narratives will be written later.")
+                appendLine("Focus on structure and connections, not detailed prose.")
+            }
 
             val structureAgent = ParsedAgent(
                 resultClass = StoryStructure::class.java,
-                prompt = """
-You are an expert interactive fiction designer. Create a detailed story structure based on this outline.
-
-OUTLINE:
-$outline
-
-Story Parameters:
-- Genre: ${executionConfig.genre}
-- Target Audience: ${executionConfig.target_audience}
-- Tone: ${executionConfig.tone}
-${if (executionConfig.track_state_variables) "- State Variables to Track: ${stateVars.joinToString(", ")}" else ""}
-
-
-Expand the outline into a complete structure with:
-1. The title from the outline
-2. A brief opening description (2-3 sentences, NOT the full narrative)
-3. Decision points with:
-   - A unique ID (e.g., "decision_1", "decision_2" - use snake_case for compatibility)
-   - A brief narrative description (1-2 sentences)
-   - A clear decision prompt
-   - ${executionConfig.choices_per_decision} meaningful choices
-   - Each choice should lead to another decision point or an ending
-4. Endings with unique IDs and types
-${if (executionConfig.track_state_variables) "5. State variable definitions and how they're affected by choices" else ""}
-
-
-IMPORTANT: Keep descriptions brief. Full narratives will be written later.
-Focus on structure and connections, not detailed prose.
-          """.trimIndent(),
-                model = api,
+                prompt = structurePrompt,
+                model = smartApi,
                 temperature = 0.5,
-                parsingChatter = defaultFast
+                parsingChatter = fastApi
             )
 
             val structure = structureAgent.answer(listOf("Create detailed structure from outline")).obj
@@ -468,42 +466,46 @@ Focus on structure and connections, not detailed prose.
             structure.validate()?.let { validationError ->
                 log.error("Structure validation failed: $validationError")
                 structureTask.error(ValidatedObject.ValidationError(validationError, structure))
-                transcriptWriter.apply {
-                    write("**ERROR:** Structure validation failed: $validationError\n\n")
-                    flush()
-                    close()
-                }
+                transcript?.write("**ERROR:** Structure validation failed: $validationError\n\n".toByteArray())
                 task.safeComplete("Structure validation failed: $validationError", log)
                 resultFn("ERROR: Structure validation failed: $validationError")
                 return
             }
 
             log.info("Generated structure: ${structure.decision_points.size} decision points, ${structure.endings.size} endings")
-            transcriptWriter.apply {
-                write("### Generated Story Structure\n\n")
-                write("**Title:** ${structure.title}\n\n")
-                write("**Opening:** ${structure.opening}\n\n")
-                write("**Decision Points:** ${structure.decision_points.size}\n\n")
+            transcript?.write(buildString {
+                appendLine("### Generated Story Structure")
+                appendLine()
+                appendLine("**Title:** ${structure.title}")
+                appendLine()
+                appendLine("**Opening:** ${structure.opening}")
+                appendLine()
+                appendLine("**Decision Points:** ${structure.decision_points.size}")
+                appendLine()
                 structure.decision_points.forEach { dp ->
-                    write("- ${dp.id}: ${dp.decision_prompt}\n")
+                    appendLine("- ${dp.id}: ${dp.decision_prompt}")
                     dp.choices.forEach { choice ->
-                        write("  - ${choice.text} → ${choice.leads_to}\n")
+                        appendLine("  - ${choice.text} → ${choice.leads_to}")
                     }
                 }
-                write("\n**Endings:** ${structure.endings.size}\n\n")
+                appendLine()
+                appendLine("**Endings:** ${structure.endings.size}")
+                appendLine()
                 structure.endings.forEach { ending ->
-                    write("- ${ending.id}: ${ending.ending_type}\n")
+                    appendLine("- ${ending.id}: ${ending.ending_type}")
                 }
                 if (structure.tracked_variables.isNotEmpty()) {
-                    write("\n**Tracked Variables:**\n\n")
+                    appendLine()
+                    appendLine("**Tracked Variables:**")
+                    appendLine()
                     structure.tracked_variables.forEach { (name, description) ->
-                        write("- $name: $description\n")
+                        appendLine("- $name: $description")
                     }
                 }
-                write("\n---\n\n")
-                flush()
-            }
-
+                appendLine()
+                appendLine("---")
+                appendLine()
+            }.toByteArray())
 
             val structureContent = buildString {
                 appendLine("## ${structure.title}")
@@ -579,11 +581,7 @@ Focus on structure and connections, not detailed prose.
             task.update()
 
             // Phase 2: Write opening segment
-            transcriptWriter.apply {
-                write("## Phase 2: Opening Segment\n\n")
-                write("Writing the story opening...\n\n")
-                flush()
-            }
+            transcript?.write("## Phase 2: Opening Segment\n\nWriting the story opening...\n\n".toByteArray())
             log.info("Phase 2: Writing opening segment")
             val openingTask = tabs.newTask("Opening")
 
@@ -596,49 +594,55 @@ Focus on structure and connections, not detailed prose.
                 }.renderMarkdown()
             )
             task.update()
+            val openingPrompt = buildString {
+                appendLine("You are a skilled ${executionConfig.genre} writer. Write the opening segment of this interactive story.")
+                appendLine()
+                appendLine("Title: ${structure.title}")
+                appendLine("Premise: $premise")
+                appendLine()
+                appendLine("Story Parameters:")
+                appendLine("- Genre: ${executionConfig.genre}")
+                appendLine("- Tone: ${executionConfig.tone}")
+                appendLine("- Point of View: ${executionConfig.point_of_view}")
+                appendLine("- Writing Style: ${executionConfig.writing_style}")
+                appendLine("- Target Audience: ${executionConfig.target_audience}")
+                appendLine()
+                appendLine("Opening Outline: ${structure.opening}")
+                appendLine()
+                appendLine("Write an engaging opening segment (~${executionConfig.segment_word_count} words) that:")
+                appendLine("1. Immediately hooks the reader")
+                appendLine("2. Establishes the setting and atmosphere")
+                appendLine("3. Introduces the protagonist (the reader in ${executionConfig.point_of_view} POV)")
+                appendLine("4. Sets up the initial situation")
+                appendLine("5. Creates anticipation for the first decision")
+                appendLine("6. Matches the ${executionConfig.tone} tone and ${executionConfig.writing_style} style")
+                if (executionConfig.track_state_variables) {
+                    appendLine()
+                    appendLine("Initialize state variables: ${stateVars.joinToString(", ")}")
+                }
+                appendLine()
+                appendLine("Make it immersive and compelling. The reader should feel invested immediately.")
+            }
 
             val openingAgent = ParsedAgent(
                 resultClass = StorySegment::class.java,
-                prompt = """
-You are a skilled ${executionConfig.genre} writer. Write the opening segment of this interactive story.
-
-Title: ${structure.title}
-Premise: $premise
-
-Story Parameters:
-- Genre: ${executionConfig.genre}
-- Tone: ${executionConfig.tone}
-- Point of View: ${executionConfig.point_of_view}
-- Writing Style: ${executionConfig.writing_style}
-- Target Audience: ${executionConfig.target_audience}
-
-Opening Outline: ${structure.opening}
-
-Write an engaging opening segment (~${executionConfig.segment_word_count} words) that:
-1. Immediately hooks the reader
-2. Establishes the setting and atmosphere
-3. Introduces the protagonist (the reader in ${executionConfig.point_of_view} POV)
-4. Sets up the initial situation
-5. Creates anticipation for the first decision
-6. Matches the ${executionConfig.tone} tone and ${executionConfig.writing_style} style
-
-${if (executionConfig.track_state_variables) "Initialize state variables: ${stateVars.joinToString(", ")}" else ""}
-
-Make it immersive and compelling. The reader should feel invested immediately.
-          """.trimIndent(),
-                model = api,
+                prompt = openingPrompt,
+                model = smartApi,
                 temperature = 0.8,
-                parsingChatter = defaultFast
+                parsingChatter = fastApi
             )
 
-            var openingSegment = openingAgent.answer(listOf("Write opening")).obj
-            transcriptWriter.apply {
-                write("### Opening Segment\n\n")
-                write(openingSegment.content)
-                write("\n\n**Word Count:** ${openingSegment.word_count}\n\n")
-                write("---\n\n")
-                flush()
-            }
+            val openingSegment = openingAgent.answer(listOf("Write opening")).obj
+            transcript?.write(buildString {
+                appendLine("### Opening Segment")
+                appendLine()
+                appendLine(openingSegment.content)
+                appendLine()
+                appendLine("**Word Count:** ${openingSegment.word_count}")
+                appendLine()
+                appendLine("---")
+                appendLine()
+            }.toByteArray())
 
             openingTask.add(
                 buildString {
@@ -670,11 +674,7 @@ Make it immersive and compelling. The reader should feel invested immediately.
             overviewTask.add("\n### Phase 3: Decision Points\n*Writing branching narrative segments...*\n".renderMarkdown())
 
             // Phase 3: Write each decision point
-            transcriptWriter.apply {
-                write("## Phase 3: Decision Points\n\n")
-                write("Writing branching narrative segments...\n\n")
-                flush()
-            }
+            transcript?.write("## Phase 3: Decision Points\n\nWriting branching narrative segments...\n\n".toByteArray())
             log.info("Phase 3: Writing decision points")
             val decisionSegments = mutableMapOf<String, StorySegment>()
             var cumulativeWordCount = openingSegment.word_count
@@ -720,64 +720,69 @@ Make it immersive and compelling. The reader should feel invested immediately.
                         appendLine(openingSegment.content.takeLast(300))
                     }
                 }
+                val decisionPrompt = buildString {
+                    appendLine("You are a skilled ${executionConfig.genre} writer. Write the narrative segment leading to this decision point.")
+                    appendLine()
+                    appendLine("Title: ${structure.title}")
+                    appendLine("Decision Point: ${decisionPoint.id}")
+                    appendLine()
+                    appendLine("Decision Outline:")
+                    appendLine("- Narrative: ${decisionPoint.narrative}")
+                    appendLine("- Decision Prompt: ${decisionPoint.decision_prompt}")
+                    appendLine()
+                    appendLine("Available Choices:")
+                    decisionPoint.choices.forEach { appendLine("- ${it.text}") }
+                    appendLine()
+                    appendLine(previousContext)
+                    appendLine()
+                    appendLine("Story Parameters:")
+                    appendLine("- Genre: ${executionConfig.genre}")
+                    appendLine("- Tone: ${executionConfig.tone}")
+                    appendLine("- Point of View: ${executionConfig.point_of_view}")
+                    appendLine("- Writing Style: ${executionConfig.writing_style}")
+                    appendLine()
+                    appendLine("Write a narrative segment (~${executionConfig.segment_word_count} words) that:")
+                    appendLine("1. Flows naturally from the previous segment")
+                    appendLine("2. Develops the story and builds tension")
+                    appendLine("3. Presents the situation requiring a decision")
+                    appendLine("4. Makes all choices feel meaningful and distinct")
+                    appendLine("5. Maintains the ${executionConfig.tone} tone")
+                    appendLine("6. Ends with the decision prompt clearly presented")
+                    if (executionConfig.track_state_variables && decisionPoint.state_snapshot.isNotEmpty()) {
+                        appendLine()
+                        appendLine("Current State: ${decisionPoint.state_snapshot.entries.joinToString(", ") { "${it.key}: ${it.value}" }}")
+                    }
+                    appendLine()
+                    appendLine("Make the reader feel the weight of their choice. Each option should feel viable but lead to different outcomes.")
+                }
 
                 val decisionAgent = ParsedAgent(
                     resultClass = StorySegment::class.java,
-                    prompt = """
-You are a skilled ${executionConfig.genre} writer. Write the narrative segment leading to this decision point.
-
-Title: ${structure.title}
-Decision Point: ${decisionPoint.id}
-
-Decision Outline:
-- Narrative: ${decisionPoint.narrative}
-- Decision Prompt: ${decisionPoint.decision_prompt}
-
-Available Choices:
-${decisionPoint.choices.joinToString("\n") { "- ${it.text}" }}
-
-$previousContext
-
-Story Parameters:
-- Genre: ${executionConfig.genre}
-- Tone: ${executionConfig.tone}
-- Point of View: ${executionConfig.point_of_view}
-- Writing Style: ${executionConfig.writing_style}
-
-Write a narrative segment (~${executionConfig.segment_word_count} words) that:
-1. Flows naturally from the previous segment
-2. Develops the story and builds tension
-3. Presents the situation requiring a decision
-4. Makes all choices feel meaningful and distinct
-5. Maintains the ${executionConfig.tone} tone
-6. Ends with the decision prompt clearly presented
-
-${
-                        if (executionConfig.track_state_variables && decisionPoint.state_snapshot.isNotEmpty()) {
-                            "Current State: ${decisionPoint.state_snapshot.entries.joinToString(", ") { "${it.key}: ${it.value}" }}"
-                        } else ""
-                    }
-
-Make the reader feel the weight of their choice. Each option should feel viable but lead to different outcomes.
-          """.trimIndent(),
-                    model = api,
+                    prompt = decisionPrompt,
+                    model = smartApi,
                     temperature = 0.8,
-                    parsingChatter = defaultFast
+                    parsingChatter = fastApi
                 )
 
-                var segment = decisionAgent.answer(listOf("Write decision point")).obj.copy(id = decisionPoint.id)
+                val segment = decisionAgent.answer(listOf("Write decision point")).obj.copy(id = decisionPoint.id)
                 decisionSegments[decisionPoint.id] = segment
                 cumulativeWordCount += segment.word_count
-                transcriptWriter.apply {
-                    write("### ${decisionPoint.id}\n\n")
-                    write(segment.content)
-                    write("\n\n**Decision:** ${decisionPoint.decision_prompt}\n\n")
+                transcript?.write(buildString {
+                    appendLine("### ${decisionPoint.id}")
+                    appendLine()
+                    appendLine(segment.content)
+                    appendLine()
+                    appendLine("**Decision:** ${decisionPoint.decision_prompt}")
+                    appendLine()
                     decisionPoint.choices.forEach { choice ->
-                        write("- ${choice.text} → ${choice.leads_to}\n")
+                        appendLine("- ${choice.text} → ${choice.leads_to}")
                     }
-                    write("\n**Word Count:** ${segment.word_count}\n\n---\n\n")
-                    flush()
-                }
+                    appendLine()
+                    appendLine("**Word Count:** ${segment.word_count}")
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                }.toByteArray())
 
                 dpTask.add(
                     buildString {
@@ -826,11 +831,7 @@ Make the reader feel the weight of their choice. Each option should feel viable 
             task.update()
 
             // Phase 4: Write endings
-            transcriptWriter.apply {
-                write("## Phase 4: Endings\n\n")
-                write("Writing story conclusions...\n\n")
-                flush()
-            }
+            transcript?.write("## Phase 4: Endings\n\nWriting story conclusions...\n\n".toByteArray())
             log.info("Phase 4: Writing endings")
             val endingSegments = mutableMapOf<String, StorySegment>()
 
@@ -851,60 +852,62 @@ Make the reader feel the weight of their choice. Each option should feel viable 
                     }.renderMarkdown()
                 )
                 task.update()
+                val endingPrompt = buildString {
+                    appendLine("You are a skilled ${executionConfig.genre} writer. Write a satisfying ending for this interactive story.")
+                    appendLine()
+                    appendLine("Title: ${structure.title}")
+                    appendLine("Ending: ${ending.id}")
+                    appendLine("Ending Type: ${ending.ending_type}")
+                    appendLine()
+                    appendLine("Ending Outline: ${ending.narrative}")
+                    appendLine()
+                    if (ending.required_conditions.isNotEmpty()) {
+                        appendLine("This ending is reached when: ${ending.required_conditions.entries.joinToString(", ") { "${it.key} ${it.value}" }}")
+                        appendLine()
+                    }
+                    if (ending.path_summary.isNotEmpty()) {
+                        appendLine("Key choices that led here:")
+                        ending.path_summary.forEach { appendLine("- $it") }
+                        appendLine()
+                    }
+                    appendLine("Story Parameters:")
+                    appendLine("- Genre: ${executionConfig.genre}")
+                    appendLine("- Tone: ${executionConfig.tone}")
+                    appendLine("- Point of View: ${executionConfig.point_of_view}")
+                    appendLine("- Writing Style: ${executionConfig.writing_style}")
+                    appendLine()
+                    appendLine("Write an ending segment (~${executionConfig.segment_word_count} words) that:")
+                    appendLine("1. Provides a satisfying conclusion to the story")
+                    appendLine("2. Reflects the consequences of the reader's choices")
+                    appendLine("3. Matches the ${ending.ending_type} ending type")
+                    appendLine("4. Maintains the ${executionConfig.tone} tone")
+                    appendLine("5. Gives a sense of closure while honoring the journey")
+                    appendLine("6. Makes the reader feel their choices mattered")
+                    appendLine()
+                    appendLine("Make this ending feel earned and meaningful. It should resonate with the path taken.")
+                }
 
                 val endingAgent = ParsedAgent(
                     resultClass = StorySegment::class.java,
-                    prompt = """
-You are a skilled ${executionConfig.genre} writer. Write a satisfying ending for this interactive story.
-
-Title: ${structure.title}
-Ending: ${ending.id}
-Ending Type: ${ending.ending_type}
-
-Ending Outline: ${ending.narrative}
-
-${
-                        if (ending.required_conditions.isNotEmpty()) {
-                            "This ending is reached when: ${ending.required_conditions.entries.joinToString(", ") { "${it.key} ${it.value}" }}"
-                        } else ""
-                    }
-
-${
-                        if (ending.path_summary.isNotEmpty()) {
-                            "Key choices that led here:\n${ending.path_summary.joinToString("\n") { "- $it" }}"
-                        } else ""
-                    }
-
-Story Parameters:
-- Genre: ${executionConfig.genre}
-- Tone: ${executionConfig.tone}
-- Point of View: ${executionConfig.point_of_view}
-- Writing Style: ${executionConfig.writing_style}
-
-Write an ending segment (~${executionConfig.segment_word_count} words) that:
-1. Provides a satisfying conclusion to the story
-2. Reflects the consequences of the reader's choices
-3. Matches the ${ending.ending_type} ending type
-4. Maintains the ${executionConfig.tone} tone
-5. Gives a sense of closure while honoring the journey
-6. Makes the reader feel their choices mattered
-
-Make this ending feel earned and meaningful. It should resonate with the path taken.
-          """.trimIndent(),
-                    model = api,
+                    prompt = endingPrompt,
+                    model = smartApi,
                     temperature = 0.8,
-                    parsingChatter = defaultFast
+                    parsingChatter = fastApi
                 )
 
-                var endingSegment = endingAgent.answer(listOf("Write ending")).obj.copy(id = ending.id)
+                val endingSegment = endingAgent.answer(listOf("Write ending")).obj.copy(id = ending.id)
                 endingSegments[ending.id] = endingSegment
                 cumulativeWordCount += endingSegment.word_count
-                transcriptWriter.apply {
-                    write("### ${ending.id}: ${ending.ending_type}\n\n")
-                    write(endingSegment.content)
-                    write("\n\n**Word Count:** ${endingSegment.word_count}\n\n---\n\n")
-                    flush()
-                }
+                transcript?.write(buildString {
+                    appendLine("### ${ending.id}: ${ending.ending_type}")
+                    appendLine()
+                    appendLine(endingSegment.content)
+                    appendLine()
+                    appendLine("**Word Count:** ${endingSegment.word_count}")
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                }.toByteArray())
 
                 endingTask.add(
                     buildString {
@@ -1033,26 +1036,25 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
             mapTask.add(storyMap.renderMarkdown())
             task.update()
 
-            // Final statistics
+            // Close the final-output div and open work-details div in transcript
             val totalTime = System.currentTimeMillis() - startTime
-            transcriptWriter.apply {
-                write("## Generation Complete\n\n")
-                write("**Statistics:**\n\n")
-                write("- Total Word Count: $cumulativeWordCount\n")
-                write("- Decision Points: ${structure.decision_points.size}\n")
-                write("- Total Choices: ${structure.decision_points.sumOf { it.choices.size }}\n")
-                write("- Endings: ${structure.endings.size}\n")
-                write("- Estimated Unique Paths: ~${calculateUniquePaths(structure)}\n")
-                write("- Total Time: ${totalTime / 1000.0}s\n\n")
-                write(
-                    "**Completed:** ${
-                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                    }\n"
-                )
-                flush()
-                close()
-            }
-
+            transcript?.write(buildString {
+                appendLine("## Generation Complete")
+                appendLine()
+                appendLine("**Statistics:**")
+                appendLine()
+                appendLine("- Total Word Count: $cumulativeWordCount")
+                appendLine("- Decision Points: ${structure.decision_points.size}")
+                appendLine("- Total Choices: ${structure.decision_points.sumOf { it.choices.size }}")
+                appendLine("- Endings: ${structure.endings.size}")
+                appendLine("- Estimated Unique Paths: ~${calculateUniquePaths(structure)}")
+                appendLine("- Total Time: ${totalTime / 1000.0}s")
+                appendLine()
+                appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+                appendLine()
+                appendLine("</div>")
+                appendLine()
+            }.toByteArray())
 
             overviewTask.add(
                 buildString {
@@ -1103,11 +1105,31 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
             resultFn(buildFinalResultWithLinks(task, finalResult, storyBuilder.toString(), cumulativeWordCount, structure, totalTime))
 
         } catch (e: Exception) {
+            // Triple Log Rule: UI, SLF4J, Transcript
             log.error("Error during interactive story generation", e)
-            transcriptWriter.close()
             task.error(e)
+            transcript?.write(buildString {
+                appendLine()
+                appendLine("## ❌ Error Occurred")
+                appendLine()
+                appendLine("<details><summary>Stack Trace</summary>")
+                appendLine()
+                appendLine("```")
+                appendLine(e.stackTraceToString())
+                appendLine("```")
+                appendLine()
+                appendLine("</details>")
+                appendLine()
+                appendLine("</div>")
+                appendLine()
+            }.toByteArray())
 
-            overviewTask.add(
+            val overviewTask = try {
+                tabs.newTask("Error")
+            } catch (_: Exception) {
+                null
+            }
+            overviewTask?.add(
                 buildString {
                     appendLine()
                     appendLine("---")
@@ -1124,7 +1146,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
             val errorOutput = buildString {
                 appendLine("# Error in Interactive Story Generation")
                 appendLine()
-                appendLine("**Premise:** $premise")
+                appendLine("**Premise:** ${executionConfig?.premise}")
                 appendLine()
                 appendLine("**Error:** ${e.message}")
                 appendLine()
@@ -1135,6 +1157,8 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 }
             }
             resultFn(errorOutput)
+        } finally {
+            transcript?.close()
         }
     }
 
@@ -1147,10 +1171,17 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
         totalTime: Long
     ): String {
         return try {
-            // Save story map to file
-            val mapLink = task.saveFile("story_map.md", storyMap.toByteArray())
-            // Save summary to file
-            val summaryLink = task.saveFile("story_summary.md", summary.toByteArray())
+            // Theme auxiliary output around the primary filename
+            val baseDir = getOutputFile(".md")?.let {
+                if (it.endsWith(".md")) it.removeSuffix(".md") else null
+            } ?: "interactive_story"
+
+            // Ensure the themed directory exists
+            val dir = task.resolveUserFile(baseDir)
+            if (dir != null && !dir.exists()) dir.mkdirs()
+
+            val mapLink = task.saveFile("$baseDir/story_map.md", storyMap.toByteArray())
+            val summaryLink = task.saveFile("$baseDir/story_summary.md", summary.toByteArray())
             buildString {
                 appendLine("# Interactive Story Generation Complete")
                 appendLine()
@@ -1217,8 +1248,6 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
 
 
     private fun calculateUniquePaths(structure: StoryStructure): Int {
-        // Simple estimation: multiply choices at each decision point
-        // This is an upper bound; actual paths may converge
         val choicesPerDecision = structure.decision_points.map { it.choices.size }
         return if (choicesPerDecision.isEmpty()) {
             1
@@ -1232,27 +1261,25 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
     companion object {
         private val log: Logger = LoggerFactory.getLogger(InteractiveStoryTask::class.java)
         @JvmStatic val InteractiveStory = TaskType(
-          name = "InteractiveStory",
-          category = "Writing",
-          taskClass = InteractiveStoryTask::class.java,
-          executionConfigClass = InteractiveStoryTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Create choose-your-own-adventure narratives with branching paths",
-          tooltipHtml = """
-                        Generates complete interactive stories with meaningful choices and multiple endings.
-                        <ul>
-                          <li>Creates detailed story structure with decision tree</li>
-                          <li>Writes opening segment that hooks the reader</li>
-                          <li>Develops branching narrative segments for each decision point</li>
-                          <li>Generates multiple distinct endings based on player choices</li>
-                          <li>Tracks state variables (health, reputation, inventory, etc.)</li>
-                          <li>Ensures all paths lead to meaningful endings (no dead ends)</li>
-                          <li>Optimizes for replay value with significantly different experiences</li>
-                          <li>Tracks consequences across choices for coherent storytelling</li>
-                          <li>Produces complete playable interactive story map</li>
-                          <li>Ideal for interactive fiction, training scenarios, educational content, and games</li>
-                        </ul>
-                      """,
+            name = "InteractiveStory",
+            category = "Writing",
+            taskClass = InteractiveStoryTask::class.java,
+            executionConfigClass = InteractiveStoryTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Create choose-your-own-adventure narratives with branching paths",
+            tooltipHtml = "<p>Generates complete interactive stories with meaningful choices and multiple endings.</p>" +
+                    "<ul>" +
+                    "<li>Creates detailed story structure with decision tree</li>" +
+                    "<li>Writes opening segment that hooks the reader</li>" +
+                    "<li>Develops branching narrative segments for each decision point</li>" +
+                    "<li>Generates multiple distinct endings based on player choices</li>" +
+                    "<li>Tracks state variables (health, reputation, inventory, etc.)</li>" +
+                    "<li>Ensures all paths lead to meaningful endings (no dead ends)</li>" +
+                    "<li>Optimizes for replay value with significantly different experiences</li>" +
+                    "<li>Tracks consequences across choices for coherent storytelling</li>" +
+                    "<li>Produces complete playable interactive story map</li>" +
+                    "<li>Ideal for interactive fiction, training scenarios, educational content, and games</li>" +
+                    "</ul>",
         )
 
         private val textExtensions = setOf(

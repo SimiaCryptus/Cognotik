@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
@@ -36,139 +37,137 @@ class MathematicalReasoningTask(
           executionConfigClass = MathematicalReasoningTaskExecutionConfigData::class.java,
           taskSettingsClass = MathematicalReasoningTaskTypeConfig::class.java,
           description = "Solve mathematical problems through step-by-step logical reasoning with verifiable steps",
-          tooltipHtml = """
-                          Uses path search to solve mathematical problems through rigorous step-by-step reasoning.
-                          <ul>
-                              <li>Breaks down complex problems into verifiable atomic steps</li>
-                              <li>Each step includes justification and verification</li>
-                              <li>Explores multiple solution paths when needed</li>
-                             <li>Backtracking when encountering dead ends</li>
-                              <li>Provides detailed proof trail with MathJax notation</li>
-                              <li>Supports algebra, calculus, number theory, and more</li>
-                              <li>Validates intermediate results for correctness</li>
-                              <li>Generates human-readable mathematical proofs</li>
-                          </ul>
-                      """,
+          tooltipHtml = "<p>Uses path search to solve mathematical problems through rigorous step-by-step reasoning.</p>" +
+              "<ul>" +
+              "<li>Breaks down complex problems into verifiable atomic steps</li>" +
+              "<li>Each step includes justification and verification</li>" +
+              "<li>Explores multiple solution paths when needed</li>" +
+              "<li>Backtracking when encountering dead ends</li>" +
+              "<li>Provides detailed proof trail with MathJax notation</li>" +
+              "<li>Supports algebra, calculus, number theory, and more</li>" +
+              "<li>Validates intermediate results for correctness</li>" +
+              "<li>Generates human-readable mathematical proofs</li>" +
+              "</ul>",
         )
     }
 
   class MathematicalReasoningTaskTypeConfig(
-    var promptTemplate: String = """
-            MathematicalReasoning - Solve mathematical problems through step-by-step logical reasoning
-              ** Specify the problem statement clearly
-              ** Define the goal (prove, solve, simplify, etc.)
-              ** Provide any given information or constraints
-              ** Specify the mathematical domain if relevant
-              ** Configure search parameters (depth, alternatives)
-              ** The task will:
-                 - Break down the problem into atomic steps
-                 - Verify each step's mathematical validity
-                 - Explore alternative solution paths
-                 - Backtrack from dead ends
-                 - Generate a complete proof trail
-                 - Output results in MathJax/LaTeX format
-              ** Useful for:
-                 - Solving algebraic equations
-                 - Proving mathematical theorems
-                 - Simplifying complex expressions
-                 - Step-by-step calculus problems
-                 - Number theory proofs
-                 - Geometric proofs
-        """.trimIndent(),
-    var initialStatePrompt: String = """
-            You are a mathematical reasoning expert. Analyze the initial state of a mathematical problem.
-            ## Problem Statement
-            {{problem_statement}}
-            ## Goal
-            {{goal}}
-            ## Given Information
-            {{given_info}}
-            ## Domain
-            {{domain}}
-            ## Instructions
-            Create the initial reasoning step that captures the starting state of the problem.
-            - Restate the problem in precise mathematical terms
-            - Identify the key variables and relationships
-            - Express the initial state in LaTeX notation
-            - Set step_type to "initial"
-            - Set step_id to "S0"
-        """.trimIndent(),
-    var stepGeneratorPrompt: String = """
-            You are a mathematical reasoning expert. Generate the next logical step in solving a problem.
-            ## Problem Statement
-            {{problem_statement}}
-            ## Goal
-            {{goal}}
-            ## Given Information
-            {{given_info}}
-            ## Domain
-            {{domain}}
-            ## Current Progress
-            {{current_progress}}
-            ## Instructions
-            Generate the next logical step that moves us closer to the goal.
-            Requirements:
-            1. The step must be mathematically valid and follow from previous steps
-            2. Provide clear justification (cite theorem, rule, or operation used)
-            3. Include proper LaTeX notation
-            4. Choose appropriate step_type: 'algebraic', 'substitution', 'simplification', 'theorem', 'inference', 'definition'
-            5. Estimate confidence (0-100) based on how certain the step is
-            6. Keep steps atomic - one transformation at a time
-            7. Detail level: {{detail_level}}
-            Focus on making progress toward: {{goal}}
-        """.trimIndent(),
-    var stepVerifierPrompt: String = """
-            You are a mathematical verification expert. Verify if a reasoning step is valid.
-            ## Domain
-            {{domain}}
-            ## Previous Steps
-            {{previous_steps}}
-            ## Step to Verify
-            Statement: {{statement}}
-            LaTeX: {{latex}}
-            Justification: {{justification}}
-            Type: {{step_type}}
-            ## Instructions
-            Verify this step is mathematically valid:
-            1. Check if it follows logically from previous steps
-            2. Verify the mathematical operations are correct
-            3. Confirm the justification is appropriate
-            4. Look for any errors in algebra, logic, or notation
-            Be rigorous but fair - minor notation issues are acceptable if the mathematics is sound.
-        """.trimIndent(),
-    var goalCheckerPrompt: String = """
-            You are a mathematical reasoning expert. Check if the goal has been reached.
-            ## Goal
-            {{goal}}
-            ## Current State
-            {{current_state}}
-            ## Full Progress
-            {{full_progress}}
-            ## Instructions
-            Determine if the goal has been achieved:
-            1. Compare the current state to the goal
-            2. Estimate progress (0-100%)
-            3. If not complete, describe what remains
-            4. Be precise about whether the goal is fully achieved
-        """.trimIndent(),
-    var alternativeGeneratorPrompt: String = """
-            You are a mathematical reasoning expert. Generate alternative approaches.
-            ## Problem
-            {{problem_statement}}
-            ## Goal
-            {{goal}}
-            ## Domain
-            {{domain}}
-            ## Current Path (last 3 steps)
-            {{current_path}}
-            ## Instructions
-            Generate 2-3 alternative next steps that could be taken from the current state.
-            Each alternative should:
-            1. Be a valid mathematical operation
-            2. Take a different approach than the current path
-            3. Have potential to reach the goal
-            Rank them by likelihood of success.
-        """.trimIndent()
+    var promptTemplate: String = buildString {
+        appendLine("MathematicalReasoning - Solve mathematical problems through step-by-step logical reasoning")
+        appendLine("  ** Specify the problem statement clearly")
+        appendLine("  ** Define the goal (prove, solve, simplify, etc.)")
+        appendLine("  ** Provide any given information or constraints")
+        appendLine("  ** Specify the mathematical domain if relevant")
+        appendLine("  ** Configure search parameters (depth, alternatives)")
+        appendLine("  ** The task will:")
+        appendLine("     - Break down the problem into atomic steps")
+        appendLine("     - Verify each step's mathematical validity")
+        appendLine("     - Explore alternative solution paths")
+        appendLine("     - Backtrack from dead ends")
+        appendLine("     - Generate a complete proof trail")
+        appendLine("     - Output results in MathJax/LaTeX format")
+        appendLine("  ** Useful for:")
+        appendLine("     - Solving algebraic equations")
+        appendLine("     - Proving mathematical theorems")
+        appendLine("     - Simplifying complex expressions")
+        appendLine("     - Step-by-step calculus problems")
+        appendLine("     - Number theory proofs")
+        appendLine("     - Geometric proofs")
+    },
+    var initialStatePrompt: String = buildString {
+        appendLine("You are a mathematical reasoning expert. Analyze the initial state of a mathematical problem.")
+        appendLine("## Problem Statement")
+        appendLine("{{problem_statement}}")
+        appendLine("## Goal")
+        appendLine("{{goal}}")
+        appendLine("## Given Information")
+        appendLine("{{given_info}}")
+        appendLine("## Domain")
+        appendLine("{{domain}}")
+        appendLine("## Instructions")
+        appendLine("Create the initial reasoning step that captures the starting state of the problem.")
+        appendLine("- Restate the problem in precise mathematical terms")
+        appendLine("- Identify the key variables and relationships")
+        appendLine("- Express the initial state in LaTeX notation")
+        appendLine("- Set step_type to \"initial\"")
+        appendLine("- Set step_id to \"S0\"")
+    },
+    var stepGeneratorPrompt: String = buildString {
+        appendLine("You are a mathematical reasoning expert. Generate the next logical step in solving a problem.")
+        appendLine("## Problem Statement")
+        appendLine("{{problem_statement}}")
+        appendLine("## Goal")
+        appendLine("{{goal}}")
+        appendLine("## Given Information")
+        appendLine("{{given_info}}")
+        appendLine("## Domain")
+        appendLine("{{domain}}")
+        appendLine("## Current Progress")
+        appendLine("{{current_progress}}")
+        appendLine("## Instructions")
+        appendLine("Generate the next logical step that moves us closer to the goal.")
+        appendLine("Requirements:")
+        appendLine("1. The step must be mathematically valid and follow from previous steps")
+        appendLine("2. Provide clear justification (cite theorem, rule, or operation used)")
+        appendLine("3. Include proper LaTeX notation")
+        appendLine("4. Choose appropriate step_type: 'algebraic', 'substitution', 'simplification', 'theorem', 'inference', 'definition'")
+        appendLine("5. Estimate confidence (0-100) based on how certain the step is")
+        appendLine("6. Keep steps atomic - one transformation at a time")
+        appendLine("7. Detail level: {{detail_level}}")
+        appendLine("Focus on making progress toward: {{goal}}")
+    },
+    var stepVerifierPrompt: String = buildString {
+        appendLine("You are a mathematical verification expert. Verify if a reasoning step is valid.")
+        appendLine("## Domain")
+        appendLine("{{domain}}")
+        appendLine("## Previous Steps")
+        appendLine("{{previous_steps}}")
+        appendLine("## Step to Verify")
+        appendLine("Statement: {{statement}}")
+        appendLine("LaTeX: {{latex}}")
+        appendLine("Justification: {{justification}}")
+        appendLine("Type: {{step_type}}")
+        appendLine("## Instructions")
+        appendLine("Verify this step is mathematically valid:")
+        appendLine("1. Check if it follows logically from previous steps")
+        appendLine("2. Verify the mathematical operations are correct")
+        appendLine("3. Confirm the justification is appropriate")
+        appendLine("4. Look for any errors in algebra, logic, or notation")
+        appendLine("Be rigorous but fair - minor notation issues are acceptable if the mathematics is sound.")
+    },
+    var goalCheckerPrompt: String = buildString {
+        appendLine("You are a mathematical reasoning expert. Check if the goal has been reached.")
+        appendLine("## Goal")
+        appendLine("{{goal}}")
+        appendLine("## Current State")
+        appendLine("{{current_state}}")
+        appendLine("## Full Progress")
+        appendLine("{{full_progress}}")
+        appendLine("## Instructions")
+        appendLine("Determine if the goal has been achieved:")
+        appendLine("1. Compare the current state to the goal")
+        appendLine("2. Estimate progress (0-100%)")
+        appendLine("3. If not complete, describe what remains")
+        appendLine("4. Be precise about whether the goal is fully achieved")
+    },
+    var alternativeGeneratorPrompt: String = buildString {
+        appendLine("You are a mathematical reasoning expert. Generate alternative approaches.")
+        appendLine("## Problem")
+        appendLine("{{problem_statement}}")
+        appendLine("## Goal")
+        appendLine("{{goal}}")
+        appendLine("## Domain")
+        appendLine("{{domain}}")
+        appendLine("## Current Path (last 3 steps)")
+        appendLine("{{current_path}}")
+        appendLine("## Instructions")
+        appendLine("Generate 2-3 alternative next steps that could be taken from the current state.")
+        appendLine("Each alternative should:")
+        appendLine("1. Be a valid mathematical operation")
+        appendLine("2. Take a different approach than the current path")
+        appendLine("3. Have potential to reach the goal")
+        appendLine("Rank them by likelihood of success.")
+    }
   ) : TaskTypeConfig()
 
 
@@ -203,14 +202,10 @@ class MathematicalReasoningTask(
             if (problem_statement.isNullOrBlank()) {
                 return "problem_statement must not be blank"
             }
-            if (max_depth < 1 || max_depth > 100) {
-                return "max_depth must be between 1 and 100"
-            }
-            if (max_alternatives < 1 || max_alternatives > 10) {
-                return "max_alternatives must be between 1 and 10"
-            }
+            max_depth = max_depth.coerceIn(1, 100)
+            max_alternatives = max_alternatives.coerceIn(1, 10)
             if (detail_level !in listOf("brief", "standard", "detailed")) {
-                return "detail_level must be 'brief', 'standard', or 'detailed'"
+                detail_level = "standard"
             }
             return ValidatedObject.Companion.validateFields(this)
         }
@@ -218,69 +213,69 @@ class MathematicalReasoningTask(
 
     data class ReasoningStep(
         @Description("Unique identifier for this step")
-        val step_id: String = "",
+        var step_id: String = "",
         @Description("The mathematical statement or transformation at this step")
-        val statement: String = "",
+        var statement: String = "",
         @Description("LaTeX/MathJax representation of the statement")
-        val latex: String = "",
+        var latex: String = "",
         @Description("Justification for this step (theorem, axiom, or rule applied)")
-        val justification: String = "",
-        @Description("Type of step: 'axiom', 'definition', 'theorem', 'algebraic', 'substitution', 'simplification', 'inference'")
-        val step_type: String = "",
+        var justification: String = "",
+        @Description("Type of step: 'initial', 'axiom', 'definition', 'theorem', 'algebraic', 'substitution', 'simplification', 'inference'")
+        var step_type: String = "",
         @Description("Confidence in this step's correctness (0-100)")
-        val confidence: Int = 100,
+        var confidence: Int = 100,
         @Description("Whether this step has been verified")
-        val verified: Boolean = false,
+        var verified: Boolean = false,
         @Description("Any notes or caveats about this step")
-        val notes: String = ""
+        var notes: String = ""
     ) : ValidatedObject {
         override fun validate(): String? {
             if (statement.isBlank()) return "statement must not be blank"
-            if (confidence < 0 || confidence > 100) return "confidence must be between 0 and 100"
+            confidence = confidence.coerceIn(0, 100)
             return null
         }
     }
 
     data class ReasoningPath(
         @Description("Sequence of reasoning steps")
-        val steps: List<ReasoningStep> = emptyList(),
+        var steps: List<ReasoningStep> = emptyList(),
         @Description("Whether this path reached the goal")
-        val reached_goal: Boolean = false,
+        var reached_goal: Boolean = false,
         @Description("If not reached, reason for stopping")
-        val termination_reason: String = "",
+        var termination_reason: String = "",
         @Description("Overall confidence in this path")
-        val path_confidence: Int = 0
+        var path_confidence: Int = 0
     )
 
     data class NextStepOptions(
         @Description("List of possible next steps to explore")
-        val options: List<ReasoningStep> = emptyList(),
+        var options: List<ReasoningStep> = emptyList(),
         @Description("Recommended option index (0-based)")
-        val recommended_index: Int = 0,
+        var recommended_index: Int = 0,
         @Description("Reasoning for the recommendation")
-        val recommendation_reason: String = ""
+        var recommendation_reason: String = ""
     )
 
     data class StepVerification(
         @Description("Whether the step is mathematically valid")
-        val is_valid: Boolean = false,
+        var is_valid: Boolean = false,
         @Description("Explanation of the verification")
-        val explanation: String = "",
+        var explanation: String = "",
         @Description("Any errors or issues found")
-        val errors: List<String> = emptyList(),
+        var errors: List<String> = emptyList(),
         @Description("Suggestions for correction if invalid")
-        val suggestions: List<String> = emptyList()
+        var suggestions: List<String> = emptyList()
     )
 
     data class GoalCheck(
         @Description("Whether the current state matches the goal")
-        val goal_reached: Boolean = false,
+        var goal_reached: Boolean = false,
         @Description("How close we are to the goal (0-100)")
-        val progress: Int = 0,
+        var progress: Int = 0,
         @Description("What remains to be done")
-        val remaining_work: String = "",
+        var remaining_work: String = "",
         @Description("Explanation of the assessment")
-        val explanation: String = ""
+        var explanation: String = ""
     )
 
     override fun promptSegment(): String {
@@ -304,7 +299,7 @@ class MathematicalReasoningTask(
             executionConfig?.validate()?.let { errorMessage ->
               log.error("MathematicalReasoningTask validation failed: $errorMessage")
                 task.error(ValidatedObject.ValidationError(errorMessage, executionConfig))
-              transcript?.write("## Validation Error\n$errorMessage".toByteArray(StandardCharsets.UTF_8))
+              transcript?.write("\n## Validation Error\n\n<details><summary>Validation Details</summary>\n\n$errorMessage\n\n</details>\n".toByteArray(StandardCharsets.UTF_8))
                 resultFn("VALIDATION ERROR: $errorMessage")
               return@submit
             }
@@ -319,7 +314,8 @@ class MathematicalReasoningTask(
             val detailLevel = executionConfig?.detail_level ?: "standard"
 
             val tabs = TabbedDisplay(task)
-            val api = defaultSmart
+            val smartApi = orchestrationConfig.defaultSmart.getChildClient(task)
+            val fastApi = orchestrationConfig.defaultFast.getChildClient(task)
 
             // Create overview tab
             val overviewTask = tabs.newTask("Overview")
@@ -362,15 +358,19 @@ class MathematicalReasoningTask(
                 appendLine("- ⏳ Analyzing problem...")
             }
           overviewTask.add(overviewContent.renderMarkdown())
-          transcript?.write(
-            """
-                <details>
-                <summary>Task Configuration & Context</summary>
                 
-                $overviewContent
-                </details>
-            """.trimIndent().toByteArray(StandardCharsets.UTF_8)
-          )
+          transcript?.write(buildString {
+              appendLine("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">")
+              appendLine()
+              appendLine("## Work Details")
+              appendLine()
+              appendLine("<details><summary>Task Configuration & Context</summary>")
+              appendLine()
+              append(overviewContent)
+              appendLine()
+              appendLine("</details>")
+              appendLine()
+          }.toByteArray(StandardCharsets.UTF_8))
 
             // Gather context
             val priorContext = getPriorCode(agent.executionState)
@@ -387,7 +387,7 @@ class MathematicalReasoningTask(
             val pathQueue = PriorityQueue<Pair<List<ReasoningStep>, Int>>(compareByDescending { it.second })
 
             // Initialize with starting state
-            val initialStep = analyzeInitialState(problemStatement, goal, givenInfo, domain, api)
+            val initialStep = analyzeInitialState(problemStatement, goal, givenInfo, domain, smartApi, fastApi)
             pathQueue.add(Pair(listOf(initialStep), 100))
 
             while (pathQueue.isNotEmpty() && pathsExplored < maxAlternatives && successfulPath == null) {
@@ -408,7 +408,8 @@ class MathematicalReasoningTask(
                     domain = domain,
                     maxDepth = maxDepth,
                     detailLevel = detailLevel,
-                    api = api,
+                    smartApi = smartApi,
+                    fastApi = fastApi,
                     solutionTask = solutionTask,
                     task = task,
                     pathNumber = pathsExplored
@@ -426,7 +427,8 @@ class MathematicalReasoningTask(
                         problemStatement = problemStatement,
                         goal = goal,
                         domain = domain,
-                        api = api
+                        smartApi = smartApi,
+                        fastApi = fastApi
                     )
                     alternatives.options.forEachIndexed { index, step ->
                         if (pathQueue.size < maxAlternatives * 2) {
@@ -436,6 +438,11 @@ class MathematicalReasoningTask(
                     }
                 }
             }
+            // Close work-details tab div in transcript
+            transcript?.write("\n</div>\n\n".toByteArray(StandardCharsets.UTF_8))
+            // Open final-output tab div in transcript
+            transcript?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray(StandardCharsets.UTF_8))
+
 
             // Create proof tab if successful
             if (successfulPath != null) {
@@ -443,7 +450,7 @@ class MathematicalReasoningTask(
                 val proofContent = generateFormalProof(successfulPath, problemStatement, goal, detailLevel)
               proofTask.add(proofContent.renderMarkdown())
                 proofTask.complete()
-                transcript?.write("\n\n---\n\n# Formal Proof\n\n".toByteArray(StandardCharsets.UTF_8))
+                transcript?.write("# Formal Proof\n\n".toByteArray(StandardCharsets.UTF_8))
                 transcript?.write(proofContent.toByteArray(StandardCharsets.UTF_8))
             }
 
@@ -475,14 +482,15 @@ class MathematicalReasoningTask(
                 }
               pathsTask.add(pathsContent.renderMarkdown())
                 pathsTask.complete()
-              transcript?.write(
-                """
-                    <details>
-                    <summary>All Explored Reasoning Paths</summary>
-                    $pathsContent
-                    </details>
-                """.trimIndent().toByteArray(StandardCharsets.UTF_8)
-              )
+              transcript?.write(buildString {
+                  appendLine()
+                  appendLine("<details><summary>All Explored Reasoning Paths</summary>")
+                  appendLine()
+                  append(pathsContent)
+                  appendLine()
+                  appendLine("</details>")
+                  appendLine()
+              }.toByteArray(StandardCharsets.UTF_8))
             }
 
             // Final summary
@@ -516,6 +524,7 @@ class MathematicalReasoningTask(
             overviewTask.complete()
             solutionTask.complete()
             transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))
+            transcript?.write("\n</div>\n\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate result
             val resultMessage = if (successfulPath != null) {
@@ -554,9 +563,21 @@ class MathematicalReasoningTask(
             resultFn(resultMessage)
 
         } catch (e: Exception) {
+            // Triple Log: UI, SLF4J, Transcript
             task.error(e)
           log.error("MathematicalReasoningTask failed: ${e.message}", e)
-          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
+          transcript?.write(buildString {
+              appendLine()
+              appendLine("## Error")
+              appendLine()
+              appendLine("<details><summary>Stack Trace</summary>")
+              appendLine()
+              appendLine("```")
+              appendLine(e.stackTraceToString())
+              appendLine("```")
+              appendLine()
+              appendLine("</details>")
+          }.toByteArray(StandardCharsets.UTF_8))
           resultFn("ERROR: ${e.message}")
         } finally {
           transcript?.close()
@@ -569,7 +590,8 @@ class MathematicalReasoningTask(
         goal: String,
         givenInfo: List<String>,
         domain: String,
-        api: ChatInterface
+        smartApi: ChatInterface,
+        fastApi: ChatInterface
     ): ReasoningStep {
         return try {
           val prompt = typeConfig?.initialStatePrompt
@@ -582,10 +604,10 @@ class MathematicalReasoningTask(
 
 
               prompt = prompt,
-                model = api,
+                model = smartApi,
                 temperature = 0.3,
                 name = "InitialStateAnalyzer",
-                parsingChatter = defaultFast
+                parsingChatter = fastApi
             ).answer(listOf("Analyze the initial state")).obj
         } catch (e: Exception) {
             log.warn("Failed to analyze initial state", e)
@@ -609,7 +631,8 @@ class MathematicalReasoningTask(
         domain: String,
         maxDepth: Int,
         detailLevel: String,
-        api: ChatInterface,
+        smartApi: ChatInterface,
+        fastApi: ChatInterface,
         solutionTask: SessionTask,
         task: SessionTask,
         pathNumber: Int
@@ -637,7 +660,7 @@ class MathematicalReasoningTask(
 
         while (depth < maxDepth) {
             // Check if we've reached the goal
-            val goalCheck = checkGoal(steps, goal, api)
+            val goalCheck = checkGoal(steps, goal, smartApi, fastApi)
             if (goalCheck.goal_reached) {
               solutionTask.add("\n✅ **Goal Reached!**\n\n${goalCheck.explanation}\n".renderMarkdown())
                 return ReasoningPath(
@@ -649,7 +672,7 @@ class MathematicalReasoningTask(
             }
 
             // Generate next step
-            val nextStep = generateNextStep(steps, problemStatement, goal, givenInfo, domain, detailLevel, api)
+            val nextStep = generateNextStep(steps, problemStatement, goal, givenInfo, domain, detailLevel, smartApi, fastApi)
 
             if (nextStep == null || nextStep.statement.isBlank()) {
               solutionTask.add("\n⚠️ **No valid next step found**\n".renderMarkdown())
@@ -662,7 +685,7 @@ class MathematicalReasoningTask(
             }
 
             // Verify the step
-            val verification = verifyStep(nextStep, steps, domain, api)
+            val verification = verifyStep(nextStep, steps, domain, smartApi, fastApi)
             if (!verification.is_valid) {
                 solutionTask.add(buildString {
                     appendLine()
@@ -674,11 +697,6 @@ class MathematicalReasoningTask(
                     appendLine()
                 }.renderMarkdown())
 
-                // Try to recover with suggestions
-                if (verification.suggestions.isNotEmpty()) {
-                    log.debug("Attempting recovery with suggestions")
-                    // Could implement recovery logic here
-                }
 
                 return ReasoningPath(
                     steps = steps,
@@ -689,10 +707,10 @@ class MathematicalReasoningTask(
             }
 
             // Add verified step
-            val verifiedStep = nextStep.copy(
-                step_id = "S${steps.size}",
+            val verifiedStep = nextStep.copy().apply {
+                step_id = "S${steps.size}"
                 verified = true
-            )
+            }
             steps.add(verifiedStep)
             depth++
 
@@ -731,7 +749,8 @@ class MathematicalReasoningTask(
         givenInfo: List<String>,
         domain: String,
         detailLevel: String,
-        api: ChatInterface
+        smartApi: ChatInterface,
+        fastApi: ChatInterface
     ): ReasoningStep? {
         return try {
           val progress = currentSteps.mapIndexed { i, step ->
@@ -749,10 +768,10 @@ class MathematicalReasoningTask(
 
 
             prompt = prompt,
-                model = api,
+                model = smartApi,
                 temperature = 0.4,
                 name = "StepGenerator",
-                parsingChatter = defaultFast
+                parsingChatter = fastApi
             ).answer(listOf("Generate the next step")).obj
         } catch (e: Exception) {
             log.warn("Failed to generate next step", e)
@@ -764,7 +783,8 @@ class MathematicalReasoningTask(
         step: ReasoningStep,
         previousSteps: List<ReasoningStep>,
         domain: String,
-        api: ChatInterface
+        smartApi: ChatInterface,
+        fastApi: ChatInterface
     ): StepVerification {
         return try {
           val prev = previousSteps.takeLast(3).mapIndexed { i, s ->
@@ -782,10 +802,10 @@ class MathematicalReasoningTask(
 
 
               prompt = prompt,
-                model = api,
+                model = smartApi,
                 temperature = 0.2,
                 name = "StepVerifier",
-                parsingChatter = defaultFast
+                parsingChatter = fastApi
             ).answer(listOf("Verify this step")).obj
         } catch (e: Exception) {
             log.warn("Failed to verify step", e)
@@ -801,7 +821,8 @@ class MathematicalReasoningTask(
     private fun checkGoal(
         steps: List<ReasoningStep>,
         goal: String,
-        api: ChatInterface
+        smartApi: ChatInterface,
+        fastApi: ChatInterface
     ): GoalCheck {
         return try {
           val latest = steps.lastOrNull()?.let { "Latest step: ${it.statement}\nLaTeX: ${it.latex}" } ?: "No steps yet"
@@ -815,10 +836,10 @@ class MathematicalReasoningTask(
 
 
               prompt = prompt,
-                model = api,
+                model = smartApi,
                 temperature = 0.2,
                 name = "GoalChecker",
-                parsingChatter = defaultFast
+                parsingChatter = fastApi
             ).answer(listOf("Check if goal is reached")).obj
         } catch (e: Exception) {
             log.warn("Failed to check goal", e)
@@ -836,7 +857,8 @@ class MathematicalReasoningTask(
         problemStatement: String,
         goal: String,
         domain: String,
-        api: ChatInterface
+        smartApi: ChatInterface,
+        fastApi: ChatInterface
     ): NextStepOptions {
         return try {
           val path = currentPath.takeLast(3).mapIndexed { i, s -> "Step ${currentPath.size - 3 + i}: ${s.statement}" }
@@ -851,10 +873,10 @@ class MathematicalReasoningTask(
 
 
               prompt = prompt,
-                model = api,
+                model = smartApi,
                 temperature = 0.6,
                 name = "AlternativeGenerator",
-                parsingChatter = defaultFast
+                parsingChatter = fastApi
             ).answer(listOf("Generate alternatives")).obj
         } catch (e: Exception) {
             log.warn("Failed to generate alternatives", e)
