@@ -26,15 +26,18 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.lang.Thread.sleep
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.PriorityQueue
 import java.util.concurrent.CompletionService
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorCompletionService
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 import kotlin.math.min
@@ -48,52 +51,51 @@ class CrawlerAgentTask(
 ) {
 
     class CrawlerTaskTypeConfig(
-        @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleProxy,
-        @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
-        @Description("Strategy for processing pages (optional)") val processing_strategy: ProcessingStrategyType? = ProcessingStrategyType.DefaultSummarizer,
-        @Description("Whitespace-separated list of allowed domains/URL prefixes to restrict crawling (optional)") val allowed_domains: String? = null,
-        @Description("Respect robots.txt rules when crawling (default: true)") val respect_robots_txt: Boolean? = true,
-        @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = null,
-        @Description("Maximum depth to crawl from seed pages") val max_depth: Int? = null,
-        @Description("Maximum queue size to prevent memory issues") val max_queue_size: Int? = null,
-        @Description("Number of pages to process concurrently") val concurrent_page_processing: Int? = null,
-        @Description("Maximum characters in final summary") val max_final_output_size: Int? = null,
-        @Description("Minimum content length to process") val min_content_length: Int? = null,
-        @Description("Automatically follow links found in analyzed pages") val follow_links: Boolean? = null,
-        @Description("Allow crawling the same page multiple times") val allow_revisit_pages: Boolean? = null,
-        @Description("Generate a comprehensive summary of all results") val create_final_summary: Boolean? = null,
-        @Description("Generate a detailed transcript of the crawling session") val generate_transcript: Boolean? = true,
+        @Description("Method to seed the crawler. One of: GoogleProxy, DirectUrls (optional, default: GoogleProxy)") var seed_method: SeedMethod? = SeedMethod.GoogleProxy,
+        @Description("Method used to fetch content from URLs. One of: HttpClient, Selenium (optional, default: HttpClient)") var fetch_method: FetchMethod? = FetchMethod.HttpClient,
+        @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: ProcessingStrategyType? = ProcessingStrategyType.DefaultSummarizer,
+        @Description("Whitespace-separated list of allowed domains or URL prefixes to restrict crawling scope. If set, only URLs matching these domains/prefixes will be crawled (optional)") var allowed_domains: String? = null,
+        @Description("Whether to respect robots.txt rules when crawling (default: true)") var respect_robots_txt: Boolean? = true,
+        @Description("Maximum number of pages to process in a single task. Must be greater than 0 (optional, default: 30)") var max_pages_per_task: Int? = null,
+        @Description("Maximum depth to crawl from seed pages. Must be non-negative (optional, default: 3)") var max_depth: Int? = null,
+        @Description("Maximum queue size to prevent memory issues. Must be greater than 0 (optional, default: 100)") var max_queue_size: Int? = null,
+        @Description("Number of pages to process concurrently. Must be greater than 0 (optional, default: 3)") var concurrent_page_processing: Int? = null,
+        @Description("Maximum characters in final summary output. Must be greater than 0 (optional, default: 15000)") var max_final_output_size: Int? = null,
+        @Description("Minimum content length in characters to process a page. Pages shorter than this are skipped (optional, default: 500)") var min_content_length: Int? = null,
+        @Description("Whether to automatically follow links found in analyzed pages (optional)") var follow_links: Boolean? = null,
+        @Description("Whether to allow crawling the same page multiple times (optional)") var allow_revisit_pages: Boolean? = null,
+        @Description("Whether to generate a comprehensive summary of all results (optional)") var create_final_summary: Boolean? = null,
         task_type: String = "CrawlerAgent",
         model: ApiChatModel? = null,
         name: String? = task_type,
     ) : TaskTypeConfig(task_type = task_type, name = name, model = model), ValidatedObject {
         override fun validate(): String? {
-            if (max_pages_per_task != null && max_pages_per_task <= 0) {
-                return "max_pages_per_task must be greater than 0"
+            if (max_pages_per_task != null && max_pages_per_task!! <= 0) {
+                max_pages_per_task = null
             }
-            if (max_depth != null && max_depth < 0) {
-                return "max_depth must be non-negative"
+            if (max_depth != null && max_depth!! < 0) {
+                max_depth = 0
             }
-            if (max_queue_size != null && max_queue_size <= 0) {
-                return "max_queue_size must be greater than 0"
+            if (max_queue_size != null && max_queue_size!! <= 0) {
+                max_queue_size = null
             }
-            if (concurrent_page_processing != null && concurrent_page_processing <= 0) {
-                return "concurrent_page_processing must be greater than 0"
+            if (concurrent_page_processing != null && concurrent_page_processing!! <= 0) {
+                concurrent_page_processing = null
             }
-            if (max_final_output_size != null && max_final_output_size <= 0) {
-                return "max_final_output_size must be greater than 0"
+            if (max_final_output_size != null && max_final_output_size!! <= 0) {
+                max_final_output_size = null
             }
-            if (min_content_length != null && min_content_length < 0) {
-                return "min_content_length must be non-negative"
+            if (min_content_length != null && min_content_length!! < 0) {
+                min_content_length = 0
             }
             return ValidatedObject.validateFields(this)
         }
     }
 
     class CrawlerTaskExecutionConfigData(
-        @Description("The search query to use for Google search") val search_query: String? = null,
-        @Description("Direct URLs to analyze (comma-separated)") val direct_urls: List<String>? = null,
-        @Description("The query considered when processing the content - this should contain a detailed listing of the desired data, evaluation criteria, and filtering priorities used to transform the page into the desired summary") val content_queries: Any? = null,
+        @Description("The search query to use for Google search. Either this or direct_urls must be provided.") var search_query: String? = null,
+        @Description("Direct URLs to analyze. Each must be a valid http or https URL. Either this or search_query must be provided.") var direct_urls: List<String>? = null,
+        @Description("The query considered when processing the content. This should contain a detailed listing of the desired data, evaluation criteria, and filtering priorities used to transform each page into the desired summary.") var content_queries: Any? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -104,12 +106,13 @@ class CrawlerAgentTask(
         state = state
     ), ValidatedObject {
         override fun validate(): String? {
-            if (search_query.isNullOrBlank() && direct_urls.isNullOrEmpty()) {
+            val directUrls = direct_urls
+            if (search_query.isNullOrBlank() && directUrls.isNullOrEmpty()) {
                 return "Either search_query or direct_urls must be provided"
             }
 
-            if (!direct_urls.isNullOrEmpty()) {
-                direct_urls.forEach { url ->
+            if (!directUrls.isNullOrEmpty()) {
+                directUrls.forEach { url ->
                     if (!url.matches(Regex("^(http|https)://.*"))) {
                         return "Invalid URL format in direct_urls: $url"
                     }
@@ -123,11 +126,11 @@ class CrawlerAgentTask(
     val urlContentCache = ConcurrentHashMap<String, String>()
     private val robotsTxtParser = RobotsTxtParser()
     private val pageQueueLock = Object()
-    private val pageQueue = java.util.PriorityQueue<LinkData>(compareByDescending { it.calculatePriority() })
+    private val pageQueue = PriorityQueue<LinkData>(compareByDescending { it.calculatePriority() })
     private val seenUrls = ConcurrentHashMap.newKeySet<String>()
 
     override fun promptSegment(): String {
-        val str = buildString {
+        return buildString {
             appendLine("CrawlerAgent - Search Google, fetch top results, and analyze content")
             appendLine("** Specify the search query")
             appendLine("** Or provide direct URLs to analyze")
@@ -154,7 +157,6 @@ class CrawlerAgentTask(
                 }
             }
         }
-        return str
     }
 
     fun cleanup() {
@@ -175,10 +177,10 @@ class CrawlerAgentTask(
     }
 
     data class LinkData(
-        @Description("The URL of the link to crawl") var url: String? = null,
-        @Description("The title of the link (optional)") val title: String? = null,
-        @Description("Tags associated with the link (optional)") val tags: List<String>? = null,
-        @Description("1-100") val relevance_score: Double = 100.0
+        @Description("The URL of the link to crawl. Must be a valid http or https URL.") var url: String? = null,
+        @Description("The title of the link (optional)") var title: String? = null,
+        @Description("Tags associated with the link for categorization (optional)") var tags: List<String>? = null,
+        @Description("Relevance score from 1 to 100 indicating how relevant this link is to the query") var relevance_score: Double = 100.0
     ) : ValidatedObject {
         var started: Boolean = false
         var completed: Boolean = false
@@ -193,9 +195,7 @@ class CrawlerAgentTask(
             if (false == url?.matches(Regex("^(http|https)://.*"))) {
                 url = "https://$url"
             }
-            if (relevance_score < 1.0 || relevance_score > 100.0) {
-                return "relevance_score must be between 1 and 100"
-            }
+            relevance_score = relevance_score.coerceIn(1.0, 100.0)
             return ValidatedObject.validateFields(this)
         }
     }
@@ -208,10 +208,10 @@ class CrawlerAgentTask(
     }
 
     data class ParsedPage(
-        val page_type: PageType = PageType.OK,
-        val page_information: Any? = null,
-        val tags: List<String>? = null,
-        val link_data: List<LinkData>? = null,
+        @Description("The classification of the page content. One of: Error, Irrelevant, OK") var page_type: PageType = PageType.OK,
+        @Description("Extracted information from the page, structured according to the content query") var page_information: Any? = null,
+        @Description("Tags categorizing the page content") var tags: List<String>? = null,
+        @Description("Links extracted from the page for further crawling") var link_data: List<LinkData>? = null,
     ) : ValidatedObject {
         override fun validate(): String? {
             link_data?.forEach { linkData ->
@@ -228,17 +228,9 @@ class CrawlerAgentTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        log.info("Starting CrawlerAgentTask.run() with messages count: ${messages.size}")
-        var transcriptStream: FileOutputStream? = null
+        val transcriptStream = task.newFileOutputStream(transcriptFile())
         try {
-            transcriptStream = if (typeConfig?.generate_transcript != false) {
-                try {
-                  task.newFileOutputStream(transcriptFile("crawler_transcript"))
-                } catch (e: Exception) {
-                    log.error("Failed to initialize transcript", e)
-                    null
-                }
-            } else null
+            log.info("Starting CrawlerAgentTask.run() with messages count: ${messages.size}")
             val chatInterface = (
                     typeConfig?.model?.let { this@CrawlerAgentTask.orchestrationConfig.instance(it) }
                         ?: this@CrawlerAgentTask.defaultFast
@@ -246,6 +238,25 @@ class CrawlerAgentTask(
             resultFn(innerRun(agent, messages, task, orchestrationConfig, transcriptStream, chatInterface))
         } catch (e: Throwable) {
             log.error("Unhandled exception in CrawlerAgentTask", e)
+            transcriptStream?.let { stream ->
+                try {
+                    writeToTranscript(stream, buildString {
+                        appendLine()
+                        appendLine("## Fatal Error")
+                        appendLine()
+                        appendLine("<details><summary>Stack Trace</summary>")
+                        appendLine()
+                        appendLine("```")
+                        appendLine(e.stackTraceToString())
+                        appendLine("```")
+                        appendLine()
+                        appendLine("</details>")
+                        appendLine()
+                    })
+                } catch (ex: Exception) {
+                    log.debug("Failed to write fatal error to transcript", ex)
+                }
+            }
             val errorMessage = "Error: ${e.message ?: "Unknown error occurred"}"
             resultFn(errorMessage)
             task.error(e)
@@ -283,7 +294,7 @@ class CrawlerAgentTask(
                     executionConfig?.direct_urls?.joinToString(
                         ", "
                     ) ?: ""
-                }', max_pages=${typeConfig.max_pages_per_task ?: typeConfig.max_pages_per_task ?: 30}"
+                }', max_pages=${typeConfig.max_pages_per_task ?: 30}"
             )
             val webSearchDir = File(agent.root.toFile(), ".websearch")
             if (!webSearchDir.exists()) {
@@ -297,9 +308,9 @@ class CrawlerAgentTask(
             val crawlTask = task.linkedTask("Crawl Details")
             val crawlTabs = TabbedDisplay(crawlTask)
             task.update()
-            transcriptStream?.let { stream ->
-                writeTranscriptHeader(stream)
-            }
+
+            // Write transcript header with tabbed structure
+            transcriptStream?.let { stream -> writeTranscriptHeader(stream) }
 
             val seedMethod = when {
                 !executionConfig?.direct_urls.isNullOrEmpty() -> SeedMethod.DirectUrls
@@ -312,10 +323,28 @@ class CrawlerAgentTask(
             }
             log.info("Using seed method: $seedMethod")
             val seedItems = try {
-                seedMethod.createStrategy(this, agent.user).getSeedItems(executionConfig, orchestrationConfig)
+                seedMethod?.createStrategy(this, agent.user)?.getSeedItems(executionConfig, orchestrationConfig)
             } catch (e: Exception) {
                 log.error("Failed to get seed items using method: $seedMethod", e)
                 task.error(e)
+                transcriptStream?.let { stream ->
+                    try {
+                        writeToTranscript(stream, buildString {
+                            appendLine("## Error: Failed to get seed items")
+                            appendLine()
+                            appendLine("<details><summary>Stack Trace</summary>")
+                            appendLine()
+                            appendLine("```")
+                            appendLine(e.stackTraceToString())
+                            appendLine("```")
+                            appendLine()
+                            appendLine("</details>")
+                            appendLine()
+                        })
+                    } catch (ex: Exception) {
+                        log.debug("Failed to write seed error to transcript", ex)
+                    }
+                }
                 return "Error: Failed to get seed items - ${e.message}"
             }
             if (seedItems == null || seedItems.isEmpty()) {
@@ -328,7 +357,7 @@ class CrawlerAgentTask(
             val seedLinksContent = buildString {
                 appendLine("# Seed Links")
                 appendLine()
-                appendLine("**Method:** ${seedMethod.name}")
+                appendLine("**Method:** ${seedMethod?.name}")
                 appendLine()
                 appendLine("**Total Seeds:** ${seedItems.size}")
                 appendLine()
@@ -383,11 +412,10 @@ class CrawlerAgentTask(
             }
 
             val analysisResultsMap = ConcurrentHashMap<Int, String>()
-            val maxPages = typeConfig.max_pages_per_task ?: typeConfig.max_pages_per_task ?: 30
-            val concurrentProcessing = /*taskConfig?.concurrent_page_processing ?:*/
-                typeConfig.concurrent_page_processing ?: 3
+            val maxPages = typeConfig.max_pages_per_task ?: 30
+            val concurrentProcessing = typeConfig.concurrent_page_processing ?: 3
             log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing")
-// Create processing context
+            // Create processing context
             val processingContext = ProcessingContext(
                 executionConfig = executionConfig ?: throw RuntimeException("Missing execution config"),
                 typeConfig = typeConfig,
@@ -418,7 +446,8 @@ class CrawlerAgentTask(
                 val loopIterations = AtomicInteger(0)
                 val maxDepthConfig = typeConfig.max_depth ?: 3
                 val maxQueueSizeConfig = typeConfig.max_queue_size ?: 100
-                log.debug("Starting crawling loop: maxPages=$maxPages, maxErrors=$maxErrors, maxIterations=${1000}")
+                val maxIterations = 1000
+                log.debug("Starting crawling loop: maxPages=$maxPages, maxErrors=$maxErrors, maxIterations=$maxIterations")
                 while (shouldContinue(maxPages, errorCount, maxErrors, loopIterations, activeTasks)) {
                     if (loopIterations.get() % 10 == 0) {
                         synchronized(pageQueueLock) {
@@ -459,7 +488,7 @@ class CrawlerAgentTask(
                     // This allows in-progress tasks to add new links to the queue
                     if (activeTasks.isNotEmpty()) {
                         try {
-                            val future = completionService.poll(1, java.util.concurrent.TimeUnit.SECONDS)
+                            val future = completionService.poll(1, TimeUnit.SECONDS)
                             if (future != null) {
                                 future.get() // This will throw if the task failed
                             } else {
@@ -488,12 +517,31 @@ class CrawlerAgentTask(
                         break
                     }
                 }
-                if (loopIterations.get() >= 1000) {
-                    log.warn("Reached maximum iteration limit: ${1000}")
+                if (loopIterations.get() >= maxIterations) {
+                    log.warn("Reached maximum iteration limit: $maxIterations")
                 }
             } catch (e: Exception) {
                 log.error("Error during processing", e)
                 task.error(e)
+                transcriptStream?.let { stream ->
+                    try {
+                        writeToTranscript(stream, buildString {
+                            appendLine()
+                            appendLine("## Error During Processing")
+                            appendLine()
+                            appendLine("<details><summary>Stack Trace</summary>")
+                            appendLine()
+                            appendLine("```")
+                            appendLine(e.stackTraceToString())
+                            appendLine("```")
+                            appendLine()
+                            appendLine("</details>")
+                            appendLine()
+                        })
+                    } catch (ex: Exception) {
+                        log.debug("Failed to write processing error to transcript", ex)
+                    }
+                }
             } finally {
                 log.info("Crawling phase completed, cleaning up resources")
             }
@@ -548,6 +596,25 @@ class CrawlerAgentTask(
                 }
             } catch (e: Exception) {
                 log.error("Failed to generate final output using strategy, falling back to basic summary", e)
+                transcriptStream?.let { stream ->
+                    try {
+                        writeToTranscript(stream, buildString {
+                            appendLine()
+                            appendLine("## Warning: Strategy output generation failed, using fallback")
+                            appendLine()
+                            appendLine("<details><summary>Error Details</summary>")
+                            appendLine()
+                            appendLine("```")
+                            appendLine(e.stackTraceToString())
+                            appendLine("```")
+                            appendLine()
+                            appendLine("</details>")
+                            appendLine()
+                        })
+                    } catch (ex: Exception) {
+                        log.debug("Failed to write fallback error to transcript", ex)
+                    }
+                }
                 if (typeConfig.create_final_summary != false && analysisResults.length > (typeConfig.max_final_output_size
                         ?: 15000)
                 ) {
@@ -562,7 +629,19 @@ class CrawlerAgentTask(
                 // Write final summary to transcript
                 transcriptStream?.let { stream ->
                     try {
-                        writeToTranscript(stream, "\n\n## Final Summary\n\n$finalOutput\n\n")
+                        writeToTranscript(stream, buildString {
+                            appendLine()
+                            appendLine("</div>") // Close work-details tab
+                            appendLine()
+                            appendLine("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">")
+                            appendLine()
+                            appendLine("## Final Summary")
+                            appendLine()
+                            appendLine(finalOutput)
+                            appendLine()
+                            appendLine("</div>") // Close final-output tab
+                            appendLine()
+                        })
                     } catch (e: Exception) {
                         log.error("Failed to write final summary to transcript", e)
                     }
@@ -594,7 +673,7 @@ class CrawlerAgentTask(
                 appendLine()
                 appendLine("**Direct URLs:** ${executionConfig?.direct_urls?.joinToString(", ") ?: "N/A"}")
                 appendLine()
-                appendLine("<details><summary>Execution Configuration (click to expand)</summary>\n")
+               appendLine("<details><summary>Execution Configuration (click to expand)</summary>")
                 appendLine()
                 appendLine(executionConfig?.content_queries?.toJson()?.let { "\n```json\n${it.indent()}\n```" }
                     ?: "N/A")
@@ -603,11 +682,15 @@ class CrawlerAgentTask(
                 appendLine()
                 appendLine("---")
                 appendLine()
+                appendLine("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">")
+                appendLine()
+                appendLine("## Crawling Work Details")
+                appendLine()
             }
             stream.write(header.toByteArray(StandardCharsets.UTF_8))
             stream.flush()
         } catch (e: Exception) {
-            if (e !is java.io.IOException || e.message?.contains("closed") != true) {
+            if (e !is IOException || e.message?.contains("closed") != true) {
                 log.error("Failed to write transcript header", e)
             }
         }
@@ -635,7 +718,7 @@ class CrawlerAgentTask(
             stream.write(footer.toByteArray(StandardCharsets.UTF_8))
             stream.flush()
         } catch (e: Exception) {
-            if (e !is java.io.IOException || e.message?.contains("closed") != true) {
+            if (e !is IOException || e.message?.contains("closed") != true) {
                 log.error("Failed to write transcript footer", e)
             }
         }
@@ -740,7 +823,6 @@ class CrawlerAgentTask(
             log.error("Invalid page link encountered: $page")
             errorCount.incrementAndGet()
             page.completed = true
-            page.completed = true
             page.error = "Invalid or empty URL"
             return false
         }
@@ -756,8 +838,8 @@ class CrawlerAgentTask(
             log.error("Failed to create subtask for URL: $pageUrl", e)
             errorCount.incrementAndGet()
             page.completed = true
-            page.completed = true
             page.error = "Failed to create subtask: ${e.message}"
+            activeTasks.remove(pageUrl)
             return false
         }
 
@@ -786,7 +868,6 @@ class CrawlerAgentTask(
             } catch (e: Exception) {
                 log.error("Uncaught exception in page processing task for: $pageUrl", e)
                 errorCount.incrementAndGet()
-                page.completed = true
                 page.completed = true
                 page.error = "Uncaught exception: ${e.message}"
             } finally {
@@ -885,9 +966,9 @@ class CrawlerAgentTask(
                             )
                             allPageResults[currentIndex] = pageResult
                             task.add(
-                              "*Content too short (${content.length} chars), skipping this result*".renderMarkdown(
-                                true
-                              )
+                                "*Content too short (${content.length} chars), skipping this result*".renderMarkdown(
+                                    true
+                                )
                             )
                             statusBuffer?.setLength(0); task.update()
                             return@buildString
@@ -910,9 +991,9 @@ class CrawlerAgentTask(
                                 currentIndex
                             )
                             task.add(
-                              "*Error processing this result: ${pageResult.metadata["error"]}*".renderMarkdown(
-                                true
-                              )
+                                "*Error processing this result: ${pageResult.metadata["error"]}*".renderMarkdown(
+                                    true
+                                )
                             )
                             statusBuffer?.setLength(0); task.update()
                             return@buildString
@@ -953,8 +1034,7 @@ class CrawlerAgentTask(
                         if (typeConfig.follow_links == true) {
 
                             var linkData = pageResult.extractedLinks
-                            val allowRevisit = /*taskConfig?.allow_revisit_pages ?:*/
-                                typeConfig.allow_revisit_pages == true
+                            val allowRevisit = typeConfig.allow_revisit_pages == true
                             if (linkData.isNullOrEmpty()) {
                                 linkData = extractLinksFromMarkdown(pageResult.content)
                                 log.debug("Extracted ${linkData.size} links from markdown for '$url'")
@@ -1066,7 +1146,18 @@ class CrawlerAgentTask(
                         // Log error to transcript
                         transcriptStream?.let { stream ->
                             try {
-                                writeToTranscript(stream, "**Error:** ${e.message}\n\n")
+                                writeToTranscript(stream, buildString {
+                                    appendLine("**Error:** ${e.message}")
+                                    appendLine()
+                                    appendLine("<details><summary>Stack Trace</summary>")
+                                    appendLine()
+                                    appendLine("```")
+                                    appendLine(e.stackTraceToString())
+                                    appendLine("```")
+                                    appendLine()
+                                    appendLine("</details>")
+                                    appendLine()
+                                })
                             } catch (ex: Exception) {
                                 log.debug("Failed to write error to transcript (stream may be closed)", ex)
                             }
@@ -1080,9 +1171,27 @@ class CrawlerAgentTask(
                 log.error("Error processing page: ${link}", e)
                 errorCount.incrementAndGet()
                 page.error = e.message
-                page.error = e.message
                 analysisResultsMap[currentIndex] =
                     "## ${currentIndex}. [${page.title}](${link})\n\n*Error processing this result: ${e.message}*\n\n"
+                // Log error to transcript (Triple Log Rule)
+                transcriptStream?.let { stream ->
+                    try {
+                        writeToTranscript(stream, buildString {
+                            appendLine("### Error Processing Page ${currentIndex}: [${page.title}](${link})")
+                            appendLine()
+                            appendLine("<details><summary>Stack Trace</summary>")
+                            appendLine()
+                            appendLine("```")
+                            appendLine(e.stackTraceToString())
+                            appendLine("```")
+                            appendLine()
+                            appendLine("</details>")
+                            appendLine()
+                        })
+                    } catch (ex: Exception) {
+                        log.debug("Failed to write page error to transcript", ex)
+                    }
+                }
             } finally {
                 // Log page completion to transcript
                 transcriptStream?.let { stream ->
@@ -1102,7 +1211,6 @@ class CrawlerAgentTask(
 
                 page.completed = true
                 page.processingTimeMs = System.currentTimeMillis() - pageStartTime
-                page.completed = true
                 log.debug("Page processing completed: url='${link}', time=${page.processingTimeMs}ms, error='${page.error ?: "none"}'")
                 task.complete()
             }
@@ -1130,9 +1238,8 @@ class CrawlerAgentTask(
             // Check if URL is restricted by allowed_domains whitelist
             val allowedDomains =
                 (
-                        (typeConfig.allowed_domains?.split(Regex("\\s+"))?.filter { it.isNotBlank() } ?: listOf())
-                        //+ (executionConfig?.allowed_domains?.split(Regex("\\s+")
-                        ).filter { it.isNotBlank() }.toSet()
+                    typeConfig.allowed_domains?.split(Regex("\\s+"))?.filter { it.isNotBlank() } ?: listOf()
+                ).toSet()
             if (allowedDomains.isNotEmpty()) {
                 val isAllowed = allowedDomains.any { allowedDomainOrPrefix ->
                     val normalizedAllowed = allowedDomainOrPrefix.lowercase().trim()
@@ -1191,17 +1298,21 @@ class CrawlerAgentTask(
 
         val urlSections = extractUrlSections(analysisResults)
         log.info("Extracted ${urlSections.size} URL sections for summarization")
+        val summaryPrompt = buildString {
+            appendLine("Create a comprehensive summary of the following web search results and analyses.")
+            appendLine()
+            appendLine("Original analysis contained ${urlSections.size} web pages related to: ${executionConfig?.search_query ?: ""}")
+            appendLine()
+            appendLine("Analysis goal: ${executionConfig?.content_queries ?: executionConfig?.task_description ?: "Provide key insights"}")
+            appendLine()
+            appendLine("For each source, extract the most important insights, facts, and conclusions.")
+            appendLine("Organize information by themes rather than by source when possible.")
+            appendLine("Use markdown formatting with headers, bullet points, and emphasis where appropriate.")
+            appendLine("Include the most important links that should be followed up on.")
+            appendLine("Keep your response under ${(typeConfig.max_final_output_size ?: 15000) / 1000}K characters.")
+        }
         val summary = ChatAgent(
-            prompt = listOf(
-                "Create a comprehensive summary of the following web search results and analyses.",
-                "Original analysis contained ${urlSections.size} web pages related to: ${executionConfig?.search_query ?: ""}",
-                "Analysis goal: ${executionConfig?.content_queries ?: executionConfig?.task_description ?: "Provide key insights"}",
-                "For each source, extract the most important insights, facts, and conclusions.",
-                "Organize information by themes rather than by source when possible.",
-                "Use markdown formatting with headers, bullet points, and emphasis where appropriate.",
-                "Include the most important links that should be followed up on.",
-                "Keep your response under ${(typeConfig.max_final_output_size ?: 15000) / 1000}K characters."
-            ).joinToString("\n\n"),
+            prompt = summaryPrompt,
             model = chatInterface,
         ).answer(
             listOf(
@@ -1261,10 +1372,9 @@ class CrawlerAgentTask(
                         appendLine("|---|-----|--------|-------|-----------------|-------|")
                         processedPages.forEachIndexed { index, url ->
                             val status = if (urlContentCache.containsKey(url)) "✅ Success" else "❌ Failed"
-                            // Try to find the LinkData for this URL to get more details
-                            val depth = "N/A" // We don't track this for completed pages currently
-                            val processingTime = "N/A" // We don't track this for completed pages currently
-                            val error = "" // We don't track this for completed pages currently
+                            val depth = "N/A"
+                            val processingTime = "N/A"
+                            val error = ""
                             appendLine("| ${index + 1} | [${url.take(50)}...](${url}) | $status | $depth | $processingTime | $error |")
                         }
                     }
@@ -1389,7 +1499,6 @@ class CrawlerAgentTask(
                 else -> ".html"
             }
             val rawFile = File(webSearchDir, urlSafe + extension)
-            // Ensure content is saved with proper encoding
             try {
                 rawFile.writeText(content, StandardCharsets.UTF_8)
             } catch (e: Exception) {
@@ -1445,15 +1554,15 @@ class CrawlerAgentTask(
             CrawlerTaskExecutionConfigData::class.java,
             CrawlerTaskTypeConfig::class.java,
             "Search Google, fetch top results, and analyze content",
-            """
-          Searches Google for specified queries and analyzes the top results.
-          <ul>
-            <li>Performs Google searches</li>
-            <li>Fetches top search results</li>
-            <li>Analyzes content for specific goals</li>
-            <li>Generates detailed analysis reports</li>
- </ul>
-        """,
+            buildString {
+                append("Searches Google for specified queries and analyzes the top results.")
+                append("<ul>")
+                append("<li>Performs Google searches</li>")
+                append("<li>Fetches top search results</li>")
+                append("<li>Analyzes content for specific goals</li>")
+                append("<li>Generates detailed analysis reports</li>")
+                append("</ul>")
+            },
         )
 
     }

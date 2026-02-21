@@ -457,15 +457,15 @@ open class ConversationalMode(
             prompt: String = "",
             history: List<String> = emptyList(),
             singleStage: Boolean = false,
-        ): Pair<ParsedResponse<Tasks>, TaskExecutionConfig> {
+            taskTypes: List<TaskType<*, *>> = TaskType.getAvailableTaskTypes(orchestrationConfig),
+            ): Pair<ParsedResponse<Tasks>, TaskExecutionConfig> {
             val describer = TaskContextYamlDescriber(orchestrationConfig)
-            val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
             Tasks.initDescriber(orchestrationConfig, describer)
             val parsedActor = ParsedAgent(
                 name = "TaskChooser",
                 resultClass = Tasks::class.java,
                 exampleInstance = Tasks(
-                    listOfNotNull(availableTaskTypes.firstOrNull()?.let {
+                    listOfNotNull(taskTypes.firstOrNull()?.let {
                         orchestrationConfig.getImpl(it).executionConfig
                     }).toMutableList()
                 ),
@@ -491,7 +491,7 @@ open class ConversationalMode(
                 parsingChatter = fastModel,
                 temperature = orchestrationConfig.temperature,
                 describer = describer,
-                parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
+                parserPrompt = ("Task Subtype Schema:\n" + taskTypes.joinToString("\n\n") { taskType ->
                     "${taskType.name}:\n  ${
                         describer.describe(taskType.executionConfigClass).trim().trimIndent().indent("  ")
                     }".trim()

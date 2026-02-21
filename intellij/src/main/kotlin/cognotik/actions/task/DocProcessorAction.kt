@@ -169,14 +169,15 @@ open class DocProcessorAction(
         init {
             title = "Select Documentation Tasks"
             
-            taskItems = allTasks.mapIndexed { index, (config, _) ->
-                val targetFiles = config.files?.joinToString(", ") ?: throw IllegalStateException("No target files specified")
-                val relatedFiles = config.related_files?.take(3)?.joinToString(", ") ?: ""
+            taskItems = allTasks.mapIndexed { index, t ->
+                val config = t.data
+                val targetFiles = config.relative_files?.joinToString(", ") ?: throw IllegalStateException("No target files specified")
+                val relatedFiles = config.relative_related_files?.take(3)?.joinToString(", ") ?: ""
                 val description = buildString {
                     append("Target: $targetFiles")
                     if (relatedFiles.isNotEmpty()) {
                         append(" | Related: $relatedFiles")
-                        if ((config.related_files?.size ?: 0) > 3) {
+                        if ((config.relative_related_files?.size ?: 0) > 3) {
                             append("...")
                         }
                     }

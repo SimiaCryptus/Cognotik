@@ -15,12 +15,10 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
-import java.nio.charset.StandardCharsets
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoningTaskExecutionConfigData, U : TaskTypeConfig>(
     orchestrationConfig: OrchestrationConfig,
@@ -41,20 +39,17 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             executionConfigClass = JournalismReasoningTaskExecutionConfigData::class.java,
             taskSettingsClass = TaskTypeConfig::class.java,
             description = "Investigate stories through journalistic principles and methods",
-            tooltipHtml = """
-                        Analyzes stories using professional journalism standards and practices.
-                        <ul>
-                          <li>Verifies facts and checks claims against evidence</li>
-                          <li>Identifies multiple perspectives and source credibility</li>
-                          <li>Analyzes context, background, and broader implications</li>
-                          <li>Detects potential biases and conflicts of interest</li>
-                          <li>Finds information gaps and unanswered questions</li>
-                          <li>Explores alternative story angles and approaches</li>
-                          <li>Assesses newsworthiness and public interest</li>
-                          <li>Useful for investigative reporting, fact-checking, editorial planning</li>
-                          <li>Generates structured journalistic analysis with verified facts</li>
-                        </ul>
-                      """,
+            tooltipHtml = "<ul>" +
+                "<li>Verifies facts and checks claims against evidence</li>" +
+                "<li>Identifies multiple perspectives and source credibility</li>" +
+                "<li>Analyzes context, background, and broader implications</li>" +
+                "<li>Detects potential biases and conflicts of interest</li>" +
+                "<li>Finds information gaps and unanswered questions</li>" +
+                "<li>Explores alternative story angles and approaches</li>" +
+                "<li>Assesses newsworthiness and public interest</li>" +
+                "<li>Useful for investigative reporting, fact-checking, editorial planning</li>" +
+                "<li>Generates structured journalistic analysis with verified facts</li>" +
+                "</ul>",
         )
     }
 
@@ -89,7 +84,6 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
         @Description("Whether to assess newsworthiness and public interest")
         var assess_newsworthiness: Boolean = true,
         @Description("List of task IDs that this task depends on")
-
         task_dependencies: List<String>? = null,
         @Description("The current state of the task")
         state: TaskState? = TaskState.Pending,
@@ -103,20 +97,24 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             if (story_topic.isNullOrBlank()) {
                 return "Story topic must not be null or blank"
             }
-            if (alternative_angles < 1 || alternative_angles > 10) {
-                return "Alternative angles must be between 1 and 10, got: $alternative_angles"
-            }
+            alternative_angles = alternative_angles.coerceIn(1, 10)
             return ValidatedObject.validateFields(this)
         }
     }
 
     data class FactCheck(
-        val claim: String = "",
-        val source: String = "",
-        val verification_status: String = "",
-        val supporting_evidence: List<String> = emptyList(),
-        val contradicting_evidence: List<String> = emptyList(),
-        val confidence_level: String = ""
+        @Description("The specific factual claim being verified")
+        var claim: String = "",
+        @Description("The source of the claim (publication, person, document)")
+        var source: String = "",
+        @Description("Verification status: one of 'verified', 'unverified', 'disputed', 'false', 'partially true'")
+        var verification_status: String = "",
+        @Description("List of evidence supporting the claim")
+        var supporting_evidence: List<String> = emptyList(),
+        @Description("List of evidence contradicting the claim")
+        var contradicting_evidence: List<String> = emptyList(),
+        @Description("Confidence level in the verification (e.g., 'high', 'medium', 'low')")
+        var confidence_level: String = ""
     ) : ValidatedObject {
         override fun validate(): String? {
             if (claim.isBlank()) {
@@ -127,16 +125,23 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     }
 
     data class FactChecks(
-        val facts: List<FactCheck> = emptyList()
+        @Description("List of fact check results")
+        var facts: List<FactCheck> = emptyList()
     ) : ValidatedObject
 
     data class SourcePerspective(
-        val source_name: String = "",
-        val role: String = "",
-        val perspective: String = "",
-        val key_quotes: List<String> = emptyList(),
-        val potential_bias: String = "",
-        val credibility_assessment: String = ""
+        @Description("Name or identifier of the source")
+        var source_name: String = "",
+        @Description("Role or relationship of the source to the story")
+        var role: String = "",
+        @Description("The source's perspective or position on the story")
+        var perspective: String = "",
+        @Description("Key quotes or statements from this source")
+        var key_quotes: List<String> = emptyList(),
+        @Description("Potential biases or interests of this source")
+        var potential_bias: String = "",
+        @Description("Assessment of the source's credibility")
+        var credibility_assessment: String = ""
     ) : ValidatedObject {
         override fun validate(): String? {
             if (source_name.isBlank()) {
@@ -150,15 +155,21 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     }
 
     data class SourcePerspectives(
-        val sources: List<SourcePerspective> = emptyList()
+        @Description("List of source perspectives identified")
+        var sources: List<SourcePerspective> = emptyList()
     ) : ValidatedObject
 
     data class ContextAnalysis(
-        val historical_background: String = "",
-        val relevant_trends: List<String> = emptyList(),
-        val related_events: List<String> = emptyList(),
-        val broader_implications: List<String> = emptyList(),
-        val key_stakeholders: List<String> = emptyList()
+        @Description("Historical background and what led to this story")
+        var historical_background: String = "",
+        @Description("Relevant trends or patterns related to the story")
+        var relevant_trends: List<String> = emptyList(),
+        @Description("Related events or precedents")
+        var related_events: List<String> = emptyList(),
+        @Description("Broader implications (social, political, economic)")
+        var broader_implications: List<String> = emptyList(),
+        @Description("Key stakeholders and their interests")
+        var key_stakeholders: List<String> = emptyList()
     ) : ValidatedObject {
         override fun validate(): String? {
             if (historical_background.isBlank()) {
@@ -169,11 +180,16 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     }
 
     data class BiasAnalysis(
-        val potential_biases: List<String> = emptyList(),
-        val conflicts_of_interest: List<String> = emptyList(),
-        val missing_voices: List<String> = emptyList(),
-        val framing_issues: List<String> = emptyList(),
-        val balance_assessment: String = ""
+        @Description("List of potential biases identified in the coverage")
+        var potential_biases: List<String> = emptyList(),
+        @Description("List of conflicts of interest identified")
+        var conflicts_of_interest: List<String> = emptyList(),
+        @Description("Voices or perspectives that are missing from the coverage")
+        var missing_voices: List<String> = emptyList(),
+        @Description("Issues with how the story is framed")
+        var framing_issues: List<String> = emptyList(),
+        @Description("Overall assessment of balance in the coverage")
+        var balance_assessment: String = ""
     ) : ValidatedObject {
         override fun validate(): String? {
             if (balance_assessment.isBlank()) {
@@ -184,33 +200,42 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     }
 
     data class StoryAngle(
-        val angle_title: String = "",
-        val focus: String = "",
-        val target_audience: String = "",
-        val key_questions: List<String> = emptyList(),
-        val unique_value: String = "",
-        val newsworthiness_score: Double = 0.0
+        @Description("Compelling title or headline for this angle")
+        var angle_title: String = "",
+        @Description("What aspect of the story to emphasize")
+        var focus: String = "",
+        @Description("The intended audience for this angle")
+        var target_audience: String = "",
+        @Description("Key questions this angle would answer")
+        var key_questions: List<String> = emptyList(),
+        @Description("What makes this angle distinctive")
+        var unique_value: String = "",
+        @Description("Newsworthiness score from 0.0 to 1.0")
+        var newsworthiness_score: Double = 0.0
     ) : ValidatedObject {
         override fun validate(): String? {
             if (angle_title.isBlank()) {
                 return "Angle title must not be blank"
             }
-            if (newsworthiness_score < 0.0 || newsworthiness_score > 1.0) {
-                return "Newsworthiness score must be between 0.0 and 1.0"
-            }
+            newsworthiness_score = newsworthiness_score.coerceIn(0.0, 1.0)
             return ValidatedObject.validateFields(this)
         }
     }
 
     data class StoryAngles(
-        val angles: List<StoryAngle> = emptyList()
+        @Description("List of alternative story angles")
+        var angles: List<StoryAngle> = emptyList()
     ) : ValidatedObject
 
     data class InformationGap(
-        val question: String = "",
-        val importance: String = "",
-        val potential_sources: List<String> = emptyList(),
-        val research_approach: String = ""
+        @Description("The specific question or missing information")
+        var question: String = "",
+        @Description("Importance level: one of 'critical', 'important', 'minor'")
+        var importance: String = "",
+        @Description("Potential sources that could fill this gap")
+        var potential_sources: List<String> = emptyList(),
+        @Description("Suggested approach to research this gap")
+        var research_approach: String = ""
     ) : ValidatedObject {
         override fun validate(): String? {
             if (question.isBlank()) {
@@ -218,30 +243,29 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
             }
             val validImportance = setOf("critical", "important", "minor")
             if (importance.isNotBlank() && importance.lowercase() !in validImportance) {
-                return "Importance must be one of: ${validImportance.joinToString(", ")}"
+                importance = "important"
             }
             return ValidatedObject.validateFields(this)
         }
     }
 
     data class InformationGaps(
-        val gaps: List<InformationGap> = emptyList()
+        @Description("List of information gaps identified")
+        var gaps: List<InformationGap> = emptyList()
     ) : ValidatedObject
 
-    override fun promptSegment(): String {
-        return """
-JournalismReasoning - Investigate stories through journalistic principles and methods
-  ** Specify the story topic or event to investigate
-  ** Define journalism elements: who, what, when, where, why, how
-  ** Enable fact verification and source checking
-  ** Identify multiple perspectives and stakeholder voices
-  ** Analyze context, background, and broader implications
-  ** Detect potential biases and conflicts of interest
-  ** Find information gaps and unanswered questions
-  ** Explore alternative story angles
-  ** Assess newsworthiness and public interest
-  ** Produces structured journalistic analysis with verified facts
-        """.trimIndent()
+    override fun promptSegment(): String = buildString {
+        appendLine("JournalismReasoning - Investigate stories through journalistic principles and methods")
+        appendLine("  ** Specify the story topic or event to investigate")
+        appendLine("  ** Define journalism elements: who, what, when, where, why, how")
+        appendLine("  ** Enable fact verification and source checking")
+        appendLine("  ** Identify multiple perspectives and stakeholder voices")
+        appendLine("  ** Analyze context, background, and broader implications")
+        appendLine("  ** Detect potential biases and conflicts of interest")
+        appendLine("  ** Find information gaps and unanswered questions")
+        appendLine("  ** Explore alternative story angles")
+        appendLine("  ** Assess newsworthiness and public interest")
+        appendLine("  ** Produces structured journalistic analysis with verified facts")
     }
 
     override fun run(
@@ -251,14 +275,12 @@ JournalismReasoning - Investigate stories through journalistic principles and me
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-
-      val transcript = task.newFileOutputStream(transcriptFile())
+        val transcript = task.newFileOutputStream(transcriptFile())
         task.ui.pool.submit {
             val startTime = System.currentTimeMillis()
             val config = executionConfig ?: return@submit
             val storyTopic = config.story_topic
             if (storyTopic.isNullOrBlank()) {
-                log.error("No story topic specified for journalism reasoning")
                 log.error("No story topic specified for journalism reasoning")
                 task.safeComplete("CONFIGURATION ERROR: No story topic specified", log)
                 resultFn("CONFIGURATION ERROR: No story topic specified")
@@ -281,7 +303,8 @@ JournalismReasoning - Investigate stories through journalistic principles and me
                         "alternativeAngles=$alternativeAngles, assessNewsworthiness=$assessNewsworthiness"
             )
 
-            val api = defaultSmart ?: return@submit
+            val smartApi = (defaultSmart ?: return@submit).getChildClient(task)
+            val fastApi = (defaultFast ?: return@submit).getChildClient(task)
 
             val tabs = TabbedDisplay(task)
 
@@ -320,29 +343,25 @@ JournalismReasoning - Investigate stories through journalistic principles and me
                 appendLine("*Initializing investigation...*")
             }
 
-            transcript?.write(
-                """
-                # Journalism Investigation Transcript
-                
-                **Story Topic:** $storyTopic
-                **Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
-                
-            """.trimIndent().toByteArray()
-            )
+            transcript?.write(buildString {
+                appendLine("# Journalism Investigation Transcript")
+                appendLine()
+                appendLine("**Story Topic:** $storyTopic")
+                appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+                appendLine()
+            }.toByteArray())
 
             // Include file content if requested
             val fileContent = super.getInputFileContent(config.input_files, root, treatDocumentsAsText = true)
             if (fileContent.isNotBlank()) {
-                transcript?.write(
-                    """
-                    <details>
-                    <summary>Input Files Content</summary>
-                    
-                    $fileContent
-                    </details>
-                    
-                """.trimIndent().toByteArray()
-                )
+                transcript?.write(buildString {
+                    appendLine("<details>")
+                    appendLine("<summary>Input Files Content</summary>")
+                    appendLine()
+                    appendLine(fileContent)
+                    appendLine("</details>")
+                    appendLine()
+                }.toByteArray())
             }
 
             overviewTask.add(overviewContent.renderMarkdown(true))
@@ -362,6 +381,8 @@ JournalismReasoning - Investigate stories through journalistic principles and me
 
             val resultBuilder = StringBuilder()
             resultBuilder.append("# Journalism Investigation: $storyTopic\n\n")
+            transcript?.write("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+
 
             try {
                 // Step 1: Verify facts
@@ -380,39 +401,46 @@ JournalismReasoning - Investigate stories through journalistic principles and me
                       }.renderMarkdown(true)
                     )
                     transcript?.write("## Step 1: Fact Verification\n\n".toByteArray())
+                    val factPrompt = buildString {
+                        appendLine("You are an expert fact-checker and investigative journalist. Verify the key facts and claims in this story.")
+                        appendLine()
+                        appendLine("Story Topic: $storyTopic")
+                        appendLine()
+                        appendLine("Journalism Elements:")
+                        journalismElements.entries.forEach { (key, value) ->
+                            appendLine("- $key: $value")
+                        }
+                        appendLine()
+                        if (priorContext.isNotBlank()) {
+                            appendLine("Additional Context:")
+                            appendLine(priorContext)
+                            appendLine()
+                        }
+                        appendLine("Identify and verify 5-10 key factual claims, including:")
+                        appendLine("- Core facts about the event or topic")
+                        appendLine("- Statistical claims or data points")
+                        appendLine("- Attributions and quotes")
+                        appendLine("- Timeline elements")
+                        appendLine("- Causal relationships")
+                        appendLine()
+                        appendLine("For each fact, provide:")
+                        appendLine("- The specific claim")
+                        appendLine("- The source of the claim")
+                        appendLine("- Verification status (verified, unverified, disputed, false, partially true)")
+                        appendLine("- Supporting evidence")
+                        appendLine("- Any contradicting evidence")
+                        appendLine("- Confidence level in the verification")
+                        appendLine()
+                        appendLine("Apply rigorous journalistic standards. Be skeptical but fair.")
+                    }
+
 
                     val factAgent = ParsedAgent(
                         resultClass = FactChecks::class.java,
-                        prompt = """
-You are an expert fact-checker and investigative journalist. Verify the key facts and claims in this story.
-
-Story Topic: $storyTopic
-
-Journalism Elements:
-${journalismElements.entries.joinToString("\n") { (key, value) -> "- $key: $value" }}
-
-${if (priorContext.isNotBlank()) "Additional Context:\n$priorContext\n" else ""}
-
-Identify and verify 5-10 key factual claims, including:
-- Core facts about the event or topic
-- Statistical claims or data points
-- Attributions and quotes
-- Timeline elements
-- Causal relationships
-
-For each fact, provide:
-- The specific claim
-- The source of the claim
-- Verification status (verified, unverified, disputed, false, partially true)
-- Supporting evidence
-- Any contradicting evidence
-- Confidence level in the verification
-
-Apply rigorous journalistic standards. Be skeptical but fair.
-          """.trimIndent(),
-                        model = api,
+                        prompt = factPrompt,
+                        model = smartApi,
                         temperature = 0.3,
-                        parsingChatter = defaultFast
+                        parsingChatter = fastApi
                     )
 
                     val factChecks = factAgent.answer(listOf("Verify facts")).obj.facts
@@ -460,16 +488,16 @@ Apply rigorous journalistic standards. Be skeptical but fair.
                         appendLine("**Status:** ✅ Complete")
                     }
 
-                    transcript?.write(
-                        """
-                        <details>
-                        <summary>Verified Facts (${factChecks.size})</summary>
-                        
-                        ${factChecks.joinToString("\n") { "- **${it.verification_status}**: ${it.claim} (Source: ${it.source})" }}
-                        </details>
-                        
-                    """.trimIndent().toByteArray()
-                    )
+                    transcript?.write(buildString {
+                        appendLine("<details>")
+                        appendLine("<summary>Verified Facts (${factChecks.size})</summary>")
+                        appendLine()
+                        factChecks.forEach {
+                            appendLine("- **${it.verification_status}**: ${it.claim} (Source: ${it.source})")
+                        }
+                        appendLine("</details>")
+                        appendLine()
+                    }.toByteArray())
 
                     factsTask.add(factsContent.renderMarkdown(true))
 
@@ -502,37 +530,41 @@ Apply rigorous journalistic standards. Be skeptical but fair.
                       }.renderMarkdown(true)
                     )
                     transcript?.write("## Step 2: Source Perspectives\n\n".toByteArray())
+                    val perspectivePrompt = buildString {
+                        appendLine("You are an expert journalist skilled at identifying diverse perspectives. Analyze the different viewpoints on this story.")
+                        appendLine()
+                        appendLine("Story Topic: $storyTopic")
+                        appendLine()
+                        appendLine("Journalism Elements:")
+                        journalismElements.entries.forEach { (key, value) ->
+                            appendLine("- $key: $value")
+                        }
+                        appendLine()
+                        appendLine("Identify 4-6 key sources or stakeholder perspectives, including:")
+                        appendLine("- Primary sources directly involved")
+                        appendLine("- Expert opinions")
+                        appendLine("- Affected parties")
+                        appendLine("- Opposing viewpoints")
+                        appendLine("- Official statements")
+                        appendLine()
+                        appendLine("For each source, provide:")
+                        appendLine("- Name/identification")
+                        appendLine("- Role or relationship to the story")
+                        appendLine("- Their perspective or position")
+                        appendLine("- Key quotes or statements (if available)")
+                        appendLine("- Potential biases or interests")
+                        appendLine("- Credibility assessment")
+                        appendLine()
+                        appendLine("Ensure balanced representation of different viewpoints.")
+                    }
+
 
                     val perspectiveAgent = ParsedAgent(
                         resultClass = SourcePerspectives::class.java,
-                        prompt = """
-You are an expert journalist skilled at identifying diverse perspectives. Analyze the different viewpoints on this story.
-
-Story Topic: $storyTopic
-
-Journalism Elements:
-${journalismElements.entries.joinToString("\n") { (key, value) -> "- $key: $value" }}
-
-Identify 4-6 key sources or stakeholder perspectives, including:
-- Primary sources directly involved
-- Expert opinions
-- Affected parties
-- Opposing viewpoints
-- Official statements
-
-For each source, provide:
-- Name/identification
-- Role or relationship to the story
-- Their perspective or position
-- Key quotes or statements (if available)
-- Potential biases or interests
-- Credibility assessment
-
-Ensure balanced representation of different viewpoints.
-          """.trimIndent(),
-                        model = api,
+                        prompt = perspectivePrompt,
+                        model = smartApi,
                         temperature = 0.5,
-                        parsingChatter = defaultFast
+                        parsingChatter = fastApi
                     )
 
                     val perspectives = perspectiveAgent.answer(listOf("Identify perspectives")).obj.sources
@@ -565,16 +597,16 @@ Ensure balanced representation of different viewpoints.
                         appendLine("**Status:** ✅ Complete")
                     }
 
-                    transcript?.write(
-                        """
-                        <details>
-                        <summary>Source Perspectives (${perspectives.size})</summary>
-                        
-                        ${perspectives.joinToString("\n") { "- **${it.source_name}** (${it.role}): ${it.perspective}" }}
-                        </details>
-                        
-                    """.trimIndent().toByteArray()
-                    )
+                    transcript?.write(buildString {
+                        appendLine("<details>")
+                        appendLine("<summary>Source Perspectives (${perspectives.size})</summary>")
+                        appendLine()
+                        perspectives.forEach {
+                            appendLine("- **${it.source_name}** (${it.role}): ${it.perspective}")
+                        }
+                        appendLine("</details>")
+                        appendLine()
+                    }.toByteArray())
 
                     perspectivesTask.add(perspectivesContent.renderMarkdown(true))
 
@@ -585,7 +617,6 @@ Ensure balanced representation of different viewpoints.
                                 maxDescriptionLength
                             )
                         }\n")
-
                     }
                     resultBuilder.append("\n")
 
@@ -608,29 +639,33 @@ Ensure balanced representation of different viewpoints.
                       }.renderMarkdown(true)
                     )
                     transcript?.write("## Step 3: Context Analysis\n\n".toByteArray())
+                    val contextPrompt = buildString {
+                        appendLine("You are an expert journalist skilled at providing context. Analyze the broader context of this story.")
+                        appendLine()
+                        appendLine("Story Topic: $storyTopic")
+                        appendLine()
+                        appendLine("Journalism Elements:")
+                        journalismElements.entries.forEach { (key, value) ->
+                            appendLine("- $key: $value")
+                        }
+                        appendLine()
+                        appendLine("Provide comprehensive context including:")
+                        appendLine("- Historical background (what led to this)")
+                        appendLine("- Relevant trends or patterns")
+                        appendLine("- Related events or precedents")
+                        appendLine("- Broader implications (social, political, economic, etc.)")
+                        appendLine("- Key stakeholders and their interests")
+                        appendLine()
+                        appendLine("Help readers understand why this story matters and how it fits into the bigger picture.")
+                    }
+
 
                     val contextAgent = ParsedAgent(
                         resultClass = ContextAnalysis::class.java,
-                        prompt = """
-You are an expert journalist skilled at providing context. Analyze the broader context of this story.
-
-Story Topic: $storyTopic
-
-Journalism Elements:
-${journalismElements.entries.joinToString("\n") { (key, value) -> "- $key: $value" }}
-
-Provide comprehensive context including:
-- Historical background (what led to this)
-- Relevant trends or patterns
-- Related events or precedents
-- Broader implications (social, political, economic, etc.)
-- Key stakeholders and their interests
-
-Help readers understand why this story matters and how it fits into the bigger picture.
-          """.trimIndent(),
-                        model = api,
+                        prompt = contextPrompt,
+                        model = smartApi,
                         temperature = 0.5,
-                        parsingChatter = defaultFast
+                        parsingChatter = fastApi
                     )
 
                     val context = contextAgent.answer(listOf("Analyze context")).obj
@@ -665,16 +700,14 @@ Help readers understand why this story matters and how it fits into the bigger p
                         appendLine("**Status:** ✅ Complete")
                     }
 
-                    transcript?.write(
-                        """
-                        <details>
-                        <summary>Context Analysis Summary</summary>
-                        
-                        ${context.historical_background}
-                        </details>
-                        
-                    """.trimIndent().toByteArray()
-                    )
+                    transcript?.write(buildString {
+                        appendLine("<details>")
+                        appendLine("<summary>Context Analysis Summary</summary>")
+                        appendLine()
+                        appendLine(context.historical_background)
+                        appendLine("</details>")
+                        appendLine()
+                    }.toByteArray())
 
                     contextTask.add(contextContent.renderMarkdown(true))
 
@@ -700,29 +733,33 @@ Help readers understand why this story matters and how it fits into the bigger p
                       }.renderMarkdown(true)
                     )
                     transcript?.write("## Step 4: Bias Analysis\n\n".toByteArray())
+                    val biasPrompt = buildString {
+                        appendLine("You are an expert media critic and journalism ethics specialist. Analyze potential biases in this story coverage.")
+                        appendLine()
+                        appendLine("Story Topic: $storyTopic")
+                        appendLine()
+                        appendLine("Journalism Elements:")
+                        journalismElements.entries.forEach { (key, value) ->
+                            appendLine("- $key: $value")
+                        }
+                        appendLine()
+                        appendLine("Examine:")
+                        appendLine("- Potential biases in framing or language")
+                        appendLine("- Conflicts of interest (sources, reporters, outlets)")
+                        appendLine("- Missing or underrepresented voices")
+                        appendLine("- Framing issues (what's emphasized vs. downplayed)")
+                        appendLine("- Overall balance assessment")
+                        appendLine()
+                        appendLine("Be thorough but fair. Distinguish between legitimate perspective and problematic bias.")
+                    }
+
 
                     val biasAgent = ParsedAgent(
                         resultClass = BiasAnalysis::class.java,
-                        prompt = """
-You are an expert media critic and journalism ethics specialist. Analyze potential biases in this story coverage.
-
-Story Topic: $storyTopic
-
-Journalism Elements:
-${journalismElements.entries.joinToString("\n") { (key, value) -> "- $key: $value" }}
-
-Examine:
-- Potential biases in framing or language
-- Conflicts of interest (sources, reporters, outlets)
-- Missing or underrepresented voices
-- Framing issues (what's emphasized vs. downplayed)
-- Overall balance assessment
-
-Be thorough but fair. Distinguish between legitimate perspective and problematic bias.
-          """.trimIndent(),
-                        model = api,
+                        prompt = biasPrompt,
+                        model = smartApi,
                         temperature = 0.4,
-                        parsingChatter = defaultFast
+                        parsingChatter = fastApi
                     )
 
                     val biasAnalysis = biasAgent.answer(listOf("Analyze biases")).obj
@@ -765,16 +802,14 @@ Be thorough but fair. Distinguish between legitimate perspective and problematic
                         appendLine("**Status:** ✅ Complete")
                     }
 
-                    transcript?.write(
-                        """
-                        <details>
-                        <summary>Bias and Balance Assessment</summary>
-                        
-                        ${biasAnalysis.balance_assessment}
-                        </details>
-                        
-                    """.trimIndent().toByteArray()
-                    )
+                    transcript?.write(buildString {
+                        appendLine("<details>")
+                        appendLine("<summary>Bias and Balance Assessment</summary>")
+                        appendLine()
+                        appendLine(biasAnalysis.balance_assessment)
+                        appendLine("</details>")
+                        appendLine()
+                    }.toByteArray())
 
                     biasTask.add(biasContent.renderMarkdown(true))
 
@@ -800,34 +835,38 @@ Be thorough but fair. Distinguish between legitimate perspective and problematic
                       }.renderMarkdown(true)
                     )
                     transcript?.write("## Step 5: Alternative Story Angles\n\n".toByteArray())
+                    val anglesPrompt = buildString {
+                        appendLine("You are a creative news editor. Identify $alternativeAngles different angles for covering this story.")
+                        appendLine()
+                        appendLine("Story Topic: $storyTopic")
+                        appendLine()
+                        appendLine("Journalism Elements:")
+                        journalismElements.entries.forEach { (key, value) ->
+                            appendLine("- $key: $value")
+                        }
+                        appendLine()
+                        appendLine("For each angle, provide:")
+                        appendLine("- Compelling title/headline")
+                        appendLine("- Focus (what aspect to emphasize)")
+                        appendLine("- Target audience")
+                        appendLine("- Key questions to answer")
+                        appendLine("- Unique value (what makes this angle distinctive)")
+                        appendLine("- Newsworthiness score (0-1)")
+                        appendLine()
+                        appendLine("Consider angles that:")
+                        appendLine("- Appeal to different audiences")
+                        appendLine("- Emphasize different aspects (human interest, policy, impact, etc.)")
+                        appendLine("- Offer fresh perspectives")
+                        appendLine("- Have strong news value")
+                    }
+
 
                     val anglesAgent = ParsedAgent(
                         resultClass = StoryAngles::class.java,
-                        prompt = """
-You are a creative news editor. Identify $alternativeAngles different angles for covering this story.
-
-Story Topic: $storyTopic
-
-Journalism Elements:
-${journalismElements.entries.joinToString("\n") { (key, value) -> "- $key: $value" }}
-
-For each angle, provide:
-- Compelling title/headline
-- Focus (what aspect to emphasize)
-- Target audience
-- Key questions to answer
-- Unique value (what makes this angle distinctive)
-- Newsworthiness score (0-1)
-
-Consider angles that:
-- Appeal to different audiences
-- Emphasize different aspects (human interest, policy, impact, etc.)
-- Offer fresh perspectives
-- Have strong news value
-          """.trimIndent(),
-                        model = api,
+                        prompt = anglesPrompt,
+                        model = smartApi,
                         temperature = 0.7,
-                        parsingChatter = defaultFast
+                        parsingChatter = fastApi
                     )
 
                     val angles = anglesAgent.answer(listOf("Explore angles")).obj.angles
@@ -868,16 +907,16 @@ Consider angles that:
                         appendLine("**Status:** ✅ Complete")
                     }
 
-                    transcript?.write(
-                        """
-                        <details>
-                        <summary>Alternative Story Angles (${angles.size})</summary>
-                        
-                        ${angles.joinToString("\n") { "- **${it.angle_title}**: ${it.focus}" }}
-                        </details>
-                        
-                    """.trimIndent().toByteArray()
-                    )
+                    transcript?.write(buildString {
+                        appendLine("<details>")
+                        appendLine("<summary>Alternative Story Angles (${angles.size})</summary>")
+                        appendLine()
+                        angles.forEach {
+                            appendLine("- **${it.angle_title}**: ${it.focus}")
+                        }
+                        appendLine("</details>")
+                        appendLine()
+                    }.toByteArray())
 
                     anglesTask.add(anglesContent.renderMarkdown(true))
 
@@ -888,7 +927,6 @@ Consider angles that:
                                 maxDescriptionLength
                             )
                         }\n")
-
                     }
                     resultBuilder.append("\n")
 
@@ -911,35 +949,39 @@ Consider angles that:
                       }.renderMarkdown(true)
                     )
                     transcript?.write("## Step 6: Information Gaps\n\n".toByteArray())
+                    val gapsPrompt = buildString {
+                        appendLine("You are an investigative journalist. Identify missing information and unanswered questions in this story.")
+                        appendLine()
+                        appendLine("Story Topic: $storyTopic")
+                        appendLine()
+                        appendLine("Journalism Elements:")
+                        journalismElements.entries.forEach { (key, value) ->
+                            appendLine("- $key: $value")
+                        }
+                        appendLine()
+                        appendLine("Identify 5-8 key information gaps, including:")
+                        appendLine("- Unanswered questions")
+                        appendLine("- Missing data or evidence")
+                        appendLine("- Unclear causation or timeline")
+                        appendLine("- Unverified claims needing follow-up")
+                        appendLine("- Perspectives not yet represented")
+                        appendLine()
+                        appendLine("For each gap, provide:")
+                        appendLine("- The specific question or missing information")
+                        appendLine("- Importance level (critical, important, minor)")
+                        appendLine("- Potential sources to fill the gap")
+                        appendLine("- Suggested research approach")
+                        appendLine()
+                        appendLine("Prioritize gaps that are most important for understanding the full story.")
+                    }
+
 
                     val gapsAgent = ParsedAgent(
                         resultClass = InformationGaps::class.java,
-                        prompt = """
-You are an investigative journalist. Identify missing information and unanswered questions in this story.
-
-Story Topic: $storyTopic
-
-Journalism Elements:
-${journalismElements.entries.joinToString("\n") { (key, value) -> "- $key: $value" }}
-
-Identify 5-8 key information gaps, including:
-- Unanswered questions
-- Missing data or evidence
-- Unclear causation or timeline
-- Unverified claims needing follow-up
-- Perspectives not yet represented
-
-For each gap, provide:
-- The specific question or missing information
-- Importance level (critical, important, minor)
-- Potential sources to fill the gap
-- Suggested research approach
-
-Prioritize gaps that are most important for understanding the full story.
-          """.trimIndent(),
-                        model = api,
+                        prompt = gapsPrompt,
+                        model = smartApi,
                         temperature = 0.5,
-                        parsingChatter = defaultFast
+                        parsingChatter = fastApi
                     )
 
                     val gaps = gapsAgent.answer(listOf("Find gaps")).obj.gaps
@@ -988,16 +1030,20 @@ Prioritize gaps that are most important for understanding the full story.
                         appendLine("**Status:** ✅ Complete")
                     }
 
-                    transcript?.write(
-                        """
-                        <details>
-                        <summary>Information Gaps (${gaps.size})</summary>
-                        
-                        ${if (gaps.isEmpty()) "No significant gaps identified." else gaps.joinToString("\n") { "- **${it.importance.uppercase()}**: ${it.question}" }}
-                        </details>
-                        
-                    """.trimIndent().toByteArray()
-                    )
+                    transcript?.write(buildString {
+                        appendLine("<details>")
+                        appendLine("<summary>Information Gaps (${gaps.size})</summary>")
+                        appendLine()
+                        if (gaps.isEmpty()) {
+                            appendLine("No significant gaps identified.")
+                        } else {
+                            gaps.forEach {
+                                appendLine("- **${it.importance.uppercase()}**: ${it.question}")
+                            }
+                        }
+                        appendLine("</details>")
+                        appendLine()
+                    }.toByteArray())
 
                     gapsTask.add(gapsContent.renderMarkdown(true))
 
@@ -1017,6 +1063,8 @@ Prioritize gaps that are most important for understanding the full story.
 
                     overviewTask.add("✅ Information gaps identified (${gaps.size} found)\n".renderMarkdown(true))
                 }
+                transcript?.write("</div>\n\n".toByteArray())
+
 
                 // Step 7: Generate editorial synthesis
                 log.info("Step 7: Generating editorial synthesis")
@@ -1033,41 +1081,41 @@ Prioritize gaps that are most important for understanding the full story.
                   }.renderMarkdown(true)
                 )
                 transcript?.write("## Step 7: Editorial Synthesis\n\n".toByteArray())
+                val synthesisPrompt = buildString {
+                    appendLine("You are a senior news editor. Provide an editorial synthesis of this journalism investigation.")
+                    appendLine()
+                    appendLine("Story Topic: $storyTopic")
+                    appendLine()
+                    appendLine("Summarize:")
+                    appendLine("1. The core story and its significance")
+                    appendLine("2. Key verified facts and findings")
+                    appendLine("3. Most important perspectives and voices")
+                    appendLine("4. Critical context readers need")
+                    appendLine("5. Remaining questions and next steps")
+                    appendLine("6. Recommended editorial approach")
+                    appendLine("7. Public interest assessment")
+                    appendLine()
+                    appendLine("Be concise, authoritative, and focused on journalistic value.")
+                }
+
 
                 val synthesisAgent = ChatAgent(
-                    prompt = """
-You are a senior news editor. Provide an editorial synthesis of this journalism investigation.
-
-Story Topic: $storyTopic
-
-Summarize:
-1. The core story and its significance
-2. Key verified facts and findings
-3. Most important perspectives and voices
-4. Critical context readers need
-5. Remaining questions and next steps
-6. Recommended editorial approach
-7. Public interest assessment
-
-Be concise, authoritative, and focused on journalistic value.
-        """.trimIndent(),
-                    model = api,
+                    prompt = synthesisPrompt,
+                    model = smartApi,
                     temperature = 0.5
                 )
 
                 val synthesis = synthesisAgent.answer(listOf("Generate synthesis"))
                 log.debug("Synthesis generated: ${synthesis.length} characters")
 
-                transcript?.write(
-                    """
-                    <details>
-                    <summary>Editorial Synthesis Content</summary>
-                    
-                    $synthesis
-                    </details>
-                """.trimIndent().toByteArray()
-                )
-
+                transcript?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+                transcript?.write(buildString {
+                    appendLine("## Editorial Synthesis")
+                    appendLine()
+                    appendLine(synthesis)
+                    appendLine()
+                }.toByteArray())
+                transcript?.write("</div>\n\n".toByteArray())
 
                 synthesisTask.add(
                   buildString {
@@ -1091,14 +1139,12 @@ Be concise, authoritative, and focused on journalistic value.
                 resultBuilder.append("**Investigation Time:** ${totalTime / 1000}s | ")
                 resultBuilder.append("**Story:** $storyTopic\n")
 
-                transcript?.write(
-                    """
-                    ---
-                    **Investigation completed in ${totalTime / 1000.0}s**
-                    **Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
-                    
-                """.trimIndent().toByteArray()
-                )
+                transcript?.write(buildString {
+                    appendLine("---")
+                    appendLine("**Investigation completed in ${totalTime / 1000.0}s**")
+                    appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+                    appendLine()
+                }.toByteArray())
 
                 overviewTask.add(
                   buildString {
@@ -1120,24 +1166,20 @@ Be concise, authoritative, and focused on journalistic value.
                 val finalResult = resultBuilder.toString()
                 log.info("JournalismReasoningTask completed: total_time=${totalTime}ms, output_size=${finalResult.length} chars")
 
+                val uiMessage = buildString {
+                    appendLine("✅ Journalism investigation complete in ${totalTime / 1000}s")
+                    appendLine()
+                    appendLine("📄 Output written to `${transcriptFile()}`")
+                }
 
-                val reportPath = "journalism_analysis_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-                val reportUrl = task.saveFile(reportPath, finalResult.toByteArray(StandardCharsets.UTF_8))
-
-                val uiMessage = """
-                    ✅ Journalism investigation complete in ${totalTime / 1000}s
-                    
-                    📄 Full analysis: <a href='$reportUrl' target='_blank'>Download Report</a>
-                """.trimIndent()
-
-                val llmSummary = """
-                    ## Journalism Investigation Complete: $storyTopic
-                    - **Total Time:** ${totalTime / 1000.0}s
-                    - **Report Saved to:** `$reportPath`
-                    
-                    ### Editorial Synthesis
-                    ${synthesis.truncateForDisplay(500)}
-                """.trimIndent()
+                val llmSummary = buildString {
+                    appendLine("## Journalism Investigation Complete: $storyTopic")
+                    appendLine("- **Total Time:** ${totalTime / 1000.0}s")
+                    appendLine("- **Output:** `${transcriptFile()}`")
+                    appendLine()
+                    appendLine("### Editorial Synthesis")
+                    appendLine(synthesis.truncateForDisplay(500))
+                }
 
                 task.safeComplete(uiMessage, log)
                 resultFn(llmSummary)
@@ -1146,7 +1188,15 @@ Be concise, authoritative, and focused on journalistic value.
                 // Triple Log Rule
                 log.error("Error during journalism reasoning for story: '$storyTopic'", e)
                 task.error(e)
-                transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
+                transcript?.write(buildString {
+                    appendLine("## Error")
+                    appendLine("<details><summary>Stack Trace</summary>")
+                    appendLine()
+                    appendLine("```")
+                    appendLine(e.stackTraceToString())
+                    appendLine("```")
+                    appendLine("</details>")
+                }.toByteArray())
                 resultFn("Error in Journalism Investigation: ${e.message}")
             } finally {
                 transcript?.close()

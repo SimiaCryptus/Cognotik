@@ -271,8 +271,13 @@ override fun run(agent: TaskOrchestrator, messages: List<String>, task: SessionT
     *   **Rich Content:**
         *   Use **Mermaid** diagrams for flows or logic visualization.
         *   Use `<details><summary>Label</summary>...content...</details>` blocks for high-volume data (raw JSON, stack traces, large file content) to keep the document readable.
+    *   **Tabbed Content Sections:**
+        *   Use `<div id="..." class="tab-content" style="display: block;" markdown="1">...</div>` elements to demarcate major content sections that should be presented as navigable tabs in the UI.
+        *   **Purpose:** Tasks often produce their final results at the end of a long transcript. Without tabs, users must scroll past all intermediate work to find the deliverable. Tabbed sections allow the UI to present "Final Output" alongside "Work Details" as peer-level tabs, eliminating excessive scrolling.
+        *   **Distinction from `<details>`:** `<details>` blocks are for *inline* collapsible sections within a single content flow (e.g., hiding a stack trace or raw JSON dump). Tabbed `<div>` sections are for *top-level structural organization* of the transcript into distinct views (e.g., "Results", "Process Log", "Raw Data").
+        *   **Naming Convention:** Use descriptive `id` attributes that reflect the section's purpose (e.g., `id="final-output"`, `id="work-details"`, `id="raw-data"`).
+        *   **Default Visibility:** The primary deliverable tab (typically "Final Output") should use `style="display: block;"` to be visible by default. Secondary tabs (e.g., "Work Details") should use `style="display: block;"` so they are available but not initially shown.
     *   **Lifecycle:** Ensure `transcript?.close()` is called in a `finally` block.
-    * **Crucial:** Ensure `transcript?.close()` is called in a `finally` block.
 * **Result Function:** The `resultFn` callback must be invoked with the final textual result of the task. This result is
   what downstream tasks will see.
 * **Artifacts:** If the task generates files, the output text passed to `resultFn` should list the paths of created
@@ -450,6 +455,7 @@ When reviewing a specific Task file (e.g., `MyNewTask.kt`), apply the following 
 | **R5**   | **Registry** | Is the task registered in `TaskType.kt`?                                                                 | **Fail** if the `TaskType` enum or constructor map is missing the entry.                                                                            |
 | **R6**   | **Docs**     | Is there a `tooltipHtml` or `description` provided in the `TaskType` definition?                         | **Fail** if null or empty.                                                                                                                          |
 | **R7**   | **Debug**    | Is the transcript used with `<details>` for verbose data?                                                | **Fail** if raw dumps clutter the main view or if transcript is missing.                                                                            |
+| **R16**  | **Output**   | Does the transcript use tabbed `<div>` sections to separate final output from work details?              | **Warn** if a long transcript has no structural organization. **Fail** if final results are buried at the end of a long process log with no way to navigate directly to them. |
 | **R8**   | **Async**    | Are heavy ops offloaded to `task.ui.pool`?                                                               | **Fail** if `Thread.sleep` or blocking I/O occurs on the main thread.                                                                               |
 | **R9**   | **Data**     | Do all `ParsedAgent` target classes have no-arg constructors (all fields defaulted)?                     | **Fail** if any field lacks a default value.                                                                                                        |
 | **R10**  | **Data**     | Are all fields in data classes annotated with `@Description`?                                            | **Fail** if any public field used in LLM schema generation lacks `@Description`.                                                                    |
@@ -510,21 +516,30 @@ class ExampleTask(
                     
                     // 7. Dependency Handling
                     val context = getPriorCode(agent.executionState)
-                    transcript?.write("# Analysis\n<details><summary>Context Data</summary>\n\n```\n$context\n```\n</details>\n".toByteArray())
+                    // Write work details in a secondary tab
+                    transcript?.write("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+                    transcript?.write("## Work Details\n\n".toByteArray())
+                    transcript?.write("<details><summary>Context Data</summary>\n\n```\n$context\n```\n</details>\n".toByteArray())
 
                     // 8. Streaming Feedback to UI
                     task.add("Analyzing context...".renderMarkdown())
 
                     // 9. Use wrapped API client for LLM calls
                     // smartApi.chat(request) // Properly logged to task session
+                    transcript?.write("</div>\n\n".toByteArray())
+
 
                     // 10. Safety Check for Side Effects
                     val output = "Proposed Change"
+                    // Write final output in the primary tab
+                    transcript?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+                    transcript?.write("# Analysis Results\n\nProposed changes ready for review.\n\n".toByteArray())
+                    transcript?.write("</div>\n\n".toByteArray())
                     
+
                     // Switch back to UI thread for interaction if needed, or handle logic here
                     acceptButtonFooter(task.ui) {
                         File(executionConfig?.path).writeText(output)
-                        transcript?.write("## Action\nWrote to file.\n".toByteArray())
                         log.info("ExampleTask completed successfully.")
                         resultFn("File updated.")
                     }
@@ -813,12 +828,13 @@ Tasks can be recursive. A `SubPlanningTask` is a specific `TaskType` that spins 
   * **UI:** Visual updates for the user.
   * **Transcript:** Detailed data dumps for audit.
   * **ResultFn:** Summarized, markdown-formatted text for the LLM's next thought process.
-
 4. **Output File Discipline:**
   * **Declare Before You Write:** If your task produces a file artifact, declare its path in the `files` field of the
     execution config so the Planner and UI can find it.
   * **Unify Transcript and Output:** When the task's deliverable is a text document (report, analysis, research notes),
     use `transcriptFile()` to write the deliverable as the transcript itself, avoiding duplicate files.
+  * **Structure with Tabs:** For transcripts that contain both process details and final deliverables, use tabbed
+    `<div>` sections to separate them. Place the final output in a `<div id="final-output" class="tab-content" style="display: block;" markdown="1">` block and work details in a `<div id="work-details" class="tab-content" style="display: block;" markdown="1">` block. This allows the UI to render navigable tabs so users can jump directly to results without scrolling through intermediate work.
   * **Theme Auxiliary Output:** When producing multiple artifacts, derive directory names and companion file names from
     the primary output file's base name (see "Theming Auxiliary Output Around the Primary Filename" above). Always
     provide a sensible fallback default when no primary file is specified.
@@ -869,3 +885,26 @@ Tasks can be recursive. A `SubPlanningTask` is a specific `TaskType` that spins 
   * Never change a `var` to a `val`.
   * When adding new fields, always provide a default value to maintain backward compatibility.
   * When renaming fields, consider adding a `@JsonAlias` for the old name to support deserialization of existing plans.
+8. **TODO Resolution:**
+    * **TODOs Are Instructions:** When modifying a file, treat any `TODO` comments encountered in the code as actionable instructions. Implement the behavior described by the TODO and remove the TODO comment in the same change.
+    * **Scope:** This applies to `TODO`, `FIXME`, `HACK`, and `XXX` comments. If the comment describes work to be done, do the work and delete the comment.
+    * **Judgment:** If a TODO describes work that is clearly out of scope for the current change (e.g., a TODO about an unrelated subsystem), leave it in place. But if the TODO is relevant to the code being touched, resolve it.
+    * **Examples:**
+    ```kotlin
+    // ✗ BAD — Leaving a TODO that describes work you're already doing
+    fun processResults(results: List<Result>) {
+        // TODO: Add error handling here
+        results.forEach { handle(it) }
+    }
+    // ✓ GOOD — TODO resolved and comment removed
+    fun processResults(results: List<Result>) {
+        results.forEach { result ->
+            try {
+                handle(result)
+            } catch (e: Exception) {
+                log.error("Failed to process result: ${result.id}", e)
+            }
+        }
+    }
+    ```
+    * **Rationale:** TODO comments represent technical debt. When an agent or developer is already modifying a file, resolving nearby TODOs prevents debt accumulation and ensures the codebase converges toward completeness rather than accumulating deferred work indefinitely.
