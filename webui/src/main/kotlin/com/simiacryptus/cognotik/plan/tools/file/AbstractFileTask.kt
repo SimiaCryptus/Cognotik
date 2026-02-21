@@ -27,7 +27,6 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
       task_description: String? = null,
       @Description("REQUIRED: The files to be generated as output for the task (relative paths)") override var files: List<String> = emptyList(),
       @Description("Additional files used to inform the change, including relevant files created by previous tasks") var related_files: List<String>? = null,
-      @Description("Whether to extract text content from non-text files (PDF, HTML, etc.)") var extractContent: Boolean = false,
       task_dependencies: List<String>? = null,
       state: TaskState? = TaskState.Pending,
     ) : TaskExecutionConfig(
@@ -37,11 +36,7 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
         state = state
     )
 
-    protected fun getInputFileCode(
-        fn: (File) -> (CharSequence?) = ::formatFileForLLM
-    ) = getInputFiles()
-        .mapNotNull { fn(it) }
-        .joinToString("\n\n")
+    protected fun getInputFileCode(fn: (File) -> (CharSequence) = ::formatFileForLLM) = getInputFiles().joinToString("\n\n") { fn(it) }
 
     protected fun getInputFiles(): List<File> =
         ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf()))
@@ -72,6 +67,8 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
         "class", "jar", "exe", "dll", "bin", "img", "iso", "zip", "tar", "gz", "7z" -> true
         /* Common Image and Media */
         "png", "jpg", "jpeg", "gif", "bmp", "tiff", "mp4", "mp3", "avi", "mov", "wmv", "flv", "mkv" -> true
+        /* Binary Documents */
+        "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx" -> false // Not ignored, but may be extracted
         else -> false
     }
 
@@ -79,9 +76,9 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
      * Formats the content of a file for inclusion in the LLM context.
      * Uses Markdown headers and code blocks.
      */
-    protected open fun formatFileForLLM(relativePath: File): CharSequence? = try {
+    protected open fun formatFileForLLM(relativePath: File): CharSequence = try {
         val file = root.toFile().resolve(relativePath)
-        val content = if (executionConfig?.extractContent == true && !isTextFile(file)) {
+        val content = if (!isTextFile(file)) {
             extractDocumentContent(file)
         } else {
             codeFiles[file.toPath()] ?: file.readText()

@@ -253,7 +253,6 @@ class FileModificationTaskAction : BaseAction() {
                 task_description = taskDescriptionArea.text,
                 files = files,
                 related_files = relatedFiles,
-                extractContent = extractContentCheckbox.isSelected,
                 includeGitDiff = includeGitDiffCheckbox.isSelected,
                 state = TaskState.Pending
             )

@@ -16,7 +16,10 @@ class BasicChatApp(
     val model: ChatModel,
     val parsingModel: ChatModel,
     applicationName: String = "Chat",
-    val settings: Settings? = null,
+    val settings: Settings = BasicChatApp.Settings(
+        model = model,
+        parsingModel = parsingModel,
+    ),
 ) : ApplicationServer(
     applicationName = applicationName,
     path = root.absolutePath,

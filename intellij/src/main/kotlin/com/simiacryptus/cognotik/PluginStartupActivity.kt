@@ -33,7 +33,7 @@ class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
         initDynamicEnums()
         log.info("Starting Cognotik plugin initialization for project: ${project.name}")
-//        setLogInfo("org.apache.hc.client5.http")
+        setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")
         setLogInfo("com.simiacryptus")
         setLogDebug("com.simiacryptus.cognotik.chat")

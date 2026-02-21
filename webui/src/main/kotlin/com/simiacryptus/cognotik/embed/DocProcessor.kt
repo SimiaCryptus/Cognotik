@@ -25,8 +25,10 @@ import java.nio.file.PathMatcher
 import java.security.MessageDigest
 import java.time.Duration
 import java.util.*
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture.allOf
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 
 /**
@@ -765,6 +767,7 @@ class DocProcessor(
     fun runAll(
         fileMods: List<ModificationTask>,
         pool: FixedConcurrencyProcessor = newProcessor(),
+        cancelFlag: AtomicBoolean = AtomicBoolean(false),
         onNewSession: (Session) -> Unit = { _ -> }
     ): Array<Session> {
         val sessions = mutableListOf<Session>()
@@ -780,10 +783,18 @@ class DocProcessor(
                         .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
                         .apply { mkdirs() }
                 }.use { harness ->
+                    if (cancelFlag.get()) {
+                        log.info("Cancellation requested, skipping execution of remaining tasks")
+                        return@submit
+                    }
                     fileMods.map { mod ->
                         val newRoot = mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
                         val mod = mod.rebase(root, newRoot)
                         harness.resetSession()
+                        if (cancelFlag.get()) {
+                            log.info("Cancellation requested, skipping execution of remaining tasks")
+                            return@submit
+                        }
                         val executionConfig = executionConfig(mod, harness)
                         harness.runTask(
                             taskType = mod.taskType,
@@ -791,6 +802,10 @@ class DocProcessor(
                             message = mod.message(root),
                             executionConfig = executionConfig
                         ) { session ->
+                            if (cancelFlag.get()) {
+                                log.info("Cancellation requested, skipping execution of remaining tasks")
+                                throw CancellationException("Execution cancelled")
+                            }
                             onNewSession(session)
                             sessions += session
                             harness.createSettings(

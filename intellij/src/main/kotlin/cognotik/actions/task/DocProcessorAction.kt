@@ -19,12 +19,24 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
+import com.simiacryptus.cognotik.webui.application.AppInfoData
+import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
+import com.simiacryptus.cognotik.webui.chat.BasicChatApp
+import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.webui.session.linkToSession
 import java.awt.Dimension
+import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import javax.swing.JComponent
+import javax.swing.event.DocumentEvent
+import kotlin.collections.set
 
 /**
  * Action that processes markdown documentation files with frontmatter specifications.
@@ -63,6 +75,35 @@ open class DocProcessorAction(
             UpdateModes.PatchToUpdate -> "Apply patches only to files older than their source documentation"
             UpdateModes.ForceOverwrite -> "Delete all target files before generation (use with caution)"
             UpdateModes.ForceUpdate -> "Delete target files older than their source documentation before generation (use with caution)"
+        }
+        fun newBasicSession(
+            root: File,
+            model: ChatModel?,
+            title: String = "Documentation Processor"
+        ): SocketManager = BasicChatApp(
+            root = root,
+            model = model ?: throw IllegalStateException("Smart model not configured"),
+            parsingModel = model,
+        ).newSession(session = Session.newUserID()).let { socketManager ->
+            SessionProxyServer.agents[socketManager.sessionId] = socketManager
+            ApplicationServer.appInfoMap[socketManager.sessionId] = AppInfoData(
+                applicationName = title,
+                inputCnt = 1,
+                stickyInput = false,
+                loadImages = false,
+                showMenubar = false
+            )
+            try {
+                BrowseUtil.browse(
+                    CognotikAppServer.getServer(
+                        AppSettingsState.instance.listeningEndpoint,
+                        AppSettingsState.instance.listeningPort
+                    ).server.uri.resolve("/#" + socketManager.sessionId)
+                )
+            } catch (e: Throwable) {
+                log.warn("Error opening browser", e)
+            }
+            socketManager
         }
     }
 
@@ -107,6 +148,7 @@ open class DocProcessorAction(
             return
         }
 
+
         // Show dialog on EDT
         ApplicationManager.getApplication().invokeAndWait {
             val dialog = DocProcessorTaskDialog(project, allTasks)
@@ -115,35 +157,33 @@ open class DocProcessorAction(
                 if (selectedTasks.isNotEmpty()) {
                     val totalTasks = selectedTasks.size
                     ProgressManager.getInstance().run(object : Task.Backgroundable(
-                        project,
-                        "Processing Documentation Tasks",
-                        true
+                        project, "Processing Documentation Tasks", true
                     ) {
                         override fun run(indicator: ProgressIndicator) {
                             indicator.isIndeterminate = false
                             indicator.fraction = 0.0
                             indicator.text = "Processing $totalTasks documentation task(s)..."
-                            val completedTasks = java.util.concurrent.atomic.AtomicInteger(0)
+                            val cancelFlag = AtomicBoolean(false)
+                            val scheduledFuture = scheduledPool.scheduleAtFixedRate({
+                                if (indicator.isCanceled) {
+                                    cancelFlag.set(true)
+                                }
+                            }, 0, 1, java.util.concurrent.TimeUnit.SECONDS)
+                            val completedTasks = AtomicInteger(0)
                             try {
-                                docProcessor.runAll(selectedTasks) { session ->
+                                val masterTask = newBasicSession(root, AppSettingsState.instance.smartModel?.model)
+                                    .newTask(root = true)
+                                docProcessor.runAll(selectedTasks, cancelFlag = cancelFlag) { session ->
+                                    masterTask.add(session.linkToSession("Doc Task: $session"))
                                     val completed = completedTasks.incrementAndGet()
                                     indicator.fraction = completed.toDouble() / totalTasks
                                     indicator.text = "Processing task $completed of $totalTasks..."
                                     indicator.text2 = "Session: $session"
-                                    try {
-                                        BrowseUtil.browse(
-                                            CognotikAppServer.getServer(
-                                                AppSettingsState.instance.listeningEndpoint,
-                                                AppSettingsState.instance.listeningPort
-                                            ).server.uri.resolve("/#" + session)
-                                        )
-                                    } catch (e: Throwable) {
-                                        log.warn("Error opening browser", e)
-                                    }
                                 }
                             } finally {
                                 indicator.fraction = 1.0
                                 indicator.text = "Documentation processing complete"
+                                scheduledFuture.cancel(false)
                             }
                         }
                     })
@@ -188,7 +228,7 @@ open class DocProcessorAction(
             checkBoxList.setItems(taskItems) { it.displayName }
             taskItems.forEach { checkBoxList.setItemSelected(it, true) }
             searchField.document.addDocumentListener(object : DocumentAdapter() {
-                override fun textChanged(e: javax.swing.event.DocumentEvent) {
+                override fun textChanged(e: DocumentEvent) {
                     filterTasks(searchField.text)
                 }
             })
