@@ -220,7 +220,7 @@ open class UnifiedHarness(
         message: String = "Execute task",
         executionConfig: TaskExecutionConfig,
         initSettings: (Session) -> OrchestrationConfig
-    ) {
+    ) : Session {
         val completionLatch = CountDownLatch(1)
         var error: Throwable? = null
         val session = this.session
@@ -311,6 +311,8 @@ open class UnifiedHarness(
         if (error != null) {
             throw RuntimeException("Task failed", error)
         }
+
+        return session
     }
 
     private fun <T : TaskExecutionConfig, U : TaskTypeConfig> initFn(

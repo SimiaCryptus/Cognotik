@@ -217,9 +217,6 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
             val contextFiles = getContextFiles()
             val inputFileContent =
                 super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
-            transcriptStream?.let { stream ->
-                writeToTranscript(stream, "## Input Files Context\n\n$inputFileContent\n\n")
-            }
             log.debug("Context gathered: priorContext length=${priorContext.length}, contextFiles length=${contextFiles.length}")
             // Update overview with context info
             overviewTask.add(buildString {

@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.mcp
+package com.simiacryptus.cognotik.util.mcp
 
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory

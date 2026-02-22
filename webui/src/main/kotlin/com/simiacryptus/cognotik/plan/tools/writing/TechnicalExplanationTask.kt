@@ -389,38 +389,6 @@ class TechnicalExplanationTask(
         log.info("Starting TechnicalExplanationTask for topic: '$topic'")
         val userMessages = messages.filter { it.isNotBlank() }
 
-        transcript?.write(buildString {
-          appendLine("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">")
-          appendLine()
-          appendLine("# Work Details")
-          appendLine()
-        }.toByteArray(StandardCharsets.UTF_8))
-
-        val inputFileContent = getInputFileCode()
-        if (inputFileContent.isNotBlank()) {
-          log.info("Loaded input files for context")
-          val inputFilesTask = tabs.newTask("Input Files")
-          inputFilesTask.add(
-            buildString {
-              appendLine("# Input Files")
-              appendLine()
-              appendLine(inputFileContent.truncateForDisplay(3000))
-              appendLine()
-            }.renderMarkdown(true)
-          )
-          transcript?.write(
-            buildString {
-              appendLine("# Input Files")
-              appendLine("<details>")
-              appendLine("<summary>Raw Input Content</summary>")
-              appendLine()
-              appendLine(inputFileContent)
-              appendLine("</details>")
-              appendLine()
-            }.toByteArray(StandardCharsets.UTF_8)
-          )
-          inputFilesTask.update()
-        }
         if (userMessages.isNotEmpty()) {
           log.info("Including ${userMessages.size} user message(s) in context")
         }
@@ -938,12 +906,6 @@ class TechnicalExplanationTask(
 
           overviewTask.add("✅ Phase 4 Complete: ${config.revision_passes} revision pass(es) completed\n".renderMarkdown(true))
         }
-
-        transcript?.write(buildString {
-          appendLine()
-          appendLine("</div>")
-          appendLine()
-        }.toByteArray(StandardCharsets.UTF_8))
 
         overviewTask.add("\n### Phase 5: Final Assembly\n*Compiling complete explanation...*\n".renderMarkdown(true))
         overviewTask.update()

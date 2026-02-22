@@ -771,7 +771,7 @@ class DocProcessor(
         onNewSession: (Session) -> Unit = { _ -> }
     ): Array<Session> {
         val sessions = mutableListOf<Session>()
-        separateQueues(fileMods).map { sortByDependencies(it) }.filter { it.isNotEmpty() }.map { fileMods ->
+        separateQueues(fileMods).map { sortByDependencies(it) }.filter { it.isNotEmpty() }.map { mods ->
             pool.submit {
                 object : UnifiedHarness(
                     fastModel = fastModel,
@@ -787,37 +787,7 @@ class DocProcessor(
                         log.info("Cancellation requested, skipping execution of remaining tasks")
                         return@submit
                     }
-                    fileMods.map { mod ->
-                        val newRoot = mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
-                        val mod = mod.rebase(root, newRoot)
-                        harness.resetSession()
-                        if (cancelFlag.get()) {
-                            log.info("Cancellation requested, skipping execution of remaining tasks")
-                            return@submit
-                        }
-                        val executionConfig = executionConfig(mod, harness)
-                        harness.runTask(
-                            taskType = mod.taskType,
-                            timeoutMinutes = 30,
-                            message = mod.message(root),
-                            executionConfig = executionConfig
-                        ) { session ->
-                            if (cancelFlag.get()) {
-                                log.info("Cancellation requested, skipping execution of remaining tasks")
-                                throw CancellationException("Execution cancelled")
-                            }
-                            onNewSession(session)
-                            sessions += session
-                            harness.createSettings(
-                                session = session,
-                                autoFix = autoFix,
-                                typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
-                                workingDir = newRoot.toString()
-                            ).apply {
-                                processor = mod.patchProcessor
-                            }
-                        }
-                    }
+                    mods.map { mod -> run(mod, harness, cancelFlag, onNewSession, sessions) }
                 }
             }
         }.toTypedArray().let {
@@ -826,7 +796,43 @@ class DocProcessor(
         return sessions.toTypedArray()
     }
 
-    private fun executionConfig(
+    fun run(
+        mod: ModificationTask,
+        harness: UnifiedHarness,
+        cancelFlag: AtomicBoolean,
+        onNewSession: (Session) -> Unit,
+        sessions: MutableList<Session>
+    ) {
+        val mod = mod.rebase(root, mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root)
+        harness.resetSession()
+        if (cancelFlag.get()) {
+            log.info("Cancellation requested, skipping execution of remaining tasks")
+            throw CancellationException("Execution cancelled")
+        }
+        harness.runTask(
+            taskType = mod.taskType,
+            timeoutMinutes = 30,
+            message = mod.message(root),
+            executionConfig = executionConfig(mod, harness)
+        ) { session ->
+            if (cancelFlag.get()) {
+                log.info("Cancellation requested, skipping execution of remaining tasks")
+                throw CancellationException("Execution cancelled")
+            }
+            onNewSession(session)
+            sessions += session
+            harness.createSettings(
+                session = session,
+                autoFix = autoFix,
+                typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
+                workingDir = mod.data.root.toString()
+            ).apply {
+                processor = mod.patchProcessor
+            }
+        }
+    }
+
+    fun executionConfig(
         mod: ModificationTask,
         harness: UnifiedHarness
     ): TaskExecutionConfig {

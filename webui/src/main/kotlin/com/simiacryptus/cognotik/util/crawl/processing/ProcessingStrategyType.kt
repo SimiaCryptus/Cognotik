@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.crawl.processing
+package com.simiacryptus.cognotik.util.crawl.processing
 
 enum class ProcessingStrategyType {
 

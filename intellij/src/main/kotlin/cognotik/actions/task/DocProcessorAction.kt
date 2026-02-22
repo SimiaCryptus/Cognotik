@@ -21,8 +21,12 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.newSettings
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.newProcessor
 import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -32,11 +36,13 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.linkToSession
 import java.awt.Dimension
 import java.io.File
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import javax.swing.JComponent
 import javax.swing.event.DocumentEvent
-import kotlin.collections.set
 
 /**
  * Action that processes markdown documentation files with frontmatter specifications.
@@ -160,35 +166,134 @@ open class DocProcessorAction(
                         project, "Processing Documentation Tasks", true
                     ) {
                         override fun run(indicator: ProgressIndicator) {
-                            indicator.isIndeterminate = false
-                            indicator.fraction = 0.0
-                            indicator.text = "Processing $totalTasks documentation task(s)..."
-                            val cancelFlag = AtomicBoolean(false)
-                            val scheduledFuture = scheduledPool.scheduleAtFixedRate({
-                                if (indicator.isCanceled) {
-                                    cancelFlag.set(true)
-                                }
-                            }, 0, 1, java.util.concurrent.TimeUnit.SECONDS)
-                            val completedTasks = AtomicInteger(0)
-                            try {
-                                val masterTask = newBasicSession(root, AppSettingsState.instance.smartModel?.model)
-                                    .newTask(root = true)
-                                docProcessor.runAll(selectedTasks, cancelFlag = cancelFlag) { session ->
-                                    masterTask.add(session.linkToSession("Doc Task: $session"))
-                                    val completed = completedTasks.incrementAndGet()
-                                    indicator.fraction = completed.toDouble() / totalTasks
-                                    indicator.text = "Processing task $completed of $totalTasks..."
-                                    indicator.text2 = "Session: $session"
-                                }
-                            } finally {
-                                indicator.fraction = 1.0
-                                indicator.text = "Documentation processing complete"
-                                scheduledFuture.cancel(false)
-                            }
+                            run(
+                                indicator,
+                                totalTasks,
+                                root,
+                                AppSettingsState.instance.smartModel?.model,
+                                docProcessor,
+                                selectedTasks,
+                            )
                         }
                     })
                 }
             }
+        }
+    }
+
+    private fun run(
+        indicator: ProgressIndicator,
+        totalTasks: Int,
+        root: File,
+        model: ChatModel?,
+        docProcessor: DocProcessor,
+        selectedTasks: List<ModificationTask>,
+    ) {
+        indicator.isIndeterminate = false
+        indicator.fraction = 0.0
+        indicator.text = "Processing $totalTasks documentation task(s)..."
+        val cancelFlag = AtomicBoolean(false)
+        val sessions = mutableListOf<Session>()
+        val scheduledFutures = mutableListOf(scheduledPool.scheduleAtFixedRate({
+            if (indicator.isCanceled && !cancelFlag.get()) {
+                cancelFlag.set(true)
+                val threadPoolManager = ApplicationServices.threadPoolManager
+                sessions.forEach {
+                    try {
+                        threadPoolManager.getPool(it).shutdown()
+                        threadPoolManager.getScheduledPool(it).shutdown()
+                    } catch (e: Throwable) {
+                        log.warn("Error closing session $it", e)
+                    }
+                }
+            }
+        }, 0, 1, TimeUnit.SECONDS))
+        val completedTasks = AtomicInteger(0)
+        try {
+            val masterTask = newBasicSession(root, model)
+                .newTask(root = true)
+            val sessions = mutableListOf<Session>()
+            docProcessor.separateQueues(selectedTasks).map { docProcessor.sortByDependencies(it) }
+                .filter { it.isNotEmpty() }
+                .map { mods ->
+                    newProcessor().submit {
+                        object : UnifiedHarness(
+                            fastModel = docProcessor.fastModel,
+                            smartModel = docProcessor.smartModel,
+                            serverless = docProcessor.serverless,
+                            openBrowser = docProcessor.openBrowser,
+                        ) {
+                            override fun createTempDirectory(prefix: String) = docProcessor.root
+                                .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
+                                .apply { mkdirs() }
+                        }.use { harness ->
+                            if (cancelFlag.get()) {
+                                log.info("Cancellation requested, skipping execution of remaining tasks")
+                                return@submit
+                            }
+                            val sessionStatusMap = mutableMapOf<Session, StringBuilder?>()
+                            mods.forEach { mod ->
+                                val mod = mod.rebase(
+                                    docProcessor.root,
+                                    mod.data.relative_files?.firstOrNull()
+                                        ?.let { docProcessor.root.resolve(it).parentFile }
+                                        ?: docProcessor.root)
+                                harness.resetSession()
+                                if (cancelFlag.get()) {
+                                    log.info("Cancellation requested, skipping execution of remaining tasks")
+                                    throw CancellationException("Execution cancelled")
+                                }
+                                val session = harness.runTask(
+                                    taskType = mod.taskType,
+                                    timeoutMinutes = 30,
+                                    message = mod.message(docProcessor.root),
+                                    executionConfig = docProcessor.executionConfig(mod, harness)
+                                ) { session ->
+                                    if (cancelFlag.get()) {
+                                        log.info("Cancellation requested, skipping execution of remaining tasks")
+                                        throw CancellationException("Execution cancelled")
+                                    }
+                                    sessionStatusMap[session] =
+                                        masterTask.add(
+                                            session.linkToSession(
+                                                "${mod.taskType.name}: ${mod.data.files
+                                                    ?.map { mod.data.root.resolve(it) }
+                                                    ?.joinToString(", "){it.absolutePath}
+                                                    ?: "No files specified"
+                                                }"
+                                            )
+                                        )
+                                    sessions += session
+                                    val completed1 = completedTasks.incrementAndGet()
+                                    indicator.fraction = completed1.toDouble() / totalTasks
+                                    indicator.text =
+                                        "Processing task $completed1 of $totalTasks..."
+                                    indicator.text2 = "Session: $session"
+                                    sessions += session
+                                    harness.createSettings(
+                                        session = session,
+                                        autoFix = docProcessor.autoFix,
+                                        typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(
+                                            task_type = mod.taskType.name
+                                        ),
+                                        workingDir = mod.data.root.toString()
+                                    ).apply {
+                                        processor = mod.patchProcessor
+                                    }
+                                }
+                                sessionStatusMap[session]?.append(" (Complete)")
+                                masterTask.update()
+                            }
+                        }
+                    }
+                }.let {
+                    CompletableFuture.allOf(*it.toTypedArray()).get(90, TimeUnit.MINUTES)
+                }
+            sessions.toTypedArray<Session>()
+        } finally {
+            indicator.fraction = 1.0
+            indicator.text = "Documentation processing complete"
+            scheduledFutures.forEach { it.cancel(false) }
         }
     }
 

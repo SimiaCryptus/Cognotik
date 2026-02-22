@@ -135,14 +135,6 @@ class MultiPerspectiveAnalysisTask(
               getInputFileContent((config.input_files ?: emptyList()) + (config.related_files ?: emptyList()), root)
             val priorCode = getPriorCode(agent.executionState)
 
-            transcript?.let { stream ->
-              writeToTranscript(stream, "## Context\n")
-              writeToTranscript(stream, "<details><summary>Context Files and Prior Code</summary>\n\n")
-              writeToTranscript(stream, "### Context Files\n$contextFiles\n\n")
-              writeToTranscript(stream, "### Prior Code\n$priorCode\n\n")
-              writeToTranscript(stream, "</details>\n\n")
-            }
-
             val perspectiveResults = mutableMapOf<String, String>()
 
             // Analyze from each perspective

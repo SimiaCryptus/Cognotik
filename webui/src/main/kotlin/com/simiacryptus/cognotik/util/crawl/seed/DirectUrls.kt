@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.crawl.seed
+package com.simiacryptus.cognotik.util.crawl.seed
 
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask

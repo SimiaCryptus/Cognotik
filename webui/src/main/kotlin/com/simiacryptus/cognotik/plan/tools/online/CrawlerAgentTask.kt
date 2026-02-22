@@ -5,16 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
-import com.simiacryptus.cognotik.crawl.RobotsTxtParser
+import com.simiacryptus.cognotik.util.crawl.RobotsTxtParser
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.crawl.fetch.FetchMethod
-import com.simiacryptus.cognotik.crawl.fetch.FetchStrategy
-import com.simiacryptus.cognotik.crawl.processing.PageProcessingStrategy
-import com.simiacryptus.cognotik.crawl.processing.PageProcessingStrategy.PageProcessingResult
-import com.simiacryptus.cognotik.crawl.processing.PageProcessingStrategy.ProcessingContext
-import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType
-import com.simiacryptus.cognotik.crawl.seed.SeedMethod
+import com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod
+import com.simiacryptus.cognotik.util.crawl.fetch.FetchStrategy
+import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy
+import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy.PageProcessingResult
+import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy.ProcessingContext
+import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType
+import com.simiacryptus.cognotik.util.crawl.seed.SeedMethod
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -51,9 +51,9 @@ class CrawlerAgentTask(
 ) {
 
     class CrawlerTaskTypeConfig(
-        @Description("Method to seed the crawler. One of: GoogleProxy, DirectUrls (optional, default: GoogleProxy)") var seed_method: SeedMethod? = SeedMethod.GoogleProxy,
-        @Description("Method used to fetch content from URLs. One of: HttpClient, Selenium (optional, default: HttpClient)") var fetch_method: FetchMethod? = FetchMethod.HttpClient,
-        @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: ProcessingStrategyType? = ProcessingStrategyType.DefaultSummarizer,
+        @Description("Method to seed the crawler. One of: GoogleProxy, DirectUrls (optional, default: GoogleProxy)") var seed_method: com.simiacryptus.cognotik.util.crawl.seed.SeedMethod? = _root_ide_package_.com.simiacryptus.cognotik.util.crawl.seed.SeedMethod.GoogleProxy,
+        @Description("Method used to fetch content from URLs. One of: HttpClient, Selenium (optional, default: HttpClient)") var fetch_method: com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod? = _root_ide_package_.com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod.HttpClient,
+        @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType? = _root_ide_package_.com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType.DefaultSummarizer,
         @Description("Whitespace-separated list of allowed domains or URL prefixes to restrict crawling scope. If set, only URLs matching these domains/prefixes will be crawled (optional)") var allowed_domains: String? = null,
         @Description("Whether to respect robots.txt rules when crawling (default: true)") var respect_robots_txt: Boolean? = true,
         @Description("Maximum number of pages to process in a single task. Must be greater than 0 (optional, default: 30)") var max_pages_per_task: Int? = null,
@@ -124,7 +124,7 @@ class CrawlerAgentTask(
 
     var selenium: Selenium2S3? = null
     val urlContentCache = ConcurrentHashMap<String, String>()
-    private val robotsTxtParser = RobotsTxtParser()
+    private val robotsTxtParser = _root_ide_package_.com.simiacryptus.cognotik.util.crawl.RobotsTxtParser()
     private val pageQueueLock = Object()
     private val pageQueue = PriorityQueue<LinkData>(compareByDescending { it.calculatePriority() })
     private val seenUrls = ConcurrentHashMap.newKeySet<String>()
@@ -141,7 +141,7 @@ class CrawlerAgentTask(
             val typeConfig = this@CrawlerAgentTask.typeConfig
             if (null != typeConfig) {
                 when (typeConfig.processing_strategy) {
-                    ProcessingStrategyType.DefaultSummarizer -> {
+                    _root_ide_package_.com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType.DefaultSummarizer -> {
                         // No additional notes for DefaultSummarizer
                     }
 
@@ -1149,14 +1149,16 @@ class CrawlerAgentTask(
                                 writeToTranscript(stream, buildString {
                                     appendLine("**Error:** ${e.message}")
                                     appendLine()
-                                    appendLine("<details><summary>Stack Trace</summary>")
-                                    appendLine()
-                                    appendLine("```")
-                                    appendLine(e.stackTraceToString())
-                                    appendLine("```")
-                                    appendLine()
-                                    appendLine("</details>")
-                                    appendLine()
+                                    if(verbose) {
+                                        appendLine("<details><summary>Stack Trace</summary>")
+                                        appendLine()
+                                        appendLine("```")
+                                        appendLine(e.stackTraceToString())
+                                        appendLine("```")
+                                        appendLine()
+                                        appendLine("</details>")
+                                        appendLine()
+                                    }
                                 })
                             } catch (ex: Exception) {
                                 log.debug("Failed to write error to transcript (stream may be closed)", ex)

@@ -189,29 +189,6 @@ class DialecticalReasoningTask(
             )
           }
           contextTask.complete()
-
-          transcript?.write(buildString {
-            appendLine("## Context Information")
-            appendLine("<details>")
-            appendLine("<summary>Prior Task Results</summary>")
-            appendLine()
-            appendLine(priorContext.truncateForDisplay())
-            appendLine("</details>")
-            appendLine()
-            appendLine("<details>")
-            appendLine("<summary>Related Files</summary>")
-            appendLine()
-            appendLine(relatedFilesContent.truncateForDisplay())
-            appendLine("</details>")
-            appendLine()
-            appendLine("<details>")
-            appendLine("<summary>Input Files</summary>")
-            appendLine()
-            appendLine(inputFilesContent.truncateForDisplay())
-            appendLine("</details>")
-            appendLine()
-            appendLine("---")
-          }.toByteArray())
         }
 
         val resultBuilder = StringBuilder()

@@ -213,11 +213,6 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         val solutionBuilder = StringBuilder()
         solutionBuilder.append("# Constraint Relaxation Solution\n\n")
         solutionBuilder.append("**Problem:** $problem\n\n")
-        if (inputFileContent.isNotBlank()) {
-            solutionBuilder.append("## Input Files Context\n\n")
-            solutionBuilder.append(inputFileContent)
-            solutionBuilder.append("\n\n")
-        }
 
         try {
             // Step 1: Analyze and order constraints

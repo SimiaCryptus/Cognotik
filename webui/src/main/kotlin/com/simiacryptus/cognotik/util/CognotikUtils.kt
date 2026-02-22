@@ -1,43 +1,35 @@
-package com.simiacryptus
+package com.simiacryptus.cognotik.util
 
 import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.APIProvider.Companion.Anthropic
-import com.simiacryptus.cognotik.models.APIProvider.Companion.Gemini
-import com.simiacryptus.cognotik.models.APIProvider.Companion.Groq
-import com.simiacryptus.cognotik.models.APIProvider.Companion.OpenAI
-import com.simiacryptus.cognotik.models.APIProvider.Companion.values
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.FileApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettings
-import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
-import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-import java.io.BufferedOutputStream
 import java.io.File
 import java.util.concurrent.Executors
 
 object CognotikUtils {
   @JvmStatic
   fun fileApplicationServices(): FileApplicationServices {
-    return fileApplicationServices(dataStorageRoot)
+    return ApplicationServices.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot)
   }
 
   @JvmStatic
   fun user(): User {
-    return defaultUser
+    return UserSettingsManager.Companion.defaultUser
   }
 
   @JvmStatic
@@ -108,16 +100,16 @@ object CognotikUtils {
 
   @JvmStatic
   fun configureEnvironmentalKeys() {
-    initDynamicEnums()
-    check(!values().isEmpty()) { "No API providers configured" }
-    val userSettingsManager = fileApplicationServices(dataStorageRoot).userSettingsManager
-    val user = defaultUser
+      PlanHarness.Companion.initDynamicEnums()
+    check(!APIProvider.Companion.values().isEmpty()) { "No API providers configured" }
+    val userSettingsManager = ApplicationServices.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot).userSettingsManager
+    val user = UserSettingsManager.Companion.defaultUser
     val userSettings = userSettingsManager.getUserSettings(user)
     var anythingChanged = false
-    anythingChanged = anythingChanged or setProvider(userSettings, "GOOGLE_API_KEY", Gemini)
-    anythingChanged = anythingChanged or setProvider(userSettings, "OPENAI_API_KEY", OpenAI)
-    anythingChanged = anythingChanged or setProvider(userSettings, "ANTHROPIC_API_KEY", Anthropic)
-    anythingChanged = anythingChanged or setProvider(userSettings, "GROQ_API_KEY", Groq)
+    anythingChanged = anythingChanged or setProvider(userSettings, "GOOGLE_API_KEY", APIProvider.Companion.Gemini)
+    anythingChanged = anythingChanged or setProvider(userSettings, "OPENAI_API_KEY", APIProvider.Companion.OpenAI)
+    anythingChanged = anythingChanged or setProvider(userSettings, "ANTHROPIC_API_KEY", APIProvider.Companion.Anthropic)
+    anythingChanged = anythingChanged or setProvider(userSettings, "GROQ_API_KEY", APIProvider.Companion.Groq)
     if (anythingChanged) {
       log.info("Updating user settings with new API keys.")
       userSettingsManager.updateUserSettings(user, userSettings)
@@ -135,12 +127,12 @@ object CognotikUtils {
       apis.removeIf { apiData: ApiData? -> apiData!!.provider!!.name == provider.name }
       // add new entry
       apis.add(
-        ApiData(
-          provider.name,
-          SecureString(System.getenv(keyName)),
-          provider.base,
-          provider
-        )
+          ApiData(
+              provider.name,
+              SecureString(System.getenv(keyName)),
+              provider.base,
+              provider
+          )
       )
       return true
     } else {
