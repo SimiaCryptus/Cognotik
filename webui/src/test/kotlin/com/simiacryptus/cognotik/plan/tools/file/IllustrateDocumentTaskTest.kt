@@ -27,10 +27,10 @@ object IllustrateDocumentTaskTest {
             ),
             executionConfig = IllustrateDocumentTaskExecutionConfigData(
                 files = listOf("test_document.md"),
-                maxImages = 1,
-                autoInsert = true,
-                composerDirective = "Create a simple technical diagram style illustration",
-                integratorDirective = "Insert the image after the first paragraph"
+                max_images = 1,
+                auto_insert = true,
+                composer_directive = "Create a simple technical diagram style illustration",
+                integrator_directive = "Insert the image after the first paragraph"
             ),
             timeoutMinutes = 10,
         )

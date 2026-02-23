@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.plan.tools.online
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskTypeConfig
-import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType
 import com.simiacryptus.cognotik.util.UnifiedHarness
+import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
@@ -27,7 +27,6 @@ object CrawlerAgentTaskTest {
                 task_type = CrawlerAgentTask.CrawlerAgent.name,
                 max_pages_per_task = 2,
                 processing_strategy = ProcessingStrategyType.DefaultSummarizer,
-                generate_transcript = true
             ),
             executionConfig = CrawlerTaskExecutionConfigData(
                 search_query = "Kotlin programming language features",
