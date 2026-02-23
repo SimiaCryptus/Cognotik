@@ -581,8 +581,7 @@ abstract class SocketManager(
     }
 
 
-    fun linkToSession(label: String): String =
-        """<a href="#${sessionId}" target="_blank" class="linked-task-link">${label}</a>"""
+    fun linkToSession(label: String): String = sessionId.linkToSession(label)
 
     companion object {
         private val log = LoggerFactory.getLogger(SocketManager::class.java)
@@ -665,3 +664,6 @@ class ServerlessSocketManager(
         return ServerlessSocketManager(newSession, messageEvents, dataStorage, owner, javaClass)
     }
 }
+
+fun Session.linkToSession(label: String): String =
+    """<a href="#${this}" target="_blank" class="linked-task-link">${label}</a>"""

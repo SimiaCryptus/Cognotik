@@ -191,17 +191,6 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
             appendLine("*Initializing Bayesian analysis...*")
         }
       overviewTask.add(overviewContent.renderMarkdown())
-
-        val inputFileContent = getInputFileCode(agent)
-        if (inputFileContent.isNotBlank()) {
-            log.debug("Found input files: ${inputFileContent.length} characters")
-            val filesTask = tabs.newTask("Input Files")
-            filesTask.add(
-              ("# Input Files\n\n$inputFileContent").renderMarkdown()
-            )
-            filesTask.complete()
-        }
-
         val priorContext = getPriorCode(agent.executionState)
         if (priorContext.isNotBlank()) {
             log.debug("Found prior context: ${priorContext.length} characters")

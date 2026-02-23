@@ -342,9 +342,6 @@ Generate the Mermaid diagram now:
     ): String {
         val causesSection = if (potentialCauses.isNotEmpty()) {
             """
-## User Input and Context:
-$messageContext
----
             |## Potential Causes to Investigate:
             |${potentialCauses.joinToString("\n") { "- $it" }}
             """.trimMargin()

@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.mcp
+package com.simiacryptus.cognotik.util.mcp
 
 /**
  * Configuration for an MCP server

@@ -68,9 +68,9 @@ class ImageGenerationTask(
         """.trimIndent()
     }
 
-    override fun formatFileForLLM(relativePath: File): CharSequence? {
+    override fun formatFileForLLM(relativePath: File): CharSequence {
         return when (relativePath.name.split('.').last()) {
-            "png", "jpg", "jpeg" -> null
+            "png", "jpg", "jpeg" -> ""
             else -> super.formatFileForLLM(relativePath)
         }
     }

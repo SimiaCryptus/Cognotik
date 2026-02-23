@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.crawl.seed
+package com.simiacryptus.cognotik.util.crawl.seed
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -31,7 +31,7 @@ class GoogleProxy : SeedMethodFactory {
             }
 
             val client = HttpClient.newBuilder().build()
-            val query = taskConfig.search_query.trim()
+            val query = taskConfig.search_query?.trim()
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
             val resultCount = 20
             val searchLimit = resultCount

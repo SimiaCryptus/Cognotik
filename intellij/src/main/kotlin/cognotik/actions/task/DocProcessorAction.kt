@@ -19,12 +19,30 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.newSettings
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.DocProcessor.Companion.newProcessor
 import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
+import com.simiacryptus.cognotik.webui.application.AppInfoData
+import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
+import com.simiacryptus.cognotik.webui.chat.BasicChatApp
+import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.webui.session.linkToSession
 import java.awt.Dimension
+import java.io.File
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import javax.swing.JComponent
+import javax.swing.event.DocumentEvent
 
 /**
  * Action that processes markdown documentation files with frontmatter specifications.
@@ -63,6 +81,35 @@ open class DocProcessorAction(
             UpdateModes.PatchToUpdate -> "Apply patches only to files older than their source documentation"
             UpdateModes.ForceOverwrite -> "Delete all target files before generation (use with caution)"
             UpdateModes.ForceUpdate -> "Delete target files older than their source documentation before generation (use with caution)"
+        }
+        fun newBasicSession(
+            root: File,
+            model: ChatModel?,
+            title: String = "Documentation Processor"
+        ): SocketManager = BasicChatApp(
+            root = root,
+            model = model ?: throw IllegalStateException("Smart model not configured"),
+            parsingModel = model,
+        ).newSession(session = Session.newUserID()).let { socketManager ->
+            SessionProxyServer.agents[socketManager.sessionId] = socketManager
+            ApplicationServer.appInfoMap[socketManager.sessionId] = AppInfoData(
+                applicationName = title,
+                inputCnt = 1,
+                stickyInput = false,
+                loadImages = false,
+                showMenubar = false
+            )
+            try {
+                BrowseUtil.browse(
+                    CognotikAppServer.getServer(
+                        AppSettingsState.instance.listeningEndpoint,
+                        AppSettingsState.instance.listeningPort
+                    ).server.uri.resolve("/#" + socketManager.sessionId)
+                )
+            } catch (e: Throwable) {
+                log.warn("Error opening browser", e)
+            }
+            socketManager
         }
     }
 
@@ -107,6 +154,7 @@ open class DocProcessorAction(
             return
         }
 
+
         // Show dialog on EDT
         ApplicationManager.getApplication().invokeAndWait {
             val dialog = DocProcessorTaskDialog(project, allTasks)
@@ -115,40 +163,135 @@ open class DocProcessorAction(
                 if (selectedTasks.isNotEmpty()) {
                     val totalTasks = selectedTasks.size
                     ProgressManager.getInstance().run(object : Task.Backgroundable(
-                        project,
-                        "Processing Documentation Tasks",
-                        true
+                        project, "Processing Documentation Tasks", true
                     ) {
                         override fun run(indicator: ProgressIndicator) {
-                            indicator.isIndeterminate = false
-                            indicator.fraction = 0.0
-                            indicator.text = "Processing $totalTasks documentation task(s)..."
-                            val completedTasks = java.util.concurrent.atomic.AtomicInteger(0)
-                            try {
-                                docProcessor.runAll(selectedTasks) { session ->
-                                    val completed = completedTasks.incrementAndGet()
-                                    indicator.fraction = completed.toDouble() / totalTasks
-                                    indicator.text = "Processing task $completed of $totalTasks..."
-                                    indicator.text2 = "Session: $session"
-                                    try {
-                                        BrowseUtil.browse(
-                                            CognotikAppServer.getServer(
-                                                AppSettingsState.instance.listeningEndpoint,
-                                                AppSettingsState.instance.listeningPort
-                                            ).server.uri.resolve("/#" + session)
-                                        )
-                                    } catch (e: Throwable) {
-                                        log.warn("Error opening browser", e)
-                                    }
-                                }
-                            } finally {
-                                indicator.fraction = 1.0
-                                indicator.text = "Documentation processing complete"
-                            }
+                            run(
+                                indicator,
+                                totalTasks,
+                                root,
+                                AppSettingsState.instance.smartModel?.model,
+                                docProcessor,
+                                selectedTasks,
+                            )
                         }
                     })
                 }
             }
+        }
+    }
+
+    private fun run(
+        indicator: ProgressIndicator,
+        totalTasks: Int,
+        root: File,
+        model: ChatModel?,
+        docProcessor: DocProcessor,
+        selectedTasks: List<ModificationTask>,
+    ) {
+        indicator.isIndeterminate = false
+        indicator.fraction = 0.0
+        indicator.text = "Processing $totalTasks documentation task(s)..."
+        val cancelFlag = AtomicBoolean(false)
+        val sessions = mutableListOf<Session>()
+        val scheduledFutures = mutableListOf(scheduledPool.scheduleAtFixedRate({
+            if (indicator.isCanceled && !cancelFlag.get()) {
+                cancelFlag.set(true)
+                val threadPoolManager = ApplicationServices.threadPoolManager
+                sessions.forEach {
+                    try {
+                        threadPoolManager.getPool(it).shutdown()
+                        threadPoolManager.getScheduledPool(it).shutdown()
+                    } catch (e: Throwable) {
+                        log.warn("Error closing session $it", e)
+                    }
+                }
+            }
+        }, 0, 1, TimeUnit.SECONDS))
+        val completedTasks = AtomicInteger(0)
+        try {
+            val masterTask = newBasicSession(root, model)
+                .newTask(root = true)
+            val sessions = mutableListOf<Session>()
+            docProcessor.separateQueues(selectedTasks).map { docProcessor.sortByDependencies(it) }
+                .filter { it.isNotEmpty() }
+                .map { mods ->
+                    newProcessor().submit {
+                        object : UnifiedHarness(
+                            fastModel = docProcessor.fastModel,
+                            smartModel = docProcessor.smartModel,
+                            serverless = docProcessor.serverless,
+                            openBrowser = docProcessor.openBrowser,
+                        ) {
+                            override fun createTempDirectory(prefix: String) = docProcessor.root
+                                .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
+                                .apply { mkdirs() }
+                        }.use { harness ->
+                            if (cancelFlag.get()) {
+                                log.info("Cancellation requested, skipping execution of remaining tasks")
+                                return@submit
+                            }
+                            val sessionStatusMap = mutableMapOf<Session, StringBuilder?>()
+                            mods.forEach { mod ->
+                                val mod = mod.rebase(
+                                    docProcessor.root,
+                                    mod.data.relative_files?.firstOrNull()
+                                        ?.let { docProcessor.root.resolve(it).parentFile }
+                                        ?: docProcessor.root)
+                                harness.resetSession()
+                                if (cancelFlag.get()) {
+                                    log.info("Cancellation requested, skipping execution of remaining tasks")
+                                    throw CancellationException("Execution cancelled")
+                                }
+                                val session = harness.runTask(
+                                    taskType = mod.taskType,
+                                    timeoutMinutes = 30,
+                                    message = mod.message(docProcessor.root),
+                                    executionConfig = docProcessor.executionConfig(mod, harness)
+                                ) { session ->
+                                    if (cancelFlag.get()) {
+                                        log.info("Cancellation requested, skipping execution of remaining tasks")
+                                        throw CancellationException("Execution cancelled")
+                                    }
+                                    sessionStatusMap[session] =
+                                        masterTask.add(
+                                            session.linkToSession(
+                                                "${mod.taskType.name}: ${mod.data.files
+                                                    ?.map { mod.data.root.resolve(it) }
+                                                    ?.joinToString(", "){it.absolutePath}
+                                                    ?: "No files specified"
+                                                }"
+                                            )
+                                        )
+                                    sessions += session
+                                    val completed1 = completedTasks.incrementAndGet()
+                                    indicator.fraction = completed1.toDouble() / totalTasks
+                                    indicator.text =
+                                        "Processing task $completed1 of $totalTasks..."
+                                    indicator.text2 = "Session: $session"
+                                    sessions += session
+                                    harness.createSettings(
+                                        session = session,
+                                        autoFix = docProcessor.autoFix,
+                                        typeConfig = mod.typeConfig,
+                                        workingDir = mod.data.root.toString()
+                                    ).apply {
+                                        processor = mod.patchProcessor
+                                    }
+                                }
+                                sessionStatusMap[session]?.append(" (Complete)")
+                                masterTask.update()
+                            }
+                        }
+                    }
+                }.let {
+                    CompletableFuture.allOf(*it.toTypedArray()).get(90, TimeUnit.MINUTES)
+                }
+            sessions.toTypedArray<Session>()
+        } finally {
+            indicator.fraction = 1.0
+            indicator.text = "Documentation processing complete"
+            scheduledFutures.forEach { it.cancel(false) }
         }
     }
 
@@ -169,14 +312,15 @@ open class DocProcessorAction(
         init {
             title = "Select Documentation Tasks"
             
-            taskItems = allTasks.mapIndexed { index, (config, _) ->
-                val targetFiles = config.files?.joinToString(", ") ?: throw IllegalStateException("No target files specified")
-                val relatedFiles = config.related_files?.take(3)?.joinToString(", ") ?: ""
+            taskItems = allTasks.mapIndexed { index, t ->
+                val config = t.data
+                val targetFiles = config.relative_files?.joinToString(", ") ?: throw IllegalStateException("No target files specified")
+                val relatedFiles = config.relative_related_files?.take(3)?.joinToString(", ") ?: ""
                 val description = buildString {
                     append("Target: $targetFiles")
                     if (relatedFiles.isNotEmpty()) {
                         append(" | Related: $relatedFiles")
-                        if ((config.related_files?.size ?: 0) > 3) {
+                        if ((config.relative_related_files?.size ?: 0) > 3) {
                             append("...")
                         }
                     }
@@ -187,7 +331,7 @@ open class DocProcessorAction(
             checkBoxList.setItems(taskItems) { it.displayName }
             taskItems.forEach { checkBoxList.setItemSelected(it, true) }
             searchField.document.addDocumentListener(object : DocumentAdapter() {
-                override fun textChanged(e: javax.swing.event.DocumentEvent) {
+                override fun textChanged(e: DocumentEvent) {
                     filterTasks(searchField.text)
                 }
             })

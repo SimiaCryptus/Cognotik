@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
-import java.io.File
+import java.io.FileOutputStream
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -25,7 +25,6 @@ class ScriptwritingTask(
 ) : AbstractTask<ScriptwritingTask.ScriptwritingTaskExecutionConfigData, TaskTypeConfig>(
   orchestrationConfig, planTask
 ) {
-  protected val codeFiles = mutableMapOf<Path, String>()
 
   class ScriptwritingTaskExecutionConfigData(
     @Description("The topic or subject of the script") var topic: String? = null,
@@ -53,8 +52,8 @@ class ScriptwritingTask(
     @Description("Whether to include an opening hook") var include_hook: Boolean = true,
 
     @Description("Whether to include a call-to-action") var include_cta: Boolean = true,
-    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task") var input_files: List<String>? = null,
 
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task") var input_files: List<String>? = null,
 
     @Description("Number of revision passes") var revision_passes: Int = 1,
 
@@ -74,7 +73,7 @@ class ScriptwritingTask(
         return "topic must not be null or blank"
       }
       if (target_duration_minutes <= 0 || target_duration_minutes > 180) {
-        return "target_duration_minutes must be between 1 and 180, got: $target_duration_minutes"
+        target_duration_minutes = target_duration_minutes.coerceIn(1, 180)
       }
       if (script_type.isBlank()) {
         return "script_type must not be blank"
@@ -84,10 +83,10 @@ class ScriptwritingTask(
       }
       val validPacing = setOf("slow", "moderate", "fast", "dynamic")
       if (pacing.lowercase() !in validPacing) {
-        return "pacing must be one of: ${validPacing.joinToString(", ")}, got: $pacing"
+        pacing = "moderate"
       }
       if (revision_passes < 0 || revision_passes > 5) {
-        return "revision_passes must be between 0 and 5, got: $revision_passes"
+        revision_passes = revision_passes.coerceIn(0, 5)
       }
       return ValidatedObject.validateFields(this)
     }
@@ -138,22 +137,17 @@ class ScriptwritingTask(
     }
   }
 
-  override fun promptSegment(): String {
-    return """
- Scriptwriting - Generate complete scripts for videos, podcasts, and presentations
-  ** Optionally, list input files (supports glob patterns) to be examined when generating the script
-  ** Specify the topic and script type (video, podcast, presentation, etc.)
-  ** Set target duration and audience
-  ** Configure tone and pacing
-  ** Specify the topic and script type (video, podcast, presentation, etc.)
-  ** Set target duration and audience
-  ** Configure tone and pacing
-  ** Include visual directions, timing markers, and B-roll suggestions
-  ** Mark key points for emphasis or graphics
-  ** Add speaker notes and production notes
-  ** Performs outline creation, segment writing, and timing calculation
-  ** Produces complete, production-ready script with all necessary elements
-        """.trimIndent()
+  override fun promptSegment(): String = buildString {
+    appendLine("Scriptwriting - Generate complete scripts for videos, podcasts, and presentations")
+    appendLine("  ** Optionally, list input files (supports glob patterns) to be examined when generating the script")
+    appendLine("  ** Specify the topic and script type (video, podcast, presentation, etc.)")
+    appendLine("  ** Set target duration and audience")
+    appendLine("  ** Configure tone and pacing")
+    appendLine("  ** Include visual directions, timing markers, and B-roll suggestions")
+    appendLine("  ** Mark key points for emphasis or graphics")
+    appendLine("  ** Add speaker notes and production notes")
+    appendLine("  ** Performs outline creation, segment writing, and timing calculation")
+    appendLine("  ** Produces complete, production-ready script with all necessary elements")
   }
 
   override fun run(
@@ -165,86 +159,93 @@ class ScriptwritingTask(
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting ScriptwritingTask for topic: '${executionConfig?.topic}'")
-    val transcript = task.newFileOutputStream(transcriptFile())
-
-
-    // Validate configuration
-    executionConfig?.validate()?.let { validationError ->
-      log.error("Configuration validation failed: $validationError")
-      task.safeComplete("CONFIGURATION ERROR: $validationError", log)
-      task.error(ValidatedObject.ValidationError(validationError, executionConfig))
-      transcript?.close()
-      resultFn("CONFIGURATION ERROR: $validationError")
-      transcript?.close()
-      return
-    }
-
-    val topic = executionConfig?.topic
-    if (topic.isNullOrBlank()) {
-      log.error("No topic specified for scriptwriting")
-      task.safeComplete("CONFIGURATION ERROR: No topic specified", log)
-      transcript?.close()
-      resultFn("CONFIGURATION ERROR: No topic specified")
-      transcript?.close()
-      return
-    }
-
-    val api = defaultSmart.getChildClient(task)
-    val tabs = TabbedDisplay(task)
-    val semaphore = Semaphore(0)
-
-    // Overview tab
-    val overviewTask = tabs.newTask("Overview")
-
-    val overviewContent = buildString {
-      appendLine("# Script Generation")
-      appendLine()
-      appendLine("**Topic:** $topic")
-      appendLine()
-    }
-    transcript?.write(overviewContent.toByteArray())
-    transcript?.write("\n".toByteArray())
-    overviewTask.add(overviewContent.renderMarkdown(true))
-    task.update()
-    val overviewContent2 = buildString {
-      appendLine()
-      appendLine("## Configuration")
-      appendLine("- Script Type: ${executionConfig.script_type}")
-      appendLine("- Target Duration: ${executionConfig.target_duration_minutes} minutes")
-      appendLine("- Target Audience: ${executionConfig.target_audience}")
-      appendLine("- Tone: ${executionConfig.tone}")
-      appendLine("- Pacing: ${executionConfig.pacing}")
-      appendLine("- Include Directions: ${if (executionConfig.include_directions) "✓" else "✗"}")
-      appendLine("- Include Timing: ${if (executionConfig.include_timing) "✓" else "✗"}")
-      appendLine("- Suggest B-Roll: ${if (executionConfig.suggest_b_roll) "✓" else "✗"}")
-      appendLine("- Include Notes: ${if (executionConfig.include_notes) "✓" else "✗"}")
-      appendLine("- Mark Key Points: ${if (executionConfig.mark_key_points) "✓" else "✗"}")
-      appendLine()
-      appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
-      appendLine()
-      appendLine("---")
-      appendLine()
-      appendLine("## Progress")
-      appendLine()
-      appendLine("### Phase 1: Research & Outline")
-      appendLine("*Analyzing topic and creating script structure...*")
-    }
-    transcript?.write(overviewContent2.toByteArray())
-    overviewTask.add(overviewContent2.renderMarkdown(true))
-    task.update()
-
-    val resultBuilder = StringBuilder()
-    transcript?.write("# Research Context\n<details>\n<summary>Context Details</summary>\n\n".toByteArray())
-    transcript?.write("Context loaded from prior tasks and related files.\n\n".toByteArray())
-    resultBuilder.append("# Script: $topic\n\n")
-
+    var transcript: FileOutputStream? = null
     try {
+      transcript = task.newFileOutputStream(transcriptFile())
+
+      // Validate configuration
+      executionConfig?.validate()?.let { validationError ->
+        log.error("Configuration validation failed: $validationError")
+        task.safeComplete("CONFIGURATION ERROR: $validationError", log)
+        task.error(ValidatedObject.ValidationError(validationError, executionConfig))
+        transcript?.write("\n## Validation Error\n\n$validationError\n".toByteArray())
+        resultFn("CONFIGURATION ERROR: $validationError")
+        return
+      }
+
+      val topic = executionConfig?.topic
+      if (topic.isNullOrBlank()) {
+        log.error("No topic specified for scriptwriting")
+        task.safeComplete("CONFIGURATION ERROR: No topic specified", log)
+        transcript?.write("\n## Error\n\nNo topic specified for scriptwriting.\n".toByteArray())
+        resultFn("CONFIGURATION ERROR: No topic specified")
+        return
+      }
+
+      val api = defaultSmart.getChildClient(task)
+      val fastApi = defaultFast.getChildClient(task)
+      val tabs = TabbedDisplay(task)
+      val semaphore = Semaphore(0)
+
+      // Overview tab
+      val overviewTask = tabs.newTask("Overview")
+
+      val overviewContent = buildString {
+        appendLine("# Script Generation")
+        appendLine()
+        appendLine("**Topic:** $topic")
+        appendLine()
+      }
+      transcript?.write(overviewContent.toByteArray())
+      transcript?.write("\n".toByteArray())
+      overviewTask.add(overviewContent.renderMarkdown(true))
+      task.update()
+      val overviewContent2 = buildString {
+        appendLine()
+        appendLine("## Configuration")
+        appendLine("- Script Type: ${executionConfig.script_type}")
+        appendLine("- Target Duration: ${executionConfig.target_duration_minutes} minutes")
+        appendLine("- Target Audience: ${executionConfig.target_audience}")
+        appendLine("- Tone: ${executionConfig.tone}")
+        appendLine("- Pacing: ${executionConfig.pacing}")
+        appendLine("- Include Directions: ${if (executionConfig.include_directions) "✓" else "✗"}")
+        appendLine("- Include Timing: ${if (executionConfig.include_timing) "✓" else "✗"}")
+        appendLine("- Suggest B-Roll: ${if (executionConfig.suggest_b_roll) "✓" else "✗"}")
+        appendLine("- Include Notes: ${if (executionConfig.include_notes) "✓" else "✗"}")
+        appendLine("- Mark Key Points: ${if (executionConfig.mark_key_points) "✓" else "✗"}")
+        appendLine()
+        appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine("## Progress")
+        appendLine()
+        appendLine("### Phase 1: Research & Outline")
+        appendLine("*Analyzing topic and creating script structure...*")
+      }
+      transcript?.write(overviewContent2.toByteArray())
+      overviewTask.add(overviewContent2.renderMarkdown(true))
+      task.update()
+
+      val resultBuilder = StringBuilder()
+      transcript?.write("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+      transcript?.write("# Research Context\n<details>\n<summary>Context Details</summary>\n\n".toByteArray())
+      transcript?.write("Context loaded from prior tasks and related files.\n\n".toByteArray())
+      resultBuilder.append("# Script: $topic\n\n")
+
       // Gather context
       val priorContext = getPriorCode(agent.executionState)
+      val inputFileContent = getInputFileContent()
       val contextFiles = getContextFiles()
 
-      if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
-        log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
+      val allContext = buildString {
+        if (priorContext.isNotBlank()) append(priorContext)
+        if (inputFileContent.isNotBlank()) append(inputFileContent)
+        if (contextFiles.isNotBlank()) append(contextFiles)
+      }
+
+      if (allContext.isNotBlank()) {
+        log.debug("Found context: priorContext=${priorContext.length} chars, inputFiles=${inputFileContent.length} chars, contextFiles=${contextFiles.length} chars")
         val contextTask = tabs.newTask("Research Context")
         contextTask.add(
           buildString {
@@ -252,12 +253,17 @@ class ScriptwritingTask(
             appendLine()
             if (priorContext.isNotBlank()) {
               appendLine("## Prior Context")
-              appendLine(priorContext.truncateForDisplay(2000))
+              appendLine(priorContext.take(2000))
+              appendLine()
+            }
+            if (inputFileContent.isNotBlank()) {
+              appendLine("## Input Files")
+              appendLine(inputFileContent.take(2000))
               appendLine()
             }
             if (contextFiles.isNotBlank()) {
               appendLine("## Related Files")
-              appendLine(contextFiles.truncateForDisplay(2000))
+              appendLine(contextFiles.take(2000))
             }
           }.renderMarkdown(true)
         )
@@ -289,47 +295,74 @@ class ScriptwritingTask(
         else -> 150
       }
       val targetWordCount = executionConfig.target_duration_minutes * wordsPerMinute
+      val outlinePrompt = buildString {
+        appendLine("You are an expert scriptwriter specializing in ${executionConfig.script_type} scripts. Create a detailed outline for this script.")
+        appendLine()
+        appendLine("Topic: $topic")
+        appendLine()
+        appendLine("Script Type: ${executionConfig.script_type}")
+        appendLine("Target Duration: ${executionConfig.target_duration_minutes} minutes (~$targetDurationSeconds seconds)")
+        appendLine("Target Audience: ${executionConfig.target_audience}")
+        appendLine("Tone: ${executionConfig.tone}")
+        appendLine("Pacing: ${executionConfig.pacing} (~$wordsPerMinute words per minute)")
+        appendLine("Target Word Count: ~$targetWordCount words")
+        appendLine()
+        if (priorContext.isNotBlank()) {
+          appendLine("Research Context:")
+          appendLine(priorContext.take(3000))
+          appendLine()
+        }
+        if (inputFileContent.isNotBlank()) {
+          appendLine("Input File Content:")
+          appendLine(inputFileContent.take(3000))
+          appendLine()
+        }
+        if (contextFiles.isNotBlank()) {
+          appendLine("Additional Research:")
+          appendLine(contextFiles.take(3000))
+          appendLine()
+        }
+        appendLine("Create an outline with:")
+        appendLine("1. A compelling title")
+        if (executionConfig.include_hook) {
+          appendLine("2. An attention-grabbing opening hook (10-15 seconds)")
+        }
+        appendLine("3. 3-5 main sections that logically progress through the topic")
+        appendLine("4. Key points to cover in each section")
+        if (executionConfig.suggest_b_roll) {
+          appendLine("5. Visual suggestions for each section")
+        }
+        appendLine("6. Estimated duration for each section")
+        if (executionConfig.include_cta) {
+          appendLine("7. A strong closing with call-to-action")
+        } else {
+          appendLine("7. A memorable closing")
+        }
+        appendLine()
+        appendLine("Ensure the outline:")
+        appendLine("- Flows logically from introduction to conclusion")
+        appendLine("- Maintains the ${executionConfig.tone} tone throughout")
+        appendLine("- Fits within the ${executionConfig.target_duration_minutes}-minute timeframe")
+        appendLine("- Engages the ${executionConfig.target_audience}")
+        appendLine("- Balances information delivery with entertainment/engagement")
+      }
+
 
       val outlineAgent = ParsedAgent(
-        resultClass = ScriptOutline::class.java, prompt = """
-You are an expert scriptwriter specializing in ${executionConfig.script_type} scripts. Create a detailed outline for this script.
-
-Topic: $topic
-
-Script Type: ${executionConfig.script_type}
-Target Duration: ${executionConfig.target_duration_minutes} minutes (~$targetDurationSeconds seconds)
-Target Audience: ${executionConfig.target_audience}
-Tone: ${executionConfig.tone}
-Pacing: ${executionConfig.pacing} (~$wordsPerMinute words per minute)
-Target Word Count: ~$targetWordCount words
-
-${if (priorContext.isNotBlank()) "Research Context:\n${priorContext.truncateForDisplay(3000)}\n" else ""}
-${if (contextFiles.isNotBlank()) "Additional Research:\n${contextFiles.truncateForDisplay(3000)}\n" else ""}
-
-Create an outline with:
-1. A compelling title
-${if (executionConfig.include_hook) "2. An attention-grabbing opening hook (10-15 seconds)" else ""}
-3. 3-5 main sections that logically progress through the topic
-4. Key points to cover in each section
-${if (executionConfig.suggest_b_roll) "5. Visual suggestions for each section" else ""}
-6. Estimated duration for each section
-${if (executionConfig.include_cta) "7. A strong closing with call-to-action" else "7. A memorable closing"}
-
-Ensure the outline:
-- Flows logically from introduction to conclusion
-- Maintains the ${executionConfig.tone} tone throughout
-- Fits within the ${executionConfig.target_duration_minutes}-minute timeframe
-- Engages the ${executionConfig.target_audience}
-- Balances information delivery with entertainment/engagement
-          """.trimIndent(), model = api, temperature = 0.7, parsingChatter = defaultFast
+        resultClass = ScriptOutline::class.java,
+        prompt = outlinePrompt,
+        model = api,
+        temperature = 0.7,
+        parsingChatter = fastApi
       )
 
-      var outline = outlineAgent.answer(listOf("Generate outline")).obj
+      val outline = outlineAgent.answer(listOf("Generate outline")).obj
 
       // Validate outline
       outline.validate()?.let { validationError ->
         log.error("Outline validation failed: $validationError")
         outlineTask.error(ValidatedObject.ValidationError(validationError, outline))
+        transcript?.write("\n## Outline Validation Error\n\n$validationError\n".toByteArray())
         task.safeComplete("Outline validation failed: $validationError", log)
         resultFn("ERROR: Outline validation failed: $validationError")
         return
@@ -420,31 +453,41 @@ Ensure the outline:
           }.renderMarkdown(true)
         )
         task.update()
+        val hookPrompt = buildString {
+          appendLine("You are an expert scriptwriter. Write the opening hook for this ${executionConfig.script_type} script.")
+          appendLine()
+          appendLine("Topic: $topic")
+          appendLine("Hook Concept: ${outline.hook}")
+          appendLine("Tone: ${executionConfig.tone}")
+          appendLine("Target Audience: ${executionConfig.target_audience}")
+          appendLine("Target Duration: 10-15 seconds")
+          appendLine()
+          appendLine("Write an opening that:")
+          appendLine("1. Immediately grabs attention")
+          appendLine("2. Sets the tone for the entire script")
+          appendLine("3. Hints at what's coming")
+          appendLine("4. Is conversational and natural for spoken delivery")
+          if (executionConfig.include_directions) {
+            appendLine("5. Includes visual direction for what the viewer sees")
+          }
+          if (executionConfig.suggest_b_roll) {
+            appendLine("6. Suggests B-roll or supporting visuals")
+          }
+          appendLine()
+          appendLine("Make it punchy, engaging, and memorable.")
+          appendLine("Ensure the dialogue sounds natural when spoken aloud.")
+        }
+
 
         val hookAgent = ParsedAgent(
-          resultClass = ScriptSegment::class.java, prompt = """
-You are an expert scriptwriter. Write the opening hook for this ${executionConfig.script_type} script.
-
-Topic: $topic
-Hook Concept: ${outline.hook}
-Tone: ${executionConfig.tone}
-Target Audience: ${executionConfig.target_audience}
-Target Duration: 10-15 seconds
-
-Write an opening that:
-1. Immediately grabs attention
-2. Sets the tone for the entire script
-3. Hints at what's coming
-4. Is conversational and natural for spoken delivery
-${if (executionConfig.include_directions) "5. Includes visual direction for what the viewer sees" else ""}
-${if (executionConfig.suggest_b_roll) "6. Suggests B-roll or supporting visuals" else ""}
-
-Make it punchy, engaging, and memorable.
-Ensure the dialogue sounds natural when spoken aloud.
-          """.trimIndent(), model = api, temperature = 0.8, parsingChatter = defaultFast
+          resultClass = ScriptSegment::class.java,
+          prompt = hookPrompt,
+          model = api,
+          temperature = 0.8,
+          parsingChatter = fastApi
         )
 
-        var hookSegment = hookAgent.answer(listOf("Write opening")).obj
+        val hookSegment = hookAgent.answer(listOf("Write opening")).obj
         scriptSegments.add(hookSegment)
         cumulativeDuration += hookSegment.duration_seconds
         cumulativeWordCount += hookSegment.dialogue.split("\\s+".toRegex()).size
@@ -534,51 +577,61 @@ Ensure the dialogue sounds natural when spoken aloud.
         } else {
           "This is the first main section."
         }
+        val sectionPrompt = buildString {
+          appendLine("You are an expert scriptwriter. Write Section ${sectionOutline.section_number} of this ${executionConfig.script_type} script.")
+          appendLine()
+          appendLine("Overall Topic: $topic")
+          appendLine("Section Title: ${sectionOutline.title}")
+          appendLine("Section Purpose: Cover these key points: ${sectionOutline.key_points.joinToString("; ")}")
+          appendLine("Target Duration: ${sectionOutline.estimated_duration_seconds} seconds")
+          appendLine("Tone: ${executionConfig.tone}")
+          appendLine("Pacing: ${executionConfig.pacing}")
+          appendLine()
+          appendLine(previousContext)
+          appendLine()
+          if (sectionOutline.visual_suggestions.isNotEmpty()) {
+            appendLine("Visual Suggestions: ${sectionOutline.visual_suggestions.joinToString("; ")}")
+            appendLine()
+          }
+          appendLine("Write this section with:")
+          appendLine("1. Natural, conversational dialogue that sounds good when spoken")
+          appendLine("2. Clear transitions from the previous section")
+          appendLine("3. Logical flow through the key points")
+          appendLine("4. Appropriate pacing for ${executionConfig.pacing} delivery")
+          if (executionConfig.include_directions) {
+            appendLine("5. Visual directions for what appears on screen")
+          }
+          if (executionConfig.suggest_b_roll) {
+            appendLine("6. B-roll suggestions to support the narration")
+          }
+          if (executionConfig.include_notes) {
+            appendLine("7. Production notes for the speaker/director")
+          }
+          if (executionConfig.mark_key_points) {
+            appendLine("8. Mark key points that should be emphasized or shown as graphics")
+          }
+          appendLine()
+          appendLine("Ensure the dialogue:")
+          appendLine("- Sounds natural when read aloud")
+          appendLine("- Uses contractions and conversational language")
+          appendLine("- Varies sentence length for rhythm")
+          appendLine("- Includes pauses where appropriate")
+          appendLine("- Maintains the ${executionConfig.tone} tone")
+          appendLine("- Engages the ${executionConfig.target_audience}")
+          appendLine()
+          appendLine("Aim for approximately ${sectionOutline.estimated_duration_seconds} seconds of content.")
+        }
+
 
         val sectionAgent = ParsedAgent(
-          resultClass = ScriptSegment::class.java, prompt = """
-You are an expert scriptwriter. Write Section ${sectionOutline.section_number} of this ${executionConfig.script_type} script.
-
-Overall Topic: $topic
-Section Title: ${sectionOutline.title}
-Section Purpose: Cover these key points: ${sectionOutline.key_points.joinToString("; ")}
-Target Duration: ${sectionOutline.estimated_duration_seconds} seconds
-Tone: ${executionConfig.tone}
-Pacing: ${executionConfig.pacing}
-
-$previousContext
-
-${
-            if (sectionOutline.visual_suggestions.isNotEmpty()) "Visual Suggestions: ${
-              sectionOutline.visual_suggestions.joinToString(
-                "; "
-              )
-            }" else ""
-          }
-
-Write this section with:
-1. Natural, conversational dialogue that sounds good when spoken
-2. Clear transitions from the previous section
-3. Logical flow through the key points
-4. Appropriate pacing for ${executionConfig.pacing} delivery
-${if (executionConfig.include_directions) "5. Visual directions for what appears on screen" else ""}
-${if (executionConfig.suggest_b_roll) "6. B-roll suggestions to support the narration" else ""}
-${if (executionConfig.include_notes) "7. Production notes for the speaker/director" else ""}
-${if (executionConfig.mark_key_points) "8. Mark key points that should be emphasized or shown as graphics" else ""}
-
-Ensure the dialogue:
-- Sounds natural when read aloud
-- Uses contractions and conversational language
-- Varies sentence length for rhythm
-- Includes pauses where appropriate
-- Maintains the ${executionConfig.tone} tone
-- Engages the ${executionConfig.target_audience}
-
-Aim for approximately ${sectionOutline.estimated_duration_seconds} seconds of content.
-          """.trimIndent(), model = api, temperature = 0.8, parsingChatter = defaultFast
+          resultClass = ScriptSegment::class.java,
+          prompt = sectionPrompt,
+          model = api,
+          temperature = 0.8,
+          parsingChatter = fastApi
         )
 
-        var sectionSegment = sectionAgent.answer(listOf("Write section")).obj
+        val sectionSegment = sectionAgent.answer(listOf("Write section")).obj
         scriptSegments.add(sectionSegment)
         cumulativeDuration += sectionSegment.duration_seconds
         cumulativeWordCount += sectionSegment.dialogue.split("\\s+".toRegex()).size
@@ -653,37 +706,51 @@ Aim for approximately ${sectionOutline.estimated_duration_seconds} seconds of co
         }.renderMarkdown(true)
       )
       task.update()
+      val closingPrompt = buildString {
+        appendLine("You are an expert scriptwriter. Write the closing for this ${executionConfig.script_type} script.")
+        appendLine()
+        appendLine("Topic: $topic")
+        appendLine("Closing Concept: ${outline.closing}")
+        appendLine("Tone: ${executionConfig.tone}")
+        appendLine("Target Audience: ${executionConfig.target_audience}")
+        if (executionConfig.include_cta) {
+          appendLine("Include Call-to-Action: Yes")
+        }
+        appendLine()
+        appendLine("Key Messages Covered:")
+        outline.key_messages.forEach { appendLine("- $it") }
+        appendLine()
+        appendLine("Previous Script Context:")
+        appendLine(scriptSegments.takeLast(1).firstOrNull()?.dialogue?.takeLast(200) ?: "")
+        appendLine()
+        appendLine("Write a closing that:")
+        appendLine("1. Summarizes the key takeaways")
+        appendLine("2. Reinforces the main message")
+        appendLine("3. Leaves a lasting impression")
+        if (executionConfig.include_cta) {
+          appendLine("4. Includes a clear, compelling call-to-action")
+        } else {
+          appendLine("4. Ends on a strong note")
+        }
+        appendLine("5. Sounds natural and conversational")
+        if (executionConfig.include_directions) {
+          appendLine("6. Includes visual direction for the final shot")
+        }
+        appendLine()
+        appendLine("Make it memorable and motivating.")
+        appendLine("Target duration: 15-20 seconds.")
+      }
+
 
       val closingAgent = ParsedAgent(
-        resultClass = ScriptSegment::class.java, prompt = """
-You are an expert scriptwriter. Write the closing for this ${executionConfig.script_type} script.
-
-Topic: $topic
-Closing Concept: ${outline.closing}
-Tone: ${executionConfig.tone}
-Target Audience: ${executionConfig.target_audience}
-${if (executionConfig.include_cta) "Include Call-to-Action: Yes" else ""}
-
-Key Messages Covered:
-${outline.key_messages.joinToString("\n") { "- $it" }}
-
-Previous Script Context:
-${scriptSegments.takeLast(1).firstOrNull()?.dialogue?.takeLast(200) ?: ""}
-
-Write a closing that:
-1. Summarizes the key takeaways
-2. Reinforces the main message
-3. Leaves a lasting impression
-${if (executionConfig.include_cta) "4. Includes a clear, compelling call-to-action" else "4. Ends on a strong note"}
-5. Sounds natural and conversational
-${if (executionConfig.include_directions) "6. Includes visual direction for the final shot" else ""}
-
-Make it memorable and motivating.
-Target duration: 15-20 seconds.
-          """.trimIndent(), model = api, temperature = 0.8, parsingChatter = defaultFast
+        resultClass = ScriptSegment::class.java,
+        prompt = closingPrompt,
+        model = api,
+        temperature = 0.8,
+        parsingChatter = fastApi
       )
 
-      var closingSegment = closingAgent.answer(listOf("Write closing")).obj
+      val closingSegment = closingAgent.answer(listOf("Write closing")).obj
       scriptSegments.add(closingSegment)
       cumulativeDuration += closingSegment.duration_seconds
       cumulativeWordCount += closingSegment.dialogue.split("\\s+".toRegex()).size
@@ -757,42 +824,53 @@ Target duration: 15-20 seconds.
         )
         task.update()
 
-        val fullScript = buildFullScript(outline, scriptSegments)
+        var fullScript = buildFullScript(outline, scriptSegments)
 
         repeat(executionConfig.revision_passes) { passNum ->
           log.debug("Revision pass ${passNum + 1}/${executionConfig.revision_passes}")
+          val revisionPrompt = buildString {
+            appendLine("You are an expert script editor. Review and improve this ${executionConfig.script_type} script.")
+            appendLine()
+            appendLine("Current Script:")
+            appendLine(fullScript)
+            appendLine()
+            appendLine("Focus on:")
+            appendLine("1. Natural dialogue flow and conversational tone")
+            appendLine("2. Pacing and rhythm (target: ${executionConfig.pacing})")
+            appendLine("3. Clarity and conciseness")
+            appendLine("4. Smooth transitions between sections")
+            appendLine("5. Timing accuracy (target: ${executionConfig.target_duration_minutes} minutes)")
+            appendLine("6. Engagement and audience connection")
+            appendLine("7. Consistency in tone (${executionConfig.tone})")
+            appendLine()
+            appendLine("Maintain:")
+            appendLine("- All key messages and content")
+            appendLine("- The overall structure")
+            appendLine("- Approximate duration ($cumulativeDuration seconds)")
+            appendLine("- The ${executionConfig.tone} tone")
+            appendLine()
+            appendLine("Provide the complete revised script with all formatting intact.")
+          }
+
 
           val revisionAgent = ChatAgent(
-            prompt = """
-You are an expert script editor. Review and improve this ${executionConfig.script_type} script.
-
-Current Script:
-$fullScript
-
-Focus on:
-1. Natural dialogue flow and conversational tone
-2. Pacing and rhythm (target: ${executionConfig.pacing})
-3. Clarity and conciseness
-4. Smooth transitions between sections
-5. Timing accuracy (target: ${executionConfig.target_duration_minutes} minutes)
-6. Engagement and audience connection
-7. Consistency in tone (${executionConfig.tone})
-
-Maintain:
-- All key messages and content
-- The overall structure
-- Approximate duration ($cumulativeDuration seconds)
-- The ${executionConfig.tone} tone
-
-Provide the complete revised script with all formatting intact.
-            """.trimIndent(), model = api, temperature = 0.6
+            prompt = revisionPrompt,
+            model = api,
+            temperature = 0.6
           )
 
-          revisionAgent.answer(listOf("Revise the script"))
+          val revisedScript = revisionAgent.answer(listOf("Revise the script"))
+          fullScript = revisedScript
 
           revisionTask.add(
             buildString {
               appendLine("## Revision Pass ${passNum + 1}")
+              appendLine()
+              appendLine("<details><summary>Revised Script</summary>")
+              appendLine()
+              appendLine(revisedScript)
+              appendLine()
+              appendLine("</details>")
               appendLine()
               appendLine("✅ Complete")
               appendLine()
@@ -807,6 +885,8 @@ Provide the complete revised script with all formatting intact.
           )
         )
       }
+      transcript?.write("\n</div>\n\n".toByteArray()) // Close work-details div
+
 
       // Phase 4: Final Assembly
       overviewTask.add("\n### Phase 4: Final Assembly\n*Compiling complete script...*\n".renderMarkdown(true))
@@ -818,10 +898,10 @@ Provide the complete revised script with all formatting intact.
       val finalScript = buildString {
         appendLine("# ${outline.title}")
         appendLine()
-        appendLine("**Script Type:** ${executionConfig.script_type.capitalize()}")
+        appendLine("**Script Type:** ${executionConfig.script_type.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }}")
         appendLine("**Duration:** ${formatTiming(cumulativeDuration)} (${cumulativeDuration}s)")
         appendLine("**Word Count:** $cumulativeWordCount")
-        appendLine("**Tone:** ${executionConfig.tone.capitalize()}")
+        appendLine("**Tone:** ${executionConfig.tone.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }}")
         appendLine("**Target Audience:** ${executionConfig.target_audience}")
         appendLine()
         appendLine("---")
@@ -882,9 +962,11 @@ Provide the complete revised script with all formatting intact.
       }
 
       finalTask.add(finalScript.renderMarkdown(true))
-      transcript?.write("\n---\n\n# Complete Script\n\n".toByteArray())
+      transcript?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+      transcript?.write("# Complete Script\n\n".toByteArray())
       transcript?.write(finalScript.toByteArray())
       transcript?.write("\n".toByteArray())
+      transcript?.write("\n</div>\n\n".toByteArray())
       task.update()
 
       // Production notes tab
@@ -1003,52 +1085,39 @@ Provide the complete revised script with all formatting intact.
 
       log.info("ScriptwritingTask completed: duration=${cumulativeDuration}s, words=$cumulativeWordCount, segments=${scriptSegments.size}, time=${totalTime}ms")
 
-
-      // Best Practice: Use acceptButtonFooter for manual review
-      task.add(acceptButtonFooter(task.ui) {
-        semaphore.release()
-      })
-      semaphore.acquire()
-
-      task.complete()
-      log.info("Script generation complete: ${formatTiming(cumulativeDuration)} in ${totalTime / 1000}s")
-      resultFn(finalResult)
+      if (orchestrationConfig.autoFix) {
+        log.info("Auto-fix enabled, completing automatically")
+        transcript?.write("\nAuto-applying: Script generation completed automatically.\n".toByteArray())
+        task.complete()
+        resultFn(finalResult)
+      } else {
+        task.add(acceptButtonFooter(task.ui) {
+          semaphore.release()
+        })
+        semaphore.acquire()
+        transcript?.write("\nUser Action: Accepted script.\n".toByteArray())
+        task.complete()
+        log.info("Script generation complete: ${formatTiming(cumulativeDuration)} in ${totalTime / 1000}s")
+        resultFn(finalResult)
+      }
 
     } catch (e: Exception) {
+      // Triple Log Rule: UI, SLF4J, Transcript
       log.error("Error during script generation", e)
       task.error(e)
+      transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
 
-      overviewTask.add(
-        buildString {
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("## ❌ Error Occurred")
-          appendLine()
-          appendLine("**Error:** ${e.message}")
-          appendLine()
-          appendLine("**Type:** ${e.javaClass.simpleName}")
-        }.renderMarkdown(true)
-      )
-      task.update()
-      transcript?.close()
-
-      val errorOutput = buildString {
+      val errorResult = buildString {
         appendLine("# Error in Script Generation")
         appendLine()
-        appendLine("**Topic:** $topic")
+        appendLine("**Topic:** ${executionConfig?.topic}")
         appendLine()
         appendLine("**Error:** ${e.message}")
-        appendLine()
-        if (resultBuilder.isNotEmpty()) {
-          appendLine("## Partial Results")
-          appendLine()
-          appendLine(resultBuilder.toString())
-        }
       }
-      resultFn(errorOutput)
+      resultFn(errorResult)
+    } finally {
+      transcript?.close()
     }
-    transcript?.close()
   }
 
   private fun getContextFiles(): String {
@@ -1066,7 +1135,7 @@ Provide the complete revised script with all formatting intact.
             log.debug("Successfully loaded context file: $file")
             appendLine("### $file")
             appendLine("```")
-            appendLine(filePath.toFile().readText().truncateForDisplay(1500))
+            appendLine(filePath.toFile().readText().take(1500))
             appendLine("```")
             appendLine()
           } else {
@@ -1078,6 +1147,32 @@ Provide the complete revised script with all formatting intact.
       }
     }
   }
+  private fun getInputFileContent(): String {
+    val inputFiles = executionConfig?.input_files ?: return ""
+    if (inputFiles.isEmpty()) return ""
+    return buildString {
+      appendLine("## Input Files")
+      appendLine()
+      inputFiles.forEach { file ->
+        try {
+          val filePath = root.resolve(file)
+          if (filePath.toFile().exists()) {
+            log.debug("Successfully loaded input file: $file")
+            appendLine("### $file")
+            appendLine("```")
+            appendLine(filePath.toFile().readText().take(1500))
+            appendLine("```")
+            appendLine()
+          } else {
+            log.warn("Input file not found: $file")
+          }
+        } catch (e: Exception) {
+          log.warn("Error reading input files", e)
+        }
+      }
+    }
+  }
+
 
   private fun formatTiming(seconds: Int): String {
     val minutes = seconds / 60
@@ -1105,12 +1200,6 @@ Provide the complete revised script with all formatting intact.
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ScriptwritingTask::class.java)
 
-    fun extractDocumentContent(file: File) = try {
-      file.readText()
-    } catch (e: Exception) {
-      "Error reading file: ${e.message}"
-    }
-
     @JvmStatic
     val Scriptwriting = TaskType(
       name = "Scriptwriting",
@@ -1119,22 +1208,22 @@ Provide the complete revised script with all formatting intact.
       executionConfigClass = ScriptwritingTaskExecutionConfigData::class.java,
       taskSettingsClass = TaskTypeConfig::class.java,
       description = "Generate complete scripts for videos, podcasts, and presentations",
-      tooltipHtml = """
-                        Generates production-ready scripts with dialogue, timing, and production notes.
-                        <ul>
-                          <li>Creates detailed script outline with sections and timing</li>
-                          <li>Writes natural, conversational dialogue for spoken delivery</li>
-                          <li>Includes visual directions and scene descriptions</li>
-                          <li>Suggests B-roll and supporting visuals</li>
-                          <li>Marks key points for emphasis or graphics</li>
-                          <li>Provides timing markers and duration estimates</li>
-                          <li>Includes production notes and speaker guidance</li>
-                          <li>Supports multiple script types (video, podcast, presentation, commercial)</li>
-                          <li>Configurable tone, pacing, and audience targeting</li>
-                          <li>Optional revision passes for quality improvement</li>
-                          <li>Ideal for video production, podcasts, presentations, training videos</li>
-                        </ul>
-                      """,
+      tooltipHtml = buildString {
+        appendLine("Generates production-ready scripts with dialogue, timing, and production notes.")
+        appendLine("<ul>")
+        appendLine("  <li>Creates detailed script outline with sections and timing</li>")
+        appendLine("  <li>Writes natural, conversational dialogue for spoken delivery</li>")
+        appendLine("  <li>Includes visual directions and scene descriptions</li>")
+        appendLine("  <li>Suggests B-roll and supporting visuals</li>")
+        appendLine("  <li>Marks key points for emphasis or graphics</li>")
+        appendLine("  <li>Provides timing markers and duration estimates</li>")
+        appendLine("  <li>Includes production notes and speaker guidance</li>")
+        appendLine("  <li>Supports multiple script types (video, podcast, presentation, commercial)</li>")
+        appendLine("  <li>Configurable tone, pacing, and audience targeting</li>")
+        appendLine("  <li>Optional revision passes for quality improvement</li>")
+        appendLine("  <li>Ideal for video production, podcasts, presentations, training videos</li>")
+        appendLine("</ul>")
+      },
     )
   }
 }

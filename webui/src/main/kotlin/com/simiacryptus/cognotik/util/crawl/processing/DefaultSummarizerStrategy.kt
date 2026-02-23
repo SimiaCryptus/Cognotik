@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.crawl.processing
+package com.simiacryptus.cognotik.util.crawl.processing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
@@ -52,7 +52,7 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
     }
 
     open fun analysisGoal(context: PageProcessingStrategy.ProcessingContext): String = when {
-        context.executionConfig.content_queries != null -> context.executionConfig.content_queries.toJson()
+        context.executionConfig.content_queries != null -> context.executionConfig.content_queries?.toJson()!!
         context.executionConfig.task_description?.isNotBlank() == true -> context.executionConfig.task_description!!
         else -> "Analyze the content and provide insights."
     }

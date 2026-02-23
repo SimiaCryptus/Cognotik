@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.crawl.seed
+package com.simiacryptus.cognotik.util.crawl.seed
 
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -26,18 +26,18 @@ open class SearchAPISearch(
             taskConfig: CrawlerAgentTask.CrawlerTaskExecutionConfigData?,
             orchestrationConfig: OrchestrationConfig,
         ): List<SeedItem> {
-            SeedMethod.Companion.log.info("Starting SearchAPI.io seed method with query: ${taskConfig?.search_query}")
+            SeedMethod.log.info("Starting SearchAPI.io seed method with query: ${taskConfig?.search_query}")
             if (taskConfig?.search_query.isNullOrBlank()) {
-                SeedMethod.Companion.log.error("Search query is missing for SearchAPI.io seed method")
+                SeedMethod.log.error("Search query is missing for SearchAPI.io seed method")
                 throw IllegalArgumentException("Search query is required when using SearchAPI.io seed method")
             }
             val client = HttpClient.newBuilder().build()
-            val query = taskConfig.search_query.trim()
-            SeedMethod.Companion.log.debug("Using search query: $query")
+            val query = taskConfig.search_query?.trim()
+            SeedMethod.log.debug("Using search query: $query")
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
             val resultCount = 10
             val searchLimit = 20
-            SeedMethod.Companion.log.debug("Fetching user settings for SearchAPI.io")
+            SeedMethod.log.debug("Fetching user settings for SearchAPI.io")
             val userSettings =
                 ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(
                     user ?: UserSettingsManager.defaultUser
@@ -45,7 +45,7 @@ open class SearchAPISearch(
             val apiKey = userSettings
                 .apis.firstOrNull { it.provider == APIProvider.SearchAPI }?.key?.decrypt?.trim()
                 ?: throw RuntimeException("SearchAPI.io API key is required")
-            SeedMethod.Companion.log.debug("Preparing SearchAPI.io request")
+            SeedMethod.log.debug("Preparing SearchAPI.io request")
             val uriBuilder =
                 "https://www.searchapi.io/api/v1/search?engine=$engine&q=$encodedQuery&num=$resultCount&api_key=$apiKey"
             val request = HttpRequest.newBuilder()
@@ -53,17 +53,17 @@ open class SearchAPISearch(
                 .header("User-Agent", "CognoTik-Crawler/1.0")
                 .GET()
                 .build()
-            SeedMethod.Companion.log.info("Sending request to SearchAPI.io")
+            SeedMethod.log.info("Sending request to SearchAPI.io")
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             val statusCode = response.statusCode()
             val body = response.body()
             if (statusCode != 200) {
-                SeedMethod.Companion.log.error("SearchAPI.io request failed with status $statusCode: $body")
+                SeedMethod.log.error("SearchAPI.io request failed with status $statusCode: $body")
                 throw RuntimeException("SearchAPI.io request failed with status $statusCode: $body")
             }
-            SeedMethod.Companion.log.debug("Parsing SearchAPI.io response")
-            var results = handleResult(body, query)
-            SeedMethod.Companion.log.info(
+            SeedMethod.log.debug("Parsing SearchAPI.io response")
+            var results = handleResult(body, query!!)
+            SeedMethod.log.info(
                 "Successfully retrieved ${results.size} search results, returning ${
                     results.size.coerceAtMost(searchLimit)
                 } items"
@@ -91,7 +91,7 @@ open class SearchAPISearch(
                         }
                     )
                 } else {
-                    SeedMethod.Companion.log.warn("Skipping invalid search result missing link or title: $result")
+                    SeedMethod.log.warn("Skipping invalid search result missing link or title: $result")
                     null
                 }
             }
@@ -113,25 +113,25 @@ open class SearchAPISearch(
         ).let { rawData ->
             try {
                 if (!rawData.containsKey(mainResultField)) {
-                    SeedMethod.Companion.log.warn("Expected field '$mainResultField' not found in SearchAPI.io response for query: $query")
+                    SeedMethod.log.warn("Expected field '$mainResultField' not found in SearchAPI.io response for query: $query")
                     listOf(rawData)
                 } else {
                     val list = (rawData[mainResultField] as List<Map<String, Any>>)
                     if (list.isEmpty()) {
-                        SeedMethod.Companion.log.warn("No search results found for query: $query")
+                        SeedMethod.log.warn("No search results found for query: $query")
                         listOf(rawData)
                     } else {
-                        SeedMethod.Companion.log.debug("Parsed ${list.size} results from SearchAPI.io response")
+                        SeedMethod.log.debug("Parsed ${list.size} results from SearchAPI.io response")
                         list
                     }
                 }
             } catch (e: Exception) {
-                SeedMethod.Companion.log.debug("Failed to parse SearchAPI.io response", e)
+                SeedMethod.log.debug("Failed to parse SearchAPI.io response", e)
                 listOf(rawData)
             }
         }
     } catch (e: Exception) {
-        SeedMethod.Companion.log.debug("Failed to parse SearchAPI.io response", e)
+        SeedMethod.log.debug("Failed to parse SearchAPI.io response", e)
         listOf(JsonUtil.fromJson(body, Map::class.java))
     }
 }

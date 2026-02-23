@@ -1154,6 +1154,7 @@ class DocProcessorTest {
         fun `returns single task unchanged`() {
             val task = ModificationTask(
                 data = ModificationTaskConfig(
+                    root = tempDir,
                     files = listOf("src/A.kt"),
                     related_files = emptyList(),
                     task_description = "Update A"
@@ -1172,6 +1173,7 @@ class DocProcessorTest {
 
             val baseTask = ModificationTask(
                 data = ModificationTaskConfig(
+                    root = tempDir,
                     files = listOf("src/Base.kt"),
                     related_files = emptyList(),
                     task_description = "Update Base"
@@ -1179,6 +1181,7 @@ class DocProcessorTest {
             )
             val derivedTask = ModificationTask(
                 data = ModificationTaskConfig(
+                    root = tempDir,
                     files = listOf("src/Derived.kt"),
                     related_files = listOf("src/Base.kt"),
                     task_description = "Update Derived"
@@ -1197,6 +1200,7 @@ class DocProcessorTest {
         fun `handles tasks with no dependencies`() {
             val task1 = ModificationTask(
                 data = ModificationTaskConfig(
+                    root = tempDir,
                     files = listOf("src/A.kt"),
                     related_files = emptyList(),
                     task_description = "Update A"
@@ -1204,6 +1208,7 @@ class DocProcessorTest {
             )
             val task2 = ModificationTask(
                 data = ModificationTaskConfig(
+                    root = tempDir,
                     files = listOf("src/B.kt"),
                     related_files = emptyList(),
                     task_description = "Update B"
@@ -1221,6 +1226,7 @@ class DocProcessorTest {
 
             val taskA = ModificationTask(
                 data = ModificationTaskConfig(
+                    root = tempDir,
                     files = listOf("src/A.kt"),
                     related_files = listOf("src/B.kt"),
                     task_description = "Update A"
@@ -1228,6 +1234,7 @@ class DocProcessorTest {
             )
             val taskB = ModificationTask(
                 data = ModificationTaskConfig(
+                    root = tempDir,
                     files = listOf("src/B.kt"),
                     related_files = listOf("src/A.kt"),
                     task_description = "Update B"
@@ -1245,6 +1252,7 @@ class DocProcessorTest {
         fun `handles null files gracefully`() {
             val task = ModificationTask(
                 data = ModificationTaskConfig(
+                    root = tempDir,
                     files = null,
                     related_files = null,
                     task_description = "No files"
@@ -1352,19 +1360,19 @@ class DocProcessorTest {
 
             val task = ModificationTask(
                 data = ModificationTaskConfig(
+                    root = oldRoot,
                     files = listOf("src/Main.kt"),
                     related_files = listOf("src/Related.kt"),
-                    task_description = "Update Main",
-                    template_file = "src/template.kt"
+                    task_description = "Update Main"
                 ),
-                message = "test message"
+                message = { "test message" }
             )
 
             val rebased = task.rebase(oldRoot, newRoot)
             assertEquals("Update Main", rebased.data.task_description)
-            assertEquals("test message", rebased.message)
-            assertNotNull(rebased.data.files)
-            assertNotNull(rebased.data.related_files)
+            assertEquals("test message", rebased.message(File(".")))
+            assertNotNull(rebased.data.relative_files)
+            assertNotNull(rebased.data.relative_related_files)
         }
     }
 

@@ -32,13 +32,15 @@ class BrainstormingTask(
     planTask
 ) {
 
-    private var transcriptStream: FileOutputStream? = null
     protected val codeFiles = mutableMapOf<Path, String>()
 
     data class BrainstormedOption(
-        val title: String = "",
-        val description: String = "",
-        val category: String? = null
+        @Description("A concise, descriptive name for this option (5-10 words)")
+        var title: String = "",
+        @Description("A clear explanation of the option (2-4 sentences)")
+        var description: String = "",
+        @Description("The domain or approach category this option belongs to (optional)")
+        var category: String? = null
     ) : ValidatedObject {
         override fun validate(): String? {
             if (title.isBlank()) return "BrainstormedOption title cannot be blank"
@@ -48,7 +50,8 @@ class BrainstormingTask(
     }
 
     data class BrainstormResult(
-        val options: List<BrainstormedOption> = emptyList()
+        @Description("The list of brainstormed options generated for the problem")
+        var options: List<BrainstormedOption> = emptyList()
     ) : ValidatedObject {
         override fun validate(): String? {
             if (options.isEmpty()) return "BrainstormResult must contain at least one option"
@@ -60,12 +63,18 @@ class BrainstormingTask(
     }
 
     data class OptionAnalysis(
-        val pros: List<String> = emptyList(),
-        val cons: List<String> = emptyList(),
-        val feasibility: String = "",
-        val impact: String = "",
-        val risks: List<String> = emptyList(),
-        val requirements: List<String> = emptyList()
+        @Description("List of advantages and benefits of this option")
+        var pros: List<String> = emptyList(),
+        @Description("List of disadvantages and limitations of this option")
+        var cons: List<String> = emptyList(),
+        @Description("Assessment of how realistic implementation is, considering technical, resource, and organizational factors")
+        var feasibility: String = "",
+        @Description("Expected outcomes and effects of implementing this option")
+        var impact: String = "",
+        @Description("List of potential problems and negative consequences")
+        var risks: List<String> = emptyList(),
+        @Description("List of resources, skills, or conditions needed to implement this option")
+        var requirements: List<String> = emptyList()
     ) : ValidatedObject {
         override fun validate(): String? {
             if (feasibility.isBlank()) return "OptionAnalysis feasibility cannot be blank"
@@ -73,11 +82,16 @@ class BrainstormingTask(
             return null
         }
     }
+
     data class BrainstormingSummary(
-        val overview: String = "",
-        val top_option_index: Int = 1,
-        val selection_reasoning: String = "",
-        val next_steps: String = ""
+        @Description("A brief executive summary of the session findings and general trends")
+        var overview: String = "",
+        @Description("The 1-based integer index of the single best option")
+        var top_option_index: Int = 1,
+        @Description("Explanation of why this option was chosen as the winner, compared against runners-up")
+        var selection_reasoning: String = "",
+        @Description("Concrete actions to take to implement the top recommendation")
+        var next_steps: String = ""
     ) : ValidatedObject {
         override fun validate(): String? {
             if (overview.isBlank()) return "Summary overview cannot be blank"
@@ -86,28 +100,25 @@ class BrainstormingTask(
         }
     }
 
-
-
     class BrainstormingTaskExecutionConfigData(
         @Description("The problem or question to brainstorm solutions for")
-        val problem_statement: String? = null,
+        var problem_statement: String? = null,
         @Description("A list of specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
+        var input_files: List<String>? = null,
         @Description("Number of options to generate (default: 5-10)")
-        val target_option_count: Int = 7,
+        var target_option_count: Int = 7,
         @Description("A list of categories or domains to consider (optional)")
-        val categories: List<String>? = null,
+        var categories: List<String>? = null,
         @Description("A list of constraints or requirements to consider")
-        val constraints: List<String>? = null,
+        var constraints: List<String>? = null,
         @Description("Whether to include creative/unconventional options")
-        val include_creative_options: Boolean = true,
+        var include_creative_options: Boolean = true,
         @Description("Depth of analysis for each option (brief/moderate/detailed)")
-        val analysis_depth: String = "moderate",
+        var analysis_depth: String = "moderate",
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
-
-        ) : TaskExecutionConfig(
+    ) : TaskExecutionConfig(
         task_type = Brainstorming.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
@@ -117,30 +128,26 @@ class BrainstormingTask(
             if (problem_statement.isNullOrBlank()) {
                 return "BrainstormingTaskExecutionConfigData problem_statement cannot be null or blank"
             }
-            if (target_option_count < 3 || target_option_count > 20) {
-                return "BrainstormingTaskExecutionConfigData target_option_count must be between 3 and 20"
-            }
+            target_option_count = target_option_count.coerceIn(3, 20)
             return super.validate()
         }
     }
 
-    override fun promptSegment(): String {
-        return """
-Brainstorming - Generate and analyze multiple solution options
-  ** Specify the problem or question to brainstorm solutions for
-  ** Configure target number of options (default: 7)
-  ** Optionally specify categories or domains to explore
-  ** Define constraints or requirements
-  ** Enable/disable creative/unconventional options
-  ** Set analysis depth (brief/moderate/detailed)
-  ** Generates diverse options, analyzes each independently
-  ** Provides comparative summary with recommendations
-  ** Useful for:
-     - Solution exploration
-     - Decision making
-     - Strategic planning
-     - Problem solving
-        """.trimIndent()
+    override fun promptSegment(): String = buildString {
+        appendLine("Brainstorming - Generate and analyze multiple solution options")
+        appendLine("  ** Specify the problem or question to brainstorm solutions for")
+        appendLine("  ** Configure target number of options (default: 7)")
+        appendLine("  ** Optionally specify categories or domains to explore")
+        appendLine("  ** Define constraints or requirements")
+        appendLine("  ** Enable/disable creative/unconventional options")
+        appendLine("  ** Set analysis depth (brief/moderate/detailed)")
+        appendLine("  ** Generates diverse options, analyzes each independently")
+        appendLine("  ** Provides comparative summary with recommendations")
+        appendLine("  ** Useful for:")
+        appendLine("     - Solution exploration")
+        appendLine("     - Decision making")
+        appendLine("     - Strategic planning")
+        appendLine("     - Problem solving")
     }
 
 
@@ -173,10 +180,9 @@ Brainstorming - Generate and analyze multiple solution options
         log.info("Input files: ${executionConfig?.input_files?.joinToString(", ") ?: "none"}")
 
         val ui = task.ui
-
+        val transcriptStream = task.newFileOutputStream(transcriptFile())
         try {
             // Initialize transcript
-          transcriptStream = task.newFileOutputStream(transcriptFile())
             transcriptStream?.write("# Brainstorming Session Transcript\n\n".toByteArray())
             transcriptStream?.write("**Input Files:** ${executionConfig.input_files?.joinToString(", ") ?: "none"}\n\n".toByteArray())
             transcriptStream?.write("**Problem Statement:** $problemStatement\n\n".toByteArray())
@@ -186,6 +192,7 @@ Brainstorming - Generate and analyze multiple solution options
                 }\n\n".toByteArray()
             )
             transcriptStream?.write("---\n\n".toByteArray())
+            transcriptStream?.write("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
 
             // Create tabbed display for organized output
             val tabs = TabbedDisplay(task)
@@ -245,15 +252,12 @@ Brainstorming - Generate and analyze multiple solution options
             if (priorContext.isNotBlank()) {
                 log.debug("Found prior context: ${priorContext.length} characters")
                 val contextTask = tabs.newTask("Context")
-                contextTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
-            |# Context from Previous Tasks
-            |
-            |${priorContext.truncateForDisplay()}
-            """.trimMargin(), ui = ui
-                    )
-                )
+                val contextContent = buildString {
+                    appendLine("# Context from Previous Tasks")
+                    appendLine()
+                    appendLine(priorContext.truncateForDisplay())
+                }
+                contextTask.add(MarkdownUtil.renderMarkdown(contextContent, ui = ui))
                 contextTask.complete()
                 task.update()
             }
@@ -261,12 +265,7 @@ Brainstorming - Generate and analyze multiple solution options
             // Step 1: Generate options using ParsedActor for structured output
             log.info("Generating $targetCount options")
             val optionsTask = tabs.newTask("Generated Options")
-            val optionsStatus = optionsTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "## Generated Options\n\n🔄 Brainstorming options...",
-                    ui = ui
-                )
-            )
+            optionsTask.add(MarkdownUtil.renderMarkdown("## Generated Options\n\n🔄 Brainstorming options...", ui = ui))
             task.update()
 
             val brainstormPrompt = buildBrainstormPrompt(
@@ -305,7 +304,6 @@ Brainstorming - Generate and analyze multiple solution options
             }
 
             // Display generated options
-            optionsStatus?.setLength(0)
             optionsTask.add(
                 MarkdownUtil.renderMarkdown(
                     buildString {
@@ -330,34 +328,29 @@ Brainstorming - Generate and analyze multiple solution options
 
             // Update overview
             progressStatus?.setLength(0)
-            progressStatus?.append(MarkdownUtil.renderMarkdown("✅ Generated ${options.size} options\n\n🔄 *Analyzing each option...*", ui = ui))
+            progressStatus?.append(
+                MarkdownUtil.renderMarkdown(
+                    "✅ Generated ${options.size} options\n\n🔄 *Analyzing each option...*",
+                    ui = ui
+                )
+            )
             task.update()
 
             // Step 2: Analyze each option independently
             log.info("Analyzing ${options.size} options")
             val analyses = mutableMapOf<Int, OptionAnalysis>()
-            val analysisAgent = ParsedAgent(
-                resultClass = OptionAnalysis::class.java,
-                prompt = "", // Will be set per option
-                model = defaultChatter,
-                temperature = 0.3,
-                parsingChatter = parsingChatter
-            )
 
             options.forEachIndexed { index, option ->
                 val optionNumber = index + 1
                 log.debug("Analyzing option $optionNumber: ${option.title}")
 
                 val analysisTask = tabs.newTask("Option $optionNumber Analysis")
-                val analysisStatus = analysisTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
-            |# Option $optionNumber: ${option.title}
-            |
-            |🔄 Analyzing...
-            """.trimMargin(), ui = ui
-                    )
-                )
+                val analysisContent = buildString {
+                    appendLine("# Option $optionNumber: ${option.title}")
+                    appendLine()
+                    appendLine("🔄 Analyzing...")
+                }
+                analysisTask.add(MarkdownUtil.renderMarkdown(analysisContent, ui = ui))
                 task.update()
 
                 val analysisPrompt = buildAnalysisPrompt(
@@ -367,7 +360,14 @@ Brainstorming - Generate and analyze multiple solution options
                     analysisDepth
                 )
 
-                val analysis = analysisAgent.answer(listOf(analysisPrompt))
+                val perOptionAgent = ParsedAgent(
+                    resultClass = OptionAnalysis::class.java,
+                    prompt = analysisPrompt,
+                    model = defaultChatter,
+                    temperature = 0.3,
+                    parsingChatter = parsingChatter
+                )
+                val analysis = perOptionAgent.answer(listOf(analysisPrompt))
                 analyses[optionNumber] = analysis.obj
                 // Write analysis to transcript
                 transcriptStream?.write("\n## Option $optionNumber Analysis: ${option.title}\n\n".toByteArray())
@@ -385,7 +385,6 @@ Brainstorming - Generate and analyze multiple solution options
 
 
                 // Display analysis
-                analysisStatus?.setLength(0)
                 analysisTask.add(
                     MarkdownUtil.renderMarkdown(
                         buildString {
@@ -429,21 +428,41 @@ Brainstorming - Generate and analyze multiple solution options
 
                 // Update overview
                 progressStatus?.setLength(0)
-                progressStatus?.append(MarkdownUtil.renderMarkdown("✅ Generated ${options.size} options\n✅ Analyzed $optionNumber/${options.size} options\n\n🔄 *Analyzing next option...*", ui = ui))
+                progressStatus?.append(
+                    MarkdownUtil.renderMarkdown(
+                        buildString {
+                            appendLine("✅ Generated ${options.size} options")
+                            appendLine("✅ Analyzed $optionNumber/${options.size} options")
+                            appendLine()
+                            appendLine("🔄 *Analyzing next option...*")
+                        },
+                        ui = ui
+                    )
+                )
                 task.update()
             }
 
             // Step 3: Generate comparative summary
             log.info("Generating comparative summary")
             val summaryTask = tabs.newTask("Summary & Recommendations")
-            val summaryStatus = summaryTask.add(
+            summaryTask.add(
                 MarkdownUtil.renderMarkdown(
                     "## Summary & Recommendations\n\n🔄 Synthesizing findings...",
                     ui = ui
                 )
             )
             progressStatus?.setLength(0)
-            progressStatus?.append(MarkdownUtil.renderMarkdown("✅ Generated ${options.size} options\n✅ Analyzed all ${options.size} options\n\n🔄 *Synthesizing findings...*", ui = ui))
+            progressStatus?.append(
+                MarkdownUtil.renderMarkdown(
+                    buildString {
+                        appendLine("✅ Generated ${options.size} options")
+                        appendLine("✅ Analyzed all ${options.size} options")
+                        appendLine()
+                        appendLine("🔄 *Synthesizing findings...*")
+                    },
+                    ui = ui
+                )
+            )
             task.update()
 
             val summaryPrompt = buildSummaryPrompt(
@@ -461,7 +480,7 @@ Brainstorming - Generate and analyze multiple solution options
             )
 
             val summaryResult = summaryAgent.answer(listOf(summaryPrompt)).obj
-            
+
             // Resolve top option safely
             val topOptionIndex = (summaryResult.top_option_index - 1).coerceIn(0, options.indices.last)
             val topOption = options[topOptionIndex]
@@ -479,8 +498,6 @@ Brainstorming - Generate and analyze multiple solution options
                 appendLine(summaryResult.next_steps)
             }
 
-            summaryStatus?.setLength(0)
-
             summaryTask.add(
                 MarkdownUtil.renderMarkdown(
                     buildString {
@@ -494,6 +511,11 @@ Brainstorming - Generate and analyze multiple solution options
             )
             summaryTask.complete()
             task.update()
+            // Close work-details tab section in transcript
+            transcriptStream?.write("\n</div>\n\n".toByteArray())
+            // Write final output tab section in transcript
+            transcriptStream?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+
 
             val totalTime = System.currentTimeMillis() - startTime
             // Write detailed results to file
@@ -504,7 +526,13 @@ Brainstorming - Generate and analyze multiple solution options
                 summaryDisplay,
                 totalTime
             )
-            val (resultsLink, resultsFile) = task.createFile("brainstorming_results.md")
+
+            val dataDir = getOutputFile(".md")?.let {
+                if (it.endsWith(".md")) it.removeSuffix(".md") else null
+            } ?: "brainstorming"
+
+            val resultsFileName = "${dataDir}_results.md"
+            val (resultsLink, resultsFile) = task.createFile(resultsFileName)
             resultsFile?.outputStream()?.use { stream ->
                 stream.write(detailedResults.toByteArray(StandardCharsets.UTF_8))
                 stream.flush()
@@ -512,7 +540,12 @@ Brainstorming - Generate and analyze multiple solution options
             log.info("Saved detailed results to: $resultsLink")
 
             // Finalize transcript
-            transcriptStream?.write("\n## Session Complete\n\n".toByteArray())
+            transcriptStream?.write("\n# Brainstorming Results: $problemStatement\n\n".toByteArray())
+            transcriptStream?.write("## 🏆 Top Recommendation: ${topOption.title}\n\n".toByteArray())
+            transcriptStream?.write("${topOption.description}\n\n".toByteArray())
+            transcriptStream?.write("> ${summaryResult.selection_reasoning}\n\n".toByteArray())
+            transcriptStream?.write("## Summary\n\n${summaryResult.overview}\n\n".toByteArray())
+            transcriptStream?.write("## Session Complete\n\n".toByteArray())
             transcriptStream?.write("**Total Time:** ${totalTime / 1000.0}s\n".toByteArray())
             transcriptStream?.write("**Options Generated:** ${options.size}\n".toByteArray())
             transcriptStream?.write("**Options Analyzed:** ${analyses.size}\n".toByteArray())
@@ -521,9 +554,8 @@ Brainstorming - Generate and analyze multiple solution options
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                 }\n".toByteArray()
             )
-            transcriptStream?.flush()
-            transcriptStream?.close()
-            val transcriptLink = task.createFile("brainstorming_transcript.md").first
+            transcriptStream?.write("\n</div>\n\n".toByteArray())
+
             // Build final concise output with file links
             val finalOutput = buildString {
                 appendLine("# Brainstorming Results: $problemStatement")
@@ -543,24 +575,9 @@ Brainstorming - Generate and analyze multiple solution options
                 appendLine()
                 appendLine("## Detailed Results")
                 appendLine()
-                appendLine(
-                    "📄 [Full Results]($resultsLink) | [HTML](${resultsLink.removeSuffix(".md")}.html) | [PDF](${
-                        resultsLink.removeSuffix(
-                            ".md"
-                        )
-                    }.pdf)"
-                )
-                appendLine()
-                appendLine(
-                    "📋 [Transcript]($transcriptLink) | [HTML](${transcriptLink.removeSuffix(".md")}.html) | [PDF](${
-                        transcriptLink.removeSuffix(
-                            ".md"
-                        )
-                    }.pdf)"
-                )
+                appendLine("📄 [Full Results]($resultsLink)")
                 appendLine()
                 appendLine("**Options:** ${options.size} | **Analysis Depth:** $analysisDepth | **Time:** ${totalTime / 1000}s")
-
                 appendLine()
                 appendLine()
                 options.forEachIndexed { index, option ->
@@ -571,22 +588,26 @@ Brainstorming - Generate and analyze multiple solution options
                 appendLine()
                 appendLine()
                 appendLine("---")
-
             }
 
             log.info("BrainstormingTask completed: total_time=${totalTime}ms, options=${options.size}, output_size=${finalOutput.length} chars")
 
             // Update overview with completion
             progressStatus?.setLength(0)
-            progressStatus?.append(MarkdownUtil.renderMarkdown("""
-                |---
-                |## ✅ Brainstorming Complete
-                |
-                |### 🏆 Winner: ${topOption.title}
-                |${summaryResult.selection_reasoning.truncateForDisplay(300)}
-                |
-                |**Total Time:** ${totalTime / 1000.0}s | **Options:** ${options.size}
-            """.trimMargin(), ui = ui))
+            progressStatus?.append(
+                MarkdownUtil.renderMarkdown(
+                    buildString {
+                        appendLine("---")
+                        appendLine("## ✅ Brainstorming Complete")
+                        appendLine()
+                        appendLine("### 🏆 Winner: ${topOption.title}")
+                        appendLine(summaryResult.selection_reasoning.truncateForDisplay(300))
+                        appendLine()
+                        appendLine("**Total Time:** ${totalTime / 1000.0}s | **Options:** ${options.size}")
+                    },
+                    ui = ui
+                )
+            )
             overviewTask.complete()
             task.update()
 
@@ -600,8 +621,7 @@ Brainstorming - Generate and analyze multiple solution options
             transcriptStream?.write("\n## ❌ Error Occurred\n\n".toByteArray())
             transcriptStream?.write("**Error:** ${e.message}\n".toByteArray())
             transcriptStream?.write("**Type:** ${e.javaClass.simpleName}\n".toByteArray())
-            transcriptStream?.flush()
-            transcriptStream?.close()
+            transcriptStream?.write("<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
 
             task.error(e)
 
@@ -617,6 +637,13 @@ Brainstorming - Generate and analyze multiple solution options
 
             task.safeComplete("Brainstorming failed: ${e.message}", log)
             resultFn(errorOutput)
+        } finally {
+            try {
+                transcriptStream?.flush()
+                transcriptStream?.close()
+            } catch (e: Exception) {
+                log.warn("Failed to close transcript stream", e)
+            }
         }
     }
 
@@ -628,56 +655,46 @@ Brainstorming - Generate and analyze multiple solution options
         includeCreative: Boolean,
         priorContext: String,
         inputFileContent: String = ""
-    ): String {
-        val constraintsSection = if (constraints.isNotEmpty()) {
-            """
-      |
-      |## Constraints to Consider:
-      |${constraints.joinToString("\n") { "- $it" }}
-      """.trimMargin()
-        } else {
-            ""
+    ): String = buildString {
+        appendLine("You are a creative problem solver and brainstorming expert. Your task is to generate diverse, well-thought-out options for addressing a problem.")
+        appendLine()
+        appendLine("## Problem Statement:")
+        appendLine(problemStatement)
+        appendLine()
+        appendLine("## Target:")
+        appendLine("Generate exactly $targetCount distinct options.")
+        appendLine()
+        appendLine("## Categories/Domains to Consider:")
+        appendLine(categories)
+        if (constraints.isNotEmpty()) {
+            appendLine()
+            appendLine("## Constraints to Consider:")
+            constraints.forEach { appendLine("- $it") }
         }
-
-        val contextSection = if (priorContext.isNotBlank()) {
-            """
-      |
-      |## Context from Previous Tasks:
-      |$priorContext
-      """.trimMargin()
-        } else {
-            ""
+        if (priorContext.isNotBlank()) {
+            appendLine()
+            appendLine("## Context from Previous Tasks:")
+            appendLine(priorContext)
         }
-
-        return """
-You are a creative problem solver and brainstorming expert. Your task is to generate diverse, well-thought-out options for addressing a problem.
-
-## Problem Statement:
-$problemStatement
-
-## Target:
-Generate exactly $targetCount distinct options.
-
-## Categories/Domains to Consider:
-$categories
-$constraintsSection
-$contextSection
-
-## Brainstorming Guidelines:
-1. **Diversity**: Ensure options span different approaches and perspectives
-2. **Clarity**: Each option should be clearly described and actionable
-3. **Relevance**: All options must address the core problem
-${if (includeCreative) "4. **Creativity**: Include unconventional and innovative approaches" else "4. **Practicality**: Focus on realistic, proven approaches"}
-5. **Categorization**: Assign each option to a relevant category
-
-## Output Format:
-Generate a JSON object with an "options" array. Each option should have:
-- title: A concise, descriptive name (5-10 words)
-- description: A clear explanation of the option (2-4 sentences)
-- category: The domain or approach category
-
-Generate $targetCount diverse options now.
-        """.trimIndent()
+        appendLine()
+        appendLine("## Brainstorming Guidelines:")
+        appendLine("1. **Diversity**: Ensure options span different approaches and perspectives")
+        appendLine("2. **Clarity**: Each option should be clearly described and actionable")
+        appendLine("3. **Relevance**: All options must address the core problem")
+        if (includeCreative) {
+            appendLine("4. **Creativity**: Include unconventional and innovative approaches")
+        } else {
+            appendLine("4. **Practicality**: Focus on realistic, proven approaches")
+        }
+        appendLine("5. **Categorization**: Assign each option to a relevant category")
+        appendLine()
+        appendLine("## Output Format:")
+        appendLine("Generate a JSON object with an \"options\" array. Each option should have:")
+        appendLine("- title: A concise, descriptive name (5-10 words)")
+        appendLine("- description: A clear explanation of the option (2-4 sentences)")
+        appendLine("- category: The domain or approach category")
+        appendLine()
+        appendLine("Generate $targetCount diverse options now.")
     }
 
     private fun buildAnalysisPrompt(
@@ -685,65 +702,58 @@ Generate $targetCount diverse options now.
         problemStatement: String,
         constraints: List<String>,
         analysisDepth: String
-    ): String {
+    ): String = buildString {
         val depthGuidance = when (analysisDepth.lowercase()) {
             "brief" -> "Provide concise analysis with 2-3 items per category."
             "detailed" -> "Provide comprehensive analysis with 5-7 items per category and detailed explanations."
             else -> "Provide moderate analysis with 3-5 items per category."
         }
-
-        val constraintsSection = if (constraints.isNotEmpty()) {
-            """
-      |
-      |## Constraints:
-      |${constraints.joinToString("\n") { "- $it" }}
-      """.trimMargin()
-        } else {
-            ""
+        appendLine("You are an analytical expert evaluating solution options. Analyze this option independently and objectively.")
+        appendLine()
+        appendLine("## Problem Statement:")
+        appendLine(problemStatement)
+        appendLine()
+        appendLine("## Option to Analyze:")
+        appendLine("**Title:** ${option.title}")
+        appendLine("**Description:** ${option.description}")
+        if (option.category != null) {
+            appendLine("**Category:** ${option.category}")
         }
-
-        return """
-You are an analytical expert evaluating solution options. Analyze this option independently and objectively.
-
-## Problem Statement:
-$problemStatement
-
-## Option to Analyze:
-**Title:** ${option.title}
-**Description:** ${option.description}
-${if (option.category != null) "**Category:** ${option.category}" else ""}
-$constraintsSection
-
-## Analysis Instructions:
-$depthGuidance
-
-Evaluate the following aspects:
-
-1. **Pros**: Advantages and benefits of this option
-2. **Cons**: Disadvantages and limitations
-3. **Feasibility**: How realistic is implementation? (Consider technical, resource, and organizational factors)
-4. **Impact**: What outcomes and effects can be expected?
-5. **Risks**: What could go wrong? What are the potential negative consequences?
-6. **Requirements**: What resources, skills, or conditions are needed?
-
-## Output Format:
-Provide a JSON object with these fields:
-- pros: Array of strings (advantages)
-- cons: Array of strings (disadvantages)
-- feasibility: String (assessment of how realistic this is)
-- impact: String (expected outcomes and effects)
-- risks: Array of strings (potential problems)
-- requirements: Array of strings (what's needed to implement)
-
-Analyze this option now.
-        """.trimIndent()
+        if (constraints.isNotEmpty()) {
+            appendLine()
+            appendLine("## Constraints:")
+            constraints.forEach { appendLine("- $it") }
+        }
+        appendLine()
+        appendLine("## Analysis Instructions:")
+        appendLine(depthGuidance)
+        appendLine()
+        appendLine("Evaluate the following aspects:")
+        appendLine()
+        appendLine("1. **Pros**: Advantages and benefits of this option")
+        appendLine("2. **Cons**: Disadvantages and limitations")
+        appendLine("3. **Feasibility**: How realistic is implementation? (Consider technical, resource, and organizational factors)")
+        appendLine("4. **Impact**: What outcomes and effects can be expected?")
+        appendLine("5. **Risks**: What could go wrong? What are the potential negative consequences?")
+        appendLine("6. **Requirements**: What resources, skills, or conditions are needed?")
+        appendLine()
+        appendLine("## Output Format:")
+        appendLine("Provide a JSON object with these fields:")
+        appendLine("- pros: Array of strings (advantages)")
+        appendLine("- cons: Array of strings (disadvantages)")
+        appendLine("- feasibility: String (assessment of how realistic this is)")
+        appendLine("- impact: String (expected outcomes and effects)")
+        appendLine("- risks: Array of strings (potential problems)")
+        appendLine("- requirements: Array of strings (what's needed to implement)")
+        appendLine()
+        appendLine("Analyze this option now.")
     }
 
     private fun buildSummaryPrompt(
         problemStatement: String,
         options: List<BrainstormedOption>,
         analyses: Map<Int, OptionAnalysis>
-    ): String {
+    ): String = buildString {
         val optionsWithAnalysis = buildString {
             options.forEachIndexed { index, option ->
                 val optionNumber = index + 1
@@ -759,28 +769,25 @@ Analyze this option now.
                 appendLine()
             }
         }
-
-        return """
-You are a strategic advisor synthesizing brainstorming results. Review all options and their analyses to provide actionable recommendations.
-
-## Problem Statement:
-$problemStatement
-
-## Options and Analyses:
-$optionsWithAnalysis
-
-## Your Task:
-Evaluate all options and select the single best recommendation.
-
-## Output Format:
-Provide a JSON object with the following fields:
-- `top_option_index`: The integer index (1-based) of the single best option.
-- `selection_reasoning`: Why was this option chosen as the winner? (Compare against runners-up).
-- `overview`: A brief executive summary of the session findings and general trends.
-- `next_steps`: Concrete actions to take to implement the top recommendation.
-
-Select the best option and summarize the findings now.
-        """.trimIndent()
+        appendLine("You are a strategic advisor synthesizing brainstorming results. Review all options and their analyses to provide actionable recommendations.")
+        appendLine()
+        appendLine("## Problem Statement:")
+        appendLine(problemStatement)
+        appendLine()
+        appendLine("## Options and Analyses:")
+        appendLine(optionsWithAnalysis)
+        appendLine()
+        appendLine("## Your Task:")
+        appendLine("Evaluate all options and select the single best recommendation.")
+        appendLine()
+        appendLine("## Output Format:")
+        appendLine("Provide a JSON object with the following fields:")
+        appendLine("- `top_option_index`: The integer index (1-based) of the single best option.")
+        appendLine("- `selection_reasoning`: Why was this option chosen as the winner? (Compare against runners-up).")
+        appendLine("- `overview`: A brief executive summary of the session findings and general trends.")
+        appendLine("- `next_steps`: Concrete actions to take to implement the top recommendation.")
+        appendLine()
+        appendLine("Select the best option and summarize the findings now.")
     }
 
     private fun buildDetailedResults(
@@ -789,8 +796,7 @@ Select the best option and summarize the findings now.
         analyses: Map<Int, OptionAnalysis>,
         summary: String,
         totalTime: Long
-    ): String {
-        return buildString {
+    ): String = buildString {
             appendLine("# Brainstorming Session - Detailed Results")
             appendLine()
             appendLine("**Problem Statement:** $problemStatement")
@@ -846,7 +852,6 @@ Select the best option and summarize the findings now.
             appendLine()
             appendLine(summary)
             appendLine()
-        }
     }
 
     private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
@@ -908,25 +913,27 @@ Select the best option and summarize the findings now.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(BrainstormingTask::class.java)
-      @JvmStatic val Brainstorming = TaskType(
-          name = "Brainstorming",
-          category = "Reasoning",
-          taskClass = BrainstormingTask::class.java,
-          executionConfigClass = BrainstormingTaskExecutionConfigData::class.java,
-          taskSettingsClass = TaskTypeConfig::class.java,
-          description = "Generate and analyze multiple solution options",
-          tooltipHtml = """
-                        Systematically generates diverse options and analyzes each independently.
-                        <ul>
-                          <li>Generates multiple solution options for a given problem</li>
-                          <li>Analyzes each option independently (pros, cons, feasibility, impact, risks)</li>
-                          <li>Provides comparative summary with recommendations</li>
-                          <li>Supports creative and conventional approaches</li>
-                          <li>Configurable analysis depth and option count</li>
-                          <li>Identifies hybrid approaches and synergies</li>
-                          <li>Useful for decision making, strategic planning, and problem solving</li>
-                        </ul>
-                      """,
+
+        @JvmStatic
+        val Brainstorming = TaskType(
+            name = "Brainstorming",
+            category = "Reasoning",
+            taskClass = BrainstormingTask::class.java,
+            executionConfigClass = BrainstormingTaskExecutionConfigData::class.java,
+            taskSettingsClass = TaskTypeConfig::class.java,
+            description = "Generate and analyze multiple solution options",
+            tooltipHtml = buildString {
+                appendLine("Systematically generates diverse options and analyzes each independently.")
+                appendLine("<ul>")
+                appendLine("  <li>Generates multiple solution options for a given problem</li>")
+                appendLine("  <li>Analyzes each option independently (pros, cons, feasibility, impact, risks)</li>")
+                appendLine("  <li>Provides comparative summary with recommendations</li>")
+                appendLine("  <li>Supports creative and conventional approaches</li>")
+                appendLine("  <li>Configurable analysis depth and option count</li>")
+                appendLine("  <li>Identifies hybrid approaches and synergies</li>")
+                appendLine("  <li>Useful for decision making, strategic planning, and problem solving</li>")
+                appendLine("</ul>")
+            },
         )
     }
 }

@@ -31,7 +31,6 @@ class IterativeFileModificationTask(
     class IterativeFileModificationTaskExecutionConfigData(
         files: List<String> = emptyList(),
         related_files: List<String>? = null,
-        extractContent: Boolean = false,
         @Description("High-level description of the overall modification goal")
         val modification_goal: String? = null,
         @Description("Maximum number of change items to generate in the planning phase")
@@ -47,7 +46,6 @@ class IterativeFileModificationTask(
         task_dependencies = task_dependencies,
         related_files = related_files,
         files = files,
-        extractContent = extractContent,
         state = state
     ), ValidatedObject {
         override fun validate(): String? {

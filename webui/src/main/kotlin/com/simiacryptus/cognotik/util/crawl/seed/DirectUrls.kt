@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.crawl.seed
+package com.simiacryptus.cognotik.util.crawl.seed
 
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
@@ -16,9 +16,9 @@ class DirectUrls : SeedMethodFactory {
                 SeedMethod.log.error("Direct URLs are missing for DirectUrls seed method")
                 return emptyList()
             }
-            SeedMethod.log.debug("Processing direct URLs: ${taskConfig.direct_urls.joinToString(", ")}")
-            return taskConfig.direct_urls.map { it.trim() }.filter { it.isNotBlank() }
-                .filter { url ->
+            SeedMethod.log.debug("Processing direct URLs: ${taskConfig.direct_urls?.joinToString(", ")}")
+            return taskConfig.direct_urls?.map { it.trim() }?.filter { it.isNotBlank() }
+                ?.filter { url ->
                     try {
                         URI.create(url)
                         url.startsWith("http://") || url.startsWith("https://")
@@ -27,16 +27,16 @@ class DirectUrls : SeedMethodFactory {
                         false
                     }
                 }
-                .mapIndexed { index, url ->
+                ?.mapIndexed { index, url ->
                     SeedMethod.log.debug("Adding direct URL: $url")
                     SeedItem(
                         link = url,
                         title = "Direct URL ${index + 1}",
                         additionalData = mapOf("index" to index)
                     )
-                }.also {
+                }?.also {
                     SeedMethod.log.info("Successfully processed ${it.size} direct URLs")
-                }
+                }!!
         }
     }
 }

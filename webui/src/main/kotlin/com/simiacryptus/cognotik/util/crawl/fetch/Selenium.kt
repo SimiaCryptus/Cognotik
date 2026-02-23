@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.crawl.fetch
+package com.simiacryptus.cognotik.util.crawl.fetch
 
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask

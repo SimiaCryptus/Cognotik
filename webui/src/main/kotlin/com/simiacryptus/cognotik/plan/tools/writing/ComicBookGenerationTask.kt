@@ -83,7 +83,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
     var plot_continuity: PlotContinuityDetails? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
-  ) : TaskExecutionConfig(
+  )    : TaskExecutionConfig(
     task_type = ComicBookGeneration.name,
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),

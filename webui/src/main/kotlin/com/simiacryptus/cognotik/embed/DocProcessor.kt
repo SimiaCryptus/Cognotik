@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
@@ -24,8 +25,10 @@ import java.nio.file.PathMatcher
 import java.security.MessageDigest
 import java.time.Duration
 import java.util.*
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture.allOf
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 
 /**
@@ -205,57 +208,55 @@ class DocProcessor(
         val spec: DocSpec
     )
 
-    data class ModificationTaskConfig(
+    class ModificationTaskConfig(
+        val root: File,
         val files: List<String>? = null,
         val related_files: List<String>? = null,
         val task_description: String = "",
-        val template_file: String? = null,
         val data: Map<String, Any>? = null,
+        val taskConfigOverrides: Map<String, Any>? = null,
     ) {
-        fun rebase(prevRoot: File, newRoot: File): ModificationTaskConfig {
-            val rebased = ModificationTaskConfig(
-                files = files?.map { filePath ->
-                    prevRoot.canonicalFile.resolve(filePath).canonicalFile
-                        .relativeTo(newRoot.canonicalFile).toString()
-                },
-                related_files = related_files?.map { relatedPath ->
-                    if (relatedPath.startsWith("http://") || relatedPath.startsWith("https://")) {
-                        relatedPath // URLs are not rebased
-                    } else {
-                        val resolvedFile = prevRoot.canonicalFile.resolve(relatedPath).canonicalFile
-                        try {
-                            resolvedFile.relativeTo(newRoot.canonicalFile).toString()
-                        } catch (_: IllegalArgumentException) {
-                            // File is outside newRoot, use absolute path
-                            resolvedFile.absolutePath
-                        }
-                    }
-                },
-                task_description = task_description,
-                template_file = template_file?.let {
-                    try {
-                        prevRoot.canonicalFile.resolve(it).canonicalFile
-                            .relativeTo(newRoot.canonicalFile).toString()
-                    } catch (_: IllegalArgumentException) {
-                        prevRoot.canonicalFile.resolve(it).canonicalFile.absolutePath
-                    }
-                },
-                data = data
-            )
-            return rebased
+        val relative_files: List<String>? get() = files?.map { filePath ->
+            try {
+                File(filePath).canonicalFile.relativeTo(root.canonicalFile).toString()
+            } catch (_: IllegalArgumentException) {
+                // File is outside root, return absolute path
+                File(filePath).canonicalFile.absolutePath
+            }
         }
+        val relative_related_files: List<String>? get() = related_files?.map { filePath ->
+            try {
+                File(filePath).canonicalFile.relativeTo(root.canonicalFile).toString()
+            } catch (_: IllegalArgumentException) {
+                // File is outside root, return absolute path
+                File(filePath).canonicalFile.absolutePath
+            }
+        }
+        fun rebase(newRoot: File) = ModificationTaskConfig(
+            root = newRoot,
+            files = files,
+            related_files = related_files,
+            task_description = task_description,
+            data = data,
+            taskConfigOverrides = taskConfigOverrides
+        )
     }
 
-    data class ModificationTask(
-        val data: ModificationTaskConfig = ModificationTaskConfig(),
-        val message: String = "",
+    class ModificationTask(
+        val data: ModificationTaskConfig,
+        val message: (File) -> String = { "" },
         val patchProcessor: PatchProcessors = PatchProcessors.Fuzzy,
         val shouldDeleteTarget: Boolean = false,
         val taskType: TaskType<*, *> = FileModification
     ) {
+        val typeConfig: TaskTypeConfig get() {
+            val jsonCast = data.taskConfigOverrides?.jsonCast<TaskTypeConfig>()
+            return jsonCast ?: taskType.newSettings() ?: TaskTypeConfig(task_type = taskType.name)
+        }
+
         fun rebase(prevRoot: File, newRoot: File) = if (newRoot == prevRoot) this
         else ModificationTask(
-            data = data.rebase(prevRoot, newRoot),
+            data = data.rebase(newRoot),
             message = message,
             patchProcessor = patchProcessor,
             shouldDeleteTarget = shouldDeleteTarget,
@@ -287,99 +288,234 @@ class DocProcessor(
 
     fun modificationTasks(docSpecs: List<DocSpec>): List<ModificationTask> {
         log.info("Found ${docSpecs.size} markdown files with 'specifies' frontmatter")
+
+        return modificationTasksRecursive(docSpecs, emptySet(), 0)
+    }
+
+    /**
+     * Recursively compute modification tasks. After computing the initial set of targets,
+     * check if any newly-generated target files would match additional doc specs (via specifies,
+     * transforms, generates, or documents patterns). If so, treat those hypothetical files as
+     * existing and re-expand to discover transitive targets. This continues until a fixed-point
+     * is reached (no new targets are discovered), enabling proper dependency ordering for
+     * multi-stage build pipelines with intermediate artifacts.
+     *
+     * @param docSpecs The doc specifications to process
+     * @param knownTargets Set of target file paths already discovered in previous iterations
+     * @param depth Current recursion depth (bounded to prevent infinite loops)
+     * @return Complete list of modification tasks including transitively discovered ones
+     */
+    private fun modificationTasksRecursive(
+        docSpecs: List<DocSpec>,
+        knownTargets: Set<String>,
+        depth: Int
+    ): List<ModificationTask> {
+        val maxDepth = 10
+        if (depth > maxDepth) {
+            log.warn("Recursive planning reached max depth ($maxDepth), stopping expansion. This may indicate circular generation rules.")
+            return emptyList()
+        }
+
         val fileToSpecs = fileToSpecs(docSpecs)
         val documentMatches = documentMatches(docSpecs)
         val transformMatches = transformMatches(docSpecs)
         val generateMatches = generateMatches(docSpecs)
         val allTargetFiles =
             (fileToSpecs.keys + transformMatches.keys + documentMatches.keys + generateMatches.keys).distinct()
-        log.info("Total unique target files: ${allTargetFiles.size}")
-        val map = allTargetFiles.map { targetFile ->
-            val specs = (fileToSpecs[targetFile] ?: emptyList()).toMutableList()
-            val transforms = transformMatches[targetFile] ?: emptyList()
-            val documents = documentMatches[targetFile] ?: emptyList()
-            val generates = generateMatches[targetFile] ?: emptyList()
-            val targetFileObj = File(targetFile)
-            val relativeTarget = targetFileObj.relativeTo(root.absoluteFile)
-            try {
-                log.info(
-                    "Processing ${relativeTarget} based on ${specs.size} spec(s), ${transforms.size} transform(s), ${documents.size} document(s), and ${generates.size} generate(s): ${
-                        (specs.map { it.docFile.name } +
-                                transforms.map { "${it.spec.docFile.name}(${it.sourceFile.name})" } +
-                                documents.map { "${it.docSpec.docFile.name}(${it.supportingFiles.size} files)" } +
-                                generates.map { "${it.spec.docFile.name}(${it.inputFiles.size} inputs)" }
-                                ).joinToString(", ")
-                    }")
-                val source = primarySource(transforms, specs, documents, generates) ?: return@map null
-                val relatedFiles = allRelatedFiles(specs, targetFileObj, transforms, documents, generates)
-                val effectiveUpdateMode = resolveUpdateMode(specs, transforms, documents, generates)
-                val prepareResult = effectiveUpdateMode.prepare(
-                    source = source,
-                    target = targetFileObj,
-                    relatedFiles = relatedFiles
-                )
-                if (prepareResult == null) {
-                  log.debug("Update mode returned null for {}, skipping", relativeTarget)
-                    return@map null
+        log.info("Recursive planning depth $depth: ${allTargetFiles.size} target files discovered")
+
+        // Identify newly discovered targets that weren't known before
+        val newTargets = allTargetFiles.filter { it !in knownTargets }.toSet()
+        val allKnownTargets = knownTargets + allTargetFiles.toSet()
+
+        // Build tasks for current level targets
+        val currentTasks = allTargetFiles.mapNotNull { targetFile ->
+            buildModificationTask(targetFile, fileToSpecs, transformMatches, documentMatches, generateMatches)
+        }
+
+        // Check if any new targets would cause additional doc specs to match new files.
+        // We do this by checking if hypothetical new files (the targets we just discovered)
+        // would match any doc spec patterns when treated as existing files.
+        if (newTargets.isNotEmpty() && depth < maxDepth) {
+            val transitiveTargets = discoverTransitiveTargets(docSpecs, newTargets, allKnownTargets)
+            if (transitiveTargets.isNotEmpty()) {
+                log.info("Depth $depth: discovered ${transitiveTargets.size} transitive target(s) from ${newTargets.size} new target(s)")
+                // Create synthetic DocSpecs or re-expand with the knowledge of hypothetical files
+                val transitiveTasks = modificationTasksRecursive(docSpecs, allKnownTargets, depth + 1)
+                // Merge: transitive tasks may overlap with current tasks for the same target.
+                // Current-level tasks take priority; only add truly new transitive tasks.
+                val currentTargetPaths = currentTasks.flatMap { it.data.relative_files ?: emptyList() }.toSet()
+                val newTransitiveTasks = transitiveTasks.filter { task ->
+                    task.data.relative_files?.any { it !in currentTargetPaths } ?: false
                 }
-                if (prepareResult.shouldDeleteTarget && targetFileObj.exists()) {
-                    log.info("Deleting target file before processing: ${targetFileObj.absolutePath}")
-                    targetFileObj.delete()
+                return currentTasks + newTransitiveTasks
+            }
+        }
+
+        return currentTasks
+    }
+
+    /**
+     * Discover transitive targets: given a set of newly discovered target files (which don't
+     * exist on disk yet), check if any doc spec transform/specifies/generates patterns would
+     * match those hypothetical files and produce additional targets.
+     *
+     * @param docSpecs All doc specifications
+     * @param newTargetPaths Absolute paths of newly discovered targets
+     * @param allKnownTargets All targets discovered so far (to avoid re-discovering)
+     * @return Set of new transitive target absolute paths not yet in allKnownTargets
+     */
+    private fun discoverTransitiveTargets(
+        docSpecs: List<DocSpec>,
+        newTargetPaths: Set<String>,
+        allKnownTargets: Set<String>
+    ): Set<String> {
+        val transitiveTargets = mutableSetOf<String>()
+
+        for (spec in docSpecs) {
+            // Check transforms: if a new target matches a transform's source pattern,
+            // it would produce a new destination
+            for (transform in spec.transforms) {
+                val sourceRegex = try {
+                    Pattern.compile(transform.sourcePattern)
+                } catch (e: Exception) {
+                    continue
                 }
-                val taskType = resolveTaskType(specs, transforms, documents, generates)
-                val targetFile1 = File(targetFile)
-                ModificationTask(
-                    data = ModificationTaskConfig(
-                        files = listOf(relativeTarget.toString()),
-                        related_files = relatedFiles.map { file ->
-                            try {
-                                file.canonicalFile.relativeTo(root.canonicalFile).toString()
-                            } catch (_: IllegalArgumentException) {
-                                // File is outside the root (e.g., cached URL content), use absolute path
-                                file.canonicalFile.absolutePath
-                            }
-                        }.distinct(),
-                        task_description = buildCombinedTaskDescription(
-                            specs,
-                            transforms,
-                            documents,
-                            generates,
-                            targetFile1,
-                            taskType
-                        ),
-                        template_file = specs.firstNotNullOfOrNull { spec ->
-                            (spec.frontmatter["template_file"] as? String)?.let { templatePath ->
-                                spec.docFile.parentFile.resolve(templatePath).relativeTo(root.absoluteFile).toString()
-                            }
-                        },
-                        data = this.run {
-                            // First check for explicit data_file in frontmatter
-                            val explicitDataFile = specs.firstNotNullOfOrNull { spec ->
-                                (spec.frontmatter["data_file"] as? String)?.let { dataPath ->
-                                    spec.docFile.parentFile.resolve(dataPath).absolutePath
-                                }
-                            }
-                            // If no explicit data_file, check if we have a transform with a JSON source file
-                            val implicitDataFile = if (explicitDataFile == null && transforms.isNotEmpty()) {
-                                transforms.firstOrNull {
-                                    it.sourceFile.extension.equals(
-                                        "json",
-                                        ignoreCase = true
-                                    )
-                                }?.sourceFile?.absolutePath
-                            } else null
-                            (explicitDataFile ?: implicitDataFile)?.let { dataFilePath ->
-                                val dataFile = File(dataFilePath)
-                                if (dataFile.exists()) {
-                                    JsonUtil.fromJson(dataFile.readText(), Map::class.java) as Map<String, Any>
-                                } else {
-                                    log.warn("Data file not found: $dataFilePath")
-                                    null
-                                }
+                for (targetPath in newTargetPaths) {
+                    val targetFile = File(targetPath)
+                    val relativePath = try {
+                        targetFile.relativeTo(spec.docFile.parentFile.absoluteFile).path.replace("\\", "/")
+                    } catch (e: IllegalArgumentException) {
+                        continue
+                    }
+                    val matcher = sourceRegex.matcher(relativePath)
+                    if (matcher.matches()) {
+                        var destPath = transform.destinationPattern
+                        for (i in 0..matcher.groupCount()) {
+                            val group = matcher.group(i) ?: ""
+                            destPath = destPath.replace("\$$i", group)
+                        }
+                        val destFile = try {
+                            spec.docFile.parentFile.resolve(destPath).canonicalFile
+                        } catch (e: Exception) {
+                            spec.docFile.parentFile.resolve(destPath)
+                        }
+                        val destAbsPath = destFile.absolutePath
+                        if (destAbsPath !in allKnownTargets) {
+                            log.debug("Transitive target discovered: $destAbsPath (from transform ${transform.sourcePattern} -> ${transform.destinationPattern} matching hypothetical $relativePath)")
+                            transitiveTargets.add(destAbsPath)
+                        }
+                    }
+                }
+            }
+
+            // Check specifies: if a new target's path matches a specifies glob,
+            // it's already covered by the spec. But the spec itself might generate
+            // targets that are new. This is handled by re-running fileToSpecs with
+            // hypothetical files, which happens in the recursive call.
+
+            // Check generates: generates have fixed output paths, so they're already
+            // discovered in the first pass. But if a generate's input glob matches
+            // a new target, the generate task gains new context (handled by re-expansion).
+        }
+
+        return transitiveTargets
+    }
+
+    /**
+     * Build a single ModificationTask for a given target file path.
+     * Extracted from the inner loop of modificationTasks for reuse in recursive planning.
+     */
+    private fun buildModificationTask(
+        targetFile: String,
+        fileToSpecs: Map<String, List<DocSpec>>,
+        transformMatches: Map<String, List<TransformMatch>>,
+        documentMatches: Map<String, List<DocumentMatch>>,
+        generateMatches: Map<String, List<GenerateMatch>>
+    ): ModificationTask? {
+        val specs = (fileToSpecs[targetFile] ?: emptyList()).toMutableList()
+        val transforms = transformMatches[targetFile] ?: emptyList()
+        val documents = documentMatches[targetFile] ?: emptyList()
+        val generates = generateMatches[targetFile] ?: emptyList()
+        val targetFileObj = File(targetFile)
+        val relativeTarget = try {
+            targetFileObj.relativeTo(root.absoluteFile)
+        } catch (e: IllegalArgumentException) {
+            log.warn("Target file is outside root: $targetFile")
+            return null
+        }
+        try {
+            log.info(
+                "Processing ${relativeTarget} based on ${specs.size} spec(s), ${transforms.size} transform(s), ${documents.size} document(s), and ${generates.size} generate(s): ${
+                    (specs.map { it.docFile.name } +
+                            transforms.map { "${it.spec.docFile.name}(${it.sourceFile.name})" } +
+                            documents.map { "${it.docSpec.docFile.name}(${it.supportingFiles.size} files)" } +
+                            generates.map { "${it.spec.docFile.name}(${it.inputFiles.size} inputs)" }
+                            ).joinToString(", ")
+                }")
+            val source = primarySource(transforms, specs, documents, generates) ?: return null
+            val relatedFiles = allRelatedFiles(specs, targetFileObj, transforms, documents, generates)
+            val effectiveUpdateMode = resolveUpdateMode(specs, transforms, documents, generates)
+            val prepareResult = effectiveUpdateMode.prepare(
+                source = source,
+                target = targetFileObj,
+                relatedFiles = relatedFiles
+            )
+            if (prepareResult == null) {
+                log.debug("Update mode returned null for {}, skipping", relativeTarget)
+                return null
+            }
+            if (prepareResult.shouldDeleteTarget && targetFileObj.exists()) {
+                log.info("Deleting target file before processing: ${targetFileObj.absolutePath}")
+                targetFileObj.delete()
+            }
+            val taskType = resolveTaskType(specs, transforms, documents, generates)
+            val targetFile1 = File(targetFile)
+            return ModificationTask(
+                data = ModificationTaskConfig(
+                    files = listOf(targetFileObj.absolutePath),
+                    related_files = relatedFiles.map { file ->
+                        file.canonicalFile.absolutePath
+                    }.distinct(),
+                    task_description = buildCombinedTaskDescription(
+                        specs,
+                        transforms,
+                        documents,
+                        generates,
+                        targetFile1,
+                        taskType
+                    ),
+                    root = root,
+                    taskConfigOverrides = resolveTaskConfigJson(specs, transforms, documents, generates),
+                    data = this.run {
+                        // First check for explicit data_file in frontmatter
+                        val explicitDataFile = specs.firstNotNullOfOrNull { spec ->
+                            (spec.frontmatter["data_file"] as? String)?.let { dataPath ->
+                                spec.docFile.parentFile.resolve(dataPath).absolutePath
                             }
                         }
-                    ),
-                    message = buildString {
+                        // If no explicit data_file, check if we have a transform with a JSON source file
+                        val implicitDataFile = if (explicitDataFile == null && transforms.isNotEmpty()) {
+                            transforms.firstOrNull {
+                                it.sourceFile.extension.equals(
+                                    "json",
+                                    ignoreCase = true
+                                )
+                            }?.sourceFile?.absolutePath
+                        } else null
+                        (explicitDataFile ?: implicitDataFile)?.let { dataFilePath ->
+                            val dataFile = File(dataFilePath)
+                            if (dataFile.exists()) {
+                                JsonUtil.fromJson(dataFile.readText(), Map::class.java) as Map<String, Any>
+                            } else {
+                                log.warn("Data file not found: $dataFilePath")
+                                null
+                            }
+                        }
+                    }
+                ),
+                message = { root : File ->
+                    buildString {
                         when {
                             FileTaskExecutionConfig::class.java.isAssignableFrom(taskType.executionConfigClass) -> this.appendLine(
                                 "Execute task."
@@ -387,7 +523,7 @@ class DocProcessor(
 
                             else -> {
                                 relatedFiles.forEach { relatedFile ->
-                                    this.appendLine("# Context file: $relatedFile")
+                                    this.appendLine("# Context file: ${relatedFile.relativeTo(root)}")
                                     this.appendLine("```")
                                     val resolvedFile = if (File(relatedFile.toString()).isAbsolute) {
                                         File(relatedFile.toString())
@@ -403,16 +539,50 @@ class DocProcessor(
                                 }
                             }
                         }
-                    },
-                    patchProcessor = prepareResult.patchProcessor,
-                    taskType = taskType
-                )
+                    }
+                },
+                patchProcessor = prepareResult.patchProcessor,
+                taskType = taskType,
+            )
+        } catch (e: Exception) {
+            log.error("Error processing ${relativeTarget}", e)
+            return null
+        }
+    }
+
+    /**
+     * Resolve task config JSON overrides from frontmatter 'task_config_json' paths.
+     * Loads the referenced JSON file and returns its contents as a map, or null if not specified.
+     */
+    private fun resolveTaskConfigJson(
+        specs: List<DocSpec>,
+        transforms: List<TransformMatch>,
+        documents: List<DocumentMatch>,
+        generates: List<GenerateMatch>
+    ): Map<String, Any>? {
+        val configJsonPath = specs.firstNotNullOfOrNull { spec ->
+            spec.taskConfigJson?.let { spec.docFile.parentFile.resolve(it) }
+        } ?: transforms.firstNotNullOfOrNull { match ->
+            match.spec.taskConfigJson?.let { match.spec.docFile.parentFile.resolve(it) }
+        } ?: documents.firstNotNullOfOrNull { docMatch ->
+            docMatch.docSpec.taskConfigJson?.let { docMatch.docSpec.docFile.parentFile.resolve(it) }
+        } ?: generates.firstNotNullOfOrNull { genMatch ->
+            genMatch.spec.taskConfigJson?.let { genMatch.spec.docFile.parentFile.resolve(it) }
+        }
+        return if (configJsonPath != null && configJsonPath.exists()) {
+            try {
+                @Suppress("UNCHECKED_CAST")
+                JsonUtil.fromJson(configJsonPath.readText(), Map::class.java) as Map<String, Any>
             } catch (e: Exception) {
-                log.error("Error processing ${relativeTarget}", e)
+                log.warn("Failed to parse task config JSON: ${configJsonPath.absolutePath}", e)
                 null
             }
-        }.filterNotNull()
-        return map
+        } else {
+            if (configJsonPath != null) {
+                log.warn("Task config JSON file not found: ${configJsonPath.absolutePath}")
+            }
+            null
+        }
     }
 
     /**
@@ -596,9 +766,9 @@ class DocProcessor(
         val processedFiles = mutableSetOf<String>()
 
         for (mod in fileMods) {
-            val targetFile = mod.data.files?.firstOrNull()?.let { File(root, it).canonicalPath }
+            val targetFile = mod.data.relative_files?.firstOrNull()?.let { File(root, it).canonicalPath }
             if (targetFile != null) {
-                val relatedFiles = mod.data.related_files?.mapNotNull { relatedPath ->
+                val relatedFiles = mod.data.relative_related_files?.mapNotNull { relatedPath ->
                     try {
                         File(root, relatedPath).canonicalPath
                     } catch (e: Exception) {
@@ -640,10 +810,11 @@ class DocProcessor(
     fun runAll(
         fileMods: List<ModificationTask>,
         pool: FixedConcurrencyProcessor = newProcessor(),
+        cancelFlag: AtomicBoolean = AtomicBoolean(false),
         onNewSession: (Session) -> Unit = { _ -> }
     ): Array<Session> {
         val sessions = mutableListOf<Session>()
-        separateQueues(fileMods).map { sortByDependencies(it) }.filter { it.isNotEmpty() }.map { fileMods ->
+        separateQueues(fileMods).map { sortByDependencies(it) }.filter { it.isNotEmpty() }.map { mods ->
             pool.submit {
                 object : UnifiedHarness(
                     fastModel = fastModel,
@@ -655,28 +826,11 @@ class DocProcessor(
                         .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
                         .apply { mkdirs() }
                 }.use { harness ->
-                    fileMods.map { mod ->
-                        val newRoot = mod.data.files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
-                        val mod = mod.rebase(root, newRoot)
-                        harness.resetSession()
-                        harness.runTask(
-                            taskType = mod.taskType,
-                            timeoutMinutes = 30,
-                            message = mod.message,
-                            executionConfig = executionConfig(mod, harness)
-                        ) { session ->
-                            onNewSession(session)
-                            sessions += session
-                            harness.createSettings(
-                                session = session,
-                                autoFix = autoFix,
-                                typeConfig = TaskTypeConfig(task_type = mod.taskType.name),
-                                workingDir = newRoot.toString()
-                            ).apply {
-                                processor = mod.patchProcessor
-                            }
-                        }
+                    if (cancelFlag.get()) {
+                        log.info("Cancellation requested, skipping execution of remaining tasks")
+                        return@submit
                     }
+                    mods.map { mod -> run(mod, harness, cancelFlag, onNewSession, sessions) }
                 }
             }
         }.toTypedArray().let {
@@ -685,23 +839,60 @@ class DocProcessor(
         return sessions.toTypedArray()
     }
 
-    private fun executionConfig(
+    fun run(
+        mod: ModificationTask,
+        harness: UnifiedHarness,
+        cancelFlag: AtomicBoolean,
+        onNewSession: (Session) -> Unit,
+        sessions: MutableList<Session>
+    ) {
+        val mod = mod.rebase(root, mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root)
+        harness.resetSession()
+        if (cancelFlag.get()) {
+            log.info("Cancellation requested, skipping execution of remaining tasks")
+            throw CancellationException("Execution cancelled")
+        }
+        harness.runTask(
+            taskType = mod.taskType,
+            timeoutMinutes = 30,
+            message = mod.message(root),
+            executionConfig = executionConfig(mod, harness)
+        ) { session ->
+            if (cancelFlag.get()) {
+                log.info("Cancellation requested, skipping execution of remaining tasks")
+                throw CancellationException("Execution cancelled")
+            }
+            onNewSession(session)
+            sessions += session
+            harness.createSettings(
+                session = session,
+                autoFix = autoFix,
+                typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
+                workingDir = mod.data.root.toString()
+            ).apply {
+                processor = mod.patchProcessor
+            }
+        }
+    }
+
+    fun executionConfig(
         mod: ModificationTask,
         harness: UnifiedHarness
     ): TaskExecutionConfig {
-        val newRoot = mod.data.files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
+        val newRoot = mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
         return if (FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass)) {
             // For file-based tasks, directly cast the config
-            val cfgJson = mapOf(
+            val baseCfgJson = mapOf(
                 "task_type" to mod.taskType.name,
             ) + mod.data.jsonCast<Map<String, Any>>()
+            val cfgJson = mod.data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
             cfgJson.jsonCast(mod.taskType.executionConfigClass)
         } else {
             // For non-file tasks (e.g. ImageVariation), use requestToTask to generate proper config
             val orchestrationConfig = harness.createSettings(
                 session = Session.newGlobalID(),
                 autoFix = true,
-                typeConfig = TaskTypeConfig(task_type = mod.taskType.name),
+                typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
                 workingDir = newRoot.toString()
             )
             val defaultModel = orchestrationConfig.defaultSmart
@@ -709,15 +900,16 @@ class DocProcessor(
             val contextMessages = buildList {
                 add("Task type: ${mod.taskType.name}")
                 add("Task description: ${mod.data.task_description}")
-                mod.data.files?.forEach { add("Target file: $it") }
-                mod.data.related_files?.forEach { relatedFile ->
+                mod.data.relative_files?.forEach { add("Target file: $it") }
+                mod.data.relative_related_files?.forEach { relatedFile ->
                     val resolvedFile =
                         if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
                     if (resolvedFile.exists()) {
                         add("Related file ($relatedFile):\n```\n${resolvedFile.readText()}\n```")
                     }
                 }
-                if (mod.message.isNotBlank()) add(mod.message)
+                val message = mod.message(mod.data.root)
+                if (message.isNotBlank()) add(message)
             }
             val (_, taskConfig) = ConversationalMode.requestToTask(
                 defaultModel = defaultModel,
@@ -726,7 +918,8 @@ class DocProcessor(
                 orchestrationConfig = orchestrationConfig,
                 prompt = "Execute the following task based on the provided context. Task type: ${mod.taskType.name}",
                 history = contextMessages,
-                singleStage = true
+                singleStage = true,
+                taskTypes = listOf(mod.taskType)
             )
             taskConfig
         }
@@ -784,7 +977,7 @@ class DocProcessor(
                     (dependencies[task] ?: emptyList()).count { it in remaining }
                 }
                 if (taskToBreak != null) {
-                    log.warn("Dependency cycle detected, breaking cycle by processing: ${taskToBreak.data.files?.firstOrNull()}")
+                    log.warn("Dependency cycle detected, breaking cycle by processing: ${taskToBreak.data.relative_files?.firstOrNull()}")
                     queue.add(taskToBreak)
                     remaining.remove(taskToBreak)
                 } else {

@@ -328,12 +328,12 @@ class IllustrateDocumentAction : BaseAction() {
         fun getTaskConfig(): IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData {
             return IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData(
                 files = listOf(documentFile.relativeTo(root).path),
-                maxImages = maxImagesSpinner.value as Int,
-                imageFormat = imageFormatCombo.selectedItem as String,
-                autoInsert = autoInsertCheckbox.isSelected,
-                imageInstructions = imageInstructionsField.text.takeIf { it.isNotBlank() },
-                composerDirective = composerDirectiveField.text.takeIf { it.isNotBlank() },
-                integratorDirective = integratorDirectiveField.text.takeIf { it.isNotBlank() },
+                max_images = maxImagesSpinner.value as Int,
+                image_format = imageFormatCombo.selectedItem as String,
+                auto_insert = autoInsertCheckbox.isSelected,
+                image_instructions = imageInstructionsField.text.takeIf { it.isNotBlank() },
+                composer_directive = composerDirectiveField.text.takeIf { it.isNotBlank() },
+                integrator_directive = integratorDirectiveField.text.takeIf { it.isNotBlank() },
                 task_description = taskDescriptionField.text,
                 state = TaskState.Pending
             )
