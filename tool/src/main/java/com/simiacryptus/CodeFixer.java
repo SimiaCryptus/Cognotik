@@ -13,7 +13,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Objects;
 
-import static com.simiacryptus.CognotikUtils.*;
+import static com.simiacryptus.cognotik.util.CognotikUtils.*;
 
 @SuppressWarnings("unused")
 public record CodeFixer(String taskDescription, List<String> relatedFiles) {

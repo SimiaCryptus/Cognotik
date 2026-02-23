@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.util.UnifiedHarness;
 import java.io.File;
 import java.util.ArrayList;
 
-import static com.simiacryptus.CognotikUtils.configureEnvironmentalKeys;
+import static com.simiacryptus.cognotik.util.CognotikUtils.configureEnvironmentalKeys;
 
 public record DocumentationUpdater(
         String overwriteMode,

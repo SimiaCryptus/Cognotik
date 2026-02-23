@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.simiacryptus.CognotikUtils.*;
+import static com.simiacryptus.cognotik.util.CognotikUtils.*;
 
 @SuppressWarnings("unused")
 public record CodeImplementer(String prompt, int port, boolean headless, int timeout, String workspaceRoot) {

@@ -8,8 +8,8 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Objects;
 
-import static com.simiacryptus.CognotikUtils.configureEnvironmentalKeys;
-import static com.simiacryptus.CognotikUtils.relativize;
+import static com.simiacryptus.cognotik.util.CognotikUtils.configureEnvironmentalKeys;
+import static com.simiacryptus.cognotik.util.CognotikUtils.relativize;
 
 public record CodeReviewer(
         String docsArg,
