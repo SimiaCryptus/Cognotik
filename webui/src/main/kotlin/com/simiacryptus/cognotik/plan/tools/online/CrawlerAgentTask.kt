@@ -5,9 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
-import com.simiacryptus.cognotik.util.crawl.RobotsTxtParser
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.AbstractTask
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.crawl.RobotsTxtParser
 import com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod
 import com.simiacryptus.cognotik.util.crawl.fetch.FetchStrategy
 import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy
@@ -15,13 +21,6 @@ import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy.Pa
 import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy.ProcessingContext
 import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType
 import com.simiacryptus.cognotik.util.crawl.seed.SeedMethod
-import com.simiacryptus.cognotik.plan.tools.AbstractTask
-import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
-import com.simiacryptus.cognotik.plan.tools.TaskType
-import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -32,12 +31,8 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.PriorityQueue
-import java.util.concurrent.CompletionService
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ExecutorCompletionService
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.TimeUnit
+import java.util.*
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 import kotlin.math.min
@@ -50,42 +45,31 @@ class CrawlerAgentTask(
     orchestrationConfig, planTask
 ) {
 
+    @Suppress("PropertyName")
     class CrawlerTaskTypeConfig(
-        @Description("Method to seed the crawler. One of: GoogleProxy, DirectUrls (optional, default: GoogleProxy)") var seed_method: com.simiacryptus.cognotik.util.crawl.seed.SeedMethod? = _root_ide_package_.com.simiacryptus.cognotik.util.crawl.seed.SeedMethod.GoogleProxy,
-        @Description("Method used to fetch content from URLs. One of: HttpClient, Selenium (optional, default: HttpClient)") var fetch_method: com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod? = _root_ide_package_.com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod.HttpClient,
-        @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType? = _root_ide_package_.com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType.DefaultSummarizer,
+        @Description("Method to seed the crawler. One of: GoogleProxy, DirectUrls (optional, default: GoogleProxy)") var seed_method: SeedMethod = SeedMethod.GoogleProxy,
+        @Description("Method used to fetch content from URLs. One of: HttpClient, Selenium (optional, default: HttpClient)") var fetch_method: FetchMethod = FetchMethod.HttpClient,
+        @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: ProcessingStrategyType = ProcessingStrategyType.DefaultSummarizer,
         @Description("Whitespace-separated list of allowed domains or URL prefixes to restrict crawling scope. If set, only URLs matching these domains/prefixes will be crawled (optional)") var allowed_domains: String? = null,
-        @Description("Whether to respect robots.txt rules when crawling (default: true)") var respect_robots_txt: Boolean? = true,
-        @Description("Maximum number of pages to process in a single task. Must be greater than 0 (optional, default: 30)") var max_pages_per_task: Int? = null,
-        @Description("Maximum depth to crawl from seed pages. Must be non-negative (optional, default: 3)") var max_depth: Int? = null,
-        @Description("Maximum queue size to prevent memory issues. Must be greater than 0 (optional, default: 100)") var max_queue_size: Int? = null,
-        @Description("Number of pages to process concurrently. Must be greater than 0 (optional, default: 3)") var concurrent_page_processing: Int? = null,
-        @Description("Maximum characters in final summary output. Must be greater than 0 (optional, default: 15000)") var max_final_output_size: Int? = null,
-        @Description("Minimum content length in characters to process a page. Pages shorter than this are skipped (optional, default: 500)") var min_content_length: Int? = null,
-        @Description("Whether to automatically follow links found in analyzed pages (optional)") var follow_links: Boolean? = null,
-        @Description("Whether to allow crawling the same page multiple times (optional)") var allow_revisit_pages: Boolean? = null,
-        @Description("Whether to generate a comprehensive summary of all results (optional)") var create_final_summary: Boolean? = null,
+        @Description("Whether to respect robots.txt rules when crawling (default: true)") var respect_robots_txt: Boolean = true,
+        @Description("Maximum number of pages to process in a single task. Must be greater than 0 (optional, default: 30)") var max_pages_per_task: Int = 30,
+        @Description("Maximum depth to crawl from seed pages. Must be non-negative (optional, default: 3)") var max_depth: Int = 3,
+        @Description("Maximum queue size to prevent memory issues. Must be greater than 0 (optional, default: 100)") var max_queue_size: Int = 100,
+        @Description("Number of pages to process concurrently. Must be greater than 0 (optional, default: 3)") var concurrent_page_processing: Int = 3,
+        @Description("Maximum characters in final summary output. Must be greater than 0 (optional, default: 15000)") var max_final_output_size: Int = 30000,
+        @Description("Minimum content length in characters to process a page. Pages shorter than this are skipped (optional, default: 500)") var min_content_length: Int = 500,
+        @Description("Whether to automatically follow links found in analyzed pages (optional)") var follow_links: Boolean = true,
+        @Description("Whether to allow crawling the same page multiple times (optional)") var allow_revisit_pages: Boolean = false,
+        @Description("Whether to generate a comprehensive summary of all results (optional)") var create_final_summary: Boolean = true,
         task_type: String = "CrawlerAgent",
         model: ApiChatModel? = null,
         name: String? = task_type,
     ) : TaskTypeConfig(task_type = task_type, name = name, model = model), ValidatedObject {
         override fun validate(): String? {
-            if (max_pages_per_task != null && max_pages_per_task!! <= 0) {
-                max_pages_per_task = null
-            }
-            if (max_depth != null && max_depth!! < 0) {
+            if (max_depth < 0) {
                 max_depth = 0
             }
-            if (max_queue_size != null && max_queue_size!! <= 0) {
-                max_queue_size = null
-            }
-            if (concurrent_page_processing != null && concurrent_page_processing!! <= 0) {
-                concurrent_page_processing = null
-            }
-            if (max_final_output_size != null && max_final_output_size!! <= 0) {
-                max_final_output_size = null
-            }
-            if (min_content_length != null && min_content_length!! < 0) {
+            if (min_content_length < 0) {
                 min_content_length = 0
             }
             return ValidatedObject.validateFields(this)
@@ -124,8 +108,8 @@ class CrawlerAgentTask(
 
     var selenium: Selenium2S3? = null
     val urlContentCache = ConcurrentHashMap<String, String>()
-    private val robotsTxtParser = _root_ide_package_.com.simiacryptus.cognotik.util.crawl.RobotsTxtParser()
-    private val pageQueueLock = Object()
+    private val robotsTxtParser = RobotsTxtParser()
+    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") private val pageQueueLock = Object()
     private val pageQueue = PriorityQueue<LinkData>(compareByDescending { it.calculatePriority() })
     private val seenUrls = ConcurrentHashMap.newKeySet<String>()
 
@@ -141,16 +125,14 @@ class CrawlerAgentTask(
             val typeConfig = this@CrawlerAgentTask.typeConfig
             if (null != typeConfig) {
                 when (typeConfig.processing_strategy) {
-                    _root_ide_package_.com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType.DefaultSummarizer -> {
+                    ProcessingStrategyType.DefaultSummarizer -> {
                         // No additional notes for DefaultSummarizer
                     }
 
                     else -> {
                         appendLine(
-                            "** Using processing strategy: ${typeConfig.processing_strategy?.name} - ${
-                                typeConfig.processing_strategy?.createStrategy()?.description?.indent(
-                                    "  "
-                                )
+                            "** Using processing strategy: ${typeConfig.processing_strategy.name} - ${
+                                typeConfig.processing_strategy.createStrategy().description.indent("  ")
                             }"
                         )
                     }
@@ -231,10 +213,8 @@ class CrawlerAgentTask(
         val transcriptStream = task.newFileOutputStream(transcriptFile())
         try {
             log.info("Starting CrawlerAgentTask.run() with messages count: ${messages.size}")
-            val chatInterface = (
-                    typeConfig?.model?.let { this@CrawlerAgentTask.orchestrationConfig.instance(it) }
-                        ?: this@CrawlerAgentTask.defaultFast
-                    ).getChildClient(task)
+            val chatInterface = (typeConfig?.model?.let { this@CrawlerAgentTask.orchestrationConfig.instance(it) }
+                ?: this@CrawlerAgentTask.defaultFast).getChildClient(task)
             resultFn(innerRun(agent, messages, task, orchestrationConfig, transcriptStream, chatInterface))
         } catch (e: Throwable) {
             log.error("Unhandled exception in CrawlerAgentTask", e)
@@ -284,7 +264,7 @@ class CrawlerAgentTask(
         try {
             val typeConfig = typeConfig ?: throw RuntimeException("Missing type config")
             // Initialize processing strategy
-            val strategyType = typeConfig.processing_strategy ?: ProcessingStrategyType.DefaultSummarizer
+            val strategyType = typeConfig.processing_strategy
             val processingStrategy = strategyType.createStrategy()
             log.info("Using processing strategy: ${strategyType.name} - ${processingStrategy.javaClass.simpleName}")
 
@@ -294,7 +274,7 @@ class CrawlerAgentTask(
                     executionConfig?.direct_urls?.joinToString(
                         ", "
                     ) ?: ""
-                }', max_pages=${typeConfig.max_pages_per_task ?: 30}"
+                }', max_pages=${typeConfig.max_pages_per_task}"
             )
             val webSearchDir = File(agent.root.toFile(), ".websearch")
             if (!webSearchDir.exists()) {
@@ -314,16 +294,11 @@ class CrawlerAgentTask(
 
             val seedMethod = when {
                 !executionConfig?.direct_urls.isNullOrEmpty() -> SeedMethod.DirectUrls
-                typeConfig.seed_method != null -> typeConfig.seed_method
-                !executionConfig?.search_query.isNullOrBlank() -> SeedMethod.GoogleProxy
-                else -> {
-                    log.error("No seed method specified and no search query or direct URLs provided")
-                    return "Error: No seed method specified and no search query or direct URLs provided"
-                }
+                else -> typeConfig.seed_method
             }
             log.info("Using seed method: $seedMethod")
             val seedItems = try {
-                seedMethod?.createStrategy(this, agent.user)?.getSeedItems(executionConfig, orchestrationConfig)
+                seedMethod.createStrategy(this, agent.user).getSeedItems(executionConfig, orchestrationConfig)
             } catch (e: Exception) {
                 log.error("Failed to get seed items using method: $seedMethod", e)
                 task.error(e)
@@ -357,7 +332,7 @@ class CrawlerAgentTask(
             val seedLinksContent = buildString {
                 appendLine("# Seed Links")
                 appendLine()
-                appendLine("**Method:** ${seedMethod?.name}")
+                appendLine("**Method:** ${seedMethod.name}")
                 appendLine()
                 appendLine("**Total Seeds:** ${seedItems.size}")
                 appendLine()
@@ -396,10 +371,7 @@ class CrawlerAgentTask(
                         url = item.link, title = item.title, tags = item.tags, relevance_score = item.relevance_score
                     ).let { linkData ->
                         log.debug("Adding seed item to page queue: {}", linkData)
-                        if (!addToQueue(
-                                linkData, typeConfig.max_depth ?: 3, typeConfig.max_queue_size ?: 100
-                            )
-                        ) {
+                        if (!addToQueue(linkData, typeConfig.max_depth, typeConfig.max_queue_size)) {
                             log.warn("No valid seed items found after processing")
                         }
                     }
@@ -412,8 +384,8 @@ class CrawlerAgentTask(
             }
 
             val analysisResultsMap = ConcurrentHashMap<Int, String>()
-            val maxPages = typeConfig.max_pages_per_task ?: 30
-            val concurrentProcessing = typeConfig.concurrent_page_processing ?: 3
+            val maxPages = typeConfig.max_pages_per_task
+            val concurrentProcessing = typeConfig.concurrent_page_processing
             log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing")
             // Create processing context
             val processingContext = ProcessingContext(
@@ -444,8 +416,8 @@ class CrawlerAgentTask(
 
             try {
                 val loopIterations = AtomicInteger(0)
-                val maxDepthConfig = typeConfig.max_depth ?: 3
-                val maxQueueSizeConfig = typeConfig.max_queue_size ?: 100
+                val maxDepthConfig = typeConfig.max_depth
+                val maxQueueSizeConfig = typeConfig.max_queue_size
                 val maxIterations = 1000
                 log.debug("Starting crawling loop: maxPages=$maxPages, maxErrors=$maxErrors, maxIterations=$maxIterations")
                 while (shouldContinue(maxPages, errorCount, maxErrors, loopIterations, activeTasks)) {
@@ -577,8 +549,7 @@ class CrawlerAgentTask(
                     appendLine("# Final Output")
                     appendLine(
                         processingStrategy.generateFinalOutput(
-                            allPageResults.values.toList(),
-                            processingContext
+                            allPageResults.values.toList(), processingContext
                         )
                     )
                     appendLine("# Remaining Queue")
@@ -615,8 +586,7 @@ class CrawlerAgentTask(
                         log.debug("Failed to write fallback error to transcript", ex)
                     }
                 }
-                if (typeConfig.create_final_summary != false && analysisResults.length > (typeConfig.max_final_output_size
-                        ?: 15000)
+                if (typeConfig.create_final_summary && analysisResults.length > typeConfig.max_final_output_size
                 ) {
                     createFinalSummary(analysisResults, chatInterface)
                 } else {
@@ -673,7 +643,7 @@ class CrawlerAgentTask(
                 appendLine()
                 appendLine("**Direct URLs:** ${executionConfig?.direct_urls?.joinToString(", ") ?: "N/A"}")
                 appendLine()
-               appendLine("<details><summary>Execution Configuration (click to expand)</summary>")
+                appendLine("<details><summary>Execution Configuration (click to expand)</summary>")
                 appendLine()
                 appendLine(executionConfig?.content_queries?.toJson()?.let { "\n```json\n${it.indent()}\n```" }
                     ?: "N/A")
@@ -753,8 +723,7 @@ class CrawlerAgentTask(
         pageQueue.add(
             newLink.copy(
                 relevance_score = newLink.relevance_score.coerceIn(1.0, 100.0) + Random.nextInt(
-                    -500,
-                    500
+                    -500, 500
                 ) * 0.001 // Slight randomness to prevent priority ties
             )
         )
@@ -931,8 +900,7 @@ class CrawlerAgentTask(
                                     "### Processing Page ${currentIndex}: [$title]($url) (priority=${"%0.3f".format(page.calculatePriority())})\n\n"
                                 )
                                 writeToTranscript(
-                                    stream,
-                                    "**Started:** ${
+                                    stream, "**Started:** ${
                                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
                                     }\n\n"
                                 )
@@ -952,8 +920,8 @@ class CrawlerAgentTask(
                         statusBuffer?.append("Processing content...")
                         task.update()
                         log.debug("Fetched content for '$url': ${content.length} characters")
-                        if (content.length < (typeConfig.min_content_length ?: 500)) {
-                            log.info("Content too short for '$url': ${content.length} < ${typeConfig.min_content_length ?: 500} chars, skipping")
+                        if (content.length < typeConfig.min_content_length) {
+                            log.info("Content too short for '$url': ${content.length} < ${typeConfig.min_content_length} chars, skipping")
                             this.appendLine("*Content too short (${content.length} chars), skipping this result*")
                             this.appendLine()
                             // Record as irrelevant for strategy
@@ -985,10 +953,7 @@ class CrawlerAgentTask(
                             this.appendLine("*Error processing this result: ${pageResult.metadata["error"]}*")
                             this.appendLine()
                             saveStrategyResult(
-                                webSearchDir.resolve("error").apply { mkdirs() },
-                                url,
-                                pageResult,
-                                currentIndex
+                                webSearchDir.resolve("error").apply { mkdirs() }, url, pageResult, currentIndex
                             )
                             task.add(
                                 "*Error processing this result: ${pageResult.metadata["error"]}*".renderMarkdown(
@@ -1004,10 +969,7 @@ class CrawlerAgentTask(
                             this.appendLine("*Irrelevant content, skipping this result*")
                             this.appendLine()
                             saveStrategyResult(
-                                webSearchDir.resolve("irrelevant").apply { mkdirs() },
-                                url,
-                                pageResult,
-                                currentIndex
+                                webSearchDir.resolve("irrelevant").apply { mkdirs() }, url, pageResult, currentIndex
                             )
                             task.add("*Irrelevant content, skipping this result*".renderMarkdown(true))
                             statusBuffer?.setLength(0); task.update()
@@ -1101,7 +1063,9 @@ class CrawlerAgentTask(
                                 task.add(skippedBlock.renderMarkdown(true))
                                 this.appendLine()
                             }
-                            if (addedLinksBuffer.isNotEmpty()) task.add(addedLinksBuffer.toString().renderMarkdown(true))
+                            if (addedLinksBuffer.isNotEmpty()) task.add(
+                                addedLinksBuffer.toString().renderMarkdown(true)
+                            )
 
                             log.info("Added $addedCount new links to queue from '$url' (filtered from ${linkData.size} total)")
                             // Add summary
@@ -1122,16 +1086,15 @@ class CrawlerAgentTask(
                                             val wasAdded = seenUrls.contains(link.url)
                                             appendLine(
                                                 "- ${if (wasAdded) "✅" else "⏭️"} **[${link.title ?: "Untitled"}](${link.url})** - Relevance: ${link.relevance_score} ${
-                                                    link.tags?.joinToString(
-                                                        ", "
-                                                    )?.let { " - Tags: $it" } ?: ""
-                                                }")
+                                                link.tags?.joinToString(
+                                                    ", "
+                                                )?.let { " - Tags: $it" } ?: ""
+                                            }")
                                         }
                                         appendLine()
                                         appendLine("</details>")
                                         appendLine()
-                                    }
-                                )
+                                    })
                             }
                         }
                     } catch (e: Exception) {
@@ -1149,7 +1112,7 @@ class CrawlerAgentTask(
                                 writeToTranscript(stream, buildString {
                                     appendLine("**Error:** ${e.message}")
                                     appendLine()
-                                    if(verbose) {
+                                    if (verbose) {
                                         appendLine("<details><summary>Stack Trace</summary>")
                                         appendLine()
                                         appendLine("```")
@@ -1203,8 +1166,7 @@ class CrawlerAgentTask(
                             "**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))}\n"
                         )
                         writeToTranscript(
-                            stream,
-                            "**Processing Time:** ${System.currentTimeMillis() - pageStartTime}ms\n\n---\n\n"
+                            stream, "**Processing Time:** ${System.currentTimeMillis() - pageStartTime}ms\n\n---\n\n"
                         )
                     } catch (e: Exception) {
                         log.debug("Failed to write page completion to transcript (stream may be closed)", e)
@@ -1239,9 +1201,7 @@ class CrawlerAgentTask(
 
             // Check if URL is restricted by allowed_domains whitelist
             val allowedDomains =
-                (
-                    typeConfig.allowed_domains?.split(Regex("\\s+"))?.filter { it.isNotBlank() } ?: listOf()
-                ).toSet()
+                (typeConfig.allowed_domains?.split(Regex("\\s+"))?.filter { it.isNotBlank() } ?: listOf()).toSet()
             if (allowedDomains.isNotEmpty()) {
                 val isAllowed = allowedDomains.any { allowedDomainOrPrefix ->
                     val normalizedAllowed = allowedDomainOrPrefix.lowercase().trim()
@@ -1284,10 +1244,10 @@ class CrawlerAgentTask(
         log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
 
         val typeConfig = typeConfig ?: throw RuntimeException("Missing type config")
-        if (analysisResults.length < (typeConfig.max_final_output_size ?: 15000) * 1.2) {
+        if (analysisResults.length < typeConfig.max_final_output_size * 1.2) {
             log.info("Analysis results only slightly exceed max size, truncating instead of summarizing")
             return analysisResults.substring(
-                0, min(analysisResults.length, typeConfig.max_final_output_size ?: 15000)
+                0, min(analysisResults.length, typeConfig.max_final_output_size)
             ) + "\n\n---\n\n*Note: Some content has been truncated due to length limitations.*"
         }
 
@@ -1311,7 +1271,7 @@ class CrawlerAgentTask(
             appendLine("Organize information by themes rather than by source when possible.")
             appendLine("Use markdown formatting with headers, bullet points, and emphasis where appropriate.")
             appendLine("Include the most important links that should be followed up on.")
-            appendLine("Keep your response under ${(typeConfig.max_final_output_size ?: 15000) / 1000}K characters.")
+            appendLine("Keep your response under ${typeConfig.max_final_output_size / 1000}K characters.")
         }
         val summary = ChatAgent(
             prompt = summaryPrompt,
@@ -1339,9 +1299,7 @@ class CrawlerAgentTask(
     }
 
     private fun addPageQueueDetailsTab(
-        tabs: TabbedDisplay,
-        processedCount: Int,
-        errorCount: Int
+        tabs: TabbedDisplay, processedCount: Int, errorCount: Int
     ) {
         try {
             val queueDetailsTask = tabs.task.newTask()
@@ -1437,9 +1395,7 @@ class CrawlerAgentTask(
             log.debug("Using cached content for URL: $url (cache size: ${urlContentCache.size})")
             return urlContentCache[url]!!
         }
-        log.debug(
-            "Fetching content for URL: {} using method: {}", url, typeConfig.fetch_method ?: FetchMethod.HttpClient
-        )
+        log.debug("Fetching content for URL: {} using method: {}", url, typeConfig.fetch_method)
 
         return try {
             val content = fetchStrategy.fetch(url, webSearchDir, index, pool, orchestrationConfig)
@@ -1549,7 +1505,8 @@ class CrawlerAgentTask(
         private val log = LoggerFactory.getLogger(CrawlerAgentTask::class.java)
         private val LINK_PATTERN = Pattern.compile("""\[([^]]+)]\(([^)]+)\)""")
         private val VALID_URL_PATTERN = Pattern.compile("^(http|https)://.*")
-        @JvmStatic val CrawlerAgent = TaskType(
+        @JvmStatic
+        val CrawlerAgent = TaskType(
             "CrawlerAgent",
             "Online & Search",
             CrawlerAgentTask::class.java,

@@ -214,6 +214,7 @@ class DocProcessor(
         val related_files: List<String>? = null,
         val task_description: String = "",
         val data: Map<String, Any>? = null,
+        val taskConfigOverrides: Map<String, Any>? = null,
     ) {
         val relative_files: List<String>? get() = files?.map { filePath ->
             try {
@@ -236,7 +237,8 @@ class DocProcessor(
             files = files,
             related_files = related_files,
             task_description = task_description,
-            data = data
+            data = data,
+            taskConfigOverrides = taskConfigOverrides
         )
     }
 
@@ -247,6 +249,11 @@ class DocProcessor(
         val shouldDeleteTarget: Boolean = false,
         val taskType: TaskType<*, *> = FileModification
     ) {
+        val typeConfig: TaskTypeConfig get() {
+            val jsonCast = data.taskConfigOverrides?.jsonCast<TaskTypeConfig>()
+            return jsonCast ?: taskType.newSettings() ?: TaskTypeConfig(task_type = taskType.name)
+        }
+
         fun rebase(prevRoot: File, newRoot: File) = if (newRoot == prevRoot) this
         else ModificationTask(
             data = data.rebase(newRoot),
@@ -479,6 +486,7 @@ class DocProcessor(
                         taskType
                     ),
                     root = root,
+                    taskConfigOverrides = resolveTaskConfigJson(specs, transforms, documents, generates),
                     data = this.run {
                         // First check for explicit data_file in frontmatter
                         val explicitDataFile = specs.firstNotNullOfOrNull { spec ->
@@ -534,11 +542,46 @@ class DocProcessor(
                     }
                 },
                 patchProcessor = prepareResult.patchProcessor,
-                taskType = taskType
+                taskType = taskType,
             )
         } catch (e: Exception) {
             log.error("Error processing ${relativeTarget}", e)
             return null
+        }
+    }
+
+    /**
+     * Resolve task config JSON overrides from frontmatter 'task_config_json' paths.
+     * Loads the referenced JSON file and returns its contents as a map, or null if not specified.
+     */
+    private fun resolveTaskConfigJson(
+        specs: List<DocSpec>,
+        transforms: List<TransformMatch>,
+        documents: List<DocumentMatch>,
+        generates: List<GenerateMatch>
+    ): Map<String, Any>? {
+        val configJsonPath = specs.firstNotNullOfOrNull { spec ->
+            spec.taskConfigJson?.let { spec.docFile.parentFile.resolve(it) }
+        } ?: transforms.firstNotNullOfOrNull { match ->
+            match.spec.taskConfigJson?.let { match.spec.docFile.parentFile.resolve(it) }
+        } ?: documents.firstNotNullOfOrNull { docMatch ->
+            docMatch.docSpec.taskConfigJson?.let { docMatch.docSpec.docFile.parentFile.resolve(it) }
+        } ?: generates.firstNotNullOfOrNull { genMatch ->
+            genMatch.spec.taskConfigJson?.let { genMatch.spec.docFile.parentFile.resolve(it) }
+        }
+        return if (configJsonPath != null && configJsonPath.exists()) {
+            try {
+                @Suppress("UNCHECKED_CAST")
+                JsonUtil.fromJson(configJsonPath.readText(), Map::class.java) as Map<String, Any>
+            } catch (e: Exception) {
+                log.warn("Failed to parse task config JSON: ${configJsonPath.absolutePath}", e)
+                null
+            }
+        } else {
+            if (configJsonPath != null) {
+                log.warn("Task config JSON file not found: ${configJsonPath.absolutePath}")
+            }
+            null
         }
     }
 
@@ -839,9 +882,10 @@ class DocProcessor(
         val newRoot = mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
         return if (FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass)) {
             // For file-based tasks, directly cast the config
-            val cfgJson = mapOf(
+            val baseCfgJson = mapOf(
                 "task_type" to mod.taskType.name,
             ) + mod.data.jsonCast<Map<String, Any>>()
+            val cfgJson = mod.data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
             cfgJson.jsonCast(mod.taskType.executionConfigClass)
         } else {
             // For non-file tasks (e.g. ImageVariation), use requestToTask to generate proper config

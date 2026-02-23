@@ -273,9 +273,7 @@ open class DocProcessorAction(
                                     harness.createSettings(
                                         session = session,
                                         autoFix = docProcessor.autoFix,
-                                        typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(
-                                            task_type = mod.taskType.name
-                                        ),
+                                        typeConfig = mod.typeConfig,
                                         workingDir = mod.data.root.toString()
                                     ).apply {
                                         processor = mod.patchProcessor
