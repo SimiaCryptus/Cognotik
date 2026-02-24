@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.newSettings
+import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
@@ -884,6 +885,13 @@ class DocProcessor(
             // For file-based tasks, directly cast the config
             val baseCfgJson = mapOf(
                 "task_type" to mod.taskType.name,
+            ) + mod.data.jsonCast<Map<String, Any>>()
+            val cfgJson = mod.data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
+            cfgJson.jsonCast(mod.taskType.executionConfigClass)
+        } else if (RenderErbTemplateTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass)) {
+            val baseCfgJson = mapOf(
+                "task_type" to mod.taskType.name,
+                "template_file" to mod.data.related_files?.firstOrNull { it.endsWith(".erb") }
             ) + mod.data.jsonCast<Map<String, Any>>()
             val cfgJson = mod.data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
             cfgJson.jsonCast(mod.taskType.executionConfigClass)

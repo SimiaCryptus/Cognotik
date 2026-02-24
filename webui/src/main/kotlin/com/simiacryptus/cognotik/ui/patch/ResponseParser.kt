@@ -7,6 +7,7 @@ class ResponseParser(private val processor: PatchProcessor) {
     private val log = org.slf4j.LoggerFactory.getLogger(ResponseParser::class.java)
     private val MARKDOWN_HEADER_PATTERN = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
     private val FILE_HEADER_PATTERN = """(?m)^(?:─+|-+)\s*\nFile:\s*(.+?)\s*\n(?:─+|-+)\s*""".toRegex()
+    private val CODE_BLOCK_REGEX = """(?m)^```(\w*)\s*\n([\s\S]*?)^```\s*$""".toRegex(RegexOption.MULTILINE)
   }
 
   fun parse(
@@ -29,36 +30,33 @@ class ResponseParser(private val processor: PatchProcessor) {
       response
     }
 
-    val codeBlocks = processor.extractCodeBlocks(normalizedResponse)
-    if (codeBlocks.isEmpty()) {
+    val codeBlockMatches = findCodeBlocks(normalizedResponse)
+    if (codeBlockMatches.isEmpty()) {
       log.debug("No code blocks found in response")
       return listOf(ResponseSegment.Markdown(normalizedResponse))
     }
-    log.debug("Found {} code blocks in response", codeBlocks.size)
+    log.debug("Found {} code blocks in response", codeBlockMatches.size)
 
     val headers = collectHeaders(normalizedResponse)
     log.debug("Found {} headers in response", headers.size)
     val segments = mutableListOf<ResponseSegment>()
     var lastEnd = 0
 
-    for ((lang, code) in codeBlocks) {
-      log.debug("Processing code block: lang='{}', code length={}", lang, code.length)
-      val codeBlockPattern = buildCodeBlockPattern(lang, code, normalizedResponse.substring(lastEnd))
-      val match = codeBlockPattern.find(normalizedResponse, lastEnd)
-      if (match == null) {
-        log.warn("Code block not found in response: lang='{}', code='{}'", lang, code)
-        continue
-      }
+    for (codeBlockMatch in codeBlockMatches) {
+      val lang = codeBlockMatch.lang
+      val code = codeBlockMatch.code
+      val matchRange = codeBlockMatch.range
+      log.debug("Processing code block: lang='{}', code length={}, range={}", lang, code.length, matchRange)
 
       // Add preceding markdown
-      if (match.range.first > lastEnd) {
-        val markdownContent = normalizedResponse.substring(lastEnd, match.range.first)
+      if (matchRange.first > lastEnd) {
+        val markdownContent = normalizedResponse.substring(lastEnd, matchRange.first)
         if (markdownContent.isNotBlank()) {
           segments.add(ResponseSegment.Markdown(markdownContent))
         }
       }
 
-      val headerFilename = findHeaderBefore(headers, match.range.first)
+      val headerFilename = findHeaderBefore(headers, matchRange.first)
       val filename = resolveFilename(headerFilename, defaultFile)
       log.debug("Resolved filename for code block: headerFilename='{}', resolved='{}'", headerFilename, filename)
 
@@ -73,7 +71,7 @@ class ResponseParser(private val processor: PatchProcessor) {
               ResponseSegment.DiffBlock(
                 filename = normalizedName,
                 diff = code,
-                originalRange = match.range
+                originalRange = matchRange
               )
             )
           } else {
@@ -82,20 +80,20 @@ class ResponseParser(private val processor: PatchProcessor) {
                 filename = normalizedName,
                 language = lang,
                 code = code.trimIndent(),
-                originalRange = match.range
+                originalRange = matchRange
               )
             )
           }
         } else {
           log.debug("Normalized filename is blank, treating code block as markdown")
-          segments.add(ResponseSegment.Markdown(match.value))
+          segments.add(ResponseSegment.Markdown(normalizedResponse.substring(matchRange.first, matchRange.last + 1)))
         }
       } else {
         log.debug("No filename resolved, treating code block as markdown")
-        segments.add(ResponseSegment.Markdown(match.value))
+        segments.add(ResponseSegment.Markdown(normalizedResponse.substring(matchRange.first, matchRange.last + 1)))
       }
 
-      lastEnd = match.range.last + 1
+      lastEnd = matchRange.last + 1
     }
 
     // Add trailing markdown
@@ -109,6 +107,78 @@ class ResponseParser(private val processor: PatchProcessor) {
 
     return segments
   }
+  private data class CodeBlockMatch(
+    val lang: String,
+    val code: String,
+    val range: IntRange
+  )
+  /**
+   * Finds individual code blocks in the response by matching non-indented code fences.
+   * This correctly splits multiple consecutive code blocks that might otherwise be
+   * merged into a single block by pattern matchers that match from first opening
+   * fence to last closing fence.
+   */
+  private fun findCodeBlocks(response: String): List<CodeBlockMatch> {
+    val results = mutableListOf<CodeBlockMatch>()
+    val lines = response.lines()
+    var i = 0
+    var charOffset = 0
+    val lineOffsets = mutableListOf<Int>()
+    // Pre-compute character offset for each line
+    for (line in lines) {
+      lineOffsets.add(charOffset)
+      charOffset += line.length + 1 // +1 for newline
+    }
+    while (i < lines.size) {
+      val line = lines[i]
+      // Match opening code fence: must start at beginning of line (non-indented)
+      val openMatch = Regex("^```(\\w*)\\s*$").matchEntire(line)
+      if (openMatch != null) {
+        val lang = openMatch.groupValues[1]
+        val startLineIndex = i
+        val codeLines = mutableListOf<String>()
+        i++
+        var closed = false
+        while (i < lines.size) {
+          val closeLine = lines[i]
+          // Match closing code fence: must be exactly ``` at start of line (non-indented)
+          if (closeLine.matches(Regex("^```\\s*$"))) {
+            closed = true
+            val endLineIndex = i
+            val startOffset = lineOffsets[startLineIndex]
+            val endOffset = if (endLineIndex < lineOffsets.size - 1) {
+              lineOffsets[endLineIndex] + lines[endLineIndex].length - 1
+            } else {
+              // Last line
+              lineOffsets[endLineIndex] + lines[endLineIndex].length - 1
+            }
+            val code = codeLines.joinToString("\n")
+            if (code.isNotBlank()) {
+              results.add(CodeBlockMatch(lang, code, startOffset..endOffset))
+            }
+            i++
+            break
+          }
+          codeLines.add(closeLine)
+          i++
+        }
+        if (!closed) {
+          // Unclosed code block - treat remaining lines as code
+          val code = codeLines.joinToString("\n")
+          if (code.isNotBlank()) {
+            val startOffset = lineOffsets[startLineIndex]
+            val endOffset = response.length - 1
+            results.add(CodeBlockMatch(lang, code, startOffset..endOffset))
+          }
+        }
+      } else {
+        i++
+      }
+    }
+    log.debug("findCodeBlocks: found {} individual code blocks", results.size)
+    return results
+  }
+
 
   private fun collectHeaders(response: String): List<Pair<IntRange, String>> {
     val headers = mutableListOf<Pair<IntRange, String>>()
@@ -144,18 +214,4 @@ class ResponseParser(private val processor: PatchProcessor) {
     return diffLineCount > lines.size / 2
   }
 
-  private fun buildCodeBlockPattern(lang: String, code: String, shouldAppearIn: String?): Regex {
-    val regex = Regex("""```${Regex.escape(lang)}\s*\n${Regex.escape(code)}\s*\n```""")
-    if (shouldAppearIn != null) {
-      val occurrences = regex.findAll(shouldAppearIn).toList()
-      if (occurrences.isEmpty()) {
-        log.warn("Code block not found in response: lang='{}', code='{}'", lang, code)
-      } else if (occurrences.size > 1) {
-        log.warn("Multiple code blocks found in response for lang='{}', code='{}'. Using first occurrence.", lang, code)
-      } else {
-        log.debug("Code block found in response at position {}: lang='{}'", occurrences.first().range, lang)
-      }
-    }
-    return regex
-  }
 }
