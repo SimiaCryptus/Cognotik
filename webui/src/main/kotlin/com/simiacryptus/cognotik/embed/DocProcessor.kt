@@ -292,6 +292,12 @@ class DocProcessor(
 
         return modificationTasksRecursive(docSpecs, emptySet(), 0)
     }
+    /**
+     * Normalize a file path for case-insensitive comparison.
+     * This ensures that targets are aggregated consistently regardless of case differences in paths.
+     */
+    private fun normalizePath(path: String): String = path.lowercase()
+
 
     /**
      * Recursively compute modification tasks. After computing the initial set of targets,
@@ -338,7 +344,7 @@ class DocProcessor(
         // We do this by checking if hypothetical new files (the targets we just discovered)
         // would match any doc spec patterns when treated as existing files.
         if (newTargets.isNotEmpty() && depth < maxDepth) {
-            val transitiveTargets = discoverTransitiveTargets(docSpecs, newTargets, allKnownTargets)
+            val transitiveTargets = discoverTransitiveTargets(docSpecs, newTargets.map { normalizePath(it) }.toSet(), allKnownTargets)
             if (transitiveTargets.isNotEmpty()) {
                 log.info("Depth $depth: discovered ${transitiveTargets.size} transitive target(s) from ${newTargets.size} new target(s)")
                 // Create synthetic DocSpecs or re-expand with the knowledge of hypothetical files
@@ -402,9 +408,9 @@ class DocProcessor(
                             spec.docFile.parentFile.resolve(destPath)
                         }
                         val destAbsPath = destFile.absolutePath
-                        if (destAbsPath !in allKnownTargets) {
-                            log.debug("Transitive target discovered: $destAbsPath (from transform ${transform.sourcePattern} -> ${transform.destinationPattern} matching hypothetical $relativePath)")
-                            transitiveTargets.add(destAbsPath)
+                        if (normalizePath(destAbsPath) !in allKnownTargets) {
+                            log.debug("Transitive target discovered: $destAbsPath (from transform ${transform.sourcePattern} -> ${transform.destinationPattern} matching hypothetical $relativePath)")  
+                            transitiveTargets.add(normalizePath(destAbsPath))
                         }
                     }
                 }
@@ -434,10 +440,11 @@ class DocProcessor(
         documentMatches: Map<String, List<DocumentMatch>>,
         generateMatches: Map<String, List<GenerateMatch>>
     ): ModificationTask? {
-        val specs = (fileToSpecs[targetFile] ?: emptyList()).toMutableList()
-        val transforms = transformMatches[targetFile] ?: emptyList()
-        val documents = documentMatches[targetFile] ?: emptyList()
-        val generates = generateMatches[targetFile] ?: emptyList()
+        val normalizedTarget = normalizePath(targetFile)
+        val specs = (fileToSpecs.entries.filter { normalizePath(it.key) == normalizedTarget }.flatMap { it.value }).toMutableList()
+        val transforms = transformMatches.entries.filter { normalizePath(it.key) == normalizedTarget }.flatMap { it.value }
+        val documents = documentMatches.entries.filter { normalizePath(it.key) == normalizedTarget }.flatMap { it.value }
+        val generates = generateMatches.entries.filter { normalizePath(it.key) == normalizedTarget }.flatMap { it.value }
         val targetFileObj = File(targetFile)
         val relativeTarget = try {
             targetFileObj.relativeTo(root.absoluteFile)
@@ -675,7 +682,15 @@ class DocProcessor(
                 spec.transforms.flatMap { transform ->
                     expandTransformPattern(root, transform, spec)
                 }
-            }.groupBy { it.destinationFile.absolutePath }
+            }.groupBy { normalizePath(it.destinationFile.absolutePath) }
+            // Re-key with original path
+            .let { normalizedMap ->
+                val originalPaths = docSpecs
+                    .filter { it.transforms.isNotEmpty() }
+                    .flatMap { spec -> spec.transforms.flatMap { transform -> expandTransformPattern(root, transform, spec) } }
+                    .associate { normalizePath(it.destinationFile.absolutePath) to it.destinationFile.absolutePath }
+                normalizedMap.mapKeys { (normalizedKey, _) -> originalPaths[normalizedKey] ?: normalizedKey }
+            }
         log.info("Found ${transformMatches.size} transform matches")
         return transformMatches
     }
@@ -701,7 +716,15 @@ class DocProcessor(
                         spec = spec
                     )
                 }
-            }.groupBy { it.outputFile.absolutePath }
+            }.groupBy { normalizePath(it.outputFile.absolutePath) }
+            // Re-key with original path
+            .let { normalizedMap ->
+                val originalPaths = docSpecs
+                    .filter { it.generates.isNotEmpty() }
+                    .flatMap { spec -> spec.generates.map { genSpec -> spec.docFile.parentFile.resolve(genSpec.output).canonicalFile.absolutePath } }
+                    .associateBy { normalizePath(it) }
+                normalizedMap.mapKeys { (normalizedKey, _) -> originalPaths[normalizedKey] ?: normalizedKey }
+            }
         log.info("Found ${generateMatches.size} generate matches")
         return generateMatches
     }
@@ -722,7 +745,14 @@ class DocProcessor(
                     matchedFiles
                 }.distinct()
                 DocumentMatch(spec, supportingFiles)
-            }.groupBy { it.docSpec.docFile.absolutePath }
+            }.groupBy { normalizePath(it.docSpec.docFile.absolutePath) }
+            // Re-key with original path
+            .let { normalizedMap ->
+                val originalPaths = docSpecs
+                    .filter { it.documents.isNotEmpty() }
+                    .associate { normalizePath(it.docFile.absolutePath) to it.docFile.absolutePath }
+                normalizedMap.mapKeys { (normalizedKey, _) -> originalPaths[normalizedKey] ?: normalizedKey }
+            }
         log.info("Found ${documentMatches.size} document specs")
         return documentMatches
     }
@@ -946,13 +976,13 @@ class DocProcessor(
         if (tasks.isEmpty()) return tasks
         // Build a map from target file path to task
         val taskByTarget = tasks.associateBy { task ->
-            task.data.files?.firstOrNull()?.let { File(root, it).canonicalPath } ?: ""
+            task.data.files?.firstOrNull()?.let { normalizePath(File(root, it).canonicalPath) } ?: ""
         }.filterKeys { it.isNotEmpty() }
         // Build adjacency list: task -> tasks it depends on (tasks that modify files in its related_files)
         val dependencies = tasks.associateWith { task ->
             task.data.related_files?.mapNotNull { relatedFile ->
                 val canonicalPath = try {
-                    File(root, relatedFile).canonicalPath
+                    normalizePath(File(root, relatedFile).canonicalPath)
                 } catch (e: Exception) {
                     log.warn("Failed to resolve related file path: $relatedFile", e)
                     return@mapNotNull null

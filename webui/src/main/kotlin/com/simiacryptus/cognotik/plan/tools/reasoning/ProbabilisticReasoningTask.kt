@@ -11,8 +11,6 @@ import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import java.io.OutputStream
-import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -165,7 +163,6 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
             stream.write("**Evidence Items:** ${evidence.size}\n\n".toByteArray())
             stream.write("**Risk Tolerance:** ${executionConfig.risk_tolerance}\n\n".toByteArray())
             stream.write("---\n\n".toByteArray())
-            writeInputFilesSection(stream, agent)
         }
 
         // Overview tab
@@ -613,21 +610,6 @@ Consider both the strength of evidence and its reliability.
                     ""
                 }
             }
-    }
-
-  private fun writeInputFilesSection(stream: OutputStream, agent: TaskOrchestrator) {
-        try {
-            val inputFileContent = getInputFileCode(agent)
-            if (inputFileContent.isNotBlank()) {
-                stream.write("\n## Input Files\n<details>\n<summary>File Contents</summary>\n\n".toByteArray(StandardCharsets.UTF_8))
-                stream.write(inputFileContent.toByteArray(StandardCharsets.UTF_8))
-                stream.write("\n</details>\n".toByteArray(StandardCharsets.UTF_8))
-                stream.write("\n\n".toByteArray(StandardCharsets.UTF_8))
-                stream.flush()
-            }
-        } catch (e: Exception) {
-            log.error("Failed to write input files section to transcript", e)
-        }
     }
 
     private fun buildBayesianUpdatePrompt(

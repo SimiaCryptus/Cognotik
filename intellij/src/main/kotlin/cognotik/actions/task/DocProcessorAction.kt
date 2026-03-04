@@ -137,48 +137,51 @@ open class DocProcessorAction(
             return
         }
 
-        val docProcessor = DocProcessor(
-          root = root,
-          docsFolder = root,
-          updateMode = mode,
-          fastModel = AppSettingsState.instance.fastModel?.model
-            ?: throw IllegalStateException("Fast model not configured"),
-          smartModel = AppSettingsState.instance.smartModel?.model
-            ?: throw IllegalStateException("Smart model not configured"),
-          autoFix = true,
-        )
-        val allTasks = docProcessor.getAll(*selectedFiles.toTypedArray())
+        Thread {
 
-        if (allTasks.isEmpty()) {
-            UITools.showError(project, "No tasks found in selected files. Ensure files have 'specifies', 'documents', or 'transforms' frontmatter.")
-            return
-        }
+            val docProcessor = DocProcessor(
+                root = root,
+                docsFolder = root,
+                updateMode = mode,
+                fastModel = AppSettingsState.instance.fastModel?.model
+                    ?: throw IllegalStateException("Fast model not configured"),
+                smartModel = AppSettingsState.instance.smartModel?.model
+                    ?: throw IllegalStateException("Smart model not configured"),
+                autoFix = true,
+            )
+            val allTasks = docProcessor.getAll(*selectedFiles.toTypedArray())
+            if (allTasks.isEmpty()) {
+                UITools.showError(project, "No tasks found in selected files. Ensure files have 'specifies', 'documents', or 'transforms' frontmatter.")
+                return@Thread
+            }
 
 
-        // Show dialog on EDT
-        ApplicationManager.getApplication().invokeAndWait {
-            val dialog = DocProcessorTaskDialog(project, allTasks)
-            if (dialog.showAndGet()) {
-                val selectedTasks = dialog.getSelectedTasks()
-                if (selectedTasks.isNotEmpty()) {
-                    val totalTasks = selectedTasks.size
-                    ProgressManager.getInstance().run(object : Task.Backgroundable(
-                        project, "Processing Documentation Tasks", true
-                    ) {
-                        override fun run(indicator: ProgressIndicator) {
-                            run(
-                                indicator,
-                                totalTasks,
-                                root,
-                                AppSettingsState.instance.smartModel?.model,
-                                docProcessor,
-                                selectedTasks,
-                            )
-                        }
-                    })
+            // Show dialog on EDT
+            ApplicationManager.getApplication().invokeAndWait {
+                val dialog = DocProcessorTaskDialog(project, allTasks)
+                if (dialog.showAndGet()) {
+                    val selectedTasks = dialog.getSelectedTasks()
+                    if (selectedTasks.isNotEmpty()) {
+                        val totalTasks = selectedTasks.size
+                        ProgressManager.getInstance().run(object : Task.Backgroundable(
+                            project, "Processing Documentation Tasks", true
+                        ) {
+                            override fun run(indicator: ProgressIndicator) {
+                                run(
+                                    indicator,
+                                    totalTasks,
+                                    root,
+                                    AppSettingsState.instance.smartModel?.model,
+                                    docProcessor,
+                                    selectedTasks,
+                                )
+                            }
+                        })
+                    }
                 }
             }
-        }
+        }.start()
+
     }
 
     private fun run(

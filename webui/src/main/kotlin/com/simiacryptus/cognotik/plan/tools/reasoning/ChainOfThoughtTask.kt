@@ -131,24 +131,16 @@ class ChainOfThoughtTask(
         val api = defaultSmart
           val inputFileContent = getInputFileCode()
 
-        val overviewContent = buildString {
-            appendLine("# Chain of Thought Reasoning")
-            appendLine()
-            appendLine("**Problem Statement:** $problemStatement")
-            appendLine()
-            appendLine("**Max Steps:** $maxSteps")
-            appendLine()
-            appendLine("**Validate Steps:** ${if (validateSteps) "Yes" else "No"}")
-            appendLine()
-            if (inputFileContent.isNotBlank()) {
-                appendLine("## Input Files")
-                appendLine()
-                appendLine(inputFileContent)
-                appendLine()
-            }
-        }
-
-        transcript?.write(overviewContent.toByteArray())
+            transcript?.write(buildString {
+                this.appendLine("# Chain of Thought Reasoning")
+                this.appendLine()
+                this.appendLine("**Problem Statement:** $problemStatement")
+                this.appendLine()
+                this.appendLine("**Max Steps:** $maxSteps")
+                this.appendLine()
+                this.appendLine("**Validate Steps:** ${if (validateSteps) "Yes" else "No"}")
+                this.appendLine()
+            }.toByteArray())
 
         overviewTask.header("Chain of Thought Reasoning")
         overviewTask.add("<b>Problem Statement:</b> $problemStatement")

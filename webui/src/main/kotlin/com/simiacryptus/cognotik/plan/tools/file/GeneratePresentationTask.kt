@@ -91,7 +91,12 @@ class GeneratePresentationTask(
   ** The generated presentation will include:
      - Complete HTML structure using Reveal.js framework
      - Multiple slides with proper structure and speaker notes
+     - Support for vertical slide stacks (nested sections for topic depth)
+     - Per-slide and global scale control for content density management
+     - Background images with configurable opacity
+     - Auto-animate transitions between related slides
      - Custom CSS file (presentation.css) for styling
+     - Standard JavaScript for autoplay, voice selection, and per-slide scaling
      - Autoplay controls and voice selection UI
      - Proper accessibility features
      - Optional AI-generated images for key slides
@@ -107,10 +112,38 @@ class GeneratePresentationTask(
         @Description("Detailed speaker notes for this slide")
         val speaker_notes: String = "",
         @Description("A prompt for an AI image generator to create a visual for this slide")
-        val image_prompt: String? = null
+        val image_prompt: String? = null,
+        @Description("Optional background image filename for this slide")
+        val background_image: String? = null,
+        @Description("Background image opacity (0.0 to 1.0, default 0.2)")
+        val background_opacity: Double? = null,
+        @Description("Per-slide scale override (e.g. 1.6 for dense content)")
+        val scale: Double? = null,
+        @Description("Whether this slide uses vertical sub-slides (nested sections)")
+        val has_vertical_slides: Boolean = false,
+        @Description("List of vertical sub-slides if has_vertical_slides is true")
+        val vertical_slides: List<VerticalSlide>? = null,
+        @Description("Whether to use data-auto-animate on this slide")
+        val auto_animate: Boolean = false
     )
+
+    data class VerticalSlide(
+        @Description("The HTML content of the vertical sub-slide")
+        val html_content: String = "",
+        @Description("Speaker notes for this vertical sub-slide")
+        val speaker_notes: String = "",
+        @Description("Optional background image filename")
+        val background_image: String? = null,
+        @Description("Background image opacity (0.0 to 1.0)")
+        val background_opacity: Double? = null,
+        @Description("Whether to use data-auto-animate")
+        val auto_animate: Boolean = false
+    )
+
     data class PresentationStructure(
-        val slides: List<PresentationSlide> = emptyList()
+        val slides: List<PresentationSlide> = emptyList(),
+        @Description("Global scale factor for the presentation (default 1.0, increase for denser content)")
+        val global_scale: Double? = null
     )
 
 
@@ -174,41 +207,42 @@ $TT
  $priorCode
 
  ## Instructions:
-1. Generate ONLY the slide content as a sequence of HTML <section> tags:
+1. Generate the presentation as a structured JSON object with the following features:
    - A compelling title slide
    - 5-10 content slides covering the main points
    - Logical flow and transitions between topics
-2. Each <section> tag should contain:
-   - A clear heading
+2. Each slide should contain:
+   - A clear title
    - 2-4 key points or visual elements
-   - An <aside class="notes"> element with detailed speaker notes (2-3 sentences)
- 3. Use appropriate Reveal.js features:
-   - data-auto-animate for smooth transitions
-   - Fragments for progressive disclosure
-4. Include emojis or icons where appropriate for visual interest
 
-## Output Format:
-Provide ONLY the slide sections within a code block (no DOCTYPE, html, head, or body tags):
-${TT}html
-<section>
-    <h1>Title</h1>
-    <p class="subtitle">Subtitle</p>
-    <aside class="notes">
-        Speaker notes for this slide go here.
-    </aside>
-</section>
 
-<section>
-    <h2>Slide Title</h2>
-    <ul>
-        <li class="fragment">Point 1</li>
-        <li class="fragment">Point 2</li>
-    </ul>
-    <aside class="notes">
-        Detailed speaker notes explaining the content.
-    </aside>
-</section>
-$TT
+   - Detailed speaker notes (2-3 sentences minimum)
+3. Use appropriate Reveal.js features in html_content:
+   - class="fragment" for progressive disclosure
+   - Columns layout with class="columns" and class="column"
+   - class="highlight" for emphasized text
+   - Emojis or icons where appropriate for visual interest
+4. Advanced slide features:
+   - Set auto_animate: true for smooth transitions between related slides
+   - Use has_vertical_slides: true with vertical_slides array to create slide stacks
+     (the outer slide gets the title, each vertical sub-slide gets its own content and notes)
+   - Set scale for slides with dense content (e.g. 1.5-1.9 for content-heavy slides)
+   - Set background_image to reference generated image filenames for visual slides
+   - Set background_opacity (0.1-0.3) when using background images to keep text readable
+5. Set global_scale on the PresentationStructure if the overall presentation needs scaling
+   (e.g. 1.5 for content-dense presentations)
+6. Provide an image_prompt for slides where a background or illustrative image would enhance the content
+
+## Vertical Slide Stacks:
+For complex topics, use vertical slide stacks. The outer slide provides the title (h1),
+and each vertical sub-slide contains detailed content. This creates a two-dimensional
+navigation structure (left/right for topics, up/down for depth within a topic).
+
+## Scale Guidelines:
+- Default scale (1.0): Normal content density
+- Scale 1.3-1.5: Slides with grids or multiple columns
+- Scale 1.6-1.9: Very dense slides with many items
+- Per-slide scale overrides the global scale for that slide only
         """.trimIndent()
 
         val slideAgent = ParsedAgent(
@@ -289,6 +323,12 @@ Based on the following Reveal.js presentation HTML, generate custom CSS styling.
  ${TT}html
 $enhancedSlideContent
 $TT
+## Standard CSS Already Included:
+The following standard CSS is already included — DO NOT duplicate any of these styles:
+${TT}css
+$standardCss
+$TT
+
 
 ## Requirements:
 ${executionConfig?.task_description ?: "Create appropriate styling for the presentation"}
@@ -296,19 +336,25 @@ ${executionConfig?.task_description ?: "Create appropriate styling for the prese
 ## Instructions:
 1. Create ONLY additional custom CSS that enhances the presentation
 2. DO NOT duplicate any styles already present in the standard CSS above
-3. Focus on adding custom styles for:
+3. The standard CSS already handles:
+   - All --scale and per-slide scaling via CSS custom properties
+   - Controls container, autoplay button, voice select styling
+   - Reveal.js overrides for slides, headings, lists, columns, highlights
+   - Fragment animations, title pulse, hover effects
+   - Responsive breakpoints and accessibility (sr-only, focus-visible)
+   - Inline style overrides for font-size, margin, padding, gap
+4. Focus on adding ONLY custom styles specific to this presentation:
    - .subtitle class for subtitle text
    - .fade-in-text for animated text
    - .intro-points for bullet point lists
-   - Custom slide transitions and animations
-   - Any slide-specific styling based on the content
-4. Only add new styles that complement the existing CSS, such as:
-   - Font sizes and weights
-   - Color contrasts
-   - Spacing and padding
-   - Hover effects for interactive elements
-5. Keep the CSS minimal and avoid conflicts with existing styles
-6. Use CSS variables defined in the standard CSS where applicable
+   - Slide-specific styling based on the actual content generated
+   - Custom color schemes or gradients unique to this presentation
+5. Keep the CSS minimal — the standard CSS handles most layout concerns
+6. Use CSS variables defined in the standard CSS where applicable:
+   --color-accent, --color-accent-glow, --color-text, --color-text-muted,
+   --font-size-base, --font-size-sm, --spacing-sm, --spacing-md, etc.
+7. Do NOT set --scale in the custom CSS (it's set in the HTML inline style)
+8. Do NOT add per-presentation scale tuning comments (already in the HTML)
 
 ## Output Format:
 Provide only the ADDITIONAL custom CSS code within a code block (no duplicates):
@@ -436,12 +482,13 @@ $TT
                         model = orchestrationConfig.defaultImage,
                         temperature = 0.7,
                     )
+                    val useAsBackground = slide.background_image != null || slide.has_vertical_slides
                     val imagePrompt = """
-Create a professional presentation slide image for:
+Create a professional presentation ${if (useAsBackground) "background" else "slide"} image for:
 Title: $heading
 Context: ${slide.image_prompt ?: ""}
 Content: $textContent
-Style: Clean, modern, professional presentation aesthetic
+Style: ${if (useAsBackground) "Dark, atmospheric, subtle background suitable for text overlay with low opacity" else "Clean, modern, professional presentation aesthetic"}
           """.trimIndent()
                     val result = imageAgent.answer(listOf(ImageAndText(imagePrompt)))
                     val image = result.image
@@ -487,28 +534,84 @@ Style: Clean, modern, professional presentation aesthetic
     private fun buildSlideHtml(structure: PresentationStructure, imageMap: Map<Int, String>): String {
         val result = StringBuilder()
         structure.slides.forEachIndexed { index, slide ->
-            result.append("<section>\n")
-            result.append("    <h1>${slide.title}</h1>\n")
             
-            if (imageMap.containsKey(index)) {
-                val imageFilename = imageMap[index]!!
-                result.append("""
-        <div class="slide-image">
-            <img src="$imageFilename" alt="Slide visual" style="max-width: 80%; max-height: 400px; margin: 20px auto; display: block; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        </div>
-""".trimIndent()).append("\n")
+            // Build outer section attributes
+            val outerAttrs = StringBuilder()
+            slide.scale?.let { outerAttrs.append(" data-scale=\"$it\"") }
+
+            if (slide.has_vertical_slides && !slide.vertical_slides.isNullOrEmpty()) {
+                // Vertical stack: outer section wraps inner sections
+                result.append("        <section${outerAttrs}>\n")
+                result.append("            <h1>${slide.title}</h1>\n")
+
+                slide.vertical_slides.forEachIndexed { vIndex, vSlide ->
+                    val innerAttrs = buildSectionAttributes(
+                        autoAnimate = vSlide.auto_animate,
+                        backgroundImage = vSlide.background_image ?: imageMap[index]?.takeIf { vIndex == 0 },
+                        backgroundOpacity = vSlide.background_opacity
+                    )
+                    result.append("            <section${innerAttrs}>\n")
+                    result.append("                ${vSlide.html_content}\n")
+                    if (vSlide.speaker_notes.isNotBlank()) {
+                        result.append("                <aside class=\"notes\">\n")
+                        result.append("                    ${vSlide.speaker_notes}\n")
+                        result.append("                </aside>\n")
+                    }
+                    result.append("            </section>\n")
+                }
+
+                // Also add speaker notes on the outer section if present
+                if (slide.speaker_notes.isNotBlank()) {
+                    result.append("            <aside class=\"notes\">\n")
+                    result.append("                ${slide.speaker_notes}\n")
+                    result.append("            </aside>\n")
+                }
+                result.append("        </section>\n\n")
+            } else {
+                // Simple flat slide
+                val sectionAttrs = buildSectionAttributes(
+                    autoAnimate = slide.auto_animate,
+                    backgroundImage = slide.background_image ?: imageMap[index],
+                    backgroundOpacity = slide.background_opacity
+                )
+                result.append("        <section${outerAttrs}${sectionAttrs}>\n")
+                result.append("            <h1>${slide.title}</h1>\n")
+
+                // Inline image (if no background image but image was generated)
+                if (slide.background_image == null && imageMap.containsKey(index)) {
+                    val imageFilename = imageMap[index]!!
+                    result.append("            <div class=\"slide-image\">\n")
+                    result.append("                <img src=\"$imageFilename\" alt=\"Slide visual\" style=\"max-width: 80%; max-height: 400px; margin: 20px auto; display: block; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);\">\n")
+                    result.append("            </div>\n")
+                }
+
+                result.append("            ${slide.html_content}\n")
+
+                if (slide.speaker_notes.isNotBlank()) {
+                    result.append("            <aside class=\"notes\">\n")
+                    result.append("                ${slide.speaker_notes}\n")
+                    result.append("            </aside>\n")
+                }
+                result.append("        </section>\n\n")
             }
             
-            result.append(slide.html_content).append("\n")
             
-            if (slide.speaker_notes.isNotBlank()) {
-                result.append("    <aside class=\"notes\">\n")
-                result.append("        ${slide.speaker_notes}\n")
-                result.append("    </aside>\n")
-            }
-            result.append("</section>\n\n")
         }
         return result.toString()
+    }
+    private fun buildSectionAttributes(
+        autoAnimate: Boolean = false,
+        backgroundImage: String? = null,
+        backgroundOpacity: Double? = null
+    ): String {
+        val attrs = StringBuilder()
+        if (autoAnimate) attrs.append(" data-auto-animate")
+        backgroundImage?.let {
+            attrs.append(" data-background-image=\"$it\"")
+            attrs.append(" data-background-size=\"cover\"")
+            attrs.append(" data-background-opacity=\"${backgroundOpacity ?: 0.2}\"")
+        }
+        return attrs.toString()
     }
 
 
