@@ -5,6 +5,7 @@ import java.io.File
 import java.io.InputStream
 import java.nio.file.Path
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.name
 
 object FileSelectionUtils {
@@ -86,31 +87,48 @@ object FileSelectionUtils {
             { f: File -> fn(f) || f.isDocumentFile() }
         } else fn
         val result = mutableListOf<File>()
-        if (filterFn(file)) {
-            if (file.isDirectory) {
-                file.listFiles()?.take(maxFilesPerDir)?.forEach { child ->
-                    result.addAll(filteredWalk(child, maxFilesPerDir, treatDocumentsAsText, fn))
-                }
-            } else {
-                result.add(file)
+        filteredWalkInternal(file, maxFilesPerDir, filterFn, result)
+        return result
+    }
+    private fun filteredWalkInternal(
+        file: File,
+        maxFilesPerDir: Int,
+        filterFn: (File) -> Boolean,
+        result: MutableList<File>
+    ) {
+        if (!filterFn(file)) {
+            log.trace("Skipping file: ${file.absolutePath}")
+            return
+        }
+        if (file.isDirectory) {
+            val children = file.listFiles() ?: return
+            val limit = minOf(children.size, maxFilesPerDir)
+            for (i in 0 until limit) {
+                filteredWalkInternal(children[i], maxFilesPerDir, filterFn, result)
             }
         } else {
-            log.trace("Skipping file: ${file.absolutePath}")
+            result.add(file)
         }
-        return result
     }
 
     fun File.listFilesRecursively(): List<File> {
         val files = mutableListOf<File>()
-        this.listFiles()?.filter {
-            !isGitignore(it.toPath()) && !it.name.startsWith(".") && !it.name.equals("node_modules")
-        }?.forEach {
-            files.add(it.absoluteFile)
-            if (it.isDirectory) {
-                files.addAll(it.listFilesRecursively())
+        listFilesRecursivelyInternal(this, files)
+        return files
+    }
+
+    private fun listFilesRecursivelyInternal(dir: File, files: MutableList<File>) {
+        val children = dir.listFiles() ?: return
+        for (child in children) {
+            val name = child.name
+            if (name.startsWith(".") || name == "node_modules" || isGitignore(child.toPath())) {
+                continue
+            }
+            files.add(child.absoluteFile)
+            if (child.isDirectory) {
+                listFilesRecursivelyInternal(child, files)
             }
         }
-        return files
     }
 
     fun expandFileList(vararg data: File, treatDocumentsAsText: Boolean = false): Array<File> {
@@ -182,6 +200,11 @@ object FileSelectionUtils {
         if (file.extension.lowercase(Locale.getDefault()) in FileExtensions.BINARY_EXTENSIONS) {
             return true
         }
+        // Small files that passed extension check are likely text
+        if (file.length() < 32) {
+            return false
+        }
+
 
         return try {
             file.inputStream().use { input ->
@@ -191,6 +214,13 @@ object FileSelectionUtils {
             log.debug("Error reading file for binary detection: ${file.absolutePath}", e)
             false
         }
+    }
+
+    private val COMMON_TEXT_CONTROL_CHARS = BooleanArray(256).apply {
+        this[9] = true   // tab
+        this[10] = true  // newline
+        this[12] = true  // form feed
+        this[13] = true  // carriage return
     }
 
     private fun isBinaryStream(input: InputStream): Boolean {
@@ -216,8 +246,8 @@ object FileSelectionUtils {
                     nullCount++
                     i++
                 }
-                // Allow common control characters: tab(9), newline(10), carriage return(13), form feed(12)
-                b in listOf(9, 10, 12, 13) -> {
+                // Allow common control characters: tab(9), newline(10), form feed(12), carriage return(13)
+                b < 256 && COMMON_TEXT_CONTROL_CHARS[b] -> {
                     printableCount++
                     i++
                 }
@@ -288,7 +318,7 @@ object FileSelectionUtils {
         val patterns: List<Regex>, val lastModified: Long
     )
 
-    private val ignorePatternCache = mutableMapOf<File, IgnoreCache>()
+    private val ignorePatternCache = ConcurrentHashMap<File, IgnoreCache>()
     private fun compileIgnorePatterns(ignoreFile: File): List<Regex> {
         val lastModified = ignoreFile.lastModified()
         val cached = ignorePatternCache[ignoreFile]

@@ -48,7 +48,10 @@ dependencies {
     implementation(libs.jackson.jaxrs.json)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.datatype.jdk8)
-
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.0")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.19.0")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.19.0")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-properties:2.19.0")
 
     compileOnly(libs.asm)
     implementation(kotlin("stdlib"))

@@ -1,11 +1,17 @@
 package com.simiacryptus.cognotik.docs
 
+import org.apache.poi.openxml4j.util.ZipSecureFile
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 
 import java.io.File
 import java.io.FileInputStream
 
 class DocxReader(docxFile: File) : DocumentReader {
+    companion object {
+        init {
+            ZipSecureFile.setMinInflateRatio(0.001)
+        }
+    }
     private val document: XWPFDocument = XWPFDocument(FileInputStream(docxFile))
 
     override fun getText(): String {

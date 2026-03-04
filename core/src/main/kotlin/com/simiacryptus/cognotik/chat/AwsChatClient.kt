@@ -18,12 +18,13 @@ import software.amazon.awssdk.services.bedrock.model.CustomModelSummary
 import software.amazon.awssdk.services.bedrock.model.FoundationModelSummary
 import software.amazon.awssdk.services.bedrock.model.ListCustomModelsRequest
 import software.amazon.awssdk.services.bedrock.model.ListFoundationModelsRequest
-import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient
 import software.amazon.awssdk.services.bedrockruntime.model.*
 import java.io.BufferedOutputStream
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.TimeUnit
 
 class AwsChatClient(
     apiKey: SecureString,
@@ -44,13 +45,14 @@ class AwsChatClient(
     private val awsAuth: AWSAuth by lazy {
         JsonUtil.fromJson(apiKey.decrypt!!, AWSAuth::class.java)
     }
-    private val bedrockClient: BedrockRuntimeClient by lazy {
-        BedrockRuntimeClient.builder()
+    private val bedrockClient: BedrockRuntimeAsyncClient by lazy {
+        BedrockRuntimeAsyncClient.builder()
             .credentialsProvider(awsCredentials(awsAuth))
             .region(Region.of(awsAuth.region))
             .overrideConfiguration { config ->
                 config.apiCallTimeout(Duration.ofMinutes(10))
                 config.apiCallAttemptTimeout(Duration.ofMinutes(5))
+                config.advancedOptions()
             }
             .build()
     }
@@ -297,31 +299,30 @@ class AwsChatClient(
         return withReliability {
             withPerformanceLogging {
                 val converseRequest = try {
-                    log.debug("Building AWS Converse request for model: ${model.modelId}")
-                    toConverseRequest(model, chatRequest)
+                    logStreams.debug("Building AWS Converse request for model: ${model.modelId}")
+                    toConverseRequest(model, chatRequest, logStreams)
                 } catch (e: Exception) {
                     log.error("Failed to create AWS request for model: ${model.modelId}", e)
+                    logStreams.debug("Error details: ${e.message}")
                     throw RuntimeException("Failed to create AWS request", e)
                 }
 
                 val converseResponse = try {
-                    log.debug("Invoking AWS Bedrock converse for model: ${model.modelId}")
+                    logStreams.debug("Invoking AWS Bedrock converse for model: ${model.modelId}")
                     val startTime = System.currentTimeMillis()
-                    val response = bedrockClient.converse(converseRequest)
+                    val responseFuture = bedrockClient.converse(converseRequest)
+                    val response = responseFuture.get(10, TimeUnit.MINUTES)
                     val elapsed = System.currentTimeMillis() - startTime
-                    log.debug("AWS Bedrock converse completed in ${elapsed}ms for model: ${model.modelId}, stopReason=${response.stopReason()}")
+                    logStreams.debug("AWS Bedrock converse completed in ${elapsed}ms for model: ${model.modelId}, stopReason=${response.stopReason()}")
                     response
                 } catch (e: Exception) {
                     log.error("Failed to invoke AWS Bedrock model: ${model.modelId}", e)
-                    throw RuntimeException("Failed to invoke AWS Bedrock model", e)
+                    throw RuntimeException("Failed to invoke AWS Bedrock model", e.cause ?: e)
                 }
-
-
-
 
                 val response = fromConverseResponse(converseResponse)
 
-                if (response.usage != null && model is ChatModel) {
+                if (response.usage != null) {
                     log.debug("Usage for model ${model.modelId}: prompt_tokens=${response.usage?.prompt_tokens}, completion_tokens=${response.usage?.completion_tokens}, total_tokens=${response.usage?.total_tokens}")
                     onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
                 }
@@ -359,10 +360,15 @@ class AwsChatClient(
         data class AWSAuth(
             val profile: String = "default",
             val region: String = Region.US_WEST_2.id(),
-            val models: Map<String,String> = emptyMap()
+            val models: Map<String,String> = emptyMap(),
+            val s3OutputUri: String? = null
         )
 
-        fun toConverseRequest(model: LLMModel, chatRequest: ModelSchema.ChatRequest): ConverseRequest {
+        fun toConverseRequest(
+            model: LLMModel,
+            chatRequest: ModelSchema.ChatRequest,
+            logStreams: MutableList<BufferedOutputStream>
+        ): ConverseRequest {
             log.debug("Creating AWS ConverseRequest: modelId=${model.modelId}")
             val systemMessages = chatRequest.messages.filter { it.role == ModelSchema.Role.system }
             val nonSystemMessages = alternateMessagesRoles(chatRequest.messages).filter {
@@ -394,7 +400,7 @@ class AwsChatClient(
                 .temperature(chatRequest.temperature.toFloat())
                 .build()
 
-            log.debug("Converse request: ${messages.size} messages, ${systemContent.size} system blocks, maxTokens=${model.maxOutTokens}, temperature=${chatRequest.temperature}")
+            logStreams.debug("Converse request: ${messages.size} messages, ${systemContent.size} system blocks, maxTokens=${model.maxOutTokens}, temperature=${chatRequest.temperature}")
 
             val builder = ConverseRequest.builder()
                 .modelId(model.modelId)
@@ -516,5 +522,12 @@ class AwsChatClient(
             )
         )
 
+    }
+}
+
+private fun MutableList<BufferedOutputStream>.debug(string: String) {
+    this.forEach { stream ->
+        stream.write("[DEBUG] $string\n".toByteArray())
+        stream.flush()
     }
 }

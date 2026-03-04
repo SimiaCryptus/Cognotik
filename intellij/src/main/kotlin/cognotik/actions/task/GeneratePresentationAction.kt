@@ -19,6 +19,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.file.GeneratePresentationTask
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -56,11 +57,11 @@ class GeneratePresentationAction : BaseAction() {
 
         if (dialog.showAndGet()) {
             try {
-                val taskConfig = dialog.getTaskConfig()
                 val orchestrationConfig = dialog.getOrchestrationConfig()
+                val taskConfig = dialog.getTaskConfig()
 
                 UITools.runAsync(e.project, "Initializing Presentation Generation Task", true) { progress ->
-                    initializeTask(e, progress, orchestrationConfig, taskConfig, root)
+                    initializeTask(progress, orchestrationConfig, root, taskConfig)
                 }
             } catch (ex: Exception) {
                 log.error("Failed to initialize presentation generation task", ex)
@@ -70,19 +71,16 @@ class GeneratePresentationAction : BaseAction() {
     }
 
     private fun initializeTask(
-        e: AnActionEvent,
         progress: ProgressIndicator,
         orchestrationConfig: OrchestrationConfig,
-        taskConfig: GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData,
-        root: File
+        root: File,
+        taskConfig: GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData
     ) {
         progress.text = "Setting up session..."
         val session = Session.newGlobalID()
-
         DataStorage.sessionPaths[session] = root
-
         progress.text = "Starting server..."
-        setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId), taskConfig, root)
+        setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId), taskConfig)
 
         Thread {
             Thread.sleep(500)
@@ -102,15 +100,16 @@ class GeneratePresentationAction : BaseAction() {
     private fun setupTaskSession(
         session: Session,
         orchestrationConfig: OrchestrationConfig,
-        taskConfig: GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData,
-        root: File
+        taskConfig: TaskExecutionConfig
     ) {
         val app = object : SingleTaskApp(
             path = "/generatePresentationTask",
             applicationName = "Presentation Generation Task",
             taskType = GeneratePresentationTask.GeneratePresentation,
             instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
-            message = "Execute task"
+            message = "Execute task",
+            taskConfig = taskConfig
+
         ) {
             override fun instance(model: ApiChatModel) =
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")

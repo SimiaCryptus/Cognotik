@@ -243,7 +243,6 @@ class BrainstormingTask(
                 inputFilesTask.add(MarkdownUtil.renderMarkdown(inputFileContent, ui = ui))
                 inputFilesTask.complete()
                 task.update()
-                transcriptStream?.write("\n## Input Files\n\n$inputFileContent\n\n".toByteArray())
             }
 
 

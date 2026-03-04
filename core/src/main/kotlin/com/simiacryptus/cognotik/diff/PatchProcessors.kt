@@ -9,6 +9,14 @@ enum class PatchProcessors : PatchProcessor {
         override fun getInitiatorPattern() = matcher.getInitiatorPattern()
     },
 
+    // JSON merge - deep merge JSON content with existing data
+    DataMerge {
+        override val label = "DataMerge"
+        override val matcher = DataMergeProcessor()
+        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
+        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
+    },
+
     // Thermodynamic mode - DNA-like binding energy approach
     Thermodynamic {
         override val label = "Thermodynamic"

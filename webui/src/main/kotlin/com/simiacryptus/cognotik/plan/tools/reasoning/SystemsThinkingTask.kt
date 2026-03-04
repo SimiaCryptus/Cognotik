@@ -67,27 +67,25 @@ class SystemsThinkingTask(
         state = state
     )
 
-    override fun promptSegment(): String {
-        return """
- SystemsThinking - Analyze complex systems through feedback loops and dynamics
- ** Specify the system to analyze (e.g., "CI/CD pipeline", "team workflow", "market dynamics")
-  ** Identify feedback loops (reinforcing and balancing)
-  ** Map delays and accumulations
-  ** Find leverage points for intervention
-  ** Simulate potential interventions (provide a list of specific interventions to simulate)
-  ** Identify system archetypes (e.g., "Limits to Growth", "Shifting the Burden")
-  ** Analyze emergent behavior and unintended consequences
-  ** Optionally specify focus_areas to prioritize certain subsystems
-  ** Optionally provide analysis_questions for specific insights
-  ** Useful for:
-     - Understanding system behavior
-     - Performance optimization
-     - Identifying unintended consequences
-     - Organizational dynamics
-     - Technical debt dynamics
-     - Strategic planning and scenario analysis
-        """.trimIndent()
-    }
+    override fun promptSegment() = """
+SystemsThinking - Analyze complex systems through feedback loops and dynamics
+* Specify the system to analyze (e.g., "CI/CD pipeline", "team workflow", "market dynamics")
+* Identify feedback loops (reinforcing and balancing)
+* Map delays and accumulations
+* Find leverage points for intervention
+* Simulate potential interventions (provide a list of specific interventions to simulate)
+* Identify system archetypes (e.g., "Limits to Growth", "Shifting the Burden")
+* Analyze emergent behavior and unintended consequences
+* Optionally specify focus_areas to prioritize certain subsystems
+* Optionally provide analysis_questions for specific insights
+* Useful for:
+  - Understanding system behavior
+  - Performance optimization
+  - Identifying unintended consequences
+  - Organizational dynamics
+  - Technical debt dynamics
+  - Strategic planning and scenario analysis
+""".trimIndent()
 
     override fun run(
         agent: TaskOrchestrator,
@@ -124,40 +122,39 @@ class SystemsThinkingTask(
             val analysisQuestions = executionConfig.analysis_questions ?: emptyList()
             overviewTask.header("Systems Thinking Analysis", level = 1)
 
-          val overviewMarkdown = buildString {
-                    appendLine("**System:** $systemDescription")
-                    appendLine()
-                    appendLine("**Time Horizon:** $timeHorizon")
-                    appendLine()
-                    if (focusAreas.isNotEmpty()) {
-                        appendLine("**Focus Areas:**")
-                        focusAreas.forEach { appendLine("- $it") }
-                        appendLine()
-                    }
-                    if (analysisQuestions.isNotEmpty()) {
-                        appendLine("**Analysis Questions:**")
-                        analysisQuestions.forEach { appendLine("- $it") }
-                        appendLine()
-                    }
-                    appendLine("**Analysis Components:**")
-                    if (executionConfig.identify_feedback_loops) appendLine("- ✅ Feedback Loops")
-                    if (executionConfig.map_delays) appendLine("- ✅ Delays & Accumulations")
-                    if (executionConfig.find_leverage_points) appendLine("- ✅ Leverage Points")
-                    if (executionConfig.identify_archetypes) appendLine("- ✅ System Archetypes")
-                    if (executionConfig.analyze_emergent_behavior) appendLine("- ✅ Emergent Behavior")
-                    if (interventions.isNotEmpty()) appendLine("- ✅ Intervention Simulation (${interventions.size} scenarios)")
-                    appendLine()
-                    appendLine(
-                        "**Started:** ${
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Status:** 🔄 Gathering context...")
-          }.renderMarkdown()
-          overviewTask.add(overviewMarkdown)
+          overviewTask.add(buildString {
+            this.appendLine("**System:** $systemDescription")
+            this.appendLine()
+            this.appendLine("**Time Horizon:** $timeHorizon")
+            this.appendLine()
+            if (focusAreas.isNotEmpty()) {
+              this.appendLine("**Focus Areas:**")
+              focusAreas.forEach { this.appendLine("- $it") }
+              this.appendLine()
+            }
+            if (analysisQuestions.isNotEmpty()) {
+              this.appendLine("**Analysis Questions:**")
+              analysisQuestions.forEach { this.appendLine("- $it") }
+              this.appendLine()
+            }
+            this.appendLine("**Analysis Components:**")
+            if (executionConfig.identify_feedback_loops) this.appendLine("- ✅ Feedback Loops")
+            if (executionConfig.map_delays) this.appendLine("- ✅ Delays & Accumulations")
+            if (executionConfig.find_leverage_points) this.appendLine("- ✅ Leverage Points")
+            if (executionConfig.identify_archetypes) this.appendLine("- ✅ System Archetypes")
+            if (executionConfig.analyze_emergent_behavior) this.appendLine("- ✅ Emergent Behavior")
+            if (interventions.isNotEmpty()) this.appendLine("- ✅ Intervention Simulation (${interventions.size} scenarios)")
+            this.appendLine()
+            this.appendLine(
+              "**Started:** ${
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+              }"
+            )
+            this.appendLine()
+            this.appendLine("---")
+            this.appendLine()
+            this.appendLine("**Status:** 🔄 Gathering context...")
+          }.renderMarkdown())
 
           transcript?.write(
                 "# Systems Thinking Analysis\n\n**System:** $systemDescription\n\n**Time Horizon:** $timeHorizon\n\n**Started:** ${
@@ -172,24 +169,6 @@ class SystemsThinkingTask(
             val relatedContext = gatherRelatedFiles()
 
             if (priorContext.isNotBlank() || inputFileContext.isNotBlank() || relatedContext.isNotBlank()) {
-              transcript?.write(
-                """
-                    <details>
-                    <summary>Analysis Context (Prior Tasks & Files)</summary>
-                    
-                    ### Prior Context
-                    $priorContext
-                    
-                    ### Input Files
-                    $inputFileContext
-                    
-                    ### Related Files
-                    $relatedContext
-                    </details>
-                    
-                    ---
-                """.trimIndent().toByteArray()
-              )
 
               val contextTask = tabs.newTask("Context")
                 contextTask.header("Context", level = 1)

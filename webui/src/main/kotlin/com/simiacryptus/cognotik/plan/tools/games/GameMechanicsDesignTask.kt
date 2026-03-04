@@ -418,13 +418,6 @@ class GameMechanicsDesignTask(
                     <details>
                     <summary>Context Data</summary>
                     
-                    ### Prior Tasks
-                    $priorContext
-                    
-                    ### Input Files
-                    $inputFileContext
-                    </details>
-                    
                     ---
                     
                     """.trimIndent().toByteArray()

@@ -711,20 +711,7 @@ class DecompositionSynthesisTask(
         } else {
             ""
         }
-
-
-        return """
-            |## Context
-            |
-            |### Related Files
-            |$relatedFiles
-            |
-            |### Input Files
-            |$fileContext
-            |
-            |### Previous Task Results
-            |$priorCode
-        """.trimMargin()
+        return "\n## Context\n\n### Related Files\n$relatedFiles\n\n### Input Files\n$fileContext\n\n### Previous Task Results\n$priorCode\n        "
     }
 
     private fun getInputFileCode(root: Path): String = (executionConfig?.input_files ?: listOf())
