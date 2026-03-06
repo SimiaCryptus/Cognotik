@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.diff.SimpleDiffApplier
+import com.simiacryptus.cognotik.diff.FileValidators
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -111,7 +111,7 @@ class PluginStartupActivity : ProjectActivity {
                 log.error("Failed to create data storage directory: $dataStorageRoot", e)
             }
         }
-        SimpleDiffApplier.validatorProviders.add(0) { filename ->
+        FileValidators.validatorProviders.add(0) { filename ->
             val extension = filename?.split('.')?.lastOrNull()
             if (IntelliJPsiValidator.isLanguageSupported(extension)) {
                 IntelliJPsiValidator(project, extension ?: "", filename ?: "")

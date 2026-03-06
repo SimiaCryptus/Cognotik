@@ -204,6 +204,10 @@
                     text="📝 Render ERB Template"
                     description="Render ERB templates with JSON data files, automatically determining output format from template naming">
             </action>
+            <action class="cognotik.actions.task.PermdocAction"
+                    text="📄 Permdoc"
+                    description="Create a permanent documentation file for selected files/folders with auto-generated frontmatter">
+            </action>
             <group class="cognotik.actions.task.DocProcessorActionGroup"
                    id="cognotik.ui.ProjectMenu.DocProcessor"
                    description="Process markdown documentation files with frontmatter specifications"

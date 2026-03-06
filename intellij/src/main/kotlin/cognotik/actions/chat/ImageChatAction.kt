@@ -190,20 +190,13 @@ class ImageChatAction : BaseAction() {
             currentChatMessages: List<ModelSchema.ChatMessage>,
             transcriptStream: OutputStream?
         ): String {
-            val codex = GPT4Tokenizer()
             task.verbose(codeFiles.mapNotNull { path ->
                 val file = root.resolve(path.toFile())
                 if (!file.exists()) {
                     log.warn("File does not exist: $file")
                     return@mapNotNull null
                 }
-                val estimateTokenCount = try {
-                    codex.estimateTokenCount(readFileContent(file))
-                } catch (e: Exception) {
-                    log.warn("Failed to read file: $file", e)
-                    return@mapNotNull null
-                }
-                "* $path - $estimateTokenCount tokens"
+                "* $path - ${file.length()} bytes"
             }.joinToString("\n").renderMarkdown())
             return super.respond(task, userMessage, currentChatMessages, transcriptStream)
         }

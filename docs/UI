@@ -1,0 +1,14 @@
+### Summary of Changes
+
+#### `TabbedDisplay.kt`
+- Documented the core functionality of managing multiple content panes.
+- Highlighted the `newTask` integration which allows sub-tasks to output directly into tabs.
+- Noted the `displayMapInTabs` utility for handling large datasets via asynchronous task splitting.
+
+#### `Retryable.kt`
+- Documented the extension of `TabbedDisplay` specifically for iterative tasks.
+- Explained the `retry()` mechanism where each attempt is preserved in a new tab.
+- Detailed the `async` companion extension which simplifies running background tasks within the tabbed interface.
+- Clarified the use of the "♻" (retry) button and the spinner state during execution.
+
+These changes ensure the documentation accurately reflects the current implementation of the UI utility classes.

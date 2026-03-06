@@ -140,26 +140,25 @@ class SmartCodeChatAction : BaseAction() {
             }
         }
 
-        override fun renderResponse(response: String, task: SessionTask) = """<div>${
-            renderMarkdown(response, tabs=true) { html ->
-                DiffInstrumentor(
-                    AppSettingsState.instance.processor,
-                    SocketManagerUIRenderer(
-                        socketManager = this,
-                        sessionId = sessionId
-                    ), RealFileSystem()
-                ).instrument(
-                root = root.toPath(),
-                response = html,
-                handle = { newCodeMap: Map<Path, String> ->
-                  newCodeMap.forEach { (path, newCode) ->
-                    task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
-                  }
-                },
-                    resolver = ::resolveToRelativePath,
-              )
-            }
-        }</div>"""
+        override fun renderResponse(response: String, task: SessionTask) =
+          "<div>" + renderMarkdown(response, tabs = true) { html ->
+            DiffInstrumentor(
+              AppSettingsState.instance.processor,
+              SocketManagerUIRenderer(
+                socketManager = this,
+                sessionId = sessionId
+              ), RealFileSystem()
+            ).instrument(
+              root = root.toPath(),
+              response = html,
+              handle = { newCodeMap: Map<Path, String> ->
+                newCodeMap.forEach { (path, newCode) ->
+                  task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
+                }
+              },
+              resolver = ::resolveToRelativePath,
+            )
+          } + "</div>"
 
         override fun respond(
             task: SessionTask,
@@ -167,22 +166,13 @@ class SmartCodeChatAction : BaseAction() {
             currentChatMessages: List<ModelSchema.ChatMessage>,
             transcriptStream: OutputStream?
         ): String {
-            val codex = GPT4Tokenizer()
             task.verbose((codeFiles.mapNotNull { path ->
                 val file = root.resolve(path.toFile())
                 if (!file.exists()) {
                     log.warn("File does not exist: $file")
                     return@mapNotNull null
                 }
-
-                val content = try {
-                    MultiCodeChatAction.readFileContent(file)
-                } catch (e: Exception) {
-                    log.warn("Failed to read file: $file", e)
-                    return@mapNotNull null
-                }
-
-                "* $path - ${codex.estimateTokenCount(content)} tokens"
+                "* $path - ${file.length()} bytes"
             }.joinToString("\n")).renderMarkdown())
             return super.respond(task, userMessage, currentChatMessages, transcriptStream)
         }

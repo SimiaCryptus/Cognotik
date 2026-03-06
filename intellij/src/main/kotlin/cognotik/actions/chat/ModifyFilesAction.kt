@@ -198,11 +198,9 @@ open class ModifyFilesAction(
             currentChatMessages: List<ModelSchema.ChatMessage>,
             transcriptStream: OutputStream?
         ): String {
-            val codex = GPT4Tokenizer()
             task.verbose((getCodeFiles().joinToString("\n") { path ->
-                "* $path - ${codex.estimateTokenCount(root.resolve(path.toFile()).readText())} tokens"
+                "* $path - ${root.resolve(path.toFile()).length()} bytes"
             }).renderMarkdown())
-            val settings = Settings()
             return super.respond(task, userMessage, currentChatMessages, transcriptStream)
         }
     }
