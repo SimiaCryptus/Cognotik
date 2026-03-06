@@ -127,9 +127,9 @@ open class UnifiedHarness(
             override fun instance(model: ApiChatModel) = modelInstanceFn(model,session)
 
             override fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
-                task.resolveUserFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
+                task.resolveSystemFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
                 val usageManager = ApplicationServices.fileApplicationServices().usageManager
-                task.resolveUserFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
+                task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
                 super.onComplete(mode, task)
             }
 
@@ -236,9 +236,9 @@ open class UnifiedHarness(
 
             override fun onTaskComplete(result: String, task: SessionTask) {
                 log.info("Task completed successfully")
-                task.resolveUserFile("result.md")?.writeText(result)
+                task.resolveSystemFile("result.md")?.writeText(result)
                 val usageManager = ApplicationServices.fileApplicationServices().usageManager
-                task.resolveUserFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
+                task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
                 completionLatch.countDown()
             }
 

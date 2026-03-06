@@ -35,14 +35,28 @@ import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.linkToSession
 import java.awt.Dimension
+import java.awt.BorderLayout
+import java.awt.Point
 import java.io.File
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import javax.swing.BorderFactory
 import javax.swing.JComponent
+import javax.swing.JLabel
+import javax.swing.JPanel
+import javax.swing.JScrollPane
+import javax.swing.JTextArea
+import javax.swing.ListSelectionModel
+import javax.swing.Popup
+import javax.swing.PopupFactory
+import javax.swing.SwingUtilities
+import javax.swing.Timer
 import javax.swing.event.DocumentEvent
+import javax.swing.event.ListSelectionEvent
+import javax.swing.event.ListSelectionListener
 
 /**
  * Action that processes markdown documentation files with frontmatter specifications.
@@ -57,6 +71,7 @@ open class DocProcessorAction(
 ) : BaseAction() {
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
     companion object {
         /**
          * Returns a pretty label for each overwrite mode
@@ -70,6 +85,7 @@ open class DocProcessorAction(
             UpdateModes.ForceOverwrite -> "🔥 Force Overwrite (Dangerous)"
             UpdateModes.ForceUpdate -> "⚡ Force Update (Dangerous)"
         }
+
         /**
          * Returns a description for each overwrite mode
          */
@@ -82,6 +98,7 @@ open class DocProcessorAction(
             UpdateModes.ForceOverwrite -> "Delete all target files before generation (use with caution)"
             UpdateModes.ForceUpdate -> "Delete target files older than their source documentation before generation (use with caution)"
         }
+
         fun newBasicSession(
             root: File,
             model: ChatModel?,
@@ -151,7 +168,10 @@ open class DocProcessorAction(
             )
             val allTasks = docProcessor.getAll(*selectedFiles.toTypedArray())
             if (allTasks.isEmpty()) {
-                UITools.showError(project, "No tasks found in selected files. Ensure files have 'specifies', 'documents', or 'transforms' frontmatter.")
+                UITools.showError(
+                    project,
+                    "No tasks found in selected files. Ensure files have 'specifies', 'documents', or 'transforms' frontmatter."
+                )
                 return@Thread
             }
 
@@ -259,10 +279,11 @@ open class DocProcessorAction(
                                     sessionStatusMap[session] =
                                         masterTask.add(
                                             session.linkToSession(
-                                                "${mod.taskType.name}: ${mod.data.files
-                                                    ?.map { mod.data.root.resolve(it) }
-                                                    ?.joinToString(", "){it.absolutePath}
-                                                    ?: "No files specified"
+                                                "${mod.taskType.name}: ${
+                                                    mod.data.files
+                                                        ?.map { mod.data.root.resolve(it) }
+                                                        ?.joinToString(", ") { it.absolutePath }
+                                                        ?: "No files specified"
                                                 }"
                                             )
                                         )
@@ -298,6 +319,7 @@ open class DocProcessorAction(
         }
     }
 
+
     /**
      * Dialog that displays a checklist of file generation tasks for user selection.
      */
@@ -307,14 +329,19 @@ open class DocProcessorAction(
     ) : DialogWrapper(project) {
         var autoFix: Boolean = true
         private val checkBoxList = CheckBoxList<TaskItem>()
-        private val taskItems: List<TaskItem>
+        private var taskItems: List<TaskItem> = emptyList()
         private val searchField = JBTextField().apply {
             emptyText.text = "Type to filter tasks..."
         }
+        private val selectedStates = mutableMapOf<Int, Boolean>()
+        private val selectionCountLabel = JLabel()
+        private var currentPopup: Popup? = null
+        private var currentHoveredItem: TaskItem? = null
+        private val popupShowTimer = Timer(400) { showPopupForCurrentItem() }.apply { isRepeats = false }
 
         init {
             title = "Select Documentation Tasks"
-            
+
             taskItems = allTasks.mapIndexed { index, t ->
                 val config = t.data
                 val targetFiles = config.relative_files?.joinToString(", ") ?: throw IllegalStateException("No target files specified")
@@ -330,24 +357,165 @@ open class DocProcessorAction(
                 }
                 TaskItem(index, targetFiles, description, config)
         }.sortedBy { it.displayName.lowercase() }
-            
+
             checkBoxList.setItems(taskItems) { it.displayName }
-            taskItems.forEach { checkBoxList.setItemSelected(it, true) }
+            taskItems.forEach { item ->
+                selectedStates[item.index] = true
+                checkBoxList.setItemSelected(item, true)
+            }
             searchField.document.addDocumentListener(object : DocumentAdapter() {
                 override fun textChanged(e: DocumentEvent) {
                     filterTasks(searchField.text)
                 }
             })
-            
+            // Add mouse motion listener for hover details
+            checkBoxList.addMouseMotionListener(object : java.awt.event.MouseMotionAdapter() {
+                override fun mouseMoved(e: java.awt.event.MouseEvent) {
+                    val index = checkBoxList.locationToIndex(e.point)
+                    if (index >= 0 && index < checkBoxList.model.size) {
+                        val item = checkBoxList.getItemAt(index)
+
+
+                        if (item != null && item != currentHoveredItem) {
+                            currentHoveredItem = item
+                            popupShowTimer.restart()
+                        }
+                    } else {
+                        currentHoveredItem = null
+                        popupShowTimer.stop()
+                        hidePopup()
+                    }
+                }
+            })
+            checkBoxList.addMouseListener(object : java.awt.event.MouseAdapter() {
+                override fun mouseExited(e: java.awt.event.MouseEvent) {
+                    currentHoveredItem = null
+                    popupShowTimer.stop()
+                    hidePopup()
+                }
+            })
+            // Also hide popup on scroll
+            checkBoxList.addHierarchyListener {
+                hidePopup()
+            }
+
+            // Track checkbox selection changes
+            checkBoxList.addListSelectionListener(object : ListSelectionListener {
+                override fun valueChanged(e: ListSelectionEvent?) {
+                    syncVisibleSelectionStates()
+                    updateSelectionCount()
+                }
+            })
+            // Also listen for item changes (checkbox toggles)
+            checkBoxList.model.addListDataListener(object : javax.swing.event.ListDataListener {
+                override fun intervalAdded(e: javax.swing.event.ListDataEvent?) {}
+                override fun intervalRemoved(e: javax.swing.event.ListDataEvent?) {}
+                override fun contentsChanged(e: javax.swing.event.ListDataEvent?) {
+                    syncVisibleSelectionStates()
+                    updateSelectionCount()
+                }
+            })
+            updateSelectionCount()
+
 
             init()
         }
-        private val selectedStates = mutableMapOf<Int, Boolean>()
+
+        private fun showPopupForCurrentItem() {
+            val item = currentHoveredItem ?: return
+            hidePopup()
+            val detailsText = buildDetailsText(item)
+            val textArea = JTextArea(detailsText).apply {
+                isEditable = false
+                lineWrap = true
+                wrapStyleWord = true
+                border = BorderFactory.createEmptyBorder(6, 6, 6, 6)
+                background = javax.swing.UIManager.getColor("ToolTip.background") ?: java.awt.Color(255, 255, 225)
+                foreground = javax.swing.UIManager.getColor("ToolTip.foreground") ?: java.awt.Color.BLACK
+                font = javax.swing.UIManager.getFont("ToolTip.font") ?: font
+                columns = 60
+            }
+            // Let the text area calculate its preferred size based on content
+            val textPreferredSize = textArea.preferredSize
+            val maxWidth = 500
+            val maxHeight = 300
+            val minWidth = 200
+            val minHeight = 60
+            val contentWidth = textPreferredSize.width.coerceIn(minWidth, maxWidth) + 20 // padding for scrollbar
+            val contentHeight = textPreferredSize.height.coerceIn(minHeight, maxHeight) + 20
+            val scrollPane = JScrollPane(textArea).apply {
+                preferredSize = Dimension(contentWidth, contentHeight)
+                border = BorderFactory.createLineBorder(java.awt.Color.GRAY)
+            }
+            try {
+                val mousePos = checkBoxList.mousePosition ?: return
+                val screenPos = Point(mousePos)
+                SwingUtilities.convertPointToScreen(screenPos, checkBoxList)
+                currentPopup = PopupFactory.getSharedInstance().getPopup(
+                    checkBoxList, scrollPane, screenPos.x + 15, screenPos.y + 15
+                )
+                currentPopup?.show()
+            } catch (_: Exception) {
+                // Ignore if component is not showing
+            }
+        }
+
+        private fun hidePopup() {
+            currentPopup?.hide()
+            currentPopup = null
+        }
+
+        override fun dispose() {
+            hidePopup()
+            popupShowTimer.stop()
+            super.dispose()
+        }
+
+        private fun buildDetailsText(item: TaskItem): String {
+            val config = item.config
+            return buildString {
+                appendLine("Target Files:")
+                config.relative_files?.forEach { appendLine("  • $it") }
+                appendLine()
+                if (!config.relative_related_files.isNullOrEmpty()) {
+                    appendLine("Related Files:")
+                    config.relative_related_files?.forEach { appendLine("  • $it") }
+                    appendLine()
+                }
+                if (config.task_description.isNotBlank()) {
+                    appendLine("Task Description:")
+                    appendLine("  ${config.task_description}")
+                    appendLine()
+                }
+                if (!config.taskConfigOverrides.isNullOrEmpty()) {
+                    appendLine("Config Overrides:")
+                    config.taskConfigOverrides?.forEach { (k, v) -> appendLine("  $k: $v") }
+                }
+            }.trimEnd()
+        }
+
+
+
+
+
+        private fun syncVisibleSelectionStates() {
+            for (i in 0 until checkBoxList.itemsCount) {
+                val item = checkBoxList.getItemAt(i)
+                if (item != null) {
+                    selectedStates[item.index] = checkBoxList.isItemSelected(item)
+                }
+            }
+        }
+
+        private fun updateSelectionCount() {
+            val totalSelected = taskItems.count { selectedStates.getOrDefault(it.index, true) }
+            selectionCountLabel.text = "$totalSelected of ${taskItems.size} task(s) selected"
+        }
+
+
         private fun filterTasks(query: String) {
             // Save current selection states
-            taskItems.forEach { item ->
-                selectedStates[item.index] = checkBoxList.isItemSelected(item)
-            }
+            syncVisibleSelectionStates()
             val filteredItems = if (query.isBlank()) {
                 taskItems
             } else {
@@ -361,6 +529,7 @@ open class DocProcessorAction(
             filteredItems.forEach { item ->
                 checkBoxList.setItemSelected(item, selectedStates.getOrDefault(item.index, true))
             }
+            updateSelectionCount()
         }
 
 
@@ -383,6 +552,8 @@ open class DocProcessorAction(
                         val item = checkBoxList.getItemAt(i)
                         if (item != null) checkBoxList.setItemSelected(item, true)
                     }
+                    syncVisibleSelectionStates()
+                    updateSelectionCount()
                     checkBoxList.repaint()
                 }
                 button("Deselect All") {
@@ -390,6 +561,8 @@ open class DocProcessorAction(
                         val item = checkBoxList.getItemAt(i)
                         if (item != null) checkBoxList.setItemSelected(item, false)
                     }
+                    syncVisibleSelectionStates()
+                    updateSelectionCount()
                     checkBoxList.repaint()
                 }
             }
@@ -401,9 +574,10 @@ open class DocProcessorAction(
                     .align(Align.FILL)
             }
             row {
-                label("${taskItems.size} task(s) found")
+                cell(selectionCountLabel)
+                    .align(Align.FILL)
             }
-            group("Task Details") {
+            group("Help") {
                 row {
                     text("""
                         Tasks are generated from markdown frontmatter:
@@ -420,12 +594,7 @@ open class DocProcessorAction(
 
         fun getSelectedTasks(): List<ModificationTask> {
             // Save current visible selection states
-            for (i in 0 until checkBoxList.itemsCount) {
-                val item = checkBoxList.getItemAt(i)
-                if (item != null) {
-                    selectedStates[item.index] = checkBoxList.isItemSelected(item)
-                }
-            }
+            syncVisibleSelectionStates()
             return taskItems
                 .filter { selectedStates.getOrDefault(it.index, true) }
                 .map { allTasks[it.index] }

@@ -166,22 +166,13 @@ class MultiCodeChatAction : BaseAction() {
             currentChatMessages: List<ModelSchema.ChatMessage>,
             transcriptStream: OutputStream?
         ): String {
-            val codex = GPT4Tokenizer()
             task.verbose((codeFiles.mapNotNull { path ->
                 val file = root.resolve(path.toFile())
                 if (!file.exists()) {
                     log.warn("File does not exist: $file")
                     return@mapNotNull null
                 }
-
-                val content = try {
-                    readFileContent(file)
-                } catch (e: Exception) {
-                    log.warn("Failed to read file: $file", e)
-                    return@mapNotNull null
-                }
-
-                "* $path - ${codex.estimateTokenCount(content)} tokens"
+                "* $path - ${file.length()} bytes"
             }.joinToString("\n")).renderMarkdown())
             return super.respond(task, userMessage, currentChatMessages, transcriptStream)
         }

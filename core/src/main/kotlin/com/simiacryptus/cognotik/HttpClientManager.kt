@@ -271,7 +271,7 @@ abstract class HttpClientManager(
     }
 
     fun <T> withReliability(
-        requestTimeoutSeconds: Long = (5 * 60),
+        requestTimeoutSeconds: Long = TimeUnit.HOURS.toSeconds(1),
         retryCount: Int = 0,
         logStreams: MutableList<BufferedOutputStream> = this.logStreams,
         fn: () -> T,

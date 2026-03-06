@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.diff
 
-import com.simiacryptus.cognotik.diff.SimpleDiffApplier.Companion.DIFF_PATTERN
+import com.simiacryptus.cognotik.diff.FileValidators.DIFF_PATTERN
 
 interface PatchProcessor {
     val label: String
@@ -25,12 +25,12 @@ interface PatchProcessor {
         val matches = DIFF_PATTERN.findAll(response).distinct()
         var currentCode = originalCode
 
-        val validator = SimpleDiffApplier.Companion.getValidator(filename)
+        val validator = FileValidators.getValidator(filename)
         val originalCodeErrors = validator.validateGrammar(originalCode)
         val newErrors = matches.flatMap { diffBlock ->
             val response: String = diffBlock.groupValues[1]
             try {
-                if (response.length > SimpleDiffApplier.Companion.MAX_DIFF_SIZE_CHARS) {
+                if (response.length > FileValidators.MAX_DIFF_SIZE_CHARS) {
                     throw IllegalArgumentException("Diff size exceeds maximum limit")
                 }
                 val newCode = applyPatch(currentCode, response).replace("\r", "")
