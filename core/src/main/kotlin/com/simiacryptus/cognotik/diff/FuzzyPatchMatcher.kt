@@ -94,8 +94,6 @@ open class FuzzyPatchMatcher(
         return "(?s)```\\w*\n".toRegex()
     }
 
-    override fun extractCodeBlocks(response: String) = response.getMarkdownCodeBlocks()
-
     /**
      * Generates a diff patch that transforms the `oldCode` into the `newCode`.
      * The process involves:

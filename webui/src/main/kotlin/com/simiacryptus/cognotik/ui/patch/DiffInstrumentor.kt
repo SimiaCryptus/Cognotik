@@ -42,23 +42,23 @@ class DiffInstrumentor(
         val result = StringBuilder()
         for (segment in segments) {
             when (segment) {
-                is ResponseSegment.Markdown -> result.append(segment.content)
+                is ResponseSegment.Markdown -> result.appendLine(segment.content)
                 is ResponseSegment.NewFileBlock -> {
                     val filename = prefilterFilename(segment.filename) ?: segment.filename
                     log.debug("Processing new file block: filename={}, language={}, code length={}", filename, segment.language, segment.code.length)
                     if (filename.isBlank()) {
                         log.warn("Blank filename after prefiltering for new file block, rendering as code block")
-                        result.append("```${segment.language}\n${segment.code}\n```")
+                        result.appendLine("```${segment.language}\n${segment.code}\n```")
                         continue
                     }
                     val resolved = resolveWithBestEffort(root, filename, resolver)
                     if (resolved == null) {
-                        result.append("```${segment.language}\n${segment.code}\n```")
+                        result.appendLine("```${segment.language}\n${segment.code}\n```")
                         continue
                     }
                     val filepath = fs.resolve(root, resolved)
                     log.debug("Resolved new file path: {}", filepath)
-                    result.append(renderNewFile(filepath, segment.code, segment.language, handle, shouldAutoApply))
+                    result.appendLine(renderNewFile(filepath, segment.code, segment.language, handle, shouldAutoApply))
                 }
 
                 is ResponseSegment.DiffBlock -> {
@@ -68,13 +68,13 @@ class DiffInstrumentor(
                         if (defaultFile != null) filename = defaultFile
                         else {
                             log.warn("Blank or extensionless filename '{}' with no default file, rendering as diff code block", segment.filename)
-                            result.append("```diff\n${segment.diff}\n```")
+                            result.appendLine("```diff\n${segment.diff}\n```")
                             continue
                         }
                     }
                     val resolved = resolveWithBestEffort(root, filename, resolver)
                     if (resolved == null) {
-                        result.append("```diff\n${segment.diff}\n```")
+                        result.appendLine("```diff\n${segment.diff}\n```")
                         continue
                     }
                     val filepath = fs.resolve(root, resolved)
@@ -84,7 +84,7 @@ class DiffInstrumentor(
                         log.warn("Could not relativize path {} against root {}: {}", filepath, root, e.message)
                         filepath
                     }
-                    result.append(renderDiffBlock(filepath, relativize, segment.diff, handle, shouldAutoApply))
+                    result.appendLine(renderDiffBlock(filepath, relativize, segment.diff, handle, shouldAutoApply))
                 }
             }
         }

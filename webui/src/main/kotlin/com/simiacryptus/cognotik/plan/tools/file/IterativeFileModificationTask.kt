@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.RealFileSystem
-import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -371,10 +371,7 @@ $implementationResponse
         val markdown = renderMarkdown(implementationResponse, ui = task.ui) {
             DiffInstrumentor(
                 orchestrationConfig.processor,
-                SocketManagerUIRenderer(
-                    socketManager = task.ui,
-                    sessionId = task.ui.sessionId
-                ), RealFileSystem()
+                SessionRenderer(task), RealFileSystem()
             ).instrument(
                 root = agent.root,
                 response = it,

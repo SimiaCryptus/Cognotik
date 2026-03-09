@@ -1,17 +1,14 @@
 package com.simiacryptus.cognotik.ui.patch
 
-import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.set
-import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.nio.file.Path
 
-class SocketManagerUIRenderer(
-  private val socketManager: SocketManager,
-  private val sessionId: Session
+class SessionRenderer(
+  task: SessionTask,
 ) : DiffUIRenderer {
-  companion object {
-    private val log = org.slf4j.LoggerFactory.getLogger(SocketManagerUIRenderer::class.java)
-  }
+
+  private val socketManager = task.ui
 
   override fun renderSaveButton(
     filepath: Path,
@@ -20,10 +17,9 @@ class SocketManagerUIRenderer(
     onSave: () -> Unit
   ): String {
     log.debug("Rendering save button for file: {}, lang: {}, code length: {}", filepath, lang, code.length)
-    val task = socketManager.newTask(false)
+    val task = socketManager.newTask(root = false)
     lateinit var hrefLink: StringBuilder
-    @Suppress("AssignedValueIsNeverRead")
-    hrefLink = task.complete(socketManager.hrefLink("Save File", classname = "href-link cmd-button") {
+    hrefLink = task.complete(task.hrefLink("Save File", classname = "href-link cmd-button") {
       try {
         log.info("Save button clicked for file: {}", filepath)
         onSave()
@@ -46,12 +42,12 @@ class SocketManagerUIRenderer(
     onRevert: () -> Unit
   ): String {
     log.debug("Rendering apply diff button for file: {}, diff length: {}", filepath, diff.length)
-    val task = socketManager.newTask(false)
     lateinit var hrefLink: StringBuilder
     var isApplied = false
 
+    val task = socketManager.newTask(root = false)
     lateinit var revertHtml: String
-    val applyHtml = socketManager.hrefLink("Apply Diff", classname = "href-link cmd-button") {
+    val applyHtml = task.hrefLink("Apply Diff", classname = "href-link cmd-button") {
       if (isApplied) return@hrefLink
       try {
         isApplied = true
@@ -67,9 +63,7 @@ class SocketManagerUIRenderer(
         task.error(e)
       }
     }
-
-    @Suppress("AssignedValueIsNeverRead")
-    revertHtml = socketManager.hrefLink("Revert", classname = "href-link cmd-button") {
+    revertHtml = task.hrefLink("Revert", classname = "href-link cmd-button") {
       try {
         isApplied = false
         log.info("Revert button clicked for file: {}", filepath)
@@ -90,7 +84,7 @@ class SocketManagerUIRenderer(
 
   override fun renderAutoApplied(filepath: Path, revertHtml: String): String {
     log.debug("Rendering auto-applied notice for file: {}", filepath)
-    return """<div class="cmd-button">Automatically Applied to $filepath</div>""" + revertHtml
+    return """<div class="cmd-button">Automatically Applied to $filepath</div>$revertHtml"""
   }
 
   override fun renderWarning(message: String): String {
@@ -113,11 +107,14 @@ class SocketManagerUIRenderer(
         }
       )
       log.debug("Patch data recorded to: {}", relativePath)
-      val sid = sessionId ?: ""
-      """<a href='fileIndex/$sid/$relativePath' target='_blank' class='verbose'>Patch Data</a>"""
+      """<a href='fileIndex/${socketManager.sessionId}/$relativePath' target='_blank' class='verbose'>Patch Data</a>"""
     } catch (e: Throwable) {
       log.warn("Failed to record patch data: {}", e.message, e)
       "" // Silently fail for recording - it's non-critical
     }
+  }
+
+  companion object {
+    private val log = org.slf4j.LoggerFactory.getLogger(SessionRenderer::class.java)
   }
 }

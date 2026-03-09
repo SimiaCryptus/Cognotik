@@ -20,7 +20,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.RealFileSystem
-import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
@@ -283,10 +283,7 @@ class ReplicateCommitAction : BaseAction() {
                         val markdown =
                             DiffInstrumentor(
                                 AppSettingsState.instance.processor,
-                                SocketManagerUIRenderer(
-                                    socketManager = ui,
-                                    sessionId = ui.sessionId
-                                ), RealFileSystem()
+                                SessionRenderer(task), RealFileSystem()
                             ).instrument(
                             root = root.toPath(),
                             response = response,

@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.RealFileSystem
-import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -164,22 +164,19 @@ class ImageChatAction : BaseAction() {
         }
 
         override fun renderResponse(response: String, task: SessionTask) = """<div>${
-            renderMarkdown(response, tabs=true) { html ->
+            renderMarkdown(response, tabs=true) { markdown ->
                 DiffInstrumentor(
                     AppSettingsState.instance.processor,
-                    SocketManagerUIRenderer(
-                        socketManager = this,
-                        sessionId = sessionId
-                    ), RealFileSystem()
+                    SessionRenderer(task), RealFileSystem()
                 ).instrument(
                 root = root.toPath(),
-                response = html,
+                response = markdown,
                 handle = { newCodeMap: Map<Path, String> ->
-                  newCodeMap.forEach { (path, newCode) ->
+                  newCodeMap.forEach { (path, _) ->
                     task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
                   }
                 },
-                    resolver = ::resolveToRelativePath,
+                resolver = ::resolveToRelativePath,
               )
             }
         }</div>"""

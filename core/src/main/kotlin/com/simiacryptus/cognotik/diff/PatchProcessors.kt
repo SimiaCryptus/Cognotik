@@ -5,7 +5,6 @@ enum class PatchProcessors : PatchProcessor {
     FullReplacement {
         override val label = "FullReplacement"
         override val matcher = FullReplacementProcessor()
-        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
         override fun getInitiatorPattern() = matcher.getInitiatorPattern()
     },
 
@@ -13,7 +12,6 @@ enum class PatchProcessors : PatchProcessor {
     DataMerge {
         override val label = "DataMerge"
         override val matcher = DataMergeProcessor()
-        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
         override fun getInitiatorPattern() = matcher.getInitiatorPattern()
     },
 
@@ -26,7 +24,6 @@ enum class PatchProcessors : PatchProcessor {
             entropyPenalty = 1.0
         )
 
-        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
         override fun getInitiatorPattern() = matcher.getInitiatorPattern()
     },
 
@@ -39,7 +36,6 @@ enum class PatchProcessors : PatchProcessor {
             contextSize = 5
         )
 
-        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
         override fun getInitiatorPattern() = matcher.getInitiatorPattern()
     },
 
@@ -56,21 +52,18 @@ enum class PatchProcessors : PatchProcessor {
             contextSize = 2
         )
 
-        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
         override fun getInitiatorPattern() = matcher.getInitiatorPattern()
     },
 
     // Default/Fuzzy - balanced configuration
     Fuzzy {
         override val label = "Fuzzy"
-        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
         override fun getInitiatorPattern() = matcher.getInitiatorPattern()
         override val matcher = FuzzyPatchMatcher()
     },
 
     Python {;
         override val label = "Python"
-        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
         override fun getInitiatorPattern() = matcher.getInitiatorPattern()
         override val matcher = PythonPatcher()
     };

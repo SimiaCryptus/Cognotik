@@ -22,7 +22,7 @@ import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.def
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.RealFileSystem
-import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
@@ -250,10 +250,7 @@ class MultiStepPatchAction : BaseAction() {
                                 renderMarkdown(
                                   DiffInstrumentor(
                                     processor,
-                                    SocketManagerUIRenderer(
-                                      socketManager = ui,
-                                      sessionId = ui.sessionId
-                                    ),
+                                    SessionRenderer(task),
                                     RealFileSystem()
                                   ).instrument(
                                     root = root,
@@ -264,7 +261,6 @@ class MultiStepPatchAction : BaseAction() {
                                         filter.joinToString("\n\n") {
                                           "# ${it}\n```${
                                             it.toString().split('.').last()
-                                              .let { it }
                                           }\n${root.resolve(it).toFile().readText()}\n```"
                                         },
                                         architectureResponse.text,

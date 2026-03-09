@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.InMemoryFileSystem
-import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -134,10 +134,7 @@ class DiffChatAction : BaseAction() {
                   val virtualRoot = Paths.get("/virtual")
                   val virtualFile = virtualRoot.resolve("file.txt")
                   virtualFs.putFile(virtualFile, editor.document.getText(TextRange(selectionStart, selectionEnd)))
-                  val renderer = SocketManagerUIRenderer(
-                    this,
-                    sessionId
-                  )
+                  val renderer = SessionRenderer(task)
                   val instrumentor = DiffInstrumentor(
                     processor = AppSettingsState.instance.processor,
                     renderer = renderer,
