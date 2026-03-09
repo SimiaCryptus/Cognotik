@@ -50,6 +50,9 @@ import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.JTextArea
 import javax.swing.ListSelectionModel
+import javax.swing.JDialog
+import javax.swing.JMenuItem
+import javax.swing.JPopupMenu
 import javax.swing.Popup
 import javax.swing.PopupFactory
 import javax.swing.SwingUtilities
@@ -393,6 +396,12 @@ open class DocProcessorAction(
                     popupShowTimer.stop()
                     hidePopup()
                 }
+                override fun mousePressed(e: java.awt.event.MouseEvent) {
+                    if (e.isPopupTrigger) showContextMenu(e)
+                }
+                override fun mouseReleased(e: java.awt.event.MouseEvent) {
+                    if (e.isPopupTrigger) showContextMenu(e)
+                }
             })
             // Also hide popup on scroll
             checkBoxList.addHierarchyListener {
@@ -459,6 +468,45 @@ open class DocProcessorAction(
                 // Ignore if component is not showing
             }
         }
+        private fun showContextMenu(e: java.awt.event.MouseEvent) {
+            val index = checkBoxList.locationToIndex(e.point)
+            if (index < 0 || index >= checkBoxList.model.size) return
+            val item = checkBoxList.getItemAt(index) ?: return
+            val popupMenu = JPopupMenu()
+            val detailsMenuItem = JMenuItem("Details...")
+            detailsMenuItem.addActionListener {
+                showDetailsDialog(item)
+            }
+            popupMenu.add(detailsMenuItem)
+            popupMenu.show(checkBoxList, e.x, e.y)
+        }
+        private fun showDetailsDialog(item: TaskItem) {
+            hidePopup()
+            popupShowTimer.stop()
+            val detailsText = buildDetailsText(item)
+            val textArea = JTextArea(detailsText).apply {
+                isEditable = false
+                lineWrap = true
+                wrapStyleWord = true
+                border = BorderFactory.createEmptyBorder(8, 8, 8, 8)
+                columns = 60
+                rows = 15
+            }
+            val scrollPane = JScrollPane(textArea)
+            val ownerWindow = SwingUtilities.getWindowAncestor(checkBoxList)
+            val dialog = JDialog(ownerWindow, "Details: ${item.displayName}").apply {
+                defaultCloseOperation = JDialog.DISPOSE_ON_CLOSE
+                contentPane.layout = BorderLayout()
+                contentPane.add(scrollPane, BorderLayout.CENTER)
+                isResizable = true
+                preferredSize = Dimension(550, 400)
+                minimumSize = Dimension(300, 200)
+                pack()
+                setLocationRelativeTo(ownerWindow)
+            }
+            dialog.isVisible = true
+        }
+
 
         private fun hidePopup() {
             currentPopup?.hide()

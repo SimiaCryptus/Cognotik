@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.RealFileSystem
-import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -602,9 +602,9 @@ class CustomFileSetPatchServer(
                 val toInput = { it: String -> listOf(fullContent, it) }
                 when {
                     outputMode == CustomFileSetPatchAction.OutputMode.EDIT_FILES -> if (autoApply) {
-                        handleAutoApplyMode(fileSet, userMessage, fileTask, session, toInput, socketManager)
+                        handleAutoApplyMode(fileSet, userMessage, fileTask, session, toInput)
                     } else {
-                        handleInteractiveMode(fileSet, userMessage, fileTask, session, toInput, socketManager)
+                        handleInteractiveMode(fileSet, userMessage, fileTask, session, toInput)
                     }
 
                     else -> {
@@ -729,18 +729,14 @@ class CustomFileSetPatchServer(
         userMessage: String,
         task: SessionTask,
         session: Session,
-        toInput: (String) -> List<String>,
-        socketManager: SocketManager
+        toInput: (String) -> List<String>
     ) {
         val design = mainActor.answer(toInput(userMessage)).toContentList().firstOrNull()?.text ?: ""
         if (design.isNotBlank()) {
             task.add(
                 DiffInstrumentor(
                     processor,
-                    SocketManagerUIRenderer(
-                        socketManager = socketManager,
-                        sessionId = socketManager.sessionId
-                    ),
+                    SessionRenderer(task),
                     RealFileSystem()
                 ).instrument(
                 root = _root ?: throw IllegalStateException("Root directory is not set"),
@@ -800,8 +796,7 @@ class CustomFileSetPatchServer(
         userMessage: String,
         task: SessionTask,
         session: Session,
-        toInput: (String) -> List<String>,
-        socketManager: SocketManager
+        toInput: (String) -> List<String>
     ) {
         Discussable(
             task = task,
@@ -811,7 +806,7 @@ class CustomFileSetPatchServer(
                 mainActor.answer(toInput(it))
             },
             outputFn = { design: String ->
-                formatOutput(design, session, fileSet, task, socketManager)
+                formatOutput(design, session, fileSet, task)
             },
             reviseResponse = { userMessages ->
                 mainActor.respond(
@@ -832,8 +827,7 @@ class CustomFileSetPatchServer(
         design: String,
         session: Session,
         fileSet: CustomFileSetPatchAction.FileSet,
-        fileTask: SessionTask,
-        socketManager: SocketManager
+        task: SessionTask
     ): String {
         return when (outputMode) {
             CustomFileSetPatchAction.OutputMode.EDIT_FILES -> {
@@ -841,17 +835,14 @@ class CustomFileSetPatchServer(
                     renderMarkdown(design) {
                         DiffInstrumentor(
                             processor,
-                            SocketManagerUIRenderer(
-                                socketManager = socketManager,
-                                sessionId = socketManager.sessionId
-                            ),
+                            SessionRenderer(task),
                             RealFileSystem()
                         ).instrument(
                         root = _root ?: throw IllegalStateException("Root directory is not set"),
                         response = design,
                         handle = { newCodeMap: Map<Path, String> ->
                           newCodeMap.forEach { (path, _) ->
-                            fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                            task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                           }
                         },
                         defaultFile = fileSet.files.firstOrNull()

@@ -49,24 +49,6 @@ class PythonPatcher : PatchProcessor {
         return "(?s)```\\w*\n".toRegex()
     }
 
-    override fun extractCodeBlocks(response: String): List<Pair<String, String>> {
-        val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*?)\n```""".toRegex()
-        val codeblockGreedyPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*)\n```""".toRegex()
-        val findAll = codeblockPattern.findAll(response).toList()
-        val findAllGreedy = codeblockGreedyPattern.findAll(response).toList()
-        // Use greedy pattern if we find markdown blocks, otherwise use non-greedy
-        val matches = if (findAllGreedy.any { it.groupValues[1] == "markdown" }) {
-            findAllGreedy
-        } else {
-            findAll
-        }
-        return matches.map { match ->
-            val language = match.groupValues[1]
-            val code = match.groupValues[2]
-            language to code
-        }
-    }
-
     private enum class LineType { CONTEXT, ADD, DELETE }
 
 

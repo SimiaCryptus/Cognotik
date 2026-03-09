@@ -578,10 +578,6 @@ class ThermodynamicPatchMatcher(
         return FuzzyPatchMatcher.default.getInitiatorPattern()
     }
 
-    override fun extractCodeBlocks(response: String): List<Pair<String, String>> {
-        return FuzzyPatchMatcher.default.extractCodeBlocks(response)
-    }
-
     /**
      * Normalizes a line for comparison.
      */

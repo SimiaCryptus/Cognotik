@@ -1,7 +1,6 @@
 package cognotik.actions.chat
 
 import cognotik.actions.BaseAction
-import cognotik.actions.agent.MultiStepPatchAction.AutoDevApp.Settings
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -13,7 +12,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.RealFileSystem
-import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
@@ -171,13 +170,8 @@ open class ModifyFilesAction(
         }
 
         override fun renderResponse(response: String, task: SessionTask) = renderMarkdown(response, tabs=true) { html ->
-            DiffInstrumentor(
-                AppSettingsState.instance.processor,
-                SocketManagerUIRenderer(
-              socketManager = this,
-                    sessionId = sessionId
-                ), RealFileSystem()
-            ).instrument(
+            DiffInstrumentor(AppSettingsState.instance.processor, SessionRenderer(task), RealFileSystem())
+              .instrument(
                 root = root.toPath(),
                 response = html,
                 handle = { newCodeMap: Map<Path, String> ->

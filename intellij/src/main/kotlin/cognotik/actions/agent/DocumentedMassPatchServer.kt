@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.RealFileSystem
-import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -103,10 +103,7 @@ class DocumentedMassPatchServer(
                             fileTask.add(
                               DiffInstrumentor(
                                 processor,
-                                SocketManagerUIRenderer(
-                                  socketManager = socketManager,
-                                  sessionId = socketManager.sessionId
-                                ), RealFileSystem()
+                                SessionRenderer(task), RealFileSystem()
                               ).instrument(
                                 root = _root,
                                 response = design,
@@ -136,10 +133,7 @@ class DocumentedMassPatchServer(
                                     renderMarkdown(design) {
                                       DiffInstrumentor(
                                         processor,
-                                        SocketManagerUIRenderer(
-                                          socketManager = socketManager,
-                                          sessionId = socketManager.sessionId
-                                        ), RealFileSystem()
+                                        SessionRenderer(task), RealFileSystem()
                                       ).instrument(
                                         root = _root,
                                         response = design,

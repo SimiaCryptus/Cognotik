@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.RealFileSystem
-import com.simiacryptus.cognotik.ui.patch.SocketManagerUIRenderer
+import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
@@ -598,10 +598,7 @@ class IllustrateDocumentTask(
                         subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
                             DiffInstrumentor(
                                 orchestrationConfig.processor,
-                                SocketManagerUIRenderer(
-                                    socketManager = subTask.ui,
-                                    sessionId = subTask.ui.sessionId
-                                ),
+                                SessionRenderer(subTask),
                                 RealFileSystem()
                             ).instrument(
                                 root = root,
@@ -622,10 +619,7 @@ class IllustrateDocumentTask(
                         subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
                             DiffInstrumentor(
                                 orchestrationConfig.processor,
-                                SocketManagerUIRenderer(
-                                    socketManager = subTask.ui,
-                                    sessionId = subTask.ui.sessionId
-                                ),
+                                SessionRenderer(subTask),
                                 RealFileSystem()
                             ).instrument(
                                 root = root,

@@ -23,14 +23,15 @@ class ResponseParser(private val processor: PatchProcessor) {
     }
     val initiator = processor.getInitiatorPattern()
     // Auto-close unclosed code blocks
-    val normalizedResponse = if (response.contains(initiator) &&
+    val normalizedResponse = (if (response.contains(initiator) &&
       !response.split(initiator, 2)[1].contains("\n```(?![^\n])".toRegex())
     ) {
       log.debug("Auto-closing unclosed code block in response")
       response + "\n```\n"
     } else {
       response
-    }
+    })
+    val normalizedResponseLines = normalizedResponse.lines()
 
     val codeBlockMatches = normalizedResponse.getMarkdownCodeBlockMatches()
     if (codeBlockMatches.isEmpty()) {
@@ -45,20 +46,25 @@ class ResponseParser(private val processor: PatchProcessor) {
     var lastEnd = 0
 
     for (codeBlockMatch in codeBlockMatches) {
-      val lang = codeBlockMatch.lang
+      val lang = codeBlockMatch.language
       val code = codeBlockMatch.code
       val matchRange = codeBlockMatch.range
       log.debug("Processing code block: lang='{}', code length={}, range={}", lang, code.length, matchRange)
 
       // Add preceding markdown
-      if (matchRange.first > lastEnd) {
-        val markdownContent = normalizedResponse.substring(lastEnd, matchRange.first)
+      val lineStart = matchRange.first
+      val lineStartPos = normalizedResponseLines.take(lineStart).sumOf { it.length + 1 } // +1 for newline
+      val lineEnd = matchRange.last
+      if (lineStart > lastEnd) {
+        val markdownContent = normalizedResponseLines.subList(lastEnd, lineStart).joinToString("\n")
         if (markdownContent.isNotBlank()) {
           segments.add(ResponseSegment.Markdown(markdownContent))
         }
+      } else {
+        log.debug("No preceding markdown for code block at range {}", matchRange)
       }
 
-      val headerFilename = findHeaderBefore(headers, matchRange.first)
+      val headerFilename = findHeaderBefore(headers, lineStartPos)
       val filename = resolveFilename(headerFilename, defaultFile)
       log.debug("Resolved filename for code block: headerFilename='{}', resolved='{}'", headerFilename, filename)
 
@@ -88,25 +94,25 @@ class ResponseParser(private val processor: PatchProcessor) {
           }
         } else {
           log.debug("Normalized filename is blank, treating code block as markdown")
-          segments.add(ResponseSegment.Markdown(normalizedResponse.substring(matchRange.first, matchRange.last + 1)))
+          segments.add(ResponseSegment.Markdown(normalizedResponseLines.subList(lineStart, lineEnd + 1).joinToString("\n")))
         }
       } else {
         log.debug("No filename resolved, treating code block as markdown")
-        segments.add(ResponseSegment.Markdown(normalizedResponse.substring(matchRange.first, matchRange.last + 1)))
+        segments.add(ResponseSegment.Markdown(normalizedResponseLines.subList(lineStart, lineEnd + 1).joinToString("\n")))
       }
 
-      lastEnd = matchRange.last + 1
+      lastEnd = lineEnd + 1
     }
 
     // Add trailing markdown
     if (lastEnd < normalizedResponse.length) {
-      val trailing = normalizedResponse.substring(lastEnd)
+      val trailing = normalizedResponseLines.subList(lastEnd, normalizedResponseLines.size).joinToString("\n")
       if (trailing.isNotBlank()) {
         segments.add(ResponseSegment.Markdown(trailing))
       }
     }
-    log.debug("Parsed {} total segments from response", segments.size)
 
+    log.debug("Parsed {} total segments from response", segments.size)
     return segments
   }
 

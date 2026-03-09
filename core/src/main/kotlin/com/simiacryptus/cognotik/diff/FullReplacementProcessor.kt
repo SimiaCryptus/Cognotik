@@ -47,15 +47,6 @@ class FullReplacementProcessor : PatchProcessor {
         return "(?s)```\\w*\n".toRegex()
     }
 
-    override fun extractCodeBlocks(response: String): List<Pair<String, String>> {
-        val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*?)\n```""".toRegex()
-        return codeblockPattern.findAll(response).map { match ->
-            val language = match.groupValues[1]
-            val code = match.groupValues[2]
-            language to code
-        }.toList()
-    }
-
     override fun generatePatch(oldCode: String, newCode: String): String {
         log.debug("Generating full replacement patch")
         // For full replacement, the "patch" is just the new code
