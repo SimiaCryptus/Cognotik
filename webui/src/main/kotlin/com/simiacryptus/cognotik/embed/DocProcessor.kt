@@ -161,6 +161,32 @@ class DocProcessor(
             }
         }
     }
+    /**
+     * Resolve a related resource path, supporting glob patterns, URLs, and literal paths.
+     * For glob patterns (containing *, ?, or [), expands the pattern against the filesystem.
+     * For URLs, fetches and caches the content.
+     * For literal paths, returns the file even if it doesn't exist.
+     */
+    fun resolveRelatedResources(baseDir: File, relatedPath: String): List<File> {
+        return if (isUrl(relatedPath)) {
+            listOfNotNull(fetchAndCacheUrl(relatedPath)?.absoluteFile)
+        } else if (isGlobPattern(relatedPath)) {
+            val expanded = expandPatternOrLiteral(baseDir, relatedPath)
+            if (expanded.isEmpty()) {
+                log.debug("Related glob pattern matched no files: $relatedPath (base: ${baseDir.absolutePath})")
+            } else {
+                log.debug("Related glob pattern '$relatedPath' matched ${expanded.size} files")
+            }
+            expanded
+        } else {
+            val resolved = baseDir.resolve(relatedPath)
+            if (!resolved.exists()) {
+                log.debug("Related file does not exist: ${resolved.absolutePath}")
+            }
+            listOf(resolved)
+        }
+    }
+
 
     data class DocSpec(
         val docFile: File,
@@ -397,11 +423,7 @@ class DocProcessor(
                     }
                     val matcher = sourceRegex.matcher(relativePath)
                     if (matcher.matches()) {
-                        var destPath = transform.destinationPattern
-                        for (i in 0..matcher.groupCount()) {
-                            val group = matcher.group(i) ?: ""
-                            destPath = destPath.replace("\$$i", group)
-                        }
+                        val destPath = applyBackreferences(transform.destinationPattern, matcher)
                         val destFile = try {
                             spec.docFile.parentFile.resolve(destPath).canonicalFile
                         } catch (e: Exception) {
@@ -641,36 +663,27 @@ class DocProcessor(
         generates: List<GenerateMatch>
     ): List<File> = (specs.flatMap { spec ->
         listOf(spec.docFile) +
-                spec.related.mapNotNull { relatedPath ->
-                    resolveRelatedResource(spec.docFile.parentFile, relatedPath)?.let { file ->
-                        // For URL-fetched files, return the absolute file so it won't be incorrectly relativized
-                        if (isUrl(relatedPath)) file.absoluteFile else file
-                    }
+                spec.related.flatMap { relatedPath ->
+                    resolveRelatedResources(spec.docFile.parentFile, relatedPath)
                 } +
                 additionalContext(spec, targetFile).map { File(it) }
     } + transforms.flatMap { match ->
         listOf(match.spec.docFile, match.sourceFile) +
-                match.spec.related.mapNotNull { relatedPath ->
-                    resolveRelatedResource(match.spec.docFile.parentFile, relatedPath)?.let { file ->
-                        if (isUrl(relatedPath)) file.absoluteFile else file
-                    }
+                match.spec.related.flatMap { relatedPath ->
+                    resolveRelatedResources(match.spec.docFile.parentFile, relatedPath)
                 } +
                 additionalContext(match.spec, targetFile).map { File(it) }
     } + documents.flatMap { docMatch ->
         docMatch.supportingFiles +
-                docMatch.docSpec.related.mapNotNull { relatedPath ->
-                    resolveRelatedResource(docMatch.docSpec.docFile.parentFile, relatedPath)?.let { file ->
-                        if (isUrl(relatedPath)) file.absoluteFile else file
-                    }
+                docMatch.docSpec.related.flatMap { relatedPath ->
+                    resolveRelatedResources(docMatch.docSpec.docFile.parentFile, relatedPath)
                 } +
                 additionalContext(docMatch.docSpec, targetFile).map { File(it) }
     } + generates.flatMap { genMatch ->
         listOf(genMatch.spec.docFile) +
                 genMatch.inputFiles +
-                genMatch.spec.related.mapNotNull { relatedPath ->
-                    resolveRelatedResource(genMatch.spec.docFile.parentFile, relatedPath)?.let { file ->
-                        if (isUrl(relatedPath)) file.absoluteFile else file
-                    }
+                genMatch.spec.related.flatMap { relatedPath ->
+                    resolveRelatedResources(genMatch.spec.docFile.parentFile, relatedPath)
                 } +
                 additionalContext(genMatch.spec, targetFile).map { File(it) }
     }).distinct()
@@ -1432,6 +1445,47 @@ class DocProcessor(
             }
             return result
         }
+        /**
+         * Apply backreference substitutions to a destination pattern using regex matcher groups.
+         * Supports arithmetic modifiers on capture groups, e.g.:
+         * - $1 -> replaced with group 1
+         * - $2+1 -> if group 2 is numeric, replaced with (group2 + 1); otherwise replaced with group2 + "+1"
+         * - $0-5 -> if group 0 is numeric, replaced with (group0 - 5); otherwise replaced with group0 + "-5"
+         */
+        fun applyBackreferences(destPattern: String, matcher: java.util.regex.Matcher): String {
+            var result = destPattern
+            // Match backreferences like $0, $1, $2+1, $3-10, etc.
+            val backrefRegex = Regex("""\$(\d+)([+-]\d+)?""")
+            // Process in reverse order of match position to avoid offset issues
+            val matches = backrefRegex.findAll(result).toList().sortedByDescending { it.range.first }
+            for (match in matches) {
+                val groupIndex = match.groupValues[1].toInt()
+                val arithmeticPart = match.groupValues[2] // e.g. "+1", "-5", or ""
+                if (groupIndex > matcher.groupCount()) continue
+                val groupValue = matcher.group(groupIndex) ?: ""
+                val replacement = if (arithmeticPart.isNotEmpty()) {
+                    val numericGroup = groupValue.toLongOrNull()
+                    if (numericGroup != null) {
+                        val operator = arithmeticPart[0]
+                        val operand = arithmeticPart.substring(1).toLongOrNull() ?: 0L
+                        val computed = when (operator) {
+                            '+' -> numericGroup + operand
+                            '-' -> numericGroup - operand
+                            else -> numericGroup
+                        }
+                        computed.toString()
+                    } else {
+                        // Not a number, append the arithmetic part as a literal suffix
+                        groupValue + arithmeticPart
+                    }
+                } else {
+                    groupValue
+                }
+                result = result.substring(0, match.range.first) + replacement + result.substring(match.range.last + 1)
+            }
+            return result
+        }
+
 
         /**
          * Expand a single transform pattern to file matches
@@ -1453,13 +1507,8 @@ class DocProcessor(
                 val relativePath = sourceFile.relativeTo(spec.docFile.parentFile.absoluteFile).path.replace("\\", "/")
                 val matcher = sourceRegex.matcher(relativePath)
                 if (matcher.matches()) {
-                    // Apply backreferences to destination pattern
-                    var destPath = transform.destinationPattern
-                    // Replace $0, $1, $2, etc. with captured groups
-                    for (i in 0..matcher.groupCount()) {
-                        val group = matcher.group(i) ?: ""
-                        destPath = destPath.replace("\$$i", group)
-                    }
+                    // Apply backreferences (with optional arithmetic) to destination pattern
+                    val destPath = applyBackreferences(transform.destinationPattern, matcher)
                     TransformMatch(
                         sourceFile = try {
                             sourceFile.canonicalFile
