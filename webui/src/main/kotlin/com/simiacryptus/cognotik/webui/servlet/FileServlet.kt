@@ -104,7 +104,7 @@ abstract class FileServlet : HttpServlet() {
             else -> {
                 resp.contentType = "text/html"
                 resp.characterEncoding = "UTF-8"
-                resp.status = HttpServletResponse.SC_OK
+                resp.status = HttpServletResponse.SC_NOT_FOUND
                 val currentPathString = pathSegments.drop(1).joinToString("/")
                 val servletPathBase =
                     req.contextPath + req.servletPath.removeSuffix("/*")
@@ -179,6 +179,76 @@ abstract class FileServlet : HttpServlet() {
             resp.writer.write("Error uploading file: ${e.message}")
         }
     }
+    override fun doPut(req: HttpServletRequest, resp: HttpServletResponse) {
+        log.info("Received PUT request for path: ${req.pathInfo ?: req.servletPath}")
+        try {
+            val pathSegments = parsePath(req.pathInfo ?: req.servletPath ?: "/")
+            val dir = getDir(req)
+            if (dir == null) {
+                log.warn("Base directory is null for PUT request")
+                resp.status = HttpServletResponse.SC_BAD_REQUEST
+                resp.writer.write("Invalid base directory")
+                return
+            }
+            val targetFile = getFile(dir, pathSegments, req)
+            if (targetFile == null) {
+                log.warn("Target file is null for PUT request")
+                resp.status = HttpServletResponse.SC_BAD_REQUEST
+                resp.writer.write("Invalid target path")
+                return
+            }
+            // Validate that the target is not a directory
+            if (targetFile.exists() && targetFile.isDirectory) {
+                log.warn("Cannot PUT to a directory: ${targetFile.absolutePath}")
+                resp.status = HttpServletResponse.SC_BAD_REQUEST
+                resp.writer.write("Cannot write to a directory")
+                return
+            }
+            // Validate filename for security
+            val fileName = targetFile.name
+            if (!isValidFileName(fileName)) {
+                log.warn("Invalid filename in PUT request: $fileName")
+                resp.status = HttpServletResponse.SC_BAD_REQUEST
+                resp.writer.write("Invalid filename")
+                return
+            }
+            // Ensure parent directory exists
+            val parentDir = targetFile.parentFile
+            if (parentDir != null && !parentDir.exists()) {
+                log.info("Creating parent directories for: ${targetFile.absolutePath}")
+                parentDir.mkdirs()
+            }
+            val fileExisted = targetFile.exists()
+            // Invalidate channel cache if file existed
+            if (fileExisted) {
+                channelCache.invalidate(targetFile)
+            }
+            // Write the request body to the file
+            req.inputStream.use { input ->
+                Files.copy(input, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+            if (fileExisted) {
+                log.info("File updated successfully via PUT: ${targetFile.absolutePath}")
+                resp.status = HttpServletResponse.SC_OK
+                resp.contentType = "application/json"
+                resp.writer.write("""{"success": true, "message": "File updated successfully", "filename": "$fileName"}""")
+            } else {
+                log.info("File created successfully via PUT: ${targetFile.absolutePath}")
+                resp.status = HttpServletResponse.SC_CREATED
+                resp.contentType = "application/json"
+                resp.writer.write("""{"success": true, "message": "File created successfully", "filename": "$fileName"}""")
+            }
+        } catch (e: IllegalArgumentException) {
+            log.warn("Invalid path in PUT request: ${e.message}")
+            resp.status = HttpServletResponse.SC_BAD_REQUEST
+            resp.writer.write("Invalid path: ${e.message}")
+        } catch (e: Exception) {
+            log.error("Error during file PUT", e)
+            resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            resp.writer.write("Error writing file: ${e.message}")
+        }
+    }
+
 
     private fun getSubmittedFileName(part: Part): String? {
         val contentDisposition = part.getHeader("content-disposition")

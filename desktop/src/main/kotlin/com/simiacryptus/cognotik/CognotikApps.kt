@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
+import com.simiacryptus.cognotik.webui.chat.DocOpsApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import org.eclipse.jetty.webapp.WebAppContext
 import java.awt.Desktop
@@ -247,6 +248,7 @@ open class CognotikApps(
         OrchestrationConfig.instanceFn =
             { m -> m.instance() ?: throw IllegalStateException("Model or provider not set") }
         listOf(
+            ChildWebApp("/health-improvement", DocOpsApp(File("."), model, model, appId = "health-improvement")),
             ChildWebApp("/chat", BasicChatApp(File("."), model, model)),
             ChildWebApp(
                 "/taskChat", object : SinglePlanApp(

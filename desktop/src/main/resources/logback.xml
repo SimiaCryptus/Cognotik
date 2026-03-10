@@ -49,7 +49,7 @@
     </appender>
 
 
-    <logger name="com.simiacryptus" level="WARN"/>
+    <logger name="com.simiacryptus" level="INFO"/>
     <!-- Chat Traffic Logger -->
     <logger name="TRAFFIC.com.simiacryptus.cognotik.webui.chat" level="INFO" additivity="false">
         <appender-ref ref="CHAT_TRAFFIC_FILE"/>

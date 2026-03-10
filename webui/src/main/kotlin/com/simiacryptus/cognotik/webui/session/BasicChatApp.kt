@@ -44,13 +44,12 @@ class BasicChatApp(
         parsingModel = parsingModel,
     ) as T
 
-    override fun newSession(user: User, session: Session): SocketManager {
+    override fun newSession(user: User, session: Session): SocketManager? {
         (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session)
             ?: SessionProxyServer.agents[session])?.apply {
             return this;
         }
-        val user = user ?: throw IllegalArgumentException("User must be provided for chat session")
-        val settings = this.settings ?: getSettings(session, user)!!
+
         fun instance(model: ChatModel): ChatInterface? {
             val api = fileApplicationServices().userSettingsManager.getUserSettings(user).apis
                 .firstOrNull { it.provider == model.provider }?.validate()
@@ -60,7 +59,7 @@ class BasicChatApp(
                     key = apiData.key ?: return null,
                     base = apiData.baseUrl,
                     workPool = threadPoolManager.getPool(session, user),
-                    temperature = settings.temperature,
+                    temperature = this.settings.temperature,
                     scheduledPool = threadPoolManager.getScheduledPool(session, user),
                     onUsage = { model, usage ->
                         fileApplicationServices().usageManager.incrementUsage(
@@ -73,19 +72,7 @@ class BasicChatApp(
                 )
             }
         }
-        return ChatSocketManager(
-            session = session,
-            smartModel = instance(settings.model)
-                ?: throw RuntimeException("No API key for model ${settings.model.name}"),
-            fastModel = instance(settings.parsingModel)
-                ?: throw RuntimeException("No API key for model ${settings.parsingModel.name}"),
-            systemPrompt = "",
-            temperature = settings.temperature,
-            applicationClass = this::class.java,
-            storage = dataStorage,
-            fastTopicParsing = true,
-            budget = settings.budget,
-        )
+        return null
     }
 }
 

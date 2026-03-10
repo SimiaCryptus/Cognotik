@@ -54,7 +54,7 @@ abstract class SingleTaskApp(
     override fun newSession(
         user: User, session: Session
     ): SocketManager {
-        val socketManager = super.newSession(user, session)
+        val socketManager = super.newSession(user, session)!!
         startSession(
             session,
             user,

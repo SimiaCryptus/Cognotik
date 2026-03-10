@@ -42,6 +42,8 @@ dependencies {
     implementation(libs.batik.transcoder)
     implementation(libs.batik.codec)
     implementation(libs.commons.text)
+    implementation(libs.aws.s3)
+    implementation(libs.aws.kms)
     implementation(libs.jsoup)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)

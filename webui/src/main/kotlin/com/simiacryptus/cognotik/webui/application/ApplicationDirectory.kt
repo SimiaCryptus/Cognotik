@@ -72,6 +72,8 @@ abstract class ApplicationDirectory(
     open val taskConfigServlet: HttpServlet = TaskConfigServlet()
         .also { log.debug("Initialized TaskConfigServlet") }
 
+    protected open val docopsServlet by lazy { DocOpsServlet() }
+
     open val cognitiveConfigServlet: HttpServlet = CognitiveConfigServlet()
         .also { log.debug("Initialized CognitiveConfigServlet") }
 
@@ -166,6 +168,10 @@ abstract class ApplicationDirectory(
         },
         newWebAppContext("/api", welcomeServlet).let {
             log.debug("Configuring API context")
+            authenticatedWebsite()?.configure(it, false) ?: it
+        },
+        newWebAppContext("/docops", docopsServlet).let {
+            log.debug("Configuring docops context with servlet")
             authenticatedWebsite()?.configure(it, false) ?: it
         },
     ).toTypedArray() + childWebApps.map {

@@ -124,7 +124,7 @@ class FindResultsModificationAction(
         override val stickyInput = false
 
         override fun newSession(user: User, session: Session): SocketManager {
-            val socketManager = super.newSession(user, session)
+            val socketManager = super.newSession(user, session)!!
             val task = socketManager.newTask(cancelable = false)
             val tabs = TabbedDisplay(task)
             usages.entries.map { (file, usages) ->

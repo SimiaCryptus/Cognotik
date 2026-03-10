@@ -110,7 +110,7 @@ open class DocProcessorAction(
             root = root,
             model = model ?: throw IllegalStateException("Smart model not configured"),
             parsingModel = model,
-        ).newSession(session = Session.newUserID()).let { socketManager ->
+        ).newSession(session = Session.newUserID())?.let { socketManager ->
             SessionProxyServer.agents[socketManager.sessionId] = socketManager
             ApplicationServer.appInfoMap[socketManager.sessionId] = AppInfoData(
                 applicationName = title,
@@ -130,7 +130,7 @@ open class DocProcessorAction(
                 log.warn("Error opening browser", e)
             }
             socketManager
-        }
+        } ?: throw RuntimeException("Failed to create chat session")
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {

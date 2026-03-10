@@ -150,7 +150,7 @@ abstract class PatchApp(
     override val inputCnt = 1
     override val stickyInput = false
     override fun newSession(user: User, session: Session): SocketManager {
-        val ui = super.newSession(user, session)
+        val ui = super.newSession(user, session)!!
         log.info("Creating new session for user: ${user?.id ?: "anonymous"}")
         var retries: Int = -1
         val task = ui.newTask()

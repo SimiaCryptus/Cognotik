@@ -75,13 +75,13 @@ abstract class ApplicationServer(
     protected open val deleteSessionServlet by lazy { ServletHolder("delete", DeleteSessionServlet(this)) }
     protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
 
-    override fun newSession(user: User, session: Session): SocketManager {
+    override fun newSession(user: User, session: Session): SocketManager? {
         (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session)
             ?: SessionProxyServer.agents[session])?.apply { return this; }
         logger.info(
             "Creating new session: {} for user: {} in application: {}",
             session,
-            user?.email ?: "anonymous",
+            user.email,
             applicationName
         )
         dataStorage.setJson(
@@ -111,7 +111,6 @@ abstract class ApplicationServer(
                 ui = socketManager
             )
         }
-        logger.info("New session created successfully: {}", session)
     }
 
     open fun userMessage(
