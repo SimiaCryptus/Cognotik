@@ -4,6 +4,33 @@ let availableModels = {};
 let cognitiveTypes = [];
 
 document.addEventListener('DOMContentLoaded', function () {
+    // --- DocOps Apps Dropdown Menu ---
+    const docopsMenuBtn = document.getElementById('docops-menu-btn');
+    const docopsMenu = document.getElementById('docops-menu');
+    if (docopsMenuBtn && docopsMenu) {
+        docopsMenuBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            docopsMenu.classList.toggle('open');
+        });
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!docopsMenu.contains(e.target)) {
+                docopsMenu.classList.remove('open');
+            }
+        });
+    }
+    // --- Health Improvement DocOps App ---
+    const openHealthImprovement = document.getElementById('open-health-improvement');
+    if (openHealthImprovement) {
+        openHealthImprovement.addEventListener('click', function (e) {
+            e.preventDefault();
+            console.log('[DOMContentLoaded] openHealthImprovement clicked.');
+            docopsMenu.classList.remove('open');
+            const docopsSessionId = Utils.generateSessionId();
+            console.log('[DOMContentLoaded] Generated session for Health Improvement:', docopsSessionId);
+            window.location.href = `/health-improvement/fileIndex/${docopsSessionId}/app.html`;
+        });
+    }
 
     // --- Basic Chat Modal Setup ---
     const basicChatBtn = document.getElementById('open-basic-chat');

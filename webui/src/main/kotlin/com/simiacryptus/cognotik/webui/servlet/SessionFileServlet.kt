@@ -13,11 +13,12 @@ import java.io.File
     maxFileSize = 1024 * 1024 * 50,      // 50MB
     maxRequestSize = 1024 * 1024 * 100   // 100MB
 )
-class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet() {
+open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet() {
     override fun getDir(req: HttpServletRequest): File? {
         val pathInfo = req.pathInfo ?: req.servletPath
         val pathSegments = parsePath(pathInfo ?: "/")
         val session = Session(parsePath(pathInfo ?: "/").first())
+        onSession(session)
         val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
         val sessionDir = dataStorage.getSessionDir(user, session)
         val dataDir = dataStorage.getDataDir(user, session)
@@ -49,9 +50,14 @@ class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet() {
         file?.let { return super.listContents(it, req) }
         val pathInfo = req.pathInfo ?: req.servletPath
         val session = Session(parsePath(pathInfo ?: "/").first())
+        onSession(session)
         val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
         val sessionPair = listContents(dataStorage.getSessionDir(user, session), req)
         val dataPair = listContents(dataStorage.getDataDir(user, session), req)
         return Pair(sessionPair.first + dataPair.first, sessionPair.second + dataPair.second)
+    }
+
+    open fun onSession(session: Session) {
+
     }
 }

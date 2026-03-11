@@ -59,7 +59,15 @@ abstract class ApplicationServer(
     protected open val usageServlet by lazy { ServletHolder("usage", UsageServlet()) }
     protected open val fileZip by lazy { ServletHolder("fileZip", ZipServlet(dataStorage)) }
     protected open val fileIndex by lazy {
-        ServletHolder("fileIndex", SessionFileServlet(dataStorage)).apply {
+        ServletHolder("fileIndex", object : SessionFileServlet(dataStorage){
+            val sessions = mutableSetOf<Session>()
+            override fun onSession(session: Session) {
+                super.onSession(session)
+                if (sessions.add(session)) {
+                    this@ApplicationServer.newSession(user = defaultUser, session = session)
+                }
+            }
+        }).apply {
             registration.setMultipartConfig(
                 MultipartConfigElement(
                     System.getProperty("java.io.tmpdir"),
