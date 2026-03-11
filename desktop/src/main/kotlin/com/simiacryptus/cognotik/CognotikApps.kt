@@ -248,6 +248,7 @@ open class CognotikApps(
         OrchestrationConfig.instanceFn =
             { m -> m.instance() ?: throw IllegalStateException("Model or provider not set") }
         listOf(
+            ChildWebApp("/puppy-finder", DocOpsApp(File("."), model, model, appId = "puppy-finder")),
             ChildWebApp("/health-improvement", DocOpsApp(File("."), model, model, appId = "health-improvement")),
             ChildWebApp("/chat", BasicChatApp(File("."), model, model)),
             ChildWebApp(

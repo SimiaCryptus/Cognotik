@@ -40,6 +40,18 @@ abstract class FileServlet : HttpServlet() {
         val dir = getDir(req)
         val file = dir?.let { getFile(it, pathSegments, req) }
         when {
+            file != null && file.name == "_files.json" && !file.exists() -> {
+                val parentDir = file.parentFile
+                if (parentDir != null && parentDir.exists() && parentDir.isDirectory) {
+                    log.info("Serving virtual _files.json for directory: ${parentDir.absolutePath}")
+                    serveFilesJson(parentDir, resp)
+                } else {
+                    log.warn("Parent directory not found for _files.json: ${file.absolutePath}")
+                    resp.status = HttpServletResponse.SC_NOT_FOUND
+                    resp.writer.write("File not found")
+                }
+            }
+
             false == file?.exists() -> {
                 // Check if this is a request for HTML or PDF with an equivalent .md file
                 val fileName = file.name
@@ -421,6 +433,58 @@ abstract class FileServlet : HttpServlet() {
             resp.writer.write("Error rendering markdown: ${e.message}")
         }
     }
+    private fun serveFilesJson(directory: File, resp: HttpServletResponse) {
+        try {
+            val children = directory.listFiles() ?: emptyArray()
+            val entries = children.sortedBy { it.name }.map { child ->
+                val type = if (child.isDirectory) "directory" else "file"
+                val size = if (child.isFile) child.length() else null
+                val lastModified = child.lastModified()
+                buildString {
+                    append("    {")
+                    append("\"name\": ${jsonEscape(child.name)}")
+                    append(", \"type\": \"$type\"")
+                    if (size != null) {
+                        append(", \"size\": $size")
+                    }
+                    append(", \"lastModified\": $lastModified")
+                    if (child.isFile) {
+                        append(", \"mimeType\": ${jsonEscape(getMimeType(child.name))}")
+                    }
+                    append("}")
+                }
+            }
+            val json = buildString {
+                appendLine("{")
+                appendLine("  \"path\": ${jsonEscape(directory.name)},")
+                appendLine("  \"totalFiles\": ${children.count { it.isFile }},")
+                appendLine("  \"totalFolders\": ${children.count { it.isDirectory }},")
+                appendLine("  \"entries\": [")
+                append(entries.joinToString(",\n"))
+                appendLine()
+                appendLine("  ]")
+                append("}")
+            }
+            resp.contentType = "application/json"
+            resp.characterEncoding = "UTF-8"
+            resp.status = HttpServletResponse.SC_OK
+            resp.writer.write(json)
+        } catch (e: Exception) {
+            log.error("Error generating _files.json for directory: ${directory.absolutePath}", e)
+            resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            resp.writer.write("""{"error": "Error generating directory listing"}""")
+        }
+    }
+    private fun jsonEscape(value: String): String {
+        val escaped = value
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+        return "\"$escaped\""
+    }
+
 
 
     private fun getMimeType(fileName: String): String {
