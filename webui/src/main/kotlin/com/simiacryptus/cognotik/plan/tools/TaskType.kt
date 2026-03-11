@@ -85,6 +85,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(DecompositionSynthesisTask.DecompositionSynthesis)
             registerConstructor(DialecticalReasoningTask.DialecticalReasoning)
             registerConstructor(DiscussionTask.Discussion)
+            registerConstructor(EntropyReductionTreeTask.EntropyReductionTree)
             registerConstructor(EmailCampaignTask.EmailCampaign)
             registerConstructor(EthicalReasoningTask.EthicalReasoning)
             registerConstructor(FileAppendTask.FileAppend)
