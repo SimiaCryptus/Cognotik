@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>🏭 Webapp Factory</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+<body>
+<div id="app">
+    <header>
+        <h1>🏭 Webapp Factory</h1>
+        <p class="subtitle">Describe a software idea and let AI render it into a complete project</p>
+    </header>
+    <nav id="pipeline-nav">
+        <ul>
+            <li><a class="nav-link active" data-section="section-input" href="#section-input">💡 Idea</a></li>
+            <li><a class="nav-link" data-section="section-pipeline" href="#section-pipeline">⚙️ Pipeline</a></li>
+            <li><a class="nav-link" data-section="section-results" href="#section-results">📊 Results</a></li>
+        </ul>
+    </nav>
+    <!-- Section: Idea Input -->
+    <section class="section active" id="section-input">
+        <h2>💡 Your Software Idea</h2>
+        <div class="card">
+            <h3>Describe the webapp you want to build</h3>
+            <p class="help-text">Describe your software idea in detail — what it does, who it's for, key features, tech
+                preferences, etc. The more detail you provide, the better the output.</p>
+            <textarea id="idea-editor" placeholder="Example:
+# Task Tracker Pro
+A simple, elegant task management web application for small teams.
+## Target Users
+- Small teams (2-10 people)
+- Freelancers managing multiple projects
+## Key Features
+- Create, edit, and delete tasks
+- Organize tasks into projects and categories
+- Assign tasks to team members
+- Set due dates and priority levels
+- Kanban board view and list view
+- Simple search and filtering
+- Dark mode support
+## Tech Preferences
+- Single-page application
+- Clean, modern UI with CSS Grid/Flexbox
+- Local storage for persistence (no backend required)
+- Vanilla JS or lightweight framework
+## Design
+- Minimalist aesthetic
+- Responsive design for mobile and desktop
+- Accessible (WCAG 2.1 AA)" rows="24" spellcheck="true"></textarea>
+            <div class="button-row">
+                <button class="btn btn-primary" id="save-idea">💾 Save Idea</button>
+                <span class="status-msg" id="idea-status"></span>
+            </div>
+        </div>
+    </section>
+    <!-- Section: Pipeline -->
+    <section class="section" id="section-pipeline">
+        <h2>⚙️ Pipeline Execution</h2>
+        <!-- Pipeline Diagram -->
+        <div class="card">
+            <h3>Pipeline Overview</h3>
+            <div id="pipeline-diagram">
+                <div class="pipeline-stage" data-stage="input">
+                    <div class="stage-icon">💡</div>
+                    <div class="stage-label">Idea</div>
+                    <div class="stage-status" id="stage-status-input">Ready</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="render">
+                    <div class="stage-icon">🏗️</div>
+                    <div class="stage-label">Render Project</div>
+                    <div class="stage-status" id="stage-status-render">Pending</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="output">
+                    <div class="stage-icon">📄</div>
+                    <div class="stage-label">README</div>
+                    <div class="stage-status" id="stage-status-output">Pending</div>
+                </div>
+            </div>
+        </div>
+        <!-- Step 1: Render Project -->
+        <div class="card">
+            <h3>Step 1: Render Project</h3>
+            <div class="step-group">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <span class="step-title">Render Idea into Project</span>
+                        <span class="step-badge" id="badge-render">pending</span>
+                    </div>
+                    <p class="step-desc">Takes your software idea and renders it into a complete project structure with
+                        a README. This uses a sub-plan agent that may create multiple files.</p>
+                    <div class="button-row">
+                        <button class="btn btn-run" data-badge="badge-render"
+                                data-op="ops/render_op.md"
+                                data-output="code/README.md" data-viewer="viewer-render">▶ Run
+                        </button>
+                        <button class="btn btn-view" data-file="code/README.md" data-viewer="viewer-render">
+                            👁 View README
+                        </button>
+                    </div>
+                    <div class="viewer" id="viewer-render"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Run All -->
+        <div class="card">
+            <h3>🚀 Execution</h3>
+            <p class="help-text">Run the full pipeline. The AI will read your idea and generate the project files.</p>
+            <div class="button-row">
+                <button class="btn btn-accent" id="run-all">▶ Run Pipeline</button>
+            </div>
+            <div class="log-output" id="batch-log"></div>
+        </div>
+    </section>
+    <!-- Section: Results -->
+    <section class="section" id="section-results">
+        <h2>📊 Results</h2>
+        <div class="results-tabs">
+            <button class="results-tab active" data-tab="tab-readme">📄 README</button>
+            <button class="results-tab" data-tab="tab-files">📁 Project Files</button>
+        </div>
+        <div class="results-content">
+            <div class="tab-panel active" id="tab-readme">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary" data-file="code/README.md" data-viewer="result-readme">🔄 Refresh
+                        </button>
+                    </div>
+                    <div class="result-viewer" id="result-readme">
+                        <p class="placeholder">Run the pipeline to generate the project README.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-files">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary" id="btn-refresh-files-results">🔄 Refresh File List</button>
+                    </div>
+                    <div id="files-results-container">
+                        <p class="placeholder">Run the pipeline to generate project files.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+<script src="marked.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

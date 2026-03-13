@@ -83,6 +83,7 @@ open class WaterfallMode(
             )
 
 
+            val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
             val plan = if (config.planFile != null) {
                 loadPrePlanned(userMessage, coordinator.root, task)
             } else {
@@ -283,6 +284,7 @@ open class WaterfallMode(
     }
 
     private fun parseConfig(message: String, root: String, task: SessionTask): WaterfallModeConfig {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         val describer = TaskContextYamlDescriber(orchestrationConfig)
         Tasks.initDescriber(orchestrationConfig, describer)
         val availableFiles = getAvailableFiles(Path(root))

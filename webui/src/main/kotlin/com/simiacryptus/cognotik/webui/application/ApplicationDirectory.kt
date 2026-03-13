@@ -98,7 +98,7 @@ abstract class ApplicationDirectory(
         log.info("Setting up platform (default implementation - no action taken)")
     }
 
-    protected open fun _main(vararg args: String) {
+    open fun _main(vararg args: String) {
         try {
             log.info("Starting application with args: ${args.joinToString(", ")}")
             init(args.contains("--server"))
@@ -133,7 +133,7 @@ abstract class ApplicationDirectory(
     open fun webAppContexts() = listOfNotNull(
         run { log.debug("Creating web app contexts"); null },
         newWebAppContext("/logout", logoutServlet),
-        newWebAppContext("/proxy", proxyHttpServlet),
+//        newWebAppContext("/proxy", proxyHttpServlet),
         newWebAppContext("/userInfo", userInfoServlet).let {
             log.debug("Configuring userInfo context with authentication")
             authenticatedWebsite()?.configure(it, true) ?: it

@@ -49,9 +49,9 @@ open class CouncilMode(
     private var isRunning = false
     private var transcriptStream: OutputStream? = null
     private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+))}""")
-    private val maxTaskHistoryChars: Int get() = config.maxTaskHistoryChars
-    private val maxTasksPerIteration: Int get() = config.maxTasksPerIteration
-    private val maxIterations: Int get() = config.maxIterations
+    private val maxTaskHistoryChars: Int get() = config?.maxTaskHistoryChars ?: 20000
+    private val maxTasksPerIteration: Int get() = config?.maxTasksPerIteration ?: 3
+    private val maxIterations: Int get() = config?.maxIterations ?: 10
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
 
 
@@ -68,6 +68,7 @@ open class CouncilMode(
     override fun contextData(): List<String> = emptyList()
 
     private fun startCouncilChat(task : SessionTask, userMessage: String) {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         task.echo(renderMarkdown(userMessage, ui = task.ui))
         transcriptStream = task.transcript()
 
@@ -374,6 +375,7 @@ ${JsonUtil.toJson(taskConfig)}
             "${index + 1}. [$nominator] $taskDesc"
         }.joinToString("\n\n")
 
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         config.council.forEach { strategy ->
             val state = reasoningStates[strategy.name]!!
             val voter = ParsedAgent(

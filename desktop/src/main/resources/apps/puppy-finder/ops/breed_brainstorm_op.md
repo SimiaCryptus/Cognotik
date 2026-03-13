@@ -1,5 +1,5 @@
 ---
-transforms: requirements\.md -> ideas.md
+transforms: \.\./requirements\.md -> ../ideas.md
 task_type: Brainstorming
 ---
 

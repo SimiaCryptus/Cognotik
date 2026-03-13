@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.def
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
@@ -250,6 +251,8 @@ open class CognotikApps(
         listOf(
             ChildWebApp("/puppy-finder", DocOpsApp(File("."), model, model, appId = "puppy-finder")),
             ChildWebApp("/health-improvement", DocOpsApp(File("."), model, model, appId = "health-improvement")),
+            ChildWebApp("/webapp-factory", DocOpsApp(File("."), model, model, appId = "webapp-factory")),
+            ChildWebApp("/proxy", SessionProxyServer("Proxy Server", "/proxy")),
             ChildWebApp("/chat", BasicChatApp(File("."), model, model)),
             ChildWebApp(
                 "/taskChat", object : SinglePlanApp(

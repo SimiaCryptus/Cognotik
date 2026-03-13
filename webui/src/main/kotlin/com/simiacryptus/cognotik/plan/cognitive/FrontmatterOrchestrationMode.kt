@@ -141,6 +141,7 @@ open class FrontmatterOrchestrationMode(
         ?: task.ui.dataStorage?.getSessionDir(user, session)?.toPath()
         ?: File(".").toPath()
 
+      val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
       val specsDir = root.resolve(config.specsDirectory)
 
       // Phase 1: Generate specifications
@@ -447,6 +448,7 @@ Do NOT generate the actual file contents. Generate specifications that describe 
 
   private fun executeDocProcessor(root: Path, specsDir: Path, task: SessionTask) {
     try {
+      val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
       val processor = DocProcessor(
         root = root.toFile(),
         docsFolder = specsDir.toFile(),

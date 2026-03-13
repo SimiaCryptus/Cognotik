@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.newSettings
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -25,12 +26,39 @@ import java.nio.file.FileSystems
 import java.nio.file.PathMatcher
 import java.security.MessageDigest
 import java.time.Duration
+import java.time.Instant
 import java.util.*
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture.allOf
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.regex.Matcher
 import java.util.regex.Pattern
+/**
+* Status of a single target generation task
+*/
+enum class TaskStatus {
+    PENDING, RUNNING, COMPLETED, FAILED, CANCELLED
+}
+/**
+* Status entry for a single target generation task in docops.status.json
+*/
+data class TaskStatusEntry(
+    val target: String,
+    val status: TaskStatus,
+    val sessionId: String? = null,
+    val startedAt: String? = null,
+    val completedAt: String? = null,
+    val error: String? = null
+)
+/**
+* Root structure for docops.status.json
+*/
+data class DocOpsStatus(
+    val lastUpdated: String,
+    val tasks: Map<String, TaskStatusEntry>
+)
+
 
 /**
  * DocProcessor processes markdown documentation files that specify target files via frontmatter.
@@ -53,6 +81,87 @@ class DocProcessor(
     val urlCacheDir: File = File(root, ".doc-processor-cache/url-cache"),
     val autoFix: Boolean
 ) {
+    private val statusFile = File(root, "docops.status.json")
+    private val statusLock = Any()
+    /**
+     * Read the current status from docops.status.json, or return an empty status if the file doesn't exist.
+     */
+    private fun readStatus(): DocOpsStatus {
+        return try {
+            if (statusFile.exists()) {
+                JsonUtil.fromJson(statusFile.readText(), DocOpsStatus::class.java)
+            } else {
+                DocOpsStatus(lastUpdated = nowTimestamp(), tasks = emptyMap())
+            }
+        } catch (e: Exception) {
+            log.warn("Failed to read docops.status.json, starting fresh", e)
+            DocOpsStatus(lastUpdated = nowTimestamp(), tasks = emptyMap())
+        }
+    }
+    /**
+     * Write the status to docops.status.json atomically (write to temp file then rename).
+     */
+    private fun writeStatus(status: DocOpsStatus) {
+        try {
+            statusFile.parentFile?.mkdirs()
+            val tempFile = File(statusFile.parentFile, ".docops.status.json.tmp")
+            tempFile.writeText(JsonUtil.toJson(status))
+            tempFile.renameTo(statusFile)
+        } catch (e: Exception) {
+            log.error("Failed to write docops.status.json", e)
+        }
+    }
+    /**
+     * Update the status of a specific target task in a thread-safe manner.
+     */
+    private fun updateTaskStatus(
+        targetKey: String,
+        status: TaskStatus,
+        sessionId: String? = null,
+        error: String? = null
+    ) {
+        synchronized(statusLock) {
+            val current = readStatus()
+            val existingEntry = current.tasks[targetKey]
+            val now = nowTimestamp()
+            val updatedEntry = TaskStatusEntry(
+                target = targetKey,
+                status = status,
+                sessionId = sessionId ?: existingEntry?.sessionId,
+                startedAt = if (status == TaskStatus.RUNNING) now else existingEntry?.startedAt,
+                completedAt = if (status in setOf(TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED)) now else existingEntry?.completedAt,
+                error = error
+            )
+            val updatedTasks = current.tasks.toMutableMap()
+            updatedTasks[targetKey] = updatedEntry
+            writeStatus(DocOpsStatus(lastUpdated = now, tasks = updatedTasks))
+        }
+    }
+    /**
+     * Initialize the status file with all planned tasks set to PENDING.
+     */
+    private fun initializeStatus(tasks: List<ModificationTask>) {
+        synchronized(statusLock) {
+            val now = nowTimestamp()
+            val taskEntries = tasks.associate { task ->
+                val targetKey = task.data.relative_files?.firstOrNull() ?: "unknown"
+                targetKey to TaskStatusEntry(
+                    target = targetKey,
+                    status = TaskStatus.PENDING
+                )
+            }
+            // Merge with existing status (preserve completed tasks from previous runs)
+            val existing = readStatus()
+            val merged = existing.tasks.toMutableMap()
+            taskEntries.forEach { (key, entry) ->
+                merged[key] = entry
+            }
+            writeStatus(DocOpsStatus(lastUpdated = now, tasks = merged))
+        }
+    }
+    private fun nowTimestamp(): String =
+        Instant.now().toString()
+
 
     /**
      * Check if a string is a URL (http or https)
@@ -200,6 +309,7 @@ class DocProcessor(
         val taskConfigJson: String? = null,
         val taskType: String? = null,
         val updateMode: String? = null,
+        val rootOverride: String? = null,
     )
 
     /**
@@ -486,6 +596,7 @@ class DocProcessor(
             val source = primarySource(transforms, specs, documents, generates) ?: return null
             val relatedFiles = allRelatedFiles(specs, targetFileObj, transforms, documents, generates)
             val effectiveUpdateMode = resolveUpdateMode(specs, transforms, documents, generates)
+            val effectiveRoot = resolveEffectiveRoot(specs, transforms, documents, generates)
             val prepareResult = effectiveUpdateMode.prepare(
                 source = source,
                 target = targetFileObj,
@@ -515,7 +626,7 @@ class DocProcessor(
                         targetFile1,
                         taskType
                     ),
-                    root = root,
+                    root = effectiveRoot,
                     taskConfigOverrides = resolveTaskConfigJson(specs, transforms, documents, generates),
                     data = this.run {
                         // First check for explicit data_file in frontmatter
@@ -591,28 +702,35 @@ class DocProcessor(
         generates: List<GenerateMatch>
     ): Map<String, Any>? {
         val configJsonPath = specs.firstNotNullOfOrNull { spec ->
-            spec.taskConfigJson?.let { spec.docFile.parentFile.resolve(it) }
+            spec.taskConfigJson?.let {
+                spec.docFile.parentFile.resolve(it)
+            }
         } ?: transforms.firstNotNullOfOrNull { match ->
-            match.spec.taskConfigJson?.let { match.spec.docFile.parentFile.resolve(it) }
+            match.spec.taskConfigJson?.let {
+                match.spec.docFile.parentFile.resolve(it)
+            }
         } ?: documents.firstNotNullOfOrNull { docMatch ->
-            docMatch.docSpec.taskConfigJson?.let { docMatch.docSpec.docFile.parentFile.resolve(it) }
+            docMatch.docSpec.taskConfigJson?.let {
+                docMatch.docSpec.docFile.parentFile.resolve(it)
+            }
         } ?: generates.firstNotNullOfOrNull { genMatch ->
-            genMatch.spec.taskConfigJson?.let { genMatch.spec.docFile.parentFile.resolve(it) }
+            genMatch.spec.taskConfigJson?.let {
+                genMatch.spec.docFile.parentFile.resolve(it)
+            }
         }
-        return if (configJsonPath != null && configJsonPath.exists()) {
+        if (configJsonPath != null && configJsonPath.exists()) {
             try {
-                @Suppress("UNCHECKED_CAST")
-                JsonUtil.fromJson(configJsonPath.readText(), Map::class.java) as Map<String, Any>
+                val fromJson = JsonUtil.fromJson<Map<String, Any>>(configJsonPath.readText(), Map::class.java)
+                return fromJson
             } catch (e: Exception) {
                 log.warn("Failed to parse task config JSON: ${configJsonPath.absolutePath}", e)
-                null
             }
         } else {
             if (configJsonPath != null) {
                 log.warn("Task config JSON file not found: ${configJsonPath.absolutePath}")
             }
-            null
         }
+        return null
     }
 
     /**
@@ -857,6 +975,7 @@ class DocProcessor(
         cancelFlag: AtomicBoolean = AtomicBoolean(false),
         onNewSession: (Session) -> Unit = { _ -> }
     ): Array<Session> {
+        initializeStatus(fileMods)
         val sessions = mutableListOf<Session>()
         separateQueues(fileMods).map { sortByDependencies(it) }.filter { it.isNotEmpty() }.map { mods ->
             pool.submit {
@@ -890,32 +1009,54 @@ class DocProcessor(
         onNewSession: (Session) -> Unit,
         sessions: MutableList<Session>
     ) {
-        val mod = mod.rebase(root, mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root)
+        val root = mod.data.root
+        val newRoot = mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
+        val isUnderRoot = try {
+            newRoot.canonicalPath.startsWith(root.canonicalPath) && newRoot.canonicalPath.length > root.canonicalPath.length
+        } catch (e: Exception) {
+            log.warn("Failed to resolve new root path: ${newRoot.absolutePath}", e)
+            false
+        }
+        val mod = if(isUnderRoot) mod.rebase(root, newRoot) else mod
+        val targetKey = mod.data.relative_files?.firstOrNull() ?: "unknown"
         harness.resetSession()
         if (cancelFlag.get()) {
             log.info("Cancellation requested, skipping execution of remaining tasks")
+            updateTaskStatus(targetKey, TaskStatus.CANCELLED)
             throw CancellationException("Execution cancelled")
         }
-        harness.runTask(
-            taskType = mod.taskType,
-            timeoutMinutes = 30,
-            message = mod.message(root),
-            executionConfig = executionConfig(mod, harness)
-        ) { session ->
-            if (cancelFlag.get()) {
-                log.info("Cancellation requested, skipping execution of remaining tasks")
-                throw CancellationException("Execution cancelled")
+        updateTaskStatus(targetKey, TaskStatus.RUNNING)
+        try {
+            harness.runTask(
+                taskType = mod.taskType,
+                timeoutMinutes = 30,
+                message = mod.message(root),
+                executionConfig = executionConfig(mod, harness)
+            ) { session ->
+                if (cancelFlag.get()) {
+                    log.info("Cancellation requested, skipping execution of remaining tasks")
+                    updateTaskStatus(targetKey, TaskStatus.CANCELLED, sessionId = session.toString())
+                    throw CancellationException("Execution cancelled")
+                }
+                updateTaskStatus(targetKey, TaskStatus.RUNNING, sessionId = session.toString())
+                onNewSession(session)
+                sessions += session
+                harness.createSettings(
+                    session = session,
+                    autoFix = autoFix,
+                    typeConfig = mod.typeConfig,
+                    workingDir = mod.data.root.toString()
+                ).apply {
+                    processor = mod.patchProcessor
+                }
             }
-            onNewSession(session)
-            sessions += session
-            harness.createSettings(
-                session = session,
-                autoFix = autoFix,
-                typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
-                workingDir = mod.data.root.toString()
-            ).apply {
-                processor = mod.patchProcessor
-            }
+            updateTaskStatus(targetKey, TaskStatus.COMPLETED)
+        } catch (e: CancellationException) {
+            updateTaskStatus(targetKey, TaskStatus.CANCELLED, error = e.message)
+            throw e
+        } catch (e: Exception) {
+            updateTaskStatus(targetKey, TaskStatus.FAILED, error = e.message ?: e.javaClass.simpleName)
+            throw e
         }
     }
 
@@ -924,56 +1065,57 @@ class DocProcessor(
         harness: UnifiedHarness
     ): TaskExecutionConfig {
         val newRoot = mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
-        return if (FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass)) {
-            // For file-based tasks, directly cast the config
-            val baseCfgJson = mapOf(
-                "task_type" to mod.taskType.name,
-            ) + mod.data.jsonCast<Map<String, Any>>()
-            val cfgJson = mod.data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
-            cfgJson.jsonCast(mod.taskType.executionConfigClass)
-        } else if (RenderErbTemplateTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass)) {
-            val baseCfgJson = mapOf(
-                "task_type" to mod.taskType.name,
-                "template_file" to mod.data.related_files?.firstOrNull { it.endsWith(".erb") }
-            ) + mod.data.jsonCast<Map<String, Any>>()
-            val cfgJson = mod.data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
-            cfgJson.jsonCast(mod.taskType.executionConfigClass)
-        } else {
+        return when {
+          FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass) -> {
+              val baseCfgJson = mapOf(
+                  "task_type" to mod.taskType.name,
+              ) + mod.data.jsonCast<Map<String, Any>>()
+              mod.data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
+          }
+          RenderErbTemplateTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass) -> {
+              val baseCfgJson = mapOf(
+                  "task_type" to mod.taskType.name,
+                  "template_file" to mod.data.related_files?.firstOrNull { it.endsWith(".erb") }
+              ) + mod.data.jsonCast<Map<String, Any>>()
+              mod.data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
+          }
+          else -> {
             // For non-file tasks (e.g. ImageVariation), use requestToTask to generate proper config
             val orchestrationConfig = harness.createSettings(
-                session = Session.newGlobalID(),
-                autoFix = true,
-                typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
-                workingDir = newRoot.toString()
+              session = Session.newGlobalID(),
+              autoFix = true,
+              typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
+              workingDir = newRoot.toString()
             )
             val defaultModel = orchestrationConfig.defaultSmart
             val fastModelClient = orchestrationConfig.defaultFast
             val contextMessages = buildList {
-                add("Task type: ${mod.taskType.name}")
-                add("Task description: ${mod.data.task_description}")
-                mod.data.relative_files?.forEach { add("Target file: $it") }
-                mod.data.relative_related_files?.forEach { relatedFile ->
-                    val resolvedFile =
-                        if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
-                    if (resolvedFile.exists()) {
-                        add("Related file ($relatedFile):\n```\n${resolvedFile.readText()}\n```")
-                    }
+              add("Task type: ${mod.taskType.name}")
+              add("Task description: ${mod.data.task_description}")
+              mod.data.relative_files?.forEach { add("Target file: $it") }
+              mod.data.relative_related_files?.forEach { relatedFile ->
+                val resolvedFile =
+                  if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
+                if (resolvedFile.exists()) {
+                  add("Related file ($relatedFile):\n```\n${resolvedFile.readText()}\n```")
                 }
-                val message = mod.message(mod.data.root)
-                if (message.isNotBlank()) add(message)
+              }
+              val message = mod.message(mod.data.root)
+              if (message.isNotBlank()) add(message)
             }
             val (_, taskConfig) = ConversationalMode.requestToTask(
-                defaultModel = defaultModel,
-                fastModel = fastModelClient,
-                userMessage = mod.data.task_description,
-                orchestrationConfig = orchestrationConfig,
-                prompt = "Execute the following task based on the provided context. Task type: ${mod.taskType.name}",
-                history = contextMessages,
-                singleStage = true,
-                taskTypes = listOf(mod.taskType)
+              defaultModel = defaultModel,
+              fastModel = fastModelClient,
+              userMessage = mod.data.task_description,
+              orchestrationConfig = orchestrationConfig,
+              prompt = "Execute the following task based on the provided context. Task type: ${mod.taskType.name}",
+              history = contextMessages,
+              singleStage = true,
+              taskTypes = listOf(mod.taskType)
             )
             taskConfig
-        }
+          }
+        }.jsonCast(mod.taskType.executionConfigClass)
     }
 
 
@@ -1077,6 +1219,7 @@ class DocProcessor(
         val taskType = parseTaskType(frontmatter)
         val taskConfigJson = parseTaskConfigJson(frontmatter)
         val perDocUpdateMode = parseUpdateMode(frontmatter)
+        val rootOverride = parseRootOverride(frontmatter)
         // Return null if neither specifies nor transforms are present
         if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty() && generates.isEmpty()) {
             return null
@@ -1092,7 +1235,8 @@ class DocProcessor(
             frontmatter = frontmatter,
             taskType = taskType,
             taskConfigJson = taskConfigJson,
-            updateMode = perDocUpdateMode
+            updateMode = perDocUpdateMode,
+            rootOverride = rootOverride
         )
     }
 
@@ -1105,6 +1249,54 @@ class DocProcessor(
     fun parseUpdateMode(frontmatter: Map<String, Any>): String? {
         return frontmatter["update_mode"] as? String
     }
+    /**
+     * Parse 'root_override' from frontmatter.
+     * This allows individual doc files to specify a different root directory for task processing.
+     * The value is a relative path from the document file's parent directory.
+     * The resolved path must be strictly under the default root directory.
+     */
+    fun parseRootOverride(frontmatter: Map<String, Any>): String? {
+        return frontmatter["root_override"] as? String
+    }
+    /**
+     * Resolve the effective root directory for a given set of specs.
+     * Per-doc root_override in frontmatter takes priority.
+     * The resolved root must be strictly under (or equal to) the default root directory.
+     *
+     * @param specs The doc specifications to check for root_override
+     * @param transforms Transform matches to check for root_override
+     * @param documents Document matches to check for root_override
+     * @param generates Generate matches to check for root_override
+     * @return The resolved root directory
+     * @throws IllegalArgumentException if the resolved root is not under the default root
+     */
+    fun resolveEffectiveRoot(
+        specs: List<DocSpec>,
+        transforms: List<TransformMatch> = emptyList(),
+        documents: List<DocumentMatch> = emptyList(),
+        generates: List<GenerateMatch> = emptyList()
+    ): File {
+        val overrideSpec = specs.firstOrNull { it.rootOverride != null }
+            ?: transforms.firstOrNull { it.spec.rootOverride != null }?.spec
+            ?: documents.firstOrNull { it.docSpec.rootOverride != null }?.docSpec
+            ?: generates.firstOrNull { it.spec.rootOverride != null }?.spec
+        if (overrideSpec == null) return root
+        val rootOverridePath = overrideSpec.rootOverride ?: return root
+        val resolvedRoot = overrideSpec.docFile.parentFile.resolve(rootOverridePath).canonicalFile
+        val canonicalDefaultRoot = root.canonicalFile
+        if (!resolvedRoot.canonicalPath.startsWith(canonicalDefaultRoot.canonicalPath + File.separator) &&
+            resolvedRoot.canonicalPath != canonicalDefaultRoot.canonicalPath
+        ) {
+            throw IllegalArgumentException(
+                "root_override '$rootOverridePath' resolves to '${resolvedRoot.canonicalPath}' " +
+                        "which is not under the default root '${canonicalDefaultRoot.canonicalPath}'. " +
+                        "The root override must be strictly under the default root directory."
+            )
+        }
+        log.info("Using root override: ${resolvedRoot.canonicalPath} (from ${overrideSpec.docFile.name})")
+        return resolvedRoot
+    }
+
     /**
      * Resolve the effective update mode for a given set of specs.
      * Per-doc update_mode in frontmatter takes priority over the global updateMode.
@@ -1160,6 +1352,11 @@ class DocProcessor(
         when {
             specs.size == 1 && specs.first().let { it.frontmatter["prompt"] } is String -> {
                 appendLine(specs.first().let { it.frontmatter["prompt"] } as String)
+            }
+
+            SubPlanTask.SubPlanTaskExecutionConfigData::class.java.isAssignableFrom(taskType.executionConfigClass) -> {
+                appendLine("Perform ${taskType.name} generation.")
+                appendLine("Use the provided documentation and specifications as context for the processing.")
             }
 
             !FileTaskExecutionConfig::class.java.isAssignableFrom(taskType.executionConfigClass) -> {
@@ -1452,7 +1649,7 @@ class DocProcessor(
          * - $2+1 -> if group 2 is numeric, replaced with (group2 + 1); otherwise replaced with group2 + "+1"
          * - $0-5 -> if group 0 is numeric, replaced with (group0 - 5); otherwise replaced with group0 + "-5"
          */
-        fun applyBackreferences(destPattern: String, matcher: java.util.regex.Matcher): String {
+        fun applyBackreferences(destPattern: String, matcher: Matcher): String {
             var result = destPattern
             // Match backreferences like $0, $1, $2+1, $3-10, etc.
             val backrefRegex = Regex("""\$(\d+)([+-]\d+)?""")

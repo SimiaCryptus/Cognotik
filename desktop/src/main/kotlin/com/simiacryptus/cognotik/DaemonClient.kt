@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik
 
+import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader

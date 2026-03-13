@@ -19,6 +19,68 @@
     }
     // Docops servlet base (at the server root)
     const docopsBase = '/' + pathParts.slice(1, fileIndexIdx - 1).join('/');
+    // === Status polling helpers ===
+    async function readStatusFile() {
+        try {
+            const resp = await fetch(basePath + '/docops.status.json');
+            if (!resp.ok) return null;
+            return await resp.json();
+        } catch (e) {
+            return null;
+        }
+    }
+    function getTaskStatus(statusData, targetPath) {
+        if (!statusData || !statusData.tasks) return null;
+        // Try exact match first, then try matching by filename
+        if (statusData.tasks[targetPath]) return statusData.tasks[targetPath];
+        // Try just the filename portion
+        const filename = targetPath.split('/').pop();
+        if (statusData.tasks[filename]) return statusData.tasks[filename];
+        // Try all tasks to find one whose target matches
+        for (const key of Object.keys(statusData.tasks)) {
+            const task = statusData.tasks[key];
+            if (task.target === targetPath || task.target === filename) return task;
+        }
+        return null;
+    }
+    function makeProxyLink(taskSessionId) {
+        return '/proxy/#' + taskSessionId;
+    }
+    async function pollForCompletion(targetPath, onStatusUpdate) {
+        const pollInterval = 2000; // 2 seconds
+        const maxWait = 10 * 60 * 1000; // 10 minutes
+        const startTime = Date.now();
+        while (Date.now() - startTime < maxWait) {
+            await new Promise(resolve => setTimeout(resolve, pollInterval));
+            const statusData = await readStatusFile();
+            const task = getTaskStatus(statusData, targetPath);
+            if (task) {
+                if (onStatusUpdate) onStatusUpdate(task);
+                if (task.status === 'COMPLETED') return task;
+                if (task.status === 'ERROR' || task.status === 'FAILED') {
+                    throw new Error(`Task failed for ${targetPath}: ${task.status}`);
+                }
+                // Still RUNNING or PENDING — continue polling
+            }
+        }
+        throw new Error(`Timeout waiting for ${targetPath} to complete`);
+        // The POST may return immediately (async) or after completion.
+        // We poll the status file to track progress.
+        const respText = await resp.text();
+
+        // Poll for completion, updating the loading overlay with session link
+        const task = await pollForCompletion(targetPath, function(taskInfo) {
+            if (taskInfo.status === 'RUNNING' && taskInfo.sessionId) {
+                updateLoadingWithLink(
+                    'Processing: ' + targetPath,
+                    taskInfo.sessionId
+                );
+            }
+        });
+
+        return respText;
+    }
+
     // === File I/O helpers ===
     async function readFile(filePath) {
         const url = basePath + '/' + filePath;
@@ -44,12 +106,13 @@
     async function runDocOp(opPath, targetPath) {
         // The docops servlet URL pattern
         const url = `/docops?sessionId=${encodeURIComponent(sessionId)}&doc=${encodeURIComponent(opPath)}&target=${encodeURIComponent(targetPath)}`;
-        const resp = await fetch(url, { method: 'POST' });
+        const resp = await fetch(url, {
+            method: 'POST'
+        });
         if (!resp.ok) {
             const errText = await resp.text().catch(() => '');
             throw new Error(`DocOps failed for ${opPath}: ${resp.status} ${resp.statusText}\n${errText}`);
         }
-        return await resp.text();
     }
     // === Markdown rendering ===
     function renderMarkdown(md) {
@@ -96,11 +159,24 @@
     function showLoading(text) {
         const overlay = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
-        loadingText.textContent = text || 'Processing...';
+        loadingText.innerHTML = escapeHtml(text || 'Processing...');
         overlay.classList.remove('hidden');
     }
+    function updateLoadingWithLink(text, taskSessionId) {
+        const loadingText = document.getElementById('loading-text');
+        if (!loadingText) return;
+        const proxyUrl = makeProxyLink(taskSessionId);
+        loadingText.innerHTML = escapeHtml(text) +
+            '<br><a href="' + escapeHtml(proxyUrl) + '" target="_blank" rel="noopener" ' +
+            'style="color: #93c5fd; text-decoration: underline; font-size: 0.85rem;">' +
+            '🔍 Monitor live processing (' + escapeHtml(taskSessionId) + ')</a>';
+    }
+
     function hideLoading() {
         document.getElementById('loading-overlay').classList.add('hidden');
+        // Reset loading text to remove any links
+        const loadingText = document.getElementById('loading-text');
+        if (loadingText) loadingText.innerHTML = '';
     }
     // === Batch log ===
     const batchLog = document.getElementById('batch-log');
@@ -251,6 +327,7 @@
             this.disabled = true;
             showLoading('Running: ' + opPath.split('/').pop().replace('_op.md', '').replace(/_/g, ' '));
             try {
+                // Fire the doc op — runDocOp now polls for completion internally
                 await runDocOp(opPath, outputPath);
                 setBadge(badgeId, 'done');
                 // Auto-show result
@@ -320,7 +397,33 @@
                 btn.disabled = true;
             }
             try {
-                await runDocOp(step.op, step.output);
+                // Fire the POST
+                const postUrl = `/docops?sessionId=${encodeURIComponent(sessionId)}&doc=${encodeURIComponent(step.op)}&target=${encodeURIComponent(step.output)}`;
+                const resp = await fetch(postUrl, { method: 'POST' });
+                if (!resp.ok) {
+                    const errText = await resp.text().catch(() => '');
+                    throw new Error(`DocOps failed for ${step.op}: ${resp.status} ${resp.statusText}\n${errText}`);
+                }
+                await resp.text();
+
+                // Poll for completion with logging
+                const task = await pollForCompletion(step.output, function(taskInfo) {
+                    if (taskInfo.status === 'RUNNING' && taskInfo.sessionId) {
+                        updateLoadingWithLink('Processing: ' + step.label, taskInfo.sessionId);
+                        // Log the monitoring link once
+                        const logLink = document.querySelector(`[data-monitor-target="${step.output}"]`);
+                        if (!logLink) {
+                            const entry = document.createElement('div');
+                            entry.className = 'log-entry log-info';
+                            entry.dataset.monitorTarget = step.output;
+                            const ts = new Date().toLocaleTimeString();
+                            entry.innerHTML = `[${ts}] 🔍 <a href="${escapeHtml(makeProxyLink(taskInfo.sessionId))}" target="_blank" rel="noopener" style="color: #93c5fd; text-decoration: underline;">Monitor: ${escapeHtml(step.label)} (${escapeHtml(taskInfo.sessionId)})</a>`;
+                            batchLog.appendChild(entry);
+                            batchLog.scrollTop = batchLog.scrollHeight;
+                        }
+                    }
+                });
+
                 if (btn) setBadge(step.badge, 'done');
                 logBatch(`✓ Completed: ${step.label}`, 'success');
                 // Try to load result into viewer
@@ -402,6 +505,9 @@
     });
     // === Check existing files on load ===
     async function checkExistingFiles() {
+        // Also read the status file for richer state
+        const statusData = await readStatusFile();
+
         const checks = [
             { file: 'round_1/brainstorm.md', badge: 'badge-brainstorm1' },
             { file: 'round_1/perspectives.md', badge: 'badge-perspectives1' },
@@ -416,6 +522,15 @@
         ];
         for (const check of checks) {
             try {
+                // Check if task is currently running
+                const task = getTaskStatus(statusData, check.file);
+                if (task && task.status === 'RUNNING') {
+                    setBadge(check.badge, 'running');
+                    // Start background polling for this task
+                    pollAndUpdateBadge(check.file, check.badge, task.sessionId);
+                    continue;
+                }
+
                 const content = await readFile(check.file);
                 if (content !== null && content.trim().length > 0) {
                     setBadge(check.badge, 'done');
@@ -425,6 +540,24 @@
             }
         }
     }
+    // Background poll for tasks that were already running when page loaded
+    async function pollAndUpdateBadge(targetPath, badgeId, taskSessionId) {
+        try {
+            updateLoadingWithLink('Resuming: ' + targetPath, taskSessionId);
+            showLoading('Task in progress: ' + targetPath);
+            await pollForCompletion(targetPath, function(taskInfo) {
+                if (taskInfo.status === 'RUNNING' && taskInfo.sessionId) {
+                    updateLoadingWithLink('Processing: ' + targetPath, taskInfo.sessionId);
+                }
+            });
+            setBadge(badgeId, 'done');
+        } catch (e) {
+            setBadge(badgeId, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
     // === Initialize ===
     loadInitialFiles();
     checkExistingFiles();

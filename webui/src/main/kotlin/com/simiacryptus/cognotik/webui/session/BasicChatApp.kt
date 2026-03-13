@@ -72,7 +72,19 @@ class BasicChatApp(
                 )
             }
         }
-        return null
+        return ChatSocketManager(
+            session = session,
+            smartModel = instance(settings.model)
+                ?: throw RuntimeException("No API key for model ${settings.model.name}"),
+            fastModel = instance(settings.parsingModel)
+                ?: throw RuntimeException("No API key for model ${settings.parsingModel.name}"),
+            systemPrompt = "",
+            temperature = settings.temperature,
+            applicationClass = this::class.java,
+            storage = dataStorage,
+            fastTopicParsing = true,
+            budget = settings.budget,
+        )
     }
 }
 

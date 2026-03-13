@@ -77,6 +77,7 @@ open class AdaptivePlanningMode(
         val continueLoop = true
         val tabbedDisplay = TabbedDisplay(task)
         task.ui.pool.execute {
+            val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
             try {
                 log.debug("Starting main execution loop")
                 task.complete()
@@ -276,6 +277,7 @@ open class AdaptivePlanningMode(
       userMessage: String,
       task: SessionTask
     ): String {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         val currentThinkingStatus =
             reasoningState.get() ?: throw IllegalStateException("ThinkingStatus is null during runTask")
         val taskImpl = orchestrationConfig.getImpl(currentTask)
@@ -300,6 +302,7 @@ open class AdaptivePlanningMode(
         reasoningState: Any,
         task: SessionTask
     ): List<TaskData>? {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         Tasks.initDescriber(orchestrationConfig, describer)
         val parsedActor = ParsedAgent(
             name = "TaskChooser",
@@ -456,7 +459,7 @@ open class AdaptivePlanningMode(
     }
 
 
-    private fun formatEvalRecords(maxTotalLength: Int = config.maxTaskHistoryChars): List<String> {
+    private fun formatEvalRecords(maxTotalLength: Int = config?.maxTaskHistoryChars ?: 0): List<String> {
         var currentLength = 0
         val formattedRecords = mutableListOf<String>()
 

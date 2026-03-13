@@ -31,6 +31,32 @@ document.addEventListener('DOMContentLoaded', function () {
             window.location.href = `/health-improvement/fileIndex/${docopsSessionId}/app.html`;
         });
     }
+    // --- Puppy Finder DocOps App ---
+    const openPuppyFinder = document.getElementById('open-puppy-finder');
+    if (openPuppyFinder) {
+        openPuppyFinder.addEventListener('click', function (e) {
+            e.preventDefault();
+            console.log('[DOMContentLoaded] openPuppyFinder clicked.');
+            docopsMenu.classList.remove('open');
+            const docopsSessionId = Utils.generateSessionId();
+            console.log('[DOMContentLoaded] Generated session for Puppy Finder:', docopsSessionId);
+            window.location.href = `/puppy-finder/fileIndex/${docopsSessionId}/app.html`;
+        });
+    }
+    /* /webapp-factory */
+    // --- Webapp Factory DocOps App ---
+    const openWebappFactory = document.getElementById('open-webapp-factory');
+    if (openWebappFactory) {
+        openWebappFactory.addEventListener('click', function (e) {
+            e.preventDefault();
+            console.log('[DOMContentLoaded] openWebappFactory clicked.');
+            docopsMenu.classList.remove('open');
+            const docopsSessionId = Utils.generateSessionId();
+            console.log('[DOMContentLoaded] Generated session for Webapp Factory:', docopsSessionId);
+            window.location.href = `/webapp-factory/fileIndex/${docopsSessionId}/app.html`;
+        });
+    }
+
 
     // --- Basic Chat Modal Setup ---
     const basicChatBtn = document.getElementById('open-basic-chat');

@@ -167,6 +167,7 @@ open class ParallelMode(
     }
 
     private fun createParserAgent(task: SessionTask): ParsedAgent<ParallelPlan> {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
         val taskDescriptions = availableTaskTypes.joinToString("\n") { taskType ->
             val impl = orchestrationConfig.getImpl(taskType)

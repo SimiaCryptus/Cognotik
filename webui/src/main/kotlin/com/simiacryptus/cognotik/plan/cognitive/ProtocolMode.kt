@@ -48,6 +48,7 @@ open class ProtocolMode(
     }
 
     private fun startProtocolSession(task : SessionTask, userMessage: String) {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         task.echo(userMessage.renderMarkdown(true))
         val transcript = task.transcript()
         fun writeToTranscript(content: String) {
@@ -327,6 +328,7 @@ open class ProtocolMode(
     }
 
     private fun parseConfig(message: String, root: String, task: SessionTask): ProtocolModeConfig {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         val availableFiles = getAvailableFiles(Path(root))
             .filter { it.endsWith(".json") }
             .joinToString("\n") { "      - $it" }

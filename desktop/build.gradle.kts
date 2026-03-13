@@ -24,7 +24,19 @@ repositories {
     }
 }
 application {
+    mainClass.set("com.simiacryptus.cognotik.CognotikApps")
+}
+tasks.register<JavaExec>("runDaemonClient") {
+    group = "application"
+    description = "Runs the DaemonClient main class"
+    classpath = sourceSets.main.get().runtimeClasspath
     mainClass.set("com.simiacryptus.cognotik.DaemonClient")
+}
+tasks.register<JavaExec>("runCognotikApps") {
+    group = "application"
+    description = "Runs the CognotikApps main class"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.simiacryptus.cognotik.CognotikApps")
 }
 
 
@@ -142,7 +154,6 @@ fun installContextMenuAction(os: String) {
     scriptPath.mkdirs()
     when {
         os.contains("windows") -> {
-
             val regFile = scriptPath.resolve("add_skyenetapps_context_menu.reg")
             val templateFile = layout.projectDirectory.file("src/packaging/windows/context_menu.reg.template").asFile
             val templateContent = templateFile.readText()

@@ -131,6 +131,8 @@ transforms:
 
 - `$0` - The entire matched string
 - `$1`, `$2`, etc. - Captured groups from the regex pattern
+- `$1+1` - Arithmetic addition: if group 1 is numeric, replaced with (group1 + 1); otherwise the literal `+1` is appended
+- `$2-5` - Arithmetic subtraction: if group 2 is numeric, replaced with (group2 - 5); otherwise the literal `-5` is appended
 
 **Note:** Transform source patterns use Java regex syntax (not glob patterns). The regex is matched against file paths
 relative to the documentation file's parent directory. When rebasing, transform patterns are preserved as-is since they
@@ -208,13 +210,18 @@ related: ../shared/constants.kt
 ```
 
 ```yaml
-# Multiple related files and URLs
+# Multiple related files, glob patterns, and URLs
 related:
   - ../shared/constants.kt
   - ../config/settings.yaml
   - ./helper-docs.md
+  - ../src/models/*.kt
   - https://example.com/api-spec
 ```
+
+**Glob Pattern Support:** Related resources can use glob patterns (containing `*`, `?`, or `[`). Glob patterns are
+expanded against the filesystem relative to the markdown file's directory. If a glob pattern matches no files, a debug
+message is logged and the pattern is skipped.
 
 **URL Support:** Related resources can be URLs (http:// or https://). URLs are automatically fetched, cached locally
 (with a 1-hour cache TTL), and their HTML content is simplified before being included as context. The URL cache is
@@ -287,10 +294,10 @@ require many parameters or when sharing configuration across multiple documentat
 
 ---
 
-### `overwrite`
+### `update_mode`
 
-Specifies the overwrite mode for this documentation file's targets. This controls how existing files are handled during
-processing.
+Specifies the update mode for this documentation file's targets. This controls how existing files are handled during
+processing. This per-doc setting overrides the global update mode configured at the `DocProcessor` level.
 
 **Type:** `String`
 
@@ -301,27 +308,43 @@ processing.
 - `OverwriteToUpdate` - Overwrite only if source/related files are newer than target
 - `PatchExisting` - Always apply fuzzy patch to existing files
 - `PatchToUpdate` - Apply fuzzy patch only if source/related files are newer than target (default)
+- `ForceOverwrite` - Delete all target files before generation (use with caution)
+- `ForceUpdate` - Delete target files older than their source documentation before generation (use with caution)
 
 **Examples:**
 
 ```yaml
 # Always apply patches to existing files
-overwrite: PatchExisting
+update_mode: PatchExisting
 ```
 
 ```yaml
 # Skip processing if target exists
-overwrite: SkipExisting
+update_mode: SkipExisting
 ```
 
 ```yaml
 # Always fully overwrite
-overwrite: OverwriteExisting
+update_mode: OverwriteExisting
 ```
+
+```yaml
+# Force delete and regenerate
+update_mode: ForceOverwrite
+```
+**Resolution Priority:** When multiple specifications apply to a single target file, the update mode is resolved in
+this order:
+1. `specifies` frontmatter (first non-null `update_mode`)
+2. `transforms` frontmatter (first non-null `update_mode`)
+3. `documents` frontmatter (first non-null `update_mode`)
+4. `generates` frontmatter (first non-null `update_mode`)
+5. Global `updateMode` configured on the `DocProcessor` instance
+
 
 **Use Case:** Control how the processor handles existing target files. Use `PatchExisting` or
 `PatchToUpdate` for incremental updates that preserve manual changes. Use `OverwriteExisting` or
 `OverwriteToUpdate` for complete regeneration. Use `SkipExisting` to prevent accidental overwrites.
+Use `ForceOverwrite` or `ForceUpdate` to delete targets before regeneration (dangerous).
 
 ---
 
@@ -405,7 +428,7 @@ related:
   - ../config/api-config.yaml
   - ./api-conventions.md
   - https://example.com/api-spec
-overwrite: PatchExisting
+update_mode: PatchExisting
 task_type: FileModification
 task_config_json: ./config/api-task-config.json
 prompt: Update the API layer to conform to the latest specification
@@ -443,6 +466,8 @@ This document specifies the API layer implementation...
 - `OverwriteToUpdate` - Overwrite only if source/related files are newer than target
 - `PatchExisting` - Always apply fuzzy patch to existing files
 - `PatchToUpdate` - Apply fuzzy patch only if source/related files are newer than target (default)
+- `ForceOverwrite` - Delete all target files before generation (use with caution)
+- `ForceUpdate` - Delete target files older than their source documentation before generation (use with caution)
 
 6. **Task Description Generation:** The processor automatically generates appropriate task descriptions based on the
    frontmatter type:
@@ -460,6 +485,7 @@ This document specifies the API layer implementation...
 - All related files specified in the frontmatter
 - All source/input files that contribute to the target
   If any of these are newer than the target, the target will be processed.
+
 8. **URL Fetching and Caching:** Related resources specified as URLs (http:// or https://) are automatically fetched
    and cached locally:
 - Cache location: `.doc-processor-cache/url-cache` within the root directory
@@ -468,30 +494,46 @@ This document specifies the API layer implementation...
 - Non-HTML content is stored as-is
 - Failed fetches log a warning and return null (the resource is skipped)
 - Cache files use a SHA-256 hash prefix for uniqueness
+
+
 9. **Rebasing:** Both `DocSpec` and `ModificationTask` support rebasing from one root directory to another. This is
    used when the IntelliJ action needs to adjust paths for a different working directory. URL-based related resources
    are preserved as-is during rebasing.
+10. **Transitive Target Discovery:** The processor recursively discovers transitive targets in multi-stage build
+    pipelines. After computing the initial set of targets, it checks if any newly-generated target files would match
+    additional doc spec patterns (via transforms). If so, those hypothetical files are treated as existing and the
+    expansion continues until a fixed-point is reached (no new targets are discovered) or a maximum recursion depth
+    of 10 is reached. This enables proper dependency ordering for pipelines where intermediate artifacts are inputs
+    to subsequent transformations.
+11. **Status Tracking:** The processor maintains a `docops.status.json` file in the root directory that tracks the
+    status of each target generation task. Status values include `PENDING`, `RUNNING`, `COMPLETED`, `FAILED`, and
+    `CANCELLED`. The status file is updated atomically (write to temp file then rename) and is thread-safe. Status
+    entries include timestamps for start/completion and optional session IDs and error messages.
+12. **Path Normalization:** Target file paths are normalized to lowercase for case-insensitive comparison when
+    aggregating specifications. This ensures that targets are grouped consistently regardless of case differences
+    in paths across different doc specs.
 
 
 ## Data Structures
 
 The frontmatter is parsed into a `DocSpec` containing:
 
-| Field            | Type                  | Description                                                                |
-|------------------|-----------------------|----------------------------------------------------------------------------|
-| `docFile`        | `File`                | The markdown file itself                                                   |
-| `specifies`      | `List<String>`        | Glob patterns for files this doc specifies                                 |
-| `documents`      | `List<String>`        | Glob patterns for files this doc describes                                 |
-| `transforms`     | `List<TransformSpec>` | Source-to-destination transformation rules                                 |
-| `generates`      | `List<GenerateSpec>`  | Explicit generation specifications                                         |
-| `related`        | `List<String>`        | Additional context files or URLs                                           |
-| `taskType`       | `String?`             | Task type to use for processing (nullable, defaults to `FileModification`) |
-| `taskConfigJson` | `String?`             | Path to JSON file with additional task configuration (nullable)            |
-| `content`        | `String`              | The markdown body (after frontmatter)                                      |
-| `frontmatter`    | `Map<String, Any>`    | Raw parsed frontmatter                                                     |
+| Field            | Type                  | Description                                                                  |
+|------------------|-----------------------|------------------------------------------------------------------------------|
+| `docFile`        | `File`                | The markdown file itself                                                     |
+| `specifies`      | `List<String>`        | Glob patterns for files this doc specifies                                   |
+| `documents`      | `List<String>`        | Glob patterns for files this doc describes                                   |
+| `transforms`     | `List<TransformSpec>` | Source-to-destination transformation rules                                   |
+| `generates`      | `List<GenerateSpec>`  | Explicit generation specifications                                           |
+| `related`        | `List<String>`        | Additional context files, glob patterns, or URLs                             |
+| `taskType`       | `String?`             | Task type to use for processing (nullable, defaults to `FileModification`)   |
+| `taskConfigJson` | `String?`             | Path to JSON file with additional task configuration (nullable)              |
+| `updateMode`     | `String?`             | Per-doc update mode override (nullable, falls back to global `updateMode`)   |
+| `content`        | `String`              | The markdown body (after frontmatter)                                        |
+| `frontmatter`    | `Map<String, Any>`    | Raw parsed frontmatter                                                       |
 
-**Note:** The `overwrite` mode is not stored in `DocSpec` — it is configured at the `DocProcessor` level and applies
-to all targets processed by that instance.
+**Note:** The `updateMode` field in `DocSpec` stores the per-doc override from the `update_mode` frontmatter key.
+If null, the global `updateMode` configured at the `DocProcessor` level applies.
 
 ### TransformSpec
 
@@ -506,24 +548,38 @@ to all targets processed by that instance.
 |----------|----------------|---------------------------------------------|
 | `output` | `String`       | The output file path (relative to doc file) |
 | `inputs` | `List<String>` | Glob patterns for input files               |
+
 ### ModificationTaskConfig
+
 Represents the configuration for a single modification task:
-| Field              | Type               | Description                                          |
-|--------------------|--------------------|------------------------------------------------------|
-| `files`            | `List<String>?`    | Target file paths (relative to root)                 |
-| `related_files`    | `List<String>?`    | Related/context file paths (relative to root)        |
-| `task_description` | `String`           | Generated or custom task description                 |
-| `template_file`    | `String?`          | Path to template file (nullable)                     |
-| `data`             | `Map<String, Any>?`| Structured data from data_file or JSON source (nullable) |
+
+| Field                | Type                | Description                                              |
+|----------------------|---------------------|----------------------------------------------------------|
+| `root`               | `File`              | The root directory for path resolution                   |
+| `files`              | `List<String>?`     | Target file paths (absolute)                             |
+| `related_files`      | `List<String>?`     | Related/context file paths (absolute)                    |
+| `task_description`   | `String`            | Generated or custom task description                     |
+| `data`               | `Map<String, Any>?` | Structured data from data_file or JSON source (nullable) |
+| `taskConfigOverrides`| `Map<String, Any>?` | Overrides from task_config_json file (nullable)          |
+
+**Computed Properties:**
+- `relative_files` - Target file paths relative to root (computed from `files`)
+- `relative_related_files` - Related file paths relative to root (computed from `related_files`)
+
 ### ModificationTask
+
 Represents a complete modification task ready for execution:
-| Field                | Type                   | Description                                      |
-|----------------------|------------------------|--------------------------------------------------|
-| `data`               | `ModificationTaskConfig` | Task configuration                             |
-| `message`            | `String`               | Message content (context files or execute command)|
-| `patchProcessor`     | `PatchProcessors`      | Patch processing strategy (default: Fuzzy)       |
-| `shouldDeleteTarget` | `Boolean`              | Whether to delete the target file (default: false)|
-| `taskType`           | `TaskType<*, *>`       | The resolved task type (default: FileModification)|
+
+| Field                | Type                     | Description                                       |
+|----------------------|--------------------------|---------------------------------------------------|
+| `data`               | `ModificationTaskConfig` | Task configuration                                |
+| `message`            | `(File) -> String`       | Function generating message content given root dir|
+| `patchProcessor`     | `PatchProcessors`        | Patch processing strategy (default: Fuzzy)        |
+| `shouldDeleteTarget` | `Boolean`                | Whether to delete the target file (default: false)|
+| `taskType`           | `TaskType<*, *>`         | The resolved task type (default: FileModification)|
+
+**Computed Properties:**
+- `typeConfig` - Resolved `TaskTypeConfig` from `taskConfigOverrides` or task type defaults
 
 
 ## Additional Processing Classes
@@ -556,6 +612,23 @@ Represents a documentation update specification:
 |-------------------|--------------|-------------------------------------------------------|
 | `docSpec`         | `DocSpec`    | The doc specification (target is the doc file itself) |
 | `supportingFiles` | `List<File>` | Source files that provide context                     |
+### TaskStatusEntry
+Represents the status of a single target generation task in `docops.status.json`:
+| Field         | Type          | Description                                    |
+|---------------|---------------|------------------------------------------------|
+| `target`      | `String`      | The target file path                           |
+| `status`      | `TaskStatus`  | Current status (PENDING/RUNNING/COMPLETED/FAILED/CANCELLED) |
+| `sessionId`   | `String?`     | Associated session ID (nullable)               |
+| `startedAt`   | `String?`     | ISO timestamp when task started (nullable)     |
+| `completedAt` | `String?`     | ISO timestamp when task completed (nullable)   |
+| `error`       | `String?`     | Error message if failed (nullable)             |
+### DocOpsStatus
+Root structure for `docops.status.json`:
+| Field         | Type                          | Description                        |
+|---------------|-------------------------------|------------------------------------|
+| `lastUpdated` | `String`                      | ISO timestamp of last update       |
+| `tasks`       | `Map<String, TaskStatusEntry>`| Map of target path to status entry |
+
 
 ## Implementation Notes
 
@@ -583,10 +656,15 @@ file's directory. When a match is found:
 
 1. The regex is applied to the relative file path
 2. Capture groups are extracted from the match
-3. Backreferences (`$0`, `$1`, etc.) in the destination pattern are replaced with the captured values
+3. Backreferences (`$0`, `$1`, etc.) in the destination pattern are replaced with the captured values. Backreferences
+   support optional arithmetic modifiers (e.g., `$1+1`, `$2-5`): if the captured group is numeric, the arithmetic is
+   applied; otherwise the modifier is appended as a literal string.
 4. The destination path is resolved relative to the documentation file's directory
+
 ### Primary Source Resolution
+
 When determining the primary source file for overwrite mode checks, the priority is:
+
 1. First transform's source file
 2. First spec's doc file
 3. First document match's first supporting file (or doc file if no supporting files)
@@ -606,17 +684,35 @@ When determining the primary source file for overwrite mode checks, the priority
 - Non-existent files referenced in `related` are still returned (downstream code handles them)
 - URL fetch failures log a warning and return null (the resource is skipped)
 - Errors processing individual target files are caught and logged; other targets continue processing
+- Unknown `update_mode` values in frontmatter log a warning and fall back to the global update mode
+- Recursive transitive target discovery is bounded to a maximum depth of 10 to prevent infinite loops
+
 ### IntelliJ Integration
+
 The `DocProcessorAction` provides an IntelliJ IDE action that:
+
 1. Filters selected files to markdown files (`.md` or `.markdown` extensions)
 2. Creates a `DocProcessor` instance with the configured fast and smart models
 3. Calls `getAll()` to collect all modification tasks from the selected files
 4. Shows a `DocProcessorTaskDialog` with a checklist of tasks for user selection
-5. Executes the first selected task via `SingleTaskApp` in a browser session
-The action is available through the `DocProcessorActionGroup` which provides a submenu with all overwrite mode options:
+5. Executes selected tasks via `UnifiedHarness` with progress tracking and cancellation support
+6. Opens a browser session with a master task view linking to individual task sessions
+
+The action is available through the `DocProcessorActionGroup` which provides a submenu with all update mode options:
+
 - 🚫 Skip Existing Files (`SkipExisting`)
 - 🔄 Overwrite All Files (`OverwriteExisting`)
 - 📅 Overwrite Outdated Files (`OverwriteToUpdate`)
 - 🩹 Patch Existing Files (`PatchExisting`)
 - 📝 Patch Outdated Files (`PatchToUpdate`)
-The dialog includes an "Auto-fix issues" checkbox and displays task details including target files and related files.
+- 🔥 Force Overwrite (Dangerous) (`ForceOverwrite`)
+- ⚡ Force Update (Dangerous) (`ForceUpdate`)
+
+The dialog includes:
+- An "Auto-fix issues" checkbox
+- A search/filter field for tasks
+- Select All / Deselect All buttons
+- A selection count indicator
+- Hover tooltips with task details (target files, related files, task description, config overrides)
+- Right-click context menu with a "Details..." option showing a resizable detail dialog
+- Task items sorted alphabetically by display name

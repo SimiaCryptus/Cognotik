@@ -118,6 +118,7 @@ open class ConversationalMode(
         defaultChat: ChatInterface
     ) {
         try {
+            val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
             val expandedUserMessage = expandTopics(userMessage)
             val expansionFunctions = processMsgRecursive(
                 expandedUserMessage, task, parsingChatter, defaultChat
@@ -169,6 +170,7 @@ open class ConversationalMode(
     private fun processMsgRecursive(
         currentMessage: String, task: SessionTask, parsingChatter: ChatInterface, defaultChatter: ChatInterface
     ): List<(StringBuilder) -> Unit> {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         if (config.useExpansionSyntax) {
             val rangeMatch = rangeExpansionPattern.find(currentMessage)
             if (rangeMatch != null) {
@@ -344,6 +346,7 @@ open class ConversationalMode(
         match: MatchResult,
         recursiveFn: (String, SessionTask) -> List<(StringBuilder) -> Unit>
     ): List<(StringBuilder) -> Unit> {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         val tabs = TabbedDisplay(task, closable = config.useExpansionSyntax)
         return match.groupValues[1].split('|', ',').flatMap { option ->
             recursiveFn(
@@ -363,6 +366,7 @@ open class ConversationalMode(
         parsingChatter: ChatInterface
     ) {
         val aggregatedResponse = StringBuilder()
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         val tabs = TabbedDisplay(task, closable = config.useExpansionSyntax)
         for (item in items) {
             val newMessage = currentMessage.replaceFirst(expression, item)
@@ -380,6 +384,7 @@ open class ConversationalMode(
     }
 
     protected open fun expandTopics(userMessage: String): String {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         if (!config.useExpansionSyntax) return userMessage
         // Matches both @TopicType and @{Topic Type With Spaces}
         val topicReferencePattern = Regex("""@\{([A-Z][a-zA-Z0-9_ ]+)\}|@([A-Z][a-zA-Z0-9_]*)""")

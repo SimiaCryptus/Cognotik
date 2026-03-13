@@ -22,6 +22,8 @@ import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
+import java.io.InputStreamReader
+import java.io.BufferedReader
 
 @MultipartConfig(
     fileSizeThreshold = 1024 * 1024 * 2, // 2MB
@@ -38,7 +40,7 @@ abstract class FileServlet : HttpServlet() {
         log.info("Received GET request for path: ${req.pathInfo ?: req.servletPath}")
         val pathSegments = parsePath(req.pathInfo ?: req.servletPath ?: "/")
         val dir = getDir(req)
-        val file = dir?.let { getFile(it, pathSegments, req) }
+        val file = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
         when {
             file != null && file.name == "_files.json" && !file.exists() -> {
                 val parentDir = file.parentFile
@@ -123,13 +125,24 @@ abstract class FileServlet : HttpServlet() {
                         .removeSuffix("/") + "/" + req.pathInfo.split("/").firstOrNull { it.isNotBlank() }
 
                 val (files, folders) = listContents(file, req)
+                val gitEnabled = isGitEnabled(req)
+                val gitRoot = if (gitEnabled) getGitRoot(req) else null
+                val isRepo = isGitRepository(gitRoot)
+                val gitSection = if (gitEnabled) buildGitSection(gitRoot, isRepo) else ""
+                val gitStyles = if (gitEnabled) getGitStyles() else ""
+                val gitScripts = if (gitEnabled) getGitScripts() else ""
+                val gitToolbar = if (gitEnabled && isRepo) getGitToolbarActions() else ""
                 resp.writer.write(
                     directoryHTML(
-                        currentPathString,
-                        servletPathBase,
-                        getZipLink(req, currentPathString),
-                        folders,
-                        files
+                      currentPath = currentPathString,
+                      servletBaseHref = servletPathBase,
+                      zipLink = getZipLink(req, currentPathString),
+                      folders = folders,
+                      files = files,
+                      toolbarActions = getToolbarActions(req, currentPathString) + gitToolbar,
+                      additionalSections = gitSection + getAdditionalSections(file, req, currentPathString),
+                      additionalStyles = getAdditionalStyles() + gitStyles,
+                      additionalScripts = getAdditionalScripts() + gitScripts
                     )
                 )
             }
@@ -139,9 +152,15 @@ abstract class FileServlet : HttpServlet() {
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
         log.info("Received POST request for file upload at path: ${req.pathInfo ?: req.servletPath}")
         try {
+            // Check if this is a git operation
+            val gitAction = req.getParameter("gitAction")
+            if (gitAction != null && isGitEnabled(req)) {
+                handleGitOperation(req, resp)
+                return
+            }
             val pathSegments = parsePath(req.pathInfo ?: req.servletPath ?: "/")
             val dir = getDir(req)
-            val targetDir = dir?.let { getFile(it, pathSegments, req) }
+            val targetDir = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
             if (targetDir == null || !targetDir.exists() || !targetDir.isDirectory) {
                 log.warn("Target directory does not exist or is not a directory: ${targetDir?.absolutePath}")
                 resp.status = HttpServletResponse.SC_BAD_REQUEST
@@ -202,7 +221,7 @@ abstract class FileServlet : HttpServlet() {
                 resp.writer.write("Invalid base directory")
                 return
             }
-            val targetFile = getFile(dir, pathSegments, req)
+            val targetFile = File(dir, pathSegments.drop(1).joinToString("/"))
             if (targetFile == null) {
                 log.warn("Target file is null for PUT request")
                 resp.status = HttpServletResponse.SC_BAD_REQUEST
@@ -218,6 +237,12 @@ abstract class FileServlet : HttpServlet() {
             }
             // Validate filename for security
             val fileName = targetFile.name
+            if (fileName.isNullOrBlank()) {
+                log.warn("Empty filename in PUT request for path: ${req.pathInfo ?: req.servletPath}")
+                resp.status = HttpServletResponse.SC_BAD_REQUEST
+                resp.writer.write("No filename specified")
+                return
+            }
             if (!isValidFileName(fileName)) {
                 log.warn("Invalid filename in PUT request: $fileName")
                 resp.status = HttpServletResponse.SC_BAD_REQUEST
@@ -227,8 +252,13 @@ abstract class FileServlet : HttpServlet() {
             // Ensure parent directory exists
             val parentDir = targetFile.parentFile
             if (parentDir != null && !parentDir.exists()) {
-                log.info("Creating parent directories for: ${targetFile.absolutePath}")
-                parentDir.mkdirs()
+                log.info("Creating parent directories for: ${targetFile.absolutePath}: ${parentDir.absolutePath}")
+                if (!parentDir.mkdirs() && !parentDir.exists()) {
+                    log.error("Failed to create parent directories for: ${targetFile.absolutePath}")
+                    resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                    resp.writer.write("Failed to create parent directories")
+                    return
+                }
             }
             val fileExisted = targetFile.exists()
             // Invalidate channel cache if file existed
@@ -282,7 +312,7 @@ abstract class FileServlet : HttpServlet() {
                 !fileName.contains(":") &&
                 !fileName.contains("~") &&
                 fileName.isNotBlank() &&
-                fileName.all { it.code >= 32 && it.code <= 126 }
+                fileName.all { it.code >= 32 }
     }
 
 
@@ -299,20 +329,260 @@ abstract class FileServlet : HttpServlet() {
                 } else {
                     ""
                 }
-                """<li style="display: flex; align-items: center;">$baseLink$htmlLink</li>"""
+                val fileActions = getFileActions(it, req)
+                """<li style="display: flex; align-items: center;">$baseLink$htmlLink$fileActions</li>"""
             } ?: ""
         val folders = file?.listFiles()
             ?.filter { !it.isFile }
             ?.sortedBy { it.name }
             ?.joinToString("") {
-                """<li><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a></li>"""
+                val folderActions = getFolderActions(it, req)
+                """<li style="display: flex; align-items: center;"><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a>$folderActions</li>"""
             } ?: ""
         return Pair(files, folders)
     }
     // getFile should construct the file path using all pathSegments relative to the base dir
 
-    open fun getFile(dir: File, pathSegments: List<String>, req: HttpServletRequest) =
-        File(dir, pathSegments.drop(1).joinToString("/"))
+    /**
+     * Override to provide additional action links/buttons for individual files in directory listings.
+     * Returns an HTML string that will be appended after the file link.
+     */
+    open fun getFileActions(file: File, req: HttpServletRequest): String = ""
+    /**
+     * Override to provide additional action links/buttons for individual folders in directory listings.
+     * Returns an HTML string that will be appended after the folder link.
+     */
+    open fun getFolderActions(folder: File, req: HttpServletRequest): String = ""
+    /**
+     * Override to provide additional toolbar items in the navbar area.
+     * Returns an HTML string that will be placed in the navbar alongside the ZIP link.
+     */
+    open fun getToolbarActions(req: HttpServletRequest, currentPath: String): String = ""
+    /**
+     * Override to provide additional sections in the directory listing page.
+     * Returns an HTML string that will be inserted after the upload section and before folders/files.
+     */
+    open fun getAdditionalSections(dir: File?, req: HttpServletRequest, currentPath: String): String = ""
+    /**
+     * Override to provide additional CSS styles for the directory listing page.
+     * Returns a CSS string (without style tags) that will be appended to the page styles.
+     */
+    open fun getAdditionalStyles(): String = ""
+    /**
+     * Override to provide additional JavaScript for the directory listing page.
+     * Returns a JavaScript string (without script tags) that will be appended to the page scripts.
+     */
+    open fun getAdditionalScripts(): String = ""
+    /**
+     * Override to indicate whether Git features should be enabled for this servlet.
+     */
+    open fun isGitEnabled(req: HttpServletRequest): Boolean = true
+    /**
+     * Returns the root directory for Git operations (the repository root).
+     * By default, returns the result of getDir(req).
+     */
+    open fun getGitRoot(req: HttpServletRequest): File? = getDir(req)
+    override fun doDelete(req: HttpServletRequest, resp: HttpServletResponse) {
+        log.info("Received DELETE request for path: ${req.pathInfo ?: req.servletPath}")
+        try {
+            val pathSegments = parsePath(req.pathInfo ?: req.servletPath ?: "/")
+            val dir = getDir(req)
+            if (dir == null) {
+                resp.status = HttpServletResponse.SC_BAD_REQUEST
+                resp.writer.write("Invalid base directory")
+                return
+            }
+            val targetFile = File(dir, pathSegments.drop(1).joinToString("/"))
+            if (targetFile == null || !targetFile.exists()) {
+                resp.status = HttpServletResponse.SC_NOT_FOUND
+                resp.writer.write("File not found")
+                return
+            }
+            if (targetFile.isDirectory) {
+                if (targetFile.deleteRecursively()) {
+                    log.info("Directory deleted successfully: ${targetFile.absolutePath}")
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.contentType = "application/json"
+                    resp.writer.write("""{"success": true, "message": "Directory deleted successfully"}""")
+                } else {
+                    resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                    resp.writer.write("Failed to delete directory")
+                }
+            } else {
+                channelCache.invalidate(targetFile)
+                if (targetFile.delete()) {
+                    log.info("File deleted successfully: ${targetFile.absolutePath}")
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.contentType = "application/json"
+                    resp.writer.write("""{"success": true, "message": "File deleted successfully"}""")
+                } else {
+                    resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                    resp.writer.write("Failed to delete file")
+                }
+            }
+        } catch (e: Exception) {
+            log.error("Error during file DELETE", e)
+            resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            resp.writer.write("Error deleting file: ${e.message}")
+        }
+    }
+    /**
+     * Handle Git-specific POST operations dispatched by action parameter.
+     */
+    private fun handleGitOperation(req: HttpServletRequest, resp: HttpServletResponse) {
+        val action = req.getParameter("gitAction")
+        val gitRoot = getGitRoot(req)
+        if (gitRoot == null || !gitRoot.exists()) {
+            resp.status = HttpServletResponse.SC_BAD_REQUEST
+            resp.contentType = "application/json"
+            resp.writer.write("""{"success": false, "message": "Git root directory not found"}""")
+            return
+        }
+        try {
+            when (action) {
+                "init" -> {
+                    val result = executeGitCommand(gitRoot, "git", "init")
+                    resp.contentType = "application/json"
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.writer.write("""{"success": true, "message": "Git repository initialized", "output": ${jsonEscape(result)}}""")
+                }
+                "status" -> {
+                    val result = executeGitCommand(gitRoot, "git", "status", "--porcelain")
+                    val branchResult = executeGitCommand(gitRoot, "git", "branch", "--show-current")
+                    resp.contentType = "application/json"
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.writer.write("""{"success": true, "branch": ${jsonEscape(branchResult.trim())}, "status": ${jsonEscape(result)}}""")
+                }
+                "add" -> {
+                    val filePath = req.getParameter("filePath") ?: "."
+                    val result = executeGitCommand(gitRoot, "git", "add", filePath)
+                    resp.contentType = "application/json"
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.writer.write("""{"success": true, "message": "Files staged", "output": ${jsonEscape(result)}}""")
+                }
+                "commit" -> {
+                    val message = req.getParameter("message") ?: "Commit from web UI"
+                    // Stage all changes first
+                    executeGitCommand(gitRoot, "git", "add", "-A")
+                    val result = executeGitCommand(gitRoot, "git", "commit", "-m", message)
+                    resp.contentType = "application/json"
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.writer.write("""{"success": true, "message": "Changes committed", "output": ${jsonEscape(result)}}""")
+                }
+                "log" -> {
+                    val count = req.getParameter("count") ?: "20"
+                    val result = executeGitCommand(gitRoot, "git", "log", "--oneline", "-n", count)
+                    resp.contentType = "application/json"
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.writer.write("""{"success": true, "log": ${jsonEscape(result)}}""")
+                }
+                "diff" -> {
+                    val result = executeGitCommand(gitRoot, "git", "diff")
+                    val stagedResult = executeGitCommand(gitRoot, "git", "diff", "--cached")
+                    resp.contentType = "application/json"
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.writer.write("""{"success": true, "unstaged": ${jsonEscape(result)}, "staged": ${jsonEscape(stagedResult)}}""")
+                }
+                "reset" -> {
+                    val filePath = req.getParameter("filePath")
+                    val result = if (filePath != null) {
+                        executeGitCommand(gitRoot, "git", "checkout", "--", filePath)
+                    } else {
+                        executeGitCommand(gitRoot, "git", "checkout", "--", ".")
+                    }
+                    resp.contentType = "application/json"
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.writer.write("""{"success": true, "message": "Changes reset", "output": ${jsonEscape(result)}}""")
+                }
+                "branches" -> {
+                    val result = executeGitCommand(gitRoot, "git", "branch")
+                    val currentBranch = executeGitCommand(gitRoot, "git", "branch", "--show-current").trim()
+                    resp.contentType = "application/json"
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.writer.write("""{"success": true, "currentBranch": ${jsonEscape(currentBranch)}, "branches": ${jsonEscape(result)}}""")
+                }
+                "create-branch" -> {
+                    val branchName = req.getParameter("branchName")
+                    if (branchName.isNullOrBlank()) {
+                        resp.status = HttpServletResponse.SC_BAD_REQUEST
+                        resp.contentType = "application/json"
+                        resp.writer.write("""{"success": false, "message": "Branch name is required"}""")
+                        return
+                    }
+                    val checkout = req.getParameter("checkout") ?: "true"
+                    val result = if (checkout == "true") {
+                        executeGitCommand(gitRoot, "git", "checkout", "-b", branchName)
+                    } else {
+                        executeGitCommand(gitRoot, "git", "branch", branchName)
+                    }
+                    resp.contentType = "application/json"
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.writer.write("""{"success": true, "message": "Branch '$branchName' created", "output": ${jsonEscape(result)}}""")
+                }
+                "switch-branch" -> {
+                    val branchName = req.getParameter("branchName")
+                    if (branchName.isNullOrBlank()) {
+                        resp.status = HttpServletResponse.SC_BAD_REQUEST
+                        resp.contentType = "application/json"
+                        resp.writer.write("""{"success": false, "message": "Branch name is required"}""")
+                        return
+                    }
+                    val result = executeGitCommand(gitRoot, "git", "checkout", branchName)
+                    resp.contentType = "application/json"
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.writer.write("""{"success": true, "message": "Switched to branch '$branchName'", "output": ${jsonEscape(result)}}""")
+                }
+                "delete-branch" -> {
+                    val branchName = req.getParameter("branchName")
+                    if (branchName.isNullOrBlank()) {
+                        resp.status = HttpServletResponse.SC_BAD_REQUEST
+                        resp.contentType = "application/json"
+                        resp.writer.write("""{"success": false, "message": "Branch name is required"}""")
+                        return
+                    }
+                    val force = req.getParameter("force") == "true"
+                    val flag = if (force) "-D" else "-d"
+                    val result = executeGitCommand(gitRoot, "git", "branch", flag, branchName)
+                    resp.contentType = "application/json"
+                    resp.status = HttpServletResponse.SC_OK
+                    resp.writer.write("""{"success": true, "message": "Branch '$branchName' deleted", "output": ${jsonEscape(result)}}""")
+                }
+                else -> {
+                    resp.status = HttpServletResponse.SC_BAD_REQUEST
+                    resp.contentType = "application/json"
+                    resp.writer.write("""{"success": false, "message": "Unknown git action: $action"}""")
+                }
+            }
+        } catch (e: Exception) {
+            log.error("Error executing git operation: $action", e)
+            resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            resp.contentType = "application/json"
+            resp.writer.write("""{"success": false, "message": ${jsonEscape(e.message ?: "Unknown error")}}""")
+        }
+    }
+    private fun executeGitCommand(workDir: File, vararg command: String): String {
+        log.info("Executing git command in ${workDir.absolutePath}: ${command.joinToString(" ")}")
+        val processBuilder = ProcessBuilder(*command)
+            .directory(workDir)
+            .redirectErrorStream(true)
+        val process = processBuilder.start()
+        val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            log.warn("Git command exited with code $exitCode: $output")
+        }
+        return output
+    }
+    private fun isGitRepository(dir: File?): Boolean {
+        if (dir == null) return false
+        var current: File? = dir
+        while (current != null) {
+            if (File(current, ".git").exists()) return true
+            current = current.parentFile
+        }
+        return false
+    }
+
 
     private fun writeSmall(channel: FileChannel, resp: HttpServletResponse, file: File, req: HttpServletRequest) {
         log.info("Writing small file: ${file.absolutePath}")
@@ -500,6 +770,657 @@ abstract class FileServlet : HttpServlet() {
         req: HttpServletRequest,
         filePath: String
     ): String = ""
+    private fun buildGitSection(gitRoot: File?, isRepo: Boolean): String {
+        if (!isRepo) {
+            return """
+            <div class="section git-section">
+                <div class="section-header"><h2 class="section-title">🔀 Git Version Control</h2></div>
+                <div class="section-content">
+                    <div class="git-init-prompt">
+                        <p class="git-init-message">This directory is not yet a Git repository. Initialize one to enable version control features like commit, diff, push, pull, and more.</p>
+                        <button class="git-button git-init-btn" onclick="gitInit()">🚀 Initialize Git Repository</button>
+                    </div>
+                </div>
+            </div>
+            """
+        }
+        return """
+        <div class="section git-section">
+            <div class="section-header">
+                <h2 class="section-title">🔀 Git Repository</h2>
+                <span id="git-branch-badge" class="git-branch-badge" style="display:none;"></span>
+            </div>
+            <div class="section-content">
+                <div class="git-controls">
+                    <div class="git-button-group">
+                        <button class="git-button" onclick="gitStatus()" title="Refresh status">⟳ Status</button>
+                        <button class="git-button" onclick="gitDiff()" title="View changes">📋 Diff</button>
+                        <button class="git-button" onclick="gitLog()" title="View commit history">📜 Log</button>
+                    </div>
+                    <div class="git-button-group">
+                        <button class="git-button git-stage-btn" onclick="gitAdd('.')" title="Stage all changes">➕ Stage All</button>
+                        <button class="git-button git-commit-btn" onclick="promptCommit()" title="Commit staged changes">✓ Commit</button>
+                    </div>
+                    <div class="git-button-group">
+                        <button class="git-button git-reset-btn" onclick="confirmReset()" title="Discard all changes">⮌ Reset</button>
+                    </div>
+                    <div class="git-button-group">
+                        <button class="git-button git-branch-btn" onclick="gitBranches()" title="List branches">⎇ Branches</button>
+                        <button class="git-button git-branch-create-btn" onclick="promptCreateBranch()" title="Create new branch">⎇+ New Branch</button>
+                    </div>
+                </div>
+                <div id="git-status-panel" class="git-panel" style="display:none;">
+                    <h3 class="git-panel-title">Status</h3>
+                    <pre id="git-status-content" class="git-output"></pre>
+                </div>
+                <div id="git-diff-panel" class="git-panel" style="display:none;">
+                    <h3 class="git-panel-title">Diff</h3>
+                    <div id="git-diff-tabs" class="git-tabs">
+                        <button class="git-tab active" onclick="showDiffTab('unstaged')">Unstaged</button>
+                        <button class="git-tab" onclick="showDiffTab('staged')">Staged</button>
+                    </div>
+                    <pre id="git-diff-content" class="git-output git-diff-output"></pre>
+                </div>
+                <div id="git-log-panel" class="git-panel" style="display:none;">
+                    <h3 class="git-panel-title">Commit History</h3>
+                    <pre id="git-log-content" class="git-output"></pre>
+                </div>
+                <div id="git-branches-panel" class="git-panel" style="display:none;">
+                    <h3 class="git-panel-title">Branches</h3>
+                    <div id="git-branches-content" class="section-content"></div>
+                </div>
+                <div id="git-output-panel" class="git-panel" style="display:none;">
+                    <h3 class="git-panel-title" id="git-output-title">Output</h3>
+                    <pre id="git-output-content" class="git-output"></pre>
+                </div>
+                <div id="git-commit-dialog" class="git-dialog" style="display:none;">
+                    <div class="git-dialog-content">
+                        <h3>Commit Changes</h3>
+                        <textarea id="git-commit-message" class="git-commit-input" placeholder="Enter commit message..." rows="3"></textarea>
+                        <div class="git-dialog-buttons">
+                            <button class="git-button git-commit-btn" onclick="gitCommit()">Commit</button>
+                            <button class="git-button git-cancel-btn" onclick="closeCommitDialog()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="git-create-branch-dialog" class="git-dialog" style="display:none;">
+                    <div class="git-dialog-content">
+                        <h3>Create New Branch</h3>
+                        <input type="text" id="git-new-branch-name" class="git-commit-input" placeholder="Enter branch name..." style="margin-bottom: 0.5rem;" />
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #495057;">
+                            <input type="checkbox" id="git-checkout-new-branch" checked /> Switch to new branch after creation
+                        </label>
+                        <div class="git-dialog-buttons">
+                            <button class="git-button git-branch-create-btn" onclick="gitCreateBranch()">Create Branch</button>
+                            <button class="git-button git-cancel-btn" onclick="closeCreateBranchDialog()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
+    }
+    private fun getGitToolbarActions(): String {
+        return """<button class="zip-link" onclick="gitStatus()" style="background-color: #6f42c1;">🔀 Git Status</button>"""
+    }
+    private fun getGitStyles(): String = """
+        .git-section {
+            border-color: #6f42c1;
+        }
+        .git-section .section-header {
+            background-color: #f3f0ff;
+            border-bottom-color: #d4c5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .git-branch-badge {
+            background-color: #6f42c1;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .git-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .git-button-group {
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
+        .git-button {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #fff;
+            background-color: #6f42c1;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+            white-space: nowrap;
+        }
+        .git-button:hover {
+            background-color: #5a32a3;
+        }
+        .git-init-btn { background-color: #198754; }
+        .git-init-btn:hover { background-color: #157347; }
+        .git-init-prompt {
+            text-align: center;
+            padding: 1.5rem 1rem;
+        }
+        .git-init-message {
+            color: #495057;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .git-init-btn {
+            padding: 0.6rem 1.5rem;
+            font-size: 1rem;
+        }
+        .git-stage-btn { background-color: #0d6efd; }
+        .git-stage-btn:hover { background-color: #0b5ed7; }
+        .git-commit-btn { background-color: #198754; }
+        .git-commit-btn:hover { background-color: #157347; }
+        .git-reset-btn { background-color: #dc3545; }
+        .git-reset-btn:hover { background-color: #bb2d3b; }
+        .git-branch-btn { background-color: #20c997; color: #000; }
+        .git-branch-btn:hover { background-color: #1aae85; }
+        .git-branch-create-btn { background-color: #20c997; color: #000; }
+        .git-branch-create-btn:hover { background-color: #1aae85; }
+        .git-cancel-btn { background-color: #6c757d; }
+        .git-cancel-btn:hover { background-color: #5a6268; }
+        .git-panel {
+            margin-top: 0.75rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            overflow: hidden;
+        }
+        .git-panel-title {
+            margin: 0;
+            padding: 0.5rem 0.75rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .git-output {
+            margin: 0;
+            padding: 0.75rem;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .git-diff-output .diff-add { color: #4ec9b0; }
+        .git-diff-output .diff-del { color: #f44747; }
+        .git-diff-output .diff-hunk { color: #569cd6; }
+        .git-diff-output .diff-file { color: #dcdcaa; font-weight: bold; }
+        .git-tabs {
+            display: flex;
+            border-bottom: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+        }
+        .git-tab {
+            padding: 0.4rem 1rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #6c757d;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+        }
+        .git-tab:hover { color: #343a40; }
+        .git-tab.active {
+            color: #6f42c1;
+            border-bottom-color: #6f42c1;
+            font-weight: 500;
+        }
+        .git-dialog {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .git-dialog-content {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            min-width: 400px;
+            max-width: 600px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .git-dialog-content h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: #343a40;
+        }
+        .git-commit-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .git-dialog-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            justify-content: flex-end;
+        }
+        .git-status-modified { color: #fd7e14; }
+        .git-status-added { color: #198754; }
+        .git-status-deleted { color: #dc3545; }
+        .git-status-untracked { color: #6c757d; }
+        .git-branch-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .git-branch-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 0.9rem;
+            transition: background-color 0.15s;
+        }
+        .git-branch-item:last-child { border-bottom: none; }
+        .git-branch-item:hover { background-color: #f8f9fa; }
+        .git-branch-item.current-branch {
+            background-color: #f3f0ff;
+            font-weight: 600;
+        }
+        .git-branch-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .git-branch-current-indicator {
+            color: #198754;
+            font-weight: bold;
+        }
+        .git-branch-actions {
+            display: flex;
+            gap: 0.35rem;
+        }
+        .git-branch-action-btn {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: #fff;
+            border: none;
+            border-radius: 0.2rem;
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+        .git-branch-switch-btn { background-color: #0d6efd; }
+        .git-branch-switch-btn:hover { background-color: #0b5ed7; }
+        .git-branch-delete-btn { background-color: #dc3545; }
+        .git-branch-delete-btn:hover { background-color: #bb2d3b; }
+        .git-loading {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #6f42c1;
+            border-radius: 50%;
+            animation: git-spin 0.8s linear infinite;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+        @keyframes git-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    """
+    private fun getGitScripts(): String = """
+        let gitDiffData = { unstaged: '', staged: '' };
+        let currentDiffTab = 'unstaged';
+        async function gitRequest(action, params = {}) {
+            const formData = new URLSearchParams();
+            formData.append('gitAction', action);
+            for (const [key, value] of Object.entries(params)) {
+                formData.append(key, value);
+            }
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            });
+            return await response.json();
+        }
+        function hideAllGitPanels() {
+            document.querySelectorAll('.git-panel').forEach(p => p.style.display = 'none');
+        }
+        function showGitPanel(panelId) {
+            hideAllGitPanels();
+            const panel = document.getElementById(panelId);
+            if (panel) panel.style.display = 'block';
+        }
+        function setGitLoading(elementId, message) {
+            const el = document.getElementById(elementId);
+            if (el) el.innerHTML = '<span class="git-loading"></span> ' + message;
+        }
+        async function gitInit() {
+            if (!confirm('Initialize a new Git repository in this directory?')) return;
+            const btn = document.querySelector('.git-init-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Initializing...';
+            }
+            try {
+                const result = await gitRequest('init');
+                if (result.success) {
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = '🚀 Initialize Git Repository';
+                    }
+                }
+            } catch (e) {
+                alert('Error initializing repository: ' + e.message);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '🚀 Initialize Git Repository';
+                }
+            }
+        }
+        async function gitStatus() {
+            showGitPanel('git-status-panel');
+            setGitLoading('git-status-content', 'Loading status...');
+            try {
+                const result = await gitRequest('status');
+                const badge = document.getElementById('git-branch-badge');
+                if (badge && result.branch) {
+                    badge.textContent = '⎇ ' + result.branch;
+                    badge.style.display = 'inline-block';
+                }
+                const statusEl = document.getElementById('git-status-content');
+                if (result.status && result.status.trim()) {
+                    statusEl.innerHTML = colorizeStatus(result.status);
+                } else {
+                    statusEl.innerHTML = '<span style="color: #4ec9b0;">✓ Working tree clean</span>';
+                }
+            } catch (e) {
+                document.getElementById('git-status-content').textContent = 'Error: ' + e.message;
+            }
+        }
+        function colorizeStatus(status) {
+            return status.split('\n').map(line => {
+                if (!line.trim()) return '';
+                const code = line.substring(0, 2);
+                let cls = 'git-status-untracked';
+                if (code.includes('M')) cls = 'git-status-modified';
+                else if (code.includes('A')) cls = 'git-status-added';
+                else if (code.includes('D')) cls = 'git-status-deleted';
+                else if (code.includes('?')) cls = 'git-status-untracked';
+                return '<span class="' + cls + '">' + escapeHtml(line) + '</span>';
+            }).join('\n');
+        }
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        async function gitDiff() {
+            showGitPanel('git-diff-panel');
+            setGitLoading('git-diff-content', 'Loading diff...');
+            try {
+                const result = await gitRequest('diff');
+                gitDiffData.unstaged = result.unstaged || '';
+                gitDiffData.staged = result.staged || '';
+                showDiffTab(currentDiffTab);
+            } catch (e) {
+                document.getElementById('git-diff-content').textContent = 'Error: ' + e.message;
+            }
+        }
+        function showDiffTab(tab) {
+            currentDiffTab = tab;
+            document.querySelectorAll('.git-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.git-tab').forEach(t => {
+                if (t.textContent.toLowerCase().includes(tab)) t.classList.add('active');
+            });
+            const content = gitDiffData[tab] || '';
+            const el = document.getElementById('git-diff-content');
+            if (content.trim()) {
+                el.innerHTML = colorizeDiff(content);
+            } else {
+                el.innerHTML = '<span style="color: #6c757d;">No ' + tab + ' changes</span>';
+            }
+        }
+        function colorizeDiff(diff) {
+            return diff.split('\n').map(line => {
+                if (line.startsWith('+++') || line.startsWith('---')) {
+                    return '<span class="diff-file">' + escapeHtml(line) + '</span>';
+                } else if (line.startsWith('+')) {
+                    return '<span class="diff-add">' + escapeHtml(line) + '</span>';
+                } else if (line.startsWith('-')) {
+                    return '<span class="diff-del">' + escapeHtml(line) + '</span>';
+                } else if (line.startsWith('@@')) {
+                    return '<span class="diff-hunk">' + escapeHtml(line) + '</span>';
+                }
+                return escapeHtml(line);
+            }).join('\n');
+        }
+        async function gitLog() {
+            showGitPanel('git-log-panel');
+            setGitLoading('git-log-content', 'Loading log...');
+            try {
+                const result = await gitRequest('log');
+                const el = document.getElementById('git-log-content');
+                el.textContent = result.log || 'No commits yet';
+            } catch (e) {
+                document.getElementById('git-log-content').textContent = 'Error: ' + e.message;
+            }
+        }
+        async function gitAdd(filePath) {
+            try {
+                const result = await gitRequest('add', { filePath: filePath });
+                showGitOutput('Stage', result.output || result.message);
+                gitStatus();
+            } catch (e) {
+                alert('Error staging files: ' + e.message);
+            }
+        }
+        function promptCommit() {
+            document.getElementById('git-commit-dialog').style.display = 'flex';
+            document.getElementById('git-commit-message').focus();
+        }
+        function closeCommitDialog() {
+            document.getElementById('git-commit-dialog').style.display = 'none';
+            document.getElementById('git-commit-message').value = '';
+        }
+        async function gitCommit() {
+            const message = document.getElementById('git-commit-message').value.trim();
+            if (!message) {
+                alert('Please enter a commit message');
+                return;
+            }
+            closeCommitDialog();
+            try {
+                const result = await gitRequest('commit', { message: message });
+                showGitOutput('Commit', result.output || result.message);
+                gitStatus();
+            } catch (e) {
+                alert('Error committing: ' + e.message);
+            }
+        }
+        function confirmReset() {
+            if (confirm('Are you sure you want to discard ALL uncommitted changes? This cannot be undone.')) {
+                gitReset();
+            }
+        }
+        async function gitReset() {
+            try {
+                const result = await gitRequest('reset');
+                showGitOutput('Reset', result.output || result.message);
+                gitStatus();
+            } catch (e) {
+                alert('Error resetting: ' + e.message);
+            }
+        }
+        function showGitOutput(title, content) {
+            showGitPanel('git-output-panel');
+            document.getElementById('git-output-title').textContent = title;
+            document.getElementById('git-output-content').textContent = content;
+        }
+        async function gitBranches() {
+            showGitPanel('git-branches-panel');
+            const contentEl = document.getElementById('git-branches-content');
+            contentEl.innerHTML = '<span class="git-loading"></span> Loading branches...';
+            try {
+                const result = await gitRequest('branches');
+                const currentBranch = result.currentBranch || '';
+                const badge = document.getElementById('git-branch-badge');
+                if (badge && currentBranch) {
+                    badge.textContent = '⎇ ' + currentBranch;
+                    badge.style.display = 'inline-block';
+                }
+                const branchLines = (result.branches || '').split('\n').filter(l => l.trim());
+                if (branchLines.length === 0) {
+                    contentEl.innerHTML = '<p style="color: #6c757d; padding: 0.5rem;">No branches found.</p>';
+                    return;
+                }
+                let html = '<ul class="git-branch-list">';
+                branchLines.forEach(line => {
+                    const trimmed = line.trim();
+                    const isCurrent = trimmed.startsWith('* ');
+                    const branchName = isCurrent ? trimmed.substring(2).trim() : trimmed;
+                    const isDetached = branchName.includes('HEAD detached') || branchName.includes('(HEAD detached');
+                    html += '<li class="git-branch-item' + (isCurrent ? ' current-branch' : '') + '">';
+                    html += '<span class="git-branch-name">';
+                    if (isCurrent) {
+                        html += '<span class="git-branch-current-indicator">●</span> ';
+                    }
+                    html += escapeHtml(branchName);
+                    if (isCurrent) {
+                        html += ' <span style="font-size:0.78rem; color:#198754;">(current)</span>';
+                    }
+                    html += '</span>';
+                    html += '<span class="git-branch-actions">';
+                    if (!isCurrent && !isDetached) {
+                        html += '<button class="git-branch-action-btn git-branch-switch-btn" onclick="gitSwitchBranch(\'' + escapeHtml(branchName).replace(/'/g, "\\'") + '\')">Switch</button>';
+                        html += '<button class="git-branch-action-btn git-branch-delete-btn" onclick="gitDeleteBranch(\'' + escapeHtml(branchName).replace(/'/g, "\\'") + '\')">Delete</button>';
+                    }
+                    html += '</span>';
+                    html += '</li>';
+                });
+                html += '</ul>';
+                contentEl.innerHTML = html;
+            } catch (e) {
+                contentEl.innerHTML = '<p style="color: #dc3545;">Error: ' + escapeHtml(e.message) + '</p>';
+            }
+        }
+        function promptCreateBranch() {
+            document.getElementById('git-create-branch-dialog').style.display = 'flex';
+            document.getElementById('git-new-branch-name').value = '';
+            document.getElementById('git-new-branch-name').focus();
+        }
+        function closeCreateBranchDialog() {
+            document.getElementById('git-create-branch-dialog').style.display = 'none';
+            document.getElementById('git-new-branch-name').value = '';
+        }
+        async function gitCreateBranch() {
+            const branchName = document.getElementById('git-new-branch-name').value.trim();
+            if (!branchName) {
+                alert('Please enter a branch name');
+                return;
+            }
+            // Basic branch name validation
+            if (/[^a-zA-Z0-9_\-\/.]/.test(branchName) || branchName.startsWith('-') || branchName.includes('..')) {
+                alert('Invalid branch name. Use only letters, numbers, hyphens, underscores, dots, and forward slashes.');
+                return;
+            }
+            const checkout = document.getElementById('git-checkout-new-branch').checked;
+            closeCreateBranchDialog();
+            try {
+                const result = await gitRequest('create-branch', { branchName: branchName, checkout: checkout.toString() });
+                showGitOutput('Create Branch', result.output || result.message);
+                gitStatus();
+                gitBranches();
+            } catch (e) {
+                alert('Error creating branch: ' + e.message);
+            }
+        }
+        async function gitSwitchBranch(branchName) {
+            if (!confirm('Switch to branch "' + branchName + '"?')) return;
+            try {
+                const result = await gitRequest('switch-branch', { branchName: branchName });
+                showGitOutput('Switch Branch', result.output || result.message);
+                gitStatus();
+                gitBranches();
+            } catch (e) {
+                alert('Error switching branch: ' + e.message);
+            }
+        }
+        async function gitDeleteBranch(branchName) {
+            if (!confirm('Delete branch "' + branchName + '"? This cannot be undone for unmerged branches.')) return;
+            try {
+                const result = await gitRequest('delete-branch', { branchName: branchName });
+                showGitOutput('Delete Branch', result.output || result.message);
+                gitBranches();
+            } catch (e) {
+                // If normal delete fails, offer force delete
+                if (confirm('Branch may not be fully merged. Force delete "' + branchName + '"?')) {
+                    try {
+                        const result = await gitRequest('delete-branch', { branchName: branchName, force: 'true' });
+                        showGitOutput('Delete Branch (forced)', result.output || result.message);
+                        gitBranches();
+                    } catch (e2) {
+                        alert('Error force-deleting branch: ' + e2.message);
+                    }
+                }
+            }
+        }
+        // Auto-load git status on page load if git section exists
+        window.addEventListener('DOMContentLoaded', () => {
+            if (document.getElementById('git-status-panel')) {
+                gitStatus();
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            const dialog = document.getElementById('git-commit-dialog');
+            const branchDialog = document.getElementById('git-create-branch-dialog');
+            if (dialog && dialog.style.display === 'flex') {
+                if (e.key === 'Escape') {
+                    closeCommitDialog();
+                } else if (e.key === 'Enter' && e.ctrlKey) {
+                    gitCommit();
+                }
+            } else if (branchDialog && branchDialog.style.display === 'flex') {
+                if (e.key === 'Escape') {
+                    closeCreateBranchDialog();
+                } else if (e.key === 'Enter') {
+                    gitCreateBranch();
+                }
+            }
+        });
+    """
 
 
     private fun generateBreadcrumbs(currentPath: String, servletBaseHref: String): String {
@@ -536,7 +1457,11 @@ abstract class FileServlet : HttpServlet() {
         servletBaseHref: String,
         zipLink: String,
         folders: String,
-        files: String
+        files: String,
+        toolbarActions: String = "",
+        additionalSections: String = "",
+        additionalStyles: String = "",
+        additionalScripts: String = ""
     ) = """
     |<!DOCTYPE html>
     |<html lang="en">
@@ -735,6 +1660,20 @@ abstract class FileServlet : HttpServlet() {
     |            padding: 0.5rem 0.75rem;
     |            font-style: italic;
     |        }
+        .action-link {
+            margin-left: 0.5rem;
+            font-size: 0.85rem;
+            color: #6c757d;
+            text-decoration: none;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.2rem;
+            transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+        }
+        .action-link:hover {
+            background-color: #e9ecef;
+            color: #0a58ca;
+        }
+        $additionalStyles
 |    </style>
     |    <script>
         // Drag and drop functionality
@@ -825,11 +1764,11 @@ abstract class FileServlet : HttpServlet() {
     |                
     |                const text = await response.text();
     |                
-|                if (response.ok) {
+    |                if (response.ok) {
     |                    showMessage('File uploaded successfully!', 'success');
     |                    fileInput.value = '';
-                    const dropZoneText = document.querySelector('.drop-zone-text');
-                    dropZoneText.innerHTML = 'Click to select, drag & drop, or paste (Ctrl+V) a file here';
+    |                    const dropZoneText = document.querySelector('.drop-zone-text');
+    |                    dropZoneText.innerHTML = 'Click to select, drag & drop, or paste (Ctrl+V) a file here';
     |                    // Reload the page after a short delay to show the new file
     |                    setTimeout(() => window.location.reload(), 1500);
     |                } else {
@@ -848,12 +1787,16 @@ abstract class FileServlet : HttpServlet() {
     |            messageDiv.textContent = message;
     |            messageDiv.className = 'upload-message ' + type;
     |        }
+    |    $additionalScripts
     |    </script>
     |</head>
     |<body>
     |    <div class="navbar">
     |        <span class="navbar-title"> File Browser</span>
+    |        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
     |        ${if (zipLink.isNotBlank()) """<a href="$zipLink" class="zip-link">Download Current Directory as ZIP</a>""" else ""}
+    |        $toolbarActions
+    |        </div>
     |    </div>
     |    <div class="container">
     |        <nav class="breadcrumb-nav" aria-label="breadcrumb">
@@ -862,7 +1805,7 @@ abstract class FileServlet : HttpServlet() {
     |           </ol>
     |        </nav>
     |
-|        <div class="section upload-section">
+    |        <div class="section upload-section">
     |            <div class="section-header"><h2 class="section-title">Upload File</h2></div>
     |            <div class="section-content">
     |                <form class="upload-form" onsubmit="uploadFile(event)" enctype="multipart/form-data">
@@ -890,6 +1833,9 @@ abstract class FileServlet : HttpServlet() {
     |                ${if (files.isBlank()) "<p class=\"empty-state\">No files found.</p>" else "<ul class=\"item-list\">$files</ul>"}
     |            </div>
     |        </div>
+    |
+    |        $additionalSections
+    |        
     |    </div>
     |</body>
     |</html>
@@ -909,7 +1855,6 @@ abstract class FileServlet : HttpServlet() {
                             it == '~' -> true
                             it == '\\' -> true
                             it.code < 32 -> true
-                            it.code > 126 -> true
                             else -> false
                         }
                     } -> throw IllegalArgumentException("Invalid path")

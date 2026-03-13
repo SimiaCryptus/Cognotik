@@ -294,8 +294,6 @@ class EntropyReductionTreeTask(
       transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
       resultFn("Error: ${e.message}")
       task.complete()
-    } finally {
-      transcript?.close()
     }
   }
 
@@ -674,6 +672,7 @@ class EntropyReductionTreeTask(
     statsTab: SessionTask,
     transcript: OutputStream?
   ): Node {
+    val topN = executionConfig?.top_n_values ?: 10
     val total = data.size
     val currentEntropy = computeMultiFieldEntropy(data, analysisFields)
     val stats = computeFieldStatistics(data, analysisFields, topN)
@@ -681,7 +680,7 @@ class EntropyReductionTreeTask(
     val allLowEntropy = stats.all { it.entropy < 0.1 }
     if (depth >= maxDepth || allLowEntropy || total < 5) {
       // Ask agent to describe this terminal leaf
-      val sample = data.shuffled().take(10).joinToString("\n") { record ->
+      val sample = data.shuffled().take(topN).joinToString("\n") { record ->
         record.entries.joinToString(", ") { "${it.key}=${it.value}" }
       }
       val descPrompt = buildString {
@@ -707,7 +706,7 @@ class EntropyReductionTreeTask(
           }
         }
         appendLine()
-        appendLine("Data Sample (up to 10 records):")
+        appendLine("Data Sample (up to ${total} records):")
         appendLine(sample)
         appendLine()
         appendLine("Please provide a detailed natural language description of this data subset.")
@@ -737,7 +736,7 @@ class EntropyReductionTreeTask(
       record.entries.joinToString(", ") { "${it.key}=${it.value}" }
     }
     val statsPromptSection = buildString {
-      appendLine("Per-field statistics for the current ${total} records:")
+      appendLine("Per-field statistics for the current ${topN} records:")
       for (s in stats) {
         appendLine(
           "  ${s.fieldName}: distinct=${s.distinctCount}, entropy=${"%.3f".format(s.entropy)}, top=${
