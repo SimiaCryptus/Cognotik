@@ -91,6 +91,12 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
+    /*org.junit.jupiter.params*/
+    testImplementation(libs.junit.jupiter.params)
+
+    /*io.mockk.every*/
+    testImplementation(libs.mockk)
+
 
     compileOnly(kotlin("stdlib"))
     testImplementation(kotlin("stdlib"))

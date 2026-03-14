@@ -9,7 +9,6 @@ class ResponseParser(private val processor: PatchProcessor) {
     private val log = LoggerFactory.getLogger(ResponseParser::class.java)
     private val MARKDOWN_HEADER_PATTERN = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
     private val FILE_HEADER_PATTERN = """(?m)^(?:─+|-+)\s*\nFile:\s*(.+?)\s*\n(?:─+|-+)\s*""".toRegex()
-    private val CODE_BLOCK_REGEX = """(?m)^```(\w*)\s*\n([\s\S]*?)^```\s*$""".toRegex(RegexOption.MULTILINE)
   }
 
   fun parse(
