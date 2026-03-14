@@ -7,7 +7,33 @@ import org.slf4j.LoggerFactory
 class ResponseParser(private val processor: PatchProcessor) {
   companion object {
     private val log = LoggerFactory.getLogger(ResponseParser::class.java)
+
+    /**
+     * Regular expression pattern used to match Markdown headers.
+     *
+     * This pattern ensures that the header starts at the beginning of a line (or after a newline)
+     * and captures the text following the hash `#` characters.
+     *
+     * **Example Matches:**
+     * - `# Header 1` -> Captures "Header 1"
+     * - `### Subtitle` -> Captures "Subtitle"
+     */
     private val MARKDOWN_HEADER_PATTERN = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
+
+    /**
+     * Regular expression pattern used to match custom file headers in text blocks.
+     *
+     * This pattern looks for a specific block format enclosed by dashes or lines,
+     * extracting the file name or path specified after "File: ".
+     *
+     * **Example Matches:**
+     * ```
+     * --------------------
+     * File: src/main/Main.kt
+     * --------------------
+     * ```
+     * -> Captures "src/main/Main.kt"
+     */
     private val FILE_HEADER_PATTERN = """(?m)^(?:─+|-+)\s*\nFile:\s*(.+?)\s*\n(?:─+|-+)\s*""".toRegex()
   }
 
@@ -104,7 +130,7 @@ class ResponseParser(private val processor: PatchProcessor) {
     }
 
     // Add trailing markdown
-    if (lastEnd < normalizedResponse.length) {
+    if (lastEnd < normalizedResponseLines.size) {
       val trailing = normalizedResponseLines.subList(lastEnd, normalizedResponseLines.size).joinToString("\n")
       if (trailing.isNotBlank()) {
         segments.add(ResponseSegment.Markdown(trailing))

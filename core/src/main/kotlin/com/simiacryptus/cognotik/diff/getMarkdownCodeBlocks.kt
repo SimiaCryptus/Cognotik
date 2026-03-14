@@ -44,13 +44,21 @@ fun String.getMarkdownCodeBlockMatches(): List<CodeBlockMatch> {
         val openFence = fences[i]
         var closeIndex = -1
         var j = i
+        var depth = 1
         while (++j < fences.size) {
             val candidate = fences[j]
-            if (candidate.indentation <= openFence.indentation) {
-                if (candidate.indentation == openFence.indentation) {
-                    if (!candidate.isOpening) closeIndex = j // Found a closing fence at the same indentation level
+            if (candidate.indentation < openFence.indentation) {
+                break
+            } else if (candidate.indentation == openFence.indentation) {
+                if (candidate.isOpening) {
+                    depth++
+                } else {
+                    depth--
+                    if (depth == 0) {
+                        closeIndex = j
+                        break
+                    }
                 }
-                break // Stop at the first fence that is not deeper than the opening fence
             }
         }
         if (closeIndex == -1) {
@@ -77,5 +85,3 @@ fun String.getMarkdownCodeBlockMatches(): List<CodeBlockMatch> {
     }
     return results
 }
-
-

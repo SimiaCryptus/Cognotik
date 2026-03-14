@@ -29,4 +29,22 @@ object TestFixtures {
         }
         ```
     """.trimIndent()
+    val EMBEDDED_FENCE_WITH_LANG = """
+        # File: src/main/Readme.md
+        ```markdown
+        # Title
+        ```javascript
+        console.log("hello");
+        ```
+        ```
+    """.trimIndent()
+    val EMBEDDED_FENCE_INDENTED = """
+        # File: src/main/Readme.md
+        ```markdown
+        # Title
+            ```
+            console.log("hello");
+            ```
+        ```
+    """.trimIndent()
 }

@@ -79,4 +79,28 @@ class ResponseParserTest {
         assertTrue(segments[0] is ResponseSegment.DiffBlock)
         assertEquals("Fallback.kt", (segments[0] as ResponseSegment.DiffBlock).filename)
     }
+    @Test
+    fun `should handle embedded fence with language ID`() {
+        val segments = parser.parse(TestFixtures.EMBEDDED_FENCE_WITH_LANG)
+        assertEquals(2, segments.size)
+        assertTrue(segments[0] is ResponseSegment.Markdown)
+        assertTrue(segments[1] is ResponseSegment.NewFileBlock)
+        val newFileBlock = segments[1] as ResponseSegment.NewFileBlock
+        assertEquals("src/main/Readme.md", newFileBlock.filename)
+        assertEquals("markdown", newFileBlock.language)
+        assertTrue(newFileBlock.code.contains("```javascript"))
+        assertTrue(newFileBlock.code.contains("console.log(\"hello\");"))
+    }
+    @Test
+    fun `should handle indented embedded fence`() {
+        val segments = parser.parse(TestFixtures.EMBEDDED_FENCE_INDENTED)
+        assertEquals(2, segments.size)
+        assertTrue(segments[0] is ResponseSegment.Markdown)
+        assertTrue(segments[1] is ResponseSegment.NewFileBlock)
+        val newFileBlock = segments[1] as ResponseSegment.NewFileBlock
+        assertEquals("src/main/Readme.md", newFileBlock.filename)
+        assertEquals("markdown", newFileBlock.language)
+        assertTrue(newFileBlock.code.contains("    ```"))
+        assertTrue(newFileBlock.code.contains("console.log(\"hello\");"))
+    }
 }
