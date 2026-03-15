@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.ui.patch
 
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.diff.PatchProcessors
+import com.simiacryptus.cognotik.diff.ResponseSegment
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import java.nio.file.Path
@@ -17,7 +17,6 @@ class DiffInstrumentor(
         private val log = org.slf4j.LoggerFactory.getLogger(DiffInstrumentor::class.java)
     }
 
-    private val parser = ResponseParser(processor)
 
     fun instrument(
         root: Path,
@@ -32,7 +31,7 @@ class DiffInstrumentor(
             log.warn("Empty response provided to instrument()")
             return response
         }
-        val segments = parser.parse(response, defaultFile)
+        val segments = processor.parse(response, defaultFile)
         if (segments.isEmpty()) {
             log.debug("No segments parsed from response")
             return response

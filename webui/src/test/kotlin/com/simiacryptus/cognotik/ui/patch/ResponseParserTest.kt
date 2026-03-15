@@ -21,13 +21,13 @@ class ResponseParserTest {
 
     @Test
     fun `should return empty list for blank response`() {
-        assertTrue(parser.parse("   ").isEmpty())
+        assertTrue(parser.processor.parse("   ").isEmpty())
     }
 
     @Test
     fun `should return markdown segment for response without code blocks`() {
         val response = "Just some text without any code blocks."
-        val segments = parser.parse(response)
+        val segments = parser.processor.parse(response)
         
         assertEquals(1, segments.size)
         assertTrue(segments[0] is ResponseSegment.Markdown)
@@ -36,7 +36,7 @@ class ResponseParserTest {
 
     @Test
     fun `should auto-close unclosed code block`() {
-        val segments = parser.parse(TestFixtures.MALFORMED_RESPONSE, defaultFile = "src/main/Main.kt")
+        val segments = parser.processor.parse(TestFixtures.MALFORMED_RESPONSE, defaultFile = "src/main/Main.kt")
         
         assertEquals(2, segments.size) // Markdown + NewFileBlock
         assertTrue(segments[1] is ResponseSegment.NewFileBlock)
@@ -47,7 +47,7 @@ class ResponseParserTest {
 
     @Test
     fun `should detect diff block`() {
-        val segments = parser.parse(TestFixtures.STANDARD_DIFF_RESPONSE)
+        val segments = parser.processor.parse(TestFixtures.STANDARD_DIFF_RESPONSE)
         
         assertEquals(2, segments.size)
         assertTrue(segments[0] is ResponseSegment.Markdown)
@@ -60,7 +60,7 @@ class ResponseParserTest {
 
     @Test
     fun `should detect new file block`() {
-        val segments = parser.parse(TestFixtures.NEW_FILE_RESPONSE)
+        val segments = parser.processor.parse(TestFixtures.NEW_FILE_RESPONSE)
         
         assertEquals(2, segments.size)
         assertTrue(segments[1] is ResponseSegment.NewFileBlock)
@@ -73,7 +73,7 @@ class ResponseParserTest {
     @Test
     fun `should fallback to default file if no header is found`() {
         val response = "```diff\n- a\n+ b\n```"
-        val segments = parser.parse(response, defaultFile = "Fallback.kt")
+        val segments = parser.processor.parse(response, defaultFile = "Fallback.kt")
         
         assertEquals(1, segments.size)
         assertTrue(segments[0] is ResponseSegment.DiffBlock)
@@ -81,7 +81,7 @@ class ResponseParserTest {
     }
     @Test
     fun `should handle embedded fence with language ID`() {
-        val segments = parser.parse(TestFixtures.EMBEDDED_FENCE_WITH_LANG)
+        val segments = parser.processor.parse(TestFixtures.EMBEDDED_FENCE_WITH_LANG)
         assertEquals(2, segments.size)
         assertTrue(segments[0] is ResponseSegment.Markdown)
         assertTrue(segments[1] is ResponseSegment.NewFileBlock)
@@ -93,7 +93,7 @@ class ResponseParserTest {
     }
     @Test
     fun `should handle indented embedded fence`() {
-        val segments = parser.parse(TestFixtures.EMBEDDED_FENCE_INDENTED)
+        val segments = parser.processor.parse(TestFixtures.EMBEDDED_FENCE_INDENTED)
         assertEquals(2, segments.size)
         assertTrue(segments[0] is ResponseSegment.Markdown)
         assertTrue(segments[1] is ResponseSegment.NewFileBlock)

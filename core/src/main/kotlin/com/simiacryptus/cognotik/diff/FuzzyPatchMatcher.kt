@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.diff
 
 import com.simiacryptus.cognotik.diff.FuzzyPatchMatcher.Companion.LineType.*
+import com.simiacryptus.cognotik.diff.PatchProcessor.Companion.TRIPLE_TILDE
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.commons.text.similarity.LevenshteinDistance
 import kotlin.math.floor
@@ -46,66 +47,6 @@ open class FuzzyPatchMatcher(
   /** A descriptive label for this patch processor. */
   override val label: String = "Fuzzy Patch Matcher"
 
-  val TRIPLE_TILDE = """```"""
-
-  /**
-   * A detailed instructional prompt intended for a language model (LLM).
-   * This prompt explains the expected patch format, including the use of diff blocks, file headers,
-   * context lines, and the alternative snippet format. Providing this to an LLM helps ensure that
-   * the patches it generates are compatible with this processor's `applyPatch` method.
-   */
-  override val patchFormatPrompt = """
-Response format:
-* Response should use one or more code patches in diff format within ```diff code blocks.
-* Each diff should be preceded by a header that identifies the file being modified.
-* The diff format should use + for line additions, - for line deletions.
-* The diff should include 2 lines of context before and after every change.
-* Separate code blocks with a single blank line.
-* The content inside the code blocks should be indented - this is CRITICAL for correct parsing.
-
-Example:
-
-Here are the patches:
-
-### src/utils/exampleUtils.js
-```diff
-  const b = 2;
-  function exampleFunction() {
--   return b + 1;
-+   return b + 2;
-  }
-```
-
-### tests/exampleUtils.test.js
-${TRIPLE_TILDE}diff
-  const assert = require('assert');
-  const { exampleFunction } = require('../src/utils/exampleUtils'); 
-  describe('exampleFunction', () => {
--   it('should return 3', () => {
-+   it('should return 4', () => {
-      assert.equal(exampleFunction(), 4);
-    });
-  });
-```
-
-### README.md
-${TRIPLE_TILDE}md
-  This file contains utility functions for the project.
-  Example usage:
-  ${TRIPLE_TILDE}js
-    print("Something")
-  ${TRIPLE_TILDE}
-${TRIPLE_TILDE}
-
-Alternately, the patch can be provided as a snippet of updated code with context.
-This is useful when the patch is small and can be applied directly, when creating the delete lines is cumbersome, or when creating a new file.
-
-      """
-
-  override fun getInitiatorPattern(): Regex {
-    return "(?s)$TRIPLE_TILDE\\w*\n".toRegex()
-  }
-
   /**
    * Generates a diff patch that transforms the `oldCode` into the `newCode`.
    * The process involves:
@@ -122,7 +63,6 @@ This is useful when the patch is small and can be applied directly, when creatin
    * @param newCode The modified source code.
    * @return A string representing the diff in the specified format, or an empty string if there are no changes.
    */
-
   override fun generatePatch(oldCode: String, newCode: String): String {
     log.info("Starting patch generation process")
     if (oldCode == newCode) {
