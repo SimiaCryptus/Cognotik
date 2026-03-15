@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.ui.patch
 
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.diff.getMarkdownCodeBlockMatches
 import org.slf4j.LoggerFactory
 
 class ResponseParser(private val processor: PatchProcessor) {
@@ -58,8 +57,18 @@ class ResponseParser(private val processor: PatchProcessor) {
       response
     })
     val normalizedResponseLines = normalizedResponse.lines()
+    val codeBlockMatches = processor.getMarkdownCodeBlockMatches(normalizedResponse)
+    val segments = markdowns(codeBlockMatches, normalizedResponse, normalizedResponseLines, defaultFile)
+    log.debug("Parsed {} total segments from response", segments.size)
+    return segments
+  }
 
-    val codeBlockMatches = normalizedResponse.getMarkdownCodeBlockMatches()
+  private fun markdowns(
+    codeBlockMatches: List<PatchProcessor.CodeBlockMatch>,
+    normalizedResponse: String,
+    normalizedResponseLines: List<String>,
+    defaultFile: String?
+  ): List<ResponseSegment> {
     if (codeBlockMatches.isEmpty()) {
       log.debug("No code blocks found in response")
       return listOf(ResponseSegment.Markdown(normalizedResponse))
@@ -120,11 +129,19 @@ class ResponseParser(private val processor: PatchProcessor) {
           }
         } else {
           log.debug("Normalized filename is blank, treating code block as markdown")
-          segments.add(ResponseSegment.Markdown(normalizedResponseLines.subList(lineStart, lineEnd + 1).joinToString("\n")))
+          segments.add(
+            ResponseSegment.Markdown(
+              normalizedResponseLines.subList(lineStart, lineEnd + 1).joinToString("\n")
+            )
+          )
         }
       } else {
         log.debug("No filename resolved, treating code block as markdown")
-        segments.add(ResponseSegment.Markdown(normalizedResponseLines.subList(lineStart, lineEnd + 1).joinToString("\n")))
+        segments.add(
+          ResponseSegment.Markdown(
+            normalizedResponseLines.subList(lineStart, lineEnd + 1).joinToString("\n")
+          )
+        )
       }
 
       lastEnd = lineEnd + 1
@@ -137,8 +154,6 @@ class ResponseParser(private val processor: PatchProcessor) {
         segments.add(ResponseSegment.Markdown(trailing))
       }
     }
-
-    log.debug("Parsed {} total segments from response", segments.size)
     return segments
   }
 

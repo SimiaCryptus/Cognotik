@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -134,7 +133,7 @@ $taskDesc
 
                 val chatAgent = ChatAgent(
                     name = "FileModification",
-                    prompt = getSystemPrompt(), // Extracted for readability
+                    prompt = getSystemPrompt(this.orchestrationConfig.processor), // Extracted for readability
                     model = chatInterface,
                     temperature = this.orchestrationConfig.temperature,
                 )
@@ -226,7 +225,8 @@ $codeResult
         }
     }
 
-  private fun getSystemPrompt(): String {
+  private fun getSystemPrompt(processor: PatchProcessor): String {
+
       return """
     Generate precise code modifications and new files based on requirements:
     For modifying existing files:
@@ -248,7 +248,7 @@ $codeResult
     - Any important implementation details
     - Potential impacts on other code
     - Required follow-up actions
-    $PROMT_PATCH_FORMAT
+    ${processor.patchFormatPrompt}
         """
     }
 
@@ -307,46 +307,5 @@ $codeResult
                 null
             }
         }
-
-      val PROMT_PATCH_FORMAT = """
-        Response format:
-        For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
-        For new files: Use ${TRIPLE_TILDE} code blocks with a header specifying the new file path.
-        The content inside the code blocks should be indented - this is CRITICAL for correct parsing.
-        The diff format should use + for line additions, - for line deletions.
-        Include 2 lines of context before and after every change in diffs.
-        Separate code blocks with a single blank line.
-        For new files, specify the language for syntax highlighting after the opening triple backticks.
-        
-        Example:
-        
-        Here are the modifications:
-        
-        ### src/utils/existingFile.js
-        ${TRIPLE_TILDE}diff
-          function existingFunction() {
-        -    return 'old result';
-        +    return 'new result';
-          }
-        ${TRIPLE_TILDE}
-        
-        ### src/utils/newFile.js
-        ${TRIPLE_TILDE}js
-          function newFunction() {
-            return 'new functionality';
-          }
-        ${TRIPLE_TILDE}
-        
-        ### src/utils/README.md
-        ${TRIPLE_TILDE}md
-          # Utility Functions
-          This file contains utility functions for the project.
-          Example usage:
-          ${TRIPLE_TILDE}js
-            import { existingFunction, newFunction } from './existingFile.js';
-            console.log(existingFunction()); // Outputs: 'new result'
-            console.log(newFunction()); // Outputs: 'new functionality'
-          ${TRIPLE_TILDE}
-        ${TRIPLE_TILDE}"""
     }
 }
