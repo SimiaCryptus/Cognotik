@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.util
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode
@@ -16,7 +17,6 @@ import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.asApiChatModel
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -315,7 +315,7 @@ class DocProcessor(
         val taskConfigJson: String? = null,
         val taskType: String? = null,
         val updateMode: String? = null,
-        val rootOverride: String? = null,
+        val targetFolder: String? = null,
     )
 
     /**
@@ -388,7 +388,7 @@ class DocProcessor(
     class ModificationTask(
         val data: ModificationTaskConfig,
         val message: (File) -> String = { "" },
-        val patchProcessor: PatchProcessors = PatchProcessors.Fuzzy,
+        val patchProcessor: PatchProcessor? = null,
         val shouldDeleteTarget: Boolean = false,
         val taskType: TaskType<*, *> = FileModification
     ) {
@@ -599,12 +599,14 @@ class DocProcessor(
                             generates.map { "${it.spec.docFile.name}(${it.inputFiles.size} inputs)" }
                             ).joinToString(", ")
                 }")
-            val source = primarySource(transforms, specs, documents, generates) ?: return null
+            val source = primarySource(transforms, specs, documents, generates)
+            // For targetFolder-only specs, the doc file itself is the source
+            val effectiveSource = source ?: specs.firstOrNull { it.targetFolder != null }?.docFile ?: return null
             val relatedFiles = allRelatedFiles(specs, targetFileObj, transforms, documents, generates)
             val effectiveUpdateMode = resolveUpdateMode(specs, transforms, documents, generates)
             val effectiveRoot = resolveEffectiveRoot(specs, transforms, documents, generates)
             val prepareResult = effectiveUpdateMode.prepare(
-                source = source,
+                source = effectiveSource,
                 target = targetFileObj,
                 relatedFiles = relatedFiles
             )
@@ -918,8 +920,22 @@ class DocProcessor(
                 }
             }
 
-        // Combine both sources and group by target file
-        val fileToSpecs = (specsFromSpecifies + specsFromTransforms)
+        // Collect specs that have a targetFolder but no other target patterns
+        // These use the resolved targetFolder directory as the target key
+        val specsFromTargetFolder = docSpecs
+            .filter { it.targetFolder != null && it.specifies.isEmpty() && it.transforms.isEmpty() && it.generates.isEmpty() && it.documents.isEmpty() }
+            .map { spec ->
+                val resolvedFolder = try {
+                    spec.docFile.parentFile.resolve(spec.targetFolder!!).canonicalFile
+                } catch (e: Exception) {
+                    spec.docFile.parentFile.resolve(spec.targetFolder!!)
+                }
+                log.info("Doc ${spec.docFile.name} targets folder '${spec.targetFolder}' -> ${resolvedFolder.absolutePath}")
+                resolvedFolder to spec
+            }
+
+        // Combine all sources and group by target file
+        val fileToSpecs = (specsFromSpecifies + specsFromTransforms + specsFromTargetFolder)
             .groupBy({ it.first.absolutePath }, { it.second })
             .mapValues { it.value.distinct() }
 
@@ -1015,15 +1031,25 @@ class DocProcessor(
         onNewSession: (Session) -> Unit,
         sessions: MutableList<Session>
     ) {
-        val root = mod.data.root
-        val newRoot = mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
-        val isUnderRoot = try {
-            newRoot.canonicalPath.startsWith(root.canonicalPath) && newRoot.canonicalPath.length > root.canonicalPath.length
+
+
+        // The task's data.root is already set to the effective root (which may be a target folder)
+        // by buildModificationTask -> resolveEffectiveRoot. If the effective root differs from
+        // this.root (the global root), we need to rebase the task so that relative paths
+        // are computed against the target folder.
+        val effectiveRoot = mod.data.root
+        val needsRebase = try {
+            effectiveRoot.canonicalPath != this.root.canonicalPath
         } catch (e: Exception) {
-            log.warn("Failed to resolve new root path: ${newRoot.absolutePath}", e)
+            log.warn("Failed to compare root paths: ${effectiveRoot.absolutePath} vs ${this.root.absolutePath}", e)
             false
         }
-        val mod = if(isUnderRoot) mod.rebase(root, newRoot) else mod
+        val mod = if (needsRebase) {
+            log.info("Rebasing task into target folder: ${effectiveRoot.canonicalPath}")
+            mod.rebase(this.root, effectiveRoot)
+        } else {
+            mod
+        }
         val targetKey = mod.data.relative_files?.firstOrNull() ?: "unknown"
         harness.resetSession()
         if (cancelFlag.get()) {
@@ -1053,7 +1079,7 @@ class DocProcessor(
                     typeConfig = mod.typeConfig,
                     workingDir = mod.data.root.toString()
                 ).apply {
-                    processor = mod.patchProcessor
+                    processor = mod.patchProcessor ?: processor
                 }
             }
             updateTaskStatus(targetKey, TaskStatus.COMPLETED)
@@ -1091,11 +1117,14 @@ class DocProcessor(
           }
           else -> {
             // For non-file tasks (e.g. ImageVariation), use requestToTask to generate proper config
+              mod.patchProcessor?.apply {
+                  harness.processor = this
+              }
             val orchestrationConfig = harness.createSettings(
               session = Session.newGlobalID(),
               autoFix = true,
               typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
-              workingDir = newRoot.toString()
+              workingDir = newRoot.toString(),
             )
           val contextMessages = buildList {
               add("Task type: ${mod.taskType.name}")
@@ -1227,9 +1256,9 @@ class DocProcessor(
         val taskType = parseTaskType(frontmatter)
         val taskConfigJson = parseTaskConfigJson(frontmatter)
         val perDocUpdateMode = parseUpdateMode(frontmatter)
-        val rootOverride = parseRootOverride(frontmatter)
+        val targetFolder = parseFolder(frontmatter)
         // Return null if neither specifies nor transforms are present
-        if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty() && generates.isEmpty()) {
+        if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty() && generates.isEmpty() && targetFolder == null) {
             return null
         }
         return DocSpec(
@@ -1244,7 +1273,7 @@ class DocProcessor(
             taskType = taskType,
             taskConfigJson = taskConfigJson,
             updateMode = perDocUpdateMode,
-            rootOverride = rootOverride
+            targetFolder = targetFolder
         )
     }
 
@@ -1263,8 +1292,8 @@ class DocProcessor(
      * The value is a relative path from the document file's parent directory.
      * The resolved path must be strictly under the default root directory.
      */
-    fun parseRootOverride(frontmatter: Map<String, Any>): String? {
-        return frontmatter["root_override"] as? String
+    fun parseFolder(frontmatter: Map<String, Any>): String? {
+        return frontmatter["folder"] as? String
     }
     /**
      * Resolve the effective root directory for a given set of specs.
@@ -1284,12 +1313,12 @@ class DocProcessor(
         documents: List<DocumentMatch> = emptyList(),
         generates: List<GenerateMatch> = emptyList()
     ): File {
-        val overrideSpec = specs.firstOrNull { it.rootOverride != null }
-            ?: transforms.firstOrNull { it.spec.rootOverride != null }?.spec
-            ?: documents.firstOrNull { it.docSpec.rootOverride != null }?.docSpec
-            ?: generates.firstOrNull { it.spec.rootOverride != null }?.spec
+        val overrideSpec = specs.firstOrNull { it.targetFolder != null }
+            ?: transforms.firstOrNull { it.spec.targetFolder != null }?.spec
+            ?: documents.firstOrNull { it.docSpec.targetFolder != null }?.docSpec
+            ?: generates.firstOrNull { it.spec.targetFolder != null }?.spec
         if (overrideSpec == null) return root
-        val rootOverridePath = overrideSpec.rootOverride ?: return root
+        val rootOverridePath = overrideSpec.targetFolder ?: return root
         val resolvedRoot = overrideSpec.docFile.parentFile.resolve(rootOverridePath).canonicalFile
         val canonicalDefaultRoot = root.canonicalFile
         if (!resolvedRoot.canonicalPath.startsWith(canonicalDefaultRoot.canonicalPath + File.separator) &&

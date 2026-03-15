@@ -72,7 +72,7 @@ abstract class ApplicationDirectory(
     open val taskConfigServlet: HttpServlet = TaskConfigServlet()
         .also { log.debug("Initialized TaskConfigServlet") }
 
-    protected open val docopsServlet by lazy { DocOpsServlet() }
+    protected open val docopsServlet by lazy { DocProcessorServlet() }
 
     open val cognitiveConfigServlet: HttpServlet = CognitiveConfigServlet()
         .also { log.debug("Initialized CognitiveConfigServlet") }

@@ -3,6 +3,8 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.diff.PatchProcessor
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -39,7 +41,7 @@ class FileModificationTask(
         val includeGitDiff: Boolean = false,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
-        state: TaskState? = null
+        state: TaskState? = null,
     ) : FileTaskExecutionConfig(
         task_type = FileModification.name,
         task_description = task_description,
@@ -162,7 +164,8 @@ $codeResult
                 val markdown = renderMarkdown(codeResult, ui = task.ui) {
                   DiffInstrumentor(
                     orchestrationConfig.processor,
-                    SessionRenderer(task), RealFileSystem()
+                    SessionRenderer(task),
+                    RealFileSystem(),
                   ).instrument(
                     root = agent.root,
                     response = it,
@@ -223,68 +226,31 @@ $codeResult
         }
     }
 
-    private fun getSystemPrompt() = """
-Generate precise code modifications and new files based on requirements:
-For modifying existing files:
-- Write efficient, readable, and maintainable code changes
-- Ensure modifications integrate smoothly with existing code
-- Follow project coding standards and patterns
-- Consider dependencies and potential side effects
-- Provide clear context and rationale for changes
-
-For creating new files:
-- Choose appropriate file locations and names
-- Structure code according to project conventions
-- Include necessary imports and dependencies
-- Add comprehensive documentation
-- Ensure no duplication of existing functionality
-
-Provide a clear summary explaining:
-- What changes were made and why
-- Any important implementation details
-- Potential impacts on other code
-- Required follow-up actions
-
-Response format:
-For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
-For new files: Use ${TRIPLE_TILDE} code blocks with a header specifying the new file path.
-The content inside the code blocks should be indented - this is CRITICAL for correct parsing.
-The diff format should use + for line additions, - for line deletions.
-Include 2 lines of context before and after every change in diffs.
-Separate code blocks with a single blank line.
-For new files, specify the language for syntax highlighting after the opening triple backticks.
-
-Example:
-
-Here are the modifications:
-
-### src/utils/existingFile.js
-${TRIPLE_TILDE}diff
-  function existingFunction() {
--    return 'old result';
-+    return 'new result';
-  }
-${TRIPLE_TILDE}
-
-### src/utils/newFile.js
-${TRIPLE_TILDE}js
-  function newFunction() {
-    return 'new functionality';
-  }
-${TRIPLE_TILDE}
-
-### src/utils/README.md
-${TRIPLE_TILDE}md
-  # Utility Functions
-  This file contains utility functions for the project.
-  Example usage:
-  ${TRIPLE_TILDE}js
-    import { existingFunction, newFunction } from './existingFile.js';
-    console.log(existingFunction()); // Outputs: 'new result'
-    console.log(newFunction()); // Outputs: 'new functionality'
-  ${TRIPLE_TILDE}
-${TRIPLE_TILDE}
-    """
+  private fun getSystemPrompt(): String {
+      return """
+    Generate precise code modifications and new files based on requirements:
+    For modifying existing files:
+    - Write efficient, readable, and maintainable code changes
+    - Ensure modifications integrate smoothly with existing code
+    - Follow project coding standards and patterns
+    - Consider dependencies and potential side effects
+    - Provide clear context and rationale for changes
+    
+    For creating new files:
+    - Choose appropriate file locations and names
+    - Structure code according to project conventions
+    - Include necessary imports and dependencies
+    - Add comprehensive documentation
+    - Ensure no duplication of existing functionality
+    
+    Provide a clear summary explaining:
+    - What changes were made and why
+    - Any important implementation details
+    - Potential impacts on other code
+    - Required follow-up actions
+    $PROMT_PATCH_FORMAT
+        """
+    }
 
     fun getDefaultFile() =
         if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).isEmpty()) {
@@ -341,5 +307,46 @@ ${TRIPLE_TILDE}
                 null
             }
         }
+
+      val PROMT_PATCH_FORMAT = """
+        Response format:
+        For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
+        For new files: Use ${TRIPLE_TILDE} code blocks with a header specifying the new file path.
+        The content inside the code blocks should be indented - this is CRITICAL for correct parsing.
+        The diff format should use + for line additions, - for line deletions.
+        Include 2 lines of context before and after every change in diffs.
+        Separate code blocks with a single blank line.
+        For new files, specify the language for syntax highlighting after the opening triple backticks.
+        
+        Example:
+        
+        Here are the modifications:
+        
+        ### src/utils/existingFile.js
+        ${TRIPLE_TILDE}diff
+          function existingFunction() {
+        -    return 'old result';
+        +    return 'new result';
+          }
+        ${TRIPLE_TILDE}
+        
+        ### src/utils/newFile.js
+        ${TRIPLE_TILDE}js
+          function newFunction() {
+            return 'new functionality';
+          }
+        ${TRIPLE_TILDE}
+        
+        ### src/utils/README.md
+        ${TRIPLE_TILDE}md
+          # Utility Functions
+          This file contains utility functions for the project.
+          Example usage:
+          ${TRIPLE_TILDE}js
+            import { existingFunction, newFunction } from './existingFile.js';
+            console.log(existingFunction()); // Outputs: 'new result'
+            console.log(newFunction()); // Outputs: 'new functionality'
+          ${TRIPLE_TILDE}
+        ${TRIPLE_TILDE}"""
     }
 }

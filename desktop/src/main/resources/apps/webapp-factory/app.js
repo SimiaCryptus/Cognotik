@@ -19,7 +19,7 @@
     let statusPollTimer = null;
     const STATUS_POLL_INTERVAL = 3000;
     const taskTargetToBadge = {
-        'code/README.md': 'badge-render',
+        'code/': 'badge-render',
     };
     const activeTaskSessions = {};
     // === File I/O helpers ===
@@ -115,32 +115,50 @@
     function updateSessionLinks(target, taskInfo) {
         const status = taskInfo.status;
         const taskSessionId = taskInfo.sessionId;
-        let linkContainerId = null;
-        if (target === 'code/README.md') {
-            linkContainerId = 'session-link-render';
-        }
-        if (!linkContainerId) return;
+        
+        const safeTarget = target.replace(/[^a-zA-Z0-9]/g, '-');
+        const linkContainerId = 'session-link-' + safeTarget;
+        
         let container = document.getElementById(linkContainerId);
         if (!container) {
             container = document.createElement('div');
             container.id = linkContainerId;
             container.className = 'session-link-container';
-            const parentStep = document.getElementById('viewer-render')?.parentElement;
-            if (parentStep) {
-                const viewer = parentStep.querySelector('.viewer');
-                if (viewer) {
-                    parentStep.insertBefore(container, viewer);
+            
+            // Try to find the run button for this target
+            const runBtn = document.querySelector(`button[data-output="${CSS.escape(target)}"]`);
+            if (runBtn) {
+                const buttonRow = runBtn.closest('.button-row');
+                if (buttonRow) {
+                    buttonRow.parentNode.insertBefore(container, buttonRow.nextSibling);
+                }
+            } else {
+                // Fallback: insert into the batch log area or the step area
+                const viewer = document.getElementById('viewer-render');
+                if (viewer && viewer.parentElement) {
+                    viewer.parentElement.insertBefore(container, viewer);
                 } else {
-                    parentStep.appendChild(container);
+                    return;
                 }
             }
         }
-        if (!container) return;
+        
+        let actionText = 'Processing…';
+        const runBtn = document.querySelector(`button[data-output="${CSS.escape(target)}"]`);
+        if (runBtn) {
+            const stepTitle = runBtn.closest('.step')?.querySelector('.step-title')?.textContent;
+            if (stepTitle) {
+                actionText = stepTitle + '…';
+            }
+        } else if (target.includes('README')) {
+            actionText = 'Rendering project…';
+        }
+        
         if (status === 'RUNNING' && taskSessionId) {
             const proxyUrl = getProxyUrl(taskSessionId);
             container.innerHTML = `<div class="session-monitor-link">
 <span class="monitor-pulse">●</span>
-<span>Rendering project… </span>
+<span>${escapeHtml(actionText)} </span>
 <a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
 📡 Monitor Live Session (${escapeHtml(taskSessionId)})
 </a>
@@ -154,7 +172,7 @@
             container.innerHTML = `<div class="session-completed-link">
 <span>✅ Completed${completedAt ? ' at ' + completedAt : ''} — </span>
 <a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
-View Session Log (${escapeHtml(taskSessionId)})
+📋 View Session Log (${escapeHtml(taskSessionId)})
 </a>
 </div>`;
             container.style.display = 'block';
@@ -163,7 +181,7 @@ View Session Log (${escapeHtml(taskSessionId)})
             container.innerHTML = `<div class="session-error-link">
 <span>❌ Failed — </span>
 ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
-View Error Log (${escapeHtml(taskSessionId)})
+🔍 View Error Log (${escapeHtml(taskSessionId)})
 </a>` : '<span>No session available</span>'}
 </div>`;
             container.style.display = 'block';
@@ -180,6 +198,10 @@ View Error Log (${escapeHtml(taskSessionId)})
             if (taskInfo.status === 'RUNNING') {
                 anyRunning = true;
             }
+            // Keep results section session link updated
+            if (target === 'code/' && taskInfo.sessionId) {
+                updateResultsSessionLink(taskInfo);
+            }
         }
         updatePipelineDiagram(statusData.tasks);
         return anyRunning;
@@ -187,8 +209,8 @@ View Error Log (${escapeHtml(taskSessionId)})
     function updatePipelineDiagram(tasks) {
         const stageMap = {
             'input': { targets: ['idea.md'], el: null },
-            'render': { targets: ['code/README.md'], el: null },
-            'output': { targets: ['code/README.md'], el: null },
+            'render': { targets: ['code/'], el: null },
+            'output': { targets: ['code/'], el: null },
         };
         for (const [stage, info] of Object.entries(stageMap)) {
             const el = document.querySelector(`.pipeline-stage[data-stage="${stage}"]`);
@@ -197,11 +219,15 @@ View Error Log (${escapeHtml(taskSessionId)})
             let anyRunning = false;
             let allDone = true;
             let anyTarget = false;
+            let activeTaskId = null;
             for (const t of info.targets) {
                 const task = tasks[t];
                 if (!task) { allDone = false; continue; }
                 anyTarget = true;
-                if (task.status === 'RUNNING') anyRunning = true;
+                if (task.status === 'RUNNING') {
+                    anyRunning = true;
+                    activeTaskId = task.sessionId;
+                }
                 if (task.status !== 'COMPLETED') allDone = false;
             }
             if (anyRunning) {
@@ -213,7 +239,14 @@ View Error Log (${escapeHtml(taskSessionId)})
             const statusEl = el.querySelector('.stage-status');
             if (stageStatus === 'running') {
                 el.classList.add('active');
-                if (statusEl) statusEl.textContent = 'Running…';
+                if (statusEl) {
+                    if (activeTaskId) {
+                        const proxyUrl = getProxyUrl(activeTaskId);
+                        statusEl.innerHTML = `<a href="${proxyUrl}" target="_blank" class="monitor-link" style="color: inherit; text-decoration: underline;">Running…</a>`;
+                    } else {
+                        statusEl.textContent = 'Running…';
+                    }
+                }
             } else if (stageStatus === 'done') {
                 el.classList.add('done');
                 if (statusEl) statusEl.textContent = 'Done';
@@ -273,14 +306,21 @@ View Error Log (${escapeHtml(taskSessionId)})
     }
     // === Batch log ===
     const batchLog = document.getElementById('batch-log');
-    function logBatch(message, type) {
+    function logBatch(message, type, isHtml = false) {
         batchLog.classList.add('visible');
         const entry = document.createElement('div');
         entry.className = 'log-entry log-' + (type || 'info');
         const ts = new Date().toLocaleTimeString();
-        entry.textContent = `[${ts}] ${message}`;
+        if (isHtml) {
+            entry.innerHTML = `[${ts}] ${message}`;
+        } else {
+            entry.textContent = `[${ts}] ${message}`;
+        }
         batchLog.appendChild(entry);
         batchLog.scrollTop = batchLog.scrollHeight;
+    }
+    function logBatchHtml(html, type) {
+        logBatch(html, type, true);
     }
     // === Navigation ===
     document.querySelectorAll('.nav-link').forEach(link => {
@@ -405,12 +445,20 @@ View Error Log (${escapeHtml(taskSessionId)})
                 } catch (e) {
                     console.warn('Could not auto-save idea.md:', e);
                 }
+            } else {
+                alert('Please describe your webapp idea first.');
+                return;
             }
             setBadge(badgeId, 'running');
             this.disabled = true;
             startStatusPolling();
             try {
-                await runDocOp(opPath, outputPath);
+                const taskId = await runDocOp(opPath, outputPath);
+                const cleanTaskId = taskId ? taskId.trim() : '';
+                if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                    updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
+                    logBatchHtml(`Session started: <a href="${getProxyUrl(cleanTaskId)}" target="_blank" class="monitor-link">📡 Monitor Live Session (${escapeHtml(cleanTaskId)})</a>`, 'info');
+                }
                 await waitForTask(outputPath);
                 setBadge(badgeId, 'done');
                 if (viewerId) {
@@ -455,13 +503,27 @@ View Error Log (${escapeHtml(taskSessionId)})
         try {
             logBatch('Starting: Render Project', 'info');
             setBadge('badge-render', 'running');
-            await runDocOp('ops/render_op.md', 'code/README.md');
-            await waitForTask('code/README.md');
+            const taskId = await runDocOp('ops/render_op.md', 'code/');
+            const cleanTaskId = taskId ? taskId.trim() : '';
+            if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                const proxyUrl = getProxyUrl(cleanTaskId);
+                logBatchHtml(`Session started: <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">📡 Monitor Live Session (${escapeHtml(cleanTaskId)})</a>`, 'info');
+                updateSessionLinks('code/', { status: 'RUNNING', sessionId: cleanTaskId });
+            }
+            await waitForTask('code/');
             setBadge('badge-render', 'done');
-            logBatch('✓ Completed: Render Project', 'success');
+            // Fetch final status to get session ID for completed link
+            const finalStatus = await fetchDocopsStatus();
+            const completedTask = finalStatus?.tasks?.['code/'];
+            if (completedTask && completedTask.sessionId) {
+                const proxyUrl = getProxyUrl(completedTask.sessionId);
+                logBatchHtml(`✓ Completed: Render Project — <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">📋 View Session Log (${escapeHtml(completedTask.sessionId)})</a>`, 'success');
+            } else {
+                logBatch('✓ Completed: Render Project', 'success');
+            }
             // Show the README
             try {
-                const content = await readFile('code/README.md');
+                const content = await readFile('code/');
                 if (content) {
                     const viewer = document.getElementById('viewer-render');
                     if (viewer) {
@@ -473,7 +535,15 @@ View Error Log (${escapeHtml(taskSessionId)})
             logBatch('🎉 Pipeline complete! Check the Results tab for output.', 'success');
         } catch (e) {
             setBadge('badge-render', 'error');
-            logBatch('Pipeline failed: ' + e.message, 'error');
+            // Try to get session link for the failed task
+            const failStatus = await fetchDocopsStatus().catch(() => null);
+            const failedTask = failStatus?.tasks?.['code/'];
+            if (failedTask && failedTask.sessionId) {
+                const proxyUrl = getProxyUrl(failedTask.sessionId);
+                logBatchHtml(`Pipeline failed: ${escapeHtml(e.message)} — <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">🔍 View Error Log (${escapeHtml(failedTask.sessionId)})</a>`, 'error');
+            } else {
+                logBatch('Pipeline failed: ' + e.message, 'error');
+            }
         } finally {
             this.disabled = false;
         }
@@ -644,11 +714,15 @@ View Error Log (${escapeHtml(taskSessionId)})
                 if (taskInfo.status === 'RUNNING') {
                     anyRunning = true;
                 }
+                // Also update the results section session link
+                if (target === 'code/' && taskInfo.sessionId) {
+                    updateResultsSessionLink(taskInfo);
+                }
             }
         }
         // Fall back to file existence checks
         const checks = [
-            { file: 'code/README.md', badge: 'badge-render' },
+            { file: 'code/', badge: 'badge-render' },
         ];
         for (const check of checks) {
             const badge = document.getElementById(check.badge);
@@ -663,6 +737,49 @@ View Error Log (${escapeHtml(taskSessionId)})
         }
         if (anyRunning) {
             startStatusPolling();
+        }
+    }
+    // === Update results section session link ===
+    function updateResultsSessionLink(taskInfo) {
+        const container = document.getElementById('result-session-link');
+        if (!container) return;
+        const status = taskInfo.status;
+        const taskSessionId = taskInfo.sessionId;
+        if (!taskSessionId) {
+            container.style.display = 'none';
+            return;
+        }
+        const proxyUrl = getProxyUrl(taskSessionId);
+        if (status === 'RUNNING') {
+            container.innerHTML = `<div class="session-monitor-link">
+<span class="monitor-pulse">●</span>
+<span>Rendering project… </span>
+<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
+📡 Monitor Live Session (${escapeHtml(taskSessionId)})
+</a>
+</div>`;
+            container.style.display = 'block';
+        } else if (status === 'COMPLETED') {
+            const completedAt = taskInfo.completedAt
+                ? new Date(taskInfo.completedAt).toLocaleTimeString()
+                : '';
+            container.innerHTML = `<div class="session-completed-link">
+<span>✅ Generated${completedAt ? ' at ' + completedAt : ''} — </span>
+<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
+📋 View Generation Session (${escapeHtml(taskSessionId)})
+</a>
+</div>`;
+            container.style.display = 'block';
+        } else if (status === 'ERROR' || status === 'FAILED') {
+            container.innerHTML = `<div class="session-error-link">
+<span>❌ Generation failed — </span>
+<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopener" class="monitor-link">
+🔍 View Error Log (${escapeHtml(taskSessionId)})
+</a>
+</div>`;
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
         }
     }
     // === Initialize ===

@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * The servlet parses the specified markdown file for frontmatter specifications
  * and executes the resulting documentation processing tasks.
  */
-class DocOpsServlet(
+class DocProcessorServlet(
   private val dataStorage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
   private val smartModel: ChatModel = AnthropicModels.Claude45Haiku,
   private val fastModel: ChatModel = smartModel,
@@ -173,7 +173,7 @@ class DocOpsServlet(
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(DocOpsServlet::class.java)
+    private val log = LoggerFactory.getLogger(DocProcessorServlet::class.java)
     fun getCookie(req: HttpServletRequest): String? {
       return req.cookies?.find { it.name == "sessionId" }?.value
     }

@@ -18,7 +18,6 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.RealFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 
@@ -156,9 +155,9 @@ class FindResultsModificationAction(
                     ).replace(Regex("""/\* L\d+ \*/"""), "")
                         .replace(Regex("""/\* <<< \*/"""), "")
                     DiffInstrumentor(
-                        AppSettingsState.instance.processor,
-                        SessionRenderer(task),
-                        RealFileSystem()
+                      AppSettingsState.instance.processor,
+                      SessionRenderer(task),
+                      patchProcessor = patchProcessor
                     ).instrument(
                     root = root.toPath(),
                     response = response,

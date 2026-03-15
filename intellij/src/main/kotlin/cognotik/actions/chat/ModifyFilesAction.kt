@@ -11,7 +11,6 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.RealFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -170,7 +169,11 @@ open class ModifyFilesAction(
         }
 
         override fun renderResponse(response: String, task: SessionTask) = renderMarkdown(response, tabs=true) { html ->
-            DiffInstrumentor(AppSettingsState.instance.processor, SessionRenderer(task), RealFileSystem())
+            DiffInstrumentor(
+              AppSettingsState.instance.processor,
+              SessionRenderer(task),
+              patchProcessor = patchProcessor
+            )
               .instrument(
                 root = root.toPath(),
                 response = html,

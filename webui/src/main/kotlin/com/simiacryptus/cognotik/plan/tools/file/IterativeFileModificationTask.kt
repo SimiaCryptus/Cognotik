@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -10,7 +11,6 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.RealFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -371,8 +371,8 @@ $implementationResponse
         val autoFix = orchestrationConfig.autoFix
         val markdown = renderMarkdown(implementationResponse, ui = task.ui) {
             DiffInstrumentor(
-                orchestrationConfig.processor,
-                SessionRenderer(task), RealFileSystem()
+              orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
+              SessionRenderer(task),
             ).instrument(
                 root = agent.root,
                 response = it,

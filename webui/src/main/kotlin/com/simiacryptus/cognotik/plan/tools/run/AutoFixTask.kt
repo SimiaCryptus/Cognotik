@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.run
 import com.simiacryptus.cognotik.apps.CmdPatchApp
 import com.simiacryptus.cognotik.apps.PatchApp
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -160,7 +161,7 @@ class AutoFixTask(
                             files = agent.files,
                             model = model,
                             parsingModel = defaultFast,
-                            processor = orchestrationConfig.processor,
+                            processor = orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
                         ).run(
                             task = subTask, model = model
                         ).apply {

@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.ui.patch
 
 import com.simiacryptus.cognotik.diff.PatchProcessor
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import java.nio.file.Path
 import java.nio.file.Files
 import kotlin.io.path.name
-import kotlin.io.path.exists
 
 class DiffInstrumentor(
     private val processor: PatchProcessor,

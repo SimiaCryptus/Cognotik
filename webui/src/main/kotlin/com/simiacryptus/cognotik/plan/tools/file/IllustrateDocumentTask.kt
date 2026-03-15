@@ -6,13 +6,13 @@ import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.RealFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 
@@ -597,9 +597,8 @@ class IllustrateDocumentTask(
                     if (orchestrationConfig.autoFix) {
                         subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
                             DiffInstrumentor(
-                                orchestrationConfig.processor,
-                                SessionRenderer(subTask),
-                                RealFileSystem()
+                              orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
+                              SessionRenderer(subTask),
                             ).instrument(
                                 root = root,
                                 response = it,
@@ -618,9 +617,8 @@ class IllustrateDocumentTask(
                     } else {
                         subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
                             DiffInstrumentor(
-                                orchestrationConfig.processor,
-                                SessionRenderer(subTask),
-                                RealFileSystem()
+                              orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
+                              SessionRenderer(subTask),
                             ).instrument(
                                 root = root,
                                 response = it,

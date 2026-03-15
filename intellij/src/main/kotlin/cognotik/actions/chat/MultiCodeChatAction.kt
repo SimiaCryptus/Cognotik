@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.RealFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
@@ -142,8 +141,8 @@ class MultiCodeChatAction : BaseAction() {
         override fun renderResponse(response: String, task: SessionTask) = """<div>${
             renderMarkdown(response, tabs=true) { html ->
                 DiffInstrumentor(
-                    AppSettingsState.instance.processor,
-                    SessionRenderer(task), RealFileSystem()
+                  AppSettingsState.instance.processor,
+                  SessionRenderer(task), patchProcessor = patchProcessor
                 ).instrument(
                 root = root.toPath(),
                 response = html,

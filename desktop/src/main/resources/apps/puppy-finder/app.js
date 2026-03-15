@@ -251,11 +251,15 @@
             let anyRunning = false;
             let allDone = true;
             let anyTarget = false;
+            let activeTaskId = null;
             for (const t of info.targets) {
                 const task = tasks[t];
                 if (!task) { allDone = false; continue; }
                 anyTarget = true;
-                if (task.status === 'RUNNING') anyRunning = true;
+                if (task.status === 'RUNNING') {
+                    anyRunning = true;
+                    activeTaskId = task.sessionId;
+                }
                 if (task.status !== 'COMPLETED') allDone = false;
             }
             if (anyRunning) {
@@ -267,7 +271,14 @@
             const statusEl = el.querySelector('.stage-status');
             if (stageStatus === 'running') {
                 el.classList.add('active');
-                if (statusEl) statusEl.textContent = 'Running…';
+                if (statusEl) {
+                    if (activeTaskId) {
+                        const proxyUrl = getProxyUrl(activeTaskId);
+                        statusEl.innerHTML = `<a href="${proxyUrl}" target="_blank" class="monitor-link" style="color: inherit; text-decoration: underline;">Running…</a>`;
+                    } else {
+                        statusEl.textContent = 'Running…';
+                    }
+                }
             } else if (stageStatus === 'done') {
                 el.classList.add('done');
                 if (statusEl) statusEl.textContent = 'Done';
@@ -484,7 +495,11 @@
             startStatusPolling();
             try {
                 // Fire off the doc op (this may return quickly while processing continues)
-                await runDocOp(opPath, outputPath);
+                const taskId = await runDocOp(opPath, outputPath);
+                const cleanTaskId = taskId ? taskId.trim() : '';
+                if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                    updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
+                }
                 // Wait for actual completion via status polling
                 await waitForTask(outputPath);
                 setBadge(badgeId, 'done');
@@ -641,7 +656,13 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
                 const outputPath = 'breeder_research/' + breedName + '.md';
                 logBatch(`Researching breeders for: ${breedName}`, 'info');
                 try {
-                    await runDocOp('ops/breeder_research_op.md', outputPath);
+                    const taskId = await runDocOp('ops/breeder_research_op.md', outputPath);
+                    const cleanTaskId = taskId ? taskId.trim() : '';
+                    if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                        const proxyUrl = getProxyUrl(cleanTaskId);
+                        logBatchHtml(`Session started: <a href="${proxyUrl}" target="_blank" class="monitor-link">Monitor Live Session (${cleanTaskId})</a>`, 'info');
+                        updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
+                    }
                     // Wait for completion
                     await waitForTask(outputPath);
                     logBatch(`✓ Completed research for: ${breedName}`, 'success');
@@ -676,7 +697,13 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
                 btn.disabled = true;
             }
             try {
-                await runDocOp(step.op, step.output);
+                const taskId = await runDocOp(step.op, step.output);
+                const cleanTaskId = taskId ? taskId.trim() : '';
+                if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                    const proxyUrl = getProxyUrl(cleanTaskId);
+                    logBatchHtml(`Session started: <a href="${proxyUrl}" target="_blank" class="monitor-link">Monitor Live Session (${cleanTaskId})</a>`, 'info');
+                    updateSessionLinks(step.output, { status: 'RUNNING', sessionId: cleanTaskId });
+                }
                 await waitForTask(step.output);
                 if (btn) setBadge(step.badge, 'done');
                 logBatch(`✓ Completed: ${step.label}`, 'success');

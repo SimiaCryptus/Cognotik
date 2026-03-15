@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.apps.PatchApp
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -119,7 +120,7 @@ class SingleFixTask(
               ),
               model = model,
               parsingModel = defaultFast,
-              processor = orchestrationConfig.processor,
+              processor = orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
             ) {
               override fun codeFiles(): Set<Path> {
                 return FileSelectionUtils.filteredWalk(root).filter { it.length() < 1024 * 1024 / 2 }

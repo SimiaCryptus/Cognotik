@@ -96,9 +96,9 @@ A simple, elegant task management web application for small teams.
                     <div class="button-row">
                         <button class="btn btn-run" data-badge="badge-render"
                                 data-op="ops/render_op.md"
-                                data-output="code/README.md" data-viewer="viewer-render">▶ Run
+                                data-output="code/" data-viewer="viewer-render">▶ Run
                         </button>
-                        <button class="btn btn-view" data-file="code/README.md" data-viewer="viewer-render">
+                        <button class="btn btn-view" data-file="code/" data-viewer="viewer-render">
                             👁 View README
                         </button>
                     </div>
@@ -127,9 +127,10 @@ A simple, elegant task management web application for small teams.
             <div class="tab-panel active" id="tab-readme">
                 <div class="card">
                     <div class="button-row">
-                        <button class="btn btn-secondary" data-file="code/README.md" data-viewer="result-readme">🔄 Refresh
+                        <button class="btn btn-secondary" data-file="code/" data-viewer="result-readme">🔄 Refresh
                         </button>
                     </div>
+                    <div id="result-session-link" class="session-link-container" style="display:none;"></div>
                     <div class="result-viewer" id="result-readme">
                         <p class="placeholder">Run the pipeline to generate the project README.</p>
                     </div>

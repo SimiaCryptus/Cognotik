@@ -23,7 +23,7 @@ class DiffInstrumentorTest {
         processor = mockk()
         every { processor.getInitiatorPattern() } returns "```".toRegex()
         renderer = mockk(relaxed = true)
-        instrumentor = DiffInstrumentor(processor, renderer, fs)
+        instrumentor = DiffInstrumentor(processor, renderer, fs, patchProcessor)
     }
 
     @Test

@@ -5,6 +5,8 @@ import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
+import com.simiacryptus.cognotik.diff.PatchProcessor
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
@@ -63,6 +65,7 @@ open class UnifiedHarness(
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
     val temperature: Double = 0.0,
+    var processor: PatchProcessor = PatchProcessors.Fuzzy
 ) : AutoCloseable {
     private var jettyServer: Any? = null
     private var appServer: CognotikAppServer? = null
@@ -368,7 +371,9 @@ open class UnifiedHarness(
         defaultImageModel = imageModel.asApiChatModel(),
         autoFix = autoFix,
         temperature = temperature,
-    )
+    ).apply {
+        this@apply.processor = this@UnifiedHarness.processor
+    }
 
     open fun getRoot(
         workspace: File?,

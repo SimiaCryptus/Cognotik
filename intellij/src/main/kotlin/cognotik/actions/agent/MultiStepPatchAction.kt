@@ -21,7 +21,6 @@ import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.RealFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -251,7 +250,7 @@ class MultiStepPatchAction : BaseAction() {
                                   DiffInstrumentor(
                                     processor,
                                     SessionRenderer(task),
-                                    RealFileSystem()
+                                    patchProcessor = patchProcessor
                                   ).instrument(
                                     root = root,
                                     response = taskActor.answer(

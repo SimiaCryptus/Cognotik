@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.RealFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
@@ -619,8 +618,8 @@ abstract class PatchApp(
         }
 
         val markdown = DiffInstrumentor(
-            processor,
-            SessionRenderer(task), RealFileSystem()
+          processor,
+          SessionRenderer(task),
         ).instrument(
           root = root.toPath(),
           response = fixResponse,
