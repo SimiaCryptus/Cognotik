@@ -110,7 +110,7 @@ class SubPlanTask(
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val transcript = task.newFileOutputStream(transcriptFile(taskType))
+    val transcript = task.newSystemFileStream(transcriptFile(taskType))
 
     try {
       log.info("Starting SubPlanningTask. Goal: ${executionConfig?.planning_goal ?: "N/A"}")

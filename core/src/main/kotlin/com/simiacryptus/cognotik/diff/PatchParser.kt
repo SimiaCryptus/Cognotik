@@ -20,12 +20,12 @@ interface PatchParser {
     ) : ResponseSegment()
   }
 
-  val patchFormatPrompt: String
-    get() = """
+  val patchFormatPrompt: String get() = """
 Response format:
 * Response should use one or more code patches in diff format within ```diff code blocks
 * Each diff should be preceded by a header that identifies the file being modified.
-* For redundant clarity, each section should be preceded by `<<<DIFF filename>>` and followed by `<<<END>>>` marker lines 
+* Files can also be given in raw (non-diff) form
+* For redundant clarity, each section should be preceded by `<<<FILE filename>>` or `<<<DIFF filename>>` and followed by `<<<END>>>` marker lines 
 * The diff format should use + for line additions, - for line deletions.
 * The diff should include 2 lines of context before and after every change.
 * Separate code blocks with a single blank line.
@@ -45,21 +45,20 @@ ${TRIPLE_TILDE}
 <<<END>>>
 
 ### tests/exampleUtils.test.js
-<<<DIFF src/utils/exampleUtils.js>>>
+<<<FILE src/utils/exampleUtils.js>>>
 ${TRIPLE_TILDE}diff
   const assert = require('assert');
   const { exampleFunction } = require('../src/utils/exampleUtils'); 
   describe('exampleFunction', () => {
-  -   it('should return 3', () => {
-  +   it('should return 4', () => {
+  it('should return 4', () => {
     assert.equal(exampleFunction(), 4);
   });
 ${TRIPLE_TILDE}
 <<<END>>>
 
 ### README.md
-
-<<<DIFF src/utils/exampleUtils.js>>>
+(This file shows proper markdown)
+<<<FILE src/utils/exampleUtils.js>>>
 ${TRIPLE_TILDE}md
   This file contains utility functions for the project.
   Example usage:
@@ -82,7 +81,7 @@ ${TRIPLE_TILDE}
     }
     // Check for explicit marker syntax first
     if (hasExplicitMarkers(response)) {
-      log.debug("Detected explicit <<<PATCH/DIFF>>> markers, using explicit parser")
+      log.debug("Detected explicit <<<FILE>>> markers, using explicit parser")
       return parseExplicitMarkers(response, defaultFile)
     }
     val initiator = this.getInitiatorPattern()
@@ -102,21 +101,12 @@ ${TRIPLE_TILDE}
     return segments
   }
 
-  /**
-   * Gets the regex pattern that initiates a code block
-   */
-  private fun getInitiatorPattern(): Regex {
-    return "(?s)${TRIPLE_TILDE}\\w*\n".toRegex()
-  }
+  private fun getInitiatorPattern() = "(?s)${TRIPLE_TILDE}\\w*\n".toRegex()
 
   private fun hasExplicitMarkers(response: String): Boolean {
     return EXPLICIT_BLOCK_PATTERN.containsMatchIn(response)
   }
 
-  /**
-   * Parses a response that uses explicit <<<PATCH filename>>> / <<<DIFF filename>>> ... <<<END>>> markers.
-   * This avoids all ambiguity with embedded markdown code fences.
-   */
   private fun parseExplicitMarkers(response: String, defaultFile: String?): List<ResponseSegment> {
     val segments = mutableListOf<ResponseSegment>()
     var lastEnd = 0
@@ -128,7 +118,7 @@ ${TRIPLE_TILDE}
           segments.add(ResponseSegment.Markdown(preceding))
         }
       }
-      val blockType = match.groupValues[1].uppercase() // PATCH or DIFF
+      val blockType = match.groupValues[1].uppercase()
       val rawFilename = match.groupValues[2].trim()
       val code = match.groupValues[3]
       val filename = normalizeFilename(rawFilename).ifBlank {
@@ -273,7 +263,7 @@ ${TRIPLE_TILDE}
     val headers = collectHeaders(normalizedResponse)
     log.debug("Found {} headers in response", headers.size)
     val diffMarkers = collectDiffMarkers(normalizedResponse)
-    log.debug("Found {} <<<DIFF>>> marker lines in response", diffMarkers.size)
+    log.debug("Found {} <<<FILE>>> marker lines in response", diffMarkers.size)
     val segments = mutableListOf<ResponseSegment>()
     var lastEnd = 0
 
@@ -297,7 +287,6 @@ ${TRIPLE_TILDE}
         log.debug("No preceding markdown for code block at range {}", matchRange)
       }
 
-      // Prefer <<<DIFF filename>>> marker if present before this code block, then fall back to headers
       val diffMarkerFilename = findDiffMarkerBefore(diffMarkers, lineStartPos)
       val headerFilename = diffMarkerFilename ?: findHeaderBefore(headers, lineStartPos)
       val filename = resolveFilename(headerFilename, defaultFile)
@@ -449,10 +438,6 @@ ${TRIPLE_TILDE}
       ?.second
   }
 
-  /**
-   * Collects all <<<DIFF filename>>> marker lines (without requiring <<<END>>>).
-   * Returns a list of (charRange, filename) pairs.
-   */
   private fun collectDiffMarkers(response: String): List<Pair<IntRange, String>> {
     val markers = mutableListOf<Pair<IntRange, String>>()
     DIFF_MARKER_LINE_PATTERN.findAll(response).forEach { match ->
@@ -464,9 +449,6 @@ ${TRIPLE_TILDE}
     return markers
   }
 
-  /**
-   * Finds the closest <<<DIFF filename>>> marker that appears before the given position.
-   */
   private fun findDiffMarkerBefore(markers: List<Pair<IntRange, String>>, position: Int): String? {
     return markers
       .filter { it.first.last <= position }
@@ -474,10 +456,6 @@ ${TRIPLE_TILDE}
       ?.second
   }
 
-  /**
-   * Strips <<<DIFF filename>>>, <<<PATCH filename>>>, and <<<END>>> marker lines from text
-   * so they don't appear as artifacts in markdown output.
-   */
   private fun stripDiffMarkerLines(text: String): String {
     return text
       .replace(DIFF_MARKER_LINE_PATTERN, "")
@@ -498,65 +476,32 @@ ${TRIPLE_TILDE}
   private fun isDiffContent(lang: String, code: String): Boolean {
     if (lang.equals("diff", ignoreCase = true)) return true
     val lines = code.lines()
-    val diffLineCount = lines.count { it.startsWith('+') || it.startsWith('-') || it.startsWith('@') }
-    return diffLineCount > lines.size / 2
+    val firstChars = lines.map { it.firstOrNull() }.groupBy { it }.mapValues { it.value.size }
+    return firstChars.filterKeys { when (it) {
+        null -> false
+        ' ' -> false
+        '\t' -> false
+        '@' -> false
+        '-' -> false
+        '+' -> false
+        else -> true
+      }
+    }.isEmpty()
   }
 
   companion object {
     private val log = LoggerFactory.getLogger(PatchParser::class.java)
 
-    /**
-     * Pattern matching explicit <<<PATCH filename>>> or <<<DIFF filename>>> ... <<<END>>> blocks.
-     * This syntax is unambiguous even when the content contains markdown code fences.
-     * Group 1: block type (PATCH or DIFF)
-     * Group 2: filename
-     * Group 3: content between markers
-     */
-    private val EXPLICIT_BLOCK_PATTERN =
-      """<<<(PATCH|DIFF)\s+(.+?)>>>\n(.*?)<<<END>>>""".toRegex(
-        setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
-      )
+    private val EXPLICIT_BLOCK_PATTERN = """<<<(DIFF|FILE)\s+(.+?)>>>\n(.*?)<<<END>>>"""
+      .toRegex(setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
 
-    /**
-     * Pattern matching a single <<<DIFF filename>>> or <<<PATCH filename>>> marker line.
-     * Used to extract filenames and strip these lines from markdown output.
-     */
-    private val DIFF_MARKER_LINE_PATTERN =
-      """<<<(?:PATCH|DIFF)\s+(.+?)>>>""".toRegex(RegexOption.IGNORE_CASE)
+    private val DIFF_MARKER_LINE_PATTERN = """<<<(?:DIFF|FILE)\s+(.+?)>>>""".toRegex(RegexOption.IGNORE_CASE)
 
-    /**
-     * Pattern matching <<<END>>> marker lines for stripping from output.
-     */
-    private val END_MARKER_LINE_PATTERN =
-      """<<<END>>>""".toRegex(RegexOption.IGNORE_CASE)
+    private val END_MARKER_LINE_PATTERN = """<<<END>>>""".toRegex(RegexOption.IGNORE_CASE)
 
 
-    /**
-     * Regular expression pattern used to match Markdown headers.
-     *
-     * This pattern ensures that the header starts at the beginning of a line (or after a newline)
-     * and captures the text following the hash `#` characters.
-     *
-     * **Example Matches:**
-     * - `# Header 1` -> Captures "Header 1"
-     * - `### Subtitle` -> Captures "Subtitle"
-     */
     private val MARKDOWN_HEADER_PATTERN = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
 
-    /**
-     * Regular expression pattern used to match custom file headers in text blocks.
-     *
-     * This pattern looks for a specific block format enclosed by dashes or lines,
-     * extracting the file name or path specified after "File: ".
-     *
-     * **Example Matches:**
-     * ```
-     * --------------------
-     * File: src/main/Main.kt
-     * --------------------
-     * ```
-     * -> Captures "src/main/Main.kt"
-     */
     private val FILE_HEADER_PATTERN = """(?m)^(?:─+|-+)\s*\nFile:\s*(.+?)\s*\n(?:─+|-+)\s*""".toRegex()
 
     const val TRIPLE_TILDE = """```"""

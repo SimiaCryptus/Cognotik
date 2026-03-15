@@ -91,7 +91,7 @@ OCR - Convert documents (PDF, Images) to Markdown text.
             return
         }
 
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
 
 
 

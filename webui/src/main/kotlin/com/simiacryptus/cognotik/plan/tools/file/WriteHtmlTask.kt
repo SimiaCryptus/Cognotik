@@ -121,7 +121,7 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
         val tabs = TabbedDisplay(task)
         val overviewTask = tabs.newTask("Overview")
       val transcriptStream =
-        task.newFileOutputStream(transcriptFile("html_generation_${htmlFile.substringBeforeLast(".")}"))
+        task.newUserFileStream(transcriptFile("html_generation_${htmlFile.substringBeforeLast(".")}"))
         val transcriptWriter = transcriptStream?.bufferedWriter()
 
         val toInput = { it: String -> listOf(it) }

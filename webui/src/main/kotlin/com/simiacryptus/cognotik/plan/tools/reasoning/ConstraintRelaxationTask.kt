@@ -138,7 +138,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         val api = defaultSmart ?: return
 
         val tabs = TabbedDisplay(task)
-      val transcript = task.newFileOutputStream(transcriptFile("constraint_relaxation"))
+      val transcript = task.newUserFileStream(transcriptFile("constraint_relaxation"))
         val overviewTask = task.newTask()
         tabs["Overview"] = overviewTask.placeholder
 

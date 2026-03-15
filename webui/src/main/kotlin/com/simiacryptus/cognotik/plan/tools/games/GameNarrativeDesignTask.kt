@@ -405,7 +405,7 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
             val api = defaultSmart ?: return@submit
 
             val tabs = TabbedDisplay(task)
-          val transcript = task.newFileOutputStream(transcriptFile())
+          val transcript = task.newUserFileStream(transcriptFile())
 
             // Create game design directory
             val gameDir = File(agent.root.toFile(), ".game_narrative_design")

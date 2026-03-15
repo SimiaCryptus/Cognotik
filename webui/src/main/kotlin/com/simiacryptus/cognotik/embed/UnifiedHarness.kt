@@ -34,6 +34,7 @@ import java.io.OutputStream
 import java.lang.AutoCloseable
 import java.net.URI
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
@@ -44,7 +45,7 @@ open class UnifiedHarness(
     val openBrowser: Boolean = false,
     val captureMessages: Boolean = serverless,
     val redirectData: Boolean = serverless,
-    val modelInstanceFn: (ApiChatModel, Session) -> ChatInterface = { model,session ->
+    val modelInstanceFn: (ApiChatModel, Session) -> ChatInterface = { model, session ->
         val api = model.findApi()
         val model =
             model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
@@ -65,7 +66,9 @@ open class UnifiedHarness(
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
     val temperature: Double = 0.0,
-    var processor: PatchProcessor = PatchProcessors.Fuzzy
+    var processor: PatchProcessor = PatchProcessors.Fuzzy,
+    val showMenubar: Boolean,
+    val name: String = "Cognotik"
 ) : AutoCloseable {
     private var jettyServer: Any? = null
     private var appServer: CognotikAppServer? = null
@@ -123,8 +126,8 @@ open class UnifiedHarness(
         val session = this.session
         val planApp = object : SinglePlanApp(
             path = "/test",
-            applicationName = "Plan Test App",
-            showMenubar = false,
+            applicationName = name,
+            showMenubar = showMenubar,
             useExpansionSyntax = true
         ) {
             override fun instance(model: ApiChatModel) = modelInstanceFn(model,session)
@@ -184,10 +187,10 @@ open class UnifiedHarness(
         if (!serverless) {
             SessionProxyServer.chats[session] = planApp
             ApplicationServer.appInfoMap[session] = AppInfoData(
-                applicationName = "Plan Test App",
-                inputCnt = 4,
-                stickyInput = true,
-                showMenubar = false
+                applicationName = name,
+                inputCnt = 0,
+                stickyInput = false,
+                showMenubar = showMenubar
             )
         }
 
@@ -274,7 +277,23 @@ open class UnifiedHarness(
                     )
                     return socketManager
                 } else {
-                    return super.newSession(user, session)
+                    return super.newSession(user, session).apply {
+/*
+                        newTask(cancelable = false, root = true).expandable(
+                            "Session Info", """
+Session ID: `${session}`
+
+Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
+
+Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
+
+Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
+
+Task Type: `${taskType.name}`
+              """.renderMarkdown()
+                        )
+*/
+                    }
                 }
             }
         }
@@ -282,10 +301,10 @@ open class UnifiedHarness(
         if (!serverless) {
             SessionProxyServer.chats[session] = singleTaskApp
             ApplicationServer.appInfoMap[session] = AppInfoData(
-                applicationName = "Single Task App",
+                applicationName = name,
                 inputCnt = 0,
                 stickyInput = false,
-                showMenubar = false
+                showMenubar = showMenubar
             )
         }
 

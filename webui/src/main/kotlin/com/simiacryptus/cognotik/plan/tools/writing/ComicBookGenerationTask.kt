@@ -205,7 +205,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val transcript = task.newFileOutputStream(transcriptFile())
+    val transcript = task.newUserFileStream(transcriptFile())
     task.ui.pool.submit {
       val dataDir = (getOutputFile(".md")?.let {
         if (it.endsWith(".md")) it.removeSuffix(".md") else null

@@ -117,11 +117,11 @@ fun hello() {
       val response = """
 ### src/main/Example.kt
 ```kotlin
-val a = 1
--val b = 2
-+val b = 3
--val c = 4
-+val c = 5
+  val a = 1
+- val b = 2
++ val b = 3
+- val c = 4
++ val c = 5
 ```
 """.trimIndent()
       val result = parser.parse(response)
@@ -192,9 +192,9 @@ Some trailing text
     }
 
     @Test
-    fun `parse explicit PATCH markers`() {
+    fun `parse explicit FILE markers`() {
       val response = """
-<<<PATCH src/main/NewFile.kt>>>
+<<<FILE src/main/NewFile.kt>>>
 package com.example
 fun newFunction() {
 println("Hello")
@@ -710,7 +710,7 @@ line1
     @Test
     fun `parse explicit markers with embedded code fences in content`() {
       val response = """
-<<<PATCH docs/README.md>>>
+<<<FILE docs/README.md>>>
 # Project README
 Example usage:
 ```kotlin
@@ -773,8 +773,8 @@ but the language says diff
 ```kotlin
 package com.example
 class Example {
-fun hello() = "Hello"
-fun world() = "World"
+  fun hello() = "Hello"
+  fun world() = "World"
 }
 ```
 """.trimIndent()

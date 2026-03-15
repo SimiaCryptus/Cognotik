@@ -158,7 +158,7 @@ class ImageDecompositionTask(
     val minSize = executionConfig.min_region_size
     val outputFile = executionConfig.output_file ?: "analysis.json"
 
-    val transcript = task.newFileOutputStream(transcriptFile())
+    val transcript = task.newUserFileStream(transcriptFile())
     val tabs = TabbedDisplay(task)
     val logTab = tabs.newTask("Live Log")
 

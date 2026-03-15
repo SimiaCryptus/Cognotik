@@ -493,7 +493,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
             resultFn(errorMsg)
             return
         }
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
 
         val ui = task.ui
         val api = defaultSmart ?: return

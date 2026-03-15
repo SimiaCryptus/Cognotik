@@ -47,9 +47,9 @@ abstract class CognitiveMode<U : CognitiveModeConfig>(
 
     fun SessionTask.transcript(name: String? = this@CognitiveMode.name): FileOutputStream? {
         val transcriptFile = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(linkTo(transcriptFile), resolveUserFile(transcriptFile))
+        val (link, file) = Pair(linkTo(transcriptFile), resolveSystemFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
+        add("[${name?.let{it+" "} ?: ""}Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
         return markdownTranscript
     }
 }

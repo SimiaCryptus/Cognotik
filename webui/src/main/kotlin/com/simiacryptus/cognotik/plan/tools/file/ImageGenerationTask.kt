@@ -82,7 +82,7 @@ class ImageGenerationTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.newFileOutputStream(transcriptFile())
+        val transcript = task.newUserFileStream(transcriptFile())
         try {
             transcript?.write("# Generate Image Task\n\n".toByteArray())
             val tabs = TabbedDisplay(task)

@@ -80,14 +80,10 @@ FileModification - Modify existing files or create new files
     ) {
         val defaultFile = getDefaultFile()
         val typeConfig = typeConfig ?: throw RuntimeException("TypeConfig is missing")
-        val chatInterface =
-            (typeConfig.model?.let<ApiChatModel, ChatInterface> { it.instance() }
-                ?: defaultSmart).getChildClient(task)
-
+        val chatInterface = (typeConfig.model?.instance() ?: defaultSmart).getChildClient(task)
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
-        val transcript = task.newFileOutputStream(transcriptFile())
-
+        val transcript = task.newSystemFileStream(transcriptFile())
 
         try {
             transcript?.write("# File Modification Task Transcript\n\n".toByteArray())

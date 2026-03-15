@@ -147,7 +147,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
         val api = defaultSmart ?: return
 
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
       transcript?.let { stream ->
             writeToTranscript(stream, "# Meta-Cognitive Reflection Transcript\n\n")
             writeToTranscript(stream, "## Subject Task: `$subjectTaskId`\n\n")

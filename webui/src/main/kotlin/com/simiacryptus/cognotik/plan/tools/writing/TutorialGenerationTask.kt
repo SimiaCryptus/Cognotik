@@ -265,7 +265,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
     task.ui.pool.submit {
       val startTime = System.currentTimeMillis()
       log.info("Starting TutorialGenerationTask for goal: '${executionConfig?.goal}'")
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
 
       // Validate configuration
       executionConfig?.validate()?.let { validationError ->

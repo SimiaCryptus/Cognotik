@@ -132,7 +132,7 @@ class IllustrateDocumentTask(
         task.ui.pool.submit {
         val startTime = System.currentTimeMillis()
         val documentFile = executionConfig?.files?.firstOrNull()
-        val transcript = task.newFileOutputStream(transcriptFile())
+        val transcript = task.newUserFileStream(transcriptFile())
 
         try {
 

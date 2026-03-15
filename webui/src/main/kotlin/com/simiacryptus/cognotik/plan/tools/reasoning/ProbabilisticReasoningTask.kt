@@ -150,7 +150,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
         val semaphore = Semaphore(0)
       val resultBuilder = StringBuilder()
       val startTime = System.currentTimeMillis()
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
         transcript?.let { stream ->
             stream.write("# Probabilistic Reasoning Analysis Transcript\n\n".toByteArray())
             stream.write(

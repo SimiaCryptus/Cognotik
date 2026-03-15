@@ -289,7 +289,7 @@ class MathematicalReasoningTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
       task.ui.pool.submit {
         try {
             val startTime = System.currentTimeMillis()

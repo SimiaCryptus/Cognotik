@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
@@ -175,6 +174,8 @@ class DocProcessor(
     fun isUrl(path: String): Boolean {
         return path.startsWith("http://") || path.startsWith("https://")
     }
+
+    var showMenubar: Boolean = true
 
     /**
      * Fetch a URL and cache its content locally. Returns the local cached file.
@@ -405,6 +406,10 @@ class DocProcessor(
             shouldDeleteTarget = shouldDeleteTarget,
             taskType = taskType
         )
+
+        fun message() : String {
+            return message(data.root)
+        }
     }
 
     data class DocumentMatch(
@@ -646,10 +651,7 @@ class DocProcessor(
                         // If no explicit data_file, check if we have a transform with a JSON source file
                         val implicitDataFile = if (explicitDataFile == null && transforms.isNotEmpty()) {
                             transforms.firstOrNull {
-                                it.sourceFile.extension.equals(
-                                    "json",
-                                    ignoreCase = true
-                                )
+                                it.sourceFile.extension.equals("json", ignoreCase = true)
                             }?.sourceFile?.absolutePath
                         } else null
                         (explicitDataFile ?: implicitDataFile)?.let { dataFilePath ->
@@ -672,15 +674,19 @@ class DocProcessor(
 
                             else -> {
                                 relatedFiles.forEach { relatedFile ->
-                                    this.appendLine("# Context file: ${relatedFile.relativeTo(root)}")
-                                    this.appendLine("```")
                                     val resolvedFile = if (File(relatedFile.toString()).isAbsolute) {
                                         File(relatedFile.toString())
                                     } else {
                                         root.resolve(relatedFile)
                                     }
+                                    this.appendLine("# Context file: ${resolvedFile.relativeTo(root)}")
+                                    this.appendLine("```")
                                     if (resolvedFile.exists()) {
-                                        this.appendLine(resolvedFile.readText())
+                                        var text = resolvedFile.readText().trim()
+                                        if(relatedFile.name.endsWith(".md") && text.startsWith("---\n")) {
+                                            text = text.substring(text.indexOf("\n---\n"))
+                                        }
+                                        this.appendLine(text)
                                     } else {
                                         this.appendLine("<!-- File not found: $relatedFile -->")
                                     }
@@ -1002,10 +1008,11 @@ class DocProcessor(
         separateQueues(fileMods).map { sortByDependencies(it) }.filter { it.isNotEmpty() }.map { mods ->
             pool.submit {
                 object : UnifiedHarness(
-                    fastModel = fastModel,
-                    smartModel = smartModel,
                     serverless = serverless,
                     openBrowser = openBrowser,
+                    fastModel = fastModel,
+                    smartModel = smartModel,
+                    showMenubar = showMenubar,
                 ) {
                     override fun createTempDirectory(prefix: String) = root
                         .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
@@ -1062,7 +1069,7 @@ class DocProcessor(
             harness.runTask(
                 taskType = mod.taskType,
                 timeoutMinutes = 30,
-                message = mod.message(root),
+                message = mod.message(),
                 executionConfig = executionConfig(mod, harness)
             ) { session ->
                 if (cancelFlag.get()) {
@@ -1137,7 +1144,7 @@ class DocProcessor(
                   add("Related file ($relatedFile):\n```\n${resolvedFile.readText()}\n```")
                 }
               }
-              val message = mod.message(mod.data.root)
+              val message = mod.message()
               if (message.isNotBlank()) add(message)
             }
             val (_, taskConfig) = ConversationalMode.requestToTask(
@@ -1526,7 +1533,7 @@ class DocProcessor(
                     PathMatcher { false }
                 }
             } else {
-                PathMatcher { true }
+                PathMatcher { false }
             }
 
             return resolvedBase.listFilesRecursively()

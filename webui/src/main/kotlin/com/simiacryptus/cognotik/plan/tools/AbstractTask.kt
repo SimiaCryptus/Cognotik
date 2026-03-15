@@ -129,12 +129,19 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
             }
         }
 
-    fun SessionTask.newFileOutputStream(transcriptFile: String): FileOutputStream? {
-        val (link, file) = Pair(linkTo(transcriptFile), resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
-        return markdownTranscript
-    }
+  fun SessionTask.newUserFileStream(transcriptFile: String): FileOutputStream? {
+    val (link, file) = Pair(linkTo(transcriptFile), resolveUserFile(transcriptFile))
+    val markdownTranscript = file?.outputStream()
+    add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
+    return markdownTranscript
+  }
+
+  fun SessionTask.newSystemFileStream(transcriptFile: String): FileOutputStream? {
+    val (link, file) = Pair(linkTo(transcriptFile), resolveSystemFile(transcriptFile))
+    val markdownTranscript = file?.outputStream()
+    add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
+    return markdownTranscript
+  }
 
     fun transcriptFile(name: String): String = "transcript/${name}_${now()}.md"
 

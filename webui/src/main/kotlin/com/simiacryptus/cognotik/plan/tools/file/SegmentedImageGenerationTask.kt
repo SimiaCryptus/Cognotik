@@ -110,7 +110,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
     val writeModel = orchestrationConfig.defaultImage.getChildClient(task)
     val planModel = orchestrationConfig.defaultSmart.getChildClient(task)
 
-    val transcript = task.newFileOutputStream(transcriptFile())
+    val transcript = task.newUserFileStream(transcriptFile())
     val tabs = TabbedDisplay(task)
     val logTab = tabs.newTask("Progress")
     val semaphore = Semaphore(0)

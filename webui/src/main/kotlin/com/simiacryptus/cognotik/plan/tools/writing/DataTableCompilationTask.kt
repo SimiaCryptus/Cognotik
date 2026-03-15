@@ -81,7 +81,7 @@ class DataTableCompilationTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
         try {
             log.info("Starting DataTableCompilationTask. Output: ${executionConfig?.output_file}")
             renderTaskHeader(task)

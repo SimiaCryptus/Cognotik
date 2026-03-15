@@ -86,7 +86,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
         val typeConfig = typeConfig ?: throw RuntimeException()
         val model = (typeConfig.model?.let { it.instance() }
             ?: defaultSmart).getChildClient(task)
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
       log.info("Starting RunCodeTask for goal: ${executionConfig?.goal?.take(50)}...")
 
         val runtime = typeConfig.codeRuntime ?: CodeRuntimes.GroovyRuntime // Kotlin has issues running within IntelliJ

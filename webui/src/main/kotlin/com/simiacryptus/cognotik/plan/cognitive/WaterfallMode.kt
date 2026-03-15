@@ -73,12 +73,10 @@ open class WaterfallMode(
             val coordinator = TaskOrchestrator(
                 user = user,
                 session = session,
-                dataStorage = task.ui.dataStorage!!,
+                dataStorage = task.ui.dataStorage,
                 root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                    ?: task.ui.dataStorage?.getSessionDir(
-                        user,
-                        session
-                    )?.toPath() ?: File(".").toPath(),
+                    ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
+                    ?: File(".").toPath(),
                 transcriptStream = transcriptStream
             )
 

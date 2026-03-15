@@ -83,7 +83,7 @@ class ReadDocumentsTask(
     ) {
 
 
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
       try {
         task.ui.pool.submit {
           try {

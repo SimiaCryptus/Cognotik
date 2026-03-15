@@ -334,8 +334,8 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
         orchestrationConfig: OrchestrationConfig
     ) {
         // Create transcript file
-      val transcriptStream = task.newFileOutputStream(transcriptFile("transcript"))
-      val proposalStream = task.newFileOutputStream(transcriptFile("proposal"))
+      val transcriptStream = task.newUserFileStream(transcriptFile("transcript"))
+      val proposalStream = task.newUserFileStream(transcriptFile("proposal"))
         transcriptStream?.let { stream ->
             stream.write("# Business Proposal Generation Transcript\n\n".toByteArray())
             stream.write("**Proposal:** ${executionConfig?.proposal_title}\n".toByteArray())

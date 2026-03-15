@@ -95,7 +95,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
         val metadataFile = executionConfig?.metadata_file ?: return resultFn("No metadata file specified")
         val description = executionConfig?.task_description ?: "Generate a sprite sheet"
 
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
 
       try {
 

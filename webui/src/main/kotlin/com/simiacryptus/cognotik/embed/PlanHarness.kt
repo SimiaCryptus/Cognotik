@@ -54,13 +54,14 @@ open class PlanHarness(
 ) {
 
     private val harness = object : UnifiedHarness(
-        port = port,
-        openBrowser = openBrowser,
-        serverless = serverless,
-        modelInstanceFn = modelInstanceFn,
-        fastModel = fastModel,
-        smartModel = smartModel,
-        imageModel = imageModel
+      port = port,
+      serverless = serverless,
+      openBrowser = openBrowser,
+      modelInstanceFn = modelInstanceFn,
+      fastModel = fastModel,
+      smartModel = smartModel,
+      imageModel = imageModel,
+      showMenubar = true
     ) {
         override fun createTempDirectory(prefix: String) = createTempDirectory()
     }

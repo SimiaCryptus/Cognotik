@@ -48,14 +48,15 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val dataDir: File by lazy { createWorkspace() }
     fun run() {
         val harness = object : UnifiedHarness(
-            port = port,
-            openBrowser = openBrowser,
-            serverless = serverless,
-            modelInstanceFn = modelInstanceFn,
-            fastModel = fastModel,
-            smartModel = smartModel,
-            imageModel = imageModel,
-            temperature = temperature,
+          port = port,
+          serverless = serverless,
+          openBrowser = openBrowser,
+          modelInstanceFn = modelInstanceFn,
+          fastModel = fastModel,
+          smartModel = smartModel,
+          imageModel = imageModel,
+          temperature = temperature,
+          showMenubar = true,
         ) {
             override fun createTempDirectory(prefix: String) = dataDir
         }

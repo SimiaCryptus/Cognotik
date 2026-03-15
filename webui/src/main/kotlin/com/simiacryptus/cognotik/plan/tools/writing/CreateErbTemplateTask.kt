@@ -115,7 +115,7 @@ CreateErbTemplate - Generate ERB-style templates for document generation
         ?: defaultSmart).getChildClient(task)
 
     val semaphore = Semaphore(0)
-    val transcript = task.newFileOutputStream(transcriptFile())
+    val transcript = task.newUserFileStream(transcriptFile())
     val tabs = TabbedDisplay(task)
 
     try {

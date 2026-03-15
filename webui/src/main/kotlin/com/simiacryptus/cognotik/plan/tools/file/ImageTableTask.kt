@@ -117,7 +117,7 @@ ImageTable - Generate a table/grid of AI-generated images
     ) {
 
 
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
       log.info("Starting ImageTableTask execution.")
       executionConfig?.validate()?.let { errorMessage ->
         resultFn("VALIDATION ERROR: $errorMessage")

@@ -361,7 +361,7 @@ class NeuralNetworkLayerTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         task.ui.pool.submit {
-          val transcript = task.newFileOutputStream(transcriptFile())
+          val transcript = task.newUserFileStream(transcriptFile())
             try {
             val startTime = System.currentTimeMillis()
                 log.info("Starting NeuralNetworkLayerTask for layer: ${executionConfig?.layer_name}")

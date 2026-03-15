@@ -77,7 +77,7 @@ class EntropyReductionTreeTask(
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val transcript = task.newFileOutputStream(transcriptFile())
+    val transcript = task.newUserFileStream(transcriptFile())
     try {
       val config = executionConfig ?: run {
         val msg = "No execution configuration provided"

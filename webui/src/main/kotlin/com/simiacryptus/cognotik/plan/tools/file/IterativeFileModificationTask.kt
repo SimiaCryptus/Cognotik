@@ -128,7 +128,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
     ) {
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
         val tabs = TabbedDisplay(task)
 
         try {

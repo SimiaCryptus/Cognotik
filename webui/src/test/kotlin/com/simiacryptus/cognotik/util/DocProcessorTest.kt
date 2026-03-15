@@ -1370,7 +1370,7 @@ class DocProcessorTest {
 
             val rebased = task.rebase(oldRoot, newRoot)
             assertEquals("Update Main", rebased.data.task_description)
-            assertEquals("test message", rebased.message(File(".")))
+            assertEquals("test message", rebased.message())
             assertNotNull(rebased.data.relative_files)
             assertNotNull(rebased.data.relative_related_files)
         }

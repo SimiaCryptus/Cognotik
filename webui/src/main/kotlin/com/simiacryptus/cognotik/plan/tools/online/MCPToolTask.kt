@@ -94,7 +94,7 @@ class MCPToolTask(
         task.header("Executing MCP tool: $toolName", level = 2)
         task.add("Server: <strong>$serverName</strong>")
         val transcriptStream = if (typeConfig.generate_transcript) {
-          task.newFileOutputStream(transcriptFile())
+          task.newUserFileStream(transcriptFile())
         } else null
 
         task.expandable("Arguments", "<pre><code class=\"language-json\">${JsonUtil.toJson(arguments)}</code></pre>")

@@ -211,7 +211,7 @@ class CrawlerAgentTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcriptStream = task.newFileOutputStream(transcriptFile())
+        val transcriptStream = task.newUserFileStream(transcriptFile())
         try {
             log.info("Starting CrawlerAgentTask.run() with messages count: ${messages.size}")
             val chatInterface = (typeConfig?.model?.let { it.instance() }
