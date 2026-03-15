@@ -43,10 +43,6 @@ class FullReplacementProcessor : PatchProcessor {
       ```
       """.trimIndent()
 
-    override fun getInitiatorPattern(): Regex {
-        return "(?s)```\\w*\n".toRegex()
-    }
-
     override fun generatePatch(oldCode: String, newCode: String): String {
         log.debug("Generating full replacement patch")
         // For full replacement, the "patch" is just the new code

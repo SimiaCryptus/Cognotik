@@ -45,10 +45,6 @@ class PythonPatcher : PatchProcessor {
       ```
       """.trimIndent()
 
-    override fun getInitiatorPattern(): Regex {
-        return "(?s)```\\w*\n".toRegex()
-    }
-
     private enum class LineType { CONTEXT, ADD, DELETE }
 
 

@@ -1,7 +1,8 @@
 package com.simiacryptus.cognotik.ui.patch
 
+import com.simiacryptus.cognotik.diff.PatchParser
+import com.simiacryptus.cognotik.diff.PatchParser.ResponseSegment
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.diff.ResponseSegment
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import java.nio.file.Path

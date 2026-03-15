@@ -67,10 +67,6 @@ Here is the updated configuration:
 "database.maxConnections", adding the "newFeature" section, and preserving all other existing fields.
 """.trimIndent()
 
-  override fun getInitiatorPattern(): Regex {
-    return """(?s)```(?:json|yaml|yml|xml|toml|properties)\n""".toRegex()
-  }
-
   override fun generatePatch(oldCode: String, newCode: String): String {
     return generatePatchForFormat(oldCode, newCode, detectFormat(oldCode))
   }
