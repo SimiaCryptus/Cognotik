@@ -1,8 +1,10 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.diff.PatchProcessors
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -14,7 +16,11 @@ import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.asApiChatModel
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
+import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URI
@@ -1062,7 +1068,11 @@ class DocProcessor(
 
     fun executionConfig(
         mod: ModificationTask,
-        harness: UnifiedHarness
+        harness: UnifiedHarness,
+        task: SessionTask? = null,
+        model: ChatInterface = harness.fastModel.asApiChatModel()?.instance()?.let {
+            if (task != null) it.getChildClient(task) else it
+        } ?: throw IllegalStateException("Fast model is not an API chat model")
     ): TaskExecutionConfig {
         val newRoot = mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
         return when {
@@ -1087,9 +1097,7 @@ class DocProcessor(
               typeConfig = mod.taskType.newSettings() ?: TaskTypeConfig(task_type = mod.taskType.name),
               workingDir = newRoot.toString()
             )
-            val defaultModel = orchestrationConfig.defaultSmart
-            val fastModelClient = orchestrationConfig.defaultFast
-            val contextMessages = buildList {
+          val contextMessages = buildList {
               add("Task type: ${mod.taskType.name}")
               add("Task description: ${mod.data.task_description}")
               mod.data.relative_files?.forEach { add("Target file: $it") }
@@ -1104,8 +1112,8 @@ class DocProcessor(
               if (message.isNotBlank()) add(message)
             }
             val (_, taskConfig) = ConversationalMode.requestToTask(
-              defaultModel = defaultModel,
-              fastModel = fastModelClient,
+              defaultModel = model,
+              fastModel = model,
               userMessage = mod.data.task_description,
               orchestrationConfig = orchestrationConfig,
               prompt = "Execute the following task based on the provided context. Task type: ${mod.taskType.name}",

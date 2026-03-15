@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.run
 import com.simiacryptus.cognotik.apps.PatchApp
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
@@ -91,7 +92,7 @@ class SingleFixTask(
           val transcript = createTranscript(subTask)
           subTask.add(transcript.second.renderMarkdown())
           val model =
-            (typeConfig.model?.let { orchestrationConfig.instance(it) } ?: defaultSmart).getChildClient(subTask)
+            (typeConfig.model?.let { it.instance() } ?: defaultSmart).getChildClient(subTask)
           val markdownTranscript = transcript.first
           try {
             markdownTranscript?.write("## Single Fix Task Execution\n\n".toByteArray())

@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -213,7 +214,7 @@ class CrawlerAgentTask(
         val transcriptStream = task.newFileOutputStream(transcriptFile())
         try {
             log.info("Starting CrawlerAgentTask.run() with messages count: ${messages.size}")
-            val chatInterface = (typeConfig?.model?.let { this@CrawlerAgentTask.orchestrationConfig.instance(it) }
+            val chatInterface = (typeConfig?.model?.let { it.instance() }
                 ?: this@CrawlerAgentTask.defaultFast).getChildClient(task)
             resultFn(innerRun(agent, messages, task, orchestrationConfig, transcriptStream, chatInterface))
         } catch (e: Throwable) {

@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -105,7 +106,9 @@ class DiscussionTask(
                         Provide a comprehensive overview, including key concepts, relevant technologies, best practices, and any potential challenges or considerations.
                         Ensure the information is accurate, up-to-date, and well-organized to facilitate easy understanding.
                         """.trimIndent(),
-                    model = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+                    model = (typeConfig.model?.let<ApiChatModel, ChatInterface> {
+                        it.instance()
+                    }
                         ?: defaultSmart).getChildClient(task),
                     temperature = this.orchestrationConfig.temperature,
                 )

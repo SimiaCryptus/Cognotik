@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedImageAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
@@ -141,7 +142,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
 
             val parserAgent = ParsedImageAgent(
               resultClass = SpriteSheetMetadata::class.java,
-              model = (typeConfig?.model?.let { orchestrationConfig.instance(it) }
+              model = (typeConfig?.model?.let { it.instance() }
                 ?: defaultSmart).getChildClient(task),
               prompt = """
                             Identify all distinct sprites in this image.

@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
@@ -217,7 +218,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
         transcript: FileOutputStream?
     ): List<PlannedChange> {
         val typeConfig = typeConfig
-        val planningModel = typeConfig?.planningModel?.let { orchestrationConfig.instance(it) }
+        val planningModel = typeConfig?.planningModel?.let { it.instance() }
             ?: defaultSmart
         val defaultChatter = planningModel.getChildClient(task)
         val parsingChatter = defaultFast.getChildClient(task)
@@ -307,7 +308,7 @@ ${planResult.text}
         completionNotes: MutableList<String>
     ): String {
         val typeConfig = typeConfig
-        val implementationModel = typeConfig?.implementationModel?.let { orchestrationConfig.instance(it) }
+        val implementationModel = typeConfig?.implementationModel?.let { it.instance() }
             ?: defaultSmart
         val chatInterface = implementationModel.getChildClient(task)
 

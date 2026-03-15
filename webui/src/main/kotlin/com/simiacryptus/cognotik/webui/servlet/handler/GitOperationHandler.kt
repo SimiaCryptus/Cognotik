@@ -87,9 +87,21 @@ object GitOperationHandler {
         "reset" -> {
           val filePath = req.getParameter("filePath")
           val result = if (filePath != null) {
-            executeGitCommand(gitRoot, "git", "checkout", "--", filePath)
+            buildString {
+              append(executeGitCommand(gitRoot, "git", "checkout", "--", filePath))
+              append("\n")
+              append(executeGitCommand(gitRoot, "git", "reset", "--hard", "HEAD", filePath))
+              append("\n")
+              append(executeGitCommand(gitRoot, "git", "clean", "-fdx", "--", filePath))
+            }
           } else {
-            executeGitCommand(gitRoot, "git", "checkout", "--", ".")
+            buildString {
+              append(executeGitCommand(gitRoot, "git", "checkout", "--", "."))
+              append("\n")
+              append(executeGitCommand(gitRoot, "git", "reset", "--hard", "HEAD"))
+              append("\n")
+              append(executeGitCommand(gitRoot, "git", "clean", "-fdx"))
+            }
           }
           resp.contentType = "application/json"
           resp.status = HttpServletResponse.SC_OK

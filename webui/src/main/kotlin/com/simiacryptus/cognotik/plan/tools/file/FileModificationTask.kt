@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
@@ -79,13 +80,13 @@ FileModification - Modify existing files or create new files
         val defaultFile = getDefaultFile()
         val typeConfig = typeConfig ?: throw RuntimeException("TypeConfig is missing")
         val chatInterface =
-            (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+            (typeConfig.model?.let<ApiChatModel, ChatInterface> { it.instance() }
                 ?: defaultSmart).getChildClient(task)
 
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
         val transcript = task.newFileOutputStream(transcriptFile())
-        val tabs = TabbedDisplay(task)
+
 
         try {
             transcript?.write("# File Modification Task Transcript\n\n".toByteArray())
@@ -128,12 +129,6 @@ $taskDesc
 </details>
 
                 """.toByteArray())
-                val contextTab = tabs.newTask("Context")
-                contextTab.add("""
-# Task Context
-$taskDesc
-                """.renderMarkdown())
-                contextTab.complete()
 
                 val chatAgent = ChatAgent(
                     name = "FileModification",
@@ -142,8 +137,7 @@ $taskDesc
                     temperature = this.orchestrationConfig.temperature,
                 )
 
-                val mainTask = tabs.newTask("Proposed Changes")
-                mainTask.add("Generating modifications...".renderMarkdown())
+              task.add("Generating modifications...".renderMarkdown())
 
                 // 3. Execute AI
                 val codeResult = chatAgent.answer(
@@ -165,7 +159,7 @@ $codeResult
 
                 """.toByteArray())
                 val autoFix = orchestrationConfig.autoFix
-                val markdown = renderMarkdown(codeResult, ui = mainTask.ui) {
+                val markdown = renderMarkdown(codeResult, ui = task.ui) {
                   DiffInstrumentor(
                     orchestrationConfig.processor,
                     SessionRenderer(task), RealFileSystem()
@@ -191,15 +185,15 @@ $codeResult
 
                 if (autoFix) {
                     transcript?.write("\n**Auto-applying changes...**\n".toByteArray())
-                    mainTask.complete(markdown)
+                  task.complete(markdown)
                     semaphore.release()
                 } else {
-                    mainTask.add(markdown)
+                  task.add(markdown)
                     // Best Practice: Use acceptButtonFooter for manual review
-                    mainTask.complete(acceptButtonFooter(mainTask.ui) {
-                        task.complete()
-                        semaphore.release()
-                    })
+                  task.complete(acceptButtonFooter(task.ui) {
+                    task.complete()
+                    semaphore.release()
+                  })
                 }
                 transcript?.flush()
             }.async(task.ui))
@@ -229,59 +223,68 @@ $codeResult
         }
     }
 
-    private fun getSystemPrompt(): String {
-        return """
-        Generate precise code modifications and new files based on requirements:
-        For modifying existing files:
-        - Write efficient, readable, and maintainable code changes
-        - Ensure modifications integrate smoothly with existing code
-        - Follow project coding standards and patterns
-        - Consider dependencies and potential side effects
-        - Provide clear context and rationale for changes
+    private fun getSystemPrompt() = """
+Generate precise code modifications and new files based on requirements:
+For modifying existing files:
+- Write efficient, readable, and maintainable code changes
+- Ensure modifications integrate smoothly with existing code
+- Follow project coding standards and patterns
+- Consider dependencies and potential side effects
+- Provide clear context and rationale for changes
 
-        For creating new files:
-        - Choose appropriate file locations and names
-        - Structure code according to project conventions
-        - Include necessary imports and dependencies
-        - Add comprehensive documentation
-        - Ensure no duplication of existing functionality
+For creating new files:
+- Choose appropriate file locations and names
+- Structure code according to project conventions
+- Include necessary imports and dependencies
+- Add comprehensive documentation
+- Ensure no duplication of existing functionality
 
-        Provide a clear summary explaining:
-        - What changes were made and why
-        - Any important implementation details
-        - Potential impacts on other code
-        - Required follow-up actions
+Provide a clear summary explaining:
+- What changes were made and why
+- Any important implementation details
+- Potential impacts on other code
+- Required follow-up actions
 
-        Response format:
-        For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
-        For new files: Use ${TRIPLE_TILDE} code blocks with a header specifying the new file path.
-        The diff format should use + for line additions, - for line deletions.
-        Include 2 lines of context before and after every change in diffs.
-        Separate code blocks with a single blank line.
-        For new files, specify the language for syntax highlighting after the opening triple backticks.
+Response format:
+For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
+For new files: Use ${TRIPLE_TILDE} code blocks with a header specifying the new file path.
+The content inside the code blocks should be indented - this is CRITICAL for correct parsing.
+The diff format should use + for line additions, - for line deletions.
+Include 2 lines of context before and after every change in diffs.
+Separate code blocks with a single blank line.
+For new files, specify the language for syntax highlighting after the opening triple backticks.
 
-        Example:
+Example:
 
-        Here are the modifications:
+Here are the modifications:
 
-        ### src/utils/existingFile.js
-        ${TRIPLE_TILDE}diff
+### src/utils/existingFile.js
+${TRIPLE_TILDE}diff
+  function existingFunction() {
+-    return 'old result';
++    return 'new result';
+  }
+${TRIPLE_TILDE}
 
-        function existingFunction() {
-        return 'old result';
-        return 'new result';
-        }
-        ${TRIPLE_TILDE}
+### src/utils/newFile.js
+${TRIPLE_TILDE}js
+  function newFunction() {
+    return 'new functionality';
+  }
+${TRIPLE_TILDE}
 
-        ### src/utils/newFile.js
-        ${TRIPLE_TILDE}js
-
-        function newFunction() {
-         return 'new functionality';
-        }
-        ${TRIPLE_TILDE}
-        """.trimIndent()
-    }
+### src/utils/README.md
+${TRIPLE_TILDE}md
+  # Utility Functions
+  This file contains utility functions for the project.
+  Example usage:
+  ${TRIPLE_TILDE}js
+    import { existingFunction, newFunction } from './existingFile.js';
+    console.log(existingFunction()); // Outputs: 'new result'
+    console.log(newFunction()); // Outputs: 'new functionality'
+  ${TRIPLE_TILDE}
+${TRIPLE_TILDE}
+    """
 
     fun getDefaultFile() =
         if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).isEmpty()) {

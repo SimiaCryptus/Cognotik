@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.apps.CmdPatchApp
 import com.simiacryptus.cognotik.apps.PatchApp
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -118,7 +119,7 @@ class AutoFixTask(
                 subTask.ui.pool.submit {
                     val transcript = createTranscript(subTask)
                     subTask.add(transcript.second.renderMarkdown())
-                    val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
+                    val model = (typeConfig.model?.let { it.instance() }
                         ?: defaultSmart).getChildClient(subTask)
                     val transcript1 = transcript.first
                     try {

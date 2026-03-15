@@ -52,20 +52,17 @@ class OrchestrationConfig(
     var processor: PatchProcessor = PatchProcessors.Fuzzy
 
     @get:JsonIgnore
-    val defaultSmart get() = instance(defaultSmartModel ?: throw IllegalStateException("Default model not set"))
+    val defaultSmart get() = (defaultSmartModel ?: throw IllegalStateException("Default model not set")).instance()
 
     @get:JsonIgnore
     val defaultFast
-        get() = instance(defaultFastModel ?: defaultSmartModel ?: throw IllegalStateException("Parsing model not set"))
+        get() = (defaultFastModel ?: defaultSmartModel
+        ?: throw IllegalStateException("Parsing model not set")).instance()
 
     @get:JsonIgnore
     val defaultImage
-        get() = instance(defaultImageModel ?: throw IllegalStateException("Image chat model not set"))
+        get() = (defaultImageModel ?: throw IllegalStateException("Image chat model not set")).instance()
 
-
-    @JsonIgnore
-    fun instance(model: ApiChatModel) =
-        instanceFn?.let { it(model) } ?: throw IllegalStateException("Instance function not set")
 
     @get:JsonIgnore
     val absoluteWorkingDir
@@ -201,6 +198,10 @@ class OrchestrationConfig(
 
         @JsonIgnore
         var instanceFn: ((ApiChatModel) -> ChatInterface)? = null
+
+        @JsonIgnore
+        fun ApiChatModel.instance() =
+            instanceFn?.let { it(this) } ?: throw IllegalStateException("Instance function not set")
     }
 
     /**

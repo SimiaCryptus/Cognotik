@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -127,7 +128,7 @@ class DataTableCompilationTask(
 
         val typeConfig = typeConfig ?: throw RuntimeException()
         val chatter =
-            (typeConfig.model?.let { orchestrationConfig.instance(it) }
+            (typeConfig.model?.let { it.instance() }
                 ?: defaultSmart).getChildClient(task)
         task.header("Step 2: Identifying Columns", level = 3)
         val columnsResponse = ParsedAgent(

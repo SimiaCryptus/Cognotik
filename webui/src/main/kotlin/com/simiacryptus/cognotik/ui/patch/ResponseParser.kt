@@ -35,6 +35,7 @@ class ResponseParser(private val processor: PatchProcessor) {
      * -> Captures "src/main/Main.kt"
      */
     private val FILE_HEADER_PATTERN = """(?m)^(?:─+|-+)\s*\nFile:\s*(.+?)\s*\n(?:─+|-+)\s*""".toRegex()
+
   }
 
   fun parse(

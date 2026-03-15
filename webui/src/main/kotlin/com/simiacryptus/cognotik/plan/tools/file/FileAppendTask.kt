@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -61,7 +62,9 @@ FileAppend - Append content to the end of an existing file
     ) {
         val typeConfig = typeConfig ?: throw RuntimeException("Type configuration missing")
         val targetPath = executionConfig?.file ?: throw RuntimeException("Target file missing")
-        val chatInterface = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+        val chatInterface = (typeConfig.model?.let<ApiChatModel, ChatInterface> {
+          it.instance()
+        }
             ?: defaultSmart).getChildClient(task)
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()

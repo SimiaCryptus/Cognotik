@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -83,7 +84,7 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
         val typeConfig = typeConfig ?: throw RuntimeException()
-        val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
+        val model = (typeConfig.model?.let { it.instance() }
             ?: defaultSmart).getChildClient(task)
       val transcript = task.newFileOutputStream(transcriptFile())
       log.info("Starting RunCodeTask for goal: ${executionConfig?.goal?.take(50)}...")
