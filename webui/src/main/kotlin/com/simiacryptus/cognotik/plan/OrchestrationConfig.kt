@@ -125,7 +125,6 @@ class OrchestrationConfig(
         sessionId = sessionId
     )
 
-
     data class TaskBreakdownResult(
         @Description("A map where each task ID is associated with its corresponding PlanTask object. Crucial for defining task relationships and information flow.")
         val tasksByID: Map<String, TaskExecutionConfig>? = null,
@@ -137,7 +136,7 @@ class OrchestrationConfig(
                 "1" to AutoFixTaskExecutionConfigData(
                     task_description = "Task 1", task_dependencies = listOf(), commands = mutableListOf(
                         AutoFixTask.CommandWithWorkingDir(
-                            command = mutableListOf("echo", "Hello, World!"), workingDir = "."
+                            command = mutableListOf("echo", "Hello, World!"), working_dir = "."
                         )
                     )
                 ), "2" to FileModificationTaskExecutionConfigData(

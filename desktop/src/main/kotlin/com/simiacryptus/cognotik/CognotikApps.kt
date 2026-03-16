@@ -251,6 +251,7 @@ open class CognotikApps(
         listOf(
             ChildWebApp("/puppy-finder", DocOpsApp(File("."), model, model, appId = "puppy-finder")),
             ChildWebApp("/health-improvement", DocOpsApp(File("."), model, model, appId = "health-improvement")),
+            ChildWebApp("/sys-wizard", DocOpsApp(File("."), model, model, appId = "sys-wizard")),
             ChildWebApp("/webapp-factory", DocOpsApp(File("."), model, model, appId = "webapp-factory")),
             ChildWebApp("/proxy", SessionProxyServer("Proxy Server", "/proxy")),
             ChildWebApp("/chat", BasicChatApp(File("."), model, model)),

@@ -56,6 +56,18 @@ document.addEventListener('DOMContentLoaded', function () {
             window.location.href = `/webapp-factory/fileIndex/${docopsSessionId}/app.html`;
         });
     }
+    // --- Sys Wizard DocOps App ---
+    const openSysWizard = document.getElementById('open-sys-wizard');
+    if (openSysWizard) {
+        openSysWizard.addEventListener('click', function (e) {
+            e.preventDefault();
+            console.log('[DOMContentLoaded] openSysWizard clicked.');
+            docopsMenu.classList.remove('open');
+            const docopsSessionId = Utils.generateSessionId();
+            console.log('[DOMContentLoaded] Generated session for Sys Wizard:', docopsSessionId);
+            window.location.href = `/sys-wizard/fileIndex/${docopsSessionId}/app.html`;
+        });
+    }
 
 
     // --- Basic Chat Modal Setup ---

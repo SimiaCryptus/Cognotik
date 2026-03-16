@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧙 System Wizard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+    <!-- Header -->
+    <header class="app-header">
+        <h1>🧙 System Wizard</h1>
+        <p class="subtitle">Describe your goal — the wizard writes and runs a shell script for you</p>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-nav">
+        <a href="#" class="nav-link active" data-section="section-goal">📋 Goal</a>
+        <a href="#" class="nav-link" data-section="section-pipeline">⚙️ Pipeline</a>
+        <a href="#" class="nav-link" data-section="section-results">📊 Results</a>
+    </nav>
+
+    <main>
+        <!-- ==================== GOAL SECTION ==================== -->
+        <section id="section-goal" class="section active">
+            <h2>📋 Define Your Goal</h2>
+            <div class="card">
+                <h3>What do you want to accomplish?</h3>
+                <p class="hint">Describe the task in plain language. The wizard will generate a shell script to accomplish it.</p>
+                <textarea id="goal-editor" rows="14"
+                    placeholder="Example: List all running Docker containers, find any using more than 1GB of memory, and write a summary report to /tmp/docker-report.txt"></textarea>
+                <div class="button-row">
+                    <button class="btn btn-primary" id="save-goal">💾 Save Goal</button>
+                    <span class="status-msg" id="goal-status"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PIPELINE SECTION ==================== -->
+        <section id="section-pipeline" class="section">
+            <h2>⚙️ Pipeline</h2>
+
+            <!-- Pipeline Diagram -->
+            <div class="card">
+                <h3>Pipeline Overview</h3>
+                <div class="pipeline-diagram">
+                    <div class="pipeline-stage" data-stage="goal">
+                        <div class="stage-icon">📋</div>
+                        <div class="stage-label">Goal</div>
+                        <div class="stage-status" id="stage-goal-status">Ready</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-stage" data-stage="codegen">
+                        <div class="stage-icon">🔧</div>
+                        <div class="stage-label">Generate Script</div>
+                        <div class="stage-status" id="stage-codegen-status">Pending</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-stage" data-stage="run">
+                        <div class="stage-icon">▶️</div>
+                        <div class="stage-label">Run &amp; Fix</div>
+                        <div class="stage-status" id="stage-run-status">Pending</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Generate Script -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <span class="step-title">Generate Shell Script</span>
+                        <span class="step-badge pending" id="badge-codegen">pending</span>
+                    </div>
+                    <p class="step-desc">
+                        The AI reads your goal and writes a shell script (<code>code/script.sh</code>) to accomplish it.
+                    </p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/code_op.md"
+                                data-output="code/script.sh"
+                                data-badge="badge-codegen"
+                                data-viewer="viewer-codegen">
+                            ▶ Generate
+                        </button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="code/script.sh"
+                                data-viewer="viewer-codegen">
+                            👁 View Script
+                        </button>
+                    </div>
+                    <div class="viewer" id="viewer-codegen"></div>
+                </div>
+            </div>
+
+            <!-- Step 2: Run & Fix -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <span class="step-title">Run &amp; Auto-Fix</span>
+                        <span class="step-badge pending" id="badge-run">pending</span>
+                    </div>
+                    <p class="step-desc">
+                        Executes the generated script and automatically fixes any errors until it succeeds.
+                        Results are logged to <code>code/fix_log.md</code>.
+                    </p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/run_op.md"
+                                data-output="code/fix_log.md"
+                                data-badge="badge-run"
+                                data-viewer="viewer-run">
+                            ▶ Run &amp; Fix
+                        </button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="code/fix_log.md"
+                                data-viewer="viewer-run">
+                            👁 View Log
+                        </button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="code/script.sh"
+                                data-viewer="viewer-run-script">
+                            📜 View Final Script
+                        </button>
+                    </div>
+                    <div class="viewer" id="viewer-run"></div>
+                    <div class="viewer" id="viewer-run-script"></div>
+                </div>
+            </div>
+
+            <!-- Batch Execution -->
+            <div class="card">
+                <h3>🚀 Run Entire Pipeline</h3>
+                <p class="hint">Saves your goal, generates the script, then runs and fixes it — all in one click.</p>
+                <div class="button-row">
+                    <button class="btn btn-accent" id="run-all">▶ Run Entire Pipeline</button>
+                </div>
+                <div class="batch-log" id="batch-log"></div>
+            </div>
+        </section>
+
+        <!-- ==================== RESULTS SECTION ==================== -->
+        <section id="section-results" class="section">
+            <h2>📊 Results</h2>
+
+            <div class="results-tabs">
+                <button class="results-tab active" data-tab="tab-script">📜 Script</button>
+                <button class="results-tab" data-tab="tab-log">📋 Execution Log</button>
+                <button class="results-tab" data-tab="tab-goal">📋 Goal</button>
+            </div>
+
+            <div class="results-content">
+                <!-- Script Tab -->
+                <div class="tab-panel active" id="tab-script">
+                    <div class="card">
+                        <h3>Generated Shell Script</h3>
+                        <div class="button-row">
+                            <button class="btn btn-secondary btn-refresh"
+                                    data-file="code/script.sh"
+                                    data-viewer="result-script">🔄 Refresh</button>
+                            <button class="btn btn-secondary" id="copy-script">📋 Copy to Clipboard</button>
+                        </div>
+                        <div class="result-viewer" id="result-script">
+                            <p class="placeholder">Run the pipeline to generate a script.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Execution Log Tab -->
+                <div class="tab-panel" id="tab-log">
+                    <div class="card">
+                        <h3>Execution &amp; Fix Log</h3>
+                        <div class="button-row">
+                            <button class="btn btn-secondary btn-refresh"
+                                    data-file="code/fix_log.md"
+                                    data-viewer="result-log">🔄 Refresh</button>
+                        </div>
+                        <div class="result-viewer" id="result-log">
+                            <p class="placeholder">Run the pipeline to see execution results.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Goal Tab -->
+                <div class="tab-panel" id="tab-goal">
+                    <div class="card">
+                        <h3>Original Goal</h3>
+                        <div class="button-row">
+                            <button class="btn btn-secondary btn-refresh"
+                                    data-file="goal.md"
+                                    data-viewer="result-goal">🔄 Refresh</button>
+                        </div>
+                        <div class="result-viewer" id="result-goal">
+                            <p class="placeholder">Save a goal to see it here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script src="marked.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
