@@ -250,7 +250,6 @@ class MultiStepPatchAction : BaseAction() {
                                   DiffInstrumentor(
                                     processor,
                                     SessionRenderer(task),
-                                    patchProcessor = patchProcessor
                                   ).instrument(
                                     root = root,
                                     response = taskActor.answer(

@@ -282,7 +282,7 @@ class ReplicateCommitAction : BaseAction() {
                         val markdown =
                             DiffInstrumentor(
                               AppSettingsState.instance.processor,
-                              SessionRenderer(task), patchProcessor = patchProcessor
+                              SessionRenderer(task),
                             ).instrument(
                             root = root.toPath(),
                             response = response,

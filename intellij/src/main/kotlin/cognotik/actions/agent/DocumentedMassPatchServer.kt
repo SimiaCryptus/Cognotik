@@ -102,7 +102,7 @@ class DocumentedMassPatchServer(
                             fileTask.add(
                               DiffInstrumentor(
                                 processor,
-                                SessionRenderer(task), patchProcessor = patchProcessor
+                                SessionRenderer(task),
                               ).instrument(
                                 root = _root,
                                 response = design,
@@ -132,7 +132,7 @@ class DocumentedMassPatchServer(
                                     renderMarkdown(design) {
                                       DiffInstrumentor(
                                         processor,
-                                        SessionRenderer(task), patchProcessor = patchProcessor
+                                        SessionRenderer(task),
                                       ).instrument(
                                         root = _root,
                                         response = design,

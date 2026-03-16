@@ -246,7 +246,6 @@ class AnalyzeProblemAction : AnAction() {
                   DiffInstrumentor(
                     AppSettingsState.instance.processor,
                     SessionRenderer(task),
-                    patchProcessor = patchProcessor
                   ).instrument(
                     root = root.toPath(),
                     response = response,

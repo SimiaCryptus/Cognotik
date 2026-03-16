@@ -736,7 +736,6 @@ class CustomFileSetPatchServer(
                 DiffInstrumentor(
                   processor,
                   SessionRenderer(task),
-                  patchProcessor = patchProcessor
                 ).instrument(
                 root = _root ?: throw IllegalStateException("Root directory is not set"),
                 response = design,
@@ -835,7 +834,6 @@ class CustomFileSetPatchServer(
                         DiffInstrumentor(
                           processor,
                           SessionRenderer(task),
-                          patchProcessor = patchProcessor
                         ).instrument(
                         root = _root ?: throw IllegalStateException("Root directory is not set"),
                         response = design,

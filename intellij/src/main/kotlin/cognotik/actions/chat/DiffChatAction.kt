@@ -139,7 +139,6 @@ class DiffChatAction : BaseAction() {
                     processor = AppSettingsState.instance.processor,
                     renderer = renderer,
                     fs = virtualFs,
-                    patchProcessor = patchProcessor
                   )
                   instrumentor.instrument(
                     root = virtualRoot,

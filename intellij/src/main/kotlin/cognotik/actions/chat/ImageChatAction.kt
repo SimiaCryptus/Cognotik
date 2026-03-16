@@ -166,7 +166,7 @@ class ImageChatAction : BaseAction() {
             renderMarkdown(response, tabs=true) { markdown ->
                 DiffInstrumentor(
                   AppSettingsState.instance.processor,
-                  SessionRenderer(task), patchProcessor = patchProcessor
+                  SessionRenderer(task),
                 ).instrument(
                 root = root.toPath(),
                 response = markdown,

@@ -142,7 +142,7 @@ class MultiCodeChatAction : BaseAction() {
             renderMarkdown(response, tabs=true) { html ->
                 DiffInstrumentor(
                   AppSettingsState.instance.processor,
-                  SessionRenderer(task), patchProcessor = patchProcessor
+                  SessionRenderer(task),
                 ).instrument(
                 root = root.toPath(),
                 response = html,

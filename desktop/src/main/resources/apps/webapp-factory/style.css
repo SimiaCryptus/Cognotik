@@ -1,4 +1,5 @@
 /* === Webapp Factory — Style === */
+/* === Webapp Builder — Style === */
 :root {
     --color-bg: #0f1117;
     --color-surface: #1a1d27;
@@ -13,6 +14,8 @@
     --color-success: #4ade80;
     --color-danger: #f87171;
     --color-warning: #fbbf24;
+    --color-launch: #38bdf8;
+    --color-launch-hover: #7dd3fc;
     --radius: 10px;
     --shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
 }
@@ -44,6 +47,12 @@ header {
     text-align: center;
     padding: 2rem 0 1rem;
 }
+header .header-logo {
+    font-size: 3.5rem;
+    margin-bottom: 0.25rem;
+    filter: drop-shadow(0 2px 8px rgba(108, 140, 255, 0.4));
+}
+
 
 header h1 {
     font-size: 2.2rem;
@@ -59,6 +68,24 @@ header .subtitle {
     font-size: 1.05rem;
     margin-top: 0.4rem;
 }
+.header-tags {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+.header-tag {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(108, 140, 255, 0.12);
+    color: var(--color-primary);
+    border: 1px solid rgba(108, 140, 255, 0.25);
+}
+
 
 /* Navigation */
 #pipeline-nav {
@@ -95,6 +122,29 @@ header .subtitle {
     color: var(--color-primary);
     border-bottom-color: var(--color-primary);
 }
+#pipeline-nav a.nav-link-launch {
+    color: var(--color-text-muted);
+    opacity: 0.4;
+    pointer-events: none;
+    position: relative;
+    transition: all 0.3s;
+}
+#pipeline-nav a.nav-link-launch.visible {
+    opacity: 1;
+    pointer-events: auto;
+    color: var(--color-launch);
+    border-bottom-color: var(--color-launch);
+    animation: glow-launch 2s ease-in-out infinite;
+}
+@keyframes glow-launch {
+    0%, 100% {
+        text-shadow: 0 0 4px rgba(56, 189, 248, 0.3);
+    }
+    50% {
+        text-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+    }
+}
+
 
 /* Sections */
 .section {
@@ -214,6 +264,16 @@ textarea:focus {
 .btn-run:hover:not(:disabled) {
     filter: brightness(1.1);
 }
+.btn-launch {
+    background: linear-gradient(135deg, var(--color-launch), var(--color-primary));
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(56, 189, 248, 0.3);
+}
+.btn-launch:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--color-launch-hover), var(--color-primary-hover));
+}
+
 
 .btn-view {
     background: var(--color-surface-alt);
@@ -244,6 +304,67 @@ textarea:focus {
 .status-msg.error {
     color: var(--color-danger);
 }
+/* App Preview Banner */
+.app-preview-banner {
+    display: none;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(108, 140, 255, 0.08));
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+    animation: slideDown 0.4s ease-out;
+}
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.preview-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    flex-wrap: wrap;
+}
+.preview-banner-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+.preview-banner-text {
+    flex: 1;
+    min-width: 200px;
+}
+.preview-banner-text strong {
+    display: block;
+    font-size: 1.05rem;
+    color: var(--color-launch);
+}
+.preview-banner-text span {
+    font-size: 0.88rem;
+    color: var(--color-text-muted);
+}
+/* App Preview Iframe */
+.preview-frame-container {
+    position: relative;
+    width: 100%;
+    min-height: 200px;
+}
+.app-preview-iframe {
+    width: 100%;
+    height: 600px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: #fff;
+}
+
 
 /* Pipeline Diagram */
 #pipeline-diagram {

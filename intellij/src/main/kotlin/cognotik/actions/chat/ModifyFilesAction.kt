@@ -172,7 +172,6 @@ open class ModifyFilesAction(
             DiffInstrumentor(
               AppSettingsState.instance.processor,
               SessionRenderer(task),
-              patchProcessor = patchProcessor
             )
               .instrument(
                 root = root.toPath(),

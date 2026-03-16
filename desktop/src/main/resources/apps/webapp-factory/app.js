@@ -15,6 +15,51 @@
         basePath = window.location.pathname.replace(/\/[^/]*$/, '');
     }
     const proxyBase = '/proxy/';
+    // === Compute the URL for the generated app's index.html ===
+    const appIndexUrl = basePath + '/code/index.html';
+    function updateLaunchLinks() {
+        const links = [
+            document.getElementById('nav-launch-app'),
+            document.getElementById('btn-launch-app-banner'),
+            document.getElementById('btn-launch-app-new-window'),
+            document.getElementById('btn-open-app-results'),
+        ];
+        links.forEach(el => {
+            if (el) el.href = appIndexUrl;
+        });
+    }
+    updateLaunchLinks();
+    // === Show/hide the app preview banner and iframe ===
+    async function checkAppAvailable() {
+        try {
+            const resp = await fetch(appIndexUrl, { method: 'HEAD' });
+            return resp.ok;
+        } catch (e) {
+            return false;
+        }
+    }
+    async function showAppPreview() {
+        const available = await checkAppAvailable();
+        const banner = document.getElementById('app-preview-banner');
+        const navLaunch = document.getElementById('nav-launch-app');
+        const iframe = document.getElementById('app-preview-iframe');
+        const placeholder = document.getElementById('preview-placeholder');
+        if (available) {
+            if (banner) banner.style.display = 'flex';
+            if (navLaunch) navLaunch.classList.add('visible');
+            if (iframe) {
+                iframe.src = appIndexUrl;
+                iframe.style.display = 'block';
+            }
+            if (placeholder) placeholder.style.display = 'none';
+        } else {
+            if (banner) banner.style.display = 'none';
+            if (navLaunch) navLaunch.classList.remove('visible');
+            if (iframe) iframe.style.display = 'none';
+            if (placeholder) placeholder.style.display = 'block';
+        }
+    }
+
     // === Status polling state ===
     let statusPollTimer = null;
     const STATUS_POLL_INTERVAL = 3000;
@@ -333,6 +378,22 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             document.getElementById(sectionId).classList.add('active');
         });
     });
+    // === Preview controls ===
+    document.getElementById('btn-refresh-preview')?.addEventListener('click', function() {
+        const iframe = document.getElementById('app-preview-iframe');
+        if (iframe && iframe.src) {
+            iframe.src = appIndexUrl + '?t=' + Date.now();
+        }
+        showAppPreview();
+    });
+    // Prevent nav-launch-app from navigating when app isn't ready
+    document.getElementById('nav-launch-app')?.addEventListener('click', function(e) {
+        if (!this.classList.contains('visible')) {
+            e.preventDefault();
+            alert('Your webapp hasn\'t been built yet. Run the pipeline first!');
+        }
+    });
+
     // === Results Tabs ===
     document.querySelectorAll('.results-tab').forEach(tab => {
         tab.addEventListener('click', function() {
@@ -465,7 +526,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                     const viewer = document.getElementById(viewerId);
                     if (viewer) {
                         try {
-                            const content = await readFile(outputPath);
+                            const content = await readFile(outputPath + 'README.md');
                             if (content) {
                                 viewer.innerHTML = renderMarkdown(content);
                                 viewer.classList.add('visible');
@@ -523,7 +584,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             }
             // Show the README
             try {
-                const content = await readFile('code/');
+                const content = await readFile('code/README.md');
                 if (content) {
                     const viewer = document.getElementById('viewer-render');
                     if (viewer) {
@@ -533,6 +594,8 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 }
             } catch (e) { /* non-critical */ }
             logBatch('🎉 Pipeline complete! Check the Results tab for output.', 'success');
+            // Show the app preview
+            await showAppPreview();
         } catch (e) {
             setBadge('badge-render', 'error');
             // Try to get session link for the failed task
@@ -720,18 +783,51 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 }
             }
         }
+        // Check if idea.md exists and mark input stage accordingly
+        try {
+            const ideaContent = await readFile('idea.md');
+            if (ideaContent !== null && ideaContent.trim().length > 0) {
+                const inputStage = document.querySelector('.pipeline-stage[data-stage="input"]');
+                if (inputStage) {
+                    inputStage.classList.add('done');
+                    const statusEl = inputStage.querySelector('.stage-status');
+                    if (statusEl) statusEl.textContent = 'Done';
+                }
+            }
+        } catch (e) { /* ignore */ }
+
         // Fall back to file existence checks
         const checks = [
-            { file: 'code/', badge: 'badge-render' },
+            { files: ['code/index.html', 'code/README.md'], badge: 'badge-render' },
         ];
         for (const check of checks) {
             const badge = document.getElementById(check.badge);
             if (badge && badge.classList.contains('running')) continue;
             if (badge && badge.textContent === 'done') continue;
             try {
-                const content = await readFile(check.file);
-                if (content !== null && content.trim().length > 0) {
+                let found = false;
+                for (const file of check.files) {
+                    const content = await readFile(file);
+                    if (content !== null && content.trim().length > 0) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
                     setBadge(check.badge, 'done');
+                    // Also update pipeline diagram stage
+                    const renderStage = document.querySelector('.pipeline-stage[data-stage="render"]');
+                    if (renderStage) {
+                        renderStage.classList.add('done');
+                        const statusEl = renderStage.querySelector('.stage-status');
+                        if (statusEl) statusEl.textContent = 'Done';
+                    }
+                    const outputStage = document.querySelector('.pipeline-stage[data-stage="output"]');
+                    if (outputStage) {
+                        outputStage.classList.add('done');
+                        const statusEl = outputStage.querySelector('.stage-status');
+                        if (statusEl) statusEl.textContent = 'Done';
+                    }
                 }
             } catch (e) { /* leave as pending */ }
         }
@@ -785,5 +881,6 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
     // === Initialize ===
     loadInitialFiles();
     checkExistingFiles();
+    showAppPreview();
     startStatusPolling();
 })();

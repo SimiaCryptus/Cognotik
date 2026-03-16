@@ -3,29 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>🏭 Webapp Factory</title>
+    <title>🏗️ Webapp Builder</title>
     <link href="style.css" rel="stylesheet">
 </head>
 <body>
 <div id="app">
     <header>
-        <h1>🏭 Webapp Factory</h1>
-        <p class="subtitle">Describe a software idea and let AI render it into a complete project</p>
+        <div class="header-logo">🏗️</div>
+        <h1>Webapp Builder</h1>
+        <p class="subtitle">Describe your idea → AI builds a complete, runnable web application</p>
+        <div class="header-tags">
+            <span class="header-tag">HTML</span>
+            <span class="header-tag">CSS</span>
+            <span class="header-tag">JavaScript</span>
+            <span class="header-tag">AI-Powered</span>
+        </div>
     </header>
     <nav id="pipeline-nav">
         <ul>
             <li><a class="nav-link active" data-section="section-input" href="#section-input">💡 Idea</a></li>
             <li><a class="nav-link" data-section="section-pipeline" href="#section-pipeline">⚙️ Pipeline</a></li>
             <li><a class="nav-link" data-section="section-results" href="#section-results">📊 Results</a></li>
+            <li><a class="nav-link nav-link-launch" id="nav-launch-app" href="#" target="_blank" title="Open your built webapp">🚀 Launch App</a></li>
         </ul>
     </nav>
     <!-- Section: Idea Input -->
     <section class="section active" id="section-input">
-        <h2>💡 Your Software Idea</h2>
+        <h2>💡 Describe Your Webapp</h2>
         <div class="card">
-            <h3>Describe the webapp you want to build</h3>
-            <p class="help-text">Describe your software idea in detail — what it does, who it's for, key features, tech
-                preferences, etc. The more detail you provide, the better the output.</p>
+            <h3>What do you want to build?</h3>
+            <p class="help-text">Describe your web application in detail — what it does, who it's for, key features,
+                design preferences, etc. The AI will generate a complete, runnable webapp with HTML, CSS, and JavaScript.</p>
             <textarea id="idea-editor" placeholder="Example:
 # Task Tracker Pro
 A simple, elegant task management web application for small teams.
@@ -55,6 +63,22 @@ A simple, elegant task management web application for small teams.
             </div>
         </div>
     </section>
+    <!-- App Preview Banner (shown when app is built) -->
+    <div class="app-preview-banner" id="app-preview-banner" style="display:none;">
+        <div class="preview-banner-content">
+            <div class="preview-banner-icon">🚀</div>
+            <div class="preview-banner-text">
+                <strong>Your webapp is ready!</strong>
+                <span>Open the generated application in a new tab to see it live.</span>
+            </div>
+            <a class="btn btn-launch" id="btn-launch-app-banner" href="#" target="_blank">
+                🌐 Open Webapp
+            </a>
+            <a class="btn btn-secondary btn-sm" id="btn-launch-app-new-window" href="#" target="_blank">
+                ↗ New Window
+            </a>
+        </div>
+    </div>
     <!-- Section: Pipeline -->
     <section class="section" id="section-pipeline">
         <h2>⚙️ Pipeline Execution</h2>
@@ -83,7 +107,7 @@ A simple, elegant task management web application for small teams.
         </div>
         <!-- Step 1: Render Project -->
         <div class="card">
-            <h3>Step 1: Render Project</h3>
+            <h3>Step 1: Build Webapp</h3>
             <div class="step-group">
                 <div class="step">
                     <div class="step-header">
@@ -91,14 +115,14 @@ A simple, elegant task management web application for small teams.
                         <span class="step-title">Render Idea into Project</span>
                         <span class="step-badge" id="badge-render">pending</span>
                     </div>
-                    <p class="step-desc">Takes your software idea and renders it into a complete project structure with
-                        a README. This uses a sub-plan agent that may create multiple files.</p>
+                    <p class="step-desc">Takes your webapp idea and generates a complete project with HTML, CSS, JavaScript,
+                        and a README. The AI agent plans the architecture and implements all files.</p>
                     <div class="button-row">
                         <button class="btn btn-run" data-badge="badge-render"
                                 data-op="ops/render_op.md"
                                 data-output="code/" data-viewer="viewer-render">▶ Run
                         </button>
-                        <button class="btn btn-view" data-file="code/" data-viewer="viewer-render">
+                        <button class="btn btn-view" data-file="code/README.md" data-viewer="viewer-render">
                             👁 View README
                         </button>
                     </div>
@@ -109,7 +133,7 @@ A simple, elegant task management web application for small teams.
         <!-- Run All -->
         <div class="card">
             <h3>🚀 Execution</h3>
-            <p class="help-text">Run the full pipeline. The AI will read your idea and generate the project files.</p>
+            <p class="help-text">Run the full build pipeline. The AI will read your idea and generate a complete, runnable web application.</p>
             <div class="button-row">
                 <button class="btn btn-accent" id="run-all">▶ Run Pipeline</button>
             </div>
@@ -120,14 +144,27 @@ A simple, elegant task management web application for small teams.
     <section class="section" id="section-results">
         <h2>📊 Results</h2>
         <div class="results-tabs">
-            <button class="results-tab active" data-tab="tab-readme">📄 README</button>
+            <button class="results-tab active" data-tab="tab-preview">🌐 Live Preview</button>
+            <button class="results-tab" data-tab="tab-readme">📄 README</button>
             <button class="results-tab" data-tab="tab-files">📁 Project Files</button>
         </div>
         <div class="results-content">
-            <div class="tab-panel active" id="tab-readme">
+            <div class="tab-panel active" id="tab-preview">
+                <div class="card">
+                    <div class="button-row" style="margin-top:0; margin-bottom:1rem;">
+                        <a class="btn btn-launch" id="btn-open-app-results" href="#" target="_blank">🌐 Open Webapp in New Tab</a>
+                        <button class="btn btn-secondary" id="btn-refresh-preview">🔄 Refresh Preview</button>
+                    </div>
+                    <div class="preview-frame-container" id="preview-frame-container">
+                        <p class="placeholder" id="preview-placeholder">Run the pipeline to generate your webapp. A live preview will appear here.</p>
+                        <iframe id="app-preview-iframe" class="app-preview-iframe" style="display:none;" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-readme">
                 <div class="card">
                     <div class="button-row">
-                        <button class="btn btn-secondary" data-file="code/" data-viewer="result-readme">🔄 Refresh
+                        <button class="btn btn-secondary" data-file="code/README.md" data-viewer="result-readme">🔄 Refresh
                         </button>
                     </div>
                     <div id="result-session-link" class="session-link-container" style="display:none;"></div>
