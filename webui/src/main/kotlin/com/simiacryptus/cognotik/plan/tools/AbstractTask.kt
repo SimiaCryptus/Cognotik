@@ -129,10 +129,10 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
             }
         }
 
-  fun SessionTask.newUserFileStream(transcriptFile: String): FileOutputStream? {
+  fun SessionTask.newUserFileStream(transcriptFile: String, name: String = "Transcript"): FileOutputStream? {
     val (link, file) = Pair(linkTo(transcriptFile), resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
-    add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
+    add("[$name](${link.removeSuffix(".md")}.html)".renderMarkdown())
     return markdownTranscript
   }
 

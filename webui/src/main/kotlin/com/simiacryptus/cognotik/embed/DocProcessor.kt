@@ -1533,7 +1533,7 @@ class DocProcessor(
                     PathMatcher { false }
                 }
             } else {
-                PathMatcher { false }
+                PathMatcher { true }
             }
 
             return resolvedBase.listFilesRecursively()
