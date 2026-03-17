@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.ui.patch
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.diff.PatchParser
 import com.simiacryptus.cognotik.diff.PatchParser.ResponseSegment
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
@@ -208,9 +207,9 @@ class DiffInstrumentor(
         handle: (Map<Path, String>) -> Unit,
         shouldAutoApply: (Path) -> Boolean
     ): String {
-        var code = code.trim()
+        var code = code.trim().trimIndent()
         if(code.startsWith("```") && code.endsWith("```")) {
-            code = code.lines().drop(1).dropLast(1).joinToString("\n")
+            code = code.lines().drop(1).dropLast(1).joinToString("\n").trim().trimIndent()
         }
         log.debug("Rendering new file: path={}, lang={}, code length={}", filepath, lang, code.length)
         val codeBlock = "\n```${lang}\n${code.indent("  ")}\n```\n"
@@ -259,10 +258,15 @@ class DiffInstrumentor(
         handle: (Map<Path, String>) -> Unit,
         shouldAutoApply: (Path) -> Boolean
     ): String {
+        var diffVal = diffVal.trim().trimIndent()
+        if(diffVal.startsWith("```") && diffVal.endsWith("```")) {
+            diffVal = diffVal.lines().drop(1).dropLast(1).joinToString("\n").trim().trimIndent()
+        }
         log.debug("Rendering diff block: filepath={}, relativePath={}, diff length={}", filepath, relativePath, diffVal.length)
+        val escaped = "\n```diff\n$diffVal\n```\n"
         if (diffVal.isBlank()) {
             log.warn("Empty diff content for file: {}", filepath)
-            return "\n```diff\n${diffVal}\n```\n" + renderer.renderWarning("Empty diff content")
+            return escaped + renderer.renderWarning("Empty diff content")
         }
         val controller = DiffApplyController(filepath, diffVal, processor, fs)
         val prevCode = fs.readText(filepath)
@@ -270,7 +274,7 @@ class DiffInstrumentor(
 
         // Validate the patch
         val testResult = try {
-            processor.apply(prevCode, "```diff\n$diffVal\n```", filepath.fileName?.toString())
+            processor.apply(prevCode, escaped, filepath.fileName?.toString())
         } catch (e: Throwable) {
             log.warn("Exception during patch validation for {}: {}", filepath, e.message, e)
             null
@@ -279,15 +283,12 @@ class DiffInstrumentor(
         val errorMsg = testResult?.errors?.joinToString("; ") { it.message }
         log.debug("Patch validation for {}: isValid={}, errors={}", filepath, isValid, errorMsg)
 
-        val diffBlock = "\n```diff\n$diffVal\n```\n"
-
         // Auto-apply path
         val shouldAutoApplyResult = shouldAutoApply(filepath)
         log.debug("shouldAutoApply({})={}, isValid={}", filepath, shouldAutoApplyResult, isValid)
         return if (isValid && shouldAutoApplyResult) {
             log.info("Auto-applying diff to {}", filepath)
-            val state = controller.apply()
-            when (state) {
+          when (val state = controller.apply()) {
                 is ApplyState.Applied -> {
                     handle(mapOf(relativePath to state.newCode))
                     log.info("Successfully auto-applied diff to {}", filepath)
@@ -296,7 +297,7 @@ class DiffInstrumentor(
                         controller.revert()
                         handle(mapOf(relativePath to state.originalCode))
                     })
-                    diffBlock + renderer.renderAutoApplied(filepath, revertButton) + renderer.recordPatch(
+                    escaped + renderer.renderAutoApplied(filepath, revertButton) + renderer.recordPatch(
                         mapOf(
                             "filename" to filepath.toString(),
                             "originalCode" to prevCode,
@@ -310,16 +311,16 @@ class DiffInstrumentor(
 
                 is ApplyState.Failed -> {
                     log.error("Failed to auto-apply diff to {}: {}", filepath, state.error.message)
-                    diffBlock + "<div class=\"cmd-button\">Error Auto-Applying Diff to ${filepath}: ${state.error.message}</div>"
+                    escaped + "<div class=\"cmd-button\">Error Auto-Applying Diff to ${filepath}: ${state.error.message}</div>"
                 }
 
                 else -> {
                     log.warn("Unexpected state after auto-apply attempt for {}: {}", filepath, state::class.simpleName)
-                    diffBlock
+                    escaped
                 }
             }
         } else {
-            diffBlock + (if (!isValid && errorMsg != null) {
+            escaped + (if (!isValid && errorMsg != null) {
                 log.debug("Rendering validation warning for {}: {}", filepath, errorMsg)
                 renderer.renderWarning("The patch is not valid: $errorMsg")
             } else "") + renderer.renderApplyDiffButton(filepath, diffVal, onApply = {

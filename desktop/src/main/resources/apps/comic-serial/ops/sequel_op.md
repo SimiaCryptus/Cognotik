@@ -1,6 +1,6 @@
 ---
 transforms: ../comic_(\d+)\.md -> ../comic_$1+1.md
-related: ../idea\.md
+related: ../idea.md
 task_type: ComicBookGeneration
 ---
 

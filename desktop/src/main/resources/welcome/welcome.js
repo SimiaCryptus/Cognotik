@@ -68,6 +68,18 @@ document.addEventListener('DOMContentLoaded', function () {
             window.location.href = `/sys-wizard/fileIndex/${docopsSessionId}/app.html`;
         });
     }
+    // --- Comic Serial DocOps App ---
+    const openComicSerial = document.getElementById('open-comic-serial');
+    if (openComicSerial) {
+        openComicSerial.addEventListener('click', function (e) {
+            e.preventDefault();
+            console.log('[DOMContentLoaded] openComicSerial clicked.');
+            docopsMenu.classList.remove('open');
+            const docopsSessionId = Utils.generateSessionId();
+            console.log('[DOMContentLoaded] Generated session for Comic Serial:', docopsSessionId);
+            window.location.href = `/comic-serial/fileIndex/${docopsSessionId}/app.html`;
+        });
+    }
 
 
     // --- Basic Chat Modal Setup ---
