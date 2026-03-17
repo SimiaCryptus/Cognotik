@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
@@ -17,8 +16,7 @@ class ExceptionFixer(
     val codeFiles = throwable.getCodeFiles(projectRoot)
     val eAsString = throwable.toFullString() ?: return
     object : UnifiedHarness(
-      fastModel = GeminiModels.GeminiFlash_30_Preview,
-      smartModel = GeminiModels.GeminiFlash_30_Preview
+      showMenubar = true
     ) {
       override fun createTempDirectory(prefix: String) = projectRoot
         .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")

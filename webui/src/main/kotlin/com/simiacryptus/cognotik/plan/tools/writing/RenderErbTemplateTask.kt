@@ -76,7 +76,7 @@ RenderErbTemplate - Render ERB-style templates with dynamic data
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val transcript = task.newFileOutputStream(transcriptFile())
+    val transcript = task.newUserFileStream(transcriptFile())
     val gson = Gson()
 
     try {

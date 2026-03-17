@@ -76,7 +76,7 @@ abstract class SinglePlanApp(
         user: User,
         session: Session
     ): SocketManager {
-        val socketManager = super.newSession(user, session)
+        val socketManager = super.newSession(user, session)!!
         val settings = getSettings(session, user, OrchestrationConfig::class.java)
         useExpansionSyntax = when (settings?.cognitiveMode) {
             CognitiveModeType.Chat -> true

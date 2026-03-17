@@ -1,12 +1,14 @@
 package com.simiacryptus.cognotik.ui.patch
 
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.diff.PatchParser
+import com.simiacryptus.cognotik.diff.PatchParser.ResponseSegment
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import java.nio.file.Path
 import java.nio.file.Files
 import kotlin.io.path.name
-import kotlin.io.path.exists
 
 class DiffInstrumentor(
     private val processor: PatchProcessor,
@@ -17,7 +19,6 @@ class DiffInstrumentor(
         private val log = org.slf4j.LoggerFactory.getLogger(DiffInstrumentor::class.java)
     }
 
-    private val parser = ResponseParser(processor)
 
     fun instrument(
         root: Path,
@@ -32,7 +33,7 @@ class DiffInstrumentor(
             log.warn("Empty response provided to instrument()")
             return response
         }
-        val segments = parser.parse(response, defaultFile)
+        val segments = processor.parse(response, defaultFile)
         if (segments.isEmpty()) {
             log.debug("No segments parsed from response")
             return response
@@ -207,8 +208,12 @@ class DiffInstrumentor(
         handle: (Map<Path, String>) -> Unit,
         shouldAutoApply: (Path) -> Boolean
     ): String {
+        var code = code.trim()
+        if(code.startsWith("```") && code.endsWith("```")) {
+            code = code.lines().drop(1).dropLast(1).joinToString("\n")
+        }
         log.debug("Rendering new file: path={}, lang={}, code length={}", filepath, lang, code.length)
-        val codeBlock = "\n```${lang}\n${code}\n```\n"
+        val codeBlock = "\n```${lang}\n${code.indent("  ")}\n```\n"
         if (code.isBlank()) {
             log.warn("Empty code content for new file: {}", filepath)
         }

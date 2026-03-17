@@ -92,6 +92,7 @@ open class CodingMode(
     }
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         val transcript = task.transcript()
         try {
             transcript?.write("User: $userMessage\n".toByteArray())
@@ -165,6 +166,7 @@ open class CodingMode(
         task: SessionTask,
         messages: List<Pair<String, ModelSchema.Role>>
     ): CodeAgent.CodeResult {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         return symbols(task).let { symbols ->
             CodeAgent(
                 codeRuntime = CodeRuntimes.getRuntime(config.codeRuntime, symbols),

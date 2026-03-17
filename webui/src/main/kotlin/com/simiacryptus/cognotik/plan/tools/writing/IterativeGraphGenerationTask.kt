@@ -162,7 +162,7 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
     ) {
 
 
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
         task.ui.pool.submit {
             try {
                 val config = executionConfig!!

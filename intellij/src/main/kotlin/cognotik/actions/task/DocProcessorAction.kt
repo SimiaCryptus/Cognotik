@@ -21,8 +21,6 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
@@ -46,10 +44,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import javax.swing.BorderFactory
 import javax.swing.JComponent
 import javax.swing.JLabel
-import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.JTextArea
-import javax.swing.ListSelectionModel
 import javax.swing.JDialog
 import javax.swing.JMenuItem
 import javax.swing.JPopupMenu
@@ -110,7 +106,7 @@ open class DocProcessorAction(
             root = root,
             model = model ?: throw IllegalStateException("Smart model not configured"),
             parsingModel = model,
-        ).newSession(session = Session.newUserID()).let { socketManager ->
+        ).newSession(session = Session.newUserID())?.let { socketManager ->
             SessionProxyServer.agents[socketManager.sessionId] = socketManager
             ApplicationServer.appInfoMap[socketManager.sessionId] = AppInfoData(
                 applicationName = title,
@@ -130,7 +126,7 @@ open class DocProcessorAction(
                 log.warn("Error opening browser", e)
             }
             socketManager
-        }
+        } ?: throw RuntimeException("Failed to create chat session")
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
@@ -244,10 +240,11 @@ open class DocProcessorAction(
                 .map { mods ->
                     newProcessor().submit {
                         object : UnifiedHarness(
-                            fastModel = docProcessor.fastModel,
-                            smartModel = docProcessor.smartModel,
                             serverless = docProcessor.serverless,
                             openBrowser = docProcessor.openBrowser,
+                            fastModel = docProcessor.fastModel,
+                            smartModel = docProcessor.smartModel,
+                            showMenubar = false,
                         ) {
                             override fun createTempDirectory(prefix: String) = docProcessor.root
                                 .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
@@ -272,7 +269,7 @@ open class DocProcessorAction(
                                 val session = harness.runTask(
                                     taskType = mod.taskType,
                                     timeoutMinutes = 30,
-                                    message = mod.message(docProcessor.root),
+                                    message = mod.message(),
                                     executionConfig = docProcessor.executionConfig(mod, harness)
                                 ) { session ->
                                     if (cancelFlag.get()) {
@@ -303,7 +300,7 @@ open class DocProcessorAction(
                                         typeConfig = mod.typeConfig,
                                         workingDir = mod.data.root.toString()
                                     ).apply {
-                                        processor = mod.patchProcessor
+                                        processor = mod.patchProcessor ?: processor
                                     }
                                 }
                                 sessionStatusMap[session]?.append(" (Complete)")

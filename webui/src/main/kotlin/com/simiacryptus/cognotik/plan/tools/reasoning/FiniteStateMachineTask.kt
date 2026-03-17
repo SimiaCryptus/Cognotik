@@ -89,7 +89,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
 
 
       task.ui.pool.submit {
-        val transcript = task.newFileOutputStream(transcriptFile())
+        val transcript = task.newUserFileStream(transcriptFile())
         try {
           log.info("Starting FiniteStateMachineTask for concept: '$conceptToModel'")
           transcript?.write("# Finite State Machine Analysis\n\n".toByteArray())

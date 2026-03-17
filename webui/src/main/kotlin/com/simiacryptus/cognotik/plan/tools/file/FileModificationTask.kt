@@ -3,7 +3,9 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
@@ -38,7 +40,7 @@ class FileModificationTask(
         val includeGitDiff: Boolean = false,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
-        state: TaskState? = null
+        state: TaskState? = null,
     ) : FileTaskExecutionConfig(
         task_type = FileModification.name,
         task_description = task_description,
@@ -78,14 +80,10 @@ FileModification - Modify existing files or create new files
     ) {
         val defaultFile = getDefaultFile()
         val typeConfig = typeConfig ?: throw RuntimeException("TypeConfig is missing")
-        val chatInterface =
-            (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
-                ?: defaultSmart).getChildClient(task)
-
+        val chatInterface = (typeConfig.model?.instance() ?: defaultSmart).getChildClient(task)
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
-        val transcript = task.newFileOutputStream(transcriptFile())
-        val tabs = TabbedDisplay(task)
+        val transcript = task.newSystemFileStream(transcriptFile())
 
         try {
             transcript?.write("# File Modification Task Transcript\n\n".toByteArray())
@@ -128,22 +126,15 @@ $taskDesc
 </details>
 
                 """.toByteArray())
-                val contextTab = tabs.newTask("Context")
-                contextTab.add("""
-# Task Context
-$taskDesc
-                """.renderMarkdown())
-                contextTab.complete()
 
                 val chatAgent = ChatAgent(
                     name = "FileModification",
-                    prompt = getSystemPrompt(), // Extracted for readability
+                    prompt = getSystemPrompt(this.orchestrationConfig.processor), // Extracted for readability
                     model = chatInterface,
                     temperature = this.orchestrationConfig.temperature,
                 )
 
-                val mainTask = tabs.newTask("Proposed Changes")
-                mainTask.add("Generating modifications...".renderMarkdown())
+              task.add("Generating modifications...".renderMarkdown())
 
                 // 3. Execute AI
                 val codeResult = chatAgent.answer(
@@ -165,10 +156,11 @@ $codeResult
 
                 """.toByteArray())
                 val autoFix = orchestrationConfig.autoFix
-                val markdown = renderMarkdown(codeResult, ui = mainTask.ui) {
+                val markdown = renderMarkdown(codeResult, ui = task.ui) {
                   DiffInstrumentor(
                     orchestrationConfig.processor,
-                    SessionRenderer(task), RealFileSystem()
+                    SessionRenderer(task),
+                    RealFileSystem(),
                   ).instrument(
                     root = agent.root,
                     response = it,
@@ -191,15 +183,15 @@ $codeResult
 
                 if (autoFix) {
                     transcript?.write("\n**Auto-applying changes...**\n".toByteArray())
-                    mainTask.complete(markdown)
+                  task.complete(markdown)
                     semaphore.release()
                 } else {
-                    mainTask.add(markdown)
+                  task.add(markdown)
                     // Best Practice: Use acceptButtonFooter for manual review
-                    mainTask.complete(acceptButtonFooter(mainTask.ui) {
-                        task.complete()
-                        semaphore.release()
-                    })
+                  task.complete(acceptButtonFooter(task.ui) {
+                    task.complete()
+                    semaphore.release()
+                  })
                 }
                 transcript?.flush()
             }.async(task.ui))
@@ -229,58 +221,31 @@ $codeResult
         }
     }
 
-    private fun getSystemPrompt(): String {
-        return """
-        Generate precise code modifications and new files based on requirements:
-        For modifying existing files:
-        - Write efficient, readable, and maintainable code changes
-        - Ensure modifications integrate smoothly with existing code
-        - Follow project coding standards and patterns
-        - Consider dependencies and potential side effects
-        - Provide clear context and rationale for changes
+  private fun getSystemPrompt(processor: PatchProcessor): String {
 
-        For creating new files:
-        - Choose appropriate file locations and names
-        - Structure code according to project conventions
-        - Include necessary imports and dependencies
-        - Add comprehensive documentation
-        - Ensure no duplication of existing functionality
-
-        Provide a clear summary explaining:
-        - What changes were made and why
-        - Any important implementation details
-        - Potential impacts on other code
-        - Required follow-up actions
-
-        Response format:
-        For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
-        For new files: Use ${TRIPLE_TILDE} code blocks with a header specifying the new file path.
-        The diff format should use + for line additions, - for line deletions.
-        Include 2 lines of context before and after every change in diffs.
-        Separate code blocks with a single blank line.
-        For new files, specify the language for syntax highlighting after the opening triple backticks.
-
-        Example:
-
-        Here are the modifications:
-
-        ### src/utils/existingFile.js
-        ${TRIPLE_TILDE}diff
-
-        function existingFunction() {
-        return 'old result';
-        return 'new result';
-        }
-        ${TRIPLE_TILDE}
-
-        ### src/utils/newFile.js
-        ${TRIPLE_TILDE}js
-
-        function newFunction() {
-         return 'new functionality';
-        }
-        ${TRIPLE_TILDE}
-        """.trimIndent()
+      return """
+    Generate precise code modifications and new files based on requirements:
+    For modifying existing files:
+    - Write efficient, readable, and maintainable code changes
+    - Ensure modifications integrate smoothly with existing code
+    - Follow project coding standards and patterns
+    - Consider dependencies and potential side effects
+    - Provide clear context and rationale for changes
+    
+    For creating new files:
+    - Choose appropriate file locations and names
+    - Structure code according to project conventions
+    - Include necessary imports and dependencies
+    - Add comprehensive documentation
+    - Ensure no duplication of existing functionality
+    
+    Provide a clear summary explaining:
+    - What changes were made and why
+    - Any important implementation details
+    - Potential impacts on other code
+    - Required follow-up actions
+    ${processor.patchFormatPrompt}
+        """
     }
 
     fun getDefaultFile() =

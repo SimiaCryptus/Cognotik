@@ -114,7 +114,7 @@ class TiledImageGenerationTask(
 
 
     task.ui.pool.submit {
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
       val tabs = TabbedDisplay(task)
       val logTab = tabs.newTask("Progress")
       try {

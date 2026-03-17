@@ -334,7 +334,7 @@ GameTheory - Analyze strategic interactions using game theory
       task.ui.pool.submit {
         var transcript: OutputStream? = null
         try {
-          transcript = task.newFileOutputStream(transcriptFile())
+          transcript = task.newUserFileStream(transcriptFile())
         val tabs = TabbedDisplay(task)
         val overviewTask = tabs.newTask("Overview")
 

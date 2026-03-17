@@ -250,7 +250,7 @@ EmailCampaign - Generate multi-email marketing or outreach sequences.
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
 
 
 

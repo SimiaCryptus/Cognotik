@@ -57,7 +57,9 @@ abstract class SocketManager(
     }
     fun resolveUserFile(relativePath: String): File? {
         require(relativePath.isNotBlank()) { "File path cannot be blank" }
-        require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
+        require(!relativePath.contains("..")) {
+            "Invalid file path: path traversal not allowed"
+        }
         return dataStorage?.getSessionDir(
             owner,
             sessionId

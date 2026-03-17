@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.RealFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
@@ -60,7 +59,7 @@ class DocumentedMassPatchServer(
      */
 
     override fun newSession(user: User, session: Session): SocketManager {
-        val socketManager = super.newSession(user, session)
+        val socketManager = super.newSession(user, session)!!
         _root = config.project?.basePath?.let { Path.of(it) } ?: Path.of(".")
         val task = socketManager.newTask(cancelable = false, root = true)
         val tabs = TabbedDisplay(task)
@@ -103,7 +102,7 @@ class DocumentedMassPatchServer(
                             fileTask.add(
                               DiffInstrumentor(
                                 processor,
-                                SessionRenderer(task), RealFileSystem()
+                                SessionRenderer(task),
                               ).instrument(
                                 root = _root,
                                 response = design,
@@ -133,7 +132,7 @@ class DocumentedMassPatchServer(
                                     renderMarkdown(design) {
                                       DiffInstrumentor(
                                         processor,
-                                        SessionRenderer(task), RealFileSystem()
+                                        SessionRenderer(task),
                                       ).instrument(
                                         root = _root,
                                         response = design,

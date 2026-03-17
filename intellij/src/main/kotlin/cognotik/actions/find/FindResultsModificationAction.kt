@@ -18,7 +18,6 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.RealFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 
@@ -124,7 +123,7 @@ class FindResultsModificationAction(
         override val stickyInput = false
 
         override fun newSession(user: User, session: Session): SocketManager {
-            val socketManager = super.newSession(user, session)
+            val socketManager = super.newSession(user, session)!!
             val task = socketManager.newTask(cancelable = false)
             val tabs = TabbedDisplay(task)
             usages.entries.map { (file, usages) ->
@@ -156,9 +155,8 @@ class FindResultsModificationAction(
                     ).replace(Regex("""/\* L\d+ \*/"""), "")
                         .replace(Regex("""/\* <<< \*/"""), "")
                     DiffInstrumentor(
-                        AppSettingsState.instance.processor,
-                        SessionRenderer(task),
-                        RealFileSystem()
+                      AppSettingsState.instance.processor,
+                      SessionRenderer(task),
                     ).instrument(
                     root = root.toPath(),
                     response = response,

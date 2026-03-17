@@ -126,7 +126,7 @@ ImageVariation - Creates 'Find the Differences' style image sets.
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val transcript = task.newFileOutputStream(transcriptFile())
+    val transcript = task.newUserFileStream(transcriptFile())
     task.ui.pool.submit {
       try {
         val inputFile = primaryImageFile() ?: return@submit resultFn("No input file")
@@ -420,7 +420,7 @@ ImageVariation - Creates 'Find the Differences' style image sets.
       //val gameFile = root.resolve("${prefix}_game.html").toFile()
       val gameFile = root.resolve(baseImage.substringBeforeLast(".") + ".html").toFile()
       gameFile.writeText(html)
-      task.newFileOutputStream(transcriptFile())?.write(buildString {
+      task.newUserFileStream(transcriptFile())?.write(buildString {
         appendLine("## Interactive Game")
         appendLine("[Play 'Find the Differences'](${task.linkTo(gameFile.name)})")
       }.toByteArray())

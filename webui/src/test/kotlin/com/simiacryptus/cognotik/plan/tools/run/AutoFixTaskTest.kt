@@ -29,7 +29,7 @@ object AutoFixTaskTest {
                 commands = mutableListOf(
                     CommandWithWorkingDir(
                         command = mutableListOf("git", "status"),
-                        workingDir = "."
+                        working_dir = "."
                     )
                 ),
                 task_description = "Check the status of the git repository",

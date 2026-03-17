@@ -252,7 +252,7 @@ class SoftwareDesignDocumentTask(
     val overviewTask = tabs.newTask("Overview")
 
     task.ui.pool.submit {
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
       try {
         val api = orchestrationConfig.defaultSmart.getChildClient(task)
         overviewTask.header("Software Design Document: $projectName")

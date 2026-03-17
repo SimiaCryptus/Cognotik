@@ -163,6 +163,43 @@ a:hover {
 .menu-button:hover {
     background-color: #2980b9;
 }
+/* DocOps Apps Dropdown */
+.menu-dropdown {
+    position: relative;
+    display: inline-block;
+}
+.menu-dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: #fff;
+    min-width: 220px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    z-index: 1001;
+    overflow: hidden;
+}
+.menu-dropdown.open .menu-dropdown-content {
+    display: block;
+}
+.menu-dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    color: #333;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    gap: 8px;
+}
+.menu-dropdown-item:hover {
+    background-color: #f0f0f0;
+    text-decoration: none;
+}
+.menu-dropdown-icon {
+    font-size: 1.2em;
+}
+
 
 /* Add padding to the top to prevent content from being hidden under the menu bar */
 body {
@@ -474,6 +511,11 @@ body {
     .menu-bar {
         padding: 5px;
     }
+    .menu-dropdown-content {
+        right: auto;
+        left: 0;
+    }
+
 
     .button {
         margin-bottom: 10px;
@@ -544,6 +586,16 @@ body {
     .button.secondary:hover {
         background-color: #666;
     }
+    .menu-dropdown-content {
+        background-color: #2a2a2a;
+    }
+    .menu-dropdown-item {
+        color: #f0f0f0;
+    }
+    .menu-dropdown-item:hover {
+        background-color: #444;
+    }
+
 
     .step-number {
         background-color: #444;

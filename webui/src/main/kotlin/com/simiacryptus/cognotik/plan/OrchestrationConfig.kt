@@ -52,20 +52,17 @@ class OrchestrationConfig(
     var processor: PatchProcessor = PatchProcessors.Fuzzy
 
     @get:JsonIgnore
-    val defaultSmart get() = instance(defaultSmartModel ?: throw IllegalStateException("Default model not set"))
+    val defaultSmart get() = (defaultSmartModel ?: throw IllegalStateException("Default model not set")).instance()
 
     @get:JsonIgnore
     val defaultFast
-        get() = instance(defaultFastModel ?: defaultSmartModel ?: throw IllegalStateException("Parsing model not set"))
+        get() = (defaultFastModel ?: defaultSmartModel
+        ?: throw IllegalStateException("Parsing model not set")).instance()
 
     @get:JsonIgnore
     val defaultImage
-        get() = instance(defaultImageModel ?: throw IllegalStateException("Image chat model not set"))
+        get() = (defaultImageModel ?: throw IllegalStateException("Image chat model not set")).instance()
 
-
-    @JsonIgnore
-    fun instance(model: ApiChatModel) =
-        instanceFn?.let { it(model) } ?: throw IllegalStateException("Instance function not set")
 
     @get:JsonIgnore
     val absoluteWorkingDir
@@ -128,7 +125,6 @@ class OrchestrationConfig(
         sessionId = sessionId
     )
 
-
     data class TaskBreakdownResult(
         @Description("A map where each task ID is associated with its corresponding PlanTask object. Crucial for defining task relationships and information flow.")
         val tasksByID: Map<String, TaskExecutionConfig>? = null,
@@ -140,7 +136,7 @@ class OrchestrationConfig(
                 "1" to AutoFixTaskExecutionConfigData(
                     task_description = "Task 1", task_dependencies = listOf(), commands = mutableListOf(
                         AutoFixTask.CommandWithWorkingDir(
-                            command = mutableListOf("echo", "Hello, World!"), workingDir = "."
+                            command = mutableListOf("echo", "Hello, World!"), working_dir = "."
                         )
                     )
                 ), "2" to FileModificationTaskExecutionConfigData(
@@ -201,6 +197,10 @@ class OrchestrationConfig(
 
         @JsonIgnore
         var instanceFn: ((ApiChatModel) -> ChatInterface)? = null
+
+        @JsonIgnore
+        fun ApiChatModel.instance() =
+            instanceFn?.let { it(this) } ?: throw IllegalStateException("Instance function not set")
     }
 
     /**

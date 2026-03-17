@@ -178,7 +178,7 @@ class AnalogicalReasoningTask(
             val api = defaultSmart.getChildClient(task)
             val fastApi = defaultFast.getChildClient(task)
             // Initialize transcript
-            transcriptStream = task.newFileOutputStream(transcriptFile())
+            transcriptStream = task.newUserFileStream(transcriptFile())
             transcriptStream?.let { stream ->
                 writeTranscriptHeader(stream, sourceDomain, targetProblem, numAnalogies, validateMappings)
             }

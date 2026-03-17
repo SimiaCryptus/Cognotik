@@ -105,6 +105,7 @@ open class PersonaChatMode(
         parsingChatter: ChatInterface,
         defaultChat: ChatInterface
     ) {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         try {
             val expandedUserMessage = if (config.useExpansionSyntax) expandTopics(userMessage) else userMessage
 
@@ -138,6 +139,7 @@ open class PersonaChatMode(
     private fun processMsgRecursive(
         currentMessage: String, task: SessionTask, parsingChatter: ChatInterface, defaultChatter: ChatInterface
     ): List<(StringBuilder) -> Unit> {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         if (config.useExpansionSyntax) {
             val rangeMatch = rangeExpansionPattern.find(currentMessage)
             if (rangeMatch != null) {
@@ -175,6 +177,7 @@ open class PersonaChatMode(
         defaultModel: ChatInterface,
         parserChatter: ChatInterface
     ) {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         val currentState = reasoningState.updateAndGet { state ->
             if (state == null) {
                 val s = config.cognitiveStrategy.initialize(
@@ -346,6 +349,7 @@ open class PersonaChatMode(
         match: MatchResult,
         recursiveFn: (String, SessionTask) -> List<(StringBuilder) -> Unit>
     ): List<(StringBuilder) -> Unit> {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         val tabs = TabbedDisplay(task, closable = config.useExpansionSyntax)
         return match.groupValues[1].split('|', ',').flatMap { option ->
             recursiveFn(
@@ -364,6 +368,7 @@ open class PersonaChatMode(
         defaultChatter: ChatInterface,
         parsingChatter: ChatInterface
     ) {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         val aggregatedResponse = StringBuilder()
         val tabs = TabbedDisplay(task, closable = config.useExpansionSyntax)
         for (item in items) {
@@ -382,6 +387,7 @@ open class PersonaChatMode(
     }
 
     protected open fun expandTopics(userMessage: String): String {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         if (!config.useExpansionSyntax) return userMessage
         val topicReferencePattern = Regex("""@\{([A-Z][a-zA-Z0-9_ ]+)\}|@([A-Z][a-zA-Z0-9_]*)""")
         return topicReferencePattern.replace(userMessage) { matchResult ->

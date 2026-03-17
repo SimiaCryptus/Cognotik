@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.util.crawl.processing
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.parserCast
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.toJson
@@ -216,7 +217,7 @@ class DataTableAccumulationStrategy : DefaultSummarizerStrategy() {
             appendLine("Ensure all rows have the same columns.")
         }
 
-        val model = (context.typeConfig.model?.let { context.orchestrationConfig.instance(it) }
+        val model = (context.typeConfig.model?.let { it.instance() }
             ?: context.orchestrationConfig.defaultFast).getChildClient(context.task)
 
         val result = ParsedAgent(

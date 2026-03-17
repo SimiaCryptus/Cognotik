@@ -53,7 +53,7 @@ data class Session(
     }
 
     private fun validateSessionId() {
-        if (!sessionId.matches("""([GU]-)?\d{8}-[\w+.\-]{4}""".toRegex())) {
+        if (!sessionId.matches("""([GU]-)?\d{8}-[\w+.\-]{4,8}""".toRegex())) {
             throw IllegalArgumentException("Invalid session ID: $this")
         }
     }

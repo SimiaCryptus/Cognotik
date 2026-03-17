@@ -96,7 +96,7 @@ SystemsThinking - Analyze complex systems through feedback loops and dynamics
     ) {
         val startTime = System.currentTimeMillis()
       log.info("Starting SystemsThinkingTask for system: '${executionConfig?.system_description?.take(100)}'")
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
 
         val systemDescription = executionConfig?.system_description
         if (systemDescription.isNullOrBlank()) {

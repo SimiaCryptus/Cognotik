@@ -15,7 +15,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.io.FileOutputStream
-import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.Semaphore
@@ -161,7 +160,7 @@ class ScriptwritingTask(
     log.info("Starting ScriptwritingTask for topic: '${executionConfig?.topic}'")
     var transcript: FileOutputStream? = null
     try {
-      transcript = task.newFileOutputStream(transcriptFile())
+      transcript = task.newUserFileStream(transcriptFile())
 
       // Validate configuration
       executionConfig?.validate()?.let { validationError ->

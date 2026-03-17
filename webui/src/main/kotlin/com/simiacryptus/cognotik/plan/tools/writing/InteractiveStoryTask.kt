@@ -224,7 +224,7 @@ class InteractiveStoryTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         val startTime = System.currentTimeMillis()
-        val transcript: OutputStream? = task.newFileOutputStream(transcriptFile())
+        val transcript: OutputStream? = task.newUserFileStream(transcriptFile())
         val smartApi = orchestrationConfig.defaultSmart.getChildClient(task)
         val fastApi = orchestrationConfig.defaultFast.getChildClient(task)
         val tabs = TabbedDisplay(task)

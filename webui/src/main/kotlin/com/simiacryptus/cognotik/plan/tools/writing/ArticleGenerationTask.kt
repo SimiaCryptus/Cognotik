@@ -187,7 +187,7 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
 
         val tabs = TabbedDisplay(task)
         // Create transcript file
-      val transcript = task.newFileOutputStream(transcriptFile("transcript"))
+      val transcript = task.newUserFileStream(transcriptFile("transcript"))
         transcript?.let { out ->
             out.write("# Article Generation Transcript\n\n".toByteArray())
             out.write("**Story Topic:** $storyTopic\n\n".toByteArray())

@@ -8,9 +8,9 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
 
-class SessionProxyServer : ApplicationServer(
-    applicationName = "AI Coding Assistant",
-    path = "/",
+class SessionProxyServer(appname: String = "Cognotik", path: String = "/") : ApplicationServer(
+    applicationName = appname,
+    path = path,
     showMenubar = false,
 ) {
     override val inputCnt = 0
@@ -27,7 +27,7 @@ class SessionProxyServer : ApplicationServer(
                 showMenubar = showMenubar,
             )
         } ?: AppInfoData(
-            applicationName = "AI Coding Assistant",
+            applicationName = applicationName,
             inputCnt = 0,
             stickyInput = false,
             loadImages = false,

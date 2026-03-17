@@ -50,14 +50,10 @@ class PermdocAction : BaseAction() {
       UITools.showError(project, "No files or folders selected")
       return
     }
-    val root = e.getSelectedFolder()?.toFile ?: e.getSelectedFile()?.parent?.toFile?.let { file ->
-      getModuleRootForFile(file)
-    } ?: project.basePath?.let { File(it) } ?: return
     ApplicationManager.getApplication().invokeAndWait {
       val dialog = PermdocDialog(project, selectedFiles)
       if (dialog.showAndGet()) {
         val outputFile = File(dialog.getOutputPath())
-        val runUpdate = dialog.shouldRunUpdate()
         val allFiles = collectFiles(selectedFiles)
         val outputDir = outputFile.parentFile
         outputDir.mkdirs()
@@ -68,9 +64,6 @@ class PermdocAction : BaseAction() {
         val content = buildStubContent(relativePaths, outputFile.nameWithoutExtension)
         outputFile.writeText(content)
         LocalFileSystem.getInstance().refreshAndFindFileByIoFile(outputFile)
-        if (runUpdate) {
-          runDocProcessorUpdate(project, root, outputFile)
-        }
       }
     }
   }
@@ -114,108 +107,6 @@ class PermdocAction : BaseAction() {
     return sb.toString()
   }
 
-  /**
-   * Run the DocProcessor to update the newly created documentation file.
-   */
-  private fun runDocProcessorUpdate(project: Project, root: File, outputFile: File) {
-    Thread {
-      val docProcessor = DocProcessor(
-        root = root,
-        docsFolder = root,
-        updateMode = UpdateModes.OverwriteExisting,
-        fastModel = AppSettingsState.instance.fastModel?.model
-          ?: throw IllegalStateException("Fast model not configured"),
-        smartModel = AppSettingsState.instance.smartModel?.model
-          ?: throw IllegalStateException("Smart model not configured"),
-        autoFix = true,
-      )
-      val allTasks = docProcessor.getAll(outputFile)
-      if (allTasks.isEmpty()) {
-        UITools.showError(project, "No tasks generated from the documentation file.")
-        return@Thread
-      }
-      ApplicationManager.getApplication().invokeAndWait {
-        ProgressManager.getInstance().run(object : Task.Backgroundable(
-          project, "Updating Documentation", true
-        ) {
-          override fun run(indicator: ProgressIndicator) {
-            indicator.isIndeterminate = false
-            indicator.fraction = 0.0
-            indicator.text = "Processing documentation update..."
-            val totalTasks = allTasks.size
-            val cancelFlag = AtomicBoolean(false)
-            val completedTasks = AtomicInteger(0)
-            val scheduledFutures = mutableListOf(scheduledPool.scheduleAtFixedRate({
-              if (indicator.isCanceled && !cancelFlag.get()) {
-                cancelFlag.set(true)
-              }
-            }, 0, 1, TimeUnit.SECONDS))
-            try {
-              docProcessor.separateQueues(allTasks)
-                .map { docProcessor.sortByDependencies(it) }
-                .filter { it.isNotEmpty() }
-                .map { mods ->
-                  newProcessor().submit {
-                    object : UnifiedHarness(
-                      fastModel = docProcessor.fastModel,
-                      smartModel = docProcessor.smartModel,
-                      serverless = docProcessor.serverless,
-                      openBrowser = docProcessor.openBrowser,
-                    ) {
-                      override fun createTempDirectory(prefix: String) = docProcessor.root
-                        .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")
-                        .apply { mkdirs() }
-                    }.use { harness ->
-                      if (cancelFlag.get()) return@submit
-                      mods.forEach { mod ->
-                        val mod = mod.rebase(
-                          docProcessor.root,
-                          mod.data.relative_files?.firstOrNull()
-                            ?.let { docProcessor.root.resolve(it).parentFile }
-                            ?: docProcessor.root
-                        )
-                        harness.resetSession()
-                        if (cancelFlag.get()) {
-                          throw java.util.concurrent.CancellationException("Cancelled")
-                        }
-                        harness.runTask(
-                          taskType = mod.taskType,
-                          timeoutMinutes = 30,
-                          message = mod.message(docProcessor.root),
-                          executionConfig = docProcessor.executionConfig(mod, harness)
-                        ) { session ->
-                          if (cancelFlag.get()) {
-                            throw java.util.concurrent.CancellationException("Cancelled")
-                          }
-                          val completed = completedTasks.incrementAndGet()
-                          indicator.fraction = completed.toDouble() / totalTasks
-                          indicator.text = "Processing task $completed of $totalTasks..."
-                          harness.createSettings(
-                            session = session,
-                            autoFix = docProcessor.autoFix,
-                            typeConfig = mod.typeConfig,
-                            workingDir = mod.data.root.toString()
-                          ).apply {
-                            processor = mod.patchProcessor
-                          }
-                        }
-                      }
-                    }
-                  }
-                }.let {
-                  CompletableFuture.allOf(*it.toTypedArray()).get(90, TimeUnit.MINUTES)
-                }
-            } finally {
-              indicator.fraction = 1.0
-              indicator.text = "Documentation update complete"
-              scheduledFutures.forEach { it.cancel(false) }
-              LocalFileSystem.getInstance().refreshAndFindFileByIoFile(outputFile)
-            }
-          }
-        })
-      }
-    }.start()
-  }
 
   /**
    * Dialog for configuring the Permdoc output file.
@@ -225,7 +116,6 @@ class PermdocAction : BaseAction() {
     private val selectedFiles: List<File>
   ) : DialogWrapper(project) {
     private val outputPathField = TextFieldWithBrowseButton()
-    private var runUpdate = true
 
     init {
       title = "Create Permanent Documentation"
@@ -251,12 +141,6 @@ class PermdocAction : BaseAction() {
           .align(Align.FILL)
           .comment("Path for the new documentation markdown file")
       }
-      row {
-        checkBox("Update documentation after creation")
-          .selected(runUpdate)
-          .onChanged { runUpdate = it.isSelected }
-          .comment("Run DocProcessor immediately to populate the documentation content")
-      }
       group("Summary") {
         row {
           val fileCount = collectFileCount(selectedFiles)
@@ -278,6 +162,5 @@ class PermdocAction : BaseAction() {
     }
 
     fun getOutputPath(): String = outputPathField.text
-    fun shouldRunUpdate(): Boolean = runUpdate
   }
 }

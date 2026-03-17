@@ -354,7 +354,7 @@ class TechnicalExplanationTask(
   ) {
     val tabs = TabbedDisplay(task)
     val overviewTask = tabs.newTask("Overview")
-    val transcript = task.newFileOutputStream(transcriptFile())
+    val transcript = task.newUserFileStream(transcriptFile())
     val resultBuilder = StringBuilder()
 
     task.ui.pool.submit {

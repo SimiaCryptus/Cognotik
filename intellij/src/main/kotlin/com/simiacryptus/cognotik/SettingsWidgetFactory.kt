@@ -13,6 +13,7 @@ import com.intellij.ui.treeStructure.Tree
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.UsageTable
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -47,7 +48,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private var smartModelTree: Tree? = null
         private var fastModelTree: Tree? = null
         private var imageChatModelTree: Tree? = null
-        private var patchProcessorList: JBList<PatchProcessors>? = null
+        private var patchProcessorList: JBList<PatchProcessor>? = null
         private val sessionsList = JBList<Session>()
         private val sessionsListModel = DefaultListModel<Session>()
         private fun getSmartModelTree(): Tree {
@@ -71,9 +72,9 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             return imageChatModelTree!!
         }
 
-        private fun getPatchProcessorList(): JBList<PatchProcessors> {
+        private fun getPatchProcessorList(): JBList<PatchProcessor> {
             if (patchProcessorList == null) {
-                val listModel = DefaultListModel<PatchProcessors>()
+                val listModel = DefaultListModel<PatchProcessor>()
                 PatchProcessors.values().forEach { listModel.addElement(it) }
                 patchProcessorList = JBList(listModel).apply {
                     cellRenderer = object : DefaultListCellRenderer() {
@@ -86,7 +87,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                         ): Component {
                             val component =
                                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
-                            if (value is PatchProcessors) {
+                            if (value is PatchProcessor) {
                                 text = value.label
                             }
                             return component

@@ -5,14 +5,12 @@ enum class PatchProcessors : PatchProcessor {
     FullReplacement {
         override val label = "FullReplacement"
         override val matcher = FullReplacementProcessor()
-        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
     },
 
     // JSON merge - deep merge JSON content with existing data
     DataMerge {
         override val label = "DataMerge"
         override val matcher = DataMergeProcessor()
-        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
     },
 
     // Thermodynamic mode - DNA-like binding energy approach
@@ -23,8 +21,6 @@ enum class PatchProcessors : PatchProcessor {
             cooperativityBonus = 2.0,
             entropyPenalty = 1.0
         )
-
-        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
     },
 
     // Strict mode - exact matching only, no fuzzy logic
@@ -35,8 +31,6 @@ enum class PatchProcessors : PatchProcessor {
             enableSnippetPatching = false,
             contextSize = 5
         )
-
-        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
     },
 
     // Lenient mode - maximum fuzzy matching
@@ -51,20 +45,16 @@ enum class PatchProcessors : PatchProcessor {
             requireAnchorMatch = false,
             contextSize = 2
         )
-
-        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
     },
 
     // Default/Fuzzy - balanced configuration
     Fuzzy {
         override val label = "Fuzzy"
-        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
         override val matcher = FuzzyPatchMatcher()
     },
 
     Python {;
         override val label = "Python"
-        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
         override val matcher = PythonPatcher()
     };
 

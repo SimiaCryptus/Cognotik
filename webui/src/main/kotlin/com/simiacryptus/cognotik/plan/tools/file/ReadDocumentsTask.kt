@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -82,7 +83,7 @@ class ReadDocumentsTask(
     ) {
 
 
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
       try {
         task.ui.pool.submit {
           try {
@@ -117,7 +118,7 @@ class ReadDocumentsTask(
                             Provide a comprehensive overview, including key concepts, relevant technologies, best practices, and any potential challenges or considerations.
                             Ensure the information is accurate, up-to-date, and well-organized to facilitate easy understanding.
                             """.trimIndent(),
-              model = (typeConfig.model?.let { this.orchestrationConfig.instance(it) }
+              model = (typeConfig.model?.let { it.instance() }
                 ?: defaultSmart).getChildClient(analysisTask),
               temperature = this.orchestrationConfig.temperature,
             )

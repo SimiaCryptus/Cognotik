@@ -55,9 +55,9 @@ abstract class ChatServer(
                             trafficLog.debug(
                                 "Creating new session manager for session: {}, user: {}",
                                 s,
-                                user?.name ?: "anonymous"
+                                user.name ?: "anonymous"
                             )
-                            newSession(user, s)
+                            newSession(user, s) ?: throw IllegalStateException("Failed to create session manager for session: $s")
                         }
                         ChatSocket(sessionManager)
                     } else {
@@ -74,7 +74,7 @@ abstract class ChatServer(
         }
     }
 
-    abstract fun newSession(user: User = defaultUser, session: Session): SocketManager
+    abstract fun newSession(user: User = defaultUser, session: Session): SocketManager?
 
     open val baseResource: Resource?
         get() = javaClass.classLoader.getResource(resourceBase)?.let {

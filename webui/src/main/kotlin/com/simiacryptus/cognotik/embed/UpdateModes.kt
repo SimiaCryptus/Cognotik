@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -10,7 +11,7 @@ import java.io.File
  * @param shouldDeleteTarget Whether the target file should be deleted before processing
  */
 data class UpdatePrepareResult(
-    val patchProcessor: PatchProcessors,
+    val patchProcessor: PatchProcessor,
     val shouldDeleteTarget: Boolean = false
 )
 

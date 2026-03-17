@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
@@ -28,8 +27,7 @@ open class FileGenerator {
       concurrencyLimit = concurrencyLimit
     )
     object : UnifiedHarness(
-      fastModel = GeminiModels.GeminiFlash_30_Preview,
-      smartModel = GeminiModels.GeminiFlash_30_Preview
+      showMenubar = true
     ) {
       override fun createTempDirectory(prefix: String) = root
         .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")

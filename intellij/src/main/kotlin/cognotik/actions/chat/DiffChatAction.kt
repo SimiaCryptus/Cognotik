@@ -138,7 +138,7 @@ class DiffChatAction : BaseAction() {
                   val instrumentor = DiffInstrumentor(
                     processor = AppSettingsState.instance.processor,
                     renderer = renderer,
-                    fs = virtualFs
+                    fs = virtualFs,
                   )
                   instrumentor.instrument(
                     root = virtualRoot,

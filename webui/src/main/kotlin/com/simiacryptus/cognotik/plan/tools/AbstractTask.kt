@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.docs.isDocumentFile
 import com.simiacryptus.cognotik.plan.ExecutionState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
 import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask
@@ -37,7 +38,7 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val verbose : Boolean get() = typeConfig?.verbose == true
 
   open val defaultSmart: ChatInterface
-        get() = typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.defaultSmart
+        get() = typeConfig?.model?.let { it.instance() } ?: orchestrationConfig.defaultSmart
 
     open val defaultFast: ChatInterface
         get() = orchestrationConfig.defaultFast
@@ -128,12 +129,19 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
             }
         }
 
-    fun SessionTask.newFileOutputStream(transcriptFile: String): FileOutputStream? {
-        val (link, file) = Pair(linkTo(transcriptFile), resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
-        return markdownTranscript
-    }
+  fun SessionTask.newUserFileStream(transcriptFile: String, name: String = "Transcript"): FileOutputStream? {
+    val (link, file) = Pair(linkTo(transcriptFile), resolveUserFile(transcriptFile))
+    val markdownTranscript = file?.outputStream()
+    add("[$name](${link.removeSuffix(".md")}.html)".renderMarkdown())
+    return markdownTranscript
+  }
+
+  fun SessionTask.newSystemFileStream(transcriptFile: String): FileOutputStream? {
+    val (link, file) = Pair(linkTo(transcriptFile), resolveSystemFile(transcriptFile))
+    val markdownTranscript = file?.outputStream()
+    add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
+    return markdownTranscript
+  }
 
     fun transcriptFile(name: String): String = "transcript/${name}_${now()}.md"
 

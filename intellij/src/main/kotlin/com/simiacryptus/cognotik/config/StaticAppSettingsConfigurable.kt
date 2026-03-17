@@ -510,17 +510,17 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.shellCommand = component.shellCommand.text
             settings.showWelcomeScreen = component.showWelcomeScreen.isSelected
             settings.processor = component.patchProcessor.selectedItem?.let {
-                when (it) {
-                    is String -> try {
-                        PatchProcessors.valueOf(it)
-                    } catch (e: IllegalArgumentException) {
-                        log.warn("Unknown patch processor: $it, defaulting to Fuzzy")
-                        PatchProcessors.Fuzzy
-                    }
+              when (it) {
+                  is String -> try {
+                      PatchProcessors.valueOf(it)
+                  } catch (e: IllegalArgumentException) {
+                      log.warn("Unknown patch processor: $it, defaulting to Fuzzy")
+                      PatchProcessors.Fuzzy
+                  }
 
-                    is PatchProcessor -> it
-                    else -> PatchProcessors.Fuzzy
-                } as? PatchProcessors ?: PatchProcessors.Fuzzy
+                  is PatchProcessor -> it
+                  else -> PatchProcessors.Fuzzy
+              }
             } ?: PatchProcessors.Fuzzy
 
             val tableModel = component.apis.model as DefaultTableModel

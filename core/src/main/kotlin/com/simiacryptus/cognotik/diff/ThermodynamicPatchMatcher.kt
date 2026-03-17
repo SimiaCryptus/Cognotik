@@ -574,10 +574,6 @@ class ThermodynamicPatchMatcher(
             }
     }
 
-    override fun getInitiatorPattern(): Regex {
-        return FuzzyPatchMatcher.default.getInitiatorPattern()
-    }
-
     /**
      * Normalizes a line for comparison.
      */

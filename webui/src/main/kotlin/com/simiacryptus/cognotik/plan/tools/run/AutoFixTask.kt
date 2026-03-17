@@ -3,7 +3,9 @@ package com.simiacryptus.cognotik.plan.tools.run
 import com.simiacryptus.cognotik.apps.CmdPatchApp
 import com.simiacryptus.cognotik.apps.PatchApp
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
@@ -18,8 +20,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 import java.util.concurrent.Semaphore
 import kotlin.io.path.exists
 
@@ -36,35 +36,36 @@ class AutoFixTask(
             executionConfigClass = AutoFixTaskExecutionConfigData::class.java,
             taskSettingsClass = AutoFixTaskTypeConfig::class.java,
             description = "Run a command and automatically fix any issues that arise",
-            tooltipHtml = """
-                    Executes a command and automatically fixes any issues that arise.
-                    <ul>
-                      <li>Specify commands and working directories</li>
-                      <li>Supports multiple commands and directories</li>
-                      <li>Interactive approval mode</li>
-                      <li>Output diff formatting</li>
-                    </ul>
-                  """,
+            tooltipHtml = "<p>Executes a command and automatically fixes any issues that arise.</p>" +
+                "<ul>" +
+                "<li>Specify commands and working directories</li>" +
+                "<li>Supports multiple commands and directories</li>" +
+                "<li>Interactive approval mode</li>" +
+                "<li>Output diff formatting</li>" +
+                "</ul>",
         )
     }
 
     class AutoFixTaskTypeConfig(
         name: String? = AutoFix.name,
         model: ApiChatModel? = null,
-        var promptTemplate: String = """
-  SelfHealing - Run a command and automatically fix any issues that arise
-  * Specify the commands to be executed along with their working directories
-  * Each command's working directory should be specified relative to the root directory
-  * Provide the commands and their arguments in the 'commands' field
-  * Each command should be a list of strings
-  * Available commands:
-  {executables}
-        """.trimIndent()
+        var promptTemplate: String = buildString {
+            appendLine("SelfHealing - Run a command and automatically fix any issues that arise")
+            appendLine("  * Specify the commands to be executed along with their working directories")
+            appendLine("  * Each command's working directory should be specified relative to the root directory")
+            appendLine("  * Provide the commands and their arguments in the 'commands' field")
+            appendLine("  * Each command should be a list of strings")
+            appendLine("  * Available commands:")
+            appendLine("  {executables}")
+        }
     ) : TaskTypeConfig(AutoFix.name, name, model)
 
     class AutoFixTaskExecutionConfigData(
-        @Description("The commands to be executed with their respective working directories") var commands: MutableList<CommandWithWorkingDir>? = ArrayList(),
+        @Description("The commands to be executed with their respective working directories. Each entry specifies a command and an optional working directory.")
+        var commands: MutableList<CommandWithWorkingDir>? = ArrayList(),
+        @Description("A description of what this task should accomplish")
         task_description: String? = null,
+        @Description("List of task IDs that must complete before this task can run")
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : ValidatedObject, TaskExecutionConfig(
@@ -82,8 +83,10 @@ class AutoFixTask(
     }
 
     data class CommandWithWorkingDir(
-        @Description("The command to be executed") var command: MutableList<String> = ArrayList(),
-        @Description("The relative path of the working directory") var workingDir: String? = null
+        @Description("The command to be executed as a list of strings. The first element is the executable, followed by arguments.")
+        var command: MutableList<String> = ArrayList(),
+        @Description("The relative path of the working directory for this command, relative to the project root. Null means the project root.")
+        var working_dir: String? = null
     ) : ValidatedObject {
         override fun validate(): String? {
             if (command.isEmpty()) {
@@ -116,14 +119,18 @@ class AutoFixTask(
 
             fun execute() {
                 subTask.ui.pool.submit {
-                    val transcript = createTranscript(subTask)
-                    subTask.add(transcript.second.renderMarkdown())
-                    val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
-                        ?: defaultSmart).getChildClient(subTask)
-                    val transcript1 = transcript.first
+                    val transcriptPath = transcriptFile()
+                    val transcript: FileOutputStream? = subTask.newUserFileStream(transcriptPath)
+                    val model = (typeConfig.model?.let { it.instance() } ?: defaultSmart).getChildClient(subTask)
+                    val parsingModel = defaultFast.getChildClient(subTask)
                     try {
-                        transcript1?.write("## Self-Healing Task Execution\n\n".toByteArray())
-                        transcript1?.write("## Commands\n".toByteArray())
+                        transcript?.write("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+                        transcript?.write("## Self-Healing Task Execution\n\n".toByteArray())
+                        transcript?.write("### Commands\n".toByteArray())
+                        executionConfig?.commands?.forEachIndexed { index, cmd ->
+                            transcript?.write("${index + 1}. `${cmd.command.joinToString(" ")}` in `${cmd.working_dir ?: "."}`\n".toByteArray())
+                        }
+                        transcript?.write("\n".toByteArray())
                         CmdPatchApp(
                             root = agent.root,
                             settings = PatchApp.Settings(
@@ -148,7 +155,7 @@ class AutoFixTask(
                                             else -> null
                                         } ?: throw IllegalArgumentException("Command not found: $alias"),
                                         arguments = commandWithDir.command.drop(1).joinToString(" "),
-                                        workingDirectory = (commandWithDir.workingDir?.let { agent.root.toFile().resolve(it) }
+                                        workingDirectory = (commandWithDir.working_dir?.let { agent.root.toFile().resolve(it) }
                                             ?: agent.root.toFile()).apply { mkdirs() },
                                         additionalInstructions = ""
                                     )
@@ -158,14 +165,17 @@ class AutoFixTask(
                             ),
                             files = agent.files,
                             model = model,
-                            parsingModel = defaultFast,
-                            processor = orchestrationConfig.processor,
+                            parsingModel = parsingModel,
+                            processor = orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
                         ).run(
                             task = subTask, model = model
                         ).apply {
-                            transcript1?.write("\n### Execution Result\n* **Exit Code:** ${this.exitCode}\n".toByteArray())
+                            transcript?.write("\n### Execution Result\n* **Exit Code:** ${this.exitCode}\n".toByteArray())
+                            transcript?.write("</div>\n\n".toByteArray())
+                            transcript?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
                             when {
                                 this.exitCode == 0 -> {
+                                    transcript?.write("## Result: Success\n\nAll commands executed successfully with exit code 0.\n".toByteArray())
                                     if (orchestrationConfig.autoFix) {
                                         resultFn("### Success\nAll commands executed successfully with exit code 0.")
                                         semaphore.release()
@@ -183,6 +193,7 @@ class AutoFixTask(
 
                                 else -> {
                                     log.warn("Command failed with exit code ${this.exitCode}")
+                                    transcript?.write("## Result: Failed\n\nCommands failed with exit code ${this.exitCode}.\n".toByteArray())
                                     subTask.add(
                                         subTask.ui.hrefLink("Ignore Error", "href-link cmd-button") {
                                             resultFn("### Warning\nCommands failed with exit code ${this.exitCode}, but error was ignored by user.")
@@ -192,19 +203,22 @@ class AutoFixTask(
                                     )
                                 }
                             }
+                            transcript?.write("</div>\n\n".toByteArray())
                         }
                     } catch (e: Throwable) {
                         // Triple Log Rule: UI, SLF4J, and Transcript
                         subTask.error(e)
                         log.error("Critical error during AutoFixTask execution", e)
-                        transcript1?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
-
+                        transcript?.write("</div>\n\n".toByteArray())
+                        transcript?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+                        transcript?.write("## Error\n\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
+                        transcript?.write("</div>\n\n".toByteArray())
                         if (orchestrationConfig.autoFix) {
                             semaphore.release()
                             subTask.complete()
                         }
                     } finally {
-                        transcript1?.close()
+                        transcript?.close()
                     }
                 }
             }
@@ -212,7 +226,7 @@ class AutoFixTask(
                 execute()
             } else {
                 subTask.add(subTask.ui.hrefLink("▶ Run AutoFix", "btn btn-primary") {
-                execute()
+                    execute()
                 }.renderMarkdown())
             }
             subTask.placeholder
@@ -224,17 +238,4 @@ class AutoFixTask(
         }
         task.complete()
     }
-
-    private fun createTranscript(task: SessionTask): Pair<FileOutputStream?, String> {
-        val transcriptFile =
-            this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        val html =
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(".md")
-            }.pdf' target='_blank'>pdf</a>"
-        return Pair(markdownTranscript, html)
-    }
-
 }

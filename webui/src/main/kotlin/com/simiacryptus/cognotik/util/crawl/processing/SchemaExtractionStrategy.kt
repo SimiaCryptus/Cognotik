@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.parserCast
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -195,7 +196,7 @@ class SchemaExtractionStrategy : DefaultSummarizerStrategy() {
             appendLine("If no data matches the schema, return null for 'data' with an explanation in validation_notes.")
         }
 
-        val model = (context.typeConfig.model?.let { context.orchestrationConfig.instance(it) }
+        val model = (context.typeConfig.model?.let { it.instance() }
             ?: context.orchestrationConfig.defaultFast).getChildClient(context.task)
 
         return ParsedAgent(

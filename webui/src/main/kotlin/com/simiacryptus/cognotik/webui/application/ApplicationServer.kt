@@ -59,7 +59,15 @@ abstract class ApplicationServer(
     protected open val usageServlet by lazy { ServletHolder("usage", UsageServlet()) }
     protected open val fileZip by lazy { ServletHolder("fileZip", ZipServlet(dataStorage)) }
     protected open val fileIndex by lazy {
-        ServletHolder("fileIndex", SessionFileServlet(dataStorage)).apply {
+        ServletHolder("fileIndex", object : SessionFileServlet(dataStorage){
+            val sessions = mutableSetOf<Session>()
+            override fun onSession(session: Session) {
+                super.onSession(session)
+                if (sessions.add(session)) {
+                    this@ApplicationServer.newSession(user = defaultUser, session = session)
+                }
+            }
+        }).apply {
             registration.setMultipartConfig(
                 MultipartConfigElement(
                     System.getProperty("java.io.tmpdir"),
@@ -75,13 +83,13 @@ abstract class ApplicationServer(
     protected open val deleteSessionServlet by lazy { ServletHolder("delete", DeleteSessionServlet(this)) }
     protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
 
-    override fun newSession(user: User, session: Session): SocketManager {
+    override fun newSession(user: User, session: Session): SocketManager? {
         (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session)
             ?: SessionProxyServer.agents[session])?.apply { return this; }
         logger.info(
             "Creating new session: {} for user: {} in application: {}",
             session,
-            user?.email ?: "anonymous",
+            user.email,
             applicationName
         )
         dataStorage.setJson(
@@ -111,7 +119,6 @@ abstract class ApplicationServer(
                 ui = socketManager
             )
         }
-        logger.info("New session created successfully: {}", session)
     }
 
     open fun userMessage(

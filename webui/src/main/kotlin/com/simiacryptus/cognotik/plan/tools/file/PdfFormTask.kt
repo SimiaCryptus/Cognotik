@@ -113,7 +113,7 @@ ${fieldList.lines().take(10).joinToString("\n")}${if (fieldList.lines().size > 1
 
 
       task.ui.pool.submit {
-        val transcript = task.newFileOutputStream(transcriptFile())
+        val transcript = task.newUserFileStream(transcriptFile())
         val tabs = TabbedDisplay(task)
         val statusTask = tabs.newTask("Status")
         statusTask.header("PDF Form Filler")

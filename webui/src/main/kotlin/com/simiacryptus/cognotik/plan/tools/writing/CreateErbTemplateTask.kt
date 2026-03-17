@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
@@ -110,11 +111,11 @@ CreateErbTemplate - Generate ERB-style templates for document generation
   ) {
     val typeConfig = typeConfig ?: CreateErbTemplateTaskTypeConfig()
     val chatInterface =
-      (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+      (typeConfig.model?.let<ApiChatModel, ChatInterface> { it.instance() }
         ?: defaultSmart).getChildClient(task)
 
     val semaphore = Semaphore(0)
-    val transcript = task.newFileOutputStream(transcriptFile())
+    val transcript = task.newUserFileStream(transcriptFile())
     val tabs = TabbedDisplay(task)
 
     try {

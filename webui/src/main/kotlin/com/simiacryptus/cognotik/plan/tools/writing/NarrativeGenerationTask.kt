@@ -25,14 +25,11 @@ import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
-import java.io.ByteArrayOutputStream
-import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.io.Writer
 import javax.imageio.ImageIO
 import kotlin.collections.component1
 import kotlin.collections.component2
-import java.util.concurrent.Semaphore
 
 open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerationTaskExecutionConfigData>(
     orchestrationConfig: OrchestrationConfig,
@@ -301,7 +298,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
     ) {
         val startTime = System.currentTimeMillis()
         log.info("Starting NarrativeGenerationTask - Subject: '${executionConfig?.subject}', Target words: ${executionConfig?.target_word_count}")
-        val transcript = task.newFileOutputStream(transcriptFile())?.let { OutputStreamWriter(it) }
+        val transcript = task.newUserFileStream(transcriptFile())?.let { OutputStreamWriter(it) }
         val dataDir = (getOutputFile(".md")?.let {
             if (it.endsWith(".md")) it.removeSuffix(".md") else null
         } ?: "comic").apply {

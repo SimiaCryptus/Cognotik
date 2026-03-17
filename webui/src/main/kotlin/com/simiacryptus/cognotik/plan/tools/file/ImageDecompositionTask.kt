@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.docs.RenderableDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
@@ -157,7 +158,7 @@ class ImageDecompositionTask(
     val minSize = executionConfig.min_region_size
     val outputFile = executionConfig.output_file ?: "analysis.json"
 
-    val transcript = task.newFileOutputStream(transcriptFile())
+    val transcript = task.newUserFileStream(transcriptFile())
     val tabs = TabbedDisplay(task)
     val logTab = tabs.newTask("Live Log")
 
@@ -183,7 +184,7 @@ class ImageDecompositionTask(
         val allNodes = ConcurrentLinkedQueue<AnalysisNode>()
         val rootNodes = mutableListOf<AnalysisNode>()
         val model =
-          (typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: defaultSmart).getChildClient(task)
+          (typeConfig?.model?.let { it.instance() } ?: defaultSmart).getChildClient(task)
 
         (0 until pages).forEach { page ->
           logTab.add("Processing page ${page + 1} of $pages".renderMarkdown())

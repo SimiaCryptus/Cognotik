@@ -108,7 +108,7 @@ class DialecticalReasoningTask(
     overviewTask.header("Dialectical Reasoning Analysis", level = 1)
 
     task.ui.pool.submit {
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
       val startTime = System.currentTimeMillis()
       var stepStartTime = startTime
       log.info("Starting DialecticalReasoningTask analysis.")

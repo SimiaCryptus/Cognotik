@@ -16,7 +16,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -180,7 +179,7 @@ class BrainstormingTask(
         log.info("Input files: ${executionConfig?.input_files?.joinToString(", ") ?: "none"}")
 
         val ui = task.ui
-        val transcriptStream = task.newFileOutputStream(transcriptFile())
+        val transcriptStream = task.newUserFileStream(transcriptFile())
         try {
             // Initialize transcript
             transcriptStream?.write("# Brainstorming Session Transcript\n\n".toByteArray())

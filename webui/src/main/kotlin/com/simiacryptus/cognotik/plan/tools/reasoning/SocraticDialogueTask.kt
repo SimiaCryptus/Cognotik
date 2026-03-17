@@ -209,7 +209,7 @@ Provide substantive, well-reasoned responses that advance the dialogue.
     val dialogueBuilder = StringBuilder()
     val fullDialogueBuilder = StringBuilder()
     // Create transcript file
-    val transcriptStream = task.newFileOutputStream(transcriptFile())
+    val transcriptStream = task.newUserFileStream(transcriptFile())
     val transcriptWriter = transcriptStream?.bufferedWriter()
     transcriptWriter?.apply {
       write("# Socratic Dialogue Transcript\n\n")

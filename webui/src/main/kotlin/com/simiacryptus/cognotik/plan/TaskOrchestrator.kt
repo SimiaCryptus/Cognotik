@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.cognotik.plan.PlanUtil.filterPlan
@@ -182,7 +183,7 @@ class TaskOrchestrator(
                         subTasks = executionState.subTasks,
                         visited = mutableSetOf()
                     )
-                    task.add(("\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }).renderMarkdown(true))
+                    task.add(("\n### Dependencies:\n\n" + dependencies.joinToString("\n") { "* ${it.indent("    ")}" }).renderMarkdown(true))
                     val impl = orchestrationConfig.getImpl(subTask)
                     val messages = listOf(
                         userMessage,

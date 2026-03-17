@@ -22,9 +22,8 @@ abstract class CognitiveMode<U : CognitiveModeConfig>(
     val session: Session,
     val user: User,
 ) {
-    val config: U
+    val config: U?
         get() = orchestrationConfig.cognitiveSettings as? U
-            ?: throw IllegalStateException("Cognitive settings not defined")
 
     val enabledTasks get() = TaskType.getAvailableTaskTypes(orchestrationConfig)
 
@@ -44,13 +43,13 @@ abstract class CognitiveMode<U : CognitiveModeConfig>(
      */
     abstract fun contextData(): List<String>
 
-    val name: String? = (this@CognitiveMode.config.type?.name ?: this.javaClass.simpleName)
+    val name: String? = (this@CognitiveMode.config?.type?.name ?: this.javaClass.simpleName)
 
     fun SessionTask.transcript(name: String? = this@CognitiveMode.name): FileOutputStream? {
         val transcriptFile = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(linkTo(transcriptFile), resolveUserFile(transcriptFile))
+        val (link, file) = Pair(linkTo(transcriptFile), resolveSystemFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
+        add("[${name?.let{it+" "} ?: ""}Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
         return markdownTranscript
     }
 }

@@ -380,7 +380,7 @@ $TT
         filesToWrite.add(htmlFile to htmlStructure)
         filesToWrite.add("presentation.css" to (standardCss + "\n\n" + cssCode))
       val transcriptStream =
-        task.newFileOutputStream(transcriptFile("${presentationTitle.replace(Regex("[^a-zA-Z0-9]"), "_")}"))
+        task.newUserFileStream(transcriptFile("${presentationTitle.replace(Regex("[^a-zA-Z0-9]"), "_")}"))
         transcriptStream?.close()
 
 

@@ -92,7 +92,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
             val transformations = executionConfig?.transformation_types ?: emptyList()
             val format = executionConfig?.output_format ?: "fingerprint"
 
-          transcriptStream = task.newFileOutputStream(transcriptFile())
+          transcriptStream = task.newUserFileStream(transcriptFile())
             transcriptStream?.let { stream ->
                 writeTranscriptHeader(stream, subject, transformations, format)
             }

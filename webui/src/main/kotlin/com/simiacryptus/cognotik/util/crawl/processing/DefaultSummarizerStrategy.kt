@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.toJson
@@ -94,7 +95,7 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
                 "Include the most important links that should be followed up on.",
                 "Keep your response under ${maxFinalOutputSize / 1000}K characters."
             ).joinToString("\n\n"),
-            model = (context.typeConfig.model?.let { context.orchestrationConfig.instance(it) }
+            model = (context.typeConfig.model?.let { it.instance() }
                 ?: context.orchestrationConfig.defaultFast).getChildClient(context.task),
         ).answer(
             listOf("Here are summaries of each analyzed page:\n${analysisResults}"),
@@ -137,7 +138,7 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
         describer: TypeDescriber
     ): ParsedResponse<CrawlerAgentTask.ParsedPage> {
         return try {
-            val model = (context.typeConfig.model?.let { context.orchestrationConfig.instance(it) }
+            val model = (context.typeConfig.model?.let { it.instance() }
                 ?: context.orchestrationConfig.defaultFast).getChildClient(context.task)
             ParsedAgent(
                 prompt = listOf(

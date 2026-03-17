@@ -125,4 +125,7 @@ fun <T:Any> T.jsonCopy(): T {
 
 inline fun <reified T> Any.jsonCast(): T = JsonUtil.fromJson(JsonUtil.toJson(this), T::class.java)
 
-fun <T> Any.jsonCast(type: Type): T = JsonUtil.fromJson(JsonUtil.toJson(this), type)
+fun <T> Any.jsonCast(type: Type): T = when (type) {
+    is Class<*> if type.isAssignableFrom(String::class.java) -> this as T
+    else -> JsonUtil.fromJson(JsonUtil.toJson(this), type)
+  }

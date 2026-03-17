@@ -91,7 +91,7 @@ class RunToolTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
         task.ui.pool.submit {
             try {
                 log.info("Starting RunToolTask for tool: ${executionConfig?.tool}")

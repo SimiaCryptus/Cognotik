@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>🐶 Puppy Finder Pipeline</title>
+<link href="style.css" rel="stylesheet">
+</head>
+<body>
+<div id="app">
+<header>
+<h1>🐶 Puppy Finder</h1>
+<p class="subtitle">AI-powered breed discovery, breeder research, and personalized puppy recommendations</p>
+</header>
+<nav id="pipeline-nav">
+<ul>
+<li><a class="nav-link active" data-section="section-input" href="#section-input">📝 Requirements</a></li>
+<li><a class="nav-link" data-section="section-pipeline" href="#section-pipeline">⚙️ Pipeline</a></li>
+<li><a class="nav-link" data-section="section-results" href="#section-results">📊 Results</a></li>
+</ul>
+</nav>
+<!-- Section: Requirements Input -->
+<section class="section active" id="section-input">
+<h2>📝 Your Requirements</h2>
+<div class="card">
+<h3>What are you looking for in a puppy?</h3>
+<p class="help-text">Describe your ideal dog — size, temperament, activity level, living situation, family members, allergies, experience with dogs, etc.</p>
+<textarea id="requirements-editor" rows="20" spellcheck="true" placeholder="Example:
+We're a family of four with two kids (ages 6 and 10). We live in a suburban home with a medium-sized fenced backyard.
+We're looking for:
+- A medium-sized dog (30-60 lbs)
+- Good with children
+- Moderate energy level — enjoys walks but also happy to relax
+- Minimal shedding preferred (mild allergies in the family)
+- Friendly and social temperament
+- First-time dog owners
+We'd prefer a breed that is easy to train and doesn't require extensive grooming.
+Budget for purchase: $1,000 - $3,000
+Location: Pacific Northwest, USA"></textarea>
+<div class="button-row">
+<button class="btn btn-primary" id="save-requirements">💾 Save Requirements</button>
+<span class="status-msg" id="requirements-status"></span>
+</div>
+</div>
+</section>
+<!-- Section: Pipeline -->
+<section class="section" id="section-pipeline">
+<h2>⚙️ Pipeline Execution</h2>
+<!-- Pipeline Diagram -->
+<div class="card">
+<h3>Pipeline Overview</h3>
+<div id="pipeline-diagram">
+<div class="pipeline-stage" data-stage="input">
+<div class="stage-icon">📋</div>
+<div class="stage-label">Requirements</div>
+<div class="stage-status" id="stage-status-input">Ready</div>
+</div>
+<div class="pipeline-arrow">→</div>
+<div class="pipeline-stage" data-stage="brainstorm">
+<div class="stage-icon">🧠</div>
+<div class="stage-label">Brainstorm</div>
+<div class="stage-status" id="stage-status-brainstorm">Pending</div>
+</div>
+<div class="pipeline-arrow">→</div>
+<div class="pipeline-stage" data-stage="expand">
+<div class="stage-icon">📂</div>
+<div class="stage-label">Expand Breeds</div>
+<div class="stage-status" id="stage-status-expand">Pending</div>
+</div>
+<div class="pipeline-arrow">→</div>
+<div class="pipeline-stage" data-stage="research">
+<div class="stage-icon">🔍</div>
+<div class="stage-label">Breeder Research</div>
+<div class="stage-status" id="stage-status-research">Pending</div>
+</div>
+<div class="pipeline-arrow">→</div>
+<div class="pipeline-stage" data-stage="summary">
+<div class="stage-icon">📄</div>
+<div class="stage-label">Final Summary</div>
+<div class="stage-status" id="stage-status-summary">Pending</div>
+</div>
+</div>
+</div>
+<!-- Step 1: Brainstorm -->
+<div class="card">
+<h3>Step 1: Breed Brainstorm</h3>
+<div class="step-group">
+<div class="step">
+<div class="step-header">
+<span class="step-number">1</span>
+<span class="step-title">Brainstorm Breeds</span>
+<span class="step-badge" id="badge-brainstorm">pending</span>
+</div>
+<p class="step-desc">Cast a wide net of possible dog breeds based on your requirements. Generates an initial ideas list.</p>
+<div class="button-row">
+<button class="btn btn-run" data-badge="badge-brainstorm"
+data-op="ops/breed_brainstorm_op.md"
+data-output="ideas.md" data-viewer="viewer-brainstorm">▶ Run
+</button>
+<button class="btn btn-view" data-file="ideas.md" data-viewer="viewer-brainstorm">
+👁 View Ideas
+</button>
+</div>
+<div class="viewer" id="viewer-brainstorm"></div>
+</div>
+</div>
+</div>
+<!-- Step 2: Expand -->
+<div class="card">
+<h3>Step 2: Expand Breed Details</h3>
+<div class="step-group">
+<div class="step">
+<div class="step-header">
+<span class="step-number">2</span>
+<span class="step-title">Expand into Breed Files</span>
+<span class="step-badge" id="badge-expand">pending</span>
+</div>
+<p class="step-desc">Expand the brainstormed ideas into individual breed files in the <code>breeds/</code> directory, each with detailed information.</p>
+<div class="button-row">
+<button class="btn btn-run" data-badge="badge-expand"
+data-op="ops/breed_expand_op.md"
+data-output="expand_status.md" data-viewer="viewer-expand">▶ Run
+</button>
+<button class="btn btn-view" data-file="expand_status.md" data-viewer="viewer-expand">
+👁 View Status
+</button>
+<button class="btn btn-secondary" id="btn-refresh-breeds">🔄 Refresh Breed List</button>
+</div>
+<div class="viewer" id="viewer-expand"></div>
+<div class="breed-list-container" id="breed-list-container" style="display:none;">
+<h4>📁 Discovered Breeds</h4>
+<div class="breed-grid" id="breed-grid"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Step 3: Breeder Research -->
+<div class="card">
+<h3>Step 3: Breeder Research</h3>
+<div class="step-group">
+<div class="step">
+<div class="step-header">
+<span class="step-number">3</span>
+<span class="step-title">Research Breeders</span>
+<span class="step-badge" id="badge-research">pending</span>
+</div>
+<p class="step-desc">Search the web for reputable breeders for each breed. This uses a crawler agent and may take a few minutes.</p>
+<div class="button-row">
+<button class="btn btn-run-multi" id="btn-run-research">▶ Run All Breeder Research</button>
+<button class="btn btn-secondary" id="btn-refresh-research">🔄 Refresh Research List</button>
+</div>
+<div class="research-list-container" id="research-list-container" style="display:none;">
+<h4>🔍 Research Results</h4>
+<div class="research-grid" id="research-grid"></div>
+</div>
+<div class="viewer" id="viewer-research"></div>
+</div>
+</div>
+</div>
+<!-- Step 4: Final Summary -->
+<div class="card">
+<h3>Step 4: Final Summary</h3>
+<div class="step-group">
+<div class="step">
+<div class="step-header">
+<span class="step-number">4</span>
+<span class="step-title">Generate Final Report</span>
+<span class="step-badge" id="badge-summary">pending</span>
+</div>
+<p class="step-desc">Summarize all breed information and breeder research into a comprehensive final report with recommendations.</p>
+<div class="button-row">
+<button class="btn btn-run" data-badge="badge-summary"
+data-op="ops/breeder_summary_op.md"
+data-output="final_summary.md" data-viewer="viewer-summary">▶ Run
+</button>
+<button class="btn btn-view" data-file="final_summary.md" data-viewer="viewer-summary">
+👁 View Summary
+</button>
+</div>
+<div class="viewer" id="viewer-summary"></div>
+</div>
+</div>
+</div>
+<!-- Run All -->
+<div class="card">
+<h3>🚀 Batch Execution</h3>
+<p class="help-text">Run the entire pipeline end-to-end. Note: Breeder research uses web crawling and may take several minutes.</p>
+<div class="button-row">
+<button class="btn btn-accent" id="run-all">▶ Run Entire Pipeline</button>
+<button class="btn btn-accent" id="run-brainstorm-expand">▶ Run Steps 1–2 (Brainstorm & Expand)</button>
+<button class="btn btn-accent" id="run-research-summary">▶ Run Steps 3–4 (Research & Summary)</button>
+</div>
+<div class="log-output" id="batch-log"></div>
+</div>
+</section>
+<!-- Section: Results -->
+<section class="section" id="section-results">
+<h2>📊 Final Results</h2>
+<div class="results-tabs">
+<button class="results-tab active" data-tab="tab-summary">📄 Final Summary</button>
+<button class="results-tab" data-tab="tab-breeds">🐕 Breed Profiles</button>
+<button class="results-tab" data-tab="tab-research">🔍 Breeder Research</button>
+</div>
+<div class="results-content">
+<div class="tab-panel active" id="tab-summary">
+<div class="card">
+<div class="button-row">
+<button class="btn btn-secondary" data-file="final_summary.md" data-viewer="result-summary">🔄 Refresh</button>
+</div>
+<div class="result-viewer" id="result-summary">
+<p class="placeholder">Run the pipeline to generate the final summary report.</p>
+</div>
+</div>
+</div>
+<div class="tab-panel" id="tab-breeds">
+<div class="card">
+<div class="button-row">
+<button class="btn btn-secondary" id="btn-refresh-breeds-results">🔄 Refresh Breed List</button>
+</div>
+<div id="breeds-results-container">
+<p class="placeholder">Run the pipeline to generate breed profiles.</p>
+</div>
+</div>
+</div>
+<div class="tab-panel" id="tab-research">
+<div class="card">
+<div class="button-row">
+<button class="btn btn-secondary" id="btn-refresh-research-results">🔄 Refresh Research</button>
+</div>
+<div id="research-results-container">
+<p class="placeholder">Run the pipeline to generate breeder research.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<script src="marked.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -3,13 +3,14 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.RealFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -127,7 +128,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
     ) {
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
-      val transcript = task.newFileOutputStream(transcriptFile())
+      val transcript = task.newUserFileStream(transcriptFile())
         val tabs = TabbedDisplay(task)
 
         try {
@@ -217,7 +218,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
         transcript: FileOutputStream?
     ): List<PlannedChange> {
         val typeConfig = typeConfig
-        val planningModel = typeConfig?.planningModel?.let { orchestrationConfig.instance(it) }
+        val planningModel = typeConfig?.planningModel?.let { it.instance() }
             ?: defaultSmart
         val defaultChatter = planningModel.getChildClient(task)
         val parsingChatter = defaultFast.getChildClient(task)
@@ -307,7 +308,7 @@ ${planResult.text}
         completionNotes: MutableList<String>
     ): String {
         val typeConfig = typeConfig
-        val implementationModel = typeConfig?.implementationModel?.let { orchestrationConfig.instance(it) }
+        val implementationModel = typeConfig?.implementationModel?.let { it.instance() }
             ?: defaultSmart
         val chatInterface = implementationModel.getChildClient(task)
 
@@ -370,8 +371,8 @@ $implementationResponse
         val autoFix = orchestrationConfig.autoFix
         val markdown = renderMarkdown(implementationResponse, ui = task.ui) {
             DiffInstrumentor(
-                orchestrationConfig.processor,
-                SessionRenderer(task), RealFileSystem()
+              orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
+              SessionRenderer(task),
             ).instrument(
                 root = agent.root,
                 response = it,

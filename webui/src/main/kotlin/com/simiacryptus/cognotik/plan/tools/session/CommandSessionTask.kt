@@ -149,7 +149,7 @@ class CommandSessionTask(
                 }
                 task.add(initialText.renderMarkdown())
                 resultBuffer.append("## Command Session Results\n$initialText")
-              val transcript = task.newFileOutputStream(transcriptFile())
+              val transcript = task.newUserFileStream(transcriptFile())
                 var sessionState: SessionState? = null
                 try {
                     cleanupInactiveSessions()

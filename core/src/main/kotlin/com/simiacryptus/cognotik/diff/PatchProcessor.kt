@@ -1,24 +1,19 @@
 package com.simiacryptus.cognotik.diff
 
 import com.simiacryptus.cognotik.diff.FileValidators.DIFF_PATTERN
+import com.simiacryptus.cognotik.util.LoggerFactory
 
-interface PatchProcessor {
+interface PatchProcessor : PatchParser {
     val label: String
-    val patchFormatPrompt: String
+
     fun generatePatch(oldCode: String, newCode: String): String
     fun applyPatch(source: String, patch: String): String
 
-
-    /**
-     * Gets the regex pattern that initiates a code block
-     */
-    fun getInitiatorPattern(): Regex
     fun apply(
         originalCode: String, response: String, filename: String? = null
     ): DiffApplicationResult {
         val matches = DIFF_PATTERN.findAll(response).distinct()
         var currentCode = originalCode
-
         val validator = FileValidators.getValidator(filename)
         val originalCodeErrors = validator.validateGrammar(originalCode)
         val newErrors = matches.flatMap { diffBlock ->
@@ -40,12 +35,14 @@ interface PatchProcessor {
             }
         }
         if (newErrors.isNotEmpty()) {
-            PatchProcessor.log.error("Error applying diff: ${newErrors.joinToString("\n") { it.message }}")
+            log.error("Error applying diff: ${newErrors.joinToString("\n") { it.message }}")
         }
         return DiffApplicationResult(currentCode, newErrors, validator = validator)
     }
 
     companion object {
-        val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(PatchProcessor::class.java)
+        val log = LoggerFactory.getLogger(PatchProcessor::class.java)
+
+        const val TRIPLE_TILDE = """```"""
     }
 }

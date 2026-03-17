@@ -18,6 +18,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.log
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.image.ImageModel
@@ -63,7 +64,7 @@ data class AppSettingsState(
     var imageModel: ApiImageModel? = null,
     /* Embedding Model Settings */
     var embeddingModel: EmbeddingModel? = null,
-    var processor: PatchProcessors = PatchProcessors.Fuzzy,
+    var processor: PatchProcessor = PatchProcessors.Fuzzy,
 
     /* AWS Settings */
     var awsProfile: String? = null,

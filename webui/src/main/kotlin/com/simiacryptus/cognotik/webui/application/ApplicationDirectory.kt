@@ -72,6 +72,8 @@ abstract class ApplicationDirectory(
     open val taskConfigServlet: HttpServlet = TaskConfigServlet()
         .also { log.debug("Initialized TaskConfigServlet") }
 
+    protected open val docopsServlet by lazy { DocProcessorServlet() }
+
     open val cognitiveConfigServlet: HttpServlet = CognitiveConfigServlet()
         .also { log.debug("Initialized CognitiveConfigServlet") }
 
@@ -96,7 +98,7 @@ abstract class ApplicationDirectory(
         log.info("Setting up platform (default implementation - no action taken)")
     }
 
-    protected open fun _main(vararg args: String) {
+    open fun _main(vararg args: String) {
         try {
             log.info("Starting application with args: ${args.joinToString(", ")}")
             init(args.contains("--server"))
@@ -131,7 +133,7 @@ abstract class ApplicationDirectory(
     open fun webAppContexts() = listOfNotNull(
         run { log.debug("Creating web app contexts"); null },
         newWebAppContext("/logout", logoutServlet),
-        newWebAppContext("/proxy", proxyHttpServlet),
+//        newWebAppContext("/proxy", proxyHttpServlet),
         newWebAppContext("/userInfo", userInfoServlet).let {
             log.debug("Configuring userInfo context with authentication")
             authenticatedWebsite()?.configure(it, true) ?: it
@@ -166,6 +168,10 @@ abstract class ApplicationDirectory(
         },
         newWebAppContext("/api", welcomeServlet).let {
             log.debug("Configuring API context")
+            authenticatedWebsite()?.configure(it, false) ?: it
+        },
+        newWebAppContext("/docops", docopsServlet).let {
+            log.debug("Configuring docops context with servlet")
             authenticatedWebsite()?.configure(it, false) ?: it
         },
     ).toTypedArray() + childWebApps.map {

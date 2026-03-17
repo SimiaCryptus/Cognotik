@@ -73,16 +73,15 @@ open class WaterfallMode(
             val coordinator = TaskOrchestrator(
                 user = user,
                 session = session,
-                dataStorage = task.ui.dataStorage!!,
+                dataStorage = task.ui.dataStorage,
                 root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                    ?: task.ui.dataStorage?.getSessionDir(
-                        user,
-                        session
-                    )?.toPath() ?: File(".").toPath(),
+                    ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
+                    ?: File(".").toPath(),
                 transcriptStream = transcriptStream
             )
 
 
+            val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
             val plan = if (config.planFile != null) {
                 loadPrePlanned(userMessage, coordinator.root, task)
             } else {
@@ -147,7 +146,7 @@ open class WaterfallMode(
         describer: TypeDescriber
     ): TaskBreakdownWithPrompt {
         val toInput = inputFn(codeFiles, files, root)
-        task.echo(userMessage.renderMarkdown())
+        //task.echo(userMessage.renderMarkdown())
         return if (!orchestrationConfig.autoFix)
             Discussable(
                 task = task,
@@ -283,6 +282,7 @@ open class WaterfallMode(
     }
 
     private fun parseConfig(message: String, root: String, task: SessionTask): WaterfallModeConfig {
+        val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
         val describer = TaskContextYamlDescriber(orchestrationConfig)
         Tasks.initDescriber(orchestrationConfig, describer)
         val availableFiles = getAvailableFiles(Path(root))
