@@ -16,7 +16,6 @@ import kotlin.reflect.jvm.javaType
 
 open class JsonDescriber(
     private val whitelist: MutableSet<String> = setOf(
-        "com.simiacryptus",
         "com.simiacryptus"
     ).toMutableSet()
 ) : TypeDescriber() {
