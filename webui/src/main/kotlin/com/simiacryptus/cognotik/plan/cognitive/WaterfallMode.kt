@@ -2,28 +2,27 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.cognotik.plan.PlanUtil.filterPlan
+import com.simiacryptus.cognotik.plan.TRIPLE_TILDE
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.Discussable
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 import kotlin.io.path.Path
 
 /**
@@ -87,8 +86,16 @@ open class WaterfallMode(
             } else {
                 val describer = TaskContextYamlDescriber(orchestrationConfig)
                 Tasks.initDescriber(orchestrationConfig, describer)
+                val codeFiles = coordinator.codeFiles
+                transcriptStream?.let { stream ->
+                    val fileList = codeFiles.entries.joinToString("\n") { (path, content) ->
+                        "* `$path` (${content.length} chars)"
+                    }
+                    stream.write("\n## Code Files\n\n${codeFiles.size} files:\n$fileList\n\n".toByteArray())
+                    stream.flush()
+                }
                 val plan = initialPlan(
-                    codeFiles = coordinator.codeFiles,
+                    codeFiles = codeFiles,
                     files = coordinator.files,
                     root = coordinator.root,
                     task = task,

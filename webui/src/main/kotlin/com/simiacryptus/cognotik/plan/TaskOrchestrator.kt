@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.def
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils.isBinaryFile
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 import java.io.OutputStream
@@ -39,7 +40,7 @@ class TaskOrchestrator(
 
     val codeFiles: Map<Path, String>
         get() = files
-            .filter { it.exists() && it.isFile }
+            .filter { it.exists() && it.isFile && !isBinaryFile(it) }
             .filter { !it.name.startsWith(".") }
             .associate { file ->
                 root.relativize(file.toPath()) to try {

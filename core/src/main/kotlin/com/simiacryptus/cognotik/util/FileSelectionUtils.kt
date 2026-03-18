@@ -8,6 +8,8 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.name
 
+private const val MAX_TEXT_SIZE = 1024 * 1024
+
 object FileSelectionUtils {
     val log = LoggerFactory.getLogger(FileSelectionUtils::class.java)
 
@@ -203,8 +205,9 @@ object FileSelectionUtils {
         // Small files that passed extension check are likely text
         if (file.length() < 32) {
             return false
+        } else if (file.length() > MAX_TEXT_SIZE) {
+            return false
         }
-
 
         return try {
             file.inputStream().use { input ->
