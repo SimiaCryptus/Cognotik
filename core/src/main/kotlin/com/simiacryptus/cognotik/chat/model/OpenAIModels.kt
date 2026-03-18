@@ -113,6 +113,57 @@ object OpenAIModels {
         inputTokenPricePerK = 0.25 / 1000,
         outputTokenPricePerK = 2.00 / 1000
     )
+     val GPT54 = ChatModel(
+         name = "GPT-5.4",
+         modelId = "gpt-5.4",
+         maxTotalTokens = 1048576,
+         provider = APIProvider.OpenAI,
+         inputTokenPricePerK = 2.50 / 1000,
+         outputTokenPricePerK = 15.00 / 1000
+     )
+     val GPT54Mini = ChatModel(
+         name = "GPT-5.4 Mini",
+         modelId = "gpt-5.4-mini",
+         maxTotalTokens = 400000,
+         provider = APIProvider.OpenAI,
+         inputTokenPricePerK = 0.75 / 1000,
+         outputTokenPricePerK = 4.50 / 1000
+     )
+     val GPT54Nano = ChatModel(
+         name = "GPT-5.4 Nano",
+         modelId = "gpt-5.4-nano",
+         maxTotalTokens = 400000,
+         provider = APIProvider.OpenAI,
+         inputTokenPricePerK = 0.20 / 1000,
+         outputTokenPricePerK = 1.25 / 1000
+     )
+     val GPT54 = ChatModel(
+         name = "GPT-5.4",
+         modelId = "gpt-5.4",
+         maxTotalTokens = 1048576,
+         maxOutTokens = 128000,
+         provider = APIProvider.OpenAI,
+         inputTokenPricePerK = 2.50 / 1000,
+         outputTokenPricePerK = 15.00 / 1000
+     )
+     val GPT54Mini = ChatModel(
+         name = "GPT-5.4 Mini",
+         modelId = "gpt-5.4-mini",
+         maxTotalTokens = 400000,
+         maxOutTokens = 128000,
+         provider = APIProvider.OpenAI,
+         inputTokenPricePerK = 0.75 / 1000,
+         outputTokenPricePerK = 4.50 / 1000
+     )
+     val GPT54Nano = ChatModel(
+         name = "GPT-5.4 Nano",
+         modelId = "gpt-5.4-nano",
+         maxTotalTokens = 400000,
+         maxOutTokens = 128000,
+         provider = APIProvider.OpenAI,
+         inputTokenPricePerK = 0.20 / 1000,
+         outputTokenPricePerK = 1.25 / 1000
+     )
 
 
     val GPT41 = ChatModel(
@@ -155,6 +206,9 @@ object OpenAIModels {
         "GPT52" to GPT52,
         "GPT52Pro" to GPT52Pro,
         "GPT5Mini" to GPT5Mini,
+         "GPT54" to GPT54,
+         "GPT54Mini" to GPT54Mini,
+         "GPT54Nano" to GPT54Nano,
         "GPT45" to GPT45,
         "GPT41" to GPT41,
         "GPT41Mini" to GPT41Mini,
