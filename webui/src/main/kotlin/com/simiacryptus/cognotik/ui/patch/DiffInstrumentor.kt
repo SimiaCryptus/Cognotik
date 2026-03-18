@@ -338,7 +338,7 @@ class DiffInstrumentor(
         // Auto-apply path
         val shouldAutoApplyResult = shouldAutoApply(filepath)
         log.debug("shouldAutoApply({})={}, isValid={}", filepath, shouldAutoApplyResult, isValid)
-        return if (isValid && shouldAutoApplyResult) {
+        return "\n" + if (isValid && shouldAutoApplyResult) {
             log.info("Auto-applying diff to {}", filepath)
           when (val state = controller.apply()) {
                 is ApplyState.Applied -> {
@@ -406,6 +406,6 @@ class DiffInstrumentor(
                     "action" to "diff"
                 )
             )
-        }
+        } + "\n\n"
     }
 }
