@@ -300,7 +300,7 @@ class AwsChatClient(
             withPerformanceLogging {
                 val converseRequest = try {
                     logStreams.debug("Building AWS Converse request for model: ${model.modelId}")
-                    toConverseRequest(model, chatRequest, logStreams)
+                    toConverseRequest(model, chatRequest, logStreams, awsAuth.flattenChat ?: false)
                 } catch (e: Exception) {
                     log.error("Failed to create AWS request for model: ${model.modelId}", e)
                     logStreams.debug("Error details: ${e.message}")
@@ -361,57 +361,93 @@ class AwsChatClient(
             val profile: String = "default",
             val region: String = Region.US_WEST_2.id(),
             val models: Map<String,String> = emptyMap(),
-            val s3OutputUri: String? = null
+            val s3OutputUri: String? = null,
+            val flattenChat: Boolean? = null,
         )
 
         fun toConverseRequest(
             model: LLMModel,
             chatRequest: ModelSchema.ChatRequest,
-            logStreams: MutableList<BufferedOutputStream>
+            logStreams: MutableList<BufferedOutputStream>,
+            flattenChat: Boolean = false
         ): ConverseRequest {
             log.debug("Creating AWS ConverseRequest: modelId=${model.modelId}")
-            val systemMessages = chatRequest.messages.filter { it.role == ModelSchema.Role.system }
-            val nonSystemMessages = alternateMessagesRoles(chatRequest.messages).filter {
-                it.role != ModelSchema.Role.system
-            }
-
-            val systemContent = systemMessages.flatMap { msg ->
-                msg.content?.mapNotNull { part ->
-                    part.text?.takeIf { it.isNotEmpty() }?.let { SystemContentBlock.fromText(it) }
-                } ?: emptyList()
-            }
-
-            val messages = nonSystemMessages.map { msg ->
-                val contentBlocks = msg.content?.mapNotNull { part ->
-                    part.text?.takeIf { it.isNotEmpty() }?.let { ContentBlock.fromText(it) }
-                } ?: emptyList()
-                val role = when (msg.role) {
-                    ModelSchema.Role.assistant -> ConversationRole.ASSISTANT
-                    else -> ConversationRole.USER
+            if (flattenChat) {
+                log.debug("Flattening chat messages into a single user message")
+                val flattenedText = chatRequest.messages.joinToString("\n\n") { msg ->
+                    val roleLabel = when (msg.role) {
+                        ModelSchema.Role.system -> "System"
+                        ModelSchema.Role.assistant -> "Assistant"
+                        ModelSchema.Role.user -> "User"
+                        else -> msg.role?.name ?: "Unknown"
+                    }
+                    val text = msg.content?.joinToString("\n") { it.text ?: "" } ?: ""
+                    "$roleLabel: $text"
                 }
-                Message.builder()
-                    .role(role)
-                    .content(contentBlocks)
+
+                val messages = listOf(
+                    Message.builder()
+                        .role(ConversationRole.USER)
+                        .content(listOf(ContentBlock.fromText(flattenedText)))
+                        .build()
+                )
+
+                val inferenceConfig = InferenceConfiguration.builder()
+                    .maxTokens(model.maxOutTokens)
+                    .temperature(chatRequest.temperature.toFloat())
                     .build()
+
+                logStreams.debug("Flattened converse request: 1 message, flattenedLength=${flattenedText.length}, maxTokens=${model.maxOutTokens}, temperature=${chatRequest.temperature}")
+
+                return ConverseRequest.builder()
+                    .modelId(model.modelId)
+                    .messages(messages)
+                    .inferenceConfig(inferenceConfig)
+                    .build()
+            } else {
+                val systemMessages = chatRequest.messages.filter { it.role == ModelSchema.Role.system }
+                val nonSystemMessages = alternateMessagesRoles(chatRequest.messages).filter {
+                    it.role != ModelSchema.Role.system
+                }
+
+                val systemContent = systemMessages.flatMap { msg ->
+                    msg.content?.mapNotNull { part ->
+                        part.text?.takeIf { it.isNotEmpty() }?.let { SystemContentBlock.fromText(it) }
+                    } ?: emptyList()
+                }
+
+                val messages = nonSystemMessages.map { msg ->
+                    val contentBlocks = msg.content?.mapNotNull { part ->
+                        part.text?.takeIf { it.isNotEmpty() }?.let { ContentBlock.fromText(it) }
+                    } ?: emptyList()
+                    val role = when (msg.role) {
+                        ModelSchema.Role.assistant -> ConversationRole.ASSISTANT
+                        else -> ConversationRole.USER
+                    }
+                    Message.builder()
+                        .role(role)
+                        .content(contentBlocks)
+                        .build()
+                }
+
+                val inferenceConfig = InferenceConfiguration.builder()
+                    .maxTokens(model.maxOutTokens)
+                    .temperature(chatRequest.temperature.toFloat())
+                    .build()
+
+                logStreams.debug("Converse request: ${messages.size} messages, ${systemContent.size} system blocks, maxTokens=${model.maxOutTokens}, temperature=${chatRequest.temperature}")
+
+                val builder = ConverseRequest.builder()
+                    .modelId(model.modelId)
+                    .messages(messages)
+                    .inferenceConfig(inferenceConfig)
+
+                if (systemContent.isNotEmpty()) {
+                    builder.system(systemContent)
+                }
+
+                return builder.build()
             }
-
-            val inferenceConfig = InferenceConfiguration.builder()
-                .maxTokens(model.maxOutTokens)
-                .temperature(chatRequest.temperature.toFloat())
-                .build()
-
-            logStreams.debug("Converse request: ${messages.size} messages, ${systemContent.size} system blocks, maxTokens=${model.maxOutTokens}, temperature=${chatRequest.temperature}")
-
-            val builder = ConverseRequest.builder()
-                .modelId(model.modelId)
-                .messages(messages)
-                .inferenceConfig(inferenceConfig)
-
-            if (systemContent.isNotEmpty()) {
-                builder.system(systemContent)
-            }
-
-            return builder.build()
         }
 
         fun fromConverseResponse(response: ConverseResponse): ModelSchema.ChatResponse {

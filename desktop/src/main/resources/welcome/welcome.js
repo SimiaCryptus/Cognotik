@@ -80,6 +80,18 @@ document.addEventListener('DOMContentLoaded', function () {
             window.location.href = `/comic-serial/fileIndex/${docopsSessionId}/app.html`;
         });
     }
+    // --- Philosophical Calculator DocOps App ---
+    const openPhilosophicalCalculator = document.getElementById('open-philosophical-calculator');
+    if (openPhilosophicalCalculator) {
+        openPhilosophicalCalculator.addEventListener('click', function (e) {
+            e.preventDefault();
+            console.log('[DOMContentLoaded] openPhilosophicalCalculator clicked.');
+            docopsMenu.classList.remove('open');
+            const docopsSessionId = Utils.generateSessionId();
+            console.log('[DOMContentLoaded] Generated session for Philosophical Calculator:', docopsSessionId);
+            window.location.href = `/philosophical-calculator/fileIndex/${docopsSessionId}/app.html`;
+        });
+    }
 
 
     // --- Basic Chat Modal Setup ---

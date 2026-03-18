@@ -51,7 +51,7 @@ class DiffInstrumentor(
                         result.appendLine("```${segment.language}\n${segment.code}\n```")
                         continue
                     }
-                    val resolved = resolveWithBestEffort(root, filename, resolver)
+                     val resolved = resolveNewFilePath(root, filename, resolver)
                     if (resolved == null) {
                         result.appendLine("```${segment.language}\n${segment.code}\n```")
                         continue
@@ -90,6 +90,47 @@ class DiffInstrumentor(
         }
         return result.toString()
     }
+     /**
+      * Resolves a filename for a new file block. This is intentionally less aggressive
+      * than diff resolution — we only try direct resolution and, if the file doesn't
+      * exist yet, treat it as a new file path relative to root. We do NOT search the
+      * filesystem for similarly-named files, since that could cause a new file's content
+      * to overwrite an unrelated existing file.
+      */
+     private fun resolveNewFilePath(
+         root: Path,
+         filename: String,
+         resolver: (Path, String) -> String?
+     ): String? {
+         // Strategy 1: Direct resolution (only succeeds if file already exists)
+         val direct = resolver(root, filename)
+         if (direct != null) {
+             log.debug("Resolved new file '{}' directly against root '{}'", filename, root)
+             return direct
+         }
+         // Strategy 2: Strip common diff prefixes and try direct resolution
+         val strippedPrefixes = listOf("a/", "b/", "src/", "./")
+         for (prefix in strippedPrefixes) {
+             if (filename.startsWith(prefix)) {
+                 val stripped = filename.removePrefix(prefix)
+                 val resolved = resolver(root, stripped)
+                 if (resolved != null) {
+                     log.info("Resolved new file '{}' by stripping prefix '{}' -> '{}'", filename, prefix, stripped)
+                     return resolved
+                 }
+             }
+         }
+         // Strategy 3: Treat as a new file path relative to root (no filesystem search)
+         val directPath = root.resolve(filename).normalize()
+         if (directPath.startsWith(root)) {
+             val relativePath = root.relativize(directPath).toString()
+             log.info("Treating '{}' as new file path: '{}'", filename, relativePath)
+             return relativePath
+         }
+         log.warn("New file path '{}' resolves outside root '{}', rejecting", filename, root)
+         return null
+     }
+
     /**
      * Attempts to resolve a filename against the root using multiple strategies:
      * 1. Direct resolution via the provided resolver
@@ -146,12 +187,25 @@ class DiffInstrumentor(
                 }
                 when {
                     candidates.size == 1 -> {
-                        val match = root.relativize(candidates[0]).toString()
-                        log.info(
-                            "Resolved '{}' by filesystem search: found unique match '{}' under root '{}'",
-                            filename, match, root
-                        )
-                        return match
+                         val candidate = candidates[0]
+                         val match = root.relativize(candidate).toString()
+                         // Only accept if at least the filename and parent directory match
+                         val filenameParts = filename.replace("\\", "/").split("/")
+                         val candidateParts = match.replace("\\", "/").split("/")
+                         val matchingComponents = filenameParts.reversed().zip(candidateParts.reversed())
+                             .takeWhile { (a, b) -> a == b }.count()
+                         if (matchingComponents >= minOf(2, filenameParts.size)) {
+                             log.info(
+                                 "Resolved '{}' by filesystem search: found unique match '{}' under root '{}' ({} path components match)",
+                                 filename, match, root, matchingComponents
+                             )
+                             return match
+                         } else {
+                             log.debug(
+                                 "Filesystem search found '{}' for '{}' but only {} path components match, skipping",
+                                 match, filename, matchingComponents
+                             )
+                         }
                     }
                     candidates.size > 1 -> {
                         // Try to disambiguate by matching the most path components from the end
@@ -161,13 +215,24 @@ class DiffInstrumentor(
                             filenameParts.reversed().zip(candidateParts.reversed()).takeWhile { (a, b) -> a == b }.count()
                         }
                         if (bestMatch != null) {
-                            val match = root.relativize(bestMatch).toString()
-                            log.info(
-                                "Resolved '{}' by filesystem search: best match '{}' among {} candidates under root '{}'. All candidates: {}",
-                                filename, match, candidates.size, root,
-                                candidates.map { root.relativize(it).toString() }
-                            )
-                            return match
+                             val candidateParts = root.relativize(bestMatch).toString().replace("\\", "/").split("/")
+                             val matchingComponents = filenameParts.reversed().zip(candidateParts.reversed())
+                                 .takeWhile { (a, b) -> a == b }.count()
+                             if (matchingComponents >= minOf(2, filenameParts.size)) {
+                                 val match = root.relativize(bestMatch).toString()
+                                 log.info(
+                                     "Resolved '{}' by filesystem search: best match '{}' among {} candidates under root '{}' ({} path components match). All candidates: {}",
+                                     filename, match, candidates.size, root, matchingComponents,
+                                     candidates.map { root.relativize(it).toString() }
+                                 )
+                                 return match
+                             } else {
+                                 log.debug(
+                                     "Filesystem search found {} candidates for '{}' but best match only has {} path components matching, skipping. Candidates: {}",
+                                     candidates.size, filename, matchingComponents,
+                                     candidates.map { root.relativize(it).toString() }
+                                 )
+                             }
                         }
                     }
                 }
@@ -175,24 +240,11 @@ class DiffInstrumentor(
                 log.debug("Filesystem search failed for '{}' under root '{}': {}", filename, root, e.message)
             }
         }
-        // Strategy 5: If the file doesn't exist yet, treat it as a new file path relative to root
-        val directPath = root.resolve(filename).normalize()
-        if (directPath.startsWith(root)) {
-            // The path is within the root, so it could be a new file
-            val relativePath = root.relativize(directPath).toString()
-            log.info(
-                "Could not find existing file for '{}' under root '{}'. " +
-                    "Treating as new file path: '{}'. " +
-                    "If this is a diff for an existing file, the file may have been renamed or the path in the response is incorrect.",
-                filename, root, relativePath
-            )
-            return relativePath
-        }
         // All strategies exhausted
         log.error(
             "Failed to resolve filename '{}' against root '{}'. " +
-                "Strategies attempted: direct resolution, prefix stripping ({}), path suffix matching, " +
-                "filesystem search (target='{}'), direct path resolution. " +
+                 "Strategies attempted: direct resolution, prefix stripping ({}), path suffix matching, " +
+                 "filesystem search (target='{}'). " +
                 "The file reference in the AI response could not be matched to any file in the project.",
             filename, root, strippedPrefixes.joinToString(", "), targetName
         )
