@@ -44,8 +44,8 @@ class TaskOrchestrator(
             .associate { file ->
                 root.relativize(file.toPath()) to try {
                     file.inputStream().bufferedReader().use { it.readText() }
-                } catch (e: Exception) {
-                    log.warn("Error reading file", e)
+                } catch (e: Throwable) {
+                    log.warn("Error reading $file", e)
                     ""
                 }
             }
