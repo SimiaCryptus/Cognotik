@@ -92,6 +92,18 @@ document.addEventListener('DOMContentLoaded', function () {
             window.location.href = `/philosophical-calculator/fileIndex/${docopsSessionId}/app.html`;
         });
     }
+    // --- Omega App Factory DocOps App ---
+    const openOmega = document.getElementById('open-omega');
+    if (openOmega) {
+        openOmega.addEventListener('click', function (e) {
+            e.preventDefault();
+            console.log('[DOMContentLoaded] openOmega clicked.');
+            docopsMenu.classList.remove('open');
+            const docopsSessionId = Utils.generateSessionId();
+            console.log('[DOMContentLoaded] Generated session for Omega App Factory:', docopsSessionId);
+            window.location.href = `/omega/fileIndex/${docopsSessionId}/app.html`;
+        });
+    }
 
 
     // --- Basic Chat Modal Setup ---
