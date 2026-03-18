@@ -2,7 +2,16 @@ package com.simiacryptus.cognotik.chat.model
 
 import com.simiacryptus.cognotik.models.APIProvider
 
-@Deprecated("OpenAI sucks on oh so many levels - DO NOT USE")
+
+// ⚠️ Unverified: Maintainer has no API access.
+// Model IDs and pricing sourced from public documentation only.
+// PRs with corrections welcome.
+@Deprecated(
+  "Provider has banned the maintainer of this library. " +
+  "Maintained for user compatibility only — no ability to test or verify. " +
+  "Use at your own risk.",
+  replaceWith = ReplaceWith("AnthropicModels")
+)
 object OpenAIModels {
   val GPT4Turbo = ChatModel(
     name = "GPT4Turbo",
