@@ -81,6 +81,7 @@ class DocProcessor(
     val additionalContext: (DocSpec, File) -> List<String> = { _, _ -> emptyList() },
     val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
+    val imageModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val serverless: Boolean = false,
     val openBrowser: Boolean = false,
     val urlCacheDir: File = File(root, ".doc-processor-cache/url-cache"),
@@ -1012,6 +1013,7 @@ class DocProcessor(
                     openBrowser = openBrowser,
                     fastModel = fastModel,
                     smartModel = smartModel,
+                    imageModel = imageModel,
                     showMenubar = showMenubar,
                 ) {
                     override fun createTempDirectory(prefix: String) = root
