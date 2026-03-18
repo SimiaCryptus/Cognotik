@@ -777,6 +777,134 @@ textarea::placeholder {
     border-color: var(--color-border-light);
     background: linear-gradient(135deg, var(--color-surface) 0%, rgba(108, 140, 255, 0.03) 100%);
 }
+/* ===== Upload Zone ===== */
+.upload-zone {
+    border: 2px dashed var(--color-border-light);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    background: var(--color-bg);
+    margin-bottom: 1rem;
+}
+.upload-zone:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-bg);
+}
+.upload-zone.drag-over {
+    border-color: var(--color-accent);
+    background: var(--color-accent-bg);
+    box-shadow: 0 0 0 4px var(--color-accent-bg);
+}
+.upload-zone-content {
+    pointer-events: none;
+}
+.upload-zone-content label {
+    pointer-events: auto;
+}
+.upload-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+.upload-text {
+    color: var(--color-text-muted) !important;
+    font-size: 0.95rem !important;
+    margin-bottom: 0.3rem !important;
+}
+.upload-browse-link {
+    color: var(--color-primary);
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: 500;
+}
+.upload-browse-link:hover {
+    color: var(--color-primary-hover);
+}
+.upload-hint {
+    color: var(--color-text-dim) !important;
+    font-size: 0.8rem !important;
+    margin-bottom: 0 !important;
+}
+.upload-file-input {
+    display: none;
+}
+/* ===== Uploaded Files List ===== */
+.uploaded-files-list {
+    display: none;
+    margin-bottom: 1rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+.file-list-header {
+    padding: 0.6rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+}
+.file-list-header code {
+    background: var(--color-bg);
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    color: var(--color-accent);
+}
+.file-list-items {
+    max-height: 250px;
+    overflow-y: auto;
+}
+.file-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.9rem;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.85rem;
+    transition: background var(--transition);
+}
+.file-list-item:last-child {
+    border-bottom: none;
+}
+.file-list-item:hover {
+    background: var(--color-surface-hover);
+}
+.file-item-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.file-item-name {
+    flex: 1;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.btn-sm {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+.btn-danger-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--color-text-dim);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+.btn-danger-ghost:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+    border-color: var(--color-danger);
+}
+
 
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar {

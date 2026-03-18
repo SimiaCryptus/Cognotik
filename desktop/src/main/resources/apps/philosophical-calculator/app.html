@@ -27,9 +27,20 @@
         <div class="card">
             <h3>📋 Notes</h3>
             <p>Paste your raw notes, transcripts, or source material. This is the canonical, authoritative source for all operations.</p>
+            <div class="upload-zone" id="upload-zone">
+                <div class="upload-zone-content">
+                    <span class="upload-icon">📁</span>
+                    <p class="upload-text">Drag & drop files here, or <label for="file-input" class="upload-browse-link">browse</label></p>
+                    <p class="upload-hint">Supports text, markdown, docx, pdf, and other document formats</p>
+                    <input type="file" id="file-input" multiple class="upload-file-input">
+                </div>
+            </div>
+            <div class="uploaded-files-list" id="uploaded-files-list"></div>
+
             <textarea id="notes-editor" rows="18" placeholder="Paste your raw notes, transcripts, ideas, or source material here..."></textarea>
             <div class="button-row">
                 <button class="btn btn-primary" id="save-notes">💾 Save Notes</button>
+                <button class="btn btn-secondary" id="refresh-file-list">🔄 Refresh File List</button>
                 <span id="notes-status" class="status-msg"></span>
             </div>
         </div>

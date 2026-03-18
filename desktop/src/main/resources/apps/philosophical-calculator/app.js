@@ -735,5 +735,191 @@
     loadInitialFiles();
     checkExistingFiles();
     startStatusPolling();
+    // ========================================================================
+    // File Upload
+    // ========================================================================
+    var uploadZone = document.getElementById('upload-zone');
+    var fileInput = document.getElementById('file-input');
+    var uploadedFilesList = document.getElementById('uploaded-files-list');
+    // Prevent default drag behaviors on the whole document
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function (eventName) {
+        document.body.addEventListener(eventName, function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+    // Highlight drop zone on drag
+    ['dragenter', 'dragover'].forEach(function (eventName) {
+        uploadZone.addEventListener(eventName, function () {
+            uploadZone.classList.add('drag-over');
+        }, false);
+    });
+    ['dragleave', 'drop'].forEach(function (eventName) {
+        uploadZone.addEventListener(eventName, function () {
+            uploadZone.classList.remove('drag-over');
+        }, false);
+    });
+    // Handle drop
+    uploadZone.addEventListener('drop', function (e) {
+        var files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            handleFileUpload(files);
+        }
+    }, false);
+    // Handle file input change
+    fileInput.addEventListener('change', function () {
+        if (this.files && this.files.length > 0) {
+            handleFileUpload(this.files);
+        }
+        // Reset so the same file can be re-uploaded
+        this.value = '';
+    });
+    async function handleFileUpload(files) {
+        var totalFiles = files.length;
+        var completed = 0;
+        var failed = 0;
+        setStatus('notes-status', 'Uploading ' + totalFiles + ' file(s)…', '');
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            try {
+                await uploadSingleFile(file);
+                completed++;
+                setStatus('notes-status', 'Uploaded ' + completed + '/' + totalFiles + '…', '');
+            } catch (e) {
+                failed++;
+                console.error('Failed to upload ' + file.name + ':', e);
+            }
+        }
+        if (failed === 0) {
+            setStatus('notes-status', '✓ Uploaded ' + completed + ' file(s)', 'success');
+        } else {
+            setStatus('notes-status', '⚠ Uploaded ' + completed + ', failed ' + failed, 'error');
+        }
+        await refreshUploadedFileList();
+    }
+    async function uploadSingleFile(file) {
+        var fileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        var filePath = 'notes/' + fileName;
+        // Determine content type
+        var contentType = file.type || 'application/octet-stream';
+        var resp = await fetch(basePath + '/' + filePath, {
+            method: 'PUT',
+            headers: { 'Content-Type': contentType },
+            body: file
+        });
+        if (!resp.ok) {
+            throw new Error('Upload failed for ' + fileName + ': ' + resp.status);
+        }
+        return true;
+    }
+    async function refreshUploadedFileList() {
+        try {
+            var resp = await fetch(basePath + '/notes/');
+            if (!resp.ok) {
+                uploadedFilesList.innerHTML = '';
+                return;
+            }
+            var text = await resp.text();
+            // Try to parse as JSON directory listing
+            var files = [];
+            try {
+                var json = JSON.parse(text);
+                if (Array.isArray(json)) {
+                    files = json;
+                } else if (json.files && Array.isArray(json.files)) {
+                    files = json.files;
+                } else if (json.children && Array.isArray(json.children)) {
+                    files = json.children;
+                }
+            } catch (e) {
+                // Try to parse as HTML directory listing
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(text, 'text/html');
+                var links = doc.querySelectorAll('a');
+                links.forEach(function (a) {
+                    var href = a.getAttribute('href');
+                    if (href && href !== '../' && href !== './' && href !== '/') {
+                        var name = decodeURIComponent(href.replace(/\/$/, '').split('/').pop());
+                        if (name && name !== '.' && name !== '..') {
+                            files.push(name);
+                        }
+                    }
+                });
+            }
+            // Normalize file entries to strings
+            files = files.map(function (f) {
+                if (typeof f === 'string') return f;
+                if (f && f.name) return f.name;
+                if (f && f.fileName) return f.fileName;
+                return String(f);
+            }).filter(function (f) {
+                return f && f !== '.' && f !== '..';
+            });
+            renderFileList(files);
+        } catch (e) {
+            console.warn('Could not list notes directory:', e);
+            uploadedFilesList.innerHTML = '';
+        }
+    }
+    function renderFileList(files) {
+        if (!files || files.length === 0) {
+            uploadedFilesList.innerHTML = '';
+            uploadedFilesList.style.display = 'none';
+            return;
+        }
+        uploadedFilesList.style.display = 'block';
+        var html = '<div class="file-list-header">📂 Files in <code>notes/</code> (' + files.length + ')</div>';
+        html += '<div class="file-list-items">';
+        for (var i = 0; i < files.length; i++) {
+            var fname = escapeHtml(files[i]);
+            var ext = files[i].split('.').pop().toLowerCase();
+            var icon = getFileIcon(ext);
+            html += '<div class="file-list-item">' +
+                '<span class="file-item-icon">' + icon + '</span>' +
+                '<span class="file-item-name">' + fname + '</span>' +
+                '<button class="btn btn-sm btn-danger-ghost file-delete-btn" data-filename="' + fname + '" title="Delete file">✕</button>' +
+                '</div>';
+        }
+        html += '</div>';
+        uploadedFilesList.innerHTML = html;
+        // Attach delete handlers
+        uploadedFilesList.querySelectorAll('.file-delete-btn').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var filename = this.dataset.filename;
+                if (!confirm('Delete notes/' + filename + '?')) return;
+                try {
+                    var resp = await fetch(basePath + '/notes/' + encodeURIComponent(filename), {
+                        method: 'DELETE'
+                    });
+                    if (!resp.ok && resp.status !== 404) {
+                        throw new Error('Delete failed: ' + resp.status);
+                    }
+                    setStatus('notes-status', '✓ Deleted ' + filename, 'success');
+                    await refreshUploadedFileList();
+                } catch (e) {
+                    setStatus('notes-status', '✗ ' + e.message, 'error');
+                }
+            });
+        });
+    }
+    function getFileIcon(ext) {
+        var icons = {
+            'md': '📝', 'txt': '📄', 'text': '📄',
+            'pdf': '📕', 'doc': '📘', 'docx': '📘',
+            'rtf': '📃', 'odt': '📃',
+            'html': '🌐', 'htm': '🌐',
+            'json': '📋', 'xml': '📋', 'csv': '📊',
+            'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'svg': '🖼️',
+            'mp3': '🎵', 'wav': '🎵', 'mp4': '🎬',
+            'zip': '📦', 'tar': '📦', 'gz': '📦'
+        };
+        return icons[ext] || '📎';
+    }
+    // Refresh file list button
+    document.getElementById('refresh-file-list').addEventListener('click', function () {
+        refreshUploadedFileList();
+    });
+    // Load file list on startup
+    refreshUploadedFileList();
 
 })();

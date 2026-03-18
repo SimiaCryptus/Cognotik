@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
 import java.io.File
 
 class DocOpsApp(
@@ -92,7 +93,18 @@ class DocOpsApp(
                 }
             }
         }
+         // Automatically initialize a git repository and make an initial commit
+         if (!GitOperationHandler.isGitRepository(sessionRoot)) {
+             try {
+                 GitOperationHandler.executeGitCommand(sessionRoot, "git", "init")
+                 GitOperationHandler.executeGitCommand(sessionRoot, "git", "add", "-A")
+                 GitOperationHandler.executeGitCommand(sessionRoot, "git", "commit", "-m", "Initial commit from DocOps app session")
+             } catch (e: Exception) {
+                 // Log but don't fail session creation if git init fails
+                 org.slf4j.LoggerFactory.getLogger(DocOpsApp::class.java)
+                     .warn("Failed to initialize git repository for session: ${e.message}", e)
+             }
+         }
         return newSession
     }
 }
-

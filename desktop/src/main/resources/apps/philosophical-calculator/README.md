@@ -59,7 +59,7 @@ notes.* ──► summarize_op ──► summary.md
 
 | File          | Purpose                                                               |
 |---------------|-----------------------------------------------------------------------|
-| `notes.*`    | Raw notes, transcripts, or source material (canonical/authoritative)  |
+| `notes/*`    | Raw notes, transcripts, or source material (canonical/authoritative). Supports file upload via drag-and-drop or file picker.  |
 | `instruct.md` | Structural and thematic directives for article generation             |
 | `content.md`  | The main article — both an output and an input for further refinement |
 
