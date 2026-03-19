@@ -21,10 +21,33 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.simiacryptus.cognotik.platform.model.UserKt.defaultUser;
 import static com.simiacryptus.cognotik.util.CognotikUtils.*;
 
 @SuppressWarnings("unused")
 public record CodeImplementer(String prompt, int port, boolean headless, int timeout, String workspaceRoot) {
+
+    public static final String DEFAULT_PROMPT = "Build a fun and unique game using java and gradle.";
+    public static final int DEFAULT_PORT = 8030;
+    public static final String DEFAULT_WORKSPACE = ".";
+    public static final int DEFAULT_TIMEOUT = 30;
+    public static final boolean DEFAULT_HEADLESS = true;
+    private static final Logger log = LoggerFactory.getLogger(CodeImplementer.class);
+
+    public static void main(String[] args) {
+        String prompt = getArg(args, 0, DEFAULT_PROMPT);
+        int port = Integer.parseInt(getArg(args, 1, String.valueOf(DEFAULT_PORT)));
+        String workspaceRoot = getArg(args, 2, DEFAULT_WORKSPACE);
+        int timeout = Integer.parseInt(getArg(args, 3, String.valueOf(DEFAULT_TIMEOUT)));
+        boolean headless = Boolean.parseBoolean(getArg(args, 4, String.valueOf(DEFAULT_HEADLESS)));
+        configureEnvironmentalKeys();
+        UnifiedHarness.configurePlatform(defaultUser);
+        new CodeImplementer(prompt, port, headless, timeout, workspaceRoot).run();
+    }
+
+    private static String getArg(String[] args, int index, String defaultValue) {
+        return args.length > index && args[index] != null && !args[index].isEmpty() ? args[index] : defaultValue;
+    }
 
     public void run() {
         log.info("Starting CodeImplementer with prompt: {}", this.prompt());
@@ -37,7 +60,7 @@ public record CodeImplementer(String prompt, int port, boolean headless, int tim
 
             new PlanHarness(this.prompt(),
                     new WaterfallModeConfig(),
-                    (model, session) -> getInterface(getChatModel(Objects.requireNonNull(model.getModel())), session),
+                    (model, session, user) -> getInterface(getChatModel(Objects.requireNonNull(model.getModel())), session),
                     this.port(),
                     this.headless(),
                     false,
@@ -45,7 +68,9 @@ public record CodeImplementer(String prompt, int port, boolean headless, int tim
                     chatModel,
                     chatModel,
                     chatModel,
-                    new File(this.workspaceRoot())) {
+                    new File(this.workspaceRoot()),
+                    defaultUser
+            ) {
                 @NotNull
                 @Override
                 public OrchestrationConfig newConfig(@NotNull Session session, @NotNull File tempDir) {
@@ -85,29 +110,6 @@ public record CodeImplementer(String prompt, int port, boolean headless, int tim
                     "pwd", new File(".").getAbsolutePath()
             )));
         }
-    }
-
-    public static final String DEFAULT_PROMPT = "Build a fun and unique game using java and gradle.";
-    public static final int DEFAULT_PORT = 8030;
-    public static final String DEFAULT_WORKSPACE = ".";
-    public static final int DEFAULT_TIMEOUT = 30;
-    public static final boolean DEFAULT_HEADLESS = true;
-    private static final Logger log = LoggerFactory.getLogger(CodeImplementer.class);
-
-    public static void main(String[] args) {
-        String prompt = getArg(args, 0, DEFAULT_PROMPT);
-        int port = Integer.parseInt(getArg(args, 1, String.valueOf(DEFAULT_PORT)));
-        String workspaceRoot = getArg(args, 2, DEFAULT_WORKSPACE);
-        int timeout = Integer.parseInt(getArg(args, 3, String.valueOf(DEFAULT_TIMEOUT)));
-        boolean headless = Boolean.parseBoolean(getArg(args, 4, String.valueOf(DEFAULT_HEADLESS)));
-        configureEnvironmentalKeys();
-        UnifiedHarness.configurePlatform();
-        new CodeImplementer(prompt, port, headless, timeout, workspaceRoot).run();
-    }
-
-
-    private static String getArg(String[] args, int index, String defaultValue) {
-        return args.length > index && args[index] != null && !args[index].isEmpty() ? args[index] : defaultValue;
     }
 
 }

@@ -1,6 +1,6 @@
 ---
 task_type: CodeReview
-transforms: ../vacation_plan\.html -> ../review_report\.md
+transforms: ../vacation_plan\.html -> ../review_report.md
 related:
    - ../itinerary.md
    - ../analysis_output.md

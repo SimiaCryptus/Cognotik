@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | AbstractionLadder</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Workspace Browser -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -208,19 +209,20 @@
 
 <cognotik-header current-page="abstraction-ladder"></cognotik-header>
 
-  <main class="task-container">
+<main class="task-container">
 
     <!-- Section A: Header -->
     <section class="task-header">
         <div class="breadcrumbs">Home > Tasks > Reasoning > AbstractionLadder</div>
         <h1>AbstractionLadderTask</h1>
         <p class="pitch" style="font-family: 'Inter', sans-serif; color: var(--text-dim);">
-            Traverse abstraction levels to identify patterns, generalizations, and architectural insights from your code or concepts.
+            Traverse abstraction levels to identify patterns, generalizations, and architectural insights from your code
+            or concepts.
         </p>
         <div class="badges">
-              <span class="badge badge-primary">Category: Reasoning</span>
-              <span class="badge badge-success">Side-Effect: Safe</span>
-              <span class="badge badge-warning">Model: GPT-4 Preferred</span>
+            <span class="badge badge-primary">Category: Reasoning</span>
+            <span class="badge badge-success">Side-Effect: Safe</span>
+            <span class="badge badge-warning">Model: GPT-4 Preferred</span>
         </div>
     </section>
 
@@ -254,13 +256,16 @@
                 <div class="mock-tab">Pattern Analysis</div>
             </div>
             <div class="mock-content">
-                  <div style="color: var(--accent-primary); font-weight: bold; margin-bottom: var(--space-2);">### Level 1: Data Persistence Sink</div>
+                <div style="color: var(--accent-primary); font-weight: bold; margin-bottom: var(--space-2);">### Level
+                    1: Data Persistence Sink
+                </div>
                 <p style="font-size: 0.8rem; color: var(--text-dim);">
                     • <strong>Generalization:</strong> Abstracting the destination of log entries.<br>
                     • <strong>Patterns:</strong> Strategy Pattern, Observer Pattern.<br>
-                      • <strong>Refactoring:</strong> Introduce <code class="code-inline">LogAppender</code> interface to decouple from File IO.
+                    • <strong>Refactoring:</strong> Introduce <code class="code-inline">LogAppender</code> interface to
+                    decouple from File IO.
                 </p>
-                  <div style="border-left: 2px solid var(--border-subtle); padding-left: var(--space-2); margin-top: var(--space-4);">
+                <div style="border-left: 2px solid var(--border-subtle); padding-left: var(--space-2); margin-top: var(--space-4);">
                     <span style="color: #4ade80;">✔ Upward analysis complete</span>
                 </div>
             </div>
@@ -270,11 +275,11 @@
     <section class="showcase-section">
         <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: #fff;">Test Workspace Browser</h2>
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
-            Explore the artifacts generated during the analysis of the test workspace, including the detailed markdown reports and transcripts.
+            Explore the artifacts generated during the analysis of the test workspace, including the detailed markdown
+            reports and transcripts.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
-
 
 
     <!-- Section C: Tabs -->
@@ -286,67 +291,86 @@
         </nav>
 
         <!-- Tab: Documentation -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Configuration Parameters</h3>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                                  <td><code class="code-inline">concrete_concept</code> <span class="req">*</span></td>
-                        <td>String</td>
-                        <td>The concrete concept, problem, or code pattern to analyze.</td>
-                    </tr>
-                    <tr>
-                        <td><code>direction</code></td>
-                        <td>String</td>
-                                  <td>Direction to traverse: 'up' (abstraction), 'down' (concretization), or 'both'. Default: <code class="code-inline">both</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><code>levels</code></td>
-                        <td>Int</td>
-                                  <td>Number of abstraction levels to traverse in each direction (1-5). Default: <code class="code-inline">3</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><code>identify_patterns</code></td>
-                        <td>Boolean</td>
-                                  <td>Whether to identify design patterns, anti-patterns, and refactoring opportunities. Default: <code class="code-inline">true</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><code>input_files</code></td>
-                        <td>List&lt;String&gt;</td>
-                                  <td>Specific files or patterns (e.g. <code class="code-inline">**/*.kt</code>) to be used as input for the task.</td>
-                    </tr>
-                    <tr>
-                        <td><code>related_files</code></td>
-                        <td>List&lt;String&gt;</td>
-                        <td>Additional files for context (e.g., existing code, related implementations).</td>
-                    </tr>
+                <tr>
+                    <td><code class="code-inline">concrete_concept</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The concrete concept, problem, or code pattern to analyze.</td>
+                </tr>
+                <tr>
+                    <td><code>direction</code></td>
+                    <td>String</td>
+                    <td>Direction to traverse: 'up' (abstraction), 'down' (concretization), or 'both'. Default: <code
+                            class="code-inline">both</code>.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>levels</code></td>
+                    <td>Int</td>
+                    <td>Number of abstraction levels to traverse in each direction (1-5). Default: <code
+                            class="code-inline">3</code>.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>identify_patterns</code></td>
+                    <td>Boolean</td>
+                    <td>Whether to identify design patterns, anti-patterns, and refactoring opportunities. Default:
+                        <code class="code-inline">true</code>.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>input_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Specific files or patterns (e.g. <code class="code-inline">**/*.kt</code>) to be used as input
+                        for the task.
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Additional files for context (e.g., existing code, related implementations).</td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- Tab: Process -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>Task Lifecycle</h3>
             <ol>
-                <li><strong>Initialization:</strong> Validates <code>concrete_concept</code>, <code>direction</code>, and <code>levels</code> (1-5).</li>
-                          <li><strong>Context Gathering:</strong> Reads <code class="code-inline">input_files</code> and <code class="code-inline">related_files</code> to provide concrete code context.</li>
-                <li><strong>Upward Analysis:</strong> (If 'up' or 'both') Identifies generalizations, architectural patterns, and refactoring opportunities.</li>
-                <li><strong>Downward Analysis:</strong> (If 'down' or 'both') Identifies specific implementations, idioms, and code smells.</li>
-                <li><strong>Pattern Synthesis:</strong> (If enabled) Generates a comprehensive report with design patterns, insights, and actionable recommendations.</li>
+                <li><strong>Initialization:</strong> Validates <code>concrete_concept</code>, <code>direction</code>,
+                    and <code>levels</code> (1-5).
+                </li>
+                <li><strong>Context Gathering:</strong> Reads <code class="code-inline">input_files</code> and <code
+                        class="code-inline">related_files</code> to provide concrete code context.
+                </li>
+                <li><strong>Upward Analysis:</strong> (If 'up' or 'both') Identifies generalizations, architectural
+                    patterns, and refactoring opportunities.
+                </li>
+                <li><strong>Downward Analysis:</strong> (If 'down' or 'both') Identifies specific implementations,
+                    idioms, and code smells.
+                </li>
+                <li><strong>Pattern Synthesis:</strong> (If enabled) Generates a comprehensive report with design
+                    patterns, insights, and actionable recommendations.
+                </li>
             </ol>
             <h3>Error Handling</h3>
-            <p>The task performs strict validation on the <code>direction</code> and <code>levels</code> parameters, failing early with a descriptive error if the configuration is invalid.</p>
+            <p>The task performs strict validation on the <code>direction</code> and <code>levels</code> parameters,
+                failing early with a descriptive error if the configuration is invalid.</p>
         </div>
 
         <!-- Tab: Integration -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Embedded Invocation (Kotlin)</h3>
             <p style="color: var(--text-dim); margin-bottom: 1rem;">
                 Use the <code>UnifiedHarness</code> to run this task programmatically in a headless environment.
@@ -384,9 +408,10 @@ harness.runTask(
 }
             </code></pre>
 
-                      <h3 style="margin-top: var(--space-8);">Prompt Segment</h3>
+            <h3 style="margin-top: var(--space-8);">Prompt Segment</h3>
             <p>This task injects the following logic into the LLM context:</p>
-            <pre style="background: var(--bg-panel); border-radius: 6px; font-size: 0.8rem;"><code class="language-text">
+            <pre style="background: var(--bg-panel); border-radius: 6px; font-size: 0.8rem;"><code
+                    class="language-text">
 AbstractionLadder - Traverse abstraction levels to find patterns and design insights
   ** Specify the concrete concept or problem to analyze
   ** Choose direction: 'up' (generalize), 'down' (concretize), or 'both'
@@ -413,8 +438,8 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
     }
 </script>
 <script type="module">
-      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
-    initFileTree('#file-tree-demo', 'webui/workspaces/AbstractionLadder/');
+    import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
+  initFileTree('#file-tree-demo', 'webui/workspaces/AbstractionLadder/');
 </script>
 
 

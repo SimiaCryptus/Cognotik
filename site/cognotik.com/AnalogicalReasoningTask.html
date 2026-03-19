@@ -3,19 +3,20 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | AnalogicalReasoningTask - Industrial Reasoning Engine</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree Dependencies -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -219,7 +220,8 @@
         <div class="breadcrumbs">Home > Tasks > Reasoning > AnalogicalReasoningTask</div>
         <h1>AnalogicalReasoningTask</h1>
         <p class="pitch">
-            Solve complex problems by mapping structural relationships and insights from diverse source domains (e.g., biological systems, urban planning, music).
+            Solve complex problems by mapping structural relationships and insights from diverse source domains (e.g.,
+            biological systems, urban planning, music).
         </p>
         <div class="badges">
             <span class="badge">Reasoning</span>
@@ -254,7 +256,8 @@
             </div>
             <div class="mock-ui-content">
                 <h3 style="margin-top: 0; color: var(--accent-primary);">Synthesis: Mycelial Network Analogy</h3>
-                <p><strong>Key Insight:</strong> Decentralized resource allocation via chemical signaling mimics service discovery in high-latency environments.</p>
+                <p><strong>Key Insight:</strong> Decentralized resource allocation via chemical signaling mimics service
+                    discovery in high-latency environments.</p>
                 <div style="background: #0d1117; border: 1px solid #30363d; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;">
                     <div style="font-size: 0.8rem; color: #8b949e; margin-bottom: 0.5rem;">Conceptual Mapping:</div>
                     <div style="font-family: monospace;">
@@ -263,7 +266,8 @@
                         Spore Distribution <span style="color: #58a6ff;">→</span> Container Deployment
                     </div>
                 </div>
-                <p><strong>Recommended Approach:</strong> Implement a "Gossip Protocol" for state propagation based on the Mycelial signaling model to reduce central orchestrator load.</p>
+                <p><strong>Recommended Approach:</strong> Implement a "Gossip Protocol" for state propagation based on
+                    the Mycelial signaling model to reduce central orchestrator load.</p>
             </div>
         </div>
     </section>
@@ -273,9 +277,9 @@
         <p style="color: var(--text-dim); margin-bottom: 1rem; font-size: 0.9rem;">
             Browse generated reasoning artifacts, transcripts, and synthesis reports in the task workspace.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+        <div class="panel" id="file-tree-demo"
+             style="height: 300px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
     </section>
-
 
 
     <!-- 3. TABS -->
@@ -287,7 +291,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3 style="font-family: var(--font-mono); font-size: 1.1rem;">TaskExecutionConfig Fields</h3>
             <table class="docs-table">
                 <thead>
@@ -336,30 +340,34 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3 style="font-family: var(--font-mono); font-size: 1.1rem;">Task Process Lifecycle</h3>
             <ol style="color: var(--text-dim); padding-left: 1.2rem;">
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Context Gathering:</strong> 
-                    Reads <code>input_files</code>, <code>related_files</code>, and prior execution state to build a comprehensive understanding of the target problem.
+                    <strong style="color: var(--text-main);">Context Gathering:</strong>
+                    Reads <code>input_files</code>, <code>related_files</code>, and prior execution state to build a
+                    comprehensive understanding of the target problem.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Analogy Generation:</strong> 
-                    Uses a high-temperature LLM pass (<code>temperature = 0.7</code>) to identify structural parallels and generate <code>num_analogies</code>.
+                    <strong style="color: var(--text-main);">Analogy Generation:</strong>
+                    Uses a high-temperature LLM pass (<code>temperature = 0.7</code>) to identify structural parallels
+                    and generate <code>num_analogies</code>.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Mapping Validation:</strong> 
-                    (Optional) A low-temperature pass (<code>temperature = 0.3</code>) verifies that the mappings are logically sound and free of superficial fallacies.
+                    <strong style="color: var(--text-main);">Mapping Validation:</strong>
+                    (Optional) A low-temperature pass (<code>temperature = 0.3</code>) verifies that the mappings are
+                    logically sound and free of superficial fallacies.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Synthesis:</strong> 
-                    Aggregates insights across all analogies to produce a final <code>recommended_approach</code> and <code>synthesized_insights</code>.
+                    <strong style="color: var(--text-main);">Synthesis:</strong>
+                    Aggregates insights across all analogies to produce a final <code>recommended_approach</code> and
+                    <code>synthesized_insights</code>.
                 </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3 style="font-family: var(--font-mono); font-size: 1.1rem;">Kotlin Boilerplate</h3>
             <pre><code class="language-kotlin">// 1. Define the Execution Configuration
 val executionConfig = AnalogicalReasoningTaskExecutionConfigData(
@@ -377,9 +385,11 @@ harness.runTask(
     workspace = File("./workspace"),
     autoFix = true
 )</code></pre>
-            <h3 style="margin-top: 2rem; font-family: var(--font-mono); font-size: 1.1rem;">Embedded Integration (Headless)</h3>
+            <h3 style="margin-top: 2rem; font-family: var(--font-mono); font-size: 1.1rem;">Embedded Integration
+                (Headless)</h3>
             <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
-                To use this task in a CI/CD pipeline or CLI tool, initialize the <code>UnifiedHarness</code> in serverless mode:
+                To use this task in a CI/CD pipeline or CLI tool, initialize the <code>UnifiedHarness</code> in
+                serverless mode:
             </p>
             <pre><code class="language-kotlin">val harness = UnifiedHarness(
     serverless = true,
@@ -391,7 +401,8 @@ harness.runTask(
 harness.start()</code></pre>
             <h3 style="margin-top: 2rem; font-family: var(--font-mono); font-size: 1.1rem;">Test Case Example</h3>
             <div style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-subtle);">
-                <p style="margin-top: 0; font-weight: 600; color: var(--accent-primary);">Scenario: Urban Planning for Microservices</p>
+                <p style="margin-top: 0; font-weight: 600; color: var(--accent-primary);">Scenario: Urban Planning for
+                    Microservices</p>
                 <table class="docs-table" style="margin-bottom: 0;">
                     <tr>
                         <td style="width: 150px;">Source Domain</td>
@@ -403,7 +414,9 @@ harness.start()</code></pre>
                     </tr>
                     <tr>
                         <td>Expected Insight</td>
-                        <td>Implementing "Roundabouts" (buffer zones) for high-traffic event streams to prevent deadlock.</td>
+                        <td>Implementing "Roundabouts" (buffer zones) for high-traffic event streams to prevent
+                            deadlock.
+                        </td>
                     </tr>
                 </table>
             </div>

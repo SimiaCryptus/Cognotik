@@ -15,11 +15,11 @@ class ImageVariationTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-      UnifiedHarness.configurePlatform()
+      UnifiedHarness.configurePlatform(com.simiacryptus.cognotik.platform.model.defaultUser)
     }
   }
 
- //@org.junit.jupiter.api.Test
+  //@org.junit.jupiter.api.Test
   @Timeout(30, unit = TimeUnit.MINUTES)
   fun test() {
     val inputFile = "input.png"
@@ -35,6 +35,7 @@ class ImageVariationTaskTest {
       temperature = 0.7,
       timeoutMinutes = 30,
       typeConfig = TaskTypeConfig(ImageVariationTask.ImageVariation.name),
+      user = com.simiacryptus.cognotik.platform.model.defaultUser,
     )
     File("/home/andrew/code/Cognotik/webui/workspaces/Waterfall/test-20260111_145442/complex_base_scene.png")
       .copyTo(harness.dataDir.resolve(inputFile), overwrite = true)

@@ -11,9 +11,9 @@ import com.simiacryptus.cognotik.audio.AudioState
 import com.simiacryptus.cognotik.audio.DictationManager
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.currentSession
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import icons.MyIcons
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.event.Level
@@ -126,7 +126,7 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
                     findAudioModel(it)
                 } ?: throw IOException("Transcription model not configured")
                 val apiData =
-                    fileApplicationServices().userSettingsManager.getUserSettings().apis.find { it.provider == model.provider }
+                  fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.find { it.provider == model.provider }
                 return TranscriptionClient(
                     key = apiData?.key?.decrypt ?: throw IOException("API key for ${model.provider} not configured"),
                     apiBase = apiData.baseUrl,
@@ -134,11 +134,11 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
                     logStreams = mutableListOf(),
                     workPool = ApplicationServices.threadPoolManager.getPool(
                         currentSession,
-                        UserSettingsManager.defaultUser
+                      AppSettingsState.localUser
                     ),
                     scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
                         currentSession,
-                        UserSettingsManager.defaultUser
+                      AppSettingsState.localUser
                     ),
                     provider = model.provider
                 )

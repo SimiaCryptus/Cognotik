@@ -1,11 +1,11 @@
 ﻿package com.simiacryptus.cognotik.util
 
 interface TextBlockFactory<T : TextBlock?> {
-    fun fromString(text: String?): T
+  fun fromString(text: String?): T
 
-    fun toString(text: T): CharSequence? {
-        return text.toString()
-    }
+  fun toString(text: T): CharSequence? {
+    return text.toString()
+  }
 
-    fun looksLike(text: String?): Boolean
+  fun looksLike(text: String?): Boolean
 }

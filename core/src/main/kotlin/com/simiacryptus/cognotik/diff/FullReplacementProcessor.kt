@@ -7,9 +7,9 @@ import com.simiacryptus.cognotik.util.LoggerFactory
  * This is useful when changes are extensive or when patching would be more complex.
  */
 class FullReplacementProcessor : PatchProcessor {
-    override val label = "FullReplacement"
+  override val label = "FullReplacement"
 
-    override val patchFormatPrompt = """
+  override val patchFormatPrompt = """
       Response should provide the complete updated file content within ```code blocks.
       Each code block should be preceded by a header that identifies the file being modified.
       The entire file content should be provided, not just the changes.
@@ -43,19 +43,19 @@ class FullReplacementProcessor : PatchProcessor {
       ```
       """.trimIndent()
 
-    override fun generatePatch(oldCode: String, newCode: String): String {
-        log.debug("Generating full replacement patch")
-        // For full replacement, the "patch" is just the new code
-        return newCode
-    }
+  override fun generatePatch(oldCode: String, newCode: String): String {
+    log.debug("Generating full replacement patch")
+    // For full replacement, the "patch" is just the new code
+    return newCode
+  }
 
-    override fun applyPatch(source: String, patch: String): String {
-        log.debug("Applying full replacement patch")
-        // For full replacement, we simply return the patch as the new content
-        return patch.trim()
-    }
+  override fun applyPatch(source: String, patch: String): String {
+    log.debug("Applying full replacement patch")
+    // For full replacement, we simply return the patch as the new content
+    return patch.trim()
+  }
 
-    companion object {
-        private val log = LoggerFactory.getLogger(FullReplacementProcessor::class.java)
-    }
+  companion object {
+    private val log = LoggerFactory.getLogger(FullReplacementProcessor::class.java)
+  }
 }

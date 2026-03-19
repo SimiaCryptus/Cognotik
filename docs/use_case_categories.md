@@ -1,6 +1,7 @@
 ---
 specifies: ../site/cognotik.com/use_case_categories.html
 ---
+
 # Basic Generative Use Cases
 
 ## 0 -> 1: Content Creation

@@ -1,25 +1,30 @@
-[ {
-  "id" : "llmexperiment",
-  "label" : "LLMExperiment",
-  "url" : "LLMExperimentTask.html",
-  "description" : "Conduct controlled experiments on LLM behavior\n\n\n                        Conducts rigorous experiments to characterize LLM behaviors and biases.\n                        \n                        <p><strong>Use cases:</strong> Bias studies, cognitive studies, logical performance analysis, consistency testing</p>\n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/LLMExperimentTask.kt"
-}, {
-  "id" : "llmpollsimulation",
-  "label" : "LLMPoll Simulation",
-  "url" : "LLMPollSimulationTask.html",
-  "description" : "Simulate polls and surveys with AI personas\n\n\n                        Simulates polls and surveys using LLMs to model diverse respondent personas.\n                        \n                        <p><strong>Use cases:</strong> Survey instrument testing, response pattern exploration, demographic analysis, bias detection</p>\n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/LLMPollSimulationTask.kt"
-}, {
-  "id" : "multiperspectiveanalysis",
-  "label" : "Multi Perspective Analysis",
-  "url" : "MultiPerspectiveAnalysisTask.html",
-  "description" : "Analyze problems from multiple viewpoints with synthesis\n\n\n                        Analyzes topics from multiple perspectives and synthesizes findings.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/MultiPerspectiveAnalysisTask.kt"
-}, {
-  "id" : "politicaloptimization",
-  "label" : "Political Optimization",
-  "url" : "PoliticalOptimizationTask.html",
-  "description" : "Optimize text using multi-perspective political consensus analysis\n\n\n                        Evaluates and optimizes text from multiple political perspectives using consensus-based fitness.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/PoliticalOptimizationTask.kt"
-} ]
+[
+  {
+    "id": "llmexperiment",
+    "label": "LLMExperiment",
+    "url": "LLMExperimentTask.html",
+    "description": "Conduct controlled experiments on LLM behavior\n\n\n                        Conducts rigorous experiments to characterize LLM behaviors and biases.\n                        \n                        <p><strong>Use cases:</strong> Bias studies, cognitive studies, logical performance analysis, consistency testing</p>\n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/LLMExperimentTask.kt"
+  },
+  {
+    "id": "llmpollsimulation",
+    "label": "LLMPoll Simulation",
+    "url": "LLMPollSimulationTask.html",
+    "description": "Simulate polls and surveys with AI personas\n\n\n                        Simulates polls and surveys using LLMs to model diverse respondent personas.\n                        \n                        <p><strong>Use cases:</strong> Survey instrument testing, response pattern exploration, demographic analysis, bias detection</p>\n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/LLMPollSimulationTask.kt"
+  },
+  {
+    "id": "multiperspectiveanalysis",
+    "label": "Multi Perspective Analysis",
+    "url": "MultiPerspectiveAnalysisTask.html",
+    "description": "Analyze problems from multiple viewpoints with synthesis\n\n\n                        Analyzes topics from multiple perspectives and synthesizes findings.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/MultiPerspectiveAnalysisTask.kt"
+  },
+  {
+    "id": "politicaloptimization",
+    "label": "Political Optimization",
+    "url": "PoliticalOptimizationTask.html",
+    "description": "Optimize text using multi-perspective political consensus analysis\n\n\n                        Evaluates and optimizes text from multiple political perspectives using consensus-based fitness.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/PoliticalOptimizationTask.kt"
+  }
+]

@@ -13,9 +13,9 @@ class ImageModel(
   val pricingFunction: (width: Int, height: Int) -> Double
 ) : AIModel {
 
-    fun pricing(width: Int, height: Int): Double = pricingFunction(width, height)
+  fun pricing(width: Int, height: Int): Double = pricingFunction(width, height)
 
-    companion object {
-        private val log = LoggerFactory.getLogger(ImageModel::class.java)
-    }
+  companion object {
+    private val log = LoggerFactory.getLogger(ImageModel::class.java)
+  }
 }

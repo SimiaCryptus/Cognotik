@@ -6,10 +6,8 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
-import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
@@ -27,52 +25,53 @@ import java.util.*
  * The task configuration is provided directly by the user through a dialog.
  */
 abstract class SingleTaskApp(
-    path: String,
-    applicationName: String = "Single Task App",
-    showMenubar: Boolean = false,
-    val taskType: TaskType<*, *>,
-    val taskConfig: TaskExecutionConfig = TaskExecutionConfig(task_type = taskType.name),
-    val instanceFn: ((ApiChatModel) -> ChatInterface)?,
-    var message: String
+  path: String,
+  applicationName: String = "Single Task App",
+  showMenubar: Boolean = false,
+  val taskType: TaskType<*, *>,
+  val taskConfig: TaskExecutionConfig = TaskExecutionConfig(task_type = taskType.name),
+  val instanceFn: ((ApiChatModel, User) -> ChatInterface)?,
+  var message: String,
+  val user: User
 ) : ApplicationServer(
-    applicationName = applicationName,
-    path = path,
-    showMenubar = showMenubar,
-    root = dataStorageRoot,
+  applicationName = applicationName,
+  path = path,
+  showMenubar = showMenubar,
+  root = dataStorageRoot,
 ) {
-    private val log = LoggerFactory.getLogger(SingleTaskApp::class.java)
+  private val log = LoggerFactory.getLogger(SingleTaskApp::class.java)
 
-    override val stickyInput = false
-    override val inputCnt: Int = 1
+  override val stickyInput = false
+  override val inputCnt: Int = 1
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> initSettings(session: Session): T =
-        OrchestrationConfig(sessionId = session.sessionId, null) as T
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : Any> initSettings(session: Session): T =
+    OrchestrationConfig(sessionId = session.sessionId, null, user = user) as T
 
-    abstract fun instance(model: ApiChatModel): ChatInterface
+  abstract fun instance(model: ApiChatModel): ChatInterface
 
-    override fun newSession(
-        user: User, session: Session
-    ): SocketManager {
-        val socketManager = super.newSession(user, session)!!
-        startSession(
-            session,
-            user,
-            socketManager,
-        )
-        return socketManager
-    }
+  override fun newSession(
+    user: User, session: Session
+  ): SocketManager {
+    val socketManager = super.newSession(user, session)!!
+    startSession(
+      session,
+      user,
+      socketManager,
+    )
+    return socketManager
+  }
 
 
-    protected fun startSession(
-        session: Session,
-        user: User,
-        socketManager: SocketManager,
-    ) {
-        val orchestrationConfig = getOrchestrationConfig(session, user)
-        if (null != instanceFn) OrchestrationConfig.instanceFn = instanceFn
-        socketManager.newTask(cancelable = false, root = true).expandable(
-            "Session Info", """
+  protected fun startSession(
+    session: Session,
+    user: User,
+    socketManager: SocketManager,
+  ) {
+    val orchestrationConfig = getOrchestrationConfig(session, user)
+    if (null != instanceFn) OrchestrationConfig.instanceFn = instanceFn
+    socketManager.newTask(cancelable = false, root = true).expandable(
+      "Session Info", """
     Session ID: `${session}`
     
     Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
@@ -86,74 +85,78 @@ abstract class SingleTaskApp(
     Task Type: `${taskType.name}`
     
               """.renderMarkdown()
-        )
-        socketManager.pool.submit { executeTask(
-            session = session,
-            user = user,
-            ui = socketManager,
-            settings = orchestrationConfig,
-            message = message,
-        ) }
+    )
+    socketManager.pool.submit {
+      executeTask(
+        session = session,
+        user = user,
+        ui = socketManager,
+        settings = orchestrationConfig,
+        message = message,
+      )
     }
+  }
 
-    open fun getOrchestrationConfig(
-        session: Session,
-        user: User
-    ): OrchestrationConfig? = getSettings(session, user, OrchestrationConfig::class.java)
+  open fun getOrchestrationConfig(
+    session: Session,
+    user: User
+  ): OrchestrationConfig? = getSettings(session, user, OrchestrationConfig::class.java)
 
-    protected open fun onTaskComplete(result: String, task: SessionTask) {}
-    protected open fun onTaskError(e: Throwable) {}
+  protected open fun onTaskComplete(result: String, task: SessionTask) {}
+  protected open fun onTaskError(e: Throwable) {}
 
-    protected open fun executeTask(
-        session: Session,
-        user: User = defaultUser,
-        ui: SocketManager,
-        settings: OrchestrationConfig?,
-        message: String,
-    ) {
-        try {
-            val orchestrationConfig = settings?.apply {
-                if(null == DataStorage.sessionPaths[session]) absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
-            } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
-
-            val task = ui.newTask(true)
-
-            // Get the task implementation
-            val taskImpl = orchestrationConfig.getImpl(
-                taskType = taskType, cfg = taskConfig
-            )
-
-            // Execute the task
-            taskImpl.run(
-                agent = TaskOrchestrator(
-                    user = user,
-                    session = session,
-                    dataStorage = ui.dataStorage,
-                    root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                        ?: ui.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
-                ),
-                messages = listOf(message),
-                task = task,
-                resultFn = { result ->
-                    task.complete(result.renderMarkdown(true))
-                    onTaskComplete(result, task)
-                },
-                orchestrationConfig = orchestrationConfig
-            )
-
-        } catch (e: Throwable) {
-            log.error("Error executing task", e)
-            ui.newTask().error(e)
-            onTaskError(e)
+  protected open fun executeTask(
+    session: Session,
+    user: User,
+    ui: SocketManager,
+    settings: OrchestrationConfig?,
+    message: String,
+  ) {
+    try {
+      val orchestrationConfig = settings?.apply {
+        if (null == DataStorage.sessionPaths[session]) absoluteWorkingDir?.let {
+          DataStorage.sessionPaths[session] = File(it)
         }
-    }
+      } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
-    override fun userMessage(
-        session: Session, user: User, userMessage: String, ui: SocketManager
-    ) {
-        // Single task apps don't accept user messages after initialization
-        ui.newTask().error(
-            IllegalStateException("This is a single-task application. User messages are not supported.")
-        )
+      val task = ui.newTask(true)
+
+      // Get the task implementation
+      val taskImpl = orchestrationConfig.getImpl(
+        taskType = taskType, cfg = taskConfig
+      )
+
+      // Execute the task
+      taskImpl.run(
+        agent = TaskOrchestrator(
+          user = user,
+          session = session,
+          dataStorage = ui.dataStorage,
+          root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
+            ?: ui.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
+        ),
+        messages = listOf(message),
+        task = task,
+        resultFn = { result ->
+          task.complete(result.renderMarkdown(true))
+          onTaskComplete(result, task)
+        },
+        orchestrationConfig = orchestrationConfig
+      )
+
+    } catch (e: Throwable) {
+      log.error("Error executing task", e)
+      ui.newTask().error(e)
+      onTaskError(e)
     }
+  }
+
+  override fun userMessage(
+    session: Session, user: User, userMessage: String, ui: SocketManager
+  ) {
+    // Single task apps don't accept user messages after initialization
+    ui.newTask().error(
+      IllegalStateException("This is a single-task application. User messages are not supported.")
+    )
+  }
 }

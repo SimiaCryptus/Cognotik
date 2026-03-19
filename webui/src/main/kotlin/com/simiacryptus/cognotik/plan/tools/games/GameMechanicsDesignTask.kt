@@ -1434,6 +1434,7 @@ class GameMechanicsDesignTask(
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(GameMechanicsDesignTask::class.java)
+
     @JvmStatic
     val GameMechanicsDesign = TaskType(
       name = "GameMechanicsDesign",

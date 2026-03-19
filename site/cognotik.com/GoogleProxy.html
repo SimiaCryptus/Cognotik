@@ -6,8 +6,8 @@
     <title>Cognotik - GoogleProxy</title>
 </head>
 <body>
-    <h1>GoogleProxy</h1>
-    <p>This task allows for searching Google via a proxy.</p>
+<h1>GoogleProxy</h1>
+<p>This task allows for searching Google via a proxy.</p>
 </body>
 </html>
 <!DOCTYPE html>
@@ -15,15 +15,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | GoogleProxy</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -215,7 +216,8 @@
         <div class="breadcrumbs">Home > Tasks > Search > GoogleProxy</div>
         <h1>GoogleProxy</h1>
         <p class="pitch">
-            High-performance Google Search integration via secure AWS Lambda proxy. Designed for automated seed discovery in web crawling workflows.
+            High-performance Google Search integration via secure AWS Lambda proxy. Designed for automated seed
+            discovery in web crawling workflows.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect Safe</span>
@@ -246,12 +248,16 @@
                 <div class="search-result">
                     <div class="result-link">https://example.com/ai-orchestration</div>
                     <div class="result-title">Top 10 AI Orchestration Trends for 2024</div>
-                    <div class="result-snippet">Explore how autonomous agents and proxy-based search are revolutionizing...</div>
+                    <div class="result-snippet">Explore how autonomous agents and proxy-based search are
+                        revolutionizing...
+                    </div>
                 </div>
                 <div class="search-result">
                     <div class="result-link">https://techdocs.io/agents</div>
                     <div class="result-title">Building Scalable Crawler Agents</div>
-                    <div class="result-snippet">A deep dive into using GoogleProxy for dynamic seed generation in large-scale...</div>
+                    <div class="result-snippet">A deep dive into using GoogleProxy for dynamic seed generation in
+                        large-scale...
+                    </div>
                 </div>
             </div>
         </div>
@@ -266,7 +272,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Runtime Configuration</h3>
             <p>These parameters are passed during task execution via <code>CrawlerTaskExecutionConfigData</code>.</p>
             <table class="docs-table">
@@ -316,22 +322,28 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>Static Configuration</h3>
             <p>Environment variables used by the factory:</p>
             <pre><code class="language-bash">GOOGLE_SEARCH_PROXY_ENDPOINT="https://..."</code></pre>
 
             <h3>Lifecycle & Error Handling</h3>
             <ul style="color: var(--text-dim); font-size: 0.95rem;">
-                <li><strong>Validation:</strong> Throws <code>IllegalArgumentException</code> if <code>search_query</code> is blank.</li>
+                <li><strong>Validation:</strong> Throws <code>IllegalArgumentException</code> if
+                    <code>search_query</code> is blank.
+                </li>
                 <li><strong>Network:</strong> Uses <code>java.net.http.HttpClient</code> with a 30-second timeout.</li>
-                <li><strong>Proxy:</strong> Requests are routed through an AWS Lambda proxy to avoid IP blocking and manage rate limits.</li>
-                <li><strong>Resilience:</strong> Non-200 responses from the proxy trigger a <code>RuntimeException</code> to allow orchestration-level retries.</li>
+                <li><strong>Proxy:</strong> Requests are routed through an AWS Lambda proxy to avoid IP blocking and
+                    manage rate limits.
+                </li>
+                <li><strong>Resilience:</strong> Non-200 responses from the proxy trigger a
+                    <code>RuntimeException</code> to allow orchestration-level retries.
+                </li>
             </ul>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Kotlin Boilerplate</h3>
             <pre><code class="language-kotlin">
 // Registering the GoogleProxy in a CrawlerAgentTask

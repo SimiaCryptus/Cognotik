@@ -448,26 +448,32 @@ task.add(link)
 ## 8. Best Practices
 
 1. **Thread Safety:**
-  * `SessionTask` methods are generally safe to call from background threads.
-  * When using `TabbedDisplay`, the `container` updates are synchronized, but if you are doing complex logic involving
-    multiple UI updates, ensure you aren't blocking the main UI thread (though Cognotik handles most of this via`pool`).
+
+* `SessionTask` methods are generally safe to call from background threads.
+* When using `TabbedDisplay`, the `container` updates are synchronized, but if you are doing complex logic involving
+  multiple UI updates, ensure you aren't blocking the main UI thread (though Cognotik handles most of this via`pool`).
 
 2. **Completing Tasks:**
-  * Always call `task.complete()` when a unit of work is done. If you don't, the spinner will spin forever, making the
-    UI look unresponsive.
+
+* Always call `task.complete()` when a unit of work is done. If you don't, the spinner will spin forever, making the
+  UI look unresponsive.
 
 3. **IDs and State:**
-  * The system relies on `UUID`s and `messageID`s to find DOM elements. Avoid manipulating the DOM manually via raw
-    JavaScript injection unless necessary; rely on `task.add` and `TabbedDisplay.update`.
-  * `SocketManager` maintains a version history of messages to optimize bandwidth, sending only updates when content
-    changes.
+
+* The system relies on `UUID`s and `messageID`s to find DOM elements. Avoid manipulating the DOM manually via raw
+  JavaScript injection unless necessary; rely on `task.add` and `TabbedDisplay.update`.
+* `SocketManager` maintains a version history of messages to optimize bandwidth, sending only updates when content
+  changes.
 
 4. **Blocking vs Non-Blocking:**
-  * `Discussable` is **blocking**. Do not call it on the main server thread if you are handling high throughput
-    synchronously (though usually, you are running inside a `SessionTask` thread pool).
-  * `Retryable` submits work to a thread pool automatically.
-  * You can access the session's thread pool via `task.ui.pool` to offload heavy computations.
-  * For delayed or periodic execution, use `task.ui.scheduledThreadPoolExecutor`.
+
+* `Discussable` is **blocking**. Do not call it on the main server thread if you are handling high throughput
+  synchronously (though usually, you are running inside a `SessionTask` thread pool).
+* `Retryable` submits work to a thread pool automatically.
+* You can access the session's thread pool via `task.ui.pool` to offload heavy computations.
+* For delayed or periodic execution, use `task.ui.scheduledThreadPoolExecutor`.
+
 5. **Security:**
-  * `SocketManager` checks `ApplicationServices.authorizationManager` before allowing writes or reads. Ensure your
-    `AuthorizationInterface` is configured correctly.
+
+* `SocketManager` checks `ApplicationServices.authorizationManager` before allowing writes or reads. Ensure your
+  `AuthorizationInterface` is configured correctly.

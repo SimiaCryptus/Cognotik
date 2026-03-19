@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | ImageTableTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -241,23 +242,24 @@
 
 <cognotik-header current-page="ImageTableTask"></cognotik-header>
 
-  <main class="page-container">
+<main class="page-container">
 
-      <!-- 1. PAGE HEADER -->
+    <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > File > ImageTableTask</div>
         <h1>ImageTableTask</h1>
-          <p class="page-pitch">
-            Generate structured grids of AI-generated images for style comparisons, product variations, and concept exploration.
+        <p class="page-pitch">
+            Generate structured grids of AI-generated images for style comparisons, product variations, and concept
+            exploration.
         </p>
         <div class="badges">
             <span class="badge">Category: File</span>
-              <span class="badge badge-secondary">Model: Image Generation</span>
-              <span class="badge badge-warning">Output: HTML/Markdown</span>
+            <span class="badge badge-secondary">Model: Image Generation</span>
+            <span class="badge badge-warning">Output: HTML/Markdown</span>
         </div>
     </header>
 
-      <!-- 2. REALITY CHECK SECTION -->
+    <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -280,23 +282,31 @@
             <div class="mock-gallery">
                 <table class="mock-table">
                     <thead>
-                        <tr>
-                            <th></th>
-                            <th>Impressionist</th>
-                            <th>Synthwave</th>
-                        </tr>
+                    <tr>
+                        <th></th>
+                        <th>Impressionist</th>
+                        <th>Synthwave</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <th>Astronaut</th>
-                            <td><div class="mock-img"></div></td>
-                            <td><div class="mock-img"></div></td>
-                        </tr>
-                        <tr>
-                            <th>Robot</th>
-                            <td><div class="mock-img"></div></td>
-                            <td><div class="mock-img"></div></td>
-                        </tr>
+                    <tr>
+                        <th>Astronaut</th>
+                        <td>
+                            <div class="mock-img"></div>
+                        </td>
+                        <td>
+                            <div class="mock-img"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Robot</th>
+                        <td>
+                            <div class="mock-img"></div>
+                        </td>
+                        <td>
+                            <div class="mock-img"></div>
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
                 <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-dim);">
@@ -312,7 +322,7 @@
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Explore the generated images and HTML reports directly from the task workspace.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
 
 
@@ -325,97 +335,105 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Execution Configuration</h3>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>rows</code> <span class="req">*</span></td>
-                        <td>List&lt;String&gt;</td>
-                        <td>Row labels for the image table (descriptive text or image file paths).</td>
-                    </tr>
-                    <tr>
-                        <td><code>columns</code> <span class="req">*</span></td>
-                        <td>List&lt;String&gt;</td>
-                        <td>Column labels for the image table (descriptive text or image file paths).</td>
-                    </tr>
-                    <tr>
-                        <td><code>image_prompt_template</code> <span class="req">*</span></td>
-                        <td>String</td>
-                        <td>Prompt template using <code>{row}</code> and <code>{column}</code> as placeholders.</td>
-                    </tr>
-                    <tr>
-                        <td><code>base_style</code></td>
-                        <td>String</td>
-                        <td>Base style or context to apply to all generated images.</td>
-                    </tr>
-                    <tr>
-                        <td><code>output_directory</code></td>
-                        <td>String</td>
-                        <td>Relative path for generated images. Default: <code>"generated_images"</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><code>image_format</code></td>
-                        <td>String</td>
-                        <td>Format: <code>'png'</code>, <code>'jpg'</code>, or <code>'jpeg'</code>. Default: <code>"png"</code>.</td>
-                    </tr>
+                <tr>
+                    <td><code>rows</code> <span class="req">*</span></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Row labels for the image table (descriptive text or image file paths).</td>
+                </tr>
+                <tr>
+                    <td><code>columns</code> <span class="req">*</span></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Column labels for the image table (descriptive text or image file paths).</td>
+                </tr>
+                <tr>
+                    <td><code>image_prompt_template</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>Prompt template using <code>{row}</code> and <code>{column}</code> as placeholders.</td>
+                </tr>
+                <tr>
+                    <td><code>base_style</code></td>
+                    <td>String</td>
+                    <td>Base style or context to apply to all generated images.</td>
+                </tr>
+                <tr>
+                    <td><code>output_directory</code></td>
+                    <td>String</td>
+                    <td>Relative path for generated images. Default: <code>"generated_images"</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>image_format</code></td>
+                    <td>String</td>
+                    <td>Format: <code>'png'</code>, <code>'jpg'</code>, or <code>'jpeg'</code>. Default:
+                        <code>"png"</code>.
+                    </td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>Type Configuration (Static)</h3>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Default</th>
-                        <th>Range</th>
-                    </tr>
+                <tr>
+                    <th>Field</th>
+                    <th>Default</th>
+                    <th>Range</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>parallel_generation</code></td>
-                        <td><code>2</code></td>
-                        <td>1 - 10</td>
-                    </tr>
-                    <tr>
-                        <td><code>image_width</code></td>
-                        <td><code>512</code></td>
-                        <td>64 - 2048 px</td>
-                    </tr>
-                    <tr>
-                        <td><code>image_height</code></td>
-                        <td><code>512</code></td>
-                        <td>64 - 2048 px</td>
-                    </tr>
+                <tr>
+                    <td><code>parallel_generation</code></td>
+                    <td><code>2</code></td>
+                    <td>1 - 10</td>
+                </tr>
+                <tr>
+                    <td><code>image_width</code></td>
+                    <td><code>512</code></td>
+                    <td>64 - 2048 px</td>
+                </tr>
+                <tr>
+                    <td><code>image_height</code></td>
+                    <td><code>512</code></td>
+                    <td>64 - 2048 px</td>
+                </tr>
                 </tbody>
             </table>
 
             <h3>Task Lifecycle</h3>
             <ol style="color: var(--text-dim); padding-left: 1.2rem;">
                 <li><strong>Validation:</strong> Checks for required labels and valid image format.</li>
-                <li><strong>Initialization:</strong> Resolves output directory and initializes <code>ImageProcessingAgent</code>.</li>
-                <li><strong>Generation:</strong> Iterates through the grid, replacing placeholders and generating images in parallel.</li>
-                <li><strong>Export:</strong> Saves individual images, generates a standalone <code>image_table.html</code>, and a Markdown summary.</li>
+                <li><strong>Initialization:</strong> Resolves output directory and initializes <code>ImageProcessingAgent</code>.
+                </li>
+                <li><strong>Generation:</strong> Iterates through the grid, replacing placeholders and generating images
+                    in parallel.
+                </li>
+                <li><strong>Export:</strong> Saves individual images, generates a standalone
+                    <code>image_table.html</code>, and a Markdown summary.
+                </li>
             </ol>
         </div>
 
-          <!-- TAB 3: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <!-- TAB 3: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration">
             <h3>Embedded Execution (UnifiedHarness)</h3>
             <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
-                Use the <code>UnifiedHarness</code> to run this task programmatically in headless environments or CI/CD pipelines.
+                Use the <code>UnifiedHarness</code> to run this task programmatically in headless environments or CI/CD
+                pipelines.
             </p>
-                  <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.file.ImageTableTask
+            <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.file.ImageTableTask
 import com.simiacryptus.cognotik.plan.tools.file.ImageTableTask.*
 
 fun generateComparisonGrid(harness: UnifiedHarness, projectDir: File) {
@@ -439,7 +457,8 @@ fun generateComparisonGrid(harness: UnifiedHarness, projectDir: File) {
 }</code></pre>
 
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
-            <p style="font-size: 0.9rem; color: var(--text-dim);">The following instructions are injected into the LLM context:</p>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following instructions are injected into the LLM
+                context:</p>
             <pre><code>ImageTable - Generate a table/grid of AI-generated images
   ** Specify row labels in the 'rows' array
   ** Specify column labels in the 'columns' array
@@ -461,9 +480,9 @@ fun generateComparisonGrid(harness: UnifiedHarness, projectDir: File) {
     }
 </script>
 <script type="module">
-      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
-    // Points to the standard test workspace for this task
-    initFileTree('#file-tree-demo', 'webui/workspaces/ImageTable/');
+    import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
+  // Points to the standard test workspace for this task
+  initFileTree('#file-tree-demo', 'webui/workspaces/ImageTable/');
 </script>
 
 </body>

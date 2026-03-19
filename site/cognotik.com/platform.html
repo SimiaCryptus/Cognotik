@@ -2,45 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
     <!-- SEO Meta Tags -->
     <title>Platform Architecture | Cognotik</title>
-    <meta name="description" content="Comprehensive application framework for building AI-powered applications with session management, authentication, storage, and cloud integration.">
-    <meta name="keywords" content="AI platform, session management, authentication, data storage, cloud integration, Kotlin framework">
+    <meta content="Comprehensive application framework for building AI-powered applications with session management, authentication, storage, and cloud integration."
+          name="description">
+    <meta content="AI platform, session management, authentication, data storage, cloud integration, Kotlin framework"
+          name="keywords">
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="Platform Architecture | Cognotik">
-    <meta property="og:description" content="Comprehensive application framework for building AI-powered applications with session management, authentication, storage, and cloud integration.">
-    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
-    <meta property="og:url" content="https://cognotik.com/platform.html">
-    <meta property="og:type" content="website">
+    <meta content="Platform Architecture | Cognotik" property="og:title">
+    <meta content="Comprehensive application framework for building AI-powered applications with session management, authentication, storage, and cloud integration."
+          property="og:description">
+    <meta content="https://cognotik.com/assets/images/og-image.png" property="og:image">
+    <meta content="https://cognotik.com/platform.html" property="og:url">
+    <meta content="website" property="og:type">
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Platform Architecture | Cognotik">
-    <meta name="twitter:description" content="Comprehensive application framework for building AI-powered applications with session management, authentication, storage, and cloud integration.">
-    <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+    <meta content="summary_large_image" name="twitter:card">
+    <meta content="Platform Architecture | Cognotik" name="twitter:title">
+    <meta content="Comprehensive application framework for building AI-powered applications with session management, authentication, storage, and cloud integration."
+          name="twitter:description">
+    <meta content="https://cognotik.com/assets/images/twitter-card.png" name="twitter:image">
 
     <!-- Favicon Suite -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-    <link rel="manifest" href="/site.webmanifest">
-    <meta name="theme-color" content="#0f1115">
+    <link href="assets/icons/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="assets/icons/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
+    <link href="assets/icons/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
+    <link href="assets/icons/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
+    <link href="/site.webmanifest" rel="manifest">
+    <meta content="#0f1115" name="theme-color">
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@400;600&display=swap"
+          rel="stylesheet">
 
     <!-- jQuery & FileTree -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         /* Page-specific CSS Variables (extending main.css) */
@@ -492,130 +497,135 @@
     </style>
 </head>
 <body>
-    <cognotik-header></cognotik-header>
+<cognotik-header></cognotik-header>
 
-    <main class="page-container">
-        <!-- Hero Section -->
-        <section class="hero-gradient rounded-xl mb-12">
-            <div class="hero-content">
-                <div class="flex items-center justify-center gap-2 mb-4">
-                    <span class="badge badge-primary">Core Platform</span>
-                    <span class="badge badge-success">v1.2.0 Stable</span>
-                </div>
-                <h1 class="hero-title">Platform Architecture</h1>
-                <p class="hero-subtitle">
-                    A modular, high-performance framework for building AI-powered applications with 
-                    integrated session management, secure storage, and cloud-native capabilities.
-                </p>
-                <div class="hero-actions">
-                    <a href="https://github.com/SimiaCryptus/Cognotik" class="btn btn-primary">
-                        <svg class="icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-                        Explore Source
-                    </a>
-                    <a href="#quick-start" class="btn btn-secondary">Quick Start</a>
-                </div>
+<main class="page-container">
+    <!-- Hero Section -->
+    <section class="hero-gradient rounded-xl mb-12">
+        <div class="hero-content">
+            <div class="flex items-center justify-center gap-2 mb-4">
+                <span class="badge badge-primary">Core Platform</span>
+                <span class="badge badge-success">v1.2.0 Stable</span>
             </div>
-        </section>
+            <h1 class="hero-title">Platform Architecture</h1>
+            <p class="hero-subtitle">
+                A modular, high-performance framework for building AI-powered applications with
+                integrated session management, secure storage, and cloud-native capabilities.
+            </p>
+            <div class="hero-actions">
+                <a class="btn btn-primary" href="https://github.com/SimiaCryptus/Cognotik">
+                    <svg class="icon" fill="currentColor" height="16" viewBox="0 0 16 16" width="16">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                    Explore Source
+                </a>
+                <a class="btn btn-secondary" href="#quick-start">Quick Start</a>
+            </div>
+        </div>
+    </section>
 
-        <!-- Architecture Visualization -->
-        <section class="mb-16">
-            <div class="flex items-center gap-3 mb-6">
-                <h2 class="text-heading mb-0">System Design</h2>
-                <span class="text-tertiary text-sm font-mono">/architecture</span>
+    <!-- Architecture Visualization -->
+    <section class="mb-16">
+        <div class="flex items-center gap-3 mb-6">
+            <h2 class="text-heading mb-0">System Design</h2>
+            <span class="text-tertiary text-sm font-mono">/architecture</span>
+        </div>
+
+        <div class="architecture-diagram">
+            <div class="arch-layer">
+                <div class="arch-layer-title">Application Layer</div>
+                <div class="text-sm text-secondary">User-facing logic & UI Integration</div>
             </div>
-            
-            <div class="architecture-diagram">
-                <div class="arch-layer">
-                    <div class="arch-layer-title">Application Layer</div>
-                    <div class="text-sm text-secondary">User-facing logic & UI Integration</div>
-                </div>
-                <div class="arch-arrow">↓</div>
-                <div class="arch-layer">
-                    <div class="arch-layer-title">Platform Services</div>
-                    <div class="arch-layer-content">
-                        <div class="arch-box">Thread Pool</div>
-                        <div class="arch-box">Usage Tracking</div>
-                        <div class="arch-box">User Settings</div>
-                    </div>
-                </div>
-                <div class="arch-arrow">↓</div>
-                <div class="arch-layer">
-                    <div class="arch-layer-title">Interface Layer</div>
-                    <div class="arch-layer-content">
-                        <div class="arch-box">Storage API</div>
-                        <div class="arch-box">Auth API</div>
-                        <div class="arch-box">Cloud API</div>
-                    </div>
-                </div>
-                <div class="arch-arrow">↓</div>
-                <div class="arch-layer">
-                    <div class="arch-layer-title">Implementation Layer</div>
-                    <div class="arch-layer-content">
-                        <div class="arch-box">File System</div>
-                        <div class="arch-box">HSQL DB</div>
-                        <div class="arch-box">AWS SDK</div>
-                    </div>
+            <div class="arch-arrow">↓</div>
+            <div class="arch-layer">
+                <div class="arch-layer-title">Platform Services</div>
+                <div class="arch-layer-content">
+                    <div class="arch-box">Thread Pool</div>
+                    <div class="arch-box">Usage Tracking</div>
+                    <div class="arch-box">User Settings</div>
                 </div>
             </div>
-        </section>
-        <!-- Application Services Overview -->
-        <section class="mb-16">
-            <div class="flex items-center gap-3 mb-6">
-                <h2 class="text-heading mb-0">Application Services</h2>
-                <span class="text-tertiary text-sm font-mono">/services</span>
-            </div>
-            <p class="text-secondary mb-6">The <code>ApplicationServices</code> object is the central registry for all platform services, providing unified access to authentication, storage, and cloud capabilities.</p>
-            <div class="code-block">
-                <div class="code-header">
-                    <span class="code-lang">kotlin</span>
-                    <button class="copy-btn">Copy</button>
+            <div class="arch-arrow">↓</div>
+            <div class="arch-layer">
+                <div class="arch-layer-title">Interface Layer</div>
+                <div class="arch-layer-content">
+                    <div class="arch-box">Storage API</div>
+                    <div class="arch-box">Auth API</div>
+                    <div class="arch-box">Cloud API</div>
                 </div>
-                <pre><code class="language-kotlin">// Access services
+            </div>
+            <div class="arch-arrow">↓</div>
+            <div class="arch-layer">
+                <div class="arch-layer-title">Implementation Layer</div>
+                <div class="arch-layer-content">
+                    <div class="arch-box">File System</div>
+                    <div class="arch-box">HSQL DB</div>
+                    <div class="arch-box">AWS SDK</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Application Services Overview -->
+    <section class="mb-16">
+        <div class="flex items-center gap-3 mb-6">
+            <h2 class="text-heading mb-0">Application Services</h2>
+            <span class="text-tertiary text-sm font-mono">/services</span>
+        </div>
+        <p class="text-secondary mb-6">The <code>ApplicationServices</code> object is the central registry for all
+            platform services, providing unified access to authentication, storage, and cloud capabilities.</p>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">kotlin</span>
+                <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-kotlin">// Access services
 val authManager = ApplicationServices.authenticationManager
 val authzManager = ApplicationServices.authorizationManager
 val storage = ApplicationServices.fileApplicationServices().dataStorageFactory
 val cloud = ApplicationServices.cloud
 val usageManager = ApplicationServices.fileApplicationServices().usageManager
 val threadPoolManager = ApplicationServices.threadPoolManager</code></pre>
+        </div>
+    </section>
+
+
+    <!-- Technical Reference Tabs -->
+    <section class="mb-16">
+        <div class="tabs" data-tabs>
+            <div class="tabs-nav" role="tablist">
+                <button aria-selected="true" class="tab-btn active" data-tab="sessions" role="tab">Sessions & Users
+                </button>
+                <button aria-selected="false" class="tab-btn" data-tab="storage" role="tab">Data Storage</button>
+                <button aria-selected="false" class="tab-btn" data-tab="auth" role="tab">Auth & Permissions</button>
+                <button aria-selected="false" class="tab-btn" data-tab="cloud" role="tab">Cloud Integration</button>
+                <button aria-selected="false" class="tab-btn" data-tab="usage" role="tab">Usage & Settings</button>
             </div>
-        </section>
-
-
-        <!-- Technical Reference Tabs -->
-        <section class="mb-16">
-            <div class="tabs" data-tabs>
-                <div class="tabs-nav" role="tablist">
-                    <button class="tab-btn active" data-tab="sessions" role="tab" aria-selected="true">Sessions & Users</button>
-                    <button class="tab-btn" data-tab="storage" role="tab" aria-selected="false">Data Storage</button>
-                    <button class="tab-btn" data-tab="auth" role="tab" aria-selected="false">Auth & Permissions</button>
-                    <button class="tab-btn" data-tab="cloud" role="tab" aria-selected="false">Cloud Integration</button>
-                    <button class="tab-btn" data-tab="usage" role="tab" aria-selected="false">Usage & Settings</button>
-                </div>
-                <div class="tabs-content">
-                    <!-- Sessions Tab -->
-                    <div class="tab-panel active" data-tab-panel="sessions" role="tabpanel" id="panel-sessions">
-                        <div class="grid md:grid-cols-2 gap-8">
-                            <div>
-                                <h3 class="text-xl font-semibold mb-4">Session Management</h3>
-                                <p class="text-secondary mb-4">The platform uses a structured session ID system to isolate global resources from user-specific data.</p>
-                                <p class="text-secondary mb-4"><strong>Session ID Format:</strong></p>
-                                <ul class="space-y-2 mb-6">
-                                    <li class="flex items-start gap-2 text-sm">
-                                        <code class="text-accent">G-YYYY-MM-DD-XXXX</code> <span class="text-secondary">— Global sessions (accessible to all users)</span>
-                                    </li>
-                                    <li class="flex items-start gap-2 text-sm">
-                                        <code class="text-accent">U-YYYY-MM-DD-XXXX</code> <span class="text-secondary">— User sessions (private to owner)</span>
-                                    </li>
-                                    <li class="flex items-start gap-2 text-sm">
-                                        <code class="text-tertiary">YYYY-MM-DD-XXXX</code> <span class="text-secondary">— Legacy format (treated as global)</span>
-                                    </li>
-                                </ul>
-                                <div class="code-block">
-                                    <div class="code-header">
-                                        <span class="code-lang">kotlin</span>
-                                        <button class="copy-btn">Copy</button>
-                                    </div>
-                                    <pre><code class="language-kotlin">// Create new sessions
+            <div class="tabs-content">
+                <!-- Sessions Tab -->
+                <div class="tab-panel active" data-tab-panel="sessions" id="panel-sessions" role="tabpanel">
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4">Session Management</h3>
+                            <p class="text-secondary mb-4">The platform uses a structured session ID system to isolate
+                                global resources from user-specific data.</p>
+                            <p class="text-secondary mb-4"><strong>Session ID Format:</strong></p>
+                            <ul class="space-y-2 mb-6">
+                                <li class="flex items-start gap-2 text-sm">
+                                    <code class="text-accent">G-YYYY-MM-DD-XXXX</code> <span class="text-secondary">— Global sessions (accessible to all users)</span>
+                                </li>
+                                <li class="flex items-start gap-2 text-sm">
+                                    <code class="text-accent">U-YYYY-MM-DD-XXXX</code> <span class="text-secondary">— User sessions (private to owner)</span>
+                                </li>
+                                <li class="flex items-start gap-2 text-sm">
+                                    <code class="text-tertiary">YYYY-MM-DD-XXXX</code> <span class="text-secondary">— Legacy format (treated as global)</span>
+                                </li>
+                            </ul>
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-lang">kotlin</span>
+                                    <button class="copy-btn">Copy</button>
+                                </div>
+                                <pre><code class="language-kotlin">// Create new sessions
 val globalSession = Session.newGlobalID()
 val userSession = Session.newUserID()
 
@@ -626,74 +636,83 @@ val session = Session.parseSessionID("G-20231215-AbC1")
 if (session.isGlobal()) {
     // Handle global session
 }</code></pre>
-                                </div>
                             </div>
-                            <div>
-                                <h3 class="text-xl font-semibold mb-4">User Identity</h3>
-                                <p class="text-secondary mb-4">The <code>User</code> data class encapsulates authenticated identity and credentials.</p>
-                                <div class="code-block">
-                                    <div class="code-header">
-                                        <span class="code-lang">kotlin</span>
-                                        <button class="copy-btn">Copy</button>
-                                    </div>
-                                    <pre><code class="language-kotlin">val user = User(
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4">User Identity</h3>
+                            <p class="text-secondary mb-4">The <code>User</code> data class encapsulates authenticated
+                                identity and credentials.</p>
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-lang">kotlin</span>
+                                    <button class="copy-btn">Copy</button>
+                                </div>
+                                <pre><code class="language-kotlin">val user = User(
     email = "user@example.com",
     name = "John Doe",
     id = "user123",
     picture = "https://example.com/avatar.jpg",
     credential = oauthCredential // Optional
 )</code></pre>
+                            </div>
+                            <h4 class="text-lg font-semibold mb-3 mt-6">Thread Pool Management</h4>
+                            <p class="text-secondary mb-4">The <code>ThreadPoolManager</code> provides execution
+                                contexts scoped to specific sessions and users.</p>
+                            <div class="code-block mb-0">
+                                <div class="code-header">
+                                    <span class="code-lang">kotlin</span>
+                                    <button class="copy-btn">Copy</button>
                                 </div>
-                                <h4 class="text-lg font-semibold mb-3 mt-6">Thread Pool Management</h4>
-                                <p class="text-secondary mb-4">The <code>ThreadPoolManager</code> provides execution contexts scoped to specific sessions and users.</p>
-                                <div class="code-block mb-0">
-                                    <div class="code-header">
-                                        <span class="code-lang">kotlin</span>
-                                        <button class="copy-btn">Copy</button>
-                                    </div>
-                                    <pre><code class="language-kotlin">// Get a standard thread pool for a session
+                                <pre><code class="language-kotlin">// Get a standard thread pool for a session
 val pool = ApplicationServices.threadPoolManager.getPool(session, user)
 // Get a scheduled executor
 val scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(session, user)</code></pre>
-                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Storage Tab -->
-                    <div class="tab-panel" data-tab-panel="storage" role="tabpanel" id="panel-storage">
-                        <h3 class="text-xl font-semibold mb-4">Storage Architecture</h3>
-                        <div class="grid md:grid-cols-2 gap-8">
-                            <div>
-                                <h4 class="text-lg font-semibold mb-3">Data Storage Interface</h4>
-                                <p class="text-secondary mb-4">The <code>StorageInterface</code> handles physical persistence of session data:</p>
-                                <ul class="space-y-2 mb-6 text-sm text-secondary">
-                                    <li>• <strong>Message Persistence:</strong> Storing and retrieving chat messages</li>
-                                    <li>• <strong>Session Management:</strong> Listing, deleting, organizing directories</li>
-                                    <li>• <strong>JSON Data:</strong> Generic storage for session config and state</li>
-                                </ul>
-                                <div class="directory-tree-view">
-                                    <div class="tree-folder">data/</div>
-                                    <div class="ml-4">├── <span class="tree-folder">global/</span> <span class="tree-comment"># Shared sessions</span></div>
-                                    <div class="ml-8">└── <span class="tree-folder">2023-12-15/</span></div>
-                                    <div class="ml-8">&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="tree-folder">AbC1/</span></div>
-                                    <div class="ml-8">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── messages/</div>
-                                    <div class="ml-8">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── config.json</div>
-                                    <div class="ml-4">├── <span class="tree-folder">user-sessions/</span> <span class="tree-comment"># Private data</span></div>
-                                    <div class="ml-8">└── <span class="tree-folder">user@example.com/</span></div>
-                                    <div class="ml-8">&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="tree-folder">2023-12-15/XyZ2/</span></div>
-                                    <div class="ml-4">└── <span class="tree-folder">users/</span> <span class="tree-comment"># User profiles</span></div>
-                                    <div class="ml-8">└── user@example.com.json</div>
+                <!-- Storage Tab -->
+                <div class="tab-panel" data-tab-panel="storage" id="panel-storage" role="tabpanel">
+                    <h3 class="text-xl font-semibold mb-4">Storage Architecture</h3>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="text-lg font-semibold mb-3">Data Storage Interface</h4>
+                            <p class="text-secondary mb-4">The <code>StorageInterface</code> handles physical
+                                persistence of session data:</p>
+                            <ul class="space-y-2 mb-6 text-sm text-secondary">
+                                <li>• <strong>Message Persistence:</strong> Storing and retrieving chat messages</li>
+                                <li>• <strong>Session Management:</strong> Listing, deleting, organizing directories
+                                </li>
+                                <li>• <strong>JSON Data:</strong> Generic storage for session config and state</li>
+                            </ul>
+                            <div class="directory-tree-view">
+                                <div class="tree-folder">data/</div>
+                                <div class="ml-4">├── <span class="tree-folder">global/</span> <span
+                                        class="tree-comment"># Shared sessions</span></div>
+                                <div class="ml-8">└── <span class="tree-folder">2023-12-15/</span></div>
+                                <div class="ml-8">&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="tree-folder">AbC1/</span>
                                 </div>
+                                <div class="ml-8">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── messages/</div>
+                                <div class="ml-8">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── config.json</div>
+                                <div class="ml-4">├── <span class="tree-folder">user-sessions/</span> <span
+                                        class="tree-comment"># Private data</span></div>
+                                <div class="ml-8">└── <span class="tree-folder">user@example.com/</span></div>
+                                <div class="ml-8">&nbsp;&nbsp;&nbsp;&nbsp;└── <span
+                                        class="tree-folder">2023-12-15/XyZ2/</span></div>
+                                <div class="ml-4">└── <span class="tree-folder">users/</span> <span
+                                        class="tree-comment"># User profiles</span></div>
+                                <div class="ml-8">└── user@example.com.json</div>
                             </div>
-                            <div>
-                                <h4 class="text-lg font-semibold mb-3">File Storage Implementation</h4>
-                                <div class="code-block">
-                                    <div class="code-header">
-                                        <span class="code-lang">kotlin</span>
-                                        <button class="copy-btn">Copy</button>
-                                    </div>
-                                    <pre><code class="language-kotlin">val dataStorage = DataStorage(File("/path/to/data"))
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold mb-3">File Storage Implementation</h4>
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-lang">kotlin</span>
+                                    <button class="copy-btn">Copy</button>
+                                </div>
+                                <pre><code class="language-kotlin">val dataStorage = DataStorage(File("/path/to/data"))
 
 // Store JSON data
 dataStorage.setJson(user, session, "config.json", myConfig)
@@ -703,15 +722,16 @@ dataStorage.updateMessage(user, session, "msg-123", "Hello World")
 
 // Get session directory
 val sessionDir = dataStorage.getSessionDir(user, session)</code></pre>
+                            </div>
+                            <h4 class="text-lg font-semibold mb-3 mt-6">Metadata Storage</h4>
+                            <p class="text-sm text-secondary mb-4">The <code>HSQLMetadataStorage</code> manages
+                                high-level session information separately from raw content for fast querying.</p>
+                            <div class="code-block mb-0">
+                                <div class="code-header">
+                                    <span class="code-lang">kotlin</span>
+                                    <button class="copy-btn">Copy</button>
                                 </div>
-                                <h4 class="text-lg font-semibold mb-3 mt-6">Metadata Storage</h4>
-                                <p class="text-sm text-secondary mb-4">The <code>HSQLMetadataStorage</code> manages high-level session information separately from raw content for fast querying.</p>
-                                <div class="code-block mb-0">
-                                    <div class="code-header">
-                                        <span class="code-lang">kotlin</span>
-                                        <button class="copy-btn">Copy</button>
-                                    </div>
-                                    <pre><code class="language-kotlin">val metadataStorage = HSQLMetadataStorage()
+                                <pre><code class="language-kotlin">val metadataStorage = HSQLMetadataStorage()
 
 // Set session metadata
 metadataStorage.setSessionName(user, session, "My Chat Session")
@@ -720,79 +740,84 @@ metadataStorage.setMessageIds(user, session, listOf("msg-1", "msg-2"))
 // Query metadata
 val sessionName = metadataStorage.getSessionName(user, session)
 val messageIds = metadataStorage.getMessageIds(user, session)</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auth Tab -->
+                <div class="tab-panel" data-tab-panel="auth" id="panel-auth" role="tabpanel">
+                    <h3 class="text-xl font-semibold mb-4">Authorization Model</h3>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="text-lg font-semibold mb-3">Authentication</h4>
+                            <p class="text-secondary mb-4">The <code>AuthenticationManager</code> handles user identity:
+                            </p>
+                            <ul class="space-y-2 mb-6 text-sm text-secondary">
+                                <li>• Maps access tokens to <code>User</code> objects</li>
+                                <li>• Manages the <code>sessionId</code> cookie</li>
+                                <li>• Provides a <code>defaultUser</code> for local development</li>
+                            </ul>
+
+                            <h4 class="text-lg font-semibold mb-3">File-based Authorization</h4>
+                            <p class="text-secondary mb-4">The <code>AuthorizationManager</code> uses resource files to
+                                define access. Supported operations:</p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span class="badge badge-primary">Read</span>
+                                <span class="badge badge-primary">Write</span>
+                                <span class="badge badge-primary">Public</span>
+                                <span class="badge badge-primary">Share</span>
+                                <span class="badge badge-primary">Execute</span>
+                                <span class="badge badge-primary">Delete</span>
+                                <span class="badge badge-primary">Admin</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold mb-3">Permission Syntax</h4>
+                            <div class="permission-syntax mb-4">
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div><code class="text-accent">user@example.com</code></div>
+                                    <div class="text-tertiary">Specific user access</div>
+                                    <div><code class="text-accent">@company.com</code></div>
+                                    <div class="text-tertiary">Domain-wide access</div>
+                                    <div><code class="text-accent">.</code></div>
+                                    <div class="text-tertiary">Any authenticated user</div>
+                                    <div><code class="text-accent">*</code></div>
+                                    <div class="text-tertiary">Public access (Anonymous)</div>
+                                </div>
+                            </div>
+
+                            <div class="panel">
+                                <div class="panel-header">
+                                    <span class="panel-title">Permission Files</span>
+                                </div>
+                                <div class="panel-body">
+                                    <ul class="space-y-2 text-sm">
+                                        <li><code>/permissions/read.txt</code> — Global read permissions</li>
+                                        <li><code>/permissions/write.txt</code> — Global write permissions</li>
+                                        <li><code>/permissions/com/example/app/read.txt</code> — App-specific
+                                            permissions
+                                        </li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Auth Tab -->
-                    <div class="tab-panel" data-tab-panel="auth" role="tabpanel" id="panel-auth">
-                        <h3 class="text-xl font-semibold mb-4">Authorization Model</h3>
-                        <div class="grid md:grid-cols-2 gap-8">
-                            <div>
-                                <h4 class="text-lg font-semibold mb-3">Authentication</h4>
-                                <p class="text-secondary mb-4">The <code>AuthenticationManager</code> handles user identity:</p>
-                                <ul class="space-y-2 mb-6 text-sm text-secondary">
-                                    <li>• Maps access tokens to <code>User</code> objects</li>
-                                    <li>• Manages the <code>sessionId</code> cookie</li>
-                                    <li>• Provides a <code>defaultUser</code> for local development</li>
-                                </ul>
-                        
-                                <h4 class="text-lg font-semibold mb-3">File-based Authorization</h4>
-                                <p class="text-secondary mb-4">The <code>AuthorizationManager</code> uses resource files to define access. Supported operations:</p>
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <span class="badge badge-primary">Read</span>
-                                    <span class="badge badge-primary">Write</span>
-                                    <span class="badge badge-primary">Public</span>
-                                    <span class="badge badge-primary">Share</span>
-                                    <span class="badge badge-primary">Execute</span>
-                                    <span class="badge badge-primary">Delete</span>
-                                    <span class="badge badge-primary">Admin</span>
+                <!-- Cloud Tab -->
+                <div class="tab-panel" data-tab-panel="cloud" id="panel-cloud" role="tabpanel">
+                    <h3 class="text-xl font-semibold mb-4">AWS Integration</h3>
+                    <p class="text-secondary mb-6">The <code>AwsPlatform</code> provides S3-based sharing and KMS-based
+                        encryption for enterprise deployments.</p>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-lang">kotlin</span>
+                                    <button class="copy-btn">Copy</button>
                                 </div>
-                            </div>
-                            <div>
-                                <h4 class="text-lg font-semibold mb-3">Permission Syntax</h4>
-                                <div class="permission-syntax mb-4">
-                                    <div class="grid grid-cols-2 gap-4 text-sm">
-                                        <div><code class="text-accent">user@example.com</code></div>
-                                        <div class="text-tertiary">Specific user access</div>
-                                        <div><code class="text-accent">@company.com</code></div>
-                                        <div class="text-tertiary">Domain-wide access</div>
-                                        <div><code class="text-accent">.</code></div>
-                                        <div class="text-tertiary">Any authenticated user</div>
-                                        <div><code class="text-accent">*</code></div>
-                                        <div class="text-tertiary">Public access (Anonymous)</div>
-                                    </div>
-                                </div>
-
-                                <div class="panel">
-                                    <div class="panel-header">
-                                        <span class="panel-title">Permission Files</span>
-                                    </div>
-                                    <div class="panel-body">
-                                        <ul class="space-y-2 text-sm">
-                                            <li><code>/permissions/read.txt</code> — Global read permissions</li>
-                                            <li><code>/permissions/write.txt</code> — Global write permissions</li>
-                                            <li><code>/permissions/com/example/app/read.txt</code> — App-specific permissions</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Cloud Tab -->
-                    <div class="tab-panel" data-tab-panel="cloud" role="tabpanel" id="panel-cloud">
-                        <h3 class="text-xl font-semibold mb-4">AWS Integration</h3>
-                        <p class="text-secondary mb-6">The <code>AwsPlatform</code> provides S3-based sharing and KMS-based encryption for enterprise deployments.</p>
-                        <div class="grid md:grid-cols-2 gap-8">
-                            <div>
-                                <div class="code-block">
-                                    <div class="code-header">
-                                        <span class="code-lang">kotlin</span>
-                                        <button class="copy-btn">Copy</button>
-                                    </div>
-                                    <pre><code class="language-kotlin">val awsPlatform = AwsPlatform(
+                                <pre><code class="language-kotlin">val awsPlatform = AwsPlatform(
     bucket = "my-bucket",
     shareBase = "https://my-bucket.s3.amazonaws.com",
     region = Region.US_EAST_1,
@@ -805,37 +830,38 @@ val url = awsPlatform.upload("path/to/file.txt", "text/plain", fileBytes)
 // Encrypt/decrypt with KMS
 val encrypted = awsPlatform.encrypt(data, kmsKeyArn)
 val decrypted = awsPlatform.decrypt(encryptedData)</code></pre>
-                                </div>
                             </div>
-                            <div>
-                                <div class="panel">
-                                    <div class="panel-header">
-                                        <span class="panel-title">Configuration Properties</span>
-                                    </div>
-                                    <div class="panel-body">
-                                        <ul class="space-y-2 text-sm">
-                                            <li><code>share_bucket</code> — S3 bucket for uploads</li>
-                                            <li><code>share_base</code> — Base URL for shared links</li>
-                                            <li><code>aws.profile</code> — AWS CLI profile for credentials</li>
-                                        </ul>
-                                    </div>
+                        </div>
+                        <div>
+                            <div class="panel">
+                                <div class="panel-header">
+                                    <span class="panel-title">Configuration Properties</span>
+                                </div>
+                                <div class="panel-body">
+                                    <ul class="space-y-2 text-sm">
+                                        <li><code>share_bucket</code> — S3 bucket for uploads</li>
+                                        <li><code>share_base</code> — Base URL for shared links</li>
+                                        <li><code>aws.profile</code> — AWS CLI profile for credentials</li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Usage & Settings Tab -->
-                    <div class="tab-panel" data-tab-panel="usage" role="tabpanel" id="panel-usage">
-                        <div class="grid md:grid-cols-2 gap-8">
-                            <div>
-                                <h3 class="text-xl font-semibold mb-4">Usage Tracking</h3>
-                                <p class="text-secondary mb-4">The <code>HSQLUsageManager</code> tracks API usage per session and user for billing and analytics.</p>
-                                <div class="code-block">
-                                    <div class="code-header">
-                                        <span class="code-lang">kotlin</span>
-                                        <button class="copy-btn">Copy</button>
-                                    </div>
-                                    <pre><code class="language-kotlin">val usageManager = HSQLUsageManager()
+                <!-- Usage & Settings Tab -->
+                <div class="tab-panel" data-tab-panel="usage" id="panel-usage" role="tabpanel">
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4">Usage Tracking</h3>
+                            <p class="text-secondary mb-4">The <code>HSQLUsageManager</code> tracks API usage per
+                                session and user for billing and analytics.</p>
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-lang">kotlin</span>
+                                    <button class="copy-btn">Copy</button>
+                                </div>
+                                <pre><code class="language-kotlin">val usageManager = HSQLUsageManager()
 
 // Track usage
 usageManager.incrementUsage(session, apiKey, ChatModel.GPT35Turbo, usage)
@@ -843,17 +869,18 @@ usageManager.incrementUsage(session, apiKey, ChatModel.GPT35Turbo, usage)
 // Get summaries
 val userUsage = usageManager.getUserUsageSummary(apiKey)
 val sessionUsage = usageManager.getSessionUsageSummary(session)</code></pre>
-                                </div>
                             </div>
-                            <div>
-                                <h3 class="text-xl font-semibold mb-4">User Settings</h3>
-                                <p class="text-secondary mb-4">The <code>UserSettings</code> object contains structured configuration for AI providers and tools.</p>
-                                <div class="code-block mb-0">
-                                    <div class="code-header">
-                                        <span class="code-lang">kotlin</span>
-                                        <button class="copy-btn">Copy</button>
-                                    </div>
-                                    <pre><code class="language-kotlin">val userSettings = ApplicationServices
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4">User Settings</h3>
+                            <p class="text-secondary mb-4">The <code>UserSettings</code> object contains structured
+                                configuration for AI providers and tools.</p>
+                            <div class="code-block mb-0">
+                                <div class="code-header">
+                                    <span class="code-lang">kotlin</span>
+                                    <button class="copy-btn">Copy</button>
+                                </div>
+                                <pre><code class="language-kotlin">val userSettings = ApplicationServices
     .fileApplicationServices()
     .userSettingsManager
     .getUserSettings(user)
@@ -865,57 +892,60 @@ val updatedSettings = userSettings.copy(
         key = "sk-..."
     )
 )</code></pre>
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Best Practices Section -->
-        <section class="mb-16">
-            <h2 class="text-heading mb-8">Developer Best Practices</h2>
-            <div class="content-grid">
-                <div class="card card-bordered p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="text-accent-secondary">🛡️</span>
-                        <h4 class="font-semibold mb-0">Resource Isolation</h4>
-                    </div>
-                    <p class="text-sm text-secondary mb-4">Always use the <code>ThreadPoolManager</code> to get pools scoped to a session. This prevents one session from starving others of CPU resources.</p>
-                    <code class="text-xs bg-elevated p-2 rounded block">threadPoolManager.getPool(session, user)</code>
+    <!-- Best Practices Section -->
+    <section class="mb-16">
+        <h2 class="text-heading mb-8">Developer Best Practices</h2>
+        <div class="content-grid">
+            <div class="card card-bordered p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-accent-secondary">🛡️</span>
+                    <h4 class="font-semibold mb-0">Resource Isolation</h4>
                 </div>
-                <div class="card card-bordered p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="text-accent-warning">⚠️</span>
-                        <h4 class="font-semibold mb-0">Error Handling</h4>
+                <p class="text-sm text-secondary mb-4">Always use the <code>ThreadPoolManager</code> to get pools scoped
+                    to a session. This prevents one session from starving others of CPU resources.</p>
+                <code class="text-xs bg-elevated p-2 rounded block">threadPoolManager.getPool(session, user)</code>
+            </div>
+            <div class="card card-bordered p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-accent-warning">⚠️</span>
+                    <h4 class="font-semibold mb-0">Error Handling</h4>
+                </div>
+                <p class="text-sm text-secondary mb-4">Validate session IDs at the entry point of every service call to
+                    prevent directory traversal or unauthorized access.</p>
+                <div class="code-block mb-0">
+                    <div class="code-header">
+                        <span class="code-lang">kotlin</span>
+                        <button class="copy-btn">Copy</button>
                     </div>
-                    <p class="text-sm text-secondary mb-4">Validate session IDs at the entry point of every service call to prevent directory traversal or unauthorized access.</p>
-                    <div class="code-block mb-0">
-                        <div class="code-header">
-                            <span class="code-lang">kotlin</span>
-                            <button class="copy-btn">Copy</button>
-                        </div>
-                        <pre><code class="language-kotlin">try {
+                    <pre><code class="language-kotlin">try {
     val session = Session.parseSessionID(sessionId)
     // Use session
 } catch (e: IllegalArgumentException) {
     log.error("Invalid session ID: $sessionId", e)
 }</code></pre>
-                    </div>
                 </div>
-                <div class="card card-bordered p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="text-accent-purple">📁</span>
-                        <h4 class="font-semibold mb-0">Resource Management</h4>
+            </div>
+            <div class="card card-bordered p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-accent-purple">📁</span>
+                    <h4 class="font-semibold mb-0">Resource Management</h4>
+                </div>
+                <p class="text-sm text-secondary mb-4">Always ensure directories exist and use proper stream handling
+                    for file operations.</p>
+                <div class="code-block mb-0">
+                    <div class="code-header">
+                        <span class="code-lang">kotlin</span>
+                        <button class="copy-btn">Copy</button>
                     </div>
-                    <p class="text-sm text-secondary mb-4">Always ensure directories exist and use proper stream handling for file operations.</p>
-                    <div class="code-block mb-0">
-                        <div class="code-header">
-                            <span class="code-lang">kotlin</span>
-                            <button class="copy-btn">Copy</button>
-                        </div>
-                        <pre><code class="language-kotlin">val sessionDir = dataStorage
+                    <pre><code class="language-kotlin">val sessionDir = dataStorage
     .getSessionDir(user, session)
     .apply { mkdirs() }
 
@@ -923,60 +953,62 @@ sessionDir.resolve("data.json")
     .outputStream().use { output ->
         // Write data
     }</code></pre>
-                    </div>
                 </div>
-                <div class="card card-bordered p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="text-accent">🔒</span>
-                        <h4 class="font-semibold mb-0">Security</h4>
-                    </div>
-                    <ul class="text-sm text-secondary space-y-2">
-                        <li>• Validate user permissions before operations</li>
-                        <li>• Use encrypted storage for sensitive data</li>
-                        <li>• Implement proper session timeout mechanisms</li>
-                    </ul>
+            </div>
+            <div class="card card-bordered p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-accent">🔒</span>
+                    <h4 class="font-semibold mb-0">Security</h4>
                 </div>
-                <div class="card card-bordered p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="text-accent-secondary">⚡</span>
-                        <h4 class="font-semibold mb-0">Performance</h4>
-                    </div>
-                    <ul class="text-sm text-secondary space-y-2">
-                        <li>• Cache frequently accessed data</li>
-                        <li>• Use appropriate thread pools for concurrent operations</li>
-                        <li>• Monitor usage patterns and optimize accordingly</li>
-                    </ul>
+                <ul class="text-sm text-secondary space-y-2">
+                    <li>• Validate user permissions before operations</li>
+                    <li>• Use encrypted storage for sensitive data</li>
+                    <li>• Implement proper session timeout mechanisms</li>
+                </ul>
+            </div>
+            <div class="card card-bordered p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-accent-secondary">⚡</span>
+                    <h4 class="font-semibold mb-0">Performance</h4>
                 </div>
-                <div class="card card-bordered p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="text-accent-warning">⚙️</span>
-                        <h4 class="font-semibold mb-0">Configuration Locking</h4>
+                <ul class="text-sm text-secondary space-y-2">
+                    <li>• Cache frequently accessed data</li>
+                    <li>• Use appropriate thread pools for concurrent operations</li>
+                    <li>• Monitor usage patterns and optimize accordingly</li>
+                </ul>
+            </div>
+            <div class="card card-bordered p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-accent-warning">⚙️</span>
+                    <h4 class="font-semibold mb-0">Configuration Locking</h4>
+                </div>
+                <p class="text-sm text-secondary mb-4">Lock the <code>ApplicationServicesConfig</code> after
+                    initialization to prevent runtime modification.</p>
+                <div class="code-block mb-0">
+                    <div class="code-header">
+                        <span class="code-lang">kotlin</span>
+                        <button class="copy-btn">Copy</button>
                     </div>
-                    <p class="text-sm text-secondary mb-4">Lock the <code>ApplicationServicesConfig</code> after initialization to prevent runtime modification.</p>
-                    <div class="code-block mb-0">
-                        <div class="code-header">
-                            <span class="code-lang">kotlin</span>
-                            <button class="copy-btn">Copy</button>
-                        </div>
-                        <pre><code class="language-kotlin">// Configure before locking
+                    <pre><code class="language-kotlin">// Configure before locking
 ApplicationServices.dataStorageRoot = File("/custom/data/path")
 
 // Lock configuration
 ApplicationServicesConfig.isLocked = true</code></pre>
-                    </div>
                 </div>
             </div>
-        </section>
-        <!-- Custom Implementation Section -->
-        <section class="mb-16">
-            <h2 class="text-heading mb-8">Custom Service Implementation</h2>
-            <p class="text-secondary mb-6">Extend the platform with custom storage, authentication, or authorization implementations.</p>
-            <div class="code-block">
-                <div class="code-header">
-                    <span class="code-lang">kotlin</span>
-                    <button class="copy-btn">Copy</button>
-                </div>
-                <pre><code class="language-kotlin">// Custom storage implementation
+        </div>
+    </section>
+    <!-- Custom Implementation Section -->
+    <section class="mb-16">
+        <h2 class="text-heading mb-8">Custom Service Implementation</h2>
+        <p class="text-secondary mb-6">Extend the platform with custom storage, authentication, or authorization
+            implementations.</p>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">kotlin</span>
+                <button class="copy-btn">Copy</button>
+            </div>
+            <pre><code class="language-kotlin">// Custom storage implementation
 class CustomStorage(dataDir: File) : DataStorage(dataDir) {
     override fun getMessages(user: User?, session: Session): LinkedHashMap&lt;String, String&gt; {
         // Custom implementation
@@ -987,24 +1019,24 @@ class CustomStorage(dataDir: File) : DataStorage(dataDir) {
 ApplicationServices.fileApplicationServices().dataStorageFactory = { file -> CustomStorage(file) }
 ApplicationServices.authenticationManager = CustomAuthenticationManager()
 ApplicationServices.authorizationManager = CustomAuthorizationManager()</code></pre>
+        </div>
+    </section>
+
+
+    <!-- Quick Start Section -->
+    <section class="mb-16" id="quick-start">
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">🚀</span>
+                <span class="panel-title">Quick Start: Initializing the Platform</span>
             </div>
-        </section>
-
-
-        <!-- Quick Start Section -->
-        <section id="quick-start" class="mb-16">
-            <div class="panel">
-                <div class="panel-header">
-                    <span class="panel-icon">🚀</span>
-                    <span class="panel-title">Quick Start: Initializing the Platform</span>
-                </div>
-                <div class="panel-body">
-                    <div class="code-block mb-0">
-                        <div class="code-header">
-                            <span class="code-lang">kotlin</span>
-                            <button class="copy-btn">Copy</button>
-                        </div>
-                        <pre><code class="language-kotlin">// 1. Set data root
+            <div class="panel-body">
+                <div class="code-block mb-0">
+                    <div class="code-header">
+                        <span class="code-lang">kotlin</span>
+                        <button class="copy-btn">Copy</button>
+                    </div>
+                    <pre><code class="language-kotlin">// 1. Set data root
 ApplicationServices.dataStorageRoot = File("/var/lib/cognotik")
 
 // 2. Initialize services
@@ -1013,87 +1045,87 @@ val storage = ApplicationServices.fileApplicationServices().dataStorageFactory(d
 
 // 3. Lock configuration to prevent changes
 ApplicationServicesConfig.isLocked = true</code></pre>
-                    </div>
                 </div>
             </div>
-        </section>
-    </main>
-
-    <!-- Footer -->
-    <footer class="site-footer">
-        <div class="footer-container">
-            <div class="footer-section">
-                <h4>Platform</h4>
-                <ul>
-                    <li><a href="index.html">Overview</a></li>
-                    <li><a href="platform.html">Architecture</a></li>
-                    <li><a href="intellij-plugin.html">IntelliJ Plugin</a></li>
-                    <li><a href="desktop.html">Desktop App</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Resources</h4>
-                <ul>
-                    <li><a href="https://github.com/SimiaCryptus/Cognotik">GitHub</a></li>
-                    <li><a href="https://github.com/SimiaCryptus/Cognotik/issues">Issues</a></li>
-                    <li><a href="https://github.com/SimiaCryptus/Cognotik/discussions">Discussions</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Community</h4>
-                <ul>
-                    <li><a href="https://github.com/SimiaCryptus/Cognotik/blob/main/CONTRIBUTING.md">Contributing</a></li>
-                    <li><a href="https://github.com/SimiaCryptus/Cognotik/blob/main/LICENSE">License</a></li>
-                </ul>
-            </div>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2024 Cognotik. Built with collaborative intelligence.</p>
+    </section>
+</main>
+
+<!-- Footer -->
+<footer class="site-footer">
+    <div class="footer-container">
+        <div class="footer-section">
+            <h4>Platform</h4>
+            <ul>
+                <li><a href="index.html">Overview</a></li>
+                <li><a href="platform.html">Architecture</a></li>
+                <li><a href="intellij-plugin.html">IntelliJ Plugin</a></li>
+                <li><a href="desktop.html">Desktop App</a></li>
+            </ul>
         </div>
-    </footer>
+        <div class="footer-section">
+            <h4>Resources</h4>
+            <ul>
+                <li><a href="https://github.com/SimiaCryptus/Cognotik">GitHub</a></li>
+                <li><a href="https://github.com/SimiaCryptus/Cognotik/issues">Issues</a></li>
+                <li><a href="https://github.com/SimiaCryptus/Cognotik/discussions">Discussions</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h4>Community</h4>
+            <ul>
+                <li><a href="https://github.com/SimiaCryptus/Cognotik/blob/main/CONTRIBUTING.md">Contributing</a></li>
+                <li><a href="https://github.com/SimiaCryptus/Cognotik/blob/main/LICENSE">License</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2024 Cognotik. Built with collaborative intelligence.</p>
+    </div>
+</footer>
 
-    <!-- Core Scripts -->
-    <script type="module" src="assets/scripts/core.js"></script>
-    <script type="module" src="assets/scripts/components/header.js"></script>
-    <script type="module" src="assets/scripts/components/footer.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
+<!-- Core Scripts -->
+<script src="assets/scripts/core.js" type="module"></script>
+<script src="assets/scripts/components/header.js" type="module"></script>
+<script src="assets/scripts/components/footer.js" type="module"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
 
-    <script>
-        // Tab Logic
-        document.querySelectorAll('[data-tabs]').forEach(container => {
-            const btns = container.querySelectorAll('.tab-btn');
-            const panels = container.querySelectorAll('.tab-panel');
+<script>
+    // Tab Logic
+    document.querySelectorAll('[data-tabs]').forEach(container => {
+        const btns = container.querySelectorAll('.tab-btn');
+        const panels = container.querySelectorAll('.tab-panel');
 
-            btns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const target = btn.dataset.tab;
-                    btns.forEach(b => {
-                        b.classList.remove('active');
-                        b.setAttribute('aria-selected', 'false');
-                    });
-                    panels.forEach(p => p.classList.remove('active'));
-                    btn.classList.add('active');
-                    btn.setAttribute('aria-selected', 'true');
-                    container.querySelector(`[data-tab-panel="${target}"]`).classList.add('active');
-                });
-            });
-        });
-
-        // Copy Logic
-        document.querySelectorAll('.copy-btn').forEach(btn => {
+        btns.forEach(btn => {
             btn.addEventListener('click', () => {
-                const code = btn.closest('.code-block').querySelector('code').innerText;
-                navigator.clipboard.writeText(code).then(() => {
-                    btn.innerText = 'Copied!';
-                    btn.classList.add('copied');
-                    setTimeout(() => {
-                        btn.innerText = 'Copy';
-                        btn.classList.remove('copied');
-                    }, 2000);
+                const target = btn.dataset.tab;
+                btns.forEach(b => {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-selected', 'false');
                 });
+                panels.forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                btn.setAttribute('aria-selected', 'true');
+                container.querySelector(`[data-tab-panel="${target}"]`).classList.add('active');
             });
         });
-    </script>
+    });
+
+    // Copy Logic
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const code = btn.closest('.code-block').querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.innerText = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.innerText = 'Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        });
+    });
+</script>
 </body>
 </html>

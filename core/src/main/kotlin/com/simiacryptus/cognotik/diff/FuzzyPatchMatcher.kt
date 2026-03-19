@@ -42,7 +42,7 @@ open class FuzzyPatchMatcher(
   private val enableSnippetPatching: Boolean = true,
   private val snippetMatchThreshold: Double = 0.8,
   private val requireAnchorMatch: Boolean = true,
-  private val debug : Boolean = false
+  private val debug: Boolean = false
 ) : PatchProcessor {
   /** A descriptive label for this patch processor. */
   override val label: String = "Fuzzy Patch Matcher"
@@ -66,7 +66,7 @@ open class FuzzyPatchMatcher(
   override fun generatePatch(oldCode: String, newCode: String): String {
     log.info("Starting patch generation process")
     if (oldCode == newCode) {
-      if(debug) log.debug("No changes detected, returning empty patch")
+      if (debug) log.debug("No changes detected, returning empty patch")
       return ""
     }
     // Handle edge cases
@@ -82,13 +82,13 @@ open class FuzzyPatchMatcher(
     linkUniqueMatchingLines(sourceLines, newLines)
     linkAdjacentMatchingLines(sourceLines, null)
     subsequenceLinking(sourceLines, newLines, levenshteinDistance = null)
-    if(debug) log.debug("Parsed and linked source lines: ${sourceLines.size}, new lines: ${newLines.size}")
+    if (debug) log.debug("Parsed and linked source lines: ${sourceLines.size}, new lines: ${newLines.size}")
     markMovedLines(newLines)
     val longDiff = newToPatch(newLines)
     val shortDiff = truncateContext(longDiff)
     fixPatchLineOrder(shortDiff)
     annihilateNoopLinePairs(shortDiff)
-    if(debug) log.debug("Generated diff with ${shortDiff.size} lines after processing")
+    if (debug) log.debug("Generated diff with ${shortDiff.size} lines after processing")
     val patch = StringBuilder()
 
     shortDiff.forEach { line ->
@@ -116,7 +116,7 @@ open class FuzzyPatchMatcher(
    */
   override fun applyPatch(source: String, patch: String): String {
     if (patch.isBlank()) {
-      if(debug) log.debug("Empty patch provided, returning original source")
+      if (debug) log.debug("Empty patch provided, returning original source")
       return source
     }
     // If source if blank, treat patch as new file content but strip diff markers
@@ -128,7 +128,7 @@ open class FuzzyPatchMatcher(
           else -> line.trimStart()
         }
       }.filter { it.isNotEmpty() }.joinToString("\n")
-      if(debug) log.debug("Source is blank, returning new content from patch")
+      if (debug) log.debug("Source is blank, returning new content from patch")
       return newContent
     }
 
@@ -143,12 +143,12 @@ open class FuzzyPatchMatcher(
 
     val sourceLines = setLinks(source.lines().mapIndexed { index, line -> LineRecord(index, line) })
     val patchLines = parsePatchLines(patch, sourceLines)
-    if(debug) log.debug("Parsed source lines: ${sourceLines.size}, initial patch lines: ${patchLines.size}")
+    if (debug) log.debug("Parsed source lines: ${sourceLines.size}, initial patch lines: ${patchLines.size}")
     val levenshteinDistance1 = LevenshteinDistance()
     linkUniqueMatchingLines(sourceLines, patchLines)
     linkAdjacentMatchingLines(sourceLines, levenshteinDistance1)
     subsequenceLinking(sourceLines, patchLines, levenshteinDistance = levenshteinDistance1)
-    if(debug) log.debug("Filtered patch lines: ${patchLines.size}")
+    if (debug) log.debug("Filtered patch lines: ${patchLines.size}")
     val result = generatePatchedText(
       sourceLines,
       patchLines.filter { it.line != null && normalizeLine(it.line).isNotEmpty() })
@@ -164,7 +164,7 @@ open class FuzzyPatchMatcher(
    * @param diff The list of diff lines to process.
    */
   private fun annihilateNoopLinePairs(diff: MutableList<LineRecord>) {
-    if(debug) log.debug("Starting annihilation of no-op line pairs")
+    if (debug) log.debug("Starting annihilation of no-op line pairs")
     val toRemove = mutableListOf<Pair<Int, Int>>()
     var i = 0
     while (i < diff.size - 1) {
@@ -185,7 +185,7 @@ open class FuzzyPatchMatcher(
     }
 
     toRemove.flatMap { listOf(it.first, it.second) }.distinct().sortedDescending().forEach { diff.removeAt(it) }
-    if(debug) log.debug("Removed ${toRemove.size} no-op line pairs")
+    if (debug) log.debug("Removed ${toRemove.size} no-op line pairs")
   }
 
   /**
@@ -198,7 +198,7 @@ open class FuzzyPatchMatcher(
    * @param newLines The list of `LineRecord`s for the new code, with links to the source code.
    */
   private fun markMovedLines(newLines: List<LineRecord>) {
-    if(debug) log.debug("Starting to mark moved lines")
+    if (debug) log.debug("Starting to mark moved lines")
     if (newLines.isEmpty()) return
 
     val matchedSourceLines = newLines.mapNotNull { it.matchingLine }.distinct().sortedBy { it.index }
@@ -211,12 +211,12 @@ open class FuzzyPatchMatcher(
         if (later.matchingLine!!.index < current.matchingLine!!.index) {
           current.type = DELETE
           current.matchingLine!!.type = ADD
-          if(debug) log.debug("Marked moved line: Source[${current.index}] as DELETE, Patch[${current.matchingLine!!.index}] as ADD")
+          if (debug) log.debug("Marked moved line: Source[${current.index}] as DELETE, Patch[${current.matchingLine!!.index}] as ADD")
           break
         }
       }
     }
-    if(debug) log.debug("Finished marking moved lines")
+    if (debug) log.debug("Finished marking moved lines")
   }
 
   /**
@@ -234,7 +234,7 @@ open class FuzzyPatchMatcher(
     newLines: List<LineRecord>
   ): MutableList<LineRecord> {
     val diff = mutableListOf<LineRecord>()
-    if(debug) log.debug("Starting diff generation")
+    if (debug) log.debug("Starting diff generation")
 
     var newLine = newLines.firstOrNull()
     while (newLine != null) {
@@ -242,7 +242,7 @@ open class FuzzyPatchMatcher(
       when {
         sourceLine == null || newLine.type == ADD -> {
           diff.add(LineRecord(newLine.index, newLine.line, type = ADD))
-          if(debug) log.debug("Added ADD line: ${newLine.line}")
+          if (debug) log.debug("Added ADD line: ${newLine.line}")
         }
 
         else -> {
@@ -255,12 +255,12 @@ open class FuzzyPatchMatcher(
           }
           diff.addAll(lineBuffer.reversed())
           diff.add(LineRecord(newLine.index, newLine.line, type = CONTEXT))
-          if(debug) log.debug("Added CONTEXT line: ${sourceLine.line}")
+          if (debug) log.debug("Added CONTEXT line: ${sourceLine.line}")
         }
       }
       newLine = newLine.nextLine
     }
-    if(debug) log.debug("Generated diff with ${diff.size} lines")
+    if (debug) log.debug("Generated diff with ${diff.size} lines")
     return diff
   }
 
@@ -274,7 +274,7 @@ open class FuzzyPatchMatcher(
    * @return A new list of `LineRecord`s with truncated context.
    */
   private fun truncateContext(diff: MutableList<LineRecord>): MutableList<LineRecord> {
-    if(debug) log.debug("Truncating context with size $contextSize")
+    if (debug) log.debug("Truncating context with size $contextSize")
     if (diff.isEmpty()) return mutableListOf()
 
     val truncatedDiff = mutableListOf<LineRecord>()
@@ -310,7 +310,7 @@ open class FuzzyPatchMatcher(
       truncatedDiff.addAll(contextBuffer)
     }
 
-    if(debug) log.debug("Truncated diff size: ${truncatedDiff.size}")
+    if (debug) log.debug("Truncated diff size: ${truncatedDiff.size}")
     return truncatedDiff
   }
 
@@ -344,7 +344,7 @@ open class FuzzyPatchMatcher(
     depth: Int = 0,
     levenshteinDistance: LevenshteinDistance?
   ) {
-    if(debug) log.debug("Subsequence linking at depth $depth")
+    if (debug) log.debug("Subsequence linking at depth $depth")
     if (depth > maxRecursionDepth || sourceLines.isEmpty() || patchLines.isEmpty()) {
       if (depth > maxRecursionDepth) {
         log.warn("Maximum recursion depth reached in subsequence linking")
@@ -361,7 +361,7 @@ open class FuzzyPatchMatcher(
       if (matchedLines > 0) {
         subsequenceLinking(sourceSegment, patchSegment, depth + 1, levenshteinDistance)
       }
-      if(debug) log.debug("Matched $matchedLines lines in subsequence linking at depth $depth")
+      if (debug) log.debug("Matched $matchedLines lines in subsequence linking at depth $depth")
     }
   }
 
@@ -381,7 +381,7 @@ open class FuzzyPatchMatcher(
     sourceLines: List<LineRecord>,
     patchLines: List<LineRecord>,
   ): List<String> {
-    if(debug) log.debug("Starting to generate patched text")
+    if (debug) log.debug("Starting to generate patched text")
     val patchedText: MutableList<String> = mutableListOf()
     val usedPatchLines = mutableSetOf<LineRecord>()
     var sourceIndex = -1
@@ -392,7 +392,7 @@ open class FuzzyPatchMatcher(
       when {
         codeLine.matchingLine?.type == DELETE -> {
           val patchLine = codeLine.matchingLine!!
-          if(debug) log.debug("Deleting line: {}", codeLine)
+          if (debug) log.debug("Deleting line: {}", codeLine)
 
           usedPatchLines.add(patchLine)
 
@@ -401,7 +401,7 @@ open class FuzzyPatchMatcher(
               nextPatchLine
             )
           ) {
-            if(debug) log.debug("Inserting added line after delete: {}", nextPatchLine)
+            if (debug) log.debug("Inserting added line after delete: {}", nextPatchLine)
             patchedText.add(nextPatchLine.line ?: "")
             usedPatchLines.add(nextPatchLine)
             nextPatchLine = nextPatchLine.nextLine
@@ -412,7 +412,7 @@ open class FuzzyPatchMatcher(
 
         codeLine.matchingLine != null -> {
           val patchLine: LineRecord = codeLine.matchingLine!!
-          if(debug) log.debug("Patching line: {} <-> {}", codeLine, patchLine)
+          if (debug) log.debug("Patching line: {} <-> {}", codeLine, patchLine)
           checkBeforeForInserts(patchLine, usedPatchLines, patchedText)
           usedPatchLines.add(patchLine)
 
@@ -426,7 +426,7 @@ open class FuzzyPatchMatcher(
         }
 
         else -> {
-          if(debug) log.debug("Added unmatched source line: {}", codeLine)
+          if (debug) log.debug("Added unmatched source line: {}", codeLine)
           patchedText.add(codeLine.line ?: "")
         }
 
@@ -437,13 +437,13 @@ open class FuzzyPatchMatcher(
     val isSourceEmpty = sourceLines.isEmpty() || (sourceLines.size == 1 && sourceLines[0].line.isNullOrEmpty())
     if (lastMatchedPatchIndex >= 0 || isSourceEmpty) {
       patchLines.filter { it.type == ADD && !usedPatchLines.contains(it) }.forEach { line ->
-        if(debug) log.debug("Added patch line: {}", line)
+        if (debug) log.debug("Added patch line: {}", line)
         patchedText.add(line.line ?: "")
       }
     } else {
       log.warn("No context lines matched - patch may not apply to this source")
     }
-    if(debug) log.debug("Generated patched text with ${patchedText.size} lines")
+    if (debug) log.debug("Generated patched text with ${patchedText.size} lines")
     return patchedText
   }
 
@@ -468,7 +468,7 @@ open class FuzzyPatchMatcher(
         break
       }
 
-      if(debug) log.debug("Added unmatched patch line: {}", prevPatchLine)
+      if (debug) log.debug("Added unmatched patch line: {}", prevPatchLine)
       buffer.add(prevPatchLine.line ?: "")
       usedPatchLines.add(prevPatchLine)
       prevPatchLine = prevPatchLine.previousLine
@@ -515,7 +515,7 @@ open class FuzzyPatchMatcher(
       if (nextPatchLine == null) break
       if (nextPatchLine.type != ADD) break
       if (usedPatchLines.contains(nextPatchLine)) break
-      if(debug) log.debug("Added unmatched patch line: {}", nextPatchLine)
+      if (debug) log.debug("Added unmatched patch line: {}", nextPatchLine)
       patchedText.add(nextPatchLine.line ?: "")
       usedPatchLines.add(nextPatchLine)
       nextPatchLine = nextPatchLine.nextLine
@@ -536,7 +536,7 @@ open class FuzzyPatchMatcher(
    * @return The number of lines that were matched.
    */
   private fun linkUniqueMatchingLines(sourceLines: List<LineRecord>, patchLines: List<LineRecord>): Int {
-    if(debug) log.debug("Starting to link unique matching lines. Source lines: ${sourceLines.size}, Patch lines: ${patchLines.size}")
+    if (debug) log.debug("Starting to link unique matching lines. Source lines: ${sourceLines.size}, Patch lines: ${patchLines.size}")
     if (sourceLines.isEmpty() || patchLines.isEmpty()) {
       return 0
     }
@@ -550,7 +550,7 @@ open class FuzzyPatchMatcher(
         else -> true
       }
     }.groupBy { normalizeLine(it.line!!) }
-    if(debug) log.debug("Created source and patch line maps")
+    if (debug) log.debug("Created source and patch line maps")
 
     val matched = sourceLineMap.keys.intersect(patchLineMap.keys).filter {
       sourceLineMap[it]?.size == patchLineMap[it]?.size
@@ -561,11 +561,11 @@ open class FuzzyPatchMatcher(
       for (i in sourceGroup.indices) {
         sourceGroup[i].matchingLine = patchGroup[i]
         patchGroup[i].matchingLine = sourceGroup[i]
-        if(debug) log.debug("Linked unique matching lines: Source[${sourceGroup[i].index}]: ${sourceGroup[i].line} <-> Patch[${patchGroup[i].index}]: ${patchGroup[i].line}")
+        if (debug) log.debug("Linked unique matching lines: Source[${sourceGroup[i].index}]: ${sourceGroup[i].line} <-> Patch[${patchGroup[i].index}]: ${patchGroup[i].line}")
       }
     }
     val matchedCount = matched.sumOf { sourceLineMap[it]!!.size }
-    if(debug) log.debug("Finished linking unique matching lines. Matched $matchedCount lines")
+    if (debug) log.debug("Finished linking unique matching lines. Matched $matchedCount lines")
     return matched.sumOf { sourceLineMap[it]!!.size }
   }
 
@@ -581,7 +581,7 @@ open class FuzzyPatchMatcher(
    * @return The number of new matches found.
    */
   private fun linkAdjacentMatchingLines(sourceLines: List<LineRecord>, levenshtein: LevenshteinDistance?): Int {
-    if(debug) log.debug("Starting to link adjacent matching lines. Source lines: ${sourceLines.size}")
+    if (debug) log.debug("Starting to link adjacent matching lines. Source lines: ${sourceLines.size}")
     var foundMatch = true
     var matchedLines = 0
     var iterationCount = 0
@@ -612,7 +612,7 @@ open class FuzzyPatchMatcher(
             patchPrev.matchingLine = sourcePrev
             foundMatch = true
             matchedLines++
-            if(debug) log.debug("Linked adjacent previous lines: Source[${sourcePrev.index}]: ${sourcePrev.line} <-> Patch[${patchPrev.index}]: ${patchPrev.line}")
+            if (debug) log.debug("Linked adjacent previous lines: Source[${sourcePrev.index}]: ${sourcePrev.line} <-> Patch[${patchPrev.index}]: ${patchPrev.line}")
           }
         }
 
@@ -625,12 +625,12 @@ open class FuzzyPatchMatcher(
             patchNext.matchingLine = sourceNext
             foundMatch = true
             matchedLines++
-            if(debug) log.debug("Linked adjacent next lines: Source[${sourceNext.index}]: ${sourceNext.line} <-> Patch[${patchNext.index}]: ${patchNext.line}")
+            if (debug) log.debug("Linked adjacent next lines: Source[${sourceNext.index}]: ${sourceNext.line} <-> Patch[${patchNext.index}]: ${patchNext.line}")
           }
         }
       }
     }
-    if(debug) log.debug("Finished linking adjacent matching lines. Matched $matchedLines lines")
+    if (debug) log.debug("Finished linking adjacent matching lines. Matched $matchedLines lines")
     return matchedLines
   }
 
@@ -684,7 +684,7 @@ open class FuzzyPatchMatcher(
 
     if (maxLength > minLineLengthForFuzzyMatch && levenshteinDistance != null) {
       val distance = levenshteinDistance.apply(normalizedSource, normalizedPatch)
-      if(debug) log.debug("Levenshtein distance: $distance")
+      if (debug) log.debug("Levenshtein distance: $distance")
       return distance <= floor(maxLength / levenshteinThresholdDivisor.toDouble()).toInt()
     }
     return false
@@ -699,7 +699,7 @@ open class FuzzyPatchMatcher(
    * @return The list with links set.
    */
   private fun setLinks(list: List<LineRecord>): List<LineRecord> {
-    if(debug) log.debug("Starting to set links for ${list.size} lines")
+    if (debug) log.debug("Starting to set links for ${list.size} lines")
     for (i in list.indices) {
       list[i].previousLine = if (i <= 0) null else {
         require(list[i - 1] !== list[i])
@@ -710,7 +710,7 @@ open class FuzzyPatchMatcher(
         list[i + 1]
       }
     }
-    if(debug) log.debug("Finished setting links for ${list.size} lines")
+    if (debug) log.debug("Finished setting links for ${list.size} lines")
     return list
   }
 
@@ -725,7 +725,7 @@ open class FuzzyPatchMatcher(
    * @return The list of parsed `LineRecord`s.
    */
   private fun parsePatchLines(text: String, sourceLines: List<LineRecord>): List<LineRecord> {
-    if(debug) log.debug("Starting to parse patch lines")
+    if (debug) log.debug("Starting to parse patch lines")
     val patchLines = setLinks(text.lines().mapIndexed { index, line ->
 
 
@@ -758,7 +758,7 @@ open class FuzzyPatchMatcher(
 
     fixPatchLineOrder(patchLines)
 
-    if(debug) log.debug("Finished parsing ${patchLines.size} patch lines")
+    if (debug) log.debug("Finished parsing ${patchLines.size} patch lines")
     return patchLines
   }
 
@@ -771,7 +771,7 @@ open class FuzzyPatchMatcher(
    * @param patchLines The list of patch lines to reorder.
    */
   private fun fixPatchLineOrder(patchLines: MutableList<LineRecord>) {
-    if(debug) log.debug("Starting to fix patch line order")
+    if (debug) log.debug("Starting to fix patch line order")
     if (patchLines.size < 2) return
     var swapped: Boolean
     var iterationCount = 0
@@ -808,7 +808,7 @@ open class FuzzyPatchMatcher(
     } while (swapped)
     // Re-establish the links after reordering
     setLinks(patchLines)
-    if(debug) log.debug("Finished fixing patch line order")
+    if (debug) log.debug("Finished fixing patch line order")
   }
 
   /**
@@ -889,24 +889,23 @@ open class FuzzyPatchMatcher(
    */
   private fun applySnippetPatch(source: String, patch: String): String {
     if (!enableSnippetPatching) {
-      if(debug) log.debug("Snippet patching disabled, returning original source")
+      if (debug) log.debug("Snippet patching disabled, returning original source")
       return source
     }
     val sourceLines = source.lines().toMutableList()
     val isSourceEmpty = sourceLines.isEmpty() || (sourceLines.size == 1 && sourceLines[0].isBlank())
     // If source is empty, the patch becomes the new content
     if (isSourceEmpty) {
-      if(debug) log.debug("Empty source, returning patch as new content")
+      if (debug) log.debug("Empty source, returning patch as new content")
       return patch
     }
 
 
     val patchLines = patch.lines().filter { it.isNotBlank() }
     if (patchLines.isEmpty()) {
-      if(debug) log.debug("Empty patch lines, returning original source")
+      if (debug) log.debug("Empty patch lines, returning original source")
       return source
     }
-
 
 
     // Use normalized lines for matching to handle whitespace consistently

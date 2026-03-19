@@ -21,6 +21,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
@@ -32,8 +33,8 @@ import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.linkToSession
-import java.awt.Dimension
 import java.awt.BorderLayout
+import java.awt.Dimension
 import java.awt.Point
 import java.io.File
 import java.util.concurrent.CancellationException
@@ -41,18 +42,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import javax.swing.BorderFactory
-import javax.swing.JComponent
-import javax.swing.JLabel
-import javax.swing.JScrollPane
-import javax.swing.JTextArea
-import javax.swing.JDialog
-import javax.swing.JMenuItem
-import javax.swing.JPopupMenu
-import javax.swing.Popup
-import javax.swing.PopupFactory
-import javax.swing.SwingUtilities
-import javax.swing.Timer
+import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.ListSelectionEvent
 import javax.swing.event.ListSelectionListener
@@ -103,10 +93,13 @@ open class DocProcessorAction(
             model: ChatModel?,
             title: String = "Documentation Processor"
         ): SocketManager = BasicChatApp(
-            root = root,
-            model = model ?: throw IllegalStateException("Smart model not configured"),
-            parsingModel = model,
-        ).newSession(session = Session.newUserID())?.let { socketManager ->
+          root = root,
+          model = model ?: throw IllegalStateException("Smart model not configured"),
+          parsingModel = model,
+        ).newSession(
+          localUser,
+          session = Session.newUserID()
+        )?.let { socketManager ->
             SessionProxyServer.agents[socketManager.sessionId] = socketManager
             ApplicationServer.appInfoMap[socketManager.sessionId] = AppInfoData(
                 applicationName = title,
@@ -164,6 +157,7 @@ open class DocProcessorAction(
                 smartModel = AppSettingsState.instance.smartModel?.model
                     ?: throw IllegalStateException("Smart model not configured"),
                 autoFix = true,
+                user = localUser,
             )
             val allTasks = docProcessor.getAll(*selectedFiles.toTypedArray())
             if (allTasks.isEmpty()) {
@@ -222,8 +216,8 @@ open class DocProcessorAction(
                 val threadPoolManager = ApplicationServices.threadPoolManager
                 sessions.forEach {
                     try {
-                        threadPoolManager.getPool(it).shutdown()
-                        threadPoolManager.getScheduledPool(it).shutdown()
+                      threadPoolManager.getPool(it, localUser).shutdown()
+                      threadPoolManager.getScheduledPool(it, localUser).shutdown()
                     } catch (e: Throwable) {
                         log.warn("Error closing session $it", e)
                     }
@@ -238,13 +232,14 @@ open class DocProcessorAction(
             docProcessor.separateQueues(selectedTasks).map { docProcessor.sortByDependencies(it) }
                 .filter { it.isNotEmpty() }
                 .map { mods ->
-                    newProcessor().submit {
+                    newProcessor(user = localUser).submit {
                         object : UnifiedHarness(
                             serverless = docProcessor.serverless,
                             openBrowser = docProcessor.openBrowser,
                             fastModel = docProcessor.fastModel,
                             smartModel = docProcessor.smartModel,
                             showMenubar = false,
+                            user = localUser,
                         ) {
                             override fun createTempDirectory(prefix: String) = docProcessor.root
                                 .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")

@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | MCPToolTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -201,7 +202,7 @@
         <div class="breadcrumbs">Home > Tasks > Online > MCPToolTask</div>
         <h1>MCPToolTask</h1>
         <p class="pitch">
-            Execute tools from Model Context Protocol (MCP) servers with robust connection management, 
+            Execute tools from Model Context Protocol (MCP) servers with robust connection management,
             automatic tool discovery, and configurable retry logic.
         </p>
         <div class="badges">
@@ -235,8 +236,9 @@
             <div class="panel-header"><span>👁️</span> Session UI Output</div>
             <div class="mock-ui-content">
                 <div class="ui-header">Executing MCP tool: read_file</div>
-                <div style="font-size: 0.85rem; color: var(--text-dim);">Server: <strong>filesystem-server</strong></div>
-                
+                <div style="font-size: 0.85rem; color: var(--text-dim);">Server: <strong>filesystem-server</strong>
+                </div>
+
                 <div style="margin-top: 1rem; background: var(--bg-code); padding: 0.75rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.8rem;">
                     <span style="color: var(--text-dim);">// Tool Output Preview</span><br>
                     { "content": "package com.example..." }
@@ -257,7 +259,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Execution Configuration</h3>
             <table class="docs-table">
                 <thead>
@@ -271,7 +273,8 @@
                 <tr>
                     <td><code>server_name</code></td>
                     <td>String</td>
-                    <td>The name of the MCP server to connect to. Defaults to <code>default_server</code> if omitted.</td>
+                    <td>The name of the MCP server to connect to. Defaults to <code>default_server</code> if omitted.
+                    </td>
                 </tr>
                 <tr>
                     <td><code>tool_name</code></td>
@@ -305,7 +308,7 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>Type Configuration (Static)</h3>
             <table class="docs-table">
                 <thead>
@@ -356,19 +359,27 @@
 
             <h3>Lifecycle Process</h3>
             <ol style="padding-left: 1.2rem; color: var(--text-dim);">
-                <li><strong>Registry Lookup:</strong> Retrieves the MCP client for the specified <code>server_name</code>.</li>
+                <li><strong>Registry Lookup:</strong> Retrieves the MCP client for the specified
+                    <code>server_name</code>.
+                </li>
                 <li><strong>Connection:</strong> Establishes transport connection if not already active.</li>
-                <li><strong>Discovery:</strong> Validates <code>tool_name</code> against the server's advertised tool list.</li>
+                <li><strong>Discovery:</strong> Validates <code>tool_name</code> against the server's advertised tool
+                    list.
+                </li>
                 <li><strong>Execution:</strong> Dispatches the request with arguments and monitors the timeout.</li>
-                <li><strong>Recovery:</strong> If <code>auto_retry</code> is enabled, handles transient failures with backoff.</li>
+                <li><strong>Recovery:</strong> If <code>auto_retry</code> is enabled, handles transient failures with
+                    backoff.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Prompt Segment</h3>
-            <p style="color: var(--text-dim); font-size: 0.9rem;">The following context is injected into the LLM when this tool is available:</p>
-            <pre style="background: var(--bg-code); padding: 1rem; border-radius: 4px; border: 1px solid var(--border-subtle);"><code class="language-text">
+            <p style="color: var(--text-dim); font-size: 0.9rem;">The following context is injected into the LLM when
+                this tool is available:</p>
+            <pre style="background: var(--bg-code); padding: 1rem; border-radius: 4px; border: 1px solid var(--border-subtle);"><code
+                    class="language-text">
 MCPTool - Execute tools from Model Context Protocol (MCP) servers
   ** Specify the MCP server name and tool to execute
   ** Provide tool arguments as a JSON object
@@ -377,7 +388,8 @@ MCPTool - Execute tools from Model Context Protocol (MCP) servers
             </code></pre>
 
             <h3 style="margin-top: 2rem;">Kotlin Boilerplate</h3>
-            <pre style="background: var(--bg-code); padding: 1rem; border-radius: 4px; border: 1px solid var(--border-subtle);"><code class="language-kotlin">
+            <pre style="background: var(--bg-code); padding: 1rem; border-radius: 4px; border: 1px solid var(--border-subtle);"><code
+                    class="language-kotlin">
 val task = MCPToolTask(
     orchestrationConfig = config,
     executionConfig = MCPToolTaskExecutionConfigData(

@@ -1,10 +1,10 @@
 ---
 task_type: AutoFix
-transforms: ../vacation_plan\.html -> ../validation/validation_report\.md
+transforms: ../vacation_plan\.html -> ../validation/validation_report.md
 related:
    - ../brainstorm_output.md
    - ../analysis_output.md
-   - ../data/crawler_latest.json
+   - ../research.md
    - ../itinerary.md
 validation_regex: "(?=.*## Validation Results)(?=.*## Issues Found)(?=.*## Auto-Corrections Applied)(?=.*## Recommendations)"
 ---

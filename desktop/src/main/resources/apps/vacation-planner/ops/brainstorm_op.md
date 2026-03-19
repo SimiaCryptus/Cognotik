@@ -1,6 +1,6 @@
 ---
 task_type: Brainstorming
-transforms: ../user_preferences\.md -> ../brainstorm_output\.md
+transforms: ../user_preferences\.md -> ../brainstorm_output.md
 related:
    - ../idea.md
 validation_regex: "(?=.*### 1\\. Vacation Dimensions)(?=.*### 2\\. Persona Matching)(?=.*### 3\\. Constraint Analysis)(?=.*### 4\\. Brainstorm Options)(?=.*### 5\\. Data Gathering Priorities)"

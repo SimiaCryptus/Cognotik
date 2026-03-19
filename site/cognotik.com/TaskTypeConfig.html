@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | TaskTypeConfig</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+
     <!-- jQuery & FileTree -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         .reality-check-grid {
@@ -89,7 +90,8 @@
         <div class="breadcrumbs">Tasks / Core Configuration</div>
         <h1>TaskTypeConfig</h1>
         <p class="pitch">
-            The foundational configuration layer for all Cognotik tasks, enabling polymorphic task resolution and model-specific overrides.
+            The foundational configuration layer for all Cognotik tasks, enabling polymorphic task resolution and
+            model-specific overrides.
         </p>
         <div class="badges">
             <span class="badge">Core Component</span>
@@ -118,7 +120,8 @@
         <div class="panel">
             <div class="panel-header">Resolved Task Instance</div>
             <div class="mock-ui-content" style="padding: 1rem;">
-                <div style="color: var(--accent-primary); margin-bottom: 0.5rem;">ℹ Task Resolved via TypeIdResolver</div>
+                <div style="color: var(--accent-primary); margin-bottom: 0.5rem;">ℹ Task Resolved via TypeIdResolver
+                </div>
                 <div style="background: #000; padding: 0.5rem; font-family: monospace; font-size: 0.8rem;">
                     <span style="color: #8b949e">Class:</span> FileModificationTaskTypeConfig<br>
                     <span style="color: #8b949e">Model:</span> GPT-4o (OpenAI)<br>
@@ -134,7 +137,7 @@
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Browse the artifacts and logs generated during the validation of TaskTypeConfig implementations.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
 
     <!-- 3. TABS -->
@@ -145,7 +148,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Configuration Parameters</h3>
             <table class="docs-table">
                 <thead>
@@ -159,7 +162,8 @@
                 <tr>
                     <td><code>task_type</code> <span class="req">*</span></td>
                     <td>String</td>
-                    <td>The unique ID used by <code>PlanTaskTypeIdResolver</code> to instantiate the correct subclass.</td>
+                    <td>The unique ID used by <code>PlanTaskTypeIdResolver</code> to instantiate the correct subclass.
+                    </td>
                 </tr>
                 <tr>
                     <td><code>name</code></td>
@@ -169,14 +173,16 @@
                 <tr>
                     <td><code>model</code></td>
                     <td>ApiChatModel</td>
-                    <td>Optional model override. Allows specific tasks to use different LLMs (e.g., GPT-4 for logic, GPT-3.5 for summaries).</td>
+                    <td>Optional model override. Allows specific tasks to use different LLMs (e.g., GPT-4 for logic,
+                        GPT-3.5 for summaries).
+                    </td>
                 </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Embedded Invocation</h3>
             <p>To invoke a task using <code>TaskTypeConfig</code> in an embedded environment:</p>
             <pre><code class="language-kotlin">

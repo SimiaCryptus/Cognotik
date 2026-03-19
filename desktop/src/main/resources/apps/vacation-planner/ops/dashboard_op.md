@@ -1,9 +1,9 @@
 ---
 task_type: MultiPerspectiveAnalysis
-transforms: ../analysis_output\.md -> ../continuous_outputs/dashboard_insights\.json
+transforms: ../analysis_output\.md -> ../continuous_outputs/dashboard_insights.json
 related:
   - ../brainstorm_output.md
-  - ../data/crawler_latest.json
+  - ../research.md
   - ../itinerary.md
 validation_regex: "(?=.*\"summary\")(?=.*\"perspectives\")(?=.*\"data_freshness\")(?=.*\"recommendations\")(?=.*\"confidence_score\")"
 ---
@@ -251,7 +251,7 @@ Produce a single JSON file with this structure:
     "input_sources": [
       "brainstorm_output.md",
       "analysis_output.md",
-      "crawler_latest.json",
+      "research.md",
       "itinerary.md"
     ],
     "data_sources_used": [

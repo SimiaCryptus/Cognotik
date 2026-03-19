@@ -18,6 +18,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.apps.CmdPatchApp
 import com.simiacryptus.cognotik.apps.PatchApp
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -79,7 +80,8 @@ class CommandAutofixAction : BaseAction() {
                                         ?: throw IllegalArgumentException("No executable selected")
                                 )
                                 val tools =
-                                    ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
+                                  ApplicationServices.fileApplicationServices().userSettingsManager
+                                    .getUserSettings(localUser).tools
                                 tools.addAll(ToolProvider.scanRecursive(File(executable.absolutePath)))
                                 val argument = cmdPanel.argumentsField.selectedItem?.toString() ?: ""
                                 AppSettingsState.instance.recentArguments?.remove(argument)
@@ -476,8 +478,8 @@ class CommandAutofixAction : BaseAction() {
                     preferredSize = Dimension(400, preferredSize.height)
                 }
                 val executables: List<String>? =
-                    ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
-                        .tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
+                  ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser)
+                    .tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
                 val commandField = ComboBox(executables?.toTypedArray() ?: emptyArray()).apply {
                     isEditable = true
                     preferredSize = Dimension(400, preferredSize.height)

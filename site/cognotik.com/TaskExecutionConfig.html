@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | TaskExecutionConfig</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+
     <!-- jQuery & FileTree -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         .reality-check-grid {
@@ -91,7 +92,8 @@
         <div class="breadcrumbs">Core / Schema</div>
         <h1>TaskExecutionConfig</h1>
         <p class="pitch">
-            The foundational configuration schema for all Cognotik tasks, defining identity, user-facing descriptions, and execution dependencies.
+            The foundational configuration schema for all Cognotik tasks, defining identity, user-facing descriptions,
+            and execution dependencies.
         </p>
         <div class="badges">
             <span class="badge">Core Infrastructure</span>
@@ -138,7 +140,7 @@
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Explore the execution artifacts and state files generated during TaskExecutionConfig validation.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
 
     <!-- 3. TABS -->
@@ -149,7 +151,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Configuration Parameters</h3>
             <table class="docs-table">
                 <thead>
@@ -163,7 +165,9 @@
                 <tr>
                     <td><code>task_type</code> <span class="req">*</span></td>
                     <td>String</td>
-                    <td>The unique identifier for the task logic (e.g., <code>FileModificationTask</code>). Used by the <code>PlanTaskTypeIdResolver</code>.</td>
+                    <td>The unique identifier for the task logic (e.g., <code>FileModificationTask</code>). Used by the
+                        <code>PlanTaskTypeIdResolver</code>.
+                    </td>
                 </tr>
                 <tr>
                     <td><code>task_description</code></td>
@@ -185,7 +189,7 @@
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Embedding Cognotik</h3>
             <p style="color: var(--text-dim); margin-bottom: 1rem;">
                 To invoke tasks programmatically using the <code>UnifiedHarness</code>, use the following pattern:
@@ -208,7 +212,8 @@ harness.runTask(
 )
             </code></pre>
             <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(88, 166, 255, 0.1); border-radius: 6px;">
-                <strong>Pro Tip:</strong> In headless/CI environments, ensure <code>serverless = true</code> is set to disable the Jetty server and UI components.
+                <strong>Pro Tip:</strong> In headless/CI environments, ensure <code>serverless = true</code> is set to
+                disable the Jetty server and UI components.
             </div>
         </div>
     </section>

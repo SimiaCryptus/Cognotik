@@ -6,15 +6,10 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.util.toJson
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -29,62 +24,63 @@ import java.util.concurrent.ConcurrentHashMap
  * This allows for switching between different planning and execution strategies.
  */
 abstract class SinglePlanApp(
-    path: String,
-    applicationName: String = "Unified Planning App",
-    showMenubar: Boolean = true,
-    var useExpansionSyntax: Boolean = true,
+  path: String,
+  applicationName: String = "Unified Planning App",
+  showMenubar: Boolean = true,
+  var useExpansionSyntax: Boolean = true,
+  val user: User
 ) : ApplicationServer(
-    applicationName = applicationName,
-    path = path,
-    showMenubar = showMenubar,
-    root = dataStorageRoot,
+  applicationName = applicationName,
+  path = path,
+  showMenubar = showMenubar,
+  root = dataStorageRoot,
 ) {
-    private val log = LoggerFactory.getLogger(SinglePlanApp::class.java)
+  private val log = LoggerFactory.getLogger(SinglePlanApp::class.java)
 
-    // Updated expansion patterns to match ChatSocketManager
-    private val idSubPattern = """[^|\n,/\\;}\]\[><()@]+"""
-    private val expansionExpressionPattern = Regex("""@\[($idSubPattern(?:[|,]$idSubPattern)+)]""")
-    private val sequenceExpansionPattern = Regex("""@\{([^}]+(?:\s*->\s*[^}]+)+)\}""")
-    private val rangeExpansionPattern = Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""")
-    private val topicReferencePattern = Regex("""@([A-Z][a-zA-Z0-9_]*)""")
+  // Updated expansion patterns to match ChatSocketManager
+  private val idSubPattern = """[^|\n,/\\;}\]\[><()@]+"""
+  private val expansionExpressionPattern = Regex("""@\[($idSubPattern(?:[|,]$idSubPattern)+)]""")
+  private val sequenceExpansionPattern = Regex("""@\{([^}]+(?:\s*->\s*[^}]+)+)\}""")
+  private val rangeExpansionPattern = Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""")
+  private val topicReferencePattern = Regex("""@([A-Z][a-zA-Z0-9_]*)""")
 
-    private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
-    override val stickyInput = true
-    override val inputCnt: Int = 4
+  private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
+  override val stickyInput = true
+  override val inputCnt: Int = 4
 
-    override fun appInfo(session: Session): Map<String, Any> {
-        val settings = getSettings(session, defaultUser, OrchestrationConfig::class.java)
-        return AppInfoData(
-            applicationName = applicationName,
-            inputCnt = when {
-                settings?.cognitiveMode == CognitiveModeType.Chat -> 0
-                else -> 4
-            },
-            stickyInput = stickyInput,
-            loadImages = false,
-            showMenubar = showMenubar,
-        ).toMap()
+  override fun appInfo(session: Session): Map<String, Any> {
+    val settings = getSettings(session, user, OrchestrationConfig::class.java)
+    return AppInfoData(
+      applicationName = applicationName,
+      inputCnt = when {
+        settings?.cognitiveMode == CognitiveModeType.Chat -> 0
+        else -> 4
+      },
+      stickyInput = stickyInput,
+      loadImages = false,
+      showMenubar = showMenubar,
+    ).toMap()
+  }
+
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : Any> initSettings(session: Session): T =
+    OrchestrationConfig(sessionId = session.sessionId, null, user = user) as T
+
+  abstract fun instance(model: ApiChatModel): ChatInterface
+
+  override fun newSession(
+    user: User,
+    session: Session
+  ): SocketManager {
+    val socketManager = super.newSession(user, session)!!
+    val settings = getSettings(session, user, OrchestrationConfig::class.java)
+    useExpansionSyntax = when (settings?.cognitiveMode) {
+      CognitiveModeType.Chat -> true
+      else -> false
     }
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> initSettings(session: Session): T =
-        OrchestrationConfig(sessionId = session.sessionId, null) as T
-
-    abstract fun instance(model: ApiChatModel): ChatInterface
-
-    override fun newSession(
-        user: User,
-        session: Session
-    ): SocketManager {
-        val socketManager = super.newSession(user, session)!!
-        val settings = getSettings(session, user, OrchestrationConfig::class.java)
-        useExpansionSyntax = when (settings?.cognitiveMode) {
-            CognitiveModeType.Chat -> true
-            else -> false
-        }
-        if (useExpansionSyntax) {
-            socketManager.newTask(cancelable = false, root = true).expandable(
-                "Query Expansion Syntax Guide", """
+    if (useExpansionSyntax) {
+      socketManager.newTask(cancelable = false, root = true).expandable(
+        "Query Expansion Syntax Guide", """
                 <div class="expandable-guide">
                   <p>You can use the following syntaxes in your messages to automatically expand your queries:</p>
                   <h4 class="expandable-section-title">Parallel Expansion</h4>
@@ -102,11 +98,11 @@ abstract class SinglePlanApp(
                   <p class="expandable-footer">You can combine these syntaxes for more complex expansions.</p>
                 </div>
                 """.trimIndent()
-            )
-        }
+      )
+    }
 
-        socketManager.newTask(cancelable = false, root = true).expandable(
-            "Session Info", """
+    socketManager.newTask(cancelable = false, root = true).expandable(
+      "Session Info", """
 Session ID: `${session}`
 
 Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
@@ -123,35 +119,37 @@ Expansion Syntax: `${if (useExpansionSyntax) "Enabled" else "Disabled"}`
 ${settings?.toJson()}
 ```
             """.renderMarkdown()
-        )
-        return socketManager
-    }
+    )
+    return socketManager
+  }
 
-    override fun userMessage(
-        session: Session,
-        user: User,
-        userMessage: String,
-        ui: SocketManager
-    ) {
-        try {
-            val settings = try {
-                getSettings(session, user, OrchestrationConfig::class.java)
-            } catch (e: Exception) {
-                log.error("Error retrieving orchestration config, using default", e)
-                null
-            }?.apply {
-                if(null == DataStorage.sessionPaths[session]) absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
-            } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
+  override fun userMessage(
+    session: Session,
+    user: User,
+    userMessage: String,
+    ui: SocketManager
+  ) {
+    try {
+      val settings = try {
+        getSettings(session, user, OrchestrationConfig::class.java)
+      } catch (e: Exception) {
+        log.error("Error retrieving orchestration config, using default", e)
+        null
+      }?.apply {
+        if (null == DataStorage.sessionPaths[session]) absoluteWorkingDir?.let {
+          DataStorage.sessionPaths[session] = File(it)
+        }
+      } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
-            val cognitiveMode = (settings.cognitiveMode ?: CognitiveModeType.Chat).getImpl(
-                orchestrationConfig = settings,
-                session = session,
-                user = user
-            )
+      val cognitiveMode = (settings.cognitiveMode ?: CognitiveModeType.Chat).getImpl(
+        orchestrationConfig = settings,
+        session = session,
+        user = user
+      )
 
-            log.debug("Received user message: $userMessage")
+      log.debug("Received user message: $userMessage")
 
-            val expandedMessage = if (useExpansionSyntax) expandTopics(userMessage) else userMessage
+      val expandedMessage = if (useExpansionSyntax) expandTopics(userMessage) else userMessage
 
 //            if (useExpansionSyntax && hasExpansionSyntax(expandedMessage)) {
 //                processMessageWithExpansions(
@@ -164,210 +162,201 @@ ${settings?.toJson()}
 //                return
 //            }
 
-            val task = ui.newTask(true)
-            val mode = cognitiveMode.apply { initialize(task) }
-            mode.handleUserMessage(expandedMessage, task)
-            onComplete(mode, task)
-        } catch (e: Throwable) {
-            log.error("Error processing user message", e)
-            ui.newTask().error(e)
-        }
+      val task = ui.newTask(true)
+      val mode = cognitiveMode.apply { initialize(task) }
+      mode.handleUserMessage(expandedMessage, task)
+      onComplete(mode, task)
+    } catch (e: Throwable) {
+      log.error("Error processing user message", e)
+      ui.newTask().error(e)
+    }
+  }
+
+  open fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
+    // No-op by default
+  }
+
+  /**
+   * Expands topic references in the message using previously identified topics
+   */
+  private fun expandTopics(userMessage: String): String {
+    return topicReferencePattern.replace(userMessage) { matchResult ->
+      val topicType = matchResult.groupValues[1]
+      val topicList = aggregateTopics[topicType]
+      val entities = synchronized(topicList ?: Any()) {
+        topicList?.toList()
+      }
+      if (!entities.isNullOrEmpty()) {
+        "@[${entities.joinToString("|")}]"
+      } else {
+        matchResult.value
+      }
+    }
+  }
+
+  /**
+   * Recursively processes a message with expansion expressions.
+   * Handles parallel, sequence, and range expansions similar to ChatSocketManager.
+   */
+  private fun processMessageRecursive(
+    session: Session,
+    currentMessage: String,
+    ui: SocketManager,
+    task: SessionTask,
+    processor: FixedConcurrencyProcessor,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+
+    // Check for range expansion first
+    val rangeMatch = rangeExpansionPattern.find(currentMessage)
+    if (rangeMatch != null) {
+      expandRange(session, currentMessage, ui, task, processor, rangeMatch)
+      return
     }
 
-    open fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
-        // No-op by default
+    // Check for sequence expansion
+    val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
+    if (sequenceMatch != null) {
+      expandSequence(session, currentMessage, ui, task, processor, sequenceMatch)
+      return
     }
 
-    /**
-     * Expands topic references in the message using previously identified topics
-     */
-    private fun expandTopics(userMessage: String): String {
-        return topicReferencePattern.replace(userMessage) { matchResult ->
-            val topicType = matchResult.groupValues[1]
-            val topicList = aggregateTopics[topicType]
-            val entities = synchronized(topicList ?: Any()) {
-                topicList?.toList()
-            }
-            if (!entities.isNullOrEmpty()) {
-                "@[${entities.joinToString("|")}]"
-            } else {
-                matchResult.value
-            }
-        }
+    // Check for parallel expansion
+    val parallelMatch = expansionExpressionPattern.find(currentMessage)
+    if (parallelMatch != null && parallelMatch.groupValues[1].split('|', ',').size > 1) {
+      expandParallel(session, currentMessage, ui, task, processor, parallelMatch, orchestrationConfig)
+      return
     }
+    val cognitiveMode = orchestrationConfig.cognitiveMode?.getImpl(
+      orchestrationConfig = orchestrationConfig,
+      session = session,
+      user = user
+    )?.apply { initialize(task) } ?: throw IllegalStateException("Cognitive mode not configured")
+    cognitiveMode.handleUserMessage(currentMessage, task)
+  }
 
-    /**
-     * Recursively processes a message with expansion expressions.
-     * Handles parallel, sequence, and range expansions similar to ChatSocketManager.
-     */
-    private fun processMessageRecursive(
-        session: Session,
-        user: User = defaultUser,
-        currentMessage: String,
-        ui: SocketManager,
-        task: SessionTask,
-        processor: FixedConcurrencyProcessor,
-        orchestrationConfig: OrchestrationConfig
-    ) {
+  /**
+   * Expands range expressions in the format @(start..end:step)
+   */
+  private fun expandRange(
+    session: Session,
+    currentMessage: String,
+    ui: SocketManager,
+    task: SessionTask,
+    processor: FixedConcurrencyProcessor,
+    rangeMatch: MatchResult
+  ) {
+    val start = rangeMatch.groupValues[1].toInt()
+    val end = rangeMatch.groupValues[2].toInt()
+    val step = rangeMatch.groupValues[3].takeIf { it.isNotEmpty() }?.toInt() ?: 1
 
-        // Check for range expansion first
-        val rangeMatch = rangeExpansionPattern.find(currentMessage)
-        if (rangeMatch != null) {
-            expandRange(session, user, currentMessage, ui, task, processor, rangeMatch)
-            return
-        }
+    val items = generateSequence(start) { it + step }
+      .takeWhile { if (step > 0) it <= end else it >= end }
+      .toList()
+      .map { it.toString() }
 
-        // Check for sequence expansion
-        val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
-        if (sequenceMatch != null) {
-            expandSequence(session, user, currentMessage, ui, task, processor, sequenceMatch)
-            return
-        }
+    expandSequenceItems(
+      session,
+      currentMessage,
+      ui,
+      task,
+      processor,
+      rangeMatch.value,
+      items,
+      this@SinglePlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!
+    )
+  }
 
-        // Check for parallel expansion
-        val parallelMatch = expansionExpressionPattern.find(currentMessage)
-        if (parallelMatch != null && parallelMatch.groupValues[1].split('|', ',').size > 1) {
-            expandParallel(session, user, currentMessage, ui, task, processor, parallelMatch, orchestrationConfig)
-            return
-        }
-        val cognitiveMode = orchestrationConfig.cognitiveMode?.getImpl(
-            orchestrationConfig = orchestrationConfig,
-            session = session,
-            user = user
-        )?.apply { initialize(task) } ?: throw IllegalStateException("Cognitive mode not configured")
-        cognitiveMode.handleUserMessage(currentMessage, task)
-    }
+  /**
+   * Expands sequence expressions in the format @{step1 -> step2 -> step3}
+   */
+  private fun expandSequence(
+    session: Session,
+    currentMessage: String,
+    ui: SocketManager,
+    task: SessionTask,
+    processor: FixedConcurrencyProcessor,
+    sequenceMatch: MatchResult
+  ) {
+    val items = sequenceMatch.groupValues[1].split(Regex("""\s*->\s*"""))
+    expandSequenceItems(
+      session,
+      currentMessage,
+      ui,
+      task,
+      processor,
+      sequenceMatch.value,
+      items,
+      this@SinglePlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!
+    )
+  }
 
-    /**
-     * Expands range expressions in the format @(start..end:step)
-     */
-    private fun expandRange(
-        session: Session,
-        user: User = defaultUser,
-        currentMessage: String,
-        ui: SocketManager,
-        task: SessionTask,
-        processor: FixedConcurrencyProcessor,
-        rangeMatch: MatchResult
-    ) {
-        val start = rangeMatch.groupValues[1].toInt()
-        val end = rangeMatch.groupValues[2].toInt()
-        val step = rangeMatch.groupValues[3].takeIf { it.isNotEmpty() }?.toInt() ?: 1
+  /**
+   * Expands parallel expressions in the format @[option1|option2|option3]
+   */
+  private fun expandParallel(
+    session: Session,
+    currentMessage: String,
+    ui: SocketManager,
+    task: SessionTask,
+    processor: FixedConcurrencyProcessor,
+    parallelMatch: MatchResult,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    val options = parallelMatch.groupValues[1].split('|', ',')
+    val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
 
-        val items = generateSequence(start) { it + step }
-            .takeWhile { if (step > 0) it <= end else it >= end }
-            .toList()
-            .map { it.toString() }
+    options.map { option ->
+      processor.submit {
+        val subTask = ui.newTask(false).apply { tabs[option] = placeholder }
+        val nextMessage = currentMessage.replaceFirst(parallelMatch.value, option)
 
-        expandSequenceItems(
-            session,
-            user,
-            currentMessage,
-            ui,
-            task,
-            processor,
-            rangeMatch.value,
-            items,
-            this@SinglePlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!
+        processMessageRecursive(
+          session = session,
+          currentMessage = nextMessage,
+          ui = ui,
+          task = subTask,
+          processor = processor,
+          orchestrationConfig = orchestrationConfig
         )
+      }
+    }.forEach { it.get() }
+
+    tabs.update()
+  }
+
+  /**
+   * Expands sequence items (used by both range and sequence expansions)
+   */
+  private fun expandSequenceItems(
+    session: Session,
+    currentMessage: String,
+    ui: SocketManager,
+    task: SessionTask,
+    processor: FixedConcurrencyProcessor,
+    expression: String,
+    items: List<String>,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
+
+    for (item in items) {
+      val subTask = ui.newTask(false).apply { tabs[item] = placeholder }
+      val nextMessage = currentMessage.replaceFirst(expression, item)
+
+      processMessageRecursive(
+        session = session,
+        currentMessage = nextMessage,
+        ui = ui,
+        task = subTask,
+        processor = processor,
+        orchestrationConfig = orchestrationConfig
+      )
     }
 
-    /**
-     * Expands sequence expressions in the format @{step1 -> step2 -> step3}
-     */
-    private fun expandSequence(
-        session: Session,
-        user: User = defaultUser,
-        currentMessage: String,
-        ui: SocketManager,
-        task: SessionTask,
-        processor: FixedConcurrencyProcessor,
-        sequenceMatch: MatchResult
-    ) {
-        val items = sequenceMatch.groupValues[1].split(Regex("""\s*->\s*"""))
-        expandSequenceItems(
-            session,
-            user,
-            currentMessage,
-            ui,
-            task,
-            processor,
-            sequenceMatch.value,
-            items,
-            this@SinglePlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!
-        )
-    }
+    tabs.update()
+  }
 
-    /**
-     * Expands parallel expressions in the format @[option1|option2|option3]
-     */
-    private fun expandParallel(
-        session: Session,
-        user: User = defaultUser,
-        currentMessage: String,
-        ui: SocketManager,
-        task: SessionTask,
-        processor: FixedConcurrencyProcessor,
-        parallelMatch: MatchResult,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        val options = parallelMatch.groupValues[1].split('|', ',')
-        val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
-
-        options.map { option ->
-            processor.submit {
-                val subTask = ui.newTask(false).apply { tabs[option] = placeholder }
-                val nextMessage = currentMessage.replaceFirst(parallelMatch.value, option)
-
-                processMessageRecursive(
-                    session = session,
-                    user = user,
-                    currentMessage = nextMessage,
-                    ui = ui,
-                    task = subTask,
-                    processor = processor,
-                    orchestrationConfig = orchestrationConfig
-                )
-            }
-        }.forEach { it.get() }
-
-        tabs.update()
-    }
-
-    /**
-     * Expands sequence items (used by both range and sequence expansions)
-     */
-    private fun expandSequenceItems(
-        session: Session,
-        user: User = defaultUser,
-        currentMessage: String,
-        ui: SocketManager,
-        task: SessionTask,
-        processor: FixedConcurrencyProcessor,
-        expression: String,
-        items: List<String>,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
-
-        for (item in items) {
-            val subTask = ui.newTask(false).apply { tabs[item] = placeholder }
-            val nextMessage = currentMessage.replaceFirst(expression, item)
-
-            processMessageRecursive(
-                session = session,
-                user = user,
-                currentMessage = nextMessage,
-                ui = ui,
-                task = subTask,
-                processor = processor,
-                orchestrationConfig = orchestrationConfig
-            )
-        }
-
-        tabs.update()
-    }
-
-    companion object {
-    }
+  companion object {
+  }
 }

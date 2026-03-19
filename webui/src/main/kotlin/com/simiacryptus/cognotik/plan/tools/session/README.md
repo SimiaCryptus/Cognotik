@@ -1,17 +1,24 @@
 # Session Tools
 
-This package provides a set of stateful task implementations designed for persistent interactions. Unlike standard tasks, session-based tasks can maintain state (such as environment variables, database transactions, or browser contexts) across multiple execution steps by using a `sessionId`.
+This package provides a set of stateful task implementations designed for persistent interactions. Unlike standard
+tasks, session-based tasks can maintain state (such as environment variables, database transactions, or browser
+contexts) across multiple execution steps by using a `sessionId`.
 
 ## Tools Overview
 
 ### CommandSession
-Creates and manages a persistent command-line session (e.g., `bash`, `python`). This allows for stateful interactions where commands can build on the results of previous ones.
+
+Creates and manages a persistent command-line session (e.g., `bash`, `python`). This allows for stateful interactions
+where commands can build on the results of previous ones.
 
 **Key Features:**
+
 - **Interactive Processes:** Start any interactive process by specifying the base command.
 - **Sequential Inputs:** Send a list of commands to be executed sequentially in the session's standard input.
-- **State Persistence:** The environment (variables, current directory) persists between tasks using the same `sessionId`.
-- **TTY Support:** Optional pseudo-terminal allocation (via `pty4j`) for tools requiring a TTY or providing colored output.
+- **State Persistence:** The environment (variables, current directory) persists between tasks using the same
+  `sessionId`.
+- **TTY Support:** Optional pseudo-terminal allocation (via `pty4j`) for tools requiring a TTY or providing colored
+  output.
 
 **Configuration Parameters:**
 
@@ -27,11 +34,15 @@ Creates and manages a persistent command-line session (e.g., `bash`, `python`). 
 ---
 
 ### JdbcSession
-Executes SQL statements against a database using JDBC. It supports maintaining connections for transactions or temporary state.
+
+Executes SQL statements against a database using JDBC. It supports maintaining connections for transactions or temporary
+state.
 
 **Key Features:**
+
 - **Flexible Connectivity:** Supports various databases via JDBC URL, user, and password.
-- **Transaction Support:** Use `sessionId` to keep connections open across multiple tasks, enabling multi-step transactions or use of temporary tables.
+- **Transaction Support:** Use `sessionId` to keep connections open across multiple tasks, enabling multi-step
+  transactions or use of temporary tables.
 - **Markdown Output:** Query results are automatically formatted as Markdown tables for easy reading and processing.
 
 **Configuration Parameters:**
@@ -49,12 +60,16 @@ Executes SQL statements against a database using JDBC. It supports maintaining c
 ---
 
 ### SeleniumSession
-Automates browser interactions using Selenium WebDriver. This tool is optimized for web scraping, testing, and automation tasks that require a real browser environment.
+
+Automates browser interactions using Selenium WebDriver. This tool is optimized for web scraping, testing, and
+automation tasks that require a real browser environment.
 
 **Key Features:**
+
 - **Headless Automation:** Uses headless Chrome for efficient background execution.
 - **JavaScript Execution:** Execute arbitrary JS commands in the browser context.
-- **HTML Optimization:** Includes advanced HTML scrubbing and simplification (via `HtmlSimplifier`) to reduce token usage when passing page content to LLMs.
+- **HTML Optimization:** Includes advanced HTML scrubbing and simplification (via `HtmlSimplifier`) to reduce token
+  usage when passing page content to LLMs.
 - **Transcripts:** Can generate detailed session transcripts for debugging and auditing.
 
 **Configuration Parameters:**
@@ -71,6 +86,7 @@ Automates browser interactions using Selenium WebDriver. This tool is optimized 
 
 ## Session Management
 
-- **Concurrency:** Most session types limit the number of concurrent active sessions (typically 10) to manage system resources.
+- **Concurrency:** Most session types limit the number of concurrent active sessions (typically 10) to manage system
+  resources.
 - **Cleanup:** Inactive or dead processes/connections are automatically cleaned up during new task initialization.
 - **Persistence:** Sessions are stored in-memory and are tied to the lifecycle of the application server.

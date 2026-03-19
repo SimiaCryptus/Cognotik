@@ -15,15 +15,15 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.tools.file.IllustrateDocumentTask
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -105,14 +105,15 @@ class IllustrateDocumentAction : BaseAction() {
             applicationName = "Document Illustration Task",
             taskType = IllustrateDocumentTask.IllustrateDocument,
             taskConfig = taskConfig,
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
-            message = "Execute task"
+            instanceFn = { model, user -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
+            message = "Execute task",
+            user = orchestrationConfig.user
         ) {
             override fun instance(model: ApiChatModel) =
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")
         }
 
-        app.getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())
+      app.getSettingsFile(session, AppSettingsState.localUser).writeText(orchestrationConfig.toJson())
         SessionProxyServer.chats[session] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Document Illustration Task",
@@ -342,12 +343,12 @@ class IllustrateDocumentAction : BaseAction() {
         fun getOrchestrationConfig(): OrchestrationConfig {
             val selectedTextModel = textModelCombo.selectedItem as? String
             val textModel = selectedTextModel?.let { modelName ->
-                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel()
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(localUser)
             }
 
             val selectedImageModel = imageModelCombo.selectedItem as? String
             val imageModel = selectedImageModel?.let { modelName ->
-                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel()
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(localUser)
             }
 
             return OrchestrationConfig(
@@ -363,12 +364,13 @@ class IllustrateDocumentAction : BaseAction() {
                 workingDir = root.absolutePath,
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
-                )
+                ),
+                user = localUser
             )
         }
 
         private fun getVisibleModels() =
-            fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+          fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
                     model.provider == apiData.provider && model.modelId.isNotBlank() && PlanConfigDialog.isVisible(
                         model

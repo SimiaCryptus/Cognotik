@@ -2,14 +2,15 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
+import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.util.DocProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.UpdateModes
+import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -31,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Optional model override parameters:
  * - smartModel: (Optional) Model ID to use as the smart/primary model (e.g., "claude-3-5-sonnet-20241022")
  * - fastModel: (Optional) Model ID to use as the fast/secondary model (e.g., "claude-3-5-haiku-20241022")
-* - imageModel: (Optional) Model ID to use as the image model
+ * - imageModel: (Optional) Model ID to use as the image model
  *
  * The servlet parses the specified markdown file for frontmatter specifications
  * and executes the resulting documentation processing tasks.
@@ -68,7 +69,7 @@ class DocProcessorServlet(
     val effectiveImageModel = resolveModel(req.getParameter("imageModel")) ?: imageModel
     try {
       val session = Session(sessionId)
-      val user = UserSettingsManager.defaultUser
+      val user = ApplicationServices.authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
       val sessionDir = dataStorage.getSessionDir(user, session)
       if (!sessionDir.exists() || !sessionDir.isDirectory) {
         resp.status = HttpServletResponse.SC_NOT_FOUND
@@ -100,6 +101,7 @@ class DocProcessorServlet(
         smartModel = effectiveSmartModel,
         imageModel = effectiveImageModel,
         autoFix = true,
+        user = user,
       )
       val docSpec = docProcessor.parseMarkdownWithFrontmatter(docFile)
       if (docSpec == null) {

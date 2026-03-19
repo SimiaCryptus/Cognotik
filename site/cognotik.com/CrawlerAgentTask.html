@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | CrawlerAgentTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
 
-  <link rel="stylesheet" href="assets/styles/main.css">
-  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -244,16 +245,17 @@
 
 <main class="task-container">
 
-      <!-- 1. PAGE HEADER -->
+    <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Online > CrawlerAgentTask</div>
         <h1>CrawlerAgentTask</h1>
         <p class="pitch">
-            An autonomous research agent that performs multi-threaded web crawling, content synthesis, and link discovery to answer complex queries with live data.
+            An autonomous research agent that performs multi-threaded web crawling, content synthesis, and link
+            discovery to answer complex queries with live data.
         </p>
         <div class="badges">
             <span class="badge">Category: Online</span>
-              <span class="badge badge-success">Model: GPT-4 Preferred</span>
+            <span class="badge badge-success">Model: GPT-4 Preferred</span>
             <span class="badge">Side-Effect: Safe</span>
         </div>
     </header>
@@ -263,7 +265,7 @@
         <!-- Input -->
         <div class="panel">
             <div class="panel-header">
-                  <span>⚙️ ExecutionConfig.json</span>
+                <span>⚙️ ExecutionConfig.json</span>
                 <span>UTF-8</span>
             </div>
             <pre><code>{
@@ -280,7 +282,7 @@
         <!-- Output -->
         <div class="panel">
             <div class="panel-header">
-                  <span>👁️ Session UI (TabbedDisplay)</span>
+                <span>👁️ Session UI (TabbedDisplay)</span>
                 <span>Live Render</span>
             </div>
             <div class="mock-ui-content">
@@ -292,7 +294,8 @@
                     </div>
                     <div style="padding: 1rem; font-family: serif; background: #0d1117;">
                         <h3 style="margin-top:0; color: #58a6ff;"># Research Summary</h3>
-                        <p style="font-size: 0.85rem;">Based on 12 analyzed pages, Llama-3 70B shows a 15% improvement in MMLU over previous iterations...</p>
+                        <p style="font-size: 0.85rem;">Based on 12 analyzed pages, Llama-3 70B shows a 15% improvement
+                            in MMLU over previous iterations...</p>
                         <ul style="font-size: 0.8rem; color: #8b949e;">
                             <li>Source: HuggingFace Blog (Relevance: 98%)</li>
                             <li>Source: Arxiv (Relevance: 92%)</li>
@@ -312,7 +315,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Execution Configuration</h3>
             <table class="docs-table">
                 <thead>
@@ -375,30 +378,35 @@
             </table>
         </div>
 
-          <!-- TAB 2: TASK PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <!-- TAB 2: TASK PROCESS -->
+        <div class="tab-pane" id="tab-process">
             <h3>Lifecycle of a Crawler Task</h3>
             <ol style="color: var(--text-main); padding-left: 1.2rem;">
                 <li style="margin-bottom: 1rem;">
-                    <strong>Seeding:</strong> The agent uses <code>SeedMethod</code> (Google Proxy or Direct URLs) to populate the initial <code>PriorityQueue</code>.
+                    <strong>Seeding:</strong> The agent uses <code>SeedMethod</code> (Google Proxy or Direct URLs) to
+                    populate the initial <code>PriorityQueue</code>.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong>Priority Discovery:</strong> Links are scored based on <code>relevance_score</code>. Higher relevance and lower depth are prioritized.
+                    <strong>Priority Discovery:</strong> Links are scored based on <code>relevance_score</code>. Higher
+                    relevance and lower depth are prioritized.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong>Concurrent Execution:</strong> The <code>ExecutorService</code> manages parallel <code>crawlPage</code> operations. Each page is fetched via <code>HttpClient</code> or <code>Selenium</code>.
+                    <strong>Concurrent Execution:</strong> The <code>ExecutorService</code> manages parallel <code>crawlPage</code>
+                    operations. Each page is fetched via <code>HttpClient</code> or <code>Selenium</code>.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong>LLM Synthesis:</strong> Each page is processed by the selected <code>PageProcessingStrategy</code>, which extracts data and discovers new links.
+                    <strong>LLM Synthesis:</strong> Each page is processed by the selected
+                    <code>PageProcessingStrategy</code>, which extracts data and discovers new links.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong>Final Aggregation:</strong> Once limits are reached or the queue is exhausted, a <code>ChatAgent</code> synthesizes all individual reports into a final comprehensive summary.
+                    <strong>Final Aggregation:</strong> Once limits are reached or the queue is exhausted, a <code>ChatAgent</code>
+                    synthesizes all individual reports into a final comprehensive summary.
                 </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Kotlin Implementation</h3>
             <div class="panel">
                 <div class="panel-header">OrchestrationConfig.kt</div>
@@ -421,13 +429,13 @@
 </main>
 
 <script>
-      function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-        document.getElementById('tab-' + tabId).classList.add('active');
-        event.target.classList.add('active');
-    }
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.target.classList.add('active');
+  }
 </script>
 
 </body>

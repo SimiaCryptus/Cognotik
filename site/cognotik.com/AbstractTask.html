@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | AbstractTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+
     <!-- jQuery & FileTree -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         .reality-check-grid {
@@ -87,7 +88,7 @@
         <div class="breadcrumbs">Tasks / Base Classes</div>
         <h1>AbstractTask</h1>
         <p class="pitch">
-            The foundational engine for all Cognotik operations. Provides standardized lifecycle management, 
+            The foundational engine for all Cognotik operations. Provides standardized lifecycle management,
             UI rendering, and robust file system interaction for agentic tools.
         </p>
         <div class="badges">
@@ -127,7 +128,8 @@ class MyTask(config: MyConfig) : AbstractTask<MyConfig, MyType>(...) {
                     📄 <a href="#" style="color: #58a6ff;">[Transcript] MyTask_20231027.html</a>
                 </div>
                 <div style="margin-top: 15px; padding: 8px; background: #232931; border-radius: 4px; text-align: center; border: 1px solid #444;">
-                    <span class="cmd-button" style="background: #2ea44f; padding: 4px 12px; border-radius: 4px; cursor: pointer;">Accept Result</span>
+                    <span class="cmd-button"
+                          style="background: #2ea44f; padding: 4px 12px; border-radius: 4px; cursor: pointer;">Accept Result</span>
                 </div>
             </div>
         </div>
@@ -139,7 +141,7 @@ class MyTask(config: MyConfig) : AbstractTask<MyConfig, MyType>(...) {
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Browse the artifacts and transcripts generated during the <code>AbstractTask</code> test suite execution.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
 
     <!-- 3. TABS -->
@@ -150,7 +152,7 @@ class MyTask(config: MyConfig) : AbstractTask<MyConfig, MyType>(...) {
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Framework Capabilities</h3>
             <table class="docs-table">
                 <thead>
@@ -181,7 +183,7 @@ class MyTask(config: MyConfig) : AbstractTask<MyConfig, MyType>(...) {
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Invoking via UnifiedHarness</h3>
             <p>To run any task derived from <code>AbstractTask</code> in a headless environment:</p>
             <pre><code class="language-kotlin">

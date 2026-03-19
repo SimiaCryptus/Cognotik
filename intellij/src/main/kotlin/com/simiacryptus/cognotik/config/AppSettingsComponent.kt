@@ -15,6 +15,7 @@ import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.image.ImageModel
@@ -550,7 +551,9 @@ class AppSettingsComponent : Disposable {
             log.error("Error populating API table: ${e.message}", e)
         }
         val apis =
-            fileApplicationServices(AppSettingsState.Companion.pluginHome).userSettingsManager.getUserSettings().apis
+          fileApplicationServices(AppSettingsState.Companion.pluginHome).userSettingsManager.getUserSettings(
+            localUser
+          ).apis
         try {
 
             // Get all available models from APIs with valid keys
@@ -757,9 +760,9 @@ class AppSettingsComponent : Disposable {
             log.debug("Populating API table")
             val model = apis.model as DefaultTableModel
             model.rowCount = 0
-            val userSettings = fileApplicationServices(
-                AppSettingsState.Companion.pluginHome
-            ).userSettingsManager.getUserSettings()
+          val userSettings = fileApplicationServices(
+            AppSettingsState.Companion.pluginHome
+          ).userSettingsManager.getUserSettings(localUser)
             userSettings.apis.forEach { api ->
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""
@@ -781,9 +784,9 @@ class AppSettingsComponent : Disposable {
             log.debug("Populating Tools table")
             val model = tools.model as DefaultTableModel
             model.rowCount = 0
-            val userSettings = fileApplicationServices(
-                AppSettingsState.Companion.pluginHome
-            ).userSettingsManager.getUserSettings()
+          val userSettings = fileApplicationServices(
+            AppSettingsState.Companion.pluginHome
+          ).userSettingsManager.getUserSettings(localUser)
             userSettings.tools.forEach { tool ->
                 val providerName = tool.provider?.name ?: ""
                 val path = tool.path ?: ""
@@ -803,7 +806,8 @@ class AppSettingsComponent : Disposable {
             text = value
             if (value != null) {
                 val fileApplicationServices = fileApplicationServices(AppSettingsState.Companion.pluginHome)
-                val userSettings = fileApplicationServices.userSettingsManager.getUserSettings()
+              val userSettings =
+                fileApplicationServices.userSettingsManager.getUserSettings(localUser)
                 val model = userSettings.apis
                     .filter { it.key?.decrypt != null }
                     .find { apiData ->

@@ -225,7 +225,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
             }
             appendLine()
           }.toByteArray())
-          
+
           // Generate segmentation debug image
           val debugImage = BufferedImage(sourceImage.width, sourceImage.height, BufferedImage.TYPE_INT_ARGB)
           val gDebug = debugImage.createGraphics()
@@ -321,13 +321,15 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
             transcript?.write(buildString {
               appendLine("#### Cropped Region: ${region.label}")
               appendLine("*Prompt:* $refinePrompt")
-              appendLine("![Refined Region](${
-                saveImage(
-                  crop,
-                  "${nextPath}_crop.${executionConfig.extension}",
-                  task
-                )
-              })")
+              appendLine(
+                "![Refined Region](${
+                  saveImage(
+                    crop,
+                    "${nextPath}_crop.${executionConfig.extension}",
+                    task
+                  )
+                })"
+              )
               appendLine()
             }.toByteArray())
 
@@ -348,7 +350,7 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
                 val highResRegion = processLevel(refinedImage, currentDepth + 1, levelPrompt, nextPath)
 
                 // Align refinedCrop to crop to find valid bounds
-                val bounds = if(executionConfig.retarget_subimages) ImagePatchLocalization.findBounds(
+                val bounds = if (executionConfig.retarget_subimages) ImagePatchLocalization.findBounds(
                   refinedImage,
                   crop,
                   ImagePatchLocalization.SubImageBounds(0, 0, refinedImage.width, refinedImage.height, 0.0)
@@ -371,7 +373,8 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
                 val destH = (actualH * regionScale).toInt()
 
                 val featherSize = (Math.min(destW, destH) * 0.05).toInt().coerceAtLeast(1)
-                val feathered = featherImage(sourceRegion, featherSize,
+                val feathered = featherImage(
+                  sourceRegion, featherSize,
                   destX <= 1, destY <= 1,
                   destX + destW >= fullWidth - 1, destY + destH >= fullHeight - 1
                 )
@@ -381,13 +384,15 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
                 transcript?.write(buildString {
                   appendLine("#### Refined Region: ${region.label}")
                   appendLine("*Prompt:* $refinePrompt")
-                  appendLine("![Refined Region](${
-                    saveImage(
-                      highResRegion,
-                      "${nextPath}_refined.${executionConfig.extension}",
-                      task
-                    )
-                  })")
+                  appendLine(
+                    "![Refined Region](${
+                      saveImage(
+                        highResRegion,
+                        "${nextPath}_refined.${executionConfig.extension}",
+                        task
+                      )
+                    })"
+                  )
                   appendLine()
                 }.toByteArray())
               }
@@ -454,7 +459,15 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
   override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
     return ui.hrefLink("Accept Image") { fn() }
   }
-  private fun featherImage(image: BufferedImage, feather: Int, left: Boolean, top: Boolean, right: Boolean, bottom: Boolean): BufferedImage {
+
+  private fun featherImage(
+    image: BufferedImage,
+    feather: Int,
+    left: Boolean,
+    top: Boolean,
+    right: Boolean,
+    bottom: Boolean
+  ): BufferedImage {
     val w = image.width
     val h = image.height
     val out = BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
@@ -482,7 +495,9 @@ SegmentedImageGeneration - Generates ultra-high-resolution images via recursive 
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(SegmentedImageGenerationTask::class.java)
-    @JvmStatic val SegmentedImageGeneration = TaskType(
+
+    @JvmStatic
+    val SegmentedImageGeneration = TaskType(
       name = "SegmentedImageGeneration",
       category = "Writing",
       taskClass = SegmentedImageGenerationTask::class.java,

@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | ImageVariationTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Workspace Browser -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -237,7 +238,8 @@
         <div class="breadcrumbs">Home > Tasks > Media > ImageVariationTask</div>
         <h1>ImageVariationTask</h1>
         <p class="pitch">
-            Generates "Find the Differences" style image variations by decomposing images into regions and applying controlled modifications.
+            Generates "Find the Differences" style image variations by decomposing images into regions and applying
+            controlled modifications.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect Safe</span>
@@ -271,11 +273,11 @@
                 <span>🖼️</span> Generated Variants
             </div>
             <div class="gallery-grid">
-                <img src="assets/images/var_sample_1.png" alt="Variation 1">
-                <img src="assets/images/var_sample_2.png" alt="Variation 2">
-                <img src="assets/images/var_sample_3.png" alt="Variation 3">
-                <img src="assets/images/var_sample_4.png" alt="Variation 4">
-                <img src="assets/images/var_sample_5.png" alt="Variation 5">
+                <img alt="Variation 1" src="assets/images/var_sample_1.png">
+                <img alt="Variation 2" src="assets/images/var_sample_2.png">
+                <img alt="Variation 3" src="assets/images/var_sample_3.png">
+                <img alt="Variation 4" src="assets/images/var_sample_4.png">
+                <img alt="Variation 5" src="assets/images/var_sample_5.png">
                 <div class="more-count">+6 more</div>
             </div>
             <div style="padding: 0 1rem 1rem 1rem; font-size: 0.8rem; color: var(--text-dim);">
@@ -289,7 +291,7 @@
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Explore the generated patches, manifests, and the interactive game in the task workspace.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
 
 
@@ -302,90 +304,93 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Execution Configuration</h3>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>input_file</code><span class="req">*</span></td>
-                        <td>String</td>
-                        <td>The input image file path relative to workspace root.</td>
-                    </tr>
-                    <tr>
-                        <td><code>num_subimages</code></td>
-                        <td>Int</td>
-                        <td>Number of distinct regions to identify and modify (Default: 7).</td>
-                    </tr>
-                    <tr>
-                        <td><code>num_subimage_alternates</code></td>
-                        <td>Int</td>
-                        <td>Number of alternate versions to generate per region (Default: 2).</td>
-                    </tr>
-                    <tr>
-                        <td><code>num_changes_per_variation</code></td>
-                        <td>Int</td>
-                        <td>Number of changes to apply to each final variation (Default: 5).</td>
-                    </tr>
-                    <tr>
-                        <td><code>num_variations</code></td>
-                        <td>Int</td>
-                        <td>Total number of alternative images to produce (Default: 11).</td>
-                    </tr>
-                    <tr>
-                        <td><code>retarget_subimages</code></td>
-                        <td>Boolean</td>
-                        <td>Uses image patch localization to align generated variations with the original image.</td>
-                    </tr>
-                    <tr>
-                        <td><code>output_prefix</code></td>
-                        <td>String</td>
-                        <td>Prefix for generated filenames (Default: "variation").</td>
-                    </tr>
-                    <tr>
-                        <td><code>extension</code></td>
-                        <td>String</td>
-                        <td>Output image format (png/jpg). Default: "png".</td>
-                    </tr>
+                <tr>
+                    <td><code>input_file</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The input image file path relative to workspace root.</td>
+                </tr>
+                <tr>
+                    <td><code>num_subimages</code></td>
+                    <td>Int</td>
+                    <td>Number of distinct regions to identify and modify (Default: 7).</td>
+                </tr>
+                <tr>
+                    <td><code>num_subimage_alternates</code></td>
+                    <td>Int</td>
+                    <td>Number of alternate versions to generate per region (Default: 2).</td>
+                </tr>
+                <tr>
+                    <td><code>num_changes_per_variation</code></td>
+                    <td>Int</td>
+                    <td>Number of changes to apply to each final variation (Default: 5).</td>
+                </tr>
+                <tr>
+                    <td><code>num_variations</code></td>
+                    <td>Int</td>
+                    <td>Total number of alternative images to produce (Default: 11).</td>
+                </tr>
+                <tr>
+                    <td><code>retarget_subimages</code></td>
+                    <td>Boolean</td>
+                    <td>Uses image patch localization to align generated variations with the original image.</td>
+                </tr>
+                <tr>
+                    <td><code>output_prefix</code></td>
+                    <td>String</td>
+                    <td>Prefix for generated filenames (Default: "variation").</td>
+                </tr>
+                <tr>
+                    <td><code>extension</code></td>
+                    <td>String</td>
+                    <td>Output image format (png/jpg). Default: "png".</td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>Task Lifecycle</h3>
             <ol style="color: var(--text-dim); padding-left: 1.2rem;">
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Structural Analysis:</strong> 
-                    Uses a vision model to identify distinct objects or regions (coordinates 0-1000) suitable for modification.
+                    <strong style="color: var(--text-main);">Structural Analysis:</strong>
+                    Uses a vision model to identify distinct objects or regions (coordinates 0-1000) suitable for
+                    modification.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Change Proposal:</strong> 
-                    For each region, the agent suggests visual changes (e.g., "Change color", "Remove object") that retain the original style.
+                    <strong style="color: var(--text-main);">Change Proposal:</strong>
+                    For each region, the agent suggests visual changes (e.g., "Change color", "Remove object") that
+                    retain the original style.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Patch Generation:</strong> 
+                    <strong style="color: var(--text-main);">Patch Generation:</strong>
                     Individual image patches are rendered using an image-to-image model based on the proposals.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Composition:</strong> 
-                    Patches are recombined with the base image using feathering and optional retargeting to create the final variations.
+                    <strong style="color: var(--text-main);">Composition:</strong>
+                    Patches are recombined with the base image using feathering and optional retargeting to create the
+                    final variations.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Game Generation:</strong> 
+                    <strong style="color: var(--text-main);">Game Generation:</strong>
                     Produces an interactive <code>diff_game.html</code> and JSON manifests for each variation.
                 </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Prompt Segment</h3>
             <pre><code>ImageVariation - Creates 'Find the Differences' style image sets.
 * Use for: Game asset generation, data augmentation.

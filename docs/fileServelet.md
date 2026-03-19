@@ -82,7 +82,9 @@ The `doPut` method supports creating or updating files by writing the request bo
 - Rejects writes to directories
 
 #### DELETE — File/Directory Deletion
+
 The `doDelete` method supports deleting files and directories:
+
 - Validates the target path
 - Returns `404 Not Found` if the target does not exist
 - For directories, uses `deleteRecursively()` to remove the directory and all contents
@@ -98,11 +100,15 @@ Custom MIME type mappings are applied for:
 - All others fall back to Jetty's `MimeTypes.getDefaultMimeByExtension()`, defaulting to `application/octet-stream`
 
 ### Git Version Control (Base Class)
+
 `FileServlet` includes built-in Git version control support that can be enabled or disabled per request via the
 `isGitEnabled()` method (defaults to `true`). When enabled, the directory listing page includes a Git section with a
 full-featured UI.
+
 #### Git UI Features
+
 When the directory is already a Git repository:
+
 - **Status** — Shows current branch and changed files with color-coded status indicators
 - **Diff** — Displays unstaged and staged changes with syntax-highlighted diff output (tabbed view)
 - **Log** — Shows commit history in oneline format
@@ -113,44 +119,47 @@ When the directory is already a Git repository:
 - **Reset** — Discard all uncommitted changes (with confirmation)
 - **Branches** — List all branches with switch and delete actions
 - **New Branch** — Create a new branch with optional checkout
-When the directory is not yet a Git repository:
+  When the directory is not yet a Git repository:
 - An initialization prompt is shown with a button to initialize a new repository
+
 #### Git POST Actions (via `gitAction` parameter)
-| Action           | Parameters                                    | Description                                                    |
-|------------------|-----------------------------------------------|----------------------------------------------------------------|
-| `init`           | *(none)*                                      | Initializes a git repository                                   |
-| `status`         | *(none)*                                      | Returns porcelain status and current branch                    |
-| `add`            | `filePath` (default `.`)                      | Stages files                                                   |
-| `commit`         | `message` (default `"Commit from web UI"`)    | Stages all changes and commits                                 |
-| `pull`           | *(none)*                                      | Pulls from remote                                              |
-| `push`           | *(none)*                                      | Pushes to remote                                               |
-| `log`            | `count` (default `"20"`)                      | Returns oneline log                                            |
-| `diff`           | *(none)*                                      | Returns unstaged and staged diffs                              |
-| `reset`          | `filePath` (optional)                         | Discards changes for a file or all files                       |
-| `stash`          | *(none)*                                      | Stashes changes                                                |
-| `stash-pop`      | *(none)*                                      | Applies stashed changes                                        |
-| `branches`       | *(none)*                                      | Lists all branches with current branch indicator               |
-| `create-branch`  | `branchName`, `checkout` (default `"true"`)   | Creates a new branch, optionally checking it out               |
-| `switch-branch`  | `branchName`                                  | Switches to the specified branch                               |
-| `delete-branch`  | `branchName`, `force` (optional)              | Deletes a branch (`-d` or `-D` if force)                       |
+
+| Action          | Parameters                                  | Description                                      |
+|-----------------|---------------------------------------------|--------------------------------------------------|
+| `init`          | *(none)*                                    | Initializes a git repository                     |
+| `status`        | *(none)*                                    | Returns porcelain status and current branch      |
+| `add`           | `filePath` (default `.`)                    | Stages files                                     |
+| `commit`        | `message` (default `"Commit from web UI"`)  | Stages all changes and commits                   |
+| `pull`          | *(none)*                                    | Pulls from remote                                |
+| `push`          | *(none)*                                    | Pushes to remote                                 |
+| `log`           | `count` (default `"20"`)                    | Returns oneline log                              |
+| `diff`          | *(none)*                                    | Returns unstaged and staged diffs                |
+| `reset`         | `filePath` (optional)                       | Discards changes for a file or all files         |
+| `stash`         | *(none)*                                    | Stashes changes                                  |
+| `stash-pop`     | *(none)*                                    | Applies stashed changes                          |
+| `branches`      | *(none)*                                    | Lists all branches with current branch indicator |
+| `create-branch` | `branchName`, `checkout` (default `"true"`) | Creates a new branch, optionally checking it out |
+| `switch-branch` | `branchName`                                | Switches to the specified branch                 |
+| `delete-branch` | `branchName`, `force` (optional)            | Deletes a branch (`-d` or `-D` if force)         |
+
 Git commands are executed as subprocesses with `redirectErrorStream(true)`.
 
 ### Extension Points
 
-| Method                                          | Purpose                                                                                                    |
-|-------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| `getDir(req)`                                   | Abstract — resolve the base directory for a request                                                        |
-| `getFile(dir, pathSegments, req)`               | Construct the file path from segments (default joins segments after the first)                             |
-| `listContents(file, req)`                       | Generate HTML list items for files and folders; returns a `Pair<String, String>` of (files HTML, folders HTML) |
-| `getZipLink(req, filePath)`                     | Return a ZIP download link for the current directory (default returns empty string)                        |
-| `getFileActions(file, req)`                     | Return additional HTML action links/buttons for individual files in directory listings                     |
-| `getFolderActions(folder, req)`                 | Return additional HTML action links/buttons for individual folders in directory listings                   |
-| `getToolbarActions(req, currentPath)`           | Return additional HTML toolbar items in the navbar area                                                    |
-| `getAdditionalSections(dir, req, currentPath)`  | Return additional HTML sections inserted after the upload section                                          |
-| `getAdditionalStyles()`                         | Return additional CSS styles (without style tags) appended to the page                                     |
-| `getAdditionalScripts()`                        | Return additional JavaScript (without script tags) appended to the page                                    |
-| `isGitEnabled(req)`                             | Whether Git features should be enabled for this request (default `true`)                                   |
-| `getGitRoot(req)`                               | Return the root directory for Git operations (default returns `getDir(req)`)                               |
+| Method                                         | Purpose                                                                                                        |
+|------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| `getDir(req)`                                  | Abstract — resolve the base directory for a request                                                            |
+| `getFile(dir, pathSegments, req)`              | Construct the file path from segments (default joins segments after the first)                                 |
+| `listContents(file, req)`                      | Generate HTML list items for files and folders; returns a `Pair<String, String>` of (files HTML, folders HTML) |
+| `getZipLink(req, filePath)`                    | Return a ZIP download link for the current directory (default returns empty string)                            |
+| `getFileActions(file, req)`                    | Return additional HTML action links/buttons for individual files in directory listings                         |
+| `getFolderActions(folder, req)`                | Return additional HTML action links/buttons for individual folders in directory listings                       |
+| `getToolbarActions(req, currentPath)`          | Return additional HTML toolbar items in the navbar area                                                        |
+| `getAdditionalSections(dir, req, currentPath)` | Return additional HTML sections inserted after the upload section                                              |
+| `getAdditionalStyles()`                        | Return additional CSS styles (without style tags) appended to the page                                         |
+| `getAdditionalScripts()`                       | Return additional JavaScript (without script tags) appended to the page                                        |
+| `isGitEnabled(req)`                            | Whether Git features should be enabled for this request (default `true`)                                       |
+| `getGitRoot(req)`                              | Return the root directory for Git operations (default returns `getDir(req)`)                                   |
 
 ---
 
@@ -185,11 +194,11 @@ operations executed as subprocess commands against the session directory. Git en
 
 #### GET Endpoints
 
-| Endpoint                   | Description                                                                                                                        |
-|----------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| Endpoint                   | Description                                                                                                                                                                                    |
+|----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `/.git/api/status`         | Returns repository status: whether initialized, current branch, whether clean, and a list of changed files with their status codes. Returns `initialized: false` if no `.git` directory exists |
-| `/.git/api/branches`       | Lists all branches (local and remote) with a `current` flag, plus the current branch name                                          |
-| `/.git/api/log?maxCount=N` | Returns commit history (default 20, max 100) with hash, author, email, date, and message                                           |
+| `/.git/api/branches`       | Lists all branches (local and remote) with a `current` flag, plus the current branch name                                                                                                      |
+| `/.git/api/log?maxCount=N` | Returns commit history (default 20, max 100) with hash, author, email, date, and message                                                                                                       |
 
 #### POST Endpoints
 
@@ -198,11 +207,12 @@ operations executed as subprocess commands against the session directory. Git en
 | `/.git/api/init`     | *(none)*                                  | Initializes a git repository with an initial empty commit. No-op if already initialized                                          |
 | `/.git/api/commit`   | `{"message": "..."}`                      | Stages all changes (`git add -A`) and commits. Returns the commit hash. Reports "nothing to commit" if the working tree is clean |
 | `/.git/api/checkout` | `{"branch": "...", "create": true/false}` | Checks out a branch, optionally creating it with `-b`. Validates branch names against git naming rules                           |
+
 #### Response Format
+
 All Git API endpoints return JSON responses. Successful responses include `"success": true` along with
 operation-specific fields. Error responses include `"success": false` (or `"error"`) with descriptive messages.
 The `commit` endpoint uses `--author=SessionFileServlet <noreply@localhost>` for the commit author.
-
 
 #### Auto-initialization
 
@@ -221,4 +231,4 @@ Branch names are validated to reject:
 
 | Method               | Purpose                                                                                                                          |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------------|
-| `onSession(session)` | Called when a session is resolved from the request path. Default is a no-op; subclasses can override for session lifecycle hooks  |
+| `onSession(session)` | Called when a session is resolved from the request path. Default is a no-op; subclasses can override for session lifecycle hooks |

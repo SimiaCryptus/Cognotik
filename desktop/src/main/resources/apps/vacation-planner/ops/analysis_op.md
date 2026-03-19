@@ -1,9 +1,9 @@
 ---
 task_type: MultiPerspectiveAnalysis
-transforms: ../brainstorm_output\.md -> ../analysis_output\.md
+transforms: ../brainstorm_output\.md -> ../analysis_output.md
 related:
    - ../user_preferences.md
-   - ../data/crawler_latest.json
+   - ../research.md
 validation_regex: "(?=.*### Perspective 1: Budget Optimizer)(?=.*### Perspective 2: Experience Maximizer)(?=.*### Perspective 3: Logistics Optimizer)(?=.*### Synthesis & Conflict Resolution)"
 ---
 

@@ -99,7 +99,7 @@ Evaluates each vacation concept from three distinct perspectives:
 
 #### Stage 3: Real-Time Data Gathering (CrawlerAgent Task Type)
 **Input**: `brainstorm_output.md` (data gathering priorities)  
-**Output**: `crawler_v1.json`, `crawler_v2.json`, ... `crawler_latest.json` (symlink)
+**Output**: `crawler_v1.json`, `crawler_v2.json`, ... `research.md` (symlink)
 
 Continuously gathers and validates real-time data:
 - **Destination Information**: Weather, visa requirements, best seasons
@@ -117,7 +117,8 @@ Continuously gathers and validates real-time data:
 **Continuous Updates**: Runs every 5-10 minutes in background, maintains version history
 
 #### Stage 4: Itinerary Planning (SubPlan Task Type)
-**Input**: `analysis_output.md`, `crawler_latest.json`  
+
+**Input**: `analysis_output.md`, `research.md`  
 **Output**: `itinerary.md`, `activity_recommendations.json`
 
 Generates detailed, executable vacation itineraries:
@@ -279,16 +280,16 @@ The app includes **strategic human checkpoints**:
 
 ### Op Files Reference
 
-| Op File | Task Type | Input | Output | Purpose |
-|---------|-----------|-------|--------|---------|
-| `brainstorm_op.md` | Brainstorming | `user_preferences.md` | `brainstorm_output.md` | Generate vacation concepts |
-| `analysis_op.md` | MultiPerspectiveAnalysis | `brainstorm_output.md` | `analysis_output.md` | Evaluate from 3 perspectives |
-| `crawler_op.md` | CrawlerAgent | `brainstorm_output.md` | `crawler_latest.json` | Gather real-time data |
-| `plan_op.md` | SubPlan | `analysis_output.md` | `itinerary.md` | Create detailed itinerary |
-| `generate_op.md` | FileModification | `itinerary.md` | `vacation_plan.html` | Generate UI |
-| `codereview_op.md` | CodeReview | `vacation_plan.html` | `review_report.md` | Quality assurance |
-| `autofix_op.md` | AutoFix | All files | `code_quality.json` | Continuous improvement |
-| `validate_generated_op.md` | AutoFix | Generated files | `validation_report.md` | Validate generated content |
+| Op File                    | Task Type                | Input                  | Output                 | Purpose                      |
+|----------------------------|--------------------------|------------------------|------------------------|------------------------------|
+| `brainstorm_op.md`         | Brainstorming            | `user_preferences.md`  | `brainstorm_output.md` | Generate vacation concepts   |
+| `analysis_op.md`           | MultiPerspectiveAnalysis | `brainstorm_output.md` | `analysis_output.md`   | Evaluate from 3 perspectives |
+| `crawler_op.md`            | CrawlerAgent             | `brainstorm_output.md` | `research.md`          | Gather real-time data        |
+| `plan_op.md`               | SubPlan                  | `analysis_output.md`   | `itinerary.md`         | Create detailed itinerary    |
+| `generate_op.md`           | FileModification         | `itinerary.md`         | `vacation_plan.html`   | Generate UI                  |
+| `codereview_op.md`         | CodeReview               | `vacation_plan.html`   | `review_report.md`     | Quality assurance            |
+| `autofix_op.md`            | AutoFix                  | All files              | `code_quality.json`    | Continuous improvement       |
+| `validate_generated_op.md` | AutoFix                  | Generated files        | `validation_report.md` | Validate generated content   |
 
 ### File Naming Conventions
 
@@ -308,7 +309,7 @@ generated_app/
 │
 ├── data/
 │   ├── user_preferences.md       # Your input
-│   ├── crawler_latest.json       # Current activity data
+│   ├── research.md       # Current activity data
 │   └── crawler_v*.json           # Historical versions
 │
 ├── batch_outputs/
@@ -373,11 +374,11 @@ generated_app/
 
 ### Data Files
 
-| File | Type | Description |
-|------|------|-------------|
-| `data/crawler_latest.json` | JSON | Current activity, pricing, and availability data |
-| `continuous_outputs/dashboard_insights.json` | JSON | Real-time insights and recommendations |
-| `continuous_outputs/code_quality.json` | JSON | Code quality metrics and improvements |
+| File                                         | Type | Description                                      |
+|----------------------------------------------|------|--------------------------------------------------|
+| `research.md`                                | JSON | Current activity, pricing, and availability data |
+| `continuous_outputs/dashboard_insights.json` | JSON | Real-time insights and recommendations           |
+| `continuous_outputs/code_quality.json`       | JSON | Code quality metrics and improvements            |
 
 ### Op Files
 
@@ -557,7 +558,8 @@ This application is provided "as is" without warranty. The developers are not re
 3. Save and reload page
 
 **Add Custom Activities**:
-1. Edit `data/crawler_latest.json`
+
+1. Edit `research.md`
 2. Add new activity entries with pricing and details
 3. Regenerate itinerary to include new activities
 

@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | FetchMethod</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -219,7 +220,8 @@
         <div class="breadcrumbs">Home > Tasks > Web Operations</div>
         <h1>FetchMethod</h1>
         <p class="pitch">
-            A pluggable web content retrieval engine. Supports high-speed HTTP requests for static content and Selenium-based headless browser automation for JavaScript-heavy applications.
+            A pluggable web content retrieval engine. Supports high-speed HTTP requests for static content and
+            Selenium-based headless browser automation for JavaScript-heavy applications.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect Safe</span>
@@ -288,7 +290,7 @@ strategy.fetch(
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Available Fetch Methods</h3>
             <table class="docs-table">
                 <thead>
@@ -332,20 +334,29 @@ strategy.fetch(
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>Retrieval Lifecycle</h3>
             <ol style="color: var(--text-dim); line-height: 2;">
-                <li><strong style="color: var(--text-main)">Factory Creation:</strong> The <code>FetchMethod</code> enum produces a <code>FetchStrategy</code> instance based on task requirements.</li>
-                <li><strong style="color: var(--text-main)">Environment Setup:</strong> For Selenium, the WebDriver is initialized; for HttpClient, the connection pool is verified.</li>
-                <li><strong style="color: var(--text-main)">Execution:</strong> The <code>fetch()</code> method is called with the target URL and orchestration context.</li>
-                <li><strong style="color: var(--text-main)">Persistence:</strong> Results are indexed and stored in the <code>webSearchDir</code> for future reference by the LLM.</li>
+                <li><strong style="color: var(--text-main)">Factory Creation:</strong> The <code>FetchMethod</code> enum
+                    produces a <code>FetchStrategy</code> instance based on task requirements.
+                </li>
+                <li><strong style="color: var(--text-main)">Environment Setup:</strong> For Selenium, the WebDriver is
+                    initialized; for HttpClient, the connection pool is verified.
+                </li>
+                <li><strong style="color: var(--text-main)">Execution:</strong> The <code>fetch()</code> method is
+                    called with the target URL and orchestration context.
+                </li>
+                <li><strong style="color: var(--text-main)">Persistence:</strong> Results are indexed and stored in the
+                    <code>webSearchDir</code> for future reference by the LLM.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Orchestration Setup</h3>
-            <p>Add the following to your <code>OrchestrationConfig</code> to customize how the agent retrieves external data:</p>
+            <p>Add the following to your <code>OrchestrationConfig</code> to customize how the agent retrieves external
+                data:</p>
             <pre><code class="language-kotlin">
 val config = OrchestrationConfig(
     // ... other settings

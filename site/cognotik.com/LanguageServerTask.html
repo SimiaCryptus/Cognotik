@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | LanguageServer</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -204,7 +205,8 @@
         <div class="breadcrumbs">Home > Tasks > File > LanguageServer</div>
         <h1>LanguageServer</h1>
         <p class="pitch">
-            Interact with Language Servers (LSP) to provide deep code intelligence including definition lookups, reference tracking, and real-time diagnostics.
+            Interact with Language Servers (LSP) to provide deep code intelligence including definition lookups,
+            reference tracking, and real-time diagnostics.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect: Safe</span>
@@ -233,7 +235,9 @@
         <div class="panel">
             <div class="panel-header"><span>👁️</span> User UI</div>
             <div style="padding: 1rem;">
-                <div style="color: var(--accent-primary); margin-bottom: 0.5rem; font-weight: 600;">LSP Action 'definition' completed.</div>
+                <div style="color: var(--accent-primary); margin-bottom: 0.5rem; font-weight: 600;">LSP Action
+                    'definition' completed.
+                </div>
                 <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-main);">
                     Result:<br>
                     - /src/main/models/User.kt:12:8
@@ -254,7 +258,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane">
+        <div class="tab-pane" id="tab-docs">
             <h3>TaskExecutionConfig Fields</h3>
             <table class="docs-table">
                 <thead>
@@ -292,13 +296,14 @@
                 <h4 style="margin-top: 0;">Resource Usage</h4>
                 <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 0;">
                     <strong>Token Usage:</strong> Low (Metadata only)<br>
-                    <strong>Dependencies:</strong> Requires workspace root to be indexed by the relevant language server.
+                    <strong>Dependencies:</strong> Requires workspace root to be indexed by the relevant language
+                    server.
                 </p>
             </div>
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>Supported Languages</h3>
             <p class="pitch">The task automatically detects the language server based on file extension.</p>
             <div class="lang-grid">
@@ -317,15 +322,23 @@
 
             <h3 style="margin-top: 2rem;">Task Process Lifecycle</h3>
             <ol style="color: var(--text-dim); line-height: 1.8;">
-                <li><strong>Initialization:</strong> Spawns the language server process in the workspace root and sends JSON-RPC <code>initialize</code>.</li>
-                <li><strong>Synchronization:</strong> Sends <code>textDocument/didOpen</code> to synchronize the target file content.</li>
-                <li><strong>Execution:</strong> Executes the specific LSP method (e.g., <code>textDocument/definition</code>) based on the requested action.</li>
-                <li><strong>Cleanup:</strong> Sends <code>shutdown</code> and <code>exit</code> notifications to cleanly terminate the server process.</li>
+                <li><strong>Initialization:</strong> Spawns the language server process in the workspace root and sends
+                    JSON-RPC <code>initialize</code>.
+                </li>
+                <li><strong>Synchronization:</strong> Sends <code>textDocument/didOpen</code> to synchronize the target
+                    file content.
+                </li>
+                <li><strong>Execution:</strong> Executes the specific LSP method (e.g.,
+                    <code>textDocument/definition</code>) based on the requested action.
+                </li>
+                <li><strong>Cleanup:</strong> Sends <code>shutdown</code> and <code>exit</code> notifications to cleanly
+                    terminate the server process.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Prompt Segment</h3>
             <p class="pitch">This text is injected into the LLM context to explain how to use the tool.</p>
             <pre class="panel"><code class="language-text">LanguageServer - Query code intelligence (LSP)

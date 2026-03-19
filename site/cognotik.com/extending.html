@@ -2,43 +2,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
     <!-- SEO Meta Tags -->
     <title>Extending Cognotik | Cognotik</title>
-    <meta name="description" content="Learn how to extend Cognotik with custom API providers, tool providers, code runtimes, cognitive modes, and task types using the DynamicEnum pattern.">
-    <meta name="keywords" content="AI coding, autonomous agents, extension system, DynamicEnum, API providers, custom tools, code runtimes">
+    <meta content="Learn how to extend Cognotik with custom API providers, tool providers, code runtimes, cognitive modes, and task types using the DynamicEnum pattern."
+          name="description">
+    <meta content="AI coding, autonomous agents, extension system, DynamicEnum, API providers, custom tools, code runtimes"
+          name="keywords">
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="Extending Cognotik | Cognotik">
-    <meta property="og:description" content="Learn how to extend Cognotik with custom API providers, tool providers, code runtimes, cognitive modes, and task types.">
-    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
-    <meta property="og:url" content="https://cognotik.com/extending.html">
-    <meta property="og:type" content="website">
+    <meta content="Extending Cognotik | Cognotik" property="og:title">
+    <meta content="Learn how to extend Cognotik with custom API providers, tool providers, code runtimes, cognitive modes, and task types."
+          property="og:description">
+    <meta content="https://cognotik.com/assets/images/og-image.png" property="og:image">
+    <meta content="https://cognotik.com/extending.html" property="og:url">
+    <meta content="website" property="og:type">
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Extending Cognotik | Cognotik">
-    <meta name="twitter:description" content="Learn how to extend Cognotik with custom API providers, tool providers, code runtimes, cognitive modes, and task types.">
-    <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+    <meta content="summary_large_image" name="twitter:card">
+    <meta content="Extending Cognotik | Cognotik" name="twitter:title">
+    <meta content="Learn how to extend Cognotik with custom API providers, tool providers, code runtimes, cognitive modes, and task types."
+          name="twitter:description">
+    <meta content="https://cognotik.com/assets/images/twitter-card.png" name="twitter:image">
 
     <!-- Favicon Suite -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-    <link rel="manifest" href="/site.webmanifest">
-    <meta name="theme-color" content="#0f1115">
+    <link href="assets/icons/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="assets/icons/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
+    <link href="assets/icons/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
+    <link href="assets/icons/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
+    <link href="/site.webmanifest" rel="manifest">
+    <meta content="#0f1115" name="theme-color">
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap"
+          rel="stylesheet">
 
     <!-- Prism.js for syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         /* Page-specific styles */
@@ -358,14 +363,16 @@
         </header>
 
         <!-- DynamicEnum Pattern -->
-        <section id="dynamic-enum" class="docs-section">
+        <section class="docs-section" id="dynamic-enum">
             <h2>DynamicEnum Pattern</h2>
             <p>
                 The <code>DynamicEnum</code> class provides a runtime-extensible alternative to Java enums. It supports:
             </p>
             <ul>
-                <li><strong>Registration:</strong> New values can be registered at runtime using <code>DynamicEnum.register()</code></li>
-                <li><strong>Lookup:</strong> Values can be retrieved by name using <code>valueOf()</code> or listed using <code>values()</code></li>
+                <li><strong>Registration:</strong> New values can be registered at runtime using <code>DynamicEnum.register()</code>
+                </li>
+                <li><strong>Lookup:</strong> Values can be retrieved by name using <code>valueOf()</code> or listed
+                    using <code>values()</code></li>
                 <li><strong>Serialization:</strong> Built-in Jackson serializers and deserializers for JSON support</li>
             </ul>
 
@@ -391,7 +398,7 @@ class MyExtension(name: String) : DynamicEnum&lt;MyExtension&gt;(name) {
         </section>
 
         <!-- API Providers -->
-        <section id="api-providers" class="docs-section">
+        <section class="docs-section" id="api-providers">
             <h2>API Providers</h2>
             <p>
                 API providers define connections to AI services. The <code>APIProvider</code> class supports
@@ -523,7 +530,7 @@ APIProvider.register(APIProvider::class.java, CustomProvider)</code></pre>
         </section>
 
         <!-- Tool Providers -->
-        <section id="tool-providers" class="docs-section">
+        <section class="docs-section" id="tool-providers">
             <h2>Tool Providers</h2>
             <p>
                 Tool providers define external executables that can be discovered and used by the system.
@@ -549,7 +556,9 @@ APIProvider.register(APIProvider::class.java, CustomProvider)</code></pre>
                     </tr>
                     <tr>
                         <td><strong>JVM</strong></td>
-                        <td>Jdk (java, javac, jdb, javap, jlink, jarsigner, javadoc, jshell, jcmd, jconsole, jstat, jmap, jhat, jinfo, jstack)</td>
+                        <td>Jdk (java, javac, jdb, javap, jlink, jarsigner, javadoc, jshell, jcmd, jconsole, jstat,
+                            jmap, jhat, jinfo, jstack)
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>Build Tools</strong></td>
@@ -597,7 +606,9 @@ APIProvider.register(APIProvider::class.java, CustomProvider)</code></pre>
                     </tr>
                     <tr>
                         <td><strong>Language Servers</strong></td>
-                        <td>pylsp, typescript-language-server, kotlin-language-server, jdtls, clangd, gopls, rust-analyzer, bash-language-server, docker-langserver, texlab, yaml-language-server</td>
+                        <td>pylsp, typescript-language-server, kotlin-language-server, jdtls, clangd, gopls,
+                            rust-analyzer, bash-language-server, docker-langserver, texlab, yaml-language-server
+                        </td>
                     </tr>
                     </tbody>
                 </table>
@@ -649,7 +660,7 @@ val pythonPath = ToolProvider.Python.resolve("/usr/local")</code></pre>
         </section>
 
         <!-- Code Runtimes -->
-        <section id="code-runtimes" class="docs-section">
+        <section class="docs-section" id="code-runtimes">
             <h2>Code Runtimes</h2>
             <p>
                 Code runtimes execute code in various languages.
@@ -783,7 +794,7 @@ val result = runtime.execute("print('Hello, World!')")</code></pre>
         </section>
 
         <!-- Cognitive Modes -->
-        <section id="cognitive-modes" class="docs-section">
+        <section class="docs-section" id="cognitive-modes">
             <h2>Cognitive Modes</h2>
             <p>
                 Cognitive modes define different AI interaction patterns.
@@ -884,7 +895,7 @@ class CustomCognitiveMode(
         </section>
 
         <!-- Cognitive Schema Strategies -->
-        <section id="schema-strategies" class="docs-section">
+        <section class="docs-section" id="schema-strategies">
             <h2>Cognitive Schema Strategies</h2>
             <p>
                 Schema strategies define how the adaptive planning mode maintains and updates its cognitive state.
@@ -993,7 +1004,7 @@ DynamicEnum.register(CognitiveSchemaStrategy::class.java, CustomStrategy())</cod
         </section>
 
         <!-- Task Types -->
-        <section id="task-types" class="docs-section">
+        <section class="docs-section" id="task-types">
             <h2>Task Types</h2>
             <p>
                 Task types define discrete operations that can be executed within plans.
@@ -1011,11 +1022,21 @@ DynamicEnum.register(CognitiveSchemaStrategy::class.java, CustomStrategy())</cod
                     <tbody>
                     <tr>
                         <td><strong>Reasoning</strong></td>
-                        <td>AbductiveReasoning, AbstractionLadder, AdversarialReasoning, AnalogicalReasoning, CausalInference, ChainOfThought, ConstraintRelaxation, ConstraintSatisfaction, CounterfactualAnalysis, DecisionTree, DecompositionSynthesis, DialecticalReasoning, EthicalReasoning, FiniteStateMachine, FunctorialMapping, GameTheory, GeneticOptimization, IsomorphismDiscovery, LateralThinking, MathematicalReasoning, MetaCognitiveReflection, MultiPerspectiveAnalysis, NeuralNetworkLayer, ProbabilisticReasoning, SocraticDialogue, StructuralInvariantAnalysis, SystemsThinking, TemporalReasoning</td>
+                        <td>AbductiveReasoning, AbstractionLadder, AdversarialReasoning, AnalogicalReasoning,
+                            CausalInference, ChainOfThought, ConstraintRelaxation, ConstraintSatisfaction,
+                            CounterfactualAnalysis, DecisionTree, DecompositionSynthesis, DialecticalReasoning,
+                            EthicalReasoning, FiniteStateMachine, FunctorialMapping, GameTheory, GeneticOptimization,
+                            IsomorphismDiscovery, LateralThinking, MathematicalReasoning, MetaCognitiveReflection,
+                            MultiPerspectiveAnalysis, NeuralNetworkLayer, ProbabilisticReasoning, SocraticDialogue,
+                            StructuralInvariantAnalysis, SystemsThinking, TemporalReasoning
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>Writing</strong></td>
-                        <td>ArticleGeneration, BusinessProposal, ComicBookGeneration, EmailCampaign, InteractiveStory, NarrativeGeneration, PersuasiveEssay, ReportGeneration, ResearchPaperGeneration, Scriptwriting, SoftwareDesignDocument, TechnicalExplanation, TutorialGeneration</td>
+                        <td>ArticleGeneration, BusinessProposal, ComicBookGeneration, EmailCampaign, InteractiveStory,
+                            NarrativeGeneration, PersuasiveEssay, ReportGeneration, ResearchPaperGeneration,
+                            Scriptwriting, SoftwareDesignDocument, TechnicalExplanation, TutorialGeneration
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>File Operations</strong></td>
@@ -1027,7 +1048,9 @@ DynamicEnum.register(CognitiveSchemaStrategy::class.java, CustomStrategy())</cod
                     </tr>
                     <tr>
                         <td><strong>Image</strong></td>
-                        <td>GenerateImage, GenerateQRImage, GenerateSpriteSheet, IllustrateDocument, ImageDecomposition, ImageTable, ImageVariation, SegmentedImageGeneration, TiledImageGeneration</td>
+                        <td>GenerateImage, GenerateQRImage, GenerateSpriteSheet, IllustrateDocument, ImageDecomposition,
+                            ImageTable, ImageVariation, SegmentedImageGeneration, TiledImageGeneration
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>Data</strong></td>
@@ -1043,7 +1066,9 @@ DynamicEnum.register(CognitiveSchemaStrategy::class.java, CustomStrategy())</cod
                     </tr>
                     <tr>
                         <td><strong>Social</strong></td>
-                        <td>Brainstorming, Discussion, JournalismReasoning, LLMExperiment, LLMPollSimulation, PoliticalOptimization</td>
+                        <td>Brainstorming, Discussion, JournalismReasoning, LLMExperiment, LLMPollSimulation,
+                            PoliticalOptimization
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>Games</strong></td>
@@ -1120,20 +1145,23 @@ class CustomTaskImpl(
         </section>
 
         <!-- Best Practices -->
-        <section id="best-practices" class="docs-section">
+        <section class="docs-section" id="best-practices">
             <h2>Best Practices</h2>
             <ol class="best-practices">
-                <li><strong>Use meaningful names:</strong> Choose descriptive names for your extensions that clearly indicate their purpose.</li>
+                <li><strong>Use meaningful names:</strong> Choose descriptive names for your extensions that clearly
+                    indicate their purpose.
+                </li>
                 <li><strong>Provide documentation:</strong> Include descriptions and tooltips where supported.</li>
                 <li><strong>Handle errors gracefully:</strong> Implement proper error handling and validation.</li>
                 <li><strong>Follow existing patterns:</strong> Study the built-in implementations for guidance.</li>
                 <li><strong>Register early:</strong> Register your extensions during application initialization.</li>
-                <li><strong>Test thoroughly:</strong> Verify your extensions work correctly with the rest of the system.</li>
+                <li><strong>Test thoroughly:</strong> Verify your extensions work correctly with the rest of the system.
+                </li>
             </ol>
         </section>
 
         <!-- Serialization -->
-        <section id="serialization" class="docs-section">
+        <section class="docs-section" id="serialization">
             <h2>Serialization</h2>
             <p>
                 All DynamicEnum-based extensions support JSON serialization:

@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | PageProcessingStrategy Interface</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -189,7 +190,8 @@
         <div class="breadcrumbs">Home > Tasks > Web Operations > PageProcessingStrategy</div>
         <h1>PageProcessingStrategy</h1>
         <p class="pitch">
-            A pluggable strategy interface for orchestrating web page analysis, link extraction, and crawl termination logic within the CrawlerAgentTask.
+            A pluggable strategy interface for orchestrating web page analysis, link extraction, and crawl termination
+            logic within the CrawlerAgentTask.
         </p>
         <div class="badges">
             <span class="badge">Category: Interface</span>
@@ -245,137 +247,143 @@ class DocumentationStrategy : PageProcessingStrategy {
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane">
+        <div class="tab-pane" id="tab-docs">
             <h3>Core Interface Methods</h3>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Method</th>
-                        <th>Return Type</th>
-                        <th>Description</th>
-                    </tr>
+                <tr>
+                    <th>Method</th>
+                    <th>Return Type</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>processPage(url, content, context)</code></td>
-                        <td><code>PageProcessingResult</code></td>
-                        <td>Analyzes a single page's content and extracts metadata/links.</td>
-                    </tr>
-                    <tr>
-                        <td><code>shouldContinueCrawling(results, context)</code></td>
-                        <td><code>ContinuationDecision</code></td>
-                        <td>Determines if the crawler should proceed to the next URL.</td>
-                    </tr>
-                    <tr>
-                        <td><code>generateFinalOutput(results, context)</code></td>
-                        <td><code>String</code></td>
-                        <td>Aggregates all results into the final task output.</td>
-                    </tr>
-                    <tr>
-                        <td><code>validateConfig(config)</code></td>
-                        <td><code>String?</code></td>
-                        <td>Validates strategy-specific settings before execution.</td>
-                    </tr>
+                <tr>
+                    <td><code>processPage(url, content, context)</code></td>
+                    <td><code>PageProcessingResult</code></td>
+                    <td>Analyzes a single page's content and extracts metadata/links.</td>
+                </tr>
+                <tr>
+                    <td><code>shouldContinueCrawling(results, context)</code></td>
+                    <td><code>ContinuationDecision</code></td>
+                    <td>Determines if the crawler should proceed to the next URL.</td>
+                </tr>
+                <tr>
+                    <td><code>generateFinalOutput(results, context)</code></td>
+                    <td><code>String</code></td>
+                    <td>Aggregates all results into the final task output.</td>
+                </tr>
+                <tr>
+                    <td><code>validateConfig(config)</code></td>
+                    <td><code>String?</code></td>
+                    <td>Validates strategy-specific settings before execution.</td>
+                </tr>
                 </tbody>
             </table>
 
             <h3 style="margin-top: 2rem;">ProcessingContext (State & Config)</h3>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>executionConfig</code></td>
-                        <td><code>CrawlerTaskExecutionConfigData</code></td>
-                        <td>Runtime parameters for the crawl.</td>
-                    </tr>
-                    <tr>
-                        <td><code>typeConfig</code></td>
-                        <td><code>CrawlerTaskTypeConfig</code></td>
-                        <td>Static configuration defined at registration.</td>
-                    </tr>
-                    <tr>
-                        <td><code>orchestrationConfig</code></td>
-                        <td><code>OrchestrationConfig</code></td>
-                        <td>Global system configuration and available tools.</td>
-                    </tr>
-                    <tr>
-                        <td><code>task</code></td>
-                        <td><code>SessionTask</code></td>
-                        <td>The active UI task for reporting progress.</td>
-                    </tr>
-                    <tr>
-                        <td><code>maxPages</code></td>
-                        <td><code>Int</code></td>
-                        <td>The maximum number of pages allowed for this crawl.</td>
-                    </tr>
+                <tr>
+                    <td><code>executionConfig</code></td>
+                    <td><code>CrawlerTaskExecutionConfigData</code></td>
+                    <td>Runtime parameters for the crawl.</td>
+                </tr>
+                <tr>
+                    <td><code>typeConfig</code></td>
+                    <td><code>CrawlerTaskTypeConfig</code></td>
+                    <td>Static configuration defined at registration.</td>
+                </tr>
+                <tr>
+                    <td><code>orchestrationConfig</code></td>
+                    <td><code>OrchestrationConfig</code></td>
+                    <td>Global system configuration and available tools.</td>
+                </tr>
+                <tr>
+                    <td><code>task</code></td>
+                    <td><code>SessionTask</code></td>
+                    <td>The active UI task for reporting progress.</td>
+                </tr>
+                <tr>
+                    <td><code>maxPages</code></td>
+                    <td><code>Int</code></td>
+                    <td>The maximum number of pages allowed for this crawl.</td>
+                </tr>
                 </tbody>
             </table>
 
             <h3 style="margin-top: 2rem;">PageProcessingResult</h3>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>pageType</code></td>
-                        <td><code>PageType</code></td>
-                        <td>Categorization (Content, Index, Error, etc.).</td>
-                    </tr>
-                    <tr>
-                        <td><code>extractedLinks</code></td>
-                        <td><code>List&lt;LinkData&gt;?</code></td>
-                        <td>New URLs discovered on this page.</td>
-                    </tr>
-                    <tr>
-                        <td><code>metadata</code></td>
-                        <td><code>Map&lt;String, Any&gt;</code></td>
-                        <td>Arbitrary data extracted (e.g., page title, author).</td>
-                    </tr>
-                    <tr>
-                        <td><code>shouldTerminate</code></td>
-                        <td><code>Boolean</code></td>
-                        <td>If true, stops the entire crawl immediately.</td>
-                    </tr>
-                    <tr>
-                        <td><code>error</code></td>
-                        <td><code>Throwable?</code></td>
-                        <td>Captured exception if processing failed.</td>
-                    </tr>
+                <tr>
+                    <td><code>pageType</code></td>
+                    <td><code>PageType</code></td>
+                    <td>Categorization (Content, Index, Error, etc.).</td>
+                </tr>
+                <tr>
+                    <td><code>extractedLinks</code></td>
+                    <td><code>List&lt;LinkData&gt;?</code></td>
+                    <td>New URLs discovered on this page.</td>
+                </tr>
+                <tr>
+                    <td><code>metadata</code></td>
+                    <td><code>Map&lt;String, Any&gt;</code></td>
+                    <td>Arbitrary data extracted (e.g., page title, author).</td>
+                </tr>
+                <tr>
+                    <td><code>shouldTerminate</code></td>
+                    <td><code>Boolean</code></td>
+                    <td>If true, stops the entire crawl immediately.</td>
+                </tr>
+                <tr>
+                    <td><code>error</code></td>
+                    <td><code>Throwable?</code></td>
+                    <td>Captured exception if processing failed.</td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>Execution Lifecycle</h3>
             <ol style="color: var(--text-main); font-size: 0.95rem;">
-                <li><strong>Initialization:</strong> The <code>CrawlerAgentTask</code> instantiates the strategy and calls <code>validateConfig</code>.</li>
+                <li><strong>Initialization:</strong> The <code>CrawlerAgentTask</code> instantiates the strategy and
+                    calls <code>validateConfig</code>.
+                </li>
                 <li><strong>Page Loop:</strong> For each URL fetched:
                     <ul>
                         <li><code>processPage</code> is called with the raw HTML/Text.</li>
                         <li>The <code>PageProcessingResult</code> is stored in the context.</li>
-                        <li><code>shouldContinueCrawling</code> is evaluated to check limits or termination conditions.</li>
+                        <li><code>shouldContinueCrawling</code> is evaluated to check limits or termination conditions.
+                        </li>
                     </ul>
                 </li>
-                <li><strong>Finalization:</strong> Once crawling stops, <code>generateFinalOutput</code> formats the collected data for the user.</li>
+                <li><strong>Finalization:</strong> Once crawling stops, <code>generateFinalOutput</code> formats the
+                    collected data for the user.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Orchestration Integration</h3>
-            <p>Strategies are registered within the <code>OrchestrationConfig</code>. This allows the agent to select the appropriate logic based on the task requirements.</p>
+            <p>Strategies are registered within the <code>OrchestrationConfig</code>. This allows the agent to select
+                the appropriate logic based on the task requirements.</p>
             <pre><code class="language-kotlin">
 val orchestration = OrchestrationConfig(
     strategies = mapOf(

@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | InteractiveStoryTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Workspace Browser -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-  <script type="module" src="assets/scripts/components/footer.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/footer.js" type="module"></script>
 
     <style>
         :root {
@@ -199,12 +200,13 @@
 
 <main class="page-container">
 
-  <!-- 1. PAGE HEADER -->
+    <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Writing > InteractiveStoryTask</div>
         <h1>InteractiveStoryTask</h1>
         <p class="pitch">
-            Generates complete choose-your-own-adventure narratives with branching paths, state tracking, and multiple distinct endings. Ideal for training scenarios, games, and educational content.
+            Generates complete choose-your-own-adventure narratives with branching paths, state tracking, and multiple
+            distinct endings. Ideal for training scenarios, games, and educational content.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect Safe</span>
@@ -236,30 +238,37 @@
         <div class="panel">
             <div class="panel-header"><span>👁️</span> Session UI: Story Map</div>
             <div class="mock-ui-content">
-              <div style="border-left: 2px solid var(--accent-primary); padding-left: var(--space-4); margin-bottom: var(--space-6);">
+                <div style="border-left: 2px solid var(--accent-primary); padding-left: var(--space-4); margin-bottom: var(--space-6);">
                     <h4 style="margin: 0; color: var(--accent-primary);">START: Opening</h4>
-                    <p style="font-size: 0.85rem; color: var(--text-dim);">The rain in Sector 4 tastes like copper and ozone. You adjust your collar as the neon sign above the noodle shop flickers...</p>
-                    <div style="font-family: var(--font-mono); font-size: 0.75rem; color: #4ade80;">→ [Continue to: decision_1]</div>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">The rain in Sector 4 tastes like copper and
+                        ozone. You adjust your collar as the neon sign above the noodle shop flickers...</p>
+                    <div style="font-family: var(--font-mono); font-size: 0.75rem; color: #4ade80;">→ [Continue to:
+                        decision_1]
+                    </div>
                 </div>
                 <div style="border-left: 2px solid #30363d; padding-left: 1rem; margin-bottom: 1.5rem;">
                     <h4 style="margin: 0;">decision_1: The Alleyway Encounter</h4>
-                    <p style="font-size: 0.85rem; color: var(--text-dim);">A figure steps from the shadows, hand resting on a pulsed-laser grip. "Hand over the chip, detective."</p>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">A figure steps from the shadows, hand resting
+                        on a pulsed-laser grip. "Hand over the chip, detective."</p>
                     <ul style="font-size: 0.8rem; list-style: none; padding: 0;">
-                        <li style="margin-bottom: 0.3rem;">1. <strong>[Fight]</strong> Draw your service weapon. <span style="color: #f85149;">(health -10)</span></li>
-                        <li style="margin-bottom: 0.3rem;">2. <strong>[Talk]</strong> "I'm just a guy looking for noodles." <span style="color: #4ade80;">(credibility +5)</span></li>
-                        <li style="margin-bottom: 0.3rem;">3. <strong>[Run]</strong> Bolt for the crowded main street.</li>
+                        <li style="margin-bottom: 0.3rem;">1. <strong>[Fight]</strong> Draw your service weapon. <span
+                                style="color: #f85149;">(health -10)</span></li>
+                        <li style="margin-bottom: 0.3rem;">2. <strong>[Talk]</strong> "I'm just a guy looking for
+                            noodles." <span style="color: #4ade80;">(credibility +5)</span></li>
+                        <li style="margin-bottom: 0.3rem;">3. <strong>[Run]</strong> Bolt for the crowded main street.
+                        </li>
                     </ul>
                 </div>
             </div>
         </div>
     </section>
-  <!-- 2.5 SHOWCASE: Workspace Browser -->
+    <!-- 2.5 SHOWCASE: Workspace Browser -->
     <section class="showcase-section" style="margin-bottom: 3rem;">
         <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace: InteractiveStoryTask</h2>
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Explore the generated story maps, transcripts, and summaries from recent test runs.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
 
 
@@ -272,7 +281,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Configuration Parameters</h3>
             <table class="docs-table">
                 <thead>
@@ -294,19 +303,19 @@
                     <td><code>genre</code></td>
                     <td>String</td>
                     <td>"fantasy"</td>
-                      <td>Story genre (e.g., sci-fi, mystery, horror, romance).</td>
+                    <td>Story genre (e.g., sci-fi, mystery, horror, romance).</td>
                 </tr>
                 <tr>
                     <td><code>target_audience</code></td>
                     <td>String</td>
                     <td>"young_adult"</td>
-                      <td>Target demographic (children, young_adult, adult).</td>
+                    <td>Target demographic (children, young_adult, adult).</td>
                 </tr>
                 <tr>
                     <td><code>tone</code></td>
                     <td>String</td>
                     <td>"serious"</td>
-                      <td>Narrative tone (dark, humorous, lighthearted, etc.).</td>
+                    <td>Narrative tone (dark, humorous, lighthearted, etc.).</td>
                 </tr>
                 <tr>
                     <td><code>num_decision_points</code></td>
@@ -330,7 +339,7 @@
                     <td><code>state_variables</code></td>
                     <td>List&lt;String&gt;</td>
                     <td>null</td>
-                      <td>Specific variables to track (e.g., "health", "gold", "reputation").</td>
+                    <td>Specific variables to track (e.g., "health", "gold", "reputation").</td>
                 </tr>
                 <tr>
                     <td><code>prevent_dead_ends</code></td>
@@ -354,13 +363,13 @@
                     <td><code>segment_word_count</code></td>
                     <td>Int</td>
                     <td>300</td>
-                      <td>Target length for each narrative node (Range: 100-1000).</td>
+                    <td>Target length for each narrative node (Range: 100-1000).</td>
                 </tr>
                 <tr>
                     <td><code>writing_style</code></td>
                     <td>String</td>
                     <td>"descriptive"</td>
-                      <td>Prose style (e.g., action-packed, dialogue-heavy, introspective).</td>
+                    <td>Prose style (e.g., action-packed, dialogue-heavy, introspective).</td>
                 </tr>
                 <tr>
                     <td><code>point_of_view</code></td>
@@ -379,13 +388,15 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
-          <h2>Task Lifecycle</h2>
-            <p>The <code>InteractiveStoryTask</code> executes in five distinct phases to ensure narrative coherence and structural integrity:</p>
+        <div class="tab-pane" id="tab-process" style="display:none;">
+            <h2>Task Lifecycle</h2>
+            <p>The <code>InteractiveStoryTask</code> executes in five distinct phases to ensure narrative coherence and
+                structural integrity:</p>
             <ol style="color: var(--text-dim);">
                 <li style="margin-bottom: 1rem;">
                     <strong style="color: var(--text-main);">Phase 1: Story Structure Planning</strong><br>
-                    Generates a high-level outline and a validated <code>StoryStructure</code> object containing the decision tree and ending mappings.
+                    Generates a high-level outline and a validated <code>StoryStructure</code> object containing the
+                    decision tree and ending mappings.
                 </li>
                 <li style="margin-bottom: 1rem;">
                     <strong style="color: var(--text-main);">Phase 2: Opening Segment</strong><br>
@@ -393,7 +404,8 @@
                 </li>
                 <li style="margin-bottom: 1rem;">
                     <strong style="color: var(--text-main);">Phase 3: Decision Points</strong><br>
-                  Iteratively generates narrative segments for every node in the decision tree, ensuring choices lead to the correct subsequent IDs and consequences are tracked.
+                    Iteratively generates narrative segments for every node in the decision tree, ensuring choices lead
+                    to the correct subsequent IDs and consequences are tracked.
                 </li>
                 <li style="margin-bottom: 1rem;">
                     <strong style="color: var(--text-main);">Phase 4: Endings</strong><br>
@@ -407,7 +419,7 @@
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Embedded Usage (UnifiedHarness)</h3>
             <p>To invoke this task programmatically in a headless environment (CI/CD, CLI):</p>
             <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.writing.InteractiveStoryTask
@@ -444,7 +456,8 @@ val storyTask = InteractiveStoryTask.InteractiveStoryTaskExecutionConfigData(
 orchestrator.addTask(storyTask)</code></pre>
 
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
-            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM context:</p>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM
+                context:</p>
             <pre style="background: #000;"><code style="color: #8b949e;">InteractiveStory - Create choose-your-own-adventure narratives with branching paths
 ** Optionally, list input files (supports glob patterns) to be examined for context
 ** Specify the premise or starting scenario

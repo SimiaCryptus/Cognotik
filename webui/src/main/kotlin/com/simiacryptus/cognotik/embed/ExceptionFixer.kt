@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+import com.simiacryptus.cognotik.platform.model.User
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -14,7 +15,8 @@ import java.io.PrintStream
 class ExceptionFixer(
   val projectRoot: File = File(".").gitRoot()
     ?: throw IllegalStateException("Could not find .git folder in any parent directory"),
-  val model: ChatModel = GeminiModels.GeminiFlash_30_Preview
+  val model: ChatModel = GeminiModels.GeminiFlash_30_Preview,
+  val user: User = com.simiacryptus.cognotik.platform.model.defaultUser
 ) {
   fun fix(throwable: Throwable) {
     val codeFiles = throwable.getCodeFiles(projectRoot)
@@ -24,6 +26,7 @@ class ExceptionFixer(
       fastModel = model,
       smartModel = model,
       imageModel = model,
+      user = user,
     ) {
       override fun createTempDirectory(prefix: String) = projectRoot
         .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")

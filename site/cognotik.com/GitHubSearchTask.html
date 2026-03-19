@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | GitHubSearchTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -207,17 +208,18 @@
 
 <main class="task-container">
 
-      <!-- 1. PAGE HEADER -->
+    <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Online > GitHubSearchTask</div>
         <h1>GitHubSearchTask</h1>
         <p class="pitch">
-            Comprehensive search across GitHub's repositories, code, commits, issues, topics, and users with structured markdown reporting.
+            Comprehensive search across GitHub's repositories, code, commits, issues, topics, and users with structured
+            markdown reporting.
         </p>
         <div class="badges">
             <span class="badge">Category: Online</span>
-              <span class="badge badge-success">Side-Effect: Safe</span>
-              <span class="badge badge-warning">Auth: GitHub Token Required</span>
+            <span class="badge badge-success">Side-Effect: Safe</span>
+            <span class="badge badge-warning">Auth: GitHub Token Required</span>
         </div>
     </header>
 
@@ -241,11 +243,11 @@
         <div class="panel">
             <div class="panel-header"><span>👁️</span> Session UI Output</div>
             <div class="mock-ui-content">
-                  <div style="font-weight: 600; margin-bottom: var(--space-3); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-2);">
+                <div style="font-weight: 600; margin-bottom: var(--space-3); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-2);">
                     GitHub Search Results
                 </div>
                 <div class="search-result-item">
-                      <a href="#" class="result-title">JetBrains/kotlin-multiplatform-samples</a>
+                    <a class="result-title" href="#">JetBrains/kotlin-multiplatform-samples</a>
                     <div style="font-size: 0.8rem; margin-top: 2px;">Samples for Kotlin Multiplatform Mobile...</div>
                     <div class="result-meta">Stars: 4.2k | Forks: 850</div>
                 </div>
@@ -267,7 +269,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Execution Configuration</h3>
             <table class="docs-table">
                 <thead>
@@ -289,7 +291,8 @@
                     <td><code>search_type</code></td>
                     <td>String</td>
                     <td><code>"repositories"</code></td>
-                          <td>Type of search: <code>code</code>, <code>commits</code>, <code>issues</code>, <code>repositories</code>, <code>topics</code>, <code>users</code></td>
+                    <td>Type of search: <code>code</code>, <code>commits</code>, <code>issues</code>,
+                        <code>repositories</code>, <code>topics</code>, <code>users</code></td>
                 </tr>
                 <tr>
                     <td><code>per_page</code></td>
@@ -314,28 +317,33 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>Task Lifecycle</h3>
             <ol style="padding-left: 1.2rem; color: var(--text-dim);">
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Validation:</strong> Checks if <code>search_query</code> is present and <code>search_type</code> is valid.
+                    <strong style="color: var(--text-main);">Validation:</strong> Checks if <code>search_query</code> is
+                    present and <code>search_type</code> is valid.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Authentication:</strong> Retrieves the GitHub API token from the user's encrypted settings.
+                    <strong style="color: var(--text-main);">Authentication:</strong> Retrieves the GitHub API token
+                    from the user's encrypted settings.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Execution:</strong> Performs a GET request to <code>api.github.com/search/{type}</code> with encoded parameters.
+                    <strong style="color: var(--text-main);">Execution:</strong> Performs a GET request to <code>api.github.com/search/{type}</code>
+                    with encoded parameters.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Reporting:</strong> Generates a detailed Markdown transcript and renders a summary in the Session UI.
+                    <strong style="color: var(--text-main);">Reporting:</strong> Generates a detailed Markdown
+                    transcript and renders a summary in the Session UI.
                 </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Prompt Segment</h3>
-            <p style="font-size: 0.9rem; color: var(--text-dim);">This text is injected into the LLM context to describe the tool's capabilities:</p>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">This text is injected into the LLM context to describe
+                the tool's capabilities:</p>
             <pre style="background: #000; border-radius: 4px;"><code>GitHubSearch - Search GitHub for code, commits, issues, repositories, topics, or users
     * Specify the search query
     * Specify the type of search (code, commits, issues, repositories, topics, users)
@@ -358,13 +366,13 @@
 </main>
 
 <script>
-      function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-        document.getElementById('tab-' + tabId).classList.add('active');
-        event.currentTarget.classList.add('active');
-    }
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+  }
 </script>
 
 </body>

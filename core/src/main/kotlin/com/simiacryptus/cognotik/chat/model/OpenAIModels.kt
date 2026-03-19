@@ -8,8 +8,8 @@ import com.simiacryptus.cognotik.models.APIProvider
 // PRs with corrections welcome.
 @Deprecated(
   "Provider has banned the maintainer of this library. " +
-  "Maintained for user compatibility only — no ability to test or verify. " +
-  "Use at your own risk.",
+      "Maintained for user compatibility only — no ability to test or verify. " +
+      "Use at your own risk.",
   replaceWith = ReplaceWith("AnthropicModels")
 )
 object OpenAIModels {

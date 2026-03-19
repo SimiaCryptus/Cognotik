@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -19,7 +20,6 @@ import java.io.File
 import java.io.OutputStream
 import java.util.zip.GZIPOutputStream
 import kotlin.math.log2
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
 class EntropyReductionTreeTask(
   orchestrationConfig: OrchestrationConfig,

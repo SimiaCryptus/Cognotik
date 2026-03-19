@@ -8,6 +8,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
@@ -35,7 +36,7 @@ open class UnifiedPlanAction(
             createTemporaryDirectory(e.project)
         }
         OrchestrationConfig.instanceFn =
-            { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+            { model, user -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         val dialog = PlanConfigDialog(
             e.project,
             OrchestrationConfig(
@@ -49,6 +50,7 @@ open class UnifiedPlanAction(
                 ),
                 temperature = AppSettingsState.instance.temperature.coerceIn(0.0, 1.0),
                 workingDir = root.absolutePath,
+                user = localUser
             ),
         )
 
@@ -133,12 +135,13 @@ open class UnifiedPlanAction(
         val app = object : SinglePlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",
-            showMenubar = false
+            showMenubar = false,
+            user = AppSettingsState.Companion.localUser
         ) {
             override fun instance(model: ApiChatModel) = model.instance()
                 ?: throw IllegalStateException("Model or Provider not set")
         }
-        app.getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())
+      app.getSettingsFile(session, AppSettingsState.localUser).writeText(orchestrationConfig.toJson())
         SessionProxyServer.chats[session] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Cognotik",

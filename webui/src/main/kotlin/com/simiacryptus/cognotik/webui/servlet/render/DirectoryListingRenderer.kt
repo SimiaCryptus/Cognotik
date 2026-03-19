@@ -9,8 +9,8 @@ data class DirectoryPageModel(
   val toolbarActions: String = "",
   val additionalSections: String = "",
   val additionalStyles: String = "",
-   val additionalScripts: String = "",
-   val actualFilePath: String = ""
+  val additionalScripts: String = "",
+  val actualFilePath: String = ""
 )
 
 object DirectoryListingRenderer {
@@ -23,8 +23,8 @@ object DirectoryListingRenderer {
     toolbarActions = model.toolbarActions,
     additionalSections = model.additionalSections,
     additionalStyles = model.additionalStyles,
-     additionalScripts = model.additionalScripts,
-     actualFilePath = model.actualFilePath
+    additionalScripts = model.additionalScripts,
+    actualFilePath = model.actualFilePath
   )
 
   fun generateBreadcrumbs(currentPath: String, servletBaseHref: String): String {
@@ -60,8 +60,8 @@ object DirectoryListingRenderer {
     toolbarActions: String = "",
     additionalSections: String = "",
     additionalStyles: String = "",
-     additionalScripts: String = "",
-     actualFilePath: String = ""
+    additionalScripts: String = "",
+    actualFilePath: String = ""
   ) = """
 |<!DOCTYPE html>
 |<html lang="en">

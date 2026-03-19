@@ -111,7 +111,7 @@ CreateErbTemplate - Generate ERB-style templates for document generation
   ) {
     val typeConfig = typeConfig ?: CreateErbTemplateTaskTypeConfig()
     val chatInterface =
-      (typeConfig.model?.let<ApiChatModel, ChatInterface> { it.instance() }
+      (typeConfig.model?.let<ApiChatModel, ChatInterface> { it.instance(orchestrationConfig.user) }
         ?: defaultSmart).getChildClient(task)
 
     val semaphore = Semaphore(0)

@@ -15,11 +15,11 @@ class SegmentedImageGenerationTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-      UnifiedHarness.configurePlatform()
+      UnifiedHarness.configurePlatform(com.simiacryptus.cognotik.platform.model.defaultUser)
     }
   }
 
- //@org.junit.jupiter.api.Test
+  //@org.junit.jupiter.api.Test
   @Timeout(30, unit = TimeUnit.MINUTES)
   fun test() {
     val output_file = "image.png"
@@ -38,6 +38,7 @@ class SegmentedImageGenerationTaskTest {
       temperature = 0.7,
       timeoutMinutes = 30,
       typeConfig = TaskTypeConfig(SegmentedImageGenerationTask.SegmentedImageGeneration.name),
+      user = com.simiacryptus.cognotik.platform.model.defaultUser,
     )
 
     harness.run()

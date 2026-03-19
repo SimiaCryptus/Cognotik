@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.diff.FileValidators
@@ -14,13 +15,11 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
-
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
@@ -148,7 +147,7 @@ class PluginStartupActivity : ProjectActivity {
             }
         }
         OrchestrationConfig.instanceFn =
-            { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+            { model, user -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ApplicationServices.authorizationManager = object : AuthorizationInterface {
             override fun isAuthorized(
                 applicationClass: Class<*>?,
@@ -157,7 +156,10 @@ class PluginStartupActivity : ProjectActivity {
             ) = true
         }
         ApplicationServices.authenticationManager = object : AuthenticationInterface {
-            override fun getUser(accessToken: String?) = defaultUser
+          override fun getUser(accessToken: String?): User {
+            val localUser: User = localUser
+            return localUser
+          }
             override fun putUser(accessToken: String, user: User) = user
             override fun logout(accessToken: String, user: User) {}
         }

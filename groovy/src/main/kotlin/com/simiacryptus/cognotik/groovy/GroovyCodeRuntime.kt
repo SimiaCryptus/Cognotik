@@ -39,7 +39,7 @@ open class GroovyCodeRuntime(
 
     override val symbols = defs as Map<String, Any>
 
-    override fun run(code: String): Any? {
+    override fun run(code: String, user: com.simiacryptus.cognotik.platform.model.User): Any? {
         val wrapExecution = wrapExecution {
             try {
                 val scriptText = wrapCode(code)

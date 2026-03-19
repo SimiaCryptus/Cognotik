@@ -10,7 +10,9 @@ specifies: ../site/cognotik.com/embedding.html
 
 # Embedding Cognotik: A Guide for Automated Agentic Coding
 
-This guide details how to use the **Cognotik** library (`com.cognotik:webapp`) as an embedded engine. By importing Cognotik directly into your build process (Gradle plugins, CLI tools, or GitHub Actions), you can leverage "Headless" AI agents to perform complex coding tasks, refactoring, or documentation generation without a user interface.
+This guide details how to use the **Cognotik** library (`com.cognotik:webapp`) as an embedded engine. By importing
+Cognotik directly into your build process (Gradle plugins, CLI tools, or GitHub Actions), you can leverage "Headless" AI
+agents to perform complex coding tasks, refactoring, or documentation generation without a user interface.
 
 ## 1. Installation
 
@@ -33,11 +35,13 @@ dependencies {
 
 ## 2. The Core Concept: `UnifiedHarness`
 
-The entry point for embedded execution is the `UnifiedHarness` class (found in `com.simiacryptus.cognotik.util`). It wraps the complex server infrastructure, allowing you to run agents in a **Serverless** (headless) mode.
+The entry point for embedded execution is the `UnifiedHarness` class (found in `com.simiacryptus.cognotik.util`). It
+wraps the complex server infrastructure, allowing you to run agents in a **Serverless** (headless) mode.
 
 ### Initialization
 
-To run in a CI/CD or script environment, you must instantiate the harness with `serverless = true`. You must also inject your API keys programmatically via the `modelInstanceFn` parameter.
+To run in a CI/CD or script environment, you must instantiate the harness with `serverless = true`. You must also inject
+your API keys programmatically via the `modelInstanceFn` parameter.
 
 ```kotlin
 import com.simiacryptus.cognotik.util.UnifiedHarness
@@ -72,7 +76,8 @@ harness.start()
 
 ## 3. Scenario A: Full Agent Planning (The "Manager")
 
-Use this approach when you have a high-level goal (e.g., "Refactor the database layer") and want the AI to figure out the steps, break them down, and execute them.
+Use this approach when you have a high-level goal (e.g., "Refactor the database layer") and want the AI to figure out
+the steps, break them down, and execute them.
 
 ### Usage: `runPlan`
 
@@ -111,23 +116,27 @@ runAgenticRefactor(
 ```
 
 ### Key Configuration Options
-*   **`workspace`**: If `null`, it creates a temp dir. For CI/CD, pass `File(".")` to modify the current repository.
-*   **`autoFix`**: Set to `true` for unattended execution. If `false`, the agent might hang waiting for user confirmation (which never comes in headless mode).
-*   **`cognitiveSettings`**:
-    *   `Waterfall`: Plans everything first, then executes. Good for predictable tasks.
-    *   `AdaptivePlanning`: Loops through Think/Act cycles. Good for research or debugging.
+
+* **`workspace`**: If `null`, it creates a temp dir. For CI/CD, pass `File(".")` to modify the current repository.
+* **`autoFix`**: Set to `true` for unattended execution. If `false`, the agent might hang waiting for user
+  confirmation (which never comes in headless mode).
+* **`cognitiveSettings`**:
+    * `Waterfall`: Plans everything first, then executes. Good for predictable tasks.
+    * `AdaptivePlanning`: Loops through Think/Act cycles. Good for research or debugging.
 
 ---
 
 ## 4. Scenario B: Single Task Execution (The "Tool")
 
-Use this approach when you want to use a specific Cognotik tool (like the Crawler or File Modifier) as a function call within your own code, skipping the high-level planning.
+Use this approach when you want to use a specific Cognotik tool (like the Crawler or File Modifier) as a function call
+within your own code, skipping the high-level planning.
 
 ### Usage: `runTask`
 
 This executes a specific `TaskType` in isolation.
 
 #### Example: AI-Powered File Modification
+
 This is useful for writing a Gradle task that automatically generates boilerplate code or documentation.
 
 ```kotlin
@@ -163,6 +172,7 @@ fun generateReadme(projectDir: File) {
 ```
 
 #### Example: Self-Healing Command Execution
+
 Useful for CI pipelines. Run a build; if it fails, the AI attempts to fix the code and re-run it.
 
 ```kotlin
@@ -188,10 +198,12 @@ fun runSelfHealingBuild(projectDir: File) {
 
 ## 5. Task Reference & Configuration Details
 
-When running in "Headless" mode, you often need to manually construct the configuration objects for specific tasks. Every task requires two configuration components:
-1.  **`TaskTypeConfig`**: Static settings (e.g., which Model to use, tool definitions).
-2.  **`TaskExecutionConfig`**: Runtime inputs (e.g., which files to edit, what command to run).
-Below are the configuration details for the most common tasks.
+When running in "Headless" mode, you often need to manually construct the configuration objects for specific tasks.
+Every task requires two configuration components:
+
+1. **`TaskTypeConfig`**: Static settings (e.g., which Model to use, tool definitions).
+2. **`TaskExecutionConfig`**: Runtime inputs (e.g., which files to edit, what command to run).
+   Below are the configuration details for the most common tasks.
 
 ### A. File Modification (`FileModificationTask`)
 
@@ -283,7 +295,8 @@ harness.runTask(RunTool, typeConfig, config, workspace)
 
 ### F. Sub-Planning (`SubPlanTask`)
 
-The most powerful task. It spawns a nested agent to solve a complex goal. You can define a specific `CognitiveMode` for this sub-task (e.g., switching from Waterfall to Adaptive).
+The most powerful task. It spawns a nested agent to solve a complex goal. You can define a specific `CognitiveMode` for
+this sub-task (e.g., switching from Waterfall to Adaptive).
 
 ```kotlin
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTaskExecutionConfigData
@@ -346,6 +359,7 @@ harness.runPlan(
 ## 10. Integration Examples
 
 ### A. As a Gradle Plugin
+
 You can wrap the harness in a custom Gradle Task to add AI capabilities to your build.
 
 ```kotlin
@@ -377,9 +391,10 @@ abstract class AiRefactorTask : DefaultTask() {
 ```
 
 ### B. As a GitHub Action (via Kotlin CLI)
-1.  Create a simple Kotlin application using the code in Section 2 & 3.
-2.  Build a "Fat JAR" (Shadow JAR).
-3.  Create a `.github/workflows/ai-coder.yml`:
+
+1. Create a simple Kotlin application using the code in Section 2 & 3.
+2. Build a "Fat JAR" (Shadow JAR).
+3. Create a `.github/workflows/ai-coder.yml`:
 
 ```yaml
 name: AI Code Reviewer
@@ -413,8 +428,13 @@ jobs:
 
 ## 11. Troubleshooting & Best Practices
 
-1.  **Environment Variables:** Ensure API keys are available in the environment where the JAR runs. The `UnifiedHarness` does not load from local `.config` files when a custom `modelInstanceFn` is used.
-2.  **Context Window:** If working on large codebases, ensure you select a model with a large context window (e.g., `gpt-4-turbo` or `claude-3-opus`) in the `UnifiedHarness` constructor.
-3.  **Logging:** Cognotik uses SLF4J. Configure a simple logger (like `slf4j-simple`) to see the agent's "thought process" in your console logs.
-4.  **Concurrency:** In `serverless` mode, the harness runs synchronously (blocking the thread until completion). This is usually desired for CI/CD.
-5.  **Artifacts:** The agent writes a `results.md` and a `usage.json` in the workspace. Archive these in your CI pipeline to review what the agent did.
+1. **Environment Variables:** Ensure API keys are available in the environment where the JAR runs. The `UnifiedHarness`
+   does not load from local `.config` files when a custom `modelInstanceFn` is used.
+2. **Context Window:** If working on large codebases, ensure you select a model with a large context window (e.g.,
+   `gpt-4-turbo` or `claude-3-opus`) in the `UnifiedHarness` constructor.
+3. **Logging:** Cognotik uses SLF4J. Configure a simple logger (like `slf4j-simple`) to see the agent's "thought
+   process" in your console logs.
+4. **Concurrency:** In `serverless` mode, the harness runs synchronously (blocking the thread until completion). This is
+   usually desired for CI/CD.
+5. **Artifacts:** The agent writes a `results.md` and a `usage.json` in the workspace. Archive these in your CI pipeline
+   to review what the agent did.

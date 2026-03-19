@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | TutorialGeneration</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Workspace Browser -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -218,7 +219,8 @@
         <div class="breadcrumbs">Home > Tasks > Writing > TutorialGeneration</div>
         <h1>TutorialGeneration</h1>
         <p class="pitch">
-            An industrial-grade tutorial engine that transforms complex goals into structured, multi-phase educational content with automated validation and troubleshooting.
+            An industrial-grade tutorial engine that transforms complex goals into structured, multi-phase educational
+            content with automated validation and troubleshooting.
         </p>
         <div class="badges">
             <span class="badge">Category: Writing</span>
@@ -280,7 +282,7 @@
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Explore generated artifacts (<code>tutorial.md</code>, <code>transcript.md</code>) in the task workspace.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
 
 
@@ -292,109 +294,118 @@
             <button onclick="switchTab(event, 'integration')">Integration</button>
         </nav>
 
-        <div id="tab-docs" class="tab-content">
+        <div class="tab-content" id="tab-docs">
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><span class="field-name">goal</span> <span class="req">*</span></td>
-                        <td><span class="field-type">String</span></td>
-                        <td>The final outcome the user should achieve (e.g., 'deploy a web app to the cloud').</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">target_platform</span></td>
-                        <td><span class="field-type">String</span></td>
-                        <td>Environment context (Windows, Linux, Docker, etc.). Default: <code>"cross-platform"</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">include_screenshots_placeholders</span></td>
-                        <td><span class="field-type">Boolean</span></td>
-                        <td>Add <code>[Screenshot...]</code> placeholders where visuals are needed. Default: <code>true</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">verbosity</span></td>
-                        <td><span class="field-type">String</span></td>
-                        <td>Level of detail: <code>concise</code>, <code>detailed</code>, <code>verbose</code>. Default: <code>"detailed"</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">include_troubleshooting</span></td>
-                        <td><span class="field-type">Boolean</span></td>
-                        <td>Whether to generate a common errors section. Default: <code>true</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">skill_level</span></td>
-                        <td><span class="field-type">String</span></td>
-                        <td>Target audience level: <code>beginner</code>, <code>intermediate</code>, <code>advanced</code>. Default: <code>"beginner"</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">estimated_duration</span></td>
-                        <td><span class="field-type">Int</span></td>
-                        <td>Estimated time to complete in minutes. Default: <code>30</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">include_code_examples</span></td>
-                        <td><span class="field-type">Boolean</span></td>
-                        <td>Include code blocks and CLI commands. Default: <code>true</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">include_validation_steps</span></td>
-                        <td><span class="field-type">Boolean</span></td>
-                        <td>Include steps to verify success. Default: <code>true</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">include_learning_objectives</span></td>
-                        <td><span class="field-type">Boolean</span></td>
-                        <td>Include a "What You'll Learn" section. Default: <code>true</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">include_next_steps</span></td>
-                        <td><span class="field-type">Boolean</span></td>
-                        <td>Include a "Next Steps" section. Default: <code>true</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">target_step_count</span></td>
-                        <td><span class="field-type">Int</span></td>
-                        <td>Number of main steps (3 to 20). Default: <code>7</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="field-name">input_files</span></td>
-                        <td><span class="field-type">List&lt;String&gt;</span></td>
-                        <td>Optional glob patterns for source code context (e.g. <code>**/*.kt</code>).</td>
-                    </tr>
+                <tr>
+                    <td><span class="field-name">goal</span> <span class="req">*</span></td>
+                    <td><span class="field-type">String</span></td>
+                    <td>The final outcome the user should achieve (e.g., 'deploy a web app to the cloud').</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">target_platform</span></td>
+                    <td><span class="field-type">String</span></td>
+                    <td>Environment context (Windows, Linux, Docker, etc.). Default: <code>"cross-platform"</code>.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">include_screenshots_placeholders</span></td>
+                    <td><span class="field-type">Boolean</span></td>
+                    <td>Add <code>[Screenshot...]</code> placeholders where visuals are needed. Default:
+                        <code>true</code>.
+                    </td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">verbosity</span></td>
+                    <td><span class="field-type">String</span></td>
+                    <td>Level of detail: <code>concise</code>, <code>detailed</code>, <code>verbose</code>. Default:
+                        <code>"detailed"</code>.
+                    </td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">include_troubleshooting</span></td>
+                    <td><span class="field-type">Boolean</span></td>
+                    <td>Whether to generate a common errors section. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">skill_level</span></td>
+                    <td><span class="field-type">String</span></td>
+                    <td>Target audience level: <code>beginner</code>, <code>intermediate</code>, <code>advanced</code>.
+                        Default: <code>"beginner"</code>.
+                    </td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">estimated_duration</span></td>
+                    <td><span class="field-type">Int</span></td>
+                    <td>Estimated time to complete in minutes. Default: <code>30</code>.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">include_code_examples</span></td>
+                    <td><span class="field-type">Boolean</span></td>
+                    <td>Include code blocks and CLI commands. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">include_validation_steps</span></td>
+                    <td><span class="field-type">Boolean</span></td>
+                    <td>Include steps to verify success. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">include_learning_objectives</span></td>
+                    <td><span class="field-type">Boolean</span></td>
+                    <td>Include a "What You'll Learn" section. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">include_next_steps</span></td>
+                    <td><span class="field-type">Boolean</span></td>
+                    <td>Include a "Next Steps" section. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">target_step_count</span></td>
+                    <td><span class="field-type">Int</span></td>
+                    <td>Number of main steps (3 to 20). Default: <code>7</code>.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">input_files</span></td>
+                    <td><span class="field-type">List&lt;String&gt;</span></td>
+                    <td>Optional glob patterns for source code context (e.g. <code>**/*.kt</code>).</td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
-        <div id="tab-process" class="tab-content" style="display:none;">
+        <div class="tab-content" id="tab-process" style="display:none;">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
                 <div class="panel">
                     <div class="panel-header">Phase 1: Planning</div>
                     <div class="panel-content" style="font-size: 0.85rem;">
-                        Generates a <code>TutorialOutline</code> including prerequisites, learning objectives, and step-by-step purpose mapping.
+                        Generates a <code>TutorialOutline</code> including prerequisites, learning objectives, and
+                        step-by-step purpose mapping.
                     </div>
                 </div>
                 <div class="panel">
                     <div class="panel-header">Phase 2: Writing</div>
                     <div class="panel-content" style="font-size: 0.85rem;">
-                        Iteratively writes each <code>TutorialStep</code>, injecting code blocks, validation logic, and platform-specific commands.
+                        Iteratively writes each <code>TutorialStep</code>, injecting code blocks, validation logic, and
+                        platform-specific commands.
                     </div>
                 </div>
                 <div class="panel">
                     <div class="panel-header">Phase 3: Hardening</div>
                     <div class="panel-content" style="font-size: 0.85rem;">
-                        Compiles <code>TroubleshootingSection</code> and <code>NextSteps</code> to ensure the user isn't left at a dead end.
+                        Compiles <code>TroubleshootingSection</code> and <code>NextSteps</code> to ensure the user isn't
+                        left at a dead end.
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="tab-integration" class="tab-content" style="display:none;">
+        <div class="tab-content" id="tab-integration" style="display:none;">
             <h3>Embedded Execution (Headless)</h3>
             <p>To run this task programmatically using the <code>UnifiedHarness</code>:</p>
             <pre style="background: var(--bg-panel); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-subtle); color: #abb2bf;">

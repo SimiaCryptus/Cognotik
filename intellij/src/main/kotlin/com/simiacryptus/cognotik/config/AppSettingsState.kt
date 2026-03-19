@@ -25,9 +25,9 @@ import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -276,6 +276,8 @@ data class AppSettingsState(
         var lastEvent: AnActionEvent? = null
         val log = LoggerFactory.getLogger(AppSettingsState::class.java)
         var auxiliaryLog: File? = null
+
+        val localUser: User = com.simiacryptus.cognotik.platform.model.defaultUser
         const val WELCOME_VERSION: String = "2.0.8"
 
         @JvmStatic
@@ -293,7 +295,7 @@ data class AppSettingsState(
         }
 
         val currentSession = Session.Companion.newGlobalID()
-        val workPool = ApplicationServices.threadPoolManager.getPool(currentSession, UserSettingsManager.defaultUser)
+      val workPool = ApplicationServices.threadPoolManager.getPool(currentSession, AppSettingsState.localUser)
         val pluginHome: File by lazy {
             run {
                 var logPath: String? = null
@@ -323,12 +325,12 @@ fun ApiChatModel.instance(): ChatInterface? {
         temperature = AppSettingsState.instance.temperature,
         scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
             AppSettingsState.currentSession,
-            UserSettingsManager.defaultUser
+          AppSettingsState.localUser
         ),
         onUsage = { model, usage ->
             usageManager.incrementUsage(
                 AppSettingsState.currentSession,
-                UserSettingsManager.defaultUser,
+              AppSettingsState.localUser,
                 model,
                 usage
             )
@@ -354,7 +356,7 @@ fun ApiImageModel.instance(): com.simiacryptus.cognotik.image.ImageClientInterfa
         workPool = AppSettingsState.workPool,
         scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
             AppSettingsState.currentSession,
-            UserSettingsManager.defaultUser
+          AppSettingsState.localUser
         ),
     )
 }

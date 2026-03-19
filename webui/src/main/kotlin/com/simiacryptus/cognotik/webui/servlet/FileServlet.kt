@@ -220,21 +220,21 @@ abstract class FileServlet : HttpServlet() {
 
   open fun listContents(file: File?, req: HttpServletRequest): Pair<String, String> {
     val files = file?.listFiles()?.filter { it.isFile }?.sortedBy { it.name }?.joinToString("") {
-        val fileName = it.name
-        val baseLink = """<a class="item-link" href="${fileName}"><span class="icon">📄</span>${fileName}</a>"""
-        val htmlLink = if (fileName.endsWith(".md")) {
-          val htmlFileName = fileName.substringBeforeLast(".") + ".html"
-          """ <a class="item-link" href="${htmlFileName}" style="margin-left: 0.5rem; font-size: 0.85rem;"><span class="icon">🌐</span>View as HTML</a>"""
-        } else {
-          ""
-        }
-        val fileActions = getFileActions(it, req)
-        """<li style="display: flex; align-items: center;">$baseLink$htmlLink$fileActions</li>"""
-      } ?: ""
+      val fileName = it.name
+      val baseLink = """<a class="item-link" href="${fileName}"><span class="icon">📄</span>${fileName}</a>"""
+      val htmlLink = if (fileName.endsWith(".md")) {
+        val htmlFileName = fileName.substringBeforeLast(".") + ".html"
+        """ <a class="item-link" href="${htmlFileName}" style="margin-left: 0.5rem; font-size: 0.85rem;"><span class="icon">🌐</span>View as HTML</a>"""
+      } else {
+        ""
+      }
+      val fileActions = getFileActions(it, req)
+      """<li style="display: flex; align-items: center;">$baseLink$htmlLink$fileActions</li>"""
+    } ?: ""
     val folders = file?.listFiles()?.filter { !it.isFile }?.sortedBy { it.name }?.joinToString("") {
-        val folderActions = getFolderActions(it, req)
-        """<li style="display: flex; align-items: center;"><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a>$folderActions</li>"""
-      } ?: ""
+      val folderActions = getFolderActions(it, req)
+      """<li style="display: flex; align-items: center;"><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a>$folderActions</li>"""
+    } ?: ""
     return Pair(files, folders)
   }
 

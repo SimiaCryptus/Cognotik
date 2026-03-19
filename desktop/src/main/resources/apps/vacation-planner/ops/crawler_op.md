@@ -1,6 +1,6 @@
 ---
 task_type: CrawlerAgent
-transforms: ../brainstorm_output\.md -> ../data/crawler_latest\.json
+transforms: ../brainstorm_output\.md -> ../research.md
 related:
   - ../user_preferences.md
   - ../analysis_output.md

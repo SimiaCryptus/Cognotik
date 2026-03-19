@@ -1,10 +1,10 @@
 ---
 task_type: FileModification
-transforms: ../itinerary\.md -> ../vacation_plan\.html
+transforms: ../itinerary\.md -> ../vacation_plan.html
 related:
    - ../analysis_output.md
    - ../brainstorm_output.md
-   - ../data/crawler_latest.json
+   - ../research.md
 validation_regex: "(?=.*<header>)(?=.*<main>)(?=.*<style>)(?=.*<script>)(?=.*vacation-plan)"
 ---
 

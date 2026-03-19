@@ -12,6 +12,7 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.treeStructure.Tree
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.UsageTable
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
@@ -120,7 +121,9 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
             val rootDir = AppSettingsState.pluginHome
             val userSettings =
-                ApplicationServices.fileApplicationServices(rootDir).userSettingsManager.getUserSettings()
+              ApplicationServices.fileApplicationServices(rootDir).userSettingsManager.getUserSettings(
+                localUser
+              )
             val pairs = userSettings.apis.flatMap { apiData ->
                 try {
                     (apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl) ?: listOf())
@@ -324,8 +327,10 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         private fun kill(session: Session) {
-            ApplicationServices.threadPoolManager.getPool(session).shutdownNow()
-            ApplicationServices.threadPoolManager.getScheduledPool(session).shutdownNow()
+          ApplicationServices.threadPoolManager.getPool(session, localUser)
+            .shutdownNow()
+          ApplicationServices.threadPoolManager.getScheduledPool(session, localUser)
+            .shutdownNow()
         }
 
         fun updateSessionsList() {
@@ -352,7 +357,10 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                                 value
                             )
 
-                        val threadFactory = ApplicationServices.threadPoolManager.getPool(value).threadFactory
+                      val threadFactory = ApplicationServices.threadPoolManager.getPool(
+                        value,
+                        localUser
+                      ).threadFactory
                         val activeThreads = threadFactory.threads.filter {
                             when (it.state) {
                                 Thread.State.RUNNABLE -> true

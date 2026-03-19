@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.webui.chat
 
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -20,87 +19,87 @@ import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 abstract class ChatServer(
-    private val resourceBase: String = "application",
-    val showMenubar: Boolean
+  private val resourceBase: String = "application",
+  val showMenubar: Boolean
 ) {
 
-    abstract val applicationName: String
-    open val description: String = ""
-    open val inputCnt = 1
-    open val stickyInput = false
-    open val dataStorage: StorageInterface? = null
-    val sessions: ConcurrentHashMap<Session, SocketManager> = ConcurrentHashMap()
+  abstract val applicationName: String
+  open val description: String = ""
+  open val inputCnt = 1
+  open val stickyInput = false
+  open val dataStorage: StorageInterface? = null
+  val sessions: ConcurrentHashMap<Session, SocketManager> = ConcurrentHashMap()
 
-    inner class WebSocketHandler : JettyWebSocketServlet() {
-        override fun configure(factory: JettyWebSocketServletFactory) {
-            with(factory) {
-                isAutoFragment = false
-                idleTimeout = Duration.ofMinutes(10)
-                outputBufferSize = 1024 * 1024
-                inputBufferSize = 1024 * 1024
-                maxBinaryMessageSize = 1024 * 1024
-                maxFrameSize = 1024 * 1024
-                maxTextMessageSize = 1024 * 1024
-                this.availableExtensionNames.remove("permessage-deflate")
+  inner class WebSocketHandler : JettyWebSocketServlet() {
+    override fun configure(factory: JettyWebSocketServletFactory) {
+      with(factory) {
+        isAutoFragment = false
+        idleTimeout = Duration.ofMinutes(10)
+        outputBufferSize = 1024 * 1024
+        inputBufferSize = 1024 * 1024
+        maxBinaryMessageSize = 1024 * 1024
+        maxFrameSize = 1024 * 1024
+        maxTextMessageSize = 1024 * 1024
+        this.availableExtensionNames.remove("permessage-deflate")
+      }
+      trafficLog.debug("Configuring WebSocket factory with settings: autoFragment=false, idleTimeout=10min, bufferSizes=1MB")
+      factory.setCreator { req, resp ->
+        try {
+          if (req.parameterMap.containsKey("sessionId")) {
+            val session = Session(req.parameterMap["sessionId"]?.first()!!)
+            trafficLog.debug("WebSocket connection request for session: {}", session)
+            val sessionManager = sessions.computeIfAbsent(session) { s ->
+              val user =
+                authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
+              trafficLog.debug(
+                "Creating new session manager for session: {}, user: {}",
+                s,
+                user.name ?: "anonymous"
+              )
+              newSession(user, s) ?: throw IllegalStateException("Failed to create session manager for session: $s")
             }
-            trafficLog.debug("Configuring WebSocket factory with settings: autoFragment=false, idleTimeout=10min, bufferSizes=1MB")
-            factory.setCreator { req, resp ->
-                try {
-                    if (req.parameterMap.containsKey("sessionId")) {
-                        val session = Session(req.parameterMap["sessionId"]?.first()!!)
-                        trafficLog.debug("WebSocket connection request for session: {}", session)
-                        val sessionManager = sessions.computeIfAbsent(session) { s ->
-                            val user =
-                                authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
-                            trafficLog.debug(
-                                "Creating new session manager for session: {}, user: {}",
-                                s,
-                                user.name ?: "anonymous"
-                            )
-                            newSession(user, s) ?: throw IllegalStateException("Failed to create session manager for session: $s")
-                        }
-                        ChatSocket(sessionManager)
-                    } else {
-                        trafficLog.warn("WebSocket connection rejected: missing sessionId parameter")
-                        throw IllegalArgumentException("sessionId is required")
-                    }
-                } catch (e: Exception) {
-                    log.debug("Error configuring websocket", e)
-                    trafficLog.error("WebSocket configuration error: ${e.message}", e)
-                    resp.sendError(500, e.message)
-                    null
-                }
-            }
+            ChatSocket(sessionManager)
+          } else {
+            trafficLog.warn("WebSocket connection rejected: missing sessionId parameter")
+            throw IllegalArgumentException("sessionId is required")
+          }
+        } catch (e: Exception) {
+          log.debug("Error configuring websocket", e)
+          trafficLog.error("WebSocket configuration error: ${e.message}", e)
+          resp.sendError(500, e.message)
+          null
         }
+      }
     }
+  }
 
-    abstract fun newSession(user: User = defaultUser, session: Session): SocketManager?
+  abstract fun newSession(user: User, session: Session): SocketManager?
 
-    open val baseResource: Resource?
-        get() = javaClass.classLoader.getResource(resourceBase)?.let {
-            Resource.newResource(it).apply {
-                if (!exists()) {
-                    val message = "Resource not found: $it"
-                    trafficLog.error("Base resource not found: $it")
-                    throw RuntimeException(message)
-                }
-            }
+  open val baseResource: Resource?
+    get() = javaClass.classLoader.getResource(resourceBase)?.let {
+      Resource.newResource(it).apply {
+        if (!exists()) {
+          val message = "Resource not found: $it"
+          trafficLog.error("Base resource not found: $it")
+          throw RuntimeException(message)
         }
-    private val newSessionServlet by lazy { NewSessionServlet() }
-    private val webSocketHandler by lazy { WebSocketHandler() }
-    private val defaultServlet by lazy { DefaultServlet() }
-
-    open fun configure(webAppContext: WebAppContext) {
-        trafficLog.info("Configuring web app context for ${javaClass.simpleName}")
-        webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/default", defaultServlet), "/")
-        webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/ws", webSocketHandler), "/ws")
-        webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/newSession", newSessionServlet), "/newSession")
-        trafficLog.debug("Servlets registered: default(/), ws(/ws), newSession(/newSession)")
+      }
     }
+  private val newSessionServlet by lazy { NewSessionServlet() }
+  private val webSocketHandler by lazy { WebSocketHandler() }
+  private val defaultServlet by lazy { DefaultServlet() }
 
-    companion object {
-        private val log = LoggerFactory.getLogger(ChatServer::class.java)
-        private val trafficLog = LoggerFactory.getLogger("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
-        fun JettyServerUpgradeRequest.getCookie(name: String) = cookies?.find { it.name == name }?.value
-    }
+  open fun configure(webAppContext: WebAppContext) {
+    trafficLog.info("Configuring web app context for ${javaClass.simpleName}")
+    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/default", defaultServlet), "/")
+    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/ws", webSocketHandler), "/ws")
+    webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/newSession", newSessionServlet), "/newSession")
+    trafficLog.debug("Servlets registered: default(/), ws(/ws), newSession(/newSession)")
+  }
+
+  companion object {
+    private val log = LoggerFactory.getLogger(ChatServer::class.java)
+    private val trafficLog = LoggerFactory.getLogger("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
+    fun JettyServerUpgradeRequest.getCookie(name: String) = cookies?.find { it.name == name }?.value
+  }
 }

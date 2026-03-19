@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | DefaultSummarizerStrategy</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -232,7 +233,8 @@
         <div class="breadcrumbs">Home > Strategies > Web Processing > DefaultSummarizerStrategy</div>
         <h1>DefaultSummarizerStrategy</h1>
         <p class="pitch">
-            High-density web content synthesis. Implements recursive chunking for large pages and multi-pass LLM analysis to generate structured, goal-oriented summaries across multiple sources.
+            High-density web content synthesis. Implements recursive chunking for large pages and multi-pass LLM
+            analysis to generate structured, goal-oriented summaries across multiple sources.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect Safe</span>
@@ -265,7 +267,9 @@
             <div class="mock-ui-content">
                 <div class="summary-box">
                     <strong>Technical Analysis Summary</strong>
-                    <p style="margin: 0.5rem 0; color: var(--text-dim); font-size: 0.85rem;">The platform utilizes a distributed microservices architecture. API rate limits are enforced at 1000 req/min per endpoint. Sub-millisecond latency is achieved via edge caching...</p>
+                    <p style="margin: 0.5rem 0; color: var(--text-dim); font-size: 0.85rem;">The platform utilizes a
+                        distributed microservices architecture. API rate limits are enforced at 1000 req/min per
+                        endpoint. Sub-millisecond latency is achieved via edge caching...</p>
                 </div>
                 <div style="font-size: 0.8rem;">
                     <strong>Extracted Links:</strong>
@@ -291,7 +295,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Configuration Parameters</h3>
             <table class="docs-table">
                 <thead>
@@ -308,7 +312,8 @@
                     <td>Specific questions or data points to extract from the page content.</td>
                 </tr>
                 <tr>
-                    <td><code>task_description</code> <span class="badge" style="font-size: 0.6rem;">Optional</span></td>
+                    <td><code>task_description</code> <span class="badge" style="font-size: 0.6rem;">Optional</span>
+                    </td>
                     <td>String</td>
                     <td>General goal for the analysis if specific queries aren't provided.</td>
                 </tr>
@@ -318,49 +323,58 @@
                     <td>The LLM instance to use. Defaults to the orchestration's <code>defaultFast</code> model.</td>
                 </tr>
                 <tr>
-                    <td><code>max_final_output_size</code> <span class="badge" style="font-size: 0.6rem;">Default: 15k</span></td>
+                    <td><code>max_final_output_size</code> <span class="badge"
+                                                                 style="font-size: 0.6rem;">Default: 15k</span></td>
                     <td>Int</td>
-                   <td>Maximum character length for the synthesized final summary.</td>
+                    <td>Maximum character length for the synthesized final summary.</td>
                 </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>The Industrial Pipeline</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
                 <div>
                     <h4>1. Intelligent Chunking</h4>
                     <p style="color: var(--text-dim); font-size: 0.9rem;">
-                        Content exceeding <strong>50,000 characters</strong> is automatically split. The strategy uses a weighted search for paragraph breaks (<code>\n\n</code>), newlines, or sentence ends to preserve semantic context.
+                        Content exceeding <strong>50,000 characters</strong> is automatically split. The strategy uses a
+                        weighted search for paragraph breaks (<code>\n\n</code>), newlines, or sentence ends to preserve
+                        semantic context.
                     </p>
                 </div>
                 <div>
                     <h4>2. Recursive Analysis</h4>
                     <p style="color: var(--text-dim); font-size: 0.9rem;">
-                        Each chunk is analyzed by a <code>ParsedAgent</code>. If multiple chunks exist, their intermediate summaries are recursively synthesized into a single <code>ParsedPage</code> object to maintain global context.
+                        Each chunk is analyzed by a <code>ParsedAgent</code>. If multiple chunks exist, their
+                        intermediate summaries are recursively synthesized into a single <code>ParsedPage</code> object
+                        to maintain global context.
                     </p>
                 </div>
                 <div>
                     <h4>3. Multi-Source Synthesis</h4>
                     <p style="color: var(--text-dim); font-size: 0.9rem;">
-                        After processing all URLs, the strategy aggregates individual results and performs a final synthesis pass using a <code>ChatAgent</code> to create a cohesive, thematic summary.
+                        After processing all URLs, the strategy aggregates individual results and performs a final
+                        synthesis pass using a <code>ChatAgent</code> to create a cohesive, thematic summary.
                     </p>
                 </div>
                 <div>
                     <h4>4. Structured Metadata</h4>
                     <p style="color: var(--text-dim); font-size: 0.9rem;">
-                        The strategy extracts <code>page_type</code>, <code>tags</code>, and <code>link_data</code>, enabling the crawler to make informed decisions about subsequent navigation and link prioritization.
+                        The strategy extracts <code>page_type</code>, <code>tags</code>, and <code>link_data</code>,
+                        enabling the crawler to make informed decisions about subsequent navigation and link
+                        prioritization.
                     </p>
                 </div>
             </div>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Implementation</h3>
-            <p style="color: var(--text-dim); margin-bottom: 1rem;">Register the strategy within a <code>CrawlerAgentTask</code> to enable intelligent synthesis.</p>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">Register the strategy within a <code>CrawlerAgentTask</code>
+                to enable intelligent synthesis.</p>
             <pre><code class="language-kotlin">
 // Example: Configuring a crawler with the summarizer
 val crawlerTask = CrawlerAgentTask(
@@ -372,7 +386,8 @@ val crawlerTask = CrawlerAgentTask(
 )
             </code></pre>
             <h4 style="margin-top: 1.5rem;">Synthesis Prompt Segment</h4>
-            <p style="color: var(--text-dim); font-size: 0.85rem;">The final synthesis pass uses the following logic:</p>
+            <p style="color: var(--text-dim); font-size: 0.85rem;">The final synthesis pass uses the following
+                logic:</p>
             <pre style="background: #000; font-size: 0.75rem;">
 "Create a comprehensive summary... Organize information by themes rather than by source... Include the most important links that should be followed up on."
             </pre>

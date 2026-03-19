@@ -20,7 +20,8 @@ interface PatchParser {
     ) : ResponseSegment()
   }
 
-  val patchFormatPrompt: String get() = """
+  val patchFormatPrompt: String
+    get() = """
 Response format:
 * Response should use one or more code patches in diff format within ```diff code blocks
 * Each diff should be preceded by a header that identifies the file being modified.
@@ -477,7 +478,8 @@ ${TRIPLE_TILDE}
     if (lang.equals("diff", ignoreCase = true)) return true
     val lines = code.lines()
     val firstChars = lines.map { it.firstOrNull() }.groupBy { it }.mapValues { it.value.size }
-    return firstChars.filterKeys { when (it) {
+    return firstChars.filterKeys {
+      when (it) {
         null -> false
         ' ' -> false
         '\t' -> false

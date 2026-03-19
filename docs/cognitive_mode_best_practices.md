@@ -8,7 +8,7 @@ orchestrates these tasks.
 
 This guide outlines best practices for implementing robust modes, managing LLM context, and designing architectures that
 support Sub-Planning.
- 
+
 ## 2. Core Principles
 
 1. **Transparency First:** The user must always know *what* the agent is doing and *why*. Never perform a complex
@@ -57,9 +57,8 @@ class MyCustomMode(val config: OrchestrationConfig) {
   actions (writing files, running shell commands).
 * **If `config.autoFix == true`:** Your mode should implement self-healing logic (e.g., reading a stack trace and
   retrying) rather than asking the user.
- 
- ---
 
+ ---
 
 ## 4. State Management & Resource Limits
 
@@ -80,8 +79,9 @@ Instead of managing raw strings or lists of messages, prefer using **Cognitive S
   // ... execute task ...
   state = strategy.update(state, taskResult, config.defaultSmart)
   ```
-  *Note:* For specialized modes that act as a direct interface to a runtime (like `CodingMode`), you may bypass the Schema Strategy and interact directly with a specialized Agent (e.g., `CodeAgent`) or the LLM client, provided you handle state history manually.
-
+  *Note:* For specialized modes that act as a direct interface to a runtime (like `CodingMode`), you may bypass the
+  Schema Strategy and interact directly with a specialized Agent (e.g., `CodeAgent`) or the LLM client, provided you
+  handle state history manually.
 
 ### 4.1 Implementing Token Pruning
 
@@ -103,10 +103,15 @@ When implementing parallel modes (like `ParallelMode`), do not spawn unlimited t
 * **Council/Voting Patterns:** If your mode uses a "Council" pattern, ensure you are not running the voting loop on
   every trivial step. Implement a "Confidence Threshold"—only trigger the Council if the primary model's confidence is
   low.
+
 ### 4.4 Exposing Tasks as Functions
-For modes that allow the LLM to write code or scripts (like `CodingMode`), you can expose Cognotik Tasks as executable functions within the runtime environment.
-*   **Pattern:** Wrap the `TaskType` in a helper class that implements `MethodTypeDescriber`.
-*   **Usage:** This allows the LLM to "call" a task (e.g., `WebSearch.call(config)`) directly from the generated code.
+
+For modes that allow the LLM to write code or scripts (like `CodingMode`), you can expose Cognotik Tasks as executable
+functions within the runtime environment.
+
+* **Pattern:** Wrap the `TaskType` in a helper class that implements `MethodTypeDescriber`.
+* **Usage:** This allows the LLM to "call" a task (e.g., `WebSearch.call(config)`) directly from the generated code.
+
 ```kotlin
 // Example: Exposing a task to a scripting environment
 inner class TaskFunctionImpl(val taskType: TaskType<*, *>) {
@@ -121,10 +126,16 @@ val symbols = mapOf(
     "WebSearch" to TaskFunctionImpl(TaskType.WebSearch)
 )
 ```
+
 ### 4.5 Structured Task Selection
-When implementing a Planning Mode, you often need the LLM to select and configure multiple tasks in a single turn. Instead of parsing raw text or JSON manually, use `ParsedAgent` with a container class.
-*   **Container Class:** Define a class (e.g., `Tasks`) that wraps a `List<TaskExecutionConfig>`.
-*   **Polymorphism:** Use the `TypeDescriber` to register subtypes for `TaskExecutionConfig`. This enables the LLM to output a polymorphic list (e.g., a `WebSearchConfig` and a `FileReadConfig` in the same list).
+
+When implementing a Planning Mode, you often need the LLM to select and configure multiple tasks in a single turn.
+Instead of parsing raw text or JSON manually, use `ParsedAgent` with a container class.
+
+* **Container Class:** Define a class (e.g., `Tasks`) that wraps a `List<TaskExecutionConfig>`.
+* **Polymorphism:** Use the `TypeDescriber` to register subtypes for `TaskExecutionConfig`. This enables the LLM to
+  output a polymorphic list (e.g., a `WebSearchConfig` and a `FileReadConfig` in the same list).
+
 ```kotlin
 // 1. Define Container
 data class Tasks(val tasks: MutableList<TaskExecutionConfig>? = null)
@@ -144,8 +155,9 @@ plan.tasks?.forEach { taskConfig ->
     // Execute taskConfig...
 }
 ```
+
  
- ---
+---
 
 ## 5. Observability & Transcripts
 
@@ -271,6 +283,7 @@ class MyAdaptiveMode(val config: OrchestrationConfig) {
   }
 }
 ```
+
  
 ---
 

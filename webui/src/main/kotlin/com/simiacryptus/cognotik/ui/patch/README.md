@@ -33,15 +33,16 @@ Parses raw AI response text into a list of `ResponseSegment` instances. Handles:
 
 A sealed class hierarchy representing parsed response parts:
 
-| Variant        | Description                                      |
-|----------------|--------------------------------------------------|
-| `Markdown`     | Plain markdown text between code blocks          |
-| `NewFileBlock` | A code block representing a new file to create   |
-| `DiffBlock`    | A diff/patch block to apply to an existing file  |
+| Variant        | Description                                     |
+|----------------|-------------------------------------------------|
+| `Markdown`     | Plain markdown text between code blocks         |
+| `NewFileBlock` | A code block representing a new file to create  |
+| `DiffBlock`    | A diff/patch block to apply to an existing file |
 
 ### DiffInstrumentor
 
-The main orchestrator that takes a parsed response and produces instrumented HTML/markdown with interactive buttons. Responsibilities:
+The main orchestrator that takes a parsed response and produces instrumented HTML/markdown with interactive buttons.
+Responsibilities:
 
 - Delegates parsing to `ResponseParser`
 - Resolves filenames against a project root using configurable resolver functions
@@ -52,7 +53,8 @@ The main orchestrator that takes a parsed response and produces instrumented HTM
 
 ### DiffApplyController
 
-A thread-safe state machine managing the lifecycle of a single diff application. Uses `AtomicReference` with CAS loops for lock-free concurrency.
+A thread-safe state machine managing the lifecycle of a single diff application. Uses `AtomicReference` with CAS loops
+for lock-free concurrency.
 
 **State transitions:**
 
@@ -77,16 +79,17 @@ Sealed class representing the four possible states:
 
 An abstraction over file I/O with two implementations:
 
-| Implementation     | Purpose                                    |
-|--------------------|--------------------------------------------|
-| `RealFileSystem`   | Production implementation using `java.nio` |
-| `InMemoryFileSystem`| Testing implementation using `ConcurrentHashMap` |
+| Implementation       | Purpose                                          |
+|----------------------|--------------------------------------------------|
+| `RealFileSystem`     | Production implementation using `java.nio`       |
+| `InMemoryFileSystem` | Testing implementation using `ConcurrentHashMap` |
 
 ### DiffUIRenderer
 
 Interface for rendering UI controls. Decouples the instrumentation logic from any specific web framework.
 
 Methods:
+
 - `renderSaveButton()` – Button to save a new file
 - `renderApplyDiffButton()` – Button pair for apply/revert of a diff
 - `renderAutoApplied()` – Indicator for auto-applied patches with optional revert
@@ -95,7 +98,8 @@ Methods:
 
 ### SocketManagerUIRenderer
 
-Production implementation of `DiffUIRenderer` that integrates with `SocketManager` for real-time web UI updates. Features:
+Production implementation of `DiffUIRenderer` that integrates with `SocketManager` for real-time web UI updates.
+Features:
 
 - Creates async tasks for button interactions
 - Dynamically swaps button HTML between apply/revert states using `StringBuilder.set()`
@@ -103,18 +107,19 @@ Production implementation of `DiffUIRenderer` that integrates with `SocketManage
 
 ## Supporting Types
 
-| Type                   | Description                                          |
-|------------------------|------------------------------------------------------|
-| `AppliedPatch`         | Data class capturing a completed patch application   |
-| `CreatedFile`          | Data class for a newly created file                  |
-| `InstrumentationResult`| Aggregate result with rendered markdown and metadata |
-| `InstrumentationError` | Error details for failed instrumentations            |
+| Type                    | Description                                          |
+|-------------------------|------------------------------------------------------|
+| `AppliedPatch`          | Data class capturing a completed patch application   |
+| `CreatedFile`           | Data class for a newly created file                  |
+| `InstrumentationResult` | Aggregate result with rendered markdown and metadata |
+| `InstrumentationError`  | Error details for failed instrumentations            |
 
 ## Utility Functions
 
 ### `normalizeFilename`
 
 Iteratively cleans a filename string by removing:
+
 - Common prefixes (`File:`, `Code:`, `Path:`, `Modified:`, etc.)
 - Markdown formatting (`**`, `*`, backticks, quotes)
 - Leading numbered list markers (`1. `)

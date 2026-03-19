@@ -9,12 +9,8 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.FileApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettings
+import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.model.defaultUser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -29,7 +25,7 @@ object CognotikUtils {
 
   @JvmStatic
   fun user(): User {
-    return UserSettingsManager.Companion.defaultUser
+    return defaultUser
   }
 
   @JvmStatic
@@ -100,16 +96,17 @@ object CognotikUtils {
 
   @JvmStatic
   fun configureEnvironmentalKeys() {
-      PlanHarness.Companion.initDynamicEnums()
-    check(!APIProvider.Companion.values().isEmpty()) { "No API providers configured" }
-    val userSettingsManager = ApplicationServices.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot).userSettingsManager
-    val user = UserSettingsManager.Companion.defaultUser
+    PlanHarness.initDynamicEnums()
+    check(!APIProvider.values().isEmpty()) { "No API providers configured" }
+    val userSettingsManager =
+      ApplicationServices.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot).userSettingsManager
+    val user = user()
     val userSettings = userSettingsManager.getUserSettings(user)
     var anythingChanged = false
-    anythingChanged = anythingChanged or setProvider(userSettings, "GOOGLE_API_KEY", APIProvider.Companion.Gemini)
-    anythingChanged = anythingChanged or setProvider(userSettings, "OPENAI_API_KEY", APIProvider.Companion.OpenAI)
-    anythingChanged = anythingChanged or setProvider(userSettings, "ANTHROPIC_API_KEY", APIProvider.Companion.Anthropic)
-    anythingChanged = anythingChanged or setProvider(userSettings, "GROQ_API_KEY", APIProvider.Companion.Groq)
+    anythingChanged = anythingChanged or setProvider(userSettings, "GOOGLE_API_KEY", APIProvider.Gemini)
+    anythingChanged = anythingChanged or setProvider(userSettings, "OPENAI_API_KEY", APIProvider.OpenAI)
+    anythingChanged = anythingChanged or setProvider(userSettings, "ANTHROPIC_API_KEY", APIProvider.Anthropic)
+    anythingChanged = anythingChanged or setProvider(userSettings, "GROQ_API_KEY", APIProvider.Groq)
     if (anythingChanged) {
       log.info("Updating user settings with new API keys.")
       userSettingsManager.updateUserSettings(user, userSettings)
@@ -127,12 +124,12 @@ object CognotikUtils {
       apis.removeIf { apiData: ApiData? -> apiData!!.provider!!.name == provider.name }
       // add new entry
       apis.add(
-          ApiData(
-              provider.name,
-              SecureString(System.getenv(keyName)),
-              provider.base,
-              provider
-          )
+        ApiData(
+          provider.name,
+          SecureString(System.getenv(keyName)),
+          provider.base,
+          provider
+        )
       )
       return true
     } else {

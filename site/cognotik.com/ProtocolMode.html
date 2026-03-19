@@ -2,34 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
     <!-- SEO Meta Tags -->
     <title>ProtocolMode | Cognotik</title>
-    <meta name="description" content="ProtocolMode: A strict, state-machine-driven control loop for high-reliability autonomous agent workflows with automated referee validation.">
-    <meta name="keywords" content="AI coding, autonomous agents, state machine, protocol mode, LLM orchestration">
+    <meta content="ProtocolMode: A strict, state-machine-driven control loop for high-reliability autonomous agent workflows with automated referee validation."
+          name="description">
+    <meta content="AI coding, autonomous agents, state machine, protocol mode, LLM orchestration" name="keywords">
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="ProtocolMode | Cognotik">
-    <meta property="og:description" content="Strict state-machine-driven control loop for autonomous agents.">
-    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
-    <meta property="og:url" content="https://cognotik.com/ProtocolMode.html">
-    <meta property="og:type" content="website">
+    <meta content="ProtocolMode | Cognotik" property="og:title">
+    <meta content="Strict state-machine-driven control loop for autonomous agents." property="og:description">
+    <meta content="https://cognotik.com/assets/images/og-image.png" property="og:image">
+    <meta content="https://cognotik.com/ProtocolMode.html" property="og:url">
+    <meta content="website" property="og:type">
 
     <!-- Favicon Suite -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-    <link rel="manifest" href="/site.webmanifest">
-    <meta name="theme-color" content="#0f1115">
+    <link href="assets/icons/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="assets/icons/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
+    <link href="assets/icons/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
+    <link href="assets/icons/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
+    <link href="/site.webmanifest" rel="manifest">
+    <meta content="#0f1115" name="theme-color">
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         .reality-check-grid {
@@ -59,33 +61,34 @@
     </style>
 </head>
 <body>
-    <cognotik-header></cognotik-header>
+<cognotik-header></cognotik-header>
 
-    <main class="task-container">
-        <!-- 1. HEADER -->
-        <header class="mb-8">
-            <nav class="text-caption text-tertiary mb-2">Home > Core > Cognitive Modes</nav>
-            <h1 class="text-title mb-2">ProtocolMode</h1>
-            <div class="flex gap-2 mb-4">
-                <span class="badge badge-primary">Core Architecture</span>
-                <span class="badge badge-purple">Stateful</span>
-                <span class="badge badge-success">High Reliability</span>
+<main class="task-container">
+    <!-- 1. HEADER -->
+    <header class="mb-8">
+        <nav class="text-caption text-tertiary mb-2">Home > Core > Cognitive Modes</nav>
+        <h1 class="text-title mb-2">ProtocolMode</h1>
+        <div class="flex gap-2 mb-4">
+            <span class="badge badge-primary">Core Architecture</span>
+            <span class="badge badge-purple">Stateful</span>
+            <span class="badge badge-success">High Reliability</span>
+        </div>
+        <p class="text-body-lg text-secondary">
+            A strict, state-machine-driven control loop that executes complex workflows via formal protocols with
+            automated referee validation.
+        </p>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <div class="reality-check-grid">
+        <!-- Input: Protocol Definition -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">⚙️</span>
+                <span class="panel-title">protocol.json</span>
             </div>
-            <p class="text-body-lg text-secondary">
-                A strict, state-machine-driven control loop that executes complex workflows via formal protocols with automated referee validation.
-            </p>
-        </header>
-
-        <!-- 2. REALITY CHECK -->
-        <div class="reality-check-grid">
-            <!-- Input: Protocol Definition -->
-            <div class="panel">
-                <div class="panel-header">
-                    <span class="panel-icon">⚙️</span>
-                    <span class="panel-title">protocol.json</span>
-                </div>
-                <div class="panel-body p-0">
-                    <div class="code-block mb-0 border-0 rounded-none">
+            <div class="panel-body p-0">
+                <div class="code-block mb-0 border-0 rounded-none">
                         <pre><code class="language-json">{
   "initialState": "Analyze",
   "states": [
@@ -101,101 +104,110 @@
     }
   ]
 }</code></pre>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flow-arrow">→</div>
-
-            <!-- Output: Live Execution -->
-            <div class="panel">
-                <div class="panel-header">
-                    <span class="panel-icon">🧠</span>
-                    <span class="panel-title">Execution Transcript</span>
-                </div>
-                <div class="panel-body">
-                    <div class="mb-4 border-l-2 border-accent pl-3">
-                        <div class="font-bold text-sm">State: Analyze</div>
-                        <div class="text-xs text-tertiary">Executing: ReadLogTask...</div>
-                    </div>
-                    <div class="bg-hover p-3 rounded-md mb-4 border border-subtle">
-                        <span class="status-badge status-passed">Referee: Passed</span>
-                        <p class="text-xs mt-2 mb-0">"Bug identified in line 42. Transitioning to 'Fix'."</p>
-                    </div>
-                    <div class="border-l-2 border-accent pl-3">
-                        <div class="font-bold text-sm">State: Fix</div>
-                        <div class="text-xs text-tertiary">Executing: FileModificationTask...</div>
-                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- 3. TECHNICAL DETAILS -->
-        <div class="tabs" data-tabs>
-            <div class="tabs-nav" role="tablist">
-                <button class="tab-btn active" data-tab="overview" role="tab">Overview</button>
-                <button class="tab-btn" data-tab="config" role="tab">Configuration</button>
-                <button class="tab-btn" data-tab="implementation" role="tab">Implementation</button>
+        <div class="flow-arrow">→</div>
+
+        <!-- Output: Live Execution -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">🧠</span>
+                <span class="panel-title">Execution Transcript</span>
             </div>
-            <div class="tabs-content">
-                <!-- TAB: OVERVIEW -->
-                <div class="tab-panel active" data-tab-panel="overview" role="tabpanel">
-                    <h3 class="text-subheading mb-4">The State Machine Loop</h3>
-                    <p class="text-body text-secondary mb-4">ProtocolMode operates on a deterministic loop designed for high-stakes automation where every step must be verified by a "Referee" agent before proceeding.</p>
-                    <ul class="text-body text-secondary">
-                        <li class="mb-2"><strong>Protocol Definition:</strong> Can be pre-defined in JSON or dynamically generated by the agent.</li>
-                        <li class="mb-2"><strong>State Execution:</strong> The agent selects the best tool to satisfy the current state's instructions.</li>
-                        <li class="mb-2"><strong>Referee Validation:</strong> A separate LLM call evaluates the output against strict criteria to decide the next state.</li>
-                        <li class="mb-2"><strong>Variable Substitution:</strong> Supports <code>{{mustache}}</code> style variables for reusable templates.</li>
-                    </ul>
+            <div class="panel-body">
+                <div class="mb-4 border-l-2 border-accent pl-3">
+                    <div class="font-bold text-sm">State: Analyze</div>
+                    <div class="text-xs text-tertiary">Executing: ReadLogTask...</div>
                 </div>
+                <div class="bg-hover p-3 rounded-md mb-4 border border-subtle">
+                    <span class="status-badge status-passed">Referee: Passed</span>
+                    <p class="text-xs mt-2 mb-0">"Bug identified in line 42. Transitioning to 'Fix'."</p>
+                </div>
+                <div class="border-l-2 border-accent pl-3">
+                    <div class="font-bold text-sm">State: Fix</div>
+                    <div class="text-xs text-tertiary">Executing: FileModificationTask...</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <!-- TAB: CONFIG -->
-                <div class="tab-panel" data-tab-panel="config" role="tabpanel">
-                    <h3 class="text-subheading mb-4">ProtocolModeConfig</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-subtle text-caption text-tertiary">
-                                    <th class="py-2 px-4">Field</th>
-                                    <th class="py-2 px-4">Type</th>
-                                    <th class="py-2 px-4">Description</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-sm text-secondary">
-                                <tr class="border-b border-subtle">
-                                    <td class="py-3 px-4"><code class="text-accent">protocolFile</code></td>
-                                    <td class="py-3 px-4">String?</td>
-                                    <td class="py-3 px-4">Path to a JSON file defining the state machine.</td>
-                                </tr>
-                                <tr class="border-b border-subtle">
-                                    <td class="py-3 px-4"><code class="text-accent">variables</code></td>
-                                    <td class="py-3 px-4">Map</td>
-                                    <td class="py-3 px-4">Key-value pairs to substitute into the protocol JSON.</td>
-                                </tr>
-                                <tr class="border-b border-subtle">
-                                    <td class="py-3 px-4"><code class="text-accent">maxIterations</code></td>
-                                    <td class="py-3 px-4">Int</td>
-                                    <td class="py-3 px-4">Safety limit on total state transitions (Default: 20).</td>
-                                </tr>
-                                <tr>
-                                    <td class="py-3 px-4"><code class="text-accent">maxRetries</code></td>
-                                    <td class="py-3 px-4">Int</td>
-                                    <td class="py-3 px-4">Retries allowed per state on validation failure (Default: 3).</td>
-                                </tr>
-                            </tbody>
-                        </table>
+    <!-- 3. TECHNICAL DETAILS -->
+    <div class="tabs" data-tabs>
+        <div class="tabs-nav" role="tablist">
+            <button class="tab-btn active" data-tab="overview" role="tab">Overview</button>
+            <button class="tab-btn" data-tab="config" role="tab">Configuration</button>
+            <button class="tab-btn" data-tab="implementation" role="tab">Implementation</button>
+        </div>
+        <div class="tabs-content">
+            <!-- TAB: OVERVIEW -->
+            <div class="tab-panel active" data-tab-panel="overview" role="tabpanel">
+                <h3 class="text-subheading mb-4">The State Machine Loop</h3>
+                <p class="text-body text-secondary mb-4">ProtocolMode operates on a deterministic loop designed for
+                    high-stakes automation where every step must be verified by a "Referee" agent before proceeding.</p>
+                <ul class="text-body text-secondary">
+                    <li class="mb-2"><strong>Protocol Definition:</strong> Can be pre-defined in JSON or dynamically
+                        generated by the agent.
+                    </li>
+                    <li class="mb-2"><strong>State Execution:</strong> The agent selects the best tool to satisfy the
+                        current state's instructions.
+                    </li>
+                    <li class="mb-2"><strong>Referee Validation:</strong> A separate LLM call evaluates the output
+                        against strict criteria to decide the next state.
+                    </li>
+                    <li class="mb-2"><strong>Variable Substitution:</strong> Supports <code>{{mustache}}</code> style
+                        variables for reusable templates.
+                    </li>
+                </ul>
+            </div>
+
+            <!-- TAB: CONFIG -->
+            <div class="tab-panel" data-tab-panel="config" role="tabpanel">
+                <h3 class="text-subheading mb-4">ProtocolModeConfig</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                        <tr class="border-b border-subtle text-caption text-tertiary">
+                            <th class="py-2 px-4">Field</th>
+                            <th class="py-2 px-4">Type</th>
+                            <th class="py-2 px-4">Description</th>
+                        </tr>
+                        </thead>
+                        <tbody class="text-sm text-secondary">
+                        <tr class="border-b border-subtle">
+                            <td class="py-3 px-4"><code class="text-accent">protocolFile</code></td>
+                            <td class="py-3 px-4">String?</td>
+                            <td class="py-3 px-4">Path to a JSON file defining the state machine.</td>
+                        </tr>
+                        <tr class="border-b border-subtle">
+                            <td class="py-3 px-4"><code class="text-accent">variables</code></td>
+                            <td class="py-3 px-4">Map</td>
+                            <td class="py-3 px-4">Key-value pairs to substitute into the protocol JSON.</td>
+                        </tr>
+                        <tr class="border-b border-subtle">
+                            <td class="py-3 px-4"><code class="text-accent">maxIterations</code></td>
+                            <td class="py-3 px-4">Int</td>
+                            <td class="py-3 px-4">Safety limit on total state transitions (Default: 20).</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-4"><code class="text-accent">maxRetries</code></td>
+                            <td class="py-3 px-4">Int</td>
+                            <td class="py-3 px-4">Retries allowed per state on validation failure (Default: 3).</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB: IMPLEMENTATION -->
+            <div class="tab-panel" data-tab-panel="implementation" role="tabpanel">
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">kotlin</span>
+                        <button class="copy-btn">Copy</button>
                     </div>
-                </div>
-
-                <!-- TAB: IMPLEMENTATION -->
-                <div class="tab-panel" data-tab-panel="implementation" role="tabpanel">
-                    <div class="code-block">
-                        <div class="code-header">
-                            <span class="code-lang">kotlin</span>
-                            <button class="copy-btn">Copy</button>
-                        </div>
-                        <pre><code class="language-kotlin">// From ProtocolMode.kt
+                    <pre><code class="language-kotlin">// From ProtocolMode.kt
 while (currentStateName != null && iteration++ < maxIterations) {
     val currentState = protocol.states.find { it.name == currentStateName }
     
@@ -212,18 +224,18 @@ while (currentStateName != null && iteration++ < maxIterations) {
         // Handle retry or failure
     }
 }</code></pre>
-                    </div>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
+</main>
 
-    <cognotik-footer></cognotik-footer>
+<cognotik-footer></cognotik-footer>
 
-    <script type="module" src="assets/scripts/core.js"></script>
-    <script type="module" src="assets/scripts/components/header.js"></script>
-    <script type="module" src="assets/scripts/components/footer.js"></script>
-    <script type="module" src="assets/scripts/components/tabs.js"></script>
-    <script src="assets/scripts/vendor/prism.js"></script>
+<script src="assets/scripts/core.js" type="module"></script>
+<script src="assets/scripts/components/header.js" type="module"></script>
+<script src="assets/scripts/components/footer.js" type="module"></script>
+<script src="assets/scripts/components/tabs.js" type="module"></script>
+<script src="assets/scripts/vendor/prism.js"></script>
 </body>
 </html>

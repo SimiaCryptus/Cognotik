@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | AdversarialReasoning</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Workspace Browser -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 
     <style>
@@ -221,7 +222,8 @@
         <div class="breadcrumbs">Home / Tasks / Reasoning / AdversarialReasoning</div>
         <h1>AdversarialReasoning</h1>
         <p class="pitch">
-            Automated red-team analysis to identify vulnerabilities, challenge architectural assumptions, and simulate sophisticated attack vectors against systems and designs.
+            Automated red-team analysis to identify vulnerabilities, challenge architectural assumptions, and simulate
+            sophisticated attack vectors against systems and designs.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect: Safe</span>
@@ -260,14 +262,28 @@
             <div class="mock-ui-content">
                 <div style="font-weight: bold; margin-bottom: 10px;">📊 Risk Assessment</div>
                 <table class="risk-table">
-                    <tr><td>🔴 Critical</td><td>1</td><td style="color: var(--text-dim)">Token Replay Vulnerability</td></tr>
-                    <tr><td>🟠 High</td><td>2</td><td style="color: var(--text-dim)">Insecure Redirect URI validation</td></tr>
-                    <tr><td>🟡 Medium</td><td>1</td><td style="color: var(--text-dim)">Verbose Error Messages</td></tr>
+                    <tr>
+                        <td>🔴 Critical</td>
+                        <td>1</td>
+                        <td style="color: var(--text-dim)">Token Replay Vulnerability</td>
+                    </tr>
+                    <tr>
+                        <td>🟠 High</td>
+                        <td>2</td>
+                        <td style="color: var(--text-dim)">Insecure Redirect URI validation</td>
+                    </tr>
+                    <tr>
+                        <td>🟡 Medium</td>
+                        <td>1</td>
+                        <td style="color: var(--text-dim)">Verbose Error Messages</td>
+                    </tr>
                 </table>
                 <div style="margin-top: 15px; padding: 8px; background: rgba(248, 81, 73, 0.1); border-left: 3px solid var(--severity-critical);">
-                    <span class="severity-tag" style="background: var(--severity-critical); color: white;">Critical</span>
+                    <span class="severity-tag"
+                          style="background: var(--severity-critical); color: white;">Critical</span>
                     <div style="margin-top: 5px; font-size: 0.8rem;">
-                        <strong>Logic Flaw:</strong> Race condition in authorization code exchange allows for single-use token reuse under high concurrency.
+                        <strong>Logic Flaw:</strong> Race condition in authorization code exchange allows for single-use
+                        token reuse under high concurrency.
                     </div>
                 </div>
             </div>
@@ -277,11 +293,12 @@
     <section class="showcase-section">
         <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin-bottom: 1rem;">Test Workspace Explorer</h2>
         <p style="color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.9rem;">
-            Browse the live output directory for this task, including generated Markdown transcripts, HTML reports, and raw analysis logs.
+            Browse the live output directory for this task, including generated Markdown transcripts, HTML reports, and
+            raw analysis logs.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 400px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+        <div class="panel" id="file-tree-demo"
+             style="height: 400px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
     </section>
-
 
 
     <!-- 3. TABS -->
@@ -293,7 +310,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Configuration Parameters</h3>
             <table class="docs-table">
                 <thead>
@@ -315,13 +332,16 @@
                     <td><code>attack_vectors</code></td>
                     <td>List&lt;String&gt;</td>
                     <td><code>["security", "logic"]</code></td>
-                    <td>Vectors to explore: <code>security</code>, <code>performance</code>, <code>logic</code>, <code>business</code>, <code>privacy</code>, <code>compliance</code>.</td>
+                    <td>Vectors to explore: <code>security</code>, <code>performance</code>, <code>logic</code>, <code>business</code>,
+                        <code>privacy</code>, <code>compliance</code>.
+                    </td>
                 </tr>
                 <tr>
                     <td><code>adversary_capability</code></td>
                     <td>String</td>
                     <td><code>"intermediate"</code></td>
-                    <td>Capability level: <code>basic</code>, <code>intermediate</code>, <code>advanced</code>, <code>nation-state</code>.</td>
+                    <td>Capability level: <code>basic</code>, <code>intermediate</code>, <code>advanced</code>, <code>nation-state</code>.
+                    </td>
                 </tr>
                 <tr>
                     <td><code>generate_exploits</code></td>
@@ -364,22 +384,33 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>Task Execution Flow</h3>
             <ol style="padding-left: 1.2rem; color: var(--text-main);">
-                <li><strong>Context Gathering:</strong> Aggregates content from <code>input_files</code>, <code>related_files</code>, and prior task results.</li>
-                <li><strong>Adversarial Agent Initialization:</strong> Spawns specialized agents for each <code>attack_vector</code> with a persona matching the <code>adversary_capability</code>.</li>
-                <li><strong>Vector Analysis:</strong> Parallel analysis of the system to identify vulnerabilities, challenging any provided <code>challenge_assumptions</code>.</li>
-                <li><strong>Mitigation Synthesis:</strong> If enabled, a separate Security Architect agent reviews findings to propose immediate and long-term fixes.</li>
-                <li><strong>Reporting:</strong> Generates a structured Markdown transcript, PDF/HTML reports, and an Executive Summary with risk ratings.</li>
+                <li><strong>Context Gathering:</strong> Aggregates content from <code>input_files</code>, <code>related_files</code>,
+                    and prior task results.
+                </li>
+                <li><strong>Adversarial Agent Initialization:</strong> Spawns specialized agents for each <code>attack_vector</code>
+                    with a persona matching the <code>adversary_capability</code>.
+                </li>
+                <li><strong>Vector Analysis:</strong> Parallel analysis of the system to identify vulnerabilities,
+                    challenging any provided <code>challenge_assumptions</code>.
+                </li>
+                <li><strong>Mitigation Synthesis:</strong> If enabled, a separate Security Architect agent reviews
+                    findings to propose immediate and long-term fixes.
+                </li>
+                <li><strong>Reporting:</strong> Generates a structured Markdown transcript, PDF/HTML reports, and an
+                    Executive Summary with risk ratings.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Embedded Execution (Scenario B)</h3>
             <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
-                Use the <code>UnifiedHarness</code> to run this task programmatically in a headless environment (CI/CD, CLI tools).
+                Use the <code>UnifiedHarness</code> to run this task programmatically in a headless environment (CI/CD,
+                CLI tools).
             </p>
             <pre style="background: #000; border-radius: 6px;"><code class="language-kotlin">// 1. Define the Execution Configuration
 val executionConfig = AdversarialReasoningTask.AdversarialReasoningTaskExecutionConfigData(
@@ -425,7 +456,8 @@ harness.runTask(
 }</code></pre>
 
             <h3 style="margin-top: 2rem;">LLM Prompt Segment</h3>
-            <p style="font-size: 0.85rem; color: var(--text-dim);">The following instructions are injected into the LLM context:</p>
+            <p style="font-size: 0.85rem; color: var(--text-dim);">The following instructions are injected into the LLM
+                context:</p>
             <pre style="background: #1c2128; font-size: 0.8rem; border: 1px solid var(--border-subtle);"><code>AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknesses
   ** Specify target_system: the system, design, or argument to analyze
   ** Choose attack_vectors from: 'security', 'performance', 'logic', 'business', 'privacy', 'compliance'

@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | CommandSessionTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -201,8 +202,9 @@
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Session > CommandSessionTask</div>
         <h1>CommandSessionTask</h1>
-          <p class="page-pitch">
-            Execute commands in a stateful, interactive terminal session. Maintains environment persistence, supports TTY allocation, and manages long-running process lifecycles.
+        <p class="page-pitch">
+            Execute commands in a stateful, interactive terminal session. Maintains environment persistence, supports
+            TTY allocation, and manages long-running process lifecycles.
         </p>
         <div class="badges">
             <span class="badge">Category: Session</span>
@@ -247,10 +249,12 @@
                         <span style="color: #4ade80;">$</span> ls -la
                     </div>
                     <div style="color: var(--text-dim); margin-bottom: 0.5rem;">Output:</div>
-                    <div style="background: #000; padding: 0.5rem; border-radius: 4px; color: #d1d5db; white-space: pre;">total 24
-drwxr-xr-x  4 user  staff   128 May 20 10:00 .
-drwxr-xr-x  8 user  staff   256 May 20 09:45 ..
--rw-r--r--  1 user  staff  1024 May 20 10:00 README.md</div>
+                    <div style="background: #000; padding: 0.5rem; border-radius: 4px; color: #d1d5db; white-space: pre;">
+                        total 24
+                        drwxr-xr-x 4 user staff 128 May 20 10:00 .
+                        drwxr-xr-x 8 user staff 256 May 20 09:45 ..
+                        -rw-r--r-- 1 user staff 1024 May 20 10:00 README.md
+                    </div>
                 </div>
             </div>
         </div>
@@ -264,7 +268,7 @@ drwxr-xr-x  8 user  staff   256 May 20 09:45 ..
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane">
+        <div class="tab-pane" id="tab-docs">
             <h3>Execution Configuration</h3>
             <table class="docs-table">
                 <thead>
@@ -288,7 +292,9 @@ drwxr-xr-x  8 user  staff   256 May 20 09:45 ..
                 <tr>
                     <td><code>sessionId</code></td>
                     <td><code>String?</code></td>
-                          <td>Optional ID to reuse an existing session. Enables state persistence (variables, working directory) across multiple task executions.</td>
+                    <td>Optional ID to reuse an existing session. Enables state persistence (variables, working
+                        directory) across multiple task executions.
+                    </td>
                 </tr>
                 <tr>
                     <td><code>timeout</code></td>
@@ -303,37 +309,43 @@ drwxr-xr-x  8 user  staff   256 May 20 09:45 ..
                 <tr>
                     <td><code>tty</code></td>
                     <td><code>Boolean</code></td>
-                    <td>If true, uses <code>pty4j</code> to allocate a pseudo-terminal. Required for TTY-aware applications.</td>
+                    <td>If true, uses <code>pty4j</code> to allocate a pseudo-terminal. Required for TTY-aware
+                        applications.
+                    </td>
                 </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>Task Lifecycle</h3>
             <ol style="color: var(--text-dim); max-width: 800px;">
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Session Resolution:</strong> 
-                    Checks if a <code>sessionId</code> is provided and active. If not, it initializes a new <code>Process</code> or <code>PtyProcess</code>.
+                    <strong style="color: var(--text-main);">Session Resolution:</strong>
+                    Checks if a <code>sessionId</code> is provided and active. If not, it initializes a new <code>Process</code>
+                    or <code>PtyProcess</code>.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Output Monitoring:</strong> 
-                    Spawns a daemon thread to continuously read the process's <code>inputStream</code> into a thread-safe buffer.
+                    <strong style="color: var(--text-main);">Output Monitoring:</strong>
+                    Spawns a daemon thread to continuously read the process's <code>inputStream</code> into a
+                    thread-safe buffer.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Command Execution:</strong> 
-                    Iterates through <code>inputs</code>, writing each to the process <code>outputStream</code> and waiting for output based on <code>idle_timeout</code>.
+                    <strong style="color: var(--text-main);">Command Execution:</strong>
+                    Iterates through <code>inputs</code>, writing each to the process <code>outputStream</code> and
+                    waiting for output based on <code>idle_timeout</code>.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong style="color: var(--text-main);">Cleanup:</strong> 
-                    Inactive or dead processes are automatically purged from the global session registry to prevent resource leaks.
+                    <strong style="color: var(--text-main);">Cleanup:</strong>
+                    Inactive or dead processes are automatically purged from the global session registry to prevent
+                    resource leaks.
                 </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Kotlin Boilerplate</h3>
             <div class="panel">
                 <div class="panel-header">Orchestration Setup</div>
@@ -357,13 +369,13 @@ val task = CommandSessionTask(orchestrationConfig, config)</code></pre>
 </main>
 
 <script>
-      function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-        document.getElementById('tab-' + tabId).style.display = 'block';
-        event.currentTarget.classList.add('active');
-    }
+      document.getElementById('tab-' + tabId).style.display = 'block';
+      event.currentTarget.classList.add('active');
+  }
 </script>
 
 </body>

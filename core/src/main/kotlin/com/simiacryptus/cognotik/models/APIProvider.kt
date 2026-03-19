@@ -25,528 +25,528 @@ private val log: Logger = LoggerFactory.getLogger(APIProvider::class.java)
 @JsonSerialize(using = APIProviderSerializer::class)
 abstract class APIProvider private constructor(name: String, val base: String) : DynamicEnum<APIProvider>(name) {
 
-    abstract fun getChatClient(
-        key: SecureString,
-        base: String = this.base,
-        workPool: ExecutorService,
-        logLevel: Level = Level.DEBUG,
-        logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-        scheduledPool: ListeningScheduledExecutorService
-    ): ChatClientInterface
+  abstract fun getChatClient(
+    key: SecureString,
+    base: String = this.base,
+    workPool: ExecutorService,
+    logLevel: Level = Level.DEBUG,
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService
+  ): ChatClientInterface
 
-    abstract fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel>
-    open fun getEmbeddingModels(key: SecureString, baseUrl: String): List<EmbeddingModel> = emptyList()
+  abstract fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel>
+  open fun getEmbeddingModels(key: SecureString, baseUrl: String): List<EmbeddingModel> = emptyList()
 
-    open fun getTranscriptionModels(key: SecureString, baseUrl: String): List<AudioModels> = emptyList()
-    open fun getImageModels(key: SecureString, baseUrl: String): List<ImageModel> = emptyList()
+  open fun getTranscriptionModels(key: SecureString, baseUrl: String): List<AudioModels> = emptyList()
+  open fun getImageModels(key: SecureString, baseUrl: String): List<ImageModel> = emptyList()
 
-    open fun authorize(request: HttpRequest, key: String, apiBase: String) {
-        request.addHeader("Authorization", "Bearer ${key}")
-    }
+  open fun authorize(request: HttpRequest, key: String, apiBase: String) {
+    request.addHeader("Authorization", "Bearer ${key}")
+  }
 
-    open fun getEmbeddingClient(
+  open fun getEmbeddingClient(
+    key: SecureString,
+    base: String,
+    workPool: ExecutorService,
+    logLevel: Level = Level.DEBUG,
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService
+  ): com.simiacryptus.cognotik.embedding.EmbeddingClientInterface {
+    throw UnsupportedOperationException("${this.name} does not support embedding functionality")
+  }
+
+  open fun getImageClient(
+    key: SecureString,
+    base: String,
+    workPool: ExecutorService,
+    logLevel: Level = Level.DEBUG,
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService
+  ): ImageClientInterface {
+    throw UnsupportedOperationException("${this.name} does not support image generation functionality")
+  }
+
+  companion object {
+    @JvmStatic
+    val SearchAPI: APIProvider = object : APIProvider("SearchAPI", "https://api.searchapi.com") {
+
+      override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
+
+      override fun getChatClient(
         key: SecureString,
         base: String,
         workPool: ExecutorService,
-        logLevel: Level = Level.DEBUG,
-        logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
         scheduledPool: ListeningScheduledExecutorService
-    ): com.simiacryptus.cognotik.embedding.EmbeddingClientInterface {
-        throw UnsupportedOperationException("${this.name} does not support embedding functionality")
+      ) = throw UnsupportedOperationException("SearchAPI does not support chat functionality")
     }
 
-    open fun getImageClient(
+    @JvmStatic
+    val Gemini: APIProvider = object : APIProvider("Gemini", "https://generativelanguage.googleapis.com") {
+      override fun authorize(
+        request: HttpRequest,
+        key: String,
+        apiBase: String
+      ) {
+      }
+
+      override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
+        key = key,
+        base = baseUrl,
+        workPool = MoreExecutors.newDirectExecutorService(),
+        scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
+        logLevel = Level.DEBUG,
+        logStreams = mutableListOf()
+      ).getModels() ?: GeminiModels.values.values.toList()
+
+      override fun getChatClient(
         key: SecureString,
         base: String,
         workPool: ExecutorService,
-        logLevel: Level = Level.DEBUG,
-        logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
         scheduledPool: ListeningScheduledExecutorService
-    ): ImageClientInterface {
-        throw UnsupportedOperationException("${this.name} does not support image generation functionality")
+      ) = if (false) GeminiChatClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
+      ) else GeminiSdkChatClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
+      )
+
+      override fun getImageModels(key: SecureString, baseUrl: String): List<ImageModel> {
+        return GeminiImageModels.values.values.toList()
+      }
+
+      override fun getImageClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ): ImageClientInterface = GeminiImageClient(
+        apiKey = key,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
+      )
+
     }
 
-    companion object {
-        @JvmStatic
-        val SearchAPI: APIProvider = object : APIProvider("SearchAPI", "https://api.searchapi.com") {
+    @JvmStatic
+    val Ollama: APIProvider = object : APIProvider("Ollama", "http://localhost:11434") {
+      override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
+        key = key,
+        base = baseUrl,
+        workPool = MoreExecutors.newDirectExecutorService(),
+        scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
+        logLevel = Level.DEBUG,
+        logStreams = mutableListOf()
+      ).getModels() ?: emptyList()
 
-            override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
+      override fun getChatClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = OllamaChatClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        scheduledPool = scheduledPool,
+        logLevel = logLevel,
+        logStreams = logStreams
+      )
 
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = throw UnsupportedOperationException("SearchAPI does not support chat functionality")
-        }
+      override fun getEmbeddingModels(key: SecureString, baseUrl: String): List<EmbeddingModel> {
+        return OllamaEmbeddingModels.values.values.toList()
+      }
 
-        @JvmStatic
-        val Gemini: APIProvider = object : APIProvider("Gemini", "https://generativelanguage.googleapis.com") {
-            override fun authorize(
-                request: HttpRequest,
-                key: String,
-                apiBase: String
-            ) {
-            }
-
-            override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-                key = key,
-                base = baseUrl,
-                workPool = MoreExecutors.newDirectExecutorService(),
-                scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-                logLevel = Level.DEBUG,
-                logStreams = mutableListOf()
-            ).getModels() ?: GeminiModels.values.values.toList()
-
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = if (false) GeminiChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            ) else GeminiSdkChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            )
-
-            override fun getImageModels(key: SecureString, baseUrl: String): List<ImageModel> {
-                return GeminiImageModels.values.values.toList()
-            }
-
-            override fun getImageClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ): ImageClientInterface = GeminiImageClient(
-                apiKey = key,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            )
-
-        }
-
-        @JvmStatic
-        val Ollama: APIProvider = object : APIProvider("Ollama", "http://localhost:11434") {
-            override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-                key = key,
-                base = baseUrl,
-                workPool = MoreExecutors.newDirectExecutorService(),
-                scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-                logLevel = Level.DEBUG,
-                logStreams = mutableListOf()
-            ).getModels() ?: emptyList()
-
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = OllamaChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                scheduledPool = scheduledPool,
-                logLevel = logLevel,
-                logStreams = logStreams
-            )
-
-            override fun getEmbeddingModels(key: SecureString, baseUrl: String): List<EmbeddingModel> {
-                return OllamaEmbeddingModels.values.values.toList()
-            }
-
-            override fun getEmbeddingClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            )
-        }
-
-        @JvmStatic
-        val OpenAI: APIProvider = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
-
-            override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-                key = key,
-                base = baseUrl,
-                workPool = MoreExecutors.newDirectExecutorService(),
-                scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-                logLevel = Level.DEBUG,
-                logStreams = mutableListOf()
-            ).getModels() ?: OpenAIModels.values.values.toList()
-
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = OpenAIChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                scheduledPool = scheduledPool
-            )
-
-
-            override fun getEmbeddingModels(key: SecureString, baseUrl: String): List<EmbeddingModel> {
-                return OpenAIEmbeddingModels.values.values.toList()
-            }
-
-            override fun getEmbeddingClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = com.simiacryptus.cognotik.embedding.OpenAIEmbeddingClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            )
-
-            override fun getImageModels(key: SecureString, baseUrl: String): List<ImageModel> {
-                return OpenAIImageModels.values.values.toList()
-            }
-
-            override fun getImageClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ): ImageClientInterface = OpenAIImageClient(
-                key = key.decrypt!!,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            )
-
-            override fun getTranscriptionModels(
-                key: SecureString,
-                baseUrl: String
-            ): List<AudioModels> {
-                return listOf(
-                    AudioModels(modelId = "gpt-4o-transcribe", provider = this),
-                    AudioModels(modelId = "gpt-4o-mini-transcribe", provider = this),
-                    AudioModels(modelId = "whisper-1", provider = this)
-                )
-            }
-        }
-
-        @JvmStatic
-        val Anthropic: APIProvider = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
-            override fun authorize(
-                request: HttpRequest,
-                key: String,
-                apiBase: String
-            ) {
-                request.addHeader("x-api-key", key)
-                request.addHeader("anthropic-version", "2023-06-01")
-            }
-
-            override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-                key = key,
-                base = baseUrl,
-                workPool = MoreExecutors.newDirectExecutorService(),
-                scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-                logLevel = Level.DEBUG,
-                logStreams = mutableListOf()
-            ).getModels() ?: AnthropicModels.values.values.toList()
-
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = AnthropicChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            )
-        }
-
-        @JvmStatic
-        val AWS: APIProvider = object : APIProvider("AWS", "https://api.openai.aws") {
-
-            override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-                key = key,
-                base = baseUrl,
-                workPool = MoreExecutors.newDirectExecutorService(),
-                scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-                logLevel = Level.DEBUG,
-                logStreams = mutableListOf()
-            ).getModels() ?: AWSModels.values.values.toList()
-
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = AwsChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            )
-
-        }
-
-        @JvmStatic
-        val Groq: APIProvider = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
-
-            override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-                key = key,
-                base = baseUrl,
-                workPool = MoreExecutors.newDirectExecutorService(),
-                scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-                logLevel = Level.DEBUG,
-                logStreams = mutableListOf()
-            ).getModels() ?: GroqModels.values.values.toList()
-
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = GroqChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            )
-
-            override fun getTranscriptionModels(
-                key: SecureString,
-                baseUrl: String
-            ): List<AudioModels> {
-                return listOf(
-                    AudioModels(modelId = "whisper-large-v3", provider = this),
-                    AudioModels(modelId = "whisper-large-v3-turbo", provider = this),
-                )
-            }
-        }
-
-        @JvmStatic
-        val Perplexity: APIProvider = object : APIProvider("Perplexity", "https://api.perplexity.ai") {
-
-            override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-                key = key,
-                base = baseUrl,
-                workPool = MoreExecutors.newDirectExecutorService(),
-                scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-                logLevel = Level.DEBUG,
-                logStreams = mutableListOf()
-            ).getModels() ?: PerplexityModels.values.values.toList()
-
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = OpenAIChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                scheduledPool = scheduledPool
-            )
-        }
-
-        @JvmStatic
-        val ModelsLab: APIProvider = object : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
-
-            override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-                key = key,
-                base = baseUrl,
-                workPool = MoreExecutors.newDirectExecutorService(),
-                scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-                logLevel = Level.DEBUG,
-                logStreams = mutableListOf()
-            ).getModels() ?: ModelsLabModels.values.values.toList()
-
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = ModelsLabChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            )
-        }
-
-        @JvmStatic
-        val Mistral: APIProvider = object : APIProvider("Mistral", "https://api.mistral.ai/v1") {
-
-            override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-                key = key,
-                base = baseUrl,
-                workPool = MoreExecutors.newDirectExecutorService(),
-                scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-                logLevel = Level.DEBUG,
-                logStreams = mutableListOf()
-            ).getModels() ?: MistralModels.values.values.toList()
-
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = MistralChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            )
-        }
-
-        @JvmStatic
-        val DeepSeek: APIProvider = object : APIProvider("DeepSeek", "https://api.deepseek.com") {
-
-            override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
-                key = key,
-                base = baseUrl,
-                workPool = MoreExecutors.newDirectExecutorService(),
-                scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
-                logLevel = Level.DEBUG,
-                logStreams = mutableListOf()
-            ).getModels() ?: DeepSeekModels.values.values.toList()
-
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = DeepSeekChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            )
-        }
-
-        @JvmStatic
-        val Google: APIProvider = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
-
-            override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
-
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = throw UnsupportedOperationException("Google Search API does not support chat functionality")
-        }
-
-        @JvmStatic
-        val Github: APIProvider = object : APIProvider("Github", "https://api.github.com") {
-
-            override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
-
-            override fun getChatClient(
-                key: SecureString,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ) = throw UnsupportedOperationException("Github API does not support chat functionality")
-        }
-
-        init {
-            log.info("Registering API providers")
-            register(APIProvider::class.java, Gemini)
-            register(APIProvider::class.java, OpenAI)
-            register(APIProvider::class.java, Anthropic)
-            register(APIProvider::class.java, AWS)
-            register(APIProvider::class.java, Groq)
-            register(APIProvider::class.java, Perplexity)
-            register(APIProvider::class.java, ModelsLab)
-            register(APIProvider::class.java, Mistral)
-            register(APIProvider::class.java, DeepSeek)
-            register(APIProvider::class.java, Google)
-            register(APIProvider::class.java, Github)
-            register(APIProvider::class.java, Ollama)
-            register(APIProvider::class.java, SearchAPI)
-        }
-
-        @JvmStatic
-        fun valueOf(name: String): APIProvider = valueOf(APIProvider::class.java, name)
-
-        @JvmStatic
-        fun values(): Collection<APIProvider> {
-            log.debug("Retrieving all APIProvider values")
-            return values(APIProvider::class.java)
-        }
+      override fun getEmbeddingClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
+      )
     }
+
+    @JvmStatic
+    val OpenAI: APIProvider = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
+
+      override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
+        key = key,
+        base = baseUrl,
+        workPool = MoreExecutors.newDirectExecutorService(),
+        scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
+        logLevel = Level.DEBUG,
+        logStreams = mutableListOf()
+      ).getModels() ?: OpenAIModels.values.values.toList()
+
+      override fun getChatClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = OpenAIChatClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        scheduledPool = scheduledPool
+      )
+
+
+      override fun getEmbeddingModels(key: SecureString, baseUrl: String): List<EmbeddingModel> {
+        return OpenAIEmbeddingModels.values.values.toList()
+      }
+
+      override fun getEmbeddingClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = com.simiacryptus.cognotik.embedding.OpenAIEmbeddingClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
+      )
+
+      override fun getImageModels(key: SecureString, baseUrl: String): List<ImageModel> {
+        return OpenAIImageModels.values.values.toList()
+      }
+
+      override fun getImageClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ): ImageClientInterface = OpenAIImageClient(
+        key = key.decrypt!!,
+        apiBase = base,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
+      )
+
+      override fun getTranscriptionModels(
+        key: SecureString,
+        baseUrl: String
+      ): List<AudioModels> {
+        return listOf(
+          AudioModels(modelId = "gpt-4o-transcribe", provider = this),
+          AudioModels(modelId = "gpt-4o-mini-transcribe", provider = this),
+          AudioModels(modelId = "whisper-1", provider = this)
+        )
+      }
+    }
+
+    @JvmStatic
+    val Anthropic: APIProvider = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
+      override fun authorize(
+        request: HttpRequest,
+        key: String,
+        apiBase: String
+      ) {
+        request.addHeader("x-api-key", key)
+        request.addHeader("anthropic-version", "2023-06-01")
+      }
+
+      override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
+        key = key,
+        base = baseUrl,
+        workPool = MoreExecutors.newDirectExecutorService(),
+        scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
+        logLevel = Level.DEBUG,
+        logStreams = mutableListOf()
+      ).getModels() ?: AnthropicModels.values.values.toList()
+
+      override fun getChatClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = AnthropicChatClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
+      )
+    }
+
+    @JvmStatic
+    val AWS: APIProvider = object : APIProvider("AWS", "https://api.openai.aws") {
+
+      override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
+        key = key,
+        base = baseUrl,
+        workPool = MoreExecutors.newDirectExecutorService(),
+        scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
+        logLevel = Level.DEBUG,
+        logStreams = mutableListOf()
+      ).getModels() ?: AWSModels.values.values.toList()
+
+      override fun getChatClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = AwsChatClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
+      )
+
+    }
+
+    @JvmStatic
+    val Groq: APIProvider = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
+
+      override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
+        key = key,
+        base = baseUrl,
+        workPool = MoreExecutors.newDirectExecutorService(),
+        scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
+        logLevel = Level.DEBUG,
+        logStreams = mutableListOf()
+      ).getModels() ?: GroqModels.values.values.toList()
+
+      override fun getChatClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = GroqChatClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
+      )
+
+      override fun getTranscriptionModels(
+        key: SecureString,
+        baseUrl: String
+      ): List<AudioModels> {
+        return listOf(
+          AudioModels(modelId = "whisper-large-v3", provider = this),
+          AudioModels(modelId = "whisper-large-v3-turbo", provider = this),
+        )
+      }
+    }
+
+    @JvmStatic
+    val Perplexity: APIProvider = object : APIProvider("Perplexity", "https://api.perplexity.ai") {
+
+      override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
+        key = key,
+        base = baseUrl,
+        workPool = MoreExecutors.newDirectExecutorService(),
+        scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
+        logLevel = Level.DEBUG,
+        logStreams = mutableListOf()
+      ).getModels() ?: PerplexityModels.values.values.toList()
+
+      override fun getChatClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = OpenAIChatClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        scheduledPool = scheduledPool
+      )
+    }
+
+    @JvmStatic
+    val ModelsLab: APIProvider = object : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
+
+      override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
+        key = key,
+        base = baseUrl,
+        workPool = MoreExecutors.newDirectExecutorService(),
+        scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
+        logLevel = Level.DEBUG,
+        logStreams = mutableListOf()
+      ).getModels() ?: ModelsLabModels.values.values.toList()
+
+      override fun getChatClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = ModelsLabChatClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
+      )
+    }
+
+    @JvmStatic
+    val Mistral: APIProvider = object : APIProvider("Mistral", "https://api.mistral.ai/v1") {
+
+      override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
+        key = key,
+        base = baseUrl,
+        workPool = MoreExecutors.newDirectExecutorService(),
+        scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
+        logLevel = Level.DEBUG,
+        logStreams = mutableListOf()
+      ).getModels() ?: MistralModels.values.values.toList()
+
+      override fun getChatClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = MistralChatClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
+      )
+    }
+
+    @JvmStatic
+    val DeepSeek: APIProvider = object : APIProvider("DeepSeek", "https://api.deepseek.com") {
+
+      override fun getChatModels(key: SecureString, baseUrl: String) = getChatClient(
+        key = key,
+        base = baseUrl,
+        workPool = MoreExecutors.newDirectExecutorService(),
+        scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
+        logLevel = Level.DEBUG,
+        logStreams = mutableListOf()
+      ).getModels() ?: DeepSeekModels.values.values.toList()
+
+      override fun getChatClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = DeepSeekChatClient(
+        apiKey = key,
+        apiBase = base,
+        workPool = workPool,
+        logLevel = logLevel,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
+      )
+    }
+
+    @JvmStatic
+    val Google: APIProvider = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
+
+      override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
+
+      override fun getChatClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = throw UnsupportedOperationException("Google Search API does not support chat functionality")
+    }
+
+    @JvmStatic
+    val Github: APIProvider = object : APIProvider("Github", "https://api.github.com") {
+
+      override fun getChatModels(key: SecureString, baseUrl: String): List<ChatModel> = emptyList()
+
+      override fun getChatClient(
+        key: SecureString,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level,
+        logStreams: MutableList<BufferedOutputStream>,
+        scheduledPool: ListeningScheduledExecutorService
+      ) = throw UnsupportedOperationException("Github API does not support chat functionality")
+    }
+
+    init {
+      log.info("Registering API providers")
+      register(APIProvider::class.java, Gemini)
+      register(APIProvider::class.java, OpenAI)
+      register(APIProvider::class.java, Anthropic)
+      register(APIProvider::class.java, AWS)
+      register(APIProvider::class.java, Groq)
+      register(APIProvider::class.java, Perplexity)
+      register(APIProvider::class.java, ModelsLab)
+      register(APIProvider::class.java, Mistral)
+      register(APIProvider::class.java, DeepSeek)
+      register(APIProvider::class.java, Google)
+      register(APIProvider::class.java, Github)
+      register(APIProvider::class.java, Ollama)
+      register(APIProvider::class.java, SearchAPI)
+    }
+
+    @JvmStatic
+    fun valueOf(name: String): APIProvider = valueOf(APIProvider::class.java, name)
+
+    @JvmStatic
+    fun values(): Collection<APIProvider> {
+      log.debug("Retrieving all APIProvider values")
+      return values(APIProvider::class.java)
+    }
+  }
 }
 
 class APIProviderSerializer : DynamicEnumSerializer<APIProvider>(APIProvider::class.java)

@@ -56,7 +56,12 @@ class DiffApplyController(
             )
             if (state.compareAndSet(current, applied)) {
               fs.writeText(filepath, result.newCode)
-              log.info("Successfully applied diff to {}: {} -> {} chars", filepath, originalCode.length, result.newCode.length)
+              log.info(
+                "Successfully applied diff to {}: {} -> {} chars",
+                filepath,
+                originalCode.length,
+                result.newCode.length
+              )
               applied
             } else {
               log.debug("CAS failed during apply for {}, retrying", filepath)
@@ -74,6 +79,7 @@ class DiffApplyController(
           log.debug("Diff already applied to {}", filepath)
           return current
         }
+
         is ApplyState.Failed -> {
           log.debug("Diff previously failed for {}: {}", filepath, current.error.message)
           return current
@@ -111,10 +117,12 @@ class DiffApplyController(
           log.debug("Nothing to revert for {} (state is Pending)", filepath)
           return current
         }
+
         is ApplyState.Reverted -> {
           log.debug("Already reverted for {}", filepath)
           return current
         }
+
         is ApplyState.Failed -> {
           log.debug("Cannot revert failed state for {}: {}", filepath, current.error.message)
           return current

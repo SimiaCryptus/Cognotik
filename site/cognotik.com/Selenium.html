@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | Selenium Fetch Strategy</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-  <link rel="stylesheet" href="assets/styles/main.css">
-  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -196,10 +197,11 @@
 
     <!-- 1. HEADER -->
     <header class="page-header">
-          <div class="breadcrumbs">Home / Tasks / Web Operations / Selenium</div>
+        <div class="breadcrumbs">Home / Tasks / Web Operations / Selenium</div>
         <h1>Selenium Fetch Strategy</h1>
         <p class="pitch">
-            High-fidelity web content extraction using headless Chrome. Designed for JavaScript-heavy applications where standard HTTP clients fail to render the DOM.
+            High-fidelity web content extraction using headless Chrome. Designed for JavaScript-heavy applications where
+            standard HTTP clients fail to render the DOM.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect: Safe</span>
@@ -229,7 +231,8 @@
         <div class="panel">
             <div class="panel-header"><span>👁️</span> Rendered Output</div>
             <div style="padding: 1rem;">
-                <div style="color: #4ade80; font-size: 0.85rem; margin-bottom: 0.5rem;">✔ DOM Fully Rendered (142kb)</div>
+                <div style="color: #4ade80; font-size: 0.85rem; margin-bottom: 0.5rem;">✔ DOM Fully Rendered (142kb)
+                </div>
                 <div style="background: #0d1117; border: 1px solid #30363d; padding: 0.5rem; font-family: monospace; font-size: 0.75rem; color: #8b949e;">
                     &lt;div id="root"&gt;<br>
                     &nbsp;&nbsp;&lt;nav class="sidebar"&gt;...&lt;/nav&gt;<br>
@@ -252,8 +255,8 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
-              <h2>Fetch Parameters</h2>
+        <div class="tab-pane active" id="tab-docs">
+            <h2>Fetch Parameters</h2>
             <table class="docs-table">
                 <thead>
                 <tr>
@@ -281,31 +284,40 @@
                 <tr>
                     <td><code>isSeleniumEnabled</code></td>
                     <td>Boolean</td>
-                    <td>Global toggle. If a fetch fails, this is automatically set to <code>false</code> to trigger fallback.</td>
+                    <td>Global toggle. If a fetch fails, this is automatically set to <code>false</code> to trigger
+                        fallback.
+                    </td>
                 </tr>
                 </tbody>
             </table>
 
-              <h2 style="margin-top: var(--space-8);">Resource Usage</h2>
-            <p><strong>Token Consumption:</strong> Low (Retrieval only). Output length depends on target DOM density.</p>
+            <h2 style="margin-top: var(--space-8);">Resource Usage</h2>
+            <p><strong>Token Consumption:</strong> Low (Retrieval only). Output length depends on target DOM density.
+            </p>
             <p><strong>Compute:</strong> High (Requires local Chrome/Chromium instance).</p>
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>Task Lifecycle</h3>
             <ol style="padding-left: 1.2rem;">
-                <li><strong>Initialization:</strong> Checks if <code>task.selenium</code> is null. If so, instantiates <code>Selenium2S3</code> with a fresh <code>chromeDriver</code>.</li>
+                <li><strong>Initialization:</strong> Checks if <code>task.selenium</code> is null. If so, instantiates
+                    <code>Selenium2S3</code> with a fresh <code>chromeDriver</code>.
+                </li>
                 <li><strong>Navigation:</strong> Commands the driver to navigate to the target <code>url</code>.</li>
                 <li><strong>Extraction:</strong> Retrieves the full page source via <code>getPageSource()</code>.</li>
-                <li><strong>Cleanup:</strong> Executes <code>quit()</code> on the driver in a <code>finally</code> block to ensure no zombie processes remain.</li>
-                <li><strong>Error Handling:</strong> If an exception occurs, <code>FetchConfig.isSeleniumEnabled</code> is disabled and the system retries using the next available strategy (e.g., HttpClient).</li>
+                <li><strong>Cleanup:</strong> Executes <code>quit()</code> on the driver in a <code>finally</code> block
+                    to ensure no zombie processes remain.
+                </li>
+                <li><strong>Error Handling:</strong> If an exception occurs, <code>FetchConfig.isSeleniumEnabled</code>
+                    is disabled and the system retries using the next available strategy (e.g., HttpClient).
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
-              <h2>Kotlin Implementation</h2>
+        <div class="tab-pane" id="tab-integration">
+            <h2>Kotlin Implementation</h2>
             <div class="panel">
                 <div class="panel-header">Selenium.kt</div>
                 <pre><code class="language-kotlin">
@@ -330,13 +342,13 @@ class Selenium : FetchMethodFactory {
 </main>
 
 <script>
-      function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-        document.getElementById('tab-' + tabId).classList.add('active');
-        event.currentTarget.classList.add('active');
-    }
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+  }
 </script>
 
 </body>

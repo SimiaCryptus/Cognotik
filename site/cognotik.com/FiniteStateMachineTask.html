@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | FiniteStateMachineTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
 
     <style>
@@ -234,25 +235,26 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-  <main class="page-container">
+<main class="page-container">
 
     <!-- 1. HEADER AREA -->
     <section class="task-header">
         <div class="breadcrumbs">Home > Tasks > Reasoning > FiniteStateMachineTask</div>
         <h1>FiniteStateMachineTask</h1>
-          <p class="task-pitch">
-            Model concepts using finite state machine analysis to identify states, map transitions, and validate system logic.
+        <p class="task-pitch">
+            Model concepts using finite state machine analysis to identify states, map transitions, and validate system
+            logic.
         </p>
-          <div class="task-badges">
-              <span class="badge badge-primary">Category: Reasoning</span>
-              <span class="badge badge-primary">Model: GPT-4 Preferred</span>
-              <span class="badge badge-warning">Output: Mermaid + Markdown</span>
+        <div class="task-badges">
+            <span class="badge badge-primary">Category: Reasoning</span>
+            <span class="badge badge-primary">Model: GPT-4 Preferred</span>
+            <span class="badge badge-warning">Output: Mermaid + Markdown</span>
         </div>
     </section>
 
     <!-- 2. REALITY CHECK (Visual Proof) -->
     <section class="reality-check">
-          <!-- Input: The Config -->
+        <!-- Input: The Config -->
         <div class="panel">
             <div class="panel-header"><span>⚙️</span> TaskConfig.json</div>
             <pre><code class="language-json">{
@@ -267,19 +269,19 @@
 
         <div class="flow-arrow">→</div>
 
-          <!-- Output: The Diagram -->
+        <!-- Output: The Diagram -->
         <div class="panel">
             <div class="panel-header"><span>👁️</span> Generated State Diagram</div>
             <div class="mock-ui-content">
                 <div class="mermaid">
                     stateDiagram-v2
-                        [*] --> Unauthenticated
-                        Unauthenticated --> Authenticating : login_attempt
-                        Authenticating --> Authenticated : success
-                        Authenticating --> Locked : max_retries_exceeded
-                        Authenticated --> [*] : logout
-                        Locked --> Unauthenticated : reset_timeout
-                        Authenticated --> Authenticating : session_expired
+                    [*] --> Unauthenticated
+                    Unauthenticated --> Authenticating : login_attempt
+                    Authenticating --> Authenticated : success
+                    Authenticating --> Locked : max_retries_exceeded
+                    Authenticated --> [*] : logout
+                    Locked --> Unauthenticated : reset_timeout
+                    Authenticated --> Authenticating : session_expired
                 </div>
                 <div style="margin-top: 1rem; font-size: 0.8rem; color: #4ade80; font-family: var(--font-mono);">
                     ✔ 5 States Identified<br>
@@ -293,23 +295,24 @@
     <section class="showcase-section">
         <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; margin-bottom: 1rem;">Live Results Showcase</h2>
         <p style="color: var(--text-dim); margin-bottom: 1.5rem;">
-            Explore actual artifacts generated by this task, including the full Markdown analysis and Mermaid source files.
+            Explore actual artifacts generated by this task, including the full Markdown analysis and Mermaid source
+            files.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
 
 
     <!-- 3. TABBED DETAILS -->
     <section class="task-details">
         <div class="tabs-nav">
-              <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
-              <button onclick="switchTab(event, 'process')">Config & Process</button>
-              <button onclick="switchTab(event, 'integration')">Integration</button>
+            <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
+            <button onclick="switchTab(event, 'process')">Config & Process</button>
+            <button onclick="switchTab(event, 'integration')">Integration</button>
         </div>
 
         <div class="tab-content">
             <!-- TAB 1: Documentation -->
-            <div id="tab-docs" class="tab-pane active">
+            <div class="tab-pane active" id="tab-docs">
                 <h3 style="font-family: 'Cinzel', serif;">Configuration Parameters</h3>
                 <table class="docs-table">
                     <thead>
@@ -348,7 +351,9 @@
                     <tr>
                         <td><code>validate_properties</code></td>
                         <td><code>Boolean</code></td>
-                        <td>Whether to validate state machine properties (determinism, completeness, reachability). Default: <code>true</code>.</td>
+                        <td>Whether to validate state machine properties (determinism, completeness, reachability).
+                            Default: <code>true</code>.
+                        </td>
                     </tr>
                     <tr>
                         <td><code>generate_test_scenarios</code></td>
@@ -365,40 +370,48 @@
             </div>
 
             <!-- TAB 2: Config & Process -->
-            <div id="tab-process" class="tab-pane">
+            <div class="tab-pane" id="tab-process">
                 <h3 style="font-family: 'Cinzel', serif;">Task Process Lifecycle</h3>
                 <ul style="list-style: none; padding: 0;">
                     <li style="margin-bottom: 1.5rem;">
-                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">1. State Identification:</strong>
-                        Analyzes the concept and reference files to define states, invariants, and entry/exit conditions.
+                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">1. State
+                            Identification:</strong>
+                        Analyzes the concept and reference files to define states, invariants, and entry/exit
+                        conditions.
                     </li>
                     <li style="margin-bottom: 1.5rem;">
-                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">2. Transition Mapping:</strong>
+                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">2. Transition
+                            Mapping:</strong>
                         Identifies events, guard conditions, and actions that move the system between states.
                     </li>
                     <li style="margin-bottom: 1.5rem;">
-                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">3. Diagram Generation:</strong>
+                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">3. Diagram
+                            Generation:</strong>
                         Produces a <code>stateDiagram-v2</code> Mermaid block for visual documentation.
                     </li>
                     <li style="margin-bottom: 1.5rem;">
-                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">4. Edge Case Analysis:</strong>
+                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">4. Edge Case
+                            Analysis:</strong>
                         (Optional) Detects invalid transitions, missing paths, and race conditions.
                     </li>
                     <li style="margin-bottom: 1.5rem;">
-                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">5. Formal Validation:</strong>
+                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">5. Formal
+                            Validation:</strong>
                         (Optional) Evaluates the FSM for determinism, completeness, reachability, and liveness.
                     </li>
                     <li style="margin-bottom: 1.5rem;">
-                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">6. Test Scenario Generation:</strong>
+                        <strong style="color: var(--accent-primary); font-family: var(--font-mono);">6. Test Scenario
+                            Generation:</strong>
                         (Optional) Creates "Happy Path" and "Error Path" sequences for QA validation.
                     </li>
                 </ul>
             </div>
 
             <!-- TAB 3: Integration -->
-            <div id="tab-integration" class="tab-pane">
+            <div class="tab-pane" id="tab-integration">
                 <h3 style="font-family: 'Cinzel', serif;">Direct Orchestration</h3>
-                <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">Use this when adding the task to a custom agentic workflow.</p>
+                <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">Use this when adding the task
+                    to a custom agentic workflow.</p>
                 <div class="panel">
                     <div class="panel-header">Kotlin</div>
                     <pre><code class="language-kotlin">val task = FiniteStateMachineTask(
@@ -412,7 +425,8 @@
 )</code></pre>
                 </div>
                 <h3 style="margin-top: 2rem; font-family: 'Cinzel', serif;">Embedded Execution (Headless)</h3>
-                <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">Invoke as a standalone tool using the <code>UnifiedHarness</code> for CI/CD or CLI tools.</p>
+                <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">Invoke as a standalone tool
+                    using the <code>UnifiedHarness</code> for CI/CD or CLI tools.</p>
                 <div class="panel">
                     <div class="panel-header">Embedded Example</div>
                     <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.TaskType
@@ -433,7 +447,8 @@ harness.runTask(
 
 
                 <h3 style="margin-top: 2rem; font-family: 'Cinzel', serif;">Prompt Segment</h3>
-                <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM context:</p>
+                <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM
+                    context:</p>
                 <div class="panel">
                     <pre><code>FiniteStateMachine - Model concepts using finite state machine analysis
   ** Specify the concept, system, or process to model

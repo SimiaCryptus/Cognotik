@@ -9,14 +9,15 @@ related: ../site/cognotik.com/assets/styles/main.css
 
 ### Core Principles
 
-| Principle | Description |
-|:----------|:------------|
-| **Utility First** | Developers trust density, code snippets, and concrete data. Avoid empty spaces and abstract visuals. |
-| **IDE-Native Aesthetic** | Dark mode, subtle borders, high information density. Think VS Code, Stripe Docs, or Linear. |
-| **No-Scroll Goal** | Critical information (What is it? How do I configure it? What does it look like?) must be visible above the fold. |
-| **Vaporware Antidote** | No abstract 3D spheres/cubes. Screenshots must be of the *actual* UI or terminal output. |
+| Principle                | Description                                                                                                       |
+|:-------------------------|:------------------------------------------------------------------------------------------------------------------|
+| **Utility First**        | Developers trust density, code snippets, and concrete data. Avoid empty spaces and abstract visuals.              |
+| **IDE-Native Aesthetic** | Dark mode, subtle borders, high information density. Think VS Code, Stripe Docs, or Linear.                       |
+| **No-Scroll Goal**       | Critical information (What is it? How do I configure it? What does it look like?) must be visible above the fold. |
+| **Vaporware Antidote**   | No abstract 3D spheres/cubes. Screenshots must be of the *actual* UI or terminal output.                          |
 
 ### Target Audience
+
 - **Primary:** Developers and Software Architects
 - **Secondary:** Technical Decision Makers, DevOps Engineers
 
@@ -151,14 +152,14 @@ related: ../site/cognotik.com/assets/styles/main.css
 
 ### Favicon Requirements
 
-| Asset | Size | Format | Purpose |
-|:------|:-----|:-------|:--------|
-| `favicon.svg` | Scalable | SVG | Modern browsers (preferred) |
-| `favicon-32x32.png` | 32×32 | PNG | Standard favicon |
-| `favicon-16x16.png` | 16×16 | PNG | Small favicon |
-| `apple-touch-icon.png` | 180×180 | PNG | iOS home screen |
-| `android-chrome-192x192.png` | 192×192 | PNG | Android home screen |
-| `android-chrome-512x512.png` | 512×512 | PNG | Android splash screen |
+| Asset                        | Size     | Format | Purpose                     |
+|:-----------------------------|:---------|:-------|:----------------------------|
+| `favicon.svg`                | Scalable | SVG    | Modern browsers (preferred) |
+| `favicon-32x32.png`          | 32×32    | PNG    | Standard favicon            |
+| `favicon-16x16.png`          | 16×16    | PNG    | Small favicon               |
+| `apple-touch-icon.png`       | 180×180  | PNG    | iOS home screen             |
+| `android-chrome-192x192.png` | 192×192  | PNG    | Android home screen         |
+| `android-chrome-512x512.png` | 512×512  | PNG    | Android splash screen       |
 
 ### Web Manifest (`/site.webmanifest`)
 
@@ -498,6 +499,7 @@ val config = OrchestrationConfig(
 **Purpose:** Convert visitors, explain value proposition
 
 **Sections:**
+
 1. Hero with tagline and primary CTA
 2. Feature grid (3-4 key capabilities)
 3. "Reality Check" demo (Input → Output visualization)
@@ -510,6 +512,7 @@ val config = OrchestrationConfig(
 **Purpose:** Technical documentation with proof of functionality
 
 **Sections:**
+
 1. Compact header with breadcrumbs and badges
 2. Reality Check (Config → Output split view)
 3. Tabbed interface (Docs, Config, Integration)
@@ -520,6 +523,7 @@ val config = OrchestrationConfig(
 **Purpose:** Reference material, API docs
 
 **Sections:**
+
 1. Sidebar navigation
 2. Content area with anchored headings
 3. On-page table of contents
@@ -530,6 +534,7 @@ val config = OrchestrationConfig(
 **Purpose:** Get users started quickly
 
 **Sections:**
+
 1. Platform selector (Windows/macOS/Linux)
 2. Download buttons with version info
 3. Installation instructions
@@ -542,13 +547,13 @@ val config = OrchestrationConfig(
 
 ### Requirements
 
-| Requirement | Implementation |
-|:------------|:---------------|
-| **Color Contrast** | Minimum 4.5:1 for body text, 3:1 for large text |
+| Requirement             | Implementation                                           |
+|:------------------------|:---------------------------------------------------------|
+| **Color Contrast**      | Minimum 4.5:1 for body text, 3:1 for large text          |
 | **Keyboard Navigation** | All interactive elements focusable, visible focus states |
-| **Screen Readers** | Semantic HTML, ARIA labels where needed |
-| **Motion** | Respect `prefers-reduced-motion` |
-| **Focus Indicators** | Visible, high-contrast focus rings |
+| **Screen Readers**      | Semantic HTML, ARIA labels where needed                  |
+| **Motion**              | Respect `prefers-reduced-motion`                         |
+| **Focus Indicators**    | Visible, high-contrast focus rings                       |
 
 ### Focus States
 
@@ -582,11 +587,11 @@ val config = OrchestrationConfig(
 
 ### Image Optimization
 
-| Format | Use Case |
-|:-------|:---------|
-| **SVG** | Icons, logos, diagrams |
+| Format   | Use Case                                |
+|:---------|:----------------------------------------|
+| **SVG**  | Icons, logos, diagrams                  |
 | **WebP** | Photos, screenshots (with PNG fallback) |
-| **PNG** | Screenshots requiring transparency |
+| **PNG**  | Screenshots requiring transparency      |
 
 ### Loading Strategy
 
@@ -608,13 +613,13 @@ val config = OrchestrationConfig(
 
 ### Performance Budget
 
-| Metric | Target |
-|:-------|:-------|
-| First Contentful Paint | < 1.5s |
-| Largest Contentful Paint | < 2.5s |
-| Total Blocking Time | < 200ms |
-| Cumulative Layout Shift | < 0.1 |
-| Total Page Weight | < 500KB (initial load) |
+| Metric                   | Target                 |
+|:-------------------------|:-----------------------|
+| First Contentful Paint   | < 1.5s                 |
+| Largest Contentful Paint | < 2.5s                 |
+| Total Blocking Time      | < 200ms                |
+| Cumulative Layout Shift  | < 0.1                  |
+| Total Page Weight        | < 500KB (initial load) |
 
 ---
 
@@ -663,29 +668,34 @@ val config = OrchestrationConfig(
 Before publishing any page, verify:
 
 ### Content
+
 - [ ] No placeholder text ("Lorem ipsum")
 - [ ] All links functional
 - [ ] Code examples tested and working
 - [ ] Screenshots current and accurate
 
 ### Technical
+
 - [ ] Valid HTML (W3C validator)
 - [ ] No console errors
 - [ ] Responsive at all breakpoints (320px - 1920px)
 - [ ] Print stylesheet (if applicable)
 
 ### Accessibility
+
 - [ ] Keyboard navigation works
 - [ ] Screen reader tested
 - [ ] Color contrast passes
 - [ ] Focus states visible
 
 ### Performance
+
 - [ ] Images optimized
 - [ ] No render-blocking resources
 - [ ] Lighthouse score > 90
 
 ### SEO
+
 - [ ] Meta tags complete
 - [ ] Structured data valid
 - [ ] Sitemap updated
@@ -698,13 +708,13 @@ Before publishing any page, verify:
 
 #### Container Classes
 
-| Class | Description | Usage |
-|:------|:------------|:------|
-| `.page-container` | Main content wrapper with max-width and padding | Wrap main page content |
-| `.task-container` | Task-specific container with min-height | Task/mode pages |
-| `.header-container` | Flexbox container for header elements | Inside `<header>` |
-| `.content-grid` | CSS Grid layout for content sections | Multi-column layouts |
-| `.sidebar-layout` | Two-column layout with sidebar | Documentation pages |
+| Class               | Description                                     | Usage                  |
+|:--------------------|:------------------------------------------------|:-----------------------|
+| `.page-container`   | Main content wrapper with max-width and padding | Wrap main page content |
+| `.task-container`   | Task-specific container with min-height         | Task/mode pages        |
+| `.header-container` | Flexbox container for header elements           | Inside `<header>`      |
+| `.content-grid`     | CSS Grid layout for content sections            | Multi-column layouts   |
+| `.sidebar-layout`   | Two-column layout with sidebar                  | Documentation pages    |
 
 ```css
 /* Container Classes */
@@ -742,18 +752,18 @@ Before publishing any page, verify:
 
 #### Flexbox Utilities
 
-| Class | Description |
-|:------|:------------|
-| `.flex` | `display: flex` |
-| `.flex-col` | `flex-direction: column` |
-| `.flex-wrap` | `flex-wrap: wrap` |
-| `.items-center` | `align-items: center` |
-| `.items-start` | `align-items: flex-start` |
-| `.items-end` | `align-items: flex-end` |
-| `.justify-center` | `justify-content: center` |
-| `.justify-between` | `justify-content: space-between` |
-| `.justify-end` | `justify-content: flex-end` |
-| `.gap-1` through `.gap-8` | Gap spacing using scale |
+| Class                     | Description                      |
+|:--------------------------|:---------------------------------|
+| `.flex`                   | `display: flex`                  |
+| `.flex-col`               | `flex-direction: column`         |
+| `.flex-wrap`              | `flex-wrap: wrap`                |
+| `.items-center`           | `align-items: center`            |
+| `.items-start`            | `align-items: flex-start`        |
+| `.items-end`              | `align-items: flex-end`          |
+| `.justify-center`         | `justify-content: center`        |
+| `.justify-between`        | `justify-content: space-between` |
+| `.justify-end`            | `justify-content: flex-end`      |
+| `.gap-1` through `.gap-8` | Gap spacing using scale          |
 
 ```css
 /* Flexbox Utilities */
@@ -781,17 +791,17 @@ Before publishing any page, verify:
 
 #### Heading Classes
 
-| Class | Size | Font | Usage |
-|:------|:-----|:-----|:------|
-| `.text-display` | 3rem | Cinzel | Hero headlines |
-| `.text-title` | 2.25rem | Cinzel | Page titles |
-| `.text-heading` | 1.875rem | Cinzel | Section headings |
-| `.text-subheading` | 1.5rem | Cinzel | Subsection headings |
-| `.text-body-lg` | 1.125rem | Inter | Lead paragraphs |
-| `.text-body` | 1rem | Inter | Body text |
-| `.text-body-sm` | 0.875rem | Inter | Secondary text |
-| `.text-caption` | 0.75rem | Inter | Captions, labels |
-| `.text-mono` | 0.9rem | JetBrains Mono | Code, technical |
+| Class              | Size     | Font           | Usage               |
+|:-------------------|:---------|:---------------|:--------------------|
+| `.text-display`    | 3rem     | Cinzel         | Hero headlines      |
+| `.text-title`      | 2.25rem  | Cinzel         | Page titles         |
+| `.text-heading`    | 1.875rem | Cinzel         | Section headings    |
+| `.text-subheading` | 1.5rem   | Cinzel         | Subsection headings |
+| `.text-body-lg`    | 1.125rem | Inter          | Lead paragraphs     |
+| `.text-body`       | 1rem     | Inter          | Body text           |
+| `.text-body-sm`    | 0.875rem | Inter          | Secondary text      |
+| `.text-caption`    | 0.75rem  | Inter          | Captions, labels    |
+| `.text-mono`       | 0.9rem   | JetBrains Mono | Code, technical     |
 
 ```css
 /* Typography Classes */
@@ -854,15 +864,15 @@ Before publishing any page, verify:
 
 #### Text Color Classes
 
-| Class | Color Variable | Usage |
-|:------|:---------------|:------|
-| `.text-primary` | `--text-primary` | Primary content |
-| `.text-secondary` | `--text-secondary` | Secondary content |
-| `.text-tertiary` | `--text-tertiary` | Muted content |
-| `.text-accent` | `--accent-primary` | Links, highlights |
-| `.text-success` | `--accent-secondary` | Success states |
-| `.text-warning` | `--accent-warning` | Warning states |
-| `.text-danger` | `--accent-danger` | Error states |
+| Class             | Color Variable       | Usage             |
+|:------------------|:---------------------|:------------------|
+| `.text-primary`   | `--text-primary`     | Primary content   |
+| `.text-secondary` | `--text-secondary`   | Secondary content |
+| `.text-tertiary`  | `--text-tertiary`    | Muted content     |
+| `.text-accent`    | `--accent-primary`   | Links, highlights |
+| `.text-success`   | `--accent-secondary` | Success states    |
+| `.text-warning`   | `--accent-warning`   | Warning states    |
+| `.text-danger`    | `--accent-danger`    | Error states      |
 
 ```css
 /* Text Color Classes */
@@ -877,19 +887,19 @@ Before publishing any page, verify:
 
 #### Text Alignment & Decoration
 
-| Class | Property |
-|:------|:---------|
-| `.text-left` | `text-align: left` |
-| `.text-center` | `text-align: center` |
-| `.text-right` | `text-align: right` |
-| `.font-normal` | `font-weight: 400` |
-| `.font-medium` | `font-weight: 500` |
-| `.font-semibold` | `font-weight: 600` |
-| `.font-bold` | `font-weight: 700` |
-| `.uppercase` | `text-transform: uppercase` |
-| `.capitalize` | `text-transform: capitalize` |
-| `.no-wrap` | `white-space: nowrap` |
-| `.truncate` | Ellipsis overflow |
+| Class            | Property                     |
+|:-----------------|:-----------------------------|
+| `.text-left`     | `text-align: left`           |
+| `.text-center`   | `text-align: center`         |
+| `.text-right`    | `text-align: right`          |
+| `.font-normal`   | `font-weight: 400`           |
+| `.font-medium`   | `font-weight: 500`           |
+| `.font-semibold` | `font-weight: 600`           |
+| `.font-bold`     | `font-weight: 700`           |
+| `.uppercase`     | `text-transform: uppercase`  |
+| `.capitalize`    | `text-transform: capitalize` |
+| `.no-wrap`       | `white-space: nowrap`        |
+| `.truncate`      | Ellipsis overflow            |
 
 ```css
 /* Text Utilities */
@@ -919,15 +929,15 @@ Before publishing any page, verify:
 
 #### Margin Classes
 
-| Pattern | Description | Example |
-|:--------|:------------|:--------|
-| `.m-{size}` | All sides | `.m-4` |
+| Pattern      | Description               | Example    |
+|:-------------|:--------------------------|:-----------|
+| `.m-{size}`  | All sides                 | `.m-4`     |
 | `.mx-{size}` | Horizontal (left + right) | `.mx-auto` |
-| `.my-{size}` | Vertical (top + bottom) | `.my-8` |
-| `.mt-{size}` | Top only | `.mt-4` |
-| `.mr-{size}` | Right only | `.mr-2` |
-| `.mb-{size}` | Bottom only | `.mb-6` |
-| `.ml-{size}` | Left only | `.ml-4` |
+| `.my-{size}` | Vertical (top + bottom)   | `.my-8`    |
+| `.mt-{size}` | Top only                  | `.mt-4`    |
+| `.mr-{size}` | Right only                | `.mr-2`    |
+| `.mb-{size}` | Bottom only               | `.mb-6`    |
+| `.ml-{size}` | Left only                 | `.ml-4`    |
 
 **Size Scale:** `0`, `1`, `2`, `3`, `4`, `6`, `8`, `12`, `16`, `auto`
 
@@ -961,15 +971,15 @@ Before publishing any page, verify:
 
 #### Padding Classes
 
-| Pattern | Description | Example |
-|:--------|:------------|:--------|
-| `.p-{size}` | All sides | `.p-4` |
-| `.px-{size}` | Horizontal | `.px-6` |
-| `.py-{size}` | Vertical | `.py-8` |
-| `.pt-{size}` | Top only | `.pt-4` |
-| `.pr-{size}` | Right only | `.pr-2` |
+| Pattern      | Description | Example |
+|:-------------|:------------|:--------|
+| `.p-{size}`  | All sides   | `.p-4`  |
+| `.px-{size}` | Horizontal  | `.px-6` |
+| `.py-{size}` | Vertical    | `.py-8` |
+| `.pt-{size}` | Top only    | `.pt-4` |
+| `.pr-{size}` | Right only  | `.pr-2` |
 | `.pb-{size}` | Bottom only | `.pb-6` |
-| `.pl-{size}` | Left only | `.pl-4` |
+| `.pl-{size}` | Left only   | `.pl-4` |
 
 ```css
 /* Padding Classes */
@@ -999,17 +1009,17 @@ Before publishing any page, verify:
 
 #### Button Classes
 
-| Class | Description | Visual |
-|:------|:------------|:-------|
-| `.btn` | Base button styles | Required base class |
-| `.btn-primary` | Primary action button | Blue background |
-| `.btn-secondary` | Secondary action | Outlined style |
-| `.btn-ghost` | Minimal button | Transparent background |
-| `.btn-danger` | Destructive action | Red styling |
-| `.btn-sm` | Small size | Reduced padding |
-| `.btn-lg` | Large size | Increased padding |
-| `.btn-icon` | Icon-only button | Square, centered |
-| `.btn-block` | Full width | `width: 100%` |
+| Class            | Description           | Visual                 |
+|:-----------------|:----------------------|:-----------------------|
+| `.btn`           | Base button styles    | Required base class    |
+| `.btn-primary`   | Primary action button | Blue background        |
+| `.btn-secondary` | Secondary action      | Outlined style         |
+| `.btn-ghost`     | Minimal button        | Transparent background |
+| `.btn-danger`    | Destructive action    | Red styling            |
+| `.btn-sm`        | Small size            | Reduced padding        |
+| `.btn-lg`        | Large size            | Increased padding      |
+| `.btn-icon`      | Icon-only button      | Square, centered       |
+| `.btn-block`     | Full width            | `width: 100%`          |
 
 ```css
 /* Button Base */
@@ -1103,14 +1113,14 @@ Before publishing any page, verify:
 
 #### Card Classes
 
-| Class | Description |
-|:------|:------------|
-| `.card` | Base card container |
-| `.card-header` | Card header section |
-| `.card-body` | Card content area |
-| `.card-footer` | Card footer section |
-| `.card-hover` | Adds hover effect |
-| `.card-bordered` | Adds visible border |
+| Class            | Description           |
+|:-----------------|:----------------------|
+| `.card`          | Base card container   |
+| `.card-header`   | Card header section   |
+| `.card-body`     | Card content area     |
+| `.card-footer`   | Card footer section   |
+| `.card-hover`    | Adds hover effect     |
+| `.card-bordered` | Adds visible border   |
 | `.card-elevated` | Adds shadow elevation |
 
 ```css
@@ -1157,14 +1167,14 @@ Before publishing any page, verify:
 
 #### Panel Classes
 
-| Class | Description |
-|:------|:------------|
-| `.panel` | Base panel container |
-| `.panel-header` | Panel header with icon/title |
-| `.panel-body` | Panel content area |
-| `.panel-footer` | Panel footer section |
-| `.panel-collapsible` | Collapsible panel |
-| `.panel-collapsed` | Collapsed state |
+| Class                | Description                  |
+|:---------------------|:-----------------------------|
+| `.panel`             | Base panel container         |
+| `.panel-header`      | Panel header with icon/title |
+| `.panel-body`        | Panel content area           |
+| `.panel-footer`      | Panel footer section         |
+| `.panel-collapsible` | Collapsible panel            |
+| `.panel-collapsed`   | Collapsed state              |
 
 ```css
 /* Panel Classes */
@@ -1230,18 +1240,18 @@ Before publishing any page, verify:
 
 #### Form Classes
 
-| Class | Description |
-|:------|:------------|
-| `.form-group` | Form field wrapper |
-| `.form-label` | Field label |
-| `.form-input` | Text input styling |
-| `.form-select` | Select dropdown |
-| `.form-textarea` | Textarea styling |
-| `.form-checkbox` | Checkbox wrapper |
-| `.form-radio` | Radio button wrapper |
-| `.form-hint` | Help text below field |
-| `.form-error` | Error message |
-| `.input-error` | Error state for inputs |
+| Class            | Description            |
+|:-----------------|:-----------------------|
+| `.form-group`    | Form field wrapper     |
+| `.form-label`    | Field label            |
+| `.form-input`    | Text input styling     |
+| `.form-select`   | Select dropdown        |
+| `.form-textarea` | Textarea styling       |
+| `.form-checkbox` | Checkbox wrapper       |
+| `.form-radio`    | Radio button wrapper   |
+| `.form-hint`     | Help text below field  |
+| `.form-error`    | Error message          |
+| `.input-error`   | Error state for inputs |
 
 ```css
 /* Form Classes */
@@ -1331,14 +1341,14 @@ Before publishing any page, verify:
 
 ### Code Block Classes
 
-| Class | Description |
-|:------|:------------|
-| `.code-block` | Code block container |
-| `.code-header` | Header with language/copy button |
-| `.code-lang` | Language label |
-| `.copy-btn` | Copy to clipboard button |
-| `.code-inline` | Inline code styling |
-| `.code-highlight` | Highlighted line |
+| Class             | Description                      |
+|:------------------|:---------------------------------|
+| `.code-block`     | Code block container             |
+| `.code-header`    | Header with language/copy button |
+| `.code-lang`      | Language label                   |
+| `.copy-btn`       | Copy to clipboard button         |
+| `.code-inline`    | Inline code styling              |
+| `.code-highlight` | Highlighted line                 |
 
 ```css
 /* Code Block Classes */
@@ -1429,15 +1439,15 @@ Before publishing any page, verify:
 
 ### Tab Classes
 
-| Class | Description |
-|:------|:------------|
-| `.tabs` | Tab container |
-| `.tabs-nav` | Tab navigation wrapper |
-| `.tab-btn` | Individual tab button |
-| `.tab-btn.active` | Active tab state |
-| `.tabs-content` | Content panels wrapper |
-| `.tab-panel` | Individual content panel |
-| `.tab-panel.active` | Visible panel |
+| Class               | Description              |
+|:--------------------|:-------------------------|
+| `.tabs`             | Tab container            |
+| `.tabs-nav`         | Tab navigation wrapper   |
+| `.tab-btn`          | Individual tab button    |
+| `.tab-btn.active`   | Active tab state         |
+| `.tabs-content`     | Content panels wrapper   |
+| `.tab-panel`        | Individual content panel |
+| `.tab-panel.active` | Visible panel            |
 
 ```css
 /* Tab Classes */
@@ -1503,16 +1513,16 @@ Before publishing any page, verify:
 
 ### Badge & Tag Classes
 
-| Class | Description |
-|:------|:------------|
-| `.badge` | Base badge styling |
-| `.badge-primary` | Primary/info badge |
+| Class            | Description          |
+|:-----------------|:---------------------|
+| `.badge`         | Base badge styling   |
+| `.badge-primary` | Primary/info badge   |
 | `.badge-success` | Success/stable badge |
-| `.badge-warning` | Warning/beta badge |
-| `.badge-danger` | Danger/error badge |
-| `.badge-purple` | Purple accent badge |
-| `.tag` | Removable tag |
-| `.tag-group` | Group of tags |
+| `.badge-warning` | Warning/beta badge   |
+| `.badge-danger`  | Danger/error badge   |
+| `.badge-purple`  | Purple accent badge  |
+| `.tag`           | Removable tag        |
+| `.tag-group`     | Group of tags        |
 
 ```css
 /* Badge Classes */
@@ -1595,23 +1605,23 @@ Before publishing any page, verify:
 
 #### Display Classes
 
-| Class | Property |
-|:------|:---------|
-| `.hidden` | `display: none` |
-| `.block` | `display: block` |
-| `.inline` | `display: inline` |
+| Class           | Property                |
+|:----------------|:------------------------|
+| `.hidden`       | `display: none`         |
+| `.block`        | `display: block`        |
+| `.inline`       | `display: inline`       |
 | `.inline-block` | `display: inline-block` |
-| `.flex` | `display: flex` |
-| `.inline-flex` | `display: inline-flex` |
-| `.grid` | `display: grid` |
+| `.flex`         | `display: flex`         |
+| `.inline-flex`  | `display: inline-flex`  |
+| `.grid`         | `display: grid`         |
 
 #### Visibility Classes
 
-| Class | Description |
-|:------|:------------|
-| `.visible` | `visibility: visible` |
-| `.invisible` | `visibility: hidden` |
-| `.sr-only` | Screen reader only |
+| Class        | Description           |
+|:-------------|:----------------------|
+| `.visible`   | `visibility: visible` |
+| `.invisible` | `visibility: hidden`  |
+| `.sr-only`   | Screen reader only    |
 
 ```css
 /* Display Utilities */
@@ -1642,17 +1652,17 @@ Before publishing any page, verify:
 
 #### Position Classes
 
-| Class | Property |
-|:------|:---------|
+| Class       | Property             |
+|:------------|:---------------------|
 | `.relative` | `position: relative` |
 | `.absolute` | `position: absolute` |
-| `.fixed` | `position: fixed` |
-| `.sticky` | `position: sticky` |
-| `.inset-0` | All sides 0 |
-| `.top-0` | `top: 0` |
-| `.right-0` | `right: 0` |
-| `.bottom-0` | `bottom: 0` |
-| `.left-0` | `left: 0` |
+| `.fixed`    | `position: fixed`    |
+| `.sticky`   | `position: sticky`   |
+| `.inset-0`  | All sides 0          |
+| `.top-0`    | `top: 0`             |
+| `.right-0`  | `right: 0`           |
+| `.bottom-0` | `bottom: 0`          |
+| `.left-0`   | `left: 0`            |
 
 ```css
 /* Position Utilities */
@@ -1670,19 +1680,19 @@ Before publishing any page, verify:
 
 #### Border Classes
 
-| Class | Description |
-|:------|:------------|
-| `.border` | Default border |
-| `.border-0` | No border |
-| `.border-t` | Top border only |
-| `.border-r` | Right border only |
-| `.border-b` | Bottom border only |
-| `.border-l` | Left border only |
-| `.rounded` | Default radius |
-| `.rounded-sm` | Small radius |
-| `.rounded-lg` | Large radius |
-| `.rounded-full` | Fully rounded |
-| `.rounded-none` | No radius |
+| Class           | Description        |
+|:----------------|:-------------------|
+| `.border`       | Default border     |
+| `.border-0`     | No border          |
+| `.border-t`     | Top border only    |
+| `.border-r`     | Right border only  |
+| `.border-b`     | Bottom border only |
+| `.border-l`     | Left border only   |
+| `.rounded`      | Default radius     |
+| `.rounded-sm`   | Small radius       |
+| `.rounded-lg`   | Large radius       |
+| `.rounded-full` | Fully rounded      |
+| `.rounded-none` | No radius          |
 
 ```css
 /* Border Utilities */
@@ -1707,16 +1717,16 @@ Before publishing any page, verify:
 
 #### Background Classes
 
-| Class | Color |
-|:------|:------|
-| `.bg-app` | `--bg-app` |
-| `.bg-panel` | `--bg-panel` |
-| `.bg-elevated` | `--bg-elevated` |
-| `.bg-hover` | `--bg-hover` |
-| `.bg-accent` | `--accent-primary` |
-| `.bg-success` | `--accent-secondary` |
-| `.bg-warning` | `--accent-warning` |
-| `.bg-danger` | `--accent-danger` |
+| Class          | Color                |
+|:---------------|:---------------------|
+| `.bg-app`      | `--bg-app`           |
+| `.bg-panel`    | `--bg-panel`         |
+| `.bg-elevated` | `--bg-elevated`      |
+| `.bg-hover`    | `--bg-hover`         |
+| `.bg-accent`   | `--accent-primary`   |
+| `.bg-success`  | `--accent-secondary` |
+| `.bg-warning`  | `--accent-warning`   |
+| `.bg-danger`   | `--accent-danger`    |
 
 ```css
 /* Background Utilities */
@@ -1734,13 +1744,13 @@ Before publishing any page, verify:
 
 #### Shadow Classes
 
-| Class | Shadow |
-|:------|:-------|
-| `.shadow-none` | No shadow |
-| `.shadow-sm` | Small shadow |
-| `.shadow` | Default shadow |
-| `.shadow-md` | Medium shadow |
-| `.shadow-lg` | Large shadow |
+| Class          | Shadow         |
+|:---------------|:---------------|
+| `.shadow-none` | No shadow      |
+| `.shadow-sm`   | Small shadow   |
+| `.shadow`      | Default shadow |
+| `.shadow-md`   | Medium shadow  |
+| `.shadow-lg`   | Large shadow   |
 
 ```css
 /* Shadow Utilities */
@@ -1753,14 +1763,14 @@ Before publishing any page, verify:
 
 #### Overflow Classes
 
-| Class | Property |
-|:------|:---------|
-| `.overflow-auto` | `overflow: auto` |
-| `.overflow-hidden` | `overflow: hidden` |
+| Class               | Property            |
+|:--------------------|:--------------------|
+| `.overflow-auto`    | `overflow: auto`    |
+| `.overflow-hidden`  | `overflow: hidden`  |
 | `.overflow-visible` | `overflow: visible` |
-| `.overflow-scroll` | `overflow: scroll` |
-| `.overflow-x-auto` | `overflow-x: auto` |
-| `.overflow-y-auto` | `overflow-y: auto` |
+| `.overflow-scroll`  | `overflow: scroll`  |
+| `.overflow-x-auto`  | `overflow-x: auto`  |
+| `.overflow-y-auto`  | `overflow-y: auto`  |
 
 ```css
 /* Overflow Utilities */
@@ -1778,13 +1788,13 @@ Before publishing any page, verify:
 
 #### Breakpoints
 
-| Breakpoint | Min Width | Prefix |
-|:-----------|:----------|:-------|
-| Mobile | 0px | (default) |
-| Tablet | 640px | `sm:` |
-| Laptop | 768px | `md:` |
-| Desktop | 1024px | `lg:` |
-| Wide | 1280px | `xl:` |
+| Breakpoint | Min Width | Prefix    |
+|:-----------|:----------|:----------|
+| Mobile     | 0px       | (default) |
+| Tablet     | 640px     | `sm:`     |
+| Laptop     | 768px     | `md:`     |
+| Desktop    | 1024px    | `lg:`     |
+| Wide       | 1280px    | `xl:`     |
 
 ```css
 /* Responsive Display */
@@ -1822,16 +1832,16 @@ Before publishing any page, verify:
 
 ### Animation Classes
 
-| Class | Description |
-|:------|:------------|
-| `.animate-fade-in` | Fade in animation |
-| `.animate-slide-up` | Slide up animation |
+| Class                 | Description          |
+|:----------------------|:---------------------|
+| `.animate-fade-in`    | Fade in animation    |
+| `.animate-slide-up`   | Slide up animation   |
 | `.animate-slide-down` | Slide down animation |
-| `.animate-spin` | Continuous rotation |
-| `.animate-pulse` | Pulsing opacity |
-| `.transition` | Default transition |
-| `.transition-fast` | Fast transition |
-| `.transition-slow` | Slow transition |
+| `.animate-spin`       | Continuous rotation  |
+| `.animate-pulse`      | Pulsing opacity      |
+| `.transition`         | Default transition   |
+| `.transition-fast`    | Fast transition      |
+| `.transition-slow`    | Slow transition      |
 
 ```css
 /* Animation Classes */
@@ -1876,13 +1886,13 @@ Before publishing any page, verify:
 
 ### Hero Section Classes
 
-| Class | Description |
-|:------|:------------|
-| `.hero` | Hero section container |
-| `.hero-content` | Hero content wrapper |
-| `.hero-title` | Main hero headline |
-| `.hero-subtitle` | Hero description text |
-| `.hero-actions` | CTA button group |
+| Class            | Description                 |
+|:-----------------|:----------------------------|
+| `.hero`          | Hero section container      |
+| `.hero-content`  | Hero content wrapper        |
+| `.hero-title`    | Main hero headline          |
+| `.hero-subtitle` | Hero description text       |
+| `.hero-actions`  | CTA button group            |
 | `.hero-gradient` | Gradient background variant |
 
 ```css
@@ -1944,14 +1954,14 @@ Before publishing any page, verify:
 
 ### Feature Grid Classes
 
-| Class | Description |
-|:------|:------------|
-| `.features` | Features section container |
-| `.features-grid` | Grid layout for feature cards |
-| `.feature-card` | Individual feature card |
-| `.feature-icon` | Feature icon container |
-| `.feature-title` | Feature card title |
-| `.feature-description` | Feature card description |
+| Class                  | Description                   |
+|:-----------------------|:------------------------------|
+| `.features`            | Features section container    |
+| `.features-grid`       | Grid layout for feature cards |
+| `.feature-card`        | Individual feature card       |
+| `.feature-icon`        | Feature icon container        |
+| `.feature-title`       | Feature card title            |
+| `.feature-description` | Feature card description      |
 
 ```css
 /* Feature Grid Classes */
@@ -2014,12 +2024,12 @@ Before publishing any page, verify:
 
 ### Branch Strategy
 
-| Branch | Purpose |
-|:-------|:--------|
-| `main` | Production-ready code |
-| `develop` | Integration branch |
-| `feature/*` | New features |
-| `hotfix/*` | Production fixes |
+| Branch      | Purpose               |
+|:------------|:----------------------|
+| `main`      | Production-ready code |
+| `develop`   | Integration branch    |
+| `feature/*` | New features          |
+| `hotfix/*`  | Production fixes      |
 
 ### Commit Message Format
 
@@ -2034,6 +2044,7 @@ type(scope): description
 **Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
 
 **Example:**
+
 ```
 feat(task-page): add live file tree showcase component
 

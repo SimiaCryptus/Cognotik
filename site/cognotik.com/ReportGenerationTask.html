@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | ReportGenerationTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Workspace Browser -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-  <script type="module" src="assets/scripts/components/footer.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/footer.js" type="module"></script>
 
     <style>
         :root {
@@ -234,16 +235,17 @@
         <div class="breadcrumbs">Home > Tasks > Writing > ReportGenerationTask</div>
         <h1>ReportGenerationTask</h1>
         <p class="pitch">
-            An industrial-grade multi-phase engine for generating comprehensive business reports. Analyzes raw data, structures narratives, assesses risks, and provides actionable strategic recommendations.
+            An industrial-grade multi-phase engine for generating comprehensive business reports. Analyzes raw data,
+            structures narratives, assesses risks, and provides actionable strategic recommendations.
         </p>
         <div class="badges">
-              <span class="badge">Category: Writing</span>
-              <span class="badge">Side-Effect Safe</span>
-              <span class="badge">Multi-Phase Execution</span>
+            <span class="badge">Category: Writing</span>
+            <span class="badge">Side-Effect Safe</span>
+            <span class="badge">Multi-Phase Execution</span>
         </div>
     </header>
 
-      <!-- 2. REALITY CHECK SECTION -->
+    <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -273,7 +275,7 @@
 
         <div class="flow-arrow">→</div>
 
-          <!-- Output UI -->
+        <!-- Output UI -->
         <div class="panel">
             <div class="panel-header"><span>👁️</span> Session UI Output</div>
             <div class="mock-tabs">
@@ -282,12 +284,12 @@
                 <div class="mock-tab">Outline</div>
                 <div class="mock-tab">Recommendations</div>
             </div>
-              <div class="mock-ui-content">
-                          <h3 style="margin-top: 0;">Report Generation</h3>
+            <div class="mock-ui-content">
+                <h3 style="margin-top: 0;">Report Generation</h3>
                 <p><strong>Topic:</strong> Q3 Cloud Infrastructure Costs</p>
-                
-                  <div style="border-left: 2px solid var(--accent-primary); padding-left: var(--space-4); margin: var(--space-4) 0;">
-                      <div style="font-size: 0.8rem; color: var(--text-secondary);">PHASE 1: DATA ANALYSIS</div>
+
+                <div style="border-left: 2px solid var(--accent-primary); padding-left: var(--space-4); margin: var(--space-4) 0;">
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">PHASE 1: DATA ANALYSIS</div>
                     <div style="color: #4ade80;">✅ Complete: 3 metrics analyzed</div>
                 </div>
 
@@ -297,12 +299,12 @@
                 </div>
 
                 <div style="border-left: 2px solid #30363d; padding-left: 1rem; margin: 1rem 0;">
-                      <div style="font-size: 0.8rem; color: var(--text-secondary);">PHASE 3: CONTENT GENERATION</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">PHASE 3: CONTENT GENERATION</div>
                     <div>⏳ Writing Section 3: Cost Optimization Patterns...</div>
                 </div>
 
                 <div style="margin-top: 2rem; padding: 0.5rem; background: #0d1117; border: 1px solid var(--border-subtle); text-align: center; font-size: 0.8rem;">
-                      <span style="color: var(--text-secondary);">Generating: 850 / 1500 words</span>
+                    <span style="color: var(--text-secondary);">Generating: 850 / 1500 words</span>
                 </div>
             </div>
         </div>
@@ -313,7 +315,7 @@
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Explore actual artifacts and reports generated by this task in the test workspace.
         </p>
-          <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: var(--space-4);"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: var(--space-4);"></div>
     </section>
 
 
@@ -326,7 +328,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Configuration Parameters</h3>
             <table class="docs-table">
                 <thead>
@@ -345,12 +347,16 @@
                 <tr>
                     <td><code>report_type</code></td>
                     <td>String</td>
-                          <td>Type of report (e.g., <code>status_update</code>, <code>quarterly_review</code>, <code>incident_report</code>, <code>performance_analysis</code>).</td>
+                    <td>Type of report (e.g., <code>status_update</code>, <code>quarterly_review</code>, <code>incident_report</code>,
+                        <code>performance_analysis</code>).
+                    </td>
                 </tr>
                 <tr>
                     <td><code>target_audience</code></td>
                     <td>String</td>
-                          <td>Target audience (e.g., <code>executives</code>, <code>stakeholders</code>, <code>team_members</code>).</td>
+                    <td>Target audience (e.g., <code>executives</code>, <code>stakeholders</code>,
+                        <code>team_members</code>).
+                    </td>
                 </tr>
                 <tr>
                     <td><code>time_period</code></td>
@@ -395,12 +401,14 @@
                 <tr>
                     <td><code>include_risk_assessment</code></td>
                     <td>Boolean</td>
-                          <td>Include risk and mitigation section. Default: <code>true</code>.</td>
+                    <td>Include risk and mitigation section. Default: <code>true</code>.</td>
                 </tr>
                 <tr>
                     <td><code>tone</code></td>
                     <td>String</td>
-                          <td>Tone (e.g., <code>formal</code>, <code>analytical</code>, <code>professional</code>). Default: <code>professional</code>.</td>
+                    <td>Tone (e.g., <code>formal</code>, <code>analytical</code>, <code>professional</code>). Default:
+                        <code>professional</code>.
+                    </td>
                 </tr>
                 <tr>
                     <td><code>target_word_count</code></td>
@@ -420,49 +428,56 @@
                 <tr>
                     <td><code>input_files</code></td>
                     <td>List&lt;String&gt;</td>
-                          <td>Glob patterns for source data (e.g., <code>**/*.json</code>).</td>
+                    <td>Glob patterns for source data (e.g., <code>**/*.json</code>).</td>
                 </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>The Industrial Generation Lifecycle</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
                 <div class="panel" style="height: auto; padding: 1rem;">
                     <h4 style="color: var(--accent-primary); margin-top: 0;">1. Data Analysis</h4>
-                    <p style="font-size: 0.85rem; color: var(--text-dim);">Analyzes provided metrics and data points, determining trends (increasing/decreasing) and significance levels.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Analyzes provided metrics and data points,
+                        determining trends (increasing/decreasing) and significance levels.</p>
                 </div>
                 <div class="panel" style="height: auto; padding: 1rem;">
                     <h4 style="color: var(--accent-primary); margin-top: 0;">2. Outline Creation</h4>
-                    <p style="font-size: 0.85rem; color: var(--text-dim);">Structures the report into logical sections based on the topic and audience requirements.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Structures the report into logical sections
+                        based on the topic and audience requirements.</p>
                 </div>
                 <div class="panel" style="height: auto; padding: 1rem;">
                     <h4 style="color: var(--accent-primary); margin-top: 0;">3. Content Generation</h4>
-                    <p style="font-size: 0.85rem; color: var(--text-dim);">Iteratively writes each section, maintaining context from previous chapters to ensure narrative flow.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Iteratively writes each section, maintaining
+                        context from previous chapters to ensure narrative flow.</p>
                 </div>
                 <div class="panel" style="height: auto; padding: 1rem;">
                     <h4 style="color: var(--accent-primary); margin-top: 0;">4. Strategic Recommendations</h4>
-                    <p style="font-size: 0.85rem; color: var(--text-dim);">Synthesizes findings into prioritized, actionable steps with rationale and impact estimates.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Synthesizes findings into prioritized,
+                        actionable steps with rationale and impact estimates.</p>
                 </div>
                 <div class="panel" style="height: auto; padding: 1rem;">
                     <h4 style="color: var(--accent-primary); margin-top: 0;">5. Risk Assessment</h4>
-                    <p style="font-size: 0.85rem; color: var(--text-dim);">Identifies operational, financial, or technical risks and proposes mitigation strategies.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Identifies operational, financial, or
+                        technical risks and proposes mitigation strategies.</p>
                 </div>
                 <div class="panel" style="height: auto; padding: 1rem;">
                     <h4 style="color: var(--accent-primary); margin-top: 0;">6. Revision & Polish</h4>
-                    <p style="font-size: 0.85rem; color: var(--text-dim);">Performs editorial passes to ensure tone consistency and professional formatting.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Performs editorial passes to ensure tone
+                        consistency and professional formatting.</p>
                 </div>
                 <div class="panel" style="height: auto; padding: 1rem;">
                     <h4 style="color: var(--accent-primary); margin-top: 0;">7. Final Assembly</h4>
-                    <p style="font-size: 0.85rem; color: var(--text-dim);">Compiles all sections, adds metadata, and generates the final Markdown artifact with download links.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Compiles all sections, adds metadata, and
+                        generates the final Markdown artifact with download links.</p>
                 </div>
             </div>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Direct Instantiation</h3>
             <pre><code class="language-kotlin">
 val reportTask = ReportGenerationTask(
@@ -478,7 +493,8 @@ val reportTask = ReportGenerationTask(
 )
             </code></pre>
             <h3 style="margin-top: 2rem;">Embedded Execution (Headless)</h3>
-            <p style="font-size: 0.9rem; color: var(--text-dim);">Use the <code>UnifiedHarness</code> to run this task as part of an automated pipeline.</p>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">Use the <code>UnifiedHarness</code> to run this task
+                as part of an automated pipeline.</p>
             <pre><code class="language-kotlin">
 import com.simiacryptus.cognotik.plan.tools.writing.ReportGenerationTask
 import com.simiacryptus.cognotik.plan.tools.writing.ReportGenerationTask.ReportGenerationTaskExecutionConfigData
@@ -513,9 +529,10 @@ harness.runTask(
 // 3. Actionable patching recommendations
 // 4. Final report saved to: webui/workspaces/ReportGenerationTask/reports/report_*.md</code></pre>
             </code></pre>
-            
+
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
-            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM context when this task is active:</p>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM context
+                when this task is active:</p>
             <pre><code class="language-text">
 ReportGeneration - Generate comprehensive business reports with data analysis and recommendations
   ** Specify the report topic and type (status update, quarterly review, incident report, etc.)
@@ -540,8 +557,8 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
     }
 </script>
 <script type="module">
-      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
-    initFileTree('#file-tree-demo', 'webui/workspaces/ReportGeneration/');
+    import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
+  initFileTree('#file-tree-demo', 'webui/workspaces/ReportGeneration/');
 </script>
 
 </body>

@@ -93,6 +93,7 @@ function setupAppCards() {
     const docopsApps = [
         {id: 'app-health-improvement', path: '/health-improvement/fileIndex'},
         {id: 'app-puppy-finder', path: '/puppy-finder/fileIndex'},
+        {id: 'app-vacation-planner', path: '/vacation-planner/fileIndex'},
         {id: 'app-webapp-factory', path: '/webapp-factory/fileIndex'},
         {id: 'app-sys-wizard', path: '/sys-wizard/fileIndex'},
         {id: 'app-comic-serial', path: '/comic-serial/fileIndex'},

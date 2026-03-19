@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | TemporalReasoningTask - Timeline Analysis</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
 
-  <link rel="stylesheet" href="assets/styles/main.css">
-  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -203,7 +204,8 @@
         <div class="breadcrumbs">Home > Tasks > Reasoning > TemporalReasoningTask</div>
         <h1>TemporalReasoningTask</h1>
         <p class="pitch">
-            Analyze system evolution, identify recurring patterns, and predict future states using multi-dimensional timeline analysis and Mermaid visualization.
+            Analyze system evolution, identify recurring patterns, and predict future states using multi-dimensional
+            timeline analysis and Mermaid visualization.
         </p>
         <div class="badges">
             <span class="badge">Category: Reasoning</span>
@@ -212,7 +214,7 @@
         </div>
     </header>
 
-  <!-- 2. REALITY CHECK SECTION -->
+    <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -265,7 +267,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Configuration Parameters</h3>
             <table class="docs-table">
                 <thead>
@@ -331,25 +333,32 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>Task Lifecycle</h3>
             <ol>
-                <li><strong>Data Gathering:</strong> Scans <code>input_files</code> and <code>related_files</code> using glob patterns to build a temporal context window.</li>
-                <li><strong>Timeline Construction:</strong> LLM identifies significant events, timestamps, and metrics from the gathered data.</li>
+                <li><strong>Data Gathering:</strong> Scans <code>input_files</code> and <code>related_files</code> using
+                    glob patterns to build a temporal context window.
+                </li>
+                <li><strong>Timeline Construction:</strong> LLM identifies significant events, timestamps, and metrics
+                    from the gathered data.
+                </li>
                 <li><strong>Multi-Dimensional Analysis:</strong> (Parallelized via Tabbed UI)
                     <ul>
                         <li><strong>Patterns:</strong> Identifies recurring cycles and seasonal trends.</li>
-                        <li><strong>Rate of Change:</strong> Calculates velocity and acceleration of system evolution.</li>
+                        <li><strong>Rate of Change:</strong> Calculates velocity and acceleration of system evolution.
+                        </li>
                         <li><strong>Transitions:</strong> Pinpoints critical inflection points and triggers.</li>
                         <li><strong>Predictions:</strong> Extrapolates trends based on historical patterns.</li>
                     </ul>
                 </li>
-                <li><strong>Visualization:</strong> Generates a <code>mermaid</code> timeline diagram for visual representation.</li>
+                <li><strong>Visualization:</strong> Generates a <code>mermaid</code> timeline diagram for visual
+                    representation.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Kotlin Boilerplate</h3>
             <pre><code class="language-kotlin">val task = TemporalReasoningTask(
     orchestrationConfig = config,
@@ -368,19 +377,19 @@
 - granularity: daily, weekly, monthly, quarterly, yearly.
 - identify_patterns: (Boolean) Find cycles/trends.
 - predict_future: (Boolean) Extrapolate trends.</code></pre>
-- analyze_rate_of_change: (Boolean) Velocity analysis.
-- identify_transitions: (Boolean) Find inflection points.</code></pre>
+            - analyze_rate_of_change: (Boolean) Velocity analysis.
+            - identify_transitions: (Boolean) Find inflection points.</code></pre>
         </div>
     </section>
 </main>
 
 <script>
-  function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabId).style.display = 'block';
-        event.currentTarget.classList.add('active');
-    }
+    function switchTab(event, tabId) {
+          document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+          document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+          document.getElementById('tab-' + tabId).style.display = 'block';
+          event.currentTarget.classList.add('active');
+      }
 </script>
 
 </body>

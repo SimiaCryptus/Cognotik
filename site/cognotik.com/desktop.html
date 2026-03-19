@@ -29,13 +29,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code, Cinzel for Headers -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
     <!-- Icons: FontAwesome CDN for UI icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 </head>
 <body>
 <main>
@@ -47,10 +48,12 @@
                     <h1>Cognotik Desktop</h1>
                     <p style="font-size:1.2em;max-width:650px;">
                         The Cognotik Application Server brings powerful AI agents to your desktop.
-                        Run autonomous workflows, chat with context, and manage tasks locally with full control over your data and API usage.
+                        Run autonomous workflows, chat with context, and manage tasks locally with full control over
+                        your data and API usage.
                     </p>
                     <div class="download-ui-simple" style="margin-top: 1em;">
-                        <a class="btn btn-primary" href="https://github.com/SimiaCryptus/Cognotik/releases" rel="noopener" target="_blank">
+                        <a class="btn btn-primary" href="https://github.com/SimiaCryptus/Cognotik/releases"
+                           rel="noopener" target="_blank">
                             <i class="fas fa-download"></i> Download for Desktop
                         </a>
                         <a class="btn btn-secondary" href="https://github.com/SimiaCryptus/Cognotik" rel="noopener"
@@ -74,32 +77,38 @@
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-server"></i></div>
                     <h3>Daemon Architecture</h3>
-                    <p>Runs efficiently in the background. Access applications via a web interface or the system tray.</p>
+                    <p>Runs efficiently in the background. Access applications via a web interface or the system
+                        tray.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-robot"></i></div>
                     <h3>Cognitive Modes</h3>
-                    <p>Choose between Task Chat for interactive tasks, Autonomous Mode for self-directed goals, or Plan Ahead for structured execution.</p>
+                    <p>Choose between Task Chat for interactive tasks, Autonomous Mode for self-directed goals, or Plan
+                        Ahead for structured execution.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-key"></i></div>
                     <h3>BYOK Model</h3>
-                    <p>Bring Your Own Key. Connect directly to OpenAI, Anthropic, or local models. Your keys, your data, your control.</p>
+                    <p>Bring Your Own Key. Connect directly to OpenAI, Anthropic, or local models. Your keys, your data,
+                        your control.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-sync-alt"></i></div>
                     <h3>Auto-Updates</h3>
-                    <p>Built-in update manager keeps your application server current with the latest features and fixes.</p>
+                    <p>Built-in update manager keeps your application server current with the latest features and
+                        fixes.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-terminal"></i></div>
                     <h3>Local Tools</h3>
-                    <p>Integrate with your local environment. Configure shell commands and file access for true agentic capabilities.</p>
+                    <p>Integrate with your local environment. Configure shell commands and file access for true agentic
+                        capabilities.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fab fa-osi"></i></div>
                     <h3>Open Source</h3>
-                    <p>Fully open source under Apache 2.0. Inspect the code, contribute, or build your own extensions.</p>
+                    <p>Fully open source under Apache 2.0. Inspect the code, contribute, or build your own
+                        extensions.</p>
                 </div>
             </div>
         </div>
@@ -108,27 +117,35 @@
         <div class="container container-narrow">
             <h2>Getting Started</h2>
             <h3>Installation</h3>
-            <p>Download the installer for your operating system from the <a href="https://github.com/SimiaCryptus/Cognotik/releases">GitHub Releases</a> page.</p>
+            <p>Download the installer for your operating system from the <a
+                    href="https://github.com/SimiaCryptus/Cognotik/releases">GitHub Releases</a> page.</p>
             <ul>
                 <li><strong>Windows:</strong> Download and run the `.msi` installer.</li>
-                <li><strong>macOS:</strong> Download the `.dmg` file and drag the application to your Applications folder.</li>
+                <li><strong>macOS:</strong> Download the `.dmg` file and drag the application to your Applications
+                    folder.
+                </li>
                 <li><strong>Linux:</strong> Download and install the `.deb` package.</li>
             </ul>
-            
+
             <h3>Configuration</h3>
             <ol>
                 <li>Launch the application. The Cognotik icon will appear in your system tray.</li>
                 <li>The Welcome Wizard will open in your default browser (usually at `http://localhost:7681`).</li>
                 <li>Click <strong>User Settings</strong> to configure your API keys (OpenAI, Anthropic, etc.).</li>
-                <li>(Optional) Configure <strong>Local Tools</strong> to allow the agent to use specific command-line utilities.</li>
+                <li>(Optional) Configure <strong>Local Tools</strong> to allow the agent to use specific command-line
+                    utilities.
+                </li>
             </ol>
 
             <h3>Usage</h3>
             <p>From the Welcome Wizard, select a mode to start a session:</p>
             <ul>
                 <li><strong>Chat:</strong> Interactive task execution with the `TaskChatMode` strategy.</li>
-                <li><strong>Autonomous:</strong> Give the agent a high-level goal and let it plan and execute using `AutoPlanMode`.</li>
-                <li><strong>Plan Ahead:</strong> Create a detailed plan before execution begins with `PlanAheadMode`.</li>
+                <li><strong>Autonomous:</strong> Give the agent a high-level goal and let it plan and execute using
+                    `AutoPlanMode`.
+                </li>
+                <li><strong>Plan Ahead:</strong> Create a detailed plan before execution begins with `PlanAheadMode`.
+                </li>
             </ul>
         </div>
     </section>

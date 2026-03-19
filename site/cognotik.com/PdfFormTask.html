@@ -3,19 +3,20 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | PdfFormTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Showcase -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -246,9 +247,15 @@
             </div>
             <div style="padding: 1.5rem;">
                 <div style="background: rgba(56, 139, 253, 0.1); border: 1px solid var(--accent-primary); padding: 1rem; border-radius: 4px;">
-                    <div style="color: #4ade80; font-weight: 600; margin-bottom: 0.5rem;">✔ Successfully created signed_nda.pdf</div>
-                    <div style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">2 fields filled from manual config and 4 fields extracted from context.</div>
-                    <button style="background: var(--accent-primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 600;">Download PDF</button>
+                    <div style="color: #4ade80; font-weight: 600; margin-bottom: 0.5rem;">✔ Successfully created
+                        signed_nda.pdf
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">2 fields filled from
+                        manual config and 4 fields extracted from context.
+                    </div>
+                    <button style="background: var(--accent-primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                        Download PDF
+                    </button>
                 </div>
             </div>
         </div>
@@ -259,9 +266,9 @@
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Explore generated PDF artifacts and templates within the <code>PdfFormTask</code> workspace.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem; background: #090c10;"></div>
+        <div class="panel" id="file-tree-demo"
+             style="height: 300px; overflow: auto; padding: 1rem; background: #090c10;"></div>
     </section>
-
 
 
     <!-- 3. TABBED INTERFACE -->
@@ -273,66 +280,83 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane">
+        <div class="tab-pane" id="tab-docs">
             <h3>Type Configuration (Static)</h3>
             <table class="docs-table">
                 <thead>
-                    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>template_file</code><span class="req">*</span></td>
-                        <td>String</td>
-                        <td>Path to the PDF template file used for all executions of this task type.</td>
-                    </tr>
-                    <tr>
-                        <td><code>resultTemplate</code></td>
-                        <td>String</td>
-                        <td>Template for the success message. Supports <code>{output_file}</code> and <code>{count}</code>.</td>
-                    </tr>
+                <tr>
+                    <td><code>template_file</code><span class="req">*</span></td>
+                    <td>String</td>
+                    <td>Path to the PDF template file used for all executions of this task type.</td>
+                </tr>
+                <tr>
+                    <td><code>resultTemplate</code></td>
+                    <td>String</td>
+                    <td>Template for the success message. Supports <code>{output_file}</code> and <code>{count}</code>.
+                    </td>
+                </tr>
                 </tbody>
             </table>
 
             <h3>Execution Configuration (Runtime)</h3>
             <table class="docs-table">
                 <thead>
-                    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>output_file</code></td>
-                        <td>String</td>
-                        <td>The destination path for the filled PDF. Defaults to <code>filled_form.pdf</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><code>fields</code></td>
-                        <td>Map&lt;String, String&gt;</td>
-                        <td>Manual overrides for field names to values.</td>
-                    </tr>
-                    <tr>
-                        <td><code>flatten</code></td>
-                        <td>Boolean</td>
-                        <td>If true, flattens the form fields to make them read-only. Default: <code>true</code>.</td>
-                    </tr>
+                <tr>
+                    <td><code>output_file</code></td>
+                    <td>String</td>
+                    <td>The destination path for the filled PDF. Defaults to <code>filled_form.pdf</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>fields</code></td>
+                    <td>Map&lt;String, String&gt;</td>
+                    <td>Manual overrides for field names to values.</td>
+                </tr>
+                <tr>
+                    <td><code>flatten</code></td>
+                    <td>Boolean</td>
+                    <td>If true, flattens the form fields to make them read-only. Default: <code>true</code>.</td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>Task Lifecycle</h3>
             <ol>
-                <li><strong>Initialization:</strong> Loads the PDF template specified in <code>TypeConfig</code> and inspects the AcroForm structure.</li>
-                <li><strong>Context Analysis:</strong> If an LLM is available, the task sends the conversation history and the list of available PDF fields to the model to extract relevant data.</li>
-                <li><strong>Data Merging:</strong> Merges LLM-extracted fields with manual overrides provided in <code>ExecutionConfig</code>.</li>
-                <li><strong>PDF Generation:</strong> Uses Apache PDFBox to populate fields, optionally flattens the document, and saves it to the workspace.</li>
+                <li><strong>Initialization:</strong> Loads the PDF template specified in <code>TypeConfig</code> and
+                    inspects the AcroForm structure.
+                </li>
+                <li><strong>Context Analysis:</strong> If an LLM is available, the task sends the conversation history
+                    and the list of available PDF fields to the model to extract relevant data.
+                </li>
+                <li><strong>Data Merging:</strong> Merges LLM-extracted fields with manual overrides provided in <code>ExecutionConfig</code>.
+                </li>
+                <li><strong>PDF Generation:</strong> Uses Apache PDFBox to populate fields, optionally flattens the
+                    document, and saves it to the workspace.
+                </li>
             </ol>
             <h3>Error Handling</h3>
-            <p>If fields specified in the configuration are not found in the PDF template, the task logs a warning but continues processing other fields.</p>
+            <p>If fields specified in the configuration are not found in the PDF template, the task logs a warning but
+                continues processing other fields.</p>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Embedded Execution (UnifiedHarness)</h3>
             <p>To invoke this task programmatically using the Cognotik engine:</p>
             <pre><code class="language-kotlin">
@@ -376,7 +400,8 @@ harness.runTask(
             </code></pre>
 
             <h3>Dynamic Prompt Injection</h3>
-            <p>The following instructions are injected into the LLM context to help it understand how to use this tool:</p>
+            <p>The following instructions are injected into the LLM context to help it understand how to use this
+                tool:</p>
             <pre><code class="language-text">
 PdfForm - Fill out a PDF form template.
 - template_file: [path]

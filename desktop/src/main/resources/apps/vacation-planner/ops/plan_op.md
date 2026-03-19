@@ -1,9 +1,9 @@
 ---
 task_type: SubPlan
-transforms: ../analysis_output\.md -> ../itinerary\.md
+transforms: ../analysis_output\.md -> ../itinerary.md
 related:
   - ../brainstorm_output.md
-  - ../data/crawler_latest.json
+  - ../research.md
 validation_regex: "(?=.*### Day 1:)(?=.*## Cost Breakdown)(?=.*## Logistics & Practical Details)(?=.*## Flexibility & Contingencies)(?=.*## Feasibility Assessment)"
 ---
 

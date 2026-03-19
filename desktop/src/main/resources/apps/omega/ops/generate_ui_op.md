@@ -1,10 +1,12 @@
 ---
 task_type: FileModification
-transforms: ../pipeline_design\.md -> ../generated_app/index.html
+folder: ../generated_app/
 related:
   - ../idea.md
+  - ../UI.md
   - ../analysis.md
-  - ../generated_app/ops/_files.json
+  - ../generated_app/ops/*.*
+  - ../pipeline_design.md
 ---
 
 Generate a complete, self-contained HTML file that serves as the UI for the DocOps application.

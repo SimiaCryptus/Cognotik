@@ -15,76 +15,76 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaType
 
 open class JsonDescriber(
-    private val whitelist: MutableSet<String> = setOf(
-        "com.simiacryptus"
-    ).toMutableSet()
+  private val whitelist: MutableSet<String> = setOf(
+    "com.simiacryptus"
+  ).toMutableSet()
 ) : TypeDescriber() {
 
-    // Map to track registered sub-implementations for each parent class
-    protected val subTypeRegistry: MutableMap<Class<*>, MutableList<Class<*>>> = mutableMapOf()
+  // Map to track registered sub-implementations for each parent class
+  protected val subTypeRegistry: MutableMap<Class<*>, MutableList<Class<*>>> = mutableMapOf()
 
-    /**
-     * Register a sub-implementation for a parent class
-     * @param parentClass The parent/interface class
-     * @param subClass The sub-implementation class
-     */
-    override fun <T, U : T> registerSubType(parentClass: Class<T>, subClass: Class<U>) {
-        subTypeRegistry.getOrPut(parentClass) { mutableListOf() }.add(subClass)
-        log.debug("Registered subtype ${subClass.name} for parent ${parentClass.name}")
-    }
+  /**
+   * Register a sub-implementation for a parent class
+   * @param parentClass The parent/interface class
+   * @param subClass The sub-implementation class
+   */
+  override fun <T, U : T> registerSubType(parentClass: Class<T>, subClass: Class<U>) {
+    subTypeRegistry.getOrPut(parentClass) { mutableListOf() }.add(subClass)
+    log.debug("Registered subtype ${subClass.name} for parent ${parentClass.name}")
+  }
 
-    /**
-     * Register multiple sub-implementations for a parent class
-     * @param parentClass The parent/interface class
-     * @param subClasses The sub-implementation classes
-     */
-    override fun <T, U : T> registerSubTypes(parentClass: Class<T>, vararg subClasses: Class<U>) {
-        subClasses.forEach { registerSubType(parentClass, it) }
-    }
+  /**
+   * Register multiple sub-implementations for a parent class
+   * @param parentClass The parent/interface class
+   * @param subClasses The sub-implementation classes
+   */
+  override fun <T, U : T> registerSubTypes(parentClass: Class<T>, vararg subClasses: Class<U>) {
+    subClasses.forEach { registerSubType(parentClass, it) }
+  }
 
-    override fun <T, U : T> clearSubTypes(parentClass: Class<T>) {
-        subTypeRegistry.remove(parentClass)
-        log.debug("Cleared subtypes for parent ${parentClass.name}")
-    }
+  override fun <T, U : T> clearSubTypes(parentClass: Class<T>) {
+    subTypeRegistry.remove(parentClass)
+    log.debug("Cleared subtypes for parent ${parentClass.name}")
+  }
 
-    override val markupLanguage: String
-        get() = "json"
+  override val markupLanguage: String
+    get() = "json"
 
-    override fun describe(
-        rawType: Class<in Nothing>,
-        instance: Any?,
-        stackMax: Int,
-        describedTypes: MutableSet<String>
-    ): String {
+  override fun describe(
+    rawType: Class<in Nothing>,
+    instance: Any?,
+    stackMax: Int,
+    describedTypes: MutableSet<String>
+  ): String {
 
-        if (!whitelist.contains(rawType.name)) {
+    if (!whitelist.contains(rawType.name)) {
 
-            return """{
+      return """{
                  "type": "object",
                  "class": "${rawType.name}",
                  "allowed": false
                }""".trimIndent()
-        }
-        if (!describedTypes.add(rawType.name) && rawType.name !in primitives) {
+    }
+    if (!describedTypes.add(rawType.name) && rawType.name !in primitives) {
 
-            return "{...}"
-        } else if (rawType.simpleName.lowercase() in primitives) {
-            return """
+      return "{...}"
+    } else if (rawType.simpleName.lowercase() in primitives) {
+      return """
             {
               "type": "${rawType.simpleName.lowercase()}"
             }""".trimIndent()
-        }
-        if (isAbbreviated(rawType) || stackMax <= 0) {
+    }
+    if (isAbbreviated(rawType) || stackMax <= 0) {
 
-            return """{
+      return """{
             {
               "type": "object",
               "class": "${rawType.name}"
             }
             """.trimIndent()
-        }
-        if (rawType.isEnum || DynamicEnum::class.java.isAssignableFrom(rawType)) {
-            return """
+    }
+    if (rawType.isEnum || DynamicEnum::class.java.isAssignableFrom(rawType)) {
+      return """
             {
               "type": "enum",
               "values": [
@@ -92,238 +92,238 @@ open class JsonDescriber(
               ]
             }
             """.trimIndent()
-        }
-        val propertiesJson = if (rawType.isKotlinClass()) {
-            rawType.kotlin.memberProperties.filter { it.visibility == KVisibility.PUBLIC }.joinToString(",\n") {
-                val description =
-                    DescriptorUtil.getAllAnnotations(rawType, it).find { x -> x is Description } as? Description
-                val propertyDescription = if (description != null) """
+    }
+    val propertiesJson = if (rawType.isKotlinClass()) {
+      rawType.kotlin.memberProperties.filter { it.visibility == KVisibility.PUBLIC }.joinToString(",\n") {
+        val description =
+          DescriptorUtil.getAllAnnotations(rawType, it).find { x -> x is Description } as? Description
+        val propertyDescription = if (description != null) """
                     "${it.name}": {
                       "description": "${description.value.trim()}",
                       ${
-                    toJson(it.returnType.javaType, stackMax - 1, describedTypes).lineSequence()
-                        .map {
-                            when {
-                                it.isBlank() -> {
-                                    when {
-                                        it.length < "      ".length -> "      "
-                                        else -> it
-                                    }
-                                }
-
-                                else -> "      " + it
-                            }
-                        }
-                        .joinToString("\n")
+          toJson(it.returnType.javaType, stackMax - 1, describedTypes).lineSequence()
+            .map {
+              when {
+                it.isBlank() -> {
+                  when {
+                    it.length < "      ".length -> "      "
+                    else -> it
+                  }
                 }
+
+                else -> "      " + it
+              }
+            }
+            .joinToString("\n")
+        }
                     }
                     """.trimIndent().trim() else """
                     "${it.name}": {
                       ${
-                    toJson(it.returnType.javaType, stackMax - 1, describedTypes).lineSequence()
-                        .map {
-                            when {
-                                it.isBlank() -> {
-                                    when {
-                                        it.length < "      ".length -> "      "
-                                        else -> it
-                                    }
-                                }
-
-                                else -> "      " + it
-                            }
-                        }
-                        .joinToString("\n")
+          toJson(it.returnType.javaType, stackMax - 1, describedTypes).lineSequence()
+            .map {
+              when {
+                it.isBlank() -> {
+                  when {
+                    it.length < "      ".length -> "      "
+                    else -> it
+                  }
                 }
+
+                else -> "      " + it
+              }
+            }
+            .joinToString("\n")
+        }
                     }
                     """.trimIndent().trim()
-                propertyDescription
-            }
-        } else {
-            rawType.declaredFields.filter { Modifier.isPublic(it.modifiers) }.joinToString(",\n") {
-                val description =
-                    it.annotations.find { x -> x is Description } as? Description
-                val fieldDescription = if (description != null) """
+        propertyDescription
+      }
+    } else {
+      rawType.declaredFields.filter { Modifier.isPublic(it.modifiers) }.joinToString(",\n") {
+        val description =
+          it.annotations.find { x -> x is Description } as? Description
+        val fieldDescription = if (description != null) """
                 "${it.name}": {
                   "description": "${description.value.trim()}",
                   ${
-                    toJson(it.genericType, stackMax - 1, describedTypes).lineSequence()
-                        .map {
-                            when {
-                                it.isBlank() -> {
-                                    when {
-                                        it.length < "  ".length -> "  "
-                                        else -> it
-                                    }
-                                }
-
-                                else -> "  " + it
-                            }
-                        }
-                        .joinToString("\n")
+          toJson(it.genericType, stackMax - 1, describedTypes).lineSequence()
+            .map {
+              when {
+                it.isBlank() -> {
+                  when {
+                    it.length < "  ".length -> "  "
+                    else -> it
+                  }
                 }
+
+                else -> "  " + it
+              }
+            }
+            .joinToString("\n")
+        }
                 }
                 """.trimIndent() else """
                 "${it.name}": {
                   ${
-                    toJson(it.genericType, stackMax - 1, describedTypes).lineSequence()
-                        .map {
-                            when {
-                                it.isBlank() -> {
-                                    when {
-                                        it.length < "  ".length -> "  "
-                                        else -> it
-                                    }
-                                }
-
-                                else -> "  " + it
-                            }
-                        }
-                        .joinToString("\n")
+          toJson(it.genericType, stackMax - 1, describedTypes).lineSequence()
+            .map {
+              when {
+                it.isBlank() -> {
+                  when {
+                    it.length < "  ".length -> "  "
+                    else -> it
+                  }
                 }
+
+                else -> "  " + it
+              }
+            }
+            .joinToString("\n")
+        }
                 }
                 """.trimIndent()
-                fieldDescription
-            }
-        }
-        val methodsJson = (if (rawType.isKotlinClass()) {
-            rawType.kotlin.functions.filter {
-                it.visibility == KVisibility.PUBLIC
-                        && !methodBlacklist.contains(it.name)
-                        && !it.isOperator && !it.isInfix && !it.isAbstract
-            }.joinToString(",\n") {
-                """
+        fieldDescription
+      }
+    }
+    val methodsJson = (if (rawType.isKotlinClass()) {
+      rawType.kotlin.functions.filter {
+        it.visibility == KVisibility.PUBLIC
+            && !methodBlacklist.contains(it.name)
+            && !it.isOperator && !it.isInfix && !it.isAbstract
+      }.joinToString(",\n") {
+        """
             "${it.name}": {
               ${
-                    describe(it, rawType.kotlin, instance, stackMax - 1, false, describedTypes).lineSequence()
-                        .map {
-                            when {
-                                it.isBlank() -> {
-                                    when {
-                                        it.length < "  ".length -> "  "
-                                        else -> it
-                                    }
-                                }
-
-                                else -> "  " + it
-                            }
-                        }
-                        .joinToString("\n")
+          describe(it, rawType.kotlin, instance, stackMax - 1, false, describedTypes).lineSequence()
+            .map {
+              when {
+                it.isBlank() -> {
+                  when {
+                    it.length < "  ".length -> "  "
+                    else -> it
+                  }
                 }
+
+                else -> "  " + it
+              }
+            }
+            .joinToString("\n")
+        }
             }
             """.trimIndent().trim()
-            }
-        } else {
-            if (includeMethods) {
-                rawType.methods
-                    .filter {
-                        Modifier.isPublic(it.modifiers) && !it.isSynthetic && !it.name.contains("$") && !methodBlacklist.contains(
-                            it.name
-                        )
-                    }
-                    .joinToString(",\n") {
-                        """
+      }
+    } else {
+      if (includeMethods) {
+        rawType.methods
+          .filter {
+            Modifier.isPublic(it.modifiers) && !it.isSynthetic && !it.name.contains("$") && !methodBlacklist.contains(
+              it.name
+            )
+          }
+          .joinToString(",\n") {
+            """
                 "${it.name}": {
                   ${
-                            describe(it, rawType, instance, stackMax - 1).lineSequence()
-                                .map {
-                                    when {
-                                        it.isBlank() -> {
-                                            when {
-                                                it.length < "  ".length -> "  "
-                                                else -> it
-                                            }
-                                        }
+              describe(it, rawType, instance, stackMax - 1).lineSequence()
+                .map {
+                  when {
+                    it.isBlank() -> {
+                      when {
+                        it.length < "  ".length -> "  "
+                        else -> it
+                      }
+                    }
 
-                                        else -> "  " + it
-                                    }
-                                }
-                                .joinToString("\n")
-                        }
+                    else -> "  " + it
+                  }
+                }
+                .joinToString("\n")
+            }
                 }
                 """.trimIndent().trim()
-                    }
-            } else {
-                ""
-            }
-        }).ifEmpty { "" }
-        val jsonBody = StringBuilder()
-        jsonBody.append(
-            """
+          }
+      } else {
+        ""
+      }
+    }).ifEmpty { "" }
+    val jsonBody = StringBuilder()
+    jsonBody.append(
+      """
             {
               "type": "object",
               "class": "${rawType.name}",
             """.trimIndent()
-        )
-        if (propertiesJson.isNotEmpty()) {
-            jsonBody.append(
-                """
+    )
+    if (propertiesJson.isNotEmpty()) {
+      jsonBody.append(
+        """
               "properties": {
                 $propertiesJson
               },
             """.trimIndent()
-            )
-        }
-        if (methodsJson.isNotEmpty()) {
-            jsonBody.append(
-                """
+      )
+    }
+    if (methodsJson.isNotEmpty()) {
+      jsonBody.append(
+        """
               "methods": {
                 $methodsJson
               }
             """.trimIndent()
-            )
-        }
-        jsonBody.append("\n}")
-
-        return jsonBody.toString()
+      )
     }
+    jsonBody.append("\n}")
 
-    override fun describe(self: Method, clazz: Class<*>?, instance: Any?, stackMax: Int): String {
+    return jsonBody.toString()
+  }
 
-        val returnType = self.returnType
-        clazz ?: return "..."
-        val description = getAllAnnotations(clazz, self).find { x -> x is Description } as? Description
-        val overrides = (instance as? MethodTypeDescriber)?.getMethodTypes(self.name)
-        val parameterJson = self.parameters.mapIndexed { index, parameter ->
-            toJson(parameter, stackMax - 1, overrides?.getOrNull(index))
-        }.toTypedArray().joinToString(",\n").trim()
-        val methodDescription = if (description != null) """
+  override fun describe(self: Method, clazz: Class<*>?, instance: Any?, stackMax: Int): String {
+
+    val returnType = self.returnType
+    clazz ?: return "..."
+    val description = getAllAnnotations(clazz, self).find { x -> x is Description } as? Description
+    val overrides = (instance as? MethodTypeDescriber)?.getMethodTypes(self.name)
+    val parameterJson = self.parameters.mapIndexed { index, parameter ->
+      toJson(parameter, stackMax - 1, overrides?.getOrNull(index))
+    }.toTypedArray().joinToString(",\n").trim()
+    val methodDescription = if (description != null) """
             "description": "${description.value.trim()}",
             ${
-            describe(returnType, null, stackMax, mutableSetOf()).lineSequence()
-                .map {
-                    when {
-                        it.isBlank() -> {
-                            when {
-                                it.length < "  ".length -> "  "
-                                else -> it
-                            }
-                        }
+      describe(returnType, null, stackMax, mutableSetOf()).lineSequence()
+        .map {
+          when {
+            it.isBlank() -> {
+              when {
+                it.length < "  ".length -> "  "
+                else -> it
+              }
+            }
 
-                        else -> "  " + it
-                    }
-                }
-                .joinToString("\n")
+            else -> "  " + it
+          }
         }
+        .joinToString("\n")
+    }
             """.trimIndent().trim() else """
             ${
-            describe(returnType, null, stackMax, mutableSetOf()).lineSequence()
-                .map {
-                    when {
-                        it.isBlank() -> {
-                            when {
-                                it.length < "  ".length -> "  "
-                                else -> it
-                            }
-                        }
+      describe(returnType, null, stackMax, mutableSetOf()).lineSequence()
+        .map {
+          when {
+            it.isBlank() -> {
+              when {
+                it.length < "  ".length -> "  "
+                else -> it
+              }
+            }
 
-                        else -> "  " + it
-                    }
-                }
-                .joinToString("\n")
+            else -> "  " + it
+          }
         }
+        .joinToString("\n")
+    }
             """.trimIndent()
-        return """
+    return """
             {
               "type": "method",
               "class": "${clazz.name ?: "unknown"}",
@@ -332,65 +332,65 @@ open class JsonDescriber(
               $methodDescription
             }
             """.trimIndent()
-    }
+  }
 
-    private fun getAllAnnotations(clazz: Class<*>, self: Method): List<Annotation> {
-        return (self.annotations + (clazz.kotlin.constructors.firstOrNull()?.parameters?.find { x -> x.name == self.name }?.annotations
-            ?: listOf())
-                ).toList()
-    }
+  private fun getAllAnnotations(clazz: Class<*>, self: Method): List<Annotation> {
+    return (self.annotations + (clazz.kotlin.constructors.firstOrNull()?.parameters?.find { x -> x.name == self.name }?.annotations
+      ?: listOf())
+        ).toList()
+  }
 
-    private fun toJson(self: Parameter, stackMax: Int, typeOverride: Type? = null): String {
-        if (stackMax <= 0) return "{...}"
-        val description = self.getAnnotation(Description::class.java)?.value?.trim()
-            ?.let { "\"description\": \"${it.replace("\n", "\\n")}\"," } ?: ""
-        return """
+  private fun toJson(self: Parameter, stackMax: Int, typeOverride: Type? = null): String {
+    if (stackMax <= 0) return "{...}"
+    val description = self.getAnnotation(Description::class.java)?.value?.trim()
+      ?.let { "\"description\": \"${it.replace("\n", "\\n")}\"," } ?: ""
+    return """
         {
           "name": "${self.name}",
           $description
           ${
-            toJson(typeOverride ?: self.parameterizedType, stackMax - 1, mutableSetOf()).lineSequence()
-                .map {
-                    when {
-                        it.isBlank() -> {
-                            when {
-                                it.length < "  ".length -> "  "
-                                else -> it
-                            }
-                        }
+      toJson(typeOverride ?: self.parameterizedType, stackMax - 1, mutableSetOf()).lineSequence()
+        .map {
+          when {
+            it.isBlank() -> {
+              when {
+                it.length < "  ".length -> "  "
+                else -> it
+              }
+            }
 
-                        else -> "  " + it
-                    }
-                }
-                .joinToString("\n")
+            else -> "  " + it
+          }
         }
+        .joinToString("\n")
+    }
         }
         """.trimIndent()
-    }
+  }
 
-    private fun describe(
-        self: KFunction<*>,
-        concreteClass: KClass<*>,
-        instance: Any?,
-        stackMax: Int,
-        includeOperationID: Boolean = true,
-        describedTypes: MutableSet<String>
-    ): String {
-        val functionTypeRepresentation = "${concreteClass.qualifiedName}::${self.name}"
-        if (describedTypes.contains(functionTypeRepresentation) && functionTypeRepresentation !in primitives) return "{...}"
-        describedTypes.add(functionTypeRepresentation)
-        if (stackMax <= 0) return "{...}"
-        if (!coverMethods) return "{}"
-        val overrides = (instance as? MethodTypeDescriber)?.getMethodTypes(self.name)
-        val parameterJson = self.parameters.filter { it.name != null }
-            .mapIndexed { index, kParameter ->
-                toJson(kParameter, concreteClass, stackMax - 1, describedTypes, overrides?.getOrNull(index))
-            }.toTypedArray().joinToString(",\n").trim()
-        val returnTypeJson = toJson(self.returnType, stackMax - 1, describedTypes).trim()
-        val description = (self.annotations.find { x -> x is Description } as? Description)
-            ?.let { "\"description\": \"${it.value.trim().replace("\n", "\\n")}\"," } ?: ""
-        val operationID = if (includeOperationID) "\"operationId\": \"${self.name}\"," else ""
-        return """
+  private fun describe(
+    self: KFunction<*>,
+    concreteClass: KClass<*>,
+    instance: Any?,
+    stackMax: Int,
+    includeOperationID: Boolean = true,
+    describedTypes: MutableSet<String>
+  ): String {
+    val functionTypeRepresentation = "${concreteClass.qualifiedName}::${self.name}"
+    if (describedTypes.contains(functionTypeRepresentation) && functionTypeRepresentation !in primitives) return "{...}"
+    describedTypes.add(functionTypeRepresentation)
+    if (stackMax <= 0) return "{...}"
+    if (!coverMethods) return "{}"
+    val overrides = (instance as? MethodTypeDescriber)?.getMethodTypes(self.name)
+    val parameterJson = self.parameters.filter { it.name != null }
+      .mapIndexed { index, kParameter ->
+        toJson(kParameter, concreteClass, stackMax - 1, describedTypes, overrides?.getOrNull(index))
+      }.toTypedArray().joinToString(",\n").trim()
+    val returnTypeJson = toJson(self.returnType, stackMax - 1, describedTypes).trim()
+    val description = (self.annotations.find { x -> x is Description } as? Description)
+      ?.let { "\"description\": \"${it.value.trim().replace("\n", "\\n")}\"," } ?: ""
+    val operationID = if (includeOperationID) "\"operationId\": \"${self.name}\"," else ""
+    return """
         {
           $operationID
           $description
@@ -400,65 +400,69 @@ open class JsonDescriber(
           "returnType": $returnTypeJson
         }
         """.trimIndent()
-    }
+  }
 
-    private fun toJson(
-        self: KParameter,
-        concreteClass: KClass<*>,
-        stackMax: Int,
-       describedTypes: MutableSet<String>,
-        typeOverride: Type? = null
-    ): String {
-        val parameterTypeRepresentation = "${concreteClass.qualifiedName}::${self.name}/${self.type}"
-        if (describedTypes.contains(parameterTypeRepresentation) && parameterTypeRepresentation !in primitives) return "{...}"
-        describedTypes.add(parameterTypeRepresentation)
-        if (stackMax <= 0) return "{...}"
-        val kType = resolveGenericType(concreteClass, self.type)
-        val description = (self.annotations.find { it is Description } as? Description)?.value?.trim()
-            ?.let { "\"description\": \"${it.replace("\n", "\\n")}\"," } ?: ""
-        val defaultValueInfo = if (self.isOptional) "\"required\": false" else "\"required\": true"
-        return """
+  private fun toJson(
+    self: KParameter,
+    concreteClass: KClass<*>,
+    stackMax: Int,
+    describedTypes: MutableSet<String>,
+    typeOverride: Type? = null
+  ): String {
+    val parameterTypeRepresentation = "${concreteClass.qualifiedName}::${self.name}/${self.type}"
+    if (describedTypes.contains(parameterTypeRepresentation) && parameterTypeRepresentation !in primitives) return "{...}"
+    describedTypes.add(parameterTypeRepresentation)
+    if (stackMax <= 0) return "{...}"
+    val kType = resolveGenericType(concreteClass, self.type)
+    val description = (self.annotations.find { it is Description } as? Description)?.value?.trim()
+      ?.let { "\"description\": \"${it.replace("\n", "\\n")}\"," } ?: ""
+    val defaultValueInfo = if (self.isOptional) "\"required\": false" else "\"required\": true"
+    return """
         {
           "name": "${self.name}",
           $description
           ${
-            (if (typeOverride != null) toJson(typeOverride, stackMax - 1, describedTypes) else toJson(kType, stackMax - 1, describedTypes)).lineSequence()
-                .map {
-                    when {
-                        it.isBlank() -> {
-                            when {
-                                it.length < "  ".length -> "  "
-                                else -> it
-                            }
-                        }
+      (if (typeOverride != null) toJson(typeOverride, stackMax - 1, describedTypes) else toJson(
+        kType,
+        stackMax - 1,
+        describedTypes
+      )).lineSequence()
+        .map {
+          when {
+            it.isBlank() -> {
+              when {
+                it.length < "  ".length -> "  "
+                else -> it
+              }
+            }
 
-                        else -> "  " + it
-                    }
-                }
-                .joinToString("\n")
-        },
+            else -> "  " + it
+          }
+        }
+        .joinToString("\n")
+    },
           $defaultValueInfo
         }
         """.trimIndent()
-    }
+  }
 
-    private fun toJson(self: KType, stackMax: Int, describedTypes: MutableSet<String>): String {
-        return toJson(self.javaType, stackMax, describedTypes)
-    }
+  private fun toJson(self: KType, stackMax: Int, describedTypes: MutableSet<String>): String {
+    return toJson(self.javaType, stackMax, describedTypes)
+  }
 
-    private fun toJson(self: Type, stackMax: Int, describedTypes: MutableSet<String>): String {
-        if (describedTypes.contains(self.toString())) return "{...}"
-        describedTypes.add(self.toString())
-        val typeName = self.typeName.substringAfterLast('.').replace('$', '.')
-        return if ((isAbbreviated(self) || stackMax <= 0) && typeName !in primitives) """
+  private fun toJson(self: Type, stackMax: Int, describedTypes: MutableSet<String>): String {
+    if (describedTypes.contains(self.toString())) return "{...}"
+    describedTypes.add(self.toString())
+    val typeName = self.typeName.substringAfterLast('.').replace('$', '.')
+    return if ((isAbbreviated(self) || stackMax <= 0) && typeName !in primitives) """
         {
           "type": "object",
           "class": "${self.typeName}"
         }
         """.trimIndent()
-        else if (self is Class<*> && (self.isEnum || DynamicEnum::class.java.isAssignableFrom(self))) {
-            val enumConstants = getEnumValues(self).joinToString(",\n") { "\"$it\"" }
-            """
+    else if (self is Class<*> && (self.isEnum || DynamicEnum::class.java.isAssignableFrom(self))) {
+      val enumConstants = getEnumValues(self).joinToString(",\n") { "\"$it\"" }
+      """
             {
               "type": "enum",
               "values": [
@@ -466,67 +470,67 @@ open class JsonDescriber(
               ]
             }
             """.trimIndent()
-        } else if (typeName in primitives) {
-            """
+    } else if (typeName in primitives) {
+      """
             {
               "type": "$typeName"
             }
             """.trimIndent()
-        } else if (self is ParameterizedType && List::class.java.isAssignableFrom(self.rawType as Class<*>)) {
-            """
+    } else if (self is ParameterizedType && List::class.java.isAssignableFrom(self.rawType as Class<*>)) {
+      """
             {
               "type": "array",
               "items": ${toJson(self.actualTypeArguments[0], stackMax - 1, describedTypes)}
             }
             """.trimIndent()
-        } else if (self is ParameterizedType && Map::class.java.isAssignableFrom(self.rawType as Class<*>)) {
-            """
+    } else if (self is ParameterizedType && Map::class.java.isAssignableFrom(self.rawType as Class<*>)) {
+      """
             {
               "type": "map",
               "keys": ${toJson(self.actualTypeArguments[0], stackMax - 1, describedTypes)},
               "values": ${toJson(self.actualTypeArguments[1], stackMax - 1, describedTypes)}
             }
             """.trimIndent()
-        } else if (self.isArray) {
-            """
+    } else if (self.isArray) {
+      """
             {
               "type": "array",
               "items": ${toJson(self.componentType!!, stackMax - 1, describedTypes)}
             }
             """.trimIndent()
-        } else {
-            describe(TypeToken.of(self).rawType, null, stackMax, describedTypes)
-        }
+    } else {
+      describe(TypeToken.of(self).rawType, null, stackMax, describedTypes)
     }
+  }
 
-    open fun getEnumValues(clazz: Class<*>): List<String> {
-        return when {
-            clazz.isEnum -> clazz.enumConstants.filter {
-                if (it is EnabledStrategy) it.isEnabled() else true
-            }.map { it.toString() }
+  open fun getEnumValues(clazz: Class<*>): List<String> {
+    return when {
+      clazz.isEnum -> clazz.enumConstants.filter {
+        if (it is EnabledStrategy) it.isEnabled() else true
+      }.map { it.toString() }
 
-            DynamicEnum::class.java.isAssignableFrom(clazz) -> {
-                DynamicEnum.values(clazz as Class<out DynamicEnum<*>>).filter {
-                    if (it is EnabledStrategy) it.isEnabled() else true
-                }.map { it.name }
-            }
+      DynamicEnum::class.java.isAssignableFrom(clazz) -> {
+        DynamicEnum.values(clazz as Class<out DynamicEnum<*>>).filter {
+          if (it is EnabledStrategy) it.isEnabled() else true
+        }.map { it.name }
+      }
 
-            else -> emptyList()
-        }
+      else -> emptyList()
     }
+  }
 
-    open val includeMethods: Boolean = true
-    override val methodBlacklist = setOf(
-        "equals",
-        "hashCode",
-        "copy",
-        "toString",
-        "valueOf",
-        "wait",
-        "notify",
-        "notifyAll",
-        "getClass",
-        "invokeMethod"
-    )
+  open val includeMethods: Boolean = true
+  override val methodBlacklist = setOf(
+    "equals",
+    "hashCode",
+    "copy",
+    "toString",
+    "valueOf",
+    "wait",
+    "notify",
+    "notifyAll",
+    "getClass",
+    "invokeMethod"
+  )
 
 }

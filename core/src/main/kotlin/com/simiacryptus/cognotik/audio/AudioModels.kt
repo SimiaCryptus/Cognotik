@@ -12,15 +12,15 @@ class AudioModels(
   override val provider: APIProvider = APIProvider.OpenAI,
 ) : AIModel {
 
-    private val _api = AtomicReference<AIModel?>(null)
+  private val _api = AtomicReference<AIModel?>(null)
 
-    enum class AudioModelType {
-        Transcription,
-        TextToSpeech,
-    }
+  enum class AudioModelType {
+    Transcription,
+    TextToSpeech,
+  }
 
-    companion object {
-        private val log = LoggerFactory.getLogger(AudioModels::class.java)
-    }
+  companion object {
+    private val log = LoggerFactory.getLogger(AudioModels::class.java)
+  }
 
 }

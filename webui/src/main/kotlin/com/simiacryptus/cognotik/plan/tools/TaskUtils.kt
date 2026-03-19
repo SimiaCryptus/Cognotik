@@ -4,21 +4,21 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.OutputStream
 
 /**
  * Truncates text for display with an ellipsis indicator.
  * Follows Cognotik IO Best Practices for concise UI output.
  */
 fun String.truncateForDisplay(maxLength: Int = 10000): String {
-    return if (this.length > maxLength) {
-        "${this.take(maxLength)}\n\n> _... (truncated for display, ${this.length - maxLength} characters omitted)_"
-    } else {
-        this
-    }
+  return if (this.length > maxLength) {
+    "${this.take(maxLength)}\n\n> _... (truncated for display, ${this.length - maxLength} characters omitted)_"
+  } else {
+    this
+  }
 }
 
 /**
@@ -27,28 +27,29 @@ fun String.truncateForDisplay(maxLength: Int = 10000): String {
  * Follows Cognotik IO Best Practices for UI output.
  */
 fun SessionTask.safeComplete(message: String, log: Logger) {
+  try {
+    // Use renderMarkdown extension as per Cognotik IO Best Practices
+    this.complete(message.renderMarkdown())
+  } catch (e: Exception) {
+    log.error("Error completing task with message: $message", e)
+    // Fallback to raw message if markdown rendering fails, ensuring task.complete() is called to clear UI state
     try {
-        // Use renderMarkdown extension as per Cognotik IO Best Practices
-        this.complete(message.renderMarkdown())
-    } catch (e: Exception) {
-        log.error("Error completing task with message: $message", e)
-        // Fallback to raw message if markdown rendering fails, ensuring task.complete() is called to clear UI state
-        try {
-            this.complete(message)
-        } catch (e2: Exception) {
-            log.error("Critical failure in SessionTask.complete", e2)
-        }
+      this.complete(message)
+    } catch (e2: Exception) {
+      log.error("Critical failure in SessionTask.complete", e2)
     }
+  }
 }
 
-fun ChatModel.toApiChatModel(): ApiChatModel {
-    val apis = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis
-    return ApiChatModel(
-        model = this, provider = ApiData(
-            key = apis.find { it.provider == this.provider }?.key
-                ?: throw IllegalArgumentException("No API Key for ${this.provider?.name}"),
-            baseUrl = apis.find { it.provider == this.provider }?.baseUrl ?: this.provider?.base ?: "",
-            provider = this.provider,
-        ).validate()
-    )
+fun ChatModel.toApiChatModel(user: User): ApiChatModel {
+  val apis =
+    ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user).apis
+  return ApiChatModel(
+    model = this, provider = ApiData(
+      key = apis.find { it.provider == this.provider }?.key
+        ?: throw IllegalArgumentException("No API Key for ${this.provider?.name}"),
+      baseUrl = apis.find { it.provider == this.provider }?.baseUrl ?: this.provider?.base ?: "",
+      provider = this.provider,
+    ).validate()
+  )
 }

@@ -10,155 +10,155 @@ import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 
 class ApiProviderServlet : HttpServlet() {
-    data class ApiProvidersResponse(
-        val configuredProviders: List<ProviderInfo>,
-        val availableProviders: List<AvailableProviderInfo>
-    )
+  data class ApiProvidersResponse(
+    val configuredProviders: List<ProviderInfo>,
+    val availableProviders: List<AvailableProviderInfo>
+  )
 
-    data class AvailableProviderInfo(
-        val id: String,
-        val name: String,
-        val baseUrl: String,
-        val isConfigured: Boolean
-    )
+  data class AvailableProviderInfo(
+    val id: String,
+    val name: String,
+    val baseUrl: String,
+    val isConfigured: Boolean
+  )
 
-    data class ProviderInfo(
-        val name: String,
-        val baseUrl: String,
-        val models: List<ModelInfo>,
-        val supportsChat: Boolean,
-        val supportsEmbedding: Boolean
-    )
+  data class ProviderInfo(
+    val name: String,
+    val baseUrl: String,
+    val models: List<ModelInfo>,
+    val supportsChat: Boolean,
+    val supportsEmbedding: Boolean
+  )
 
-    data class ModelInfo(
-        val name: String,
-        val maxTokens: Int? = null
-    )
+  data class ModelInfo(
+    val name: String,
+    val maxTokens: Int? = null
+  )
 
-    public override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        try {
-            val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
+  public override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+    try {
+      val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
 
-            val userSettings = ApplicationServices.fileApplicationServices()
-                .userSettingsManager.getUserSettings(userinfo)
-            // Get all available providers (including unconfigured)
-            val availableProviders = APIProvider.values().map { provider ->
-                val isConfigured = userSettings.apis.any {
-                    it.provider?.name == provider.name && !it.key?.decrypt.isNullOrEmpty()
-                }
-                AvailableProviderInfo(
-                    id = provider.name,
-                    name = provider.name,
-                    baseUrl = provider.base,
-                    isConfigured = isConfigured
-                )
-            }
-
-
-            val providers = mutableListOf<ProviderInfo>()
-
-            // Get all registered API providers
-            APIProvider.values().forEach { provider ->
-                try {
-                    // Find matching API configuration for this provider
-                    val apiConfig = userSettings.apis.find {
-                        it.provider?.name == provider.name
-                    }
-
-                    if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
-                        val models = try {
-                            provider.getChatModels(
-                                key = apiConfig.key,
-                                baseUrl = apiConfig.baseUrl
-                            ).map { model ->
-                                ModelInfo(
-                                    name = model.modelId,
-                                    maxTokens = model.maxTotalTokens
-                                )
-                            }
-                        } catch (e: Exception) {
-                            log.warn("Failed to fetch models for provider ${provider.name}", e)
-                            emptyList()
-                        }
-
-                        val supportsEmbedding = try {
-                            provider.getEmbeddingClient(
-                                key = apiConfig.key,
-                                base = apiConfig.baseUrl,
-                                workPool = com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService(),
-                                scheduledPool = com.google.common.util.concurrent.MoreExecutors.listeningDecorator(
-                                    java.util.concurrent.Executors.newScheduledThreadPool(1)
-                                )
-                            )
-                            true
-                        } catch (e: UnsupportedOperationException) {
-                            false
-                        } catch (e: Exception) {
-                            log.warn("Error checking embedding support for ${provider.name}", e)
-                            false
-                        }
-
-                        providers.add(
-                            ProviderInfo(
-                                name = provider.name,
-                                baseUrl = apiConfig.baseUrl,
-                                models = models,
-                                supportsChat = models.isNotEmpty(),
-                                supportsEmbedding = supportsEmbedding
-                            )
-                        )
-                    }
-                } catch (e: Exception) {
-                    log.error("Error processing provider ${provider.name}", e)
-                }
-            }
-            val response = ApiProvidersResponse(
-                configuredProviders = providers,
-                availableProviders = availableProviders
-            )
-
-
-            resp.status = HttpServletResponse.SC_OK
-            val acceptHeader = req.getHeader("Accept") ?: ""
-
-            if (acceptHeader.contains("application/json")) {
-                resp.contentType = "application/json"
-                resp.writer.write(JsonUtil.toJson(response))
-            } else {
-                resp.contentType = "text/html"
-                resp.writer.write(generateHtmlResponse(response))
-            }
-
-        } catch (e: Exception) {
-            log.error("Error in ApiProviderServlet", e)
-            resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-            resp.contentType = "application/json"
-            resp.writer.write(JsonUtil.toJson(mapOf("error" to e.message)))
+      val userSettings = ApplicationServices.fileApplicationServices()
+        .userSettingsManager.getUserSettings(userinfo)
+      // Get all available providers (including unconfigured)
+      val availableProviders = APIProvider.values().map { provider ->
+        val isConfigured = userSettings.apis.any {
+          it.provider?.name == provider.name && !it.key?.decrypt.isNullOrEmpty()
         }
-    }
+        AvailableProviderInfo(
+          id = provider.name,
+          name = provider.name,
+          baseUrl = provider.base,
+          isConfigured = isConfigured
+        )
+      }
 
-    private fun generateHtmlResponse(response: ApiProvidersResponse): String {
-        val availableProvidersHtml = response.availableProviders.joinToString("\n") { provider ->
-            """
+
+      val providers = mutableListOf<ProviderInfo>()
+
+      // Get all registered API providers
+      APIProvider.values().forEach { provider ->
+        try {
+          // Find matching API configuration for this provider
+          val apiConfig = userSettings.apis.find {
+            it.provider?.name == provider.name
+          }
+
+          if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
+            val models = try {
+              provider.getChatModels(
+                key = apiConfig.key,
+                baseUrl = apiConfig.baseUrl
+              ).map { model ->
+                ModelInfo(
+                  name = model.modelId,
+                  maxTokens = model.maxTotalTokens
+                )
+              }
+            } catch (e: Exception) {
+              log.warn("Failed to fetch models for provider ${provider.name}", e)
+              emptyList()
+            }
+
+            val supportsEmbedding = try {
+              provider.getEmbeddingClient(
+                key = apiConfig.key,
+                base = apiConfig.baseUrl,
+                workPool = com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService(),
+                scheduledPool = com.google.common.util.concurrent.MoreExecutors.listeningDecorator(
+                  java.util.concurrent.Executors.newScheduledThreadPool(1)
+                )
+              )
+              true
+            } catch (e: UnsupportedOperationException) {
+              false
+            } catch (e: Exception) {
+              log.warn("Error checking embedding support for ${provider.name}", e)
+              false
+            }
+
+            providers.add(
+              ProviderInfo(
+                name = provider.name,
+                baseUrl = apiConfig.baseUrl,
+                models = models,
+                supportsChat = models.isNotEmpty(),
+                supportsEmbedding = supportsEmbedding
+              )
+            )
+          }
+        } catch (e: Exception) {
+          log.error("Error processing provider ${provider.name}", e)
+        }
+      }
+      val response = ApiProvidersResponse(
+        configuredProviders = providers,
+        availableProviders = availableProviders
+      )
+
+
+      resp.status = HttpServletResponse.SC_OK
+      val acceptHeader = req.getHeader("Accept") ?: ""
+
+      if (acceptHeader.contains("application/json")) {
+        resp.contentType = "application/json"
+        resp.writer.write(JsonUtil.toJson(response))
+      } else {
+        resp.contentType = "text/html"
+        resp.writer.write(generateHtmlResponse(response))
+      }
+
+    } catch (e: Exception) {
+      log.error("Error in ApiProviderServlet", e)
+      resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      resp.contentType = "application/json"
+      resp.writer.write(JsonUtil.toJson(mapOf("error" to e.message)))
+    }
+  }
+
+  private fun generateHtmlResponse(response: ApiProvidersResponse): String {
+    val availableProvidersHtml = response.availableProviders.joinToString("\n") { provider ->
+      """
            <tr>
                <td>${provider.name}</td>
                <td>${provider.baseUrl}</td>
                <td>${if (provider.isConfigured) "✓ Yes" else "✗ No"}</td>
            </tr>
            """.trimIndent()
-        }
+    }
 
-        val providersHtml = response.configuredProviders.joinToString("\n") { provider ->
-            val modelsHtml = provider.models.joinToString("\n") { model ->
-                """
+    val providersHtml = response.configuredProviders.joinToString("\n") { provider ->
+      val modelsHtml = provider.models.joinToString("\n") { model ->
+        """
                 <li>
                     ${model.name}
                     ${model.maxTokens?.let { " (max tokens: $it)" } ?: ""}
                 </li>
                 """.trimIndent()
-            }
+      }
 
-            """
+      """
             <div class="provider">
                 <h2>${provider.name}</h2>
                 <p><strong>Base URL:</strong> ${provider.baseUrl}</p>
@@ -170,9 +170,9 @@ class ApiProviderServlet : HttpServlet() {
                 </ul>
             </div>
             """.trimIndent()
-        }
+    }
 
-        return """
+    return """
         <html>
         <head>
             <title>API Providers</title>
@@ -291,9 +291,9 @@ class ApiProviderServlet : HttpServlet() {
         </body>
         </html>
         """.trimIndent()
-    }
+  }
 
-    companion object {
-        private val log = LoggerFactory.getLogger(ApiProviderServlet::class.java)
-    }
+  companion object {
+    private val log = LoggerFactory.getLogger(ApiProviderServlet::class.java)
+  }
 }

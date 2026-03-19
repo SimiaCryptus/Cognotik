@@ -8,30 +8,30 @@ import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
 
 @JsonTypeIdResolver(CognitiveModeConfig.TypeIdResolver::class)
 @JsonTypeInfo(
-    use = JsonTypeInfo.Id.CUSTOM,
-    property = "type",
-    include = JsonTypeInfo.As.EXISTING_PROPERTY,
-    visible = true
+  use = JsonTypeInfo.Id.CUSTOM,
+  property = "type",
+  include = JsonTypeInfo.As.EXISTING_PROPERTY,
+  visible = true
 )
 open class CognitiveModeConfig(
-    var type: CognitiveModeType<*>? = null
+  var type: CognitiveModeType<*>? = null
 ) {
-    class TypeIdResolver : TypeIdResolverBase() {
-        override fun idFromValue(value: Any): String? {
-            return (value as? CognitiveModeConfig)?.type?.name
-        }
-
-        override fun idFromValueAndType(value: Any, suggestedType: Class<*>): String? {
-            return idFromValue(value)
-        }
-
-        override fun typeFromId(context: DatabindContext, id: String): JavaType {
-            val type = CognitiveModeType.valueOf(id)
-            return context.constructType(type.configClass)
-        }
-
-        override fun getMechanism(): JsonTypeInfo.Id {
-            return JsonTypeInfo.Id.CUSTOM
-        }
+  class TypeIdResolver : TypeIdResolverBase() {
+    override fun idFromValue(value: Any): String? {
+      return (value as? CognitiveModeConfig)?.type?.name
     }
+
+    override fun idFromValueAndType(value: Any, suggestedType: Class<*>): String? {
+      return idFromValue(value)
+    }
+
+    override fun typeFromId(context: DatabindContext, id: String): JavaType {
+      val type = CognitiveModeType.valueOf(id)
+      return context.constructType(type.configClass)
+    }
+
+    override fun getMechanism(): JsonTypeInfo.Id {
+      return JsonTypeInfo.Id.CUSTOM
+    }
+  }
 }

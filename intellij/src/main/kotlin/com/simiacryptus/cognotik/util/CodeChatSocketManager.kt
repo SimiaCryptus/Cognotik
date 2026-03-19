@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -24,6 +25,7 @@ open class CodeChatSocketManager(
     applicationClass = ApplicationServer::class.java,
     storage = storage,
     budget = 2.0,
+  owner = localUser,
 ) {
     override fun canWrite(user: User?): Boolean = true
 }

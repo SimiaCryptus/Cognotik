@@ -14,112 +14,112 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 
 class OpenAIChatClient(
-    apiKey: SecureString,
-    apiBase: String,
-    workPool: ExecutorService,
-    scheduledPool: ListeningScheduledExecutorService,
+  apiKey: SecureString,
+  apiBase: String,
+  workPool: ExecutorService,
+  scheduledPool: ListeningScheduledExecutorService,
 ) : SingleProviderChatClient(
-    APIProvider.OpenAI,
-    apiKey = apiKey,
-    apiBase = apiBase,
-    workPool = workPool,
-    scheduledPool = scheduledPool
+  APIProvider.OpenAI,
+  apiKey = apiKey,
+  apiBase = apiBase,
+  workPool = workPool,
+  scheduledPool = scheduledPool
 ) {
-    override fun authorize(
-        request: HttpRequest,
-        apiProvider: APIProvider
-    ) {
-        request.addHeader("Content-Type", "application/json")
-        request.addHeader("Accept", "application/json")
-        request.addHeader("Authorization", "Bearer ${apiKey.decrypt}")
-    }
+  override fun authorize(
+    request: HttpRequest,
+    apiProvider: APIProvider
+  ) {
+    request.addHeader("Content-Type", "application/json")
+    request.addHeader("Accept", "application/json")
+    request.addHeader("Authorization", "Bearer ${apiKey.decrypt}")
+  }
 
-    override fun chat(
-        chatRequest: ModelSchema.ChatRequest,
-        model: ChatModel,
-        logStreams: MutableList<java.io.BufferedOutputStream>
-    ): ModelSchema.ChatResponse {
-        validateChatRequest(chatRequest, model)
+  override fun chat(
+    chatRequest: ModelSchema.ChatRequest,
+    model: ChatModel,
+    logStreams: MutableList<java.io.BufferedOutputStream>
+  ): ModelSchema.ChatResponse {
+    validateChatRequest(chatRequest, model)
 
-        return withReliability {
-            withPerformanceLogging {
+    return withReliability {
+      withPerformanceLogging {
 
-                val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(chatRequest)
+        val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
+          .writeValueAsString(chatRequest)
 
-                val rawResponse = post("${apiBase}/chat/completions", json, APIProvider.OpenAI)
-                checkError(rawResponse)
+        val rawResponse = post("${apiBase}/chat/completions", json, APIProvider.OpenAI)
+        checkError(rawResponse)
 
-                val response = JsonUtil.objectMapper().readValue(rawResponse, ModelSchema.ChatResponse::class.java)
+        val response = JsonUtil.objectMapper().readValue(rawResponse, ModelSchema.ChatResponse::class.java)
 
-                if (response.usage != null && model is ChatModel) {
-                    onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
-                }
-
-                response
-            }
+        if (response.usage != null && model is ChatModel) {
+          onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
         }
-    }
 
-    private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
-        require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-        require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
-        require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
+        response
+      }
     }
+  }
 
-    override fun getModels(): List<ChatModel>? {
-        modelsCache[apiBase]?.let { return it }
-        return try {
-            val modelsResponse = fetchModels()
-            val models = modelsResponse.mapNotNull { modelInfo ->
-                val knownModels = OpenAIModels.values.values
-                    .filter { it.modelId == modelInfo.id }
-                if (knownModels.isNotEmpty()) {
-                    knownModels.first()
-                } else if (modelInfo.id.startsWith("gpt") || modelInfo.id.startsWith("o1") || modelInfo.id.startsWith("o3")) {
-                    ChatModel(
-                        name = modelInfo.id,
-                        modelId = modelInfo.id,
-                        provider = APIProvider.OpenAI,
-                        maxTotalTokens = 128000,
-                        inputTokenPricePerK = 0.0,
-                        outputTokenPricePerK = 0.0
-                    )
-                } else {
-                    null
-                }
-            }
-            modelsCache[apiBase] = models
-            models
-        } catch (e: Exception) {
-            log.error("Failed to fetch OpenAI models", e)
-            null
+  private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
+    require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
+    require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
+    require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
+  }
+
+  override fun getModels(): List<ChatModel>? {
+    modelsCache[apiBase]?.let { return it }
+    return try {
+      val modelsResponse = fetchModels()
+      val models = modelsResponse.mapNotNull { modelInfo ->
+        val knownModels = OpenAIModels.values.values
+          .filter { it.modelId == modelInfo.id }
+        if (knownModels.isNotEmpty()) {
+          knownModels.first()
+        } else if (modelInfo.id.startsWith("gpt") || modelInfo.id.startsWith("o1") || modelInfo.id.startsWith("o3")) {
+          ChatModel(
+            name = modelInfo.id,
+            modelId = modelInfo.id,
+            provider = APIProvider.OpenAI,
+            maxTotalTokens = 128000,
+            inputTokenPricePerK = 0.0,
+            outputTokenPricePerK = 0.0
+          )
+        } else {
+          null
         }
+      }
+      modelsCache[apiBase] = models
+      models
+    } catch (e: Exception) {
+      log.error("Failed to fetch OpenAI models", e)
+      null
     }
+  }
 
-    private fun fetchModels(): List<OpenAIModelInfo> {
-        val response = get("${apiBase}/models")
-        checkError(response)
-        val listResponse = JsonUtil.objectMapper().readValue(response, OpenAIListModelsResponse::class.java)
-        return listResponse.data
-    }
+  private fun fetchModels(): List<OpenAIModelInfo> {
+    val response = get("${apiBase}/models")
+    checkError(response)
+    val listResponse = JsonUtil.objectMapper().readValue(response, OpenAIListModelsResponse::class.java)
+    return listResponse.data
+  }
 
-    companion object {
-        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(OpenAIChatClient::class.java)
-        private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
+  companion object {
+    private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(OpenAIChatClient::class.java)
+    private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
 
-        data class OpenAIModelInfo(
-            val id: String,
-            val `object`: String,
-            val created: Long,
-            val owned_by: String
-        )
+    data class OpenAIModelInfo(
+      val id: String,
+      val `object`: String,
+      val created: Long,
+      val owned_by: String
+    )
 
-        data class OpenAIListModelsResponse(
-            val `object`: String,
-            val data: List<OpenAIModelInfo>
-        )
-    }
+    data class OpenAIListModelsResponse(
+      val `object`: String,
+      val data: List<OpenAIModelInfo>
+    )
+  }
 
 
 }

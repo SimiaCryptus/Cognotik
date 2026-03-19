@@ -11,6 +11,7 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
@@ -22,6 +23,7 @@ import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.util.DynamicEnum
 import java.awt.Component
 import java.awt.Dimension
@@ -630,7 +632,7 @@ class TaskConfigDialog(
             if (name == "model") {
                 val selectedModelName = modelCombo.selectedItem as? String
                 val selectedModel = availableModels.find { it.modelId == selectedModelName }
-                args[param] = selectedModel?.toApiChatModel()
+                args[param] = selectedModel?.toApiChatModel(localUser)
                 continue
             }
 
@@ -693,7 +695,7 @@ class TaskConfigDialog(
         val subPlanConfig = config as SubPlanTask.SubPlanTaskTypeConfig
         return SubPlanTask.SubPlanTaskTypeConfig(
             name = configNameField.text.trim(),
-            model = selectedModel?.toApiChatModel(),
+            model = selectedModel?.toApiChatModel(localUser),
             purpose = (configFields["purpose"] as? JBTextArea)?.text?.trim() ?: "",
             cognitiveSettings = CognitiveModeType.valueOf(
                 (configFields["cognitiveMode"] as? ComboBox<*>)?.selectedItem as? String ?: "Waterfall"

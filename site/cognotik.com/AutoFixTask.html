@@ -3,21 +3,22 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | AutoFixTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Workspace Browser -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <script type="module" src="assets/scripts/components/footer.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="assets/scripts/components/footer.js" type="module"></script>
 
     <style>
         :root {
@@ -213,14 +214,15 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-  <main class="page-container">
+<main class="page-container">
 
-      <!-- 1. PAGE HEADER -->
+    <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Execution</div>
         <h1>AutoFixTask</h1>
         <p class="pitch">
-            Executes shell commands and automatically repairs failures using LLM-driven patch generation. Ideal for CI/CD pipelines, automated builds, and self-healing infrastructure.
+            Executes shell commands and automatically repairs failures using LLM-driven patch generation. Ideal for
+            CI/CD pipelines, automated builds, and self-healing infrastructure.
         </p>
         <div class="badges">
             <span class="badge">Category: Execution</span>
@@ -265,20 +267,22 @@
                     <div style="color: #3fb950; margin-top: 0.5rem;">✔ Retrying... Success.</div>
                 </div>
                 <div style="margin-top: 1rem;">
-                    <a href="#" style="color: var(--accent-primary); text-decoration: none; font-size: 0.8rem;">View Full Report (Markdown) →</a>
+                    <a href="#" style="color: var(--accent-primary); text-decoration: none; font-size: 0.8rem;">View
+                        Full Report (Markdown) →</a>
                 </div>
             </div>
         </div>
     </section>
     <!-- 2.5 SHOWCASE (Workspace Browser) -->
     <section class="showcase-section" style="margin-bottom: 3rem;">
-        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-folder-open"></i> Live Results Showcase</h2>
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-folder-open"></i> Live Results Showcase
+        </h2>
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Explore actual artifacts, logs, and generated patches from the <code>AutoFixTask</code> test workspace.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+        <div class="panel" id="file-tree-demo"
+             style="height: 300px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
     </section>
-
 
 
     <!-- 3. TABS -->
@@ -290,7 +294,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Execution Configuration</h3>
             <table class="docs-table">
                 <thead>
@@ -304,7 +308,9 @@
                 <tr>
                     <td><code>commands</code> <span class="req">*</span></td>
                     <td><code>MutableList&lt;CommandWithWorkingDir&gt;</code></td>
-                    <td>A list of commands to execute. Each contains a <code>command</code> (List of strings) and an optional <code>workingDir</code>.</td>
+                    <td>A list of commands to execute. Each contains a <code>command</code> (List of strings) and an
+                        optional <code>workingDir</code>.
+                    </td>
                 </tr>
                 <tr>
                     <td><code>task_description</code></td>
@@ -328,8 +334,16 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr><td><code>command</code> <span class="req">*</span></td><td><code>MutableList&lt;String&gt;</code></td><td>The command and its arguments (e.g. <code>["npm", "install"]</code>).</td></tr>
-                <tr><td><code>workingDir</code></td><td><code>String?</code></td><td>Relative path of the working directory.</td></tr>
+                <tr>
+                    <td><code>command</code> <span class="req">*</span></td>
+                    <td><code>MutableList&lt;String&gt;</code></td>
+                    <td>The command and its arguments (e.g. <code>["npm", "install"]</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>workingDir</code></td>
+                    <td><code>String?</code></td>
+                    <td>Relative path of the working directory.</td>
+                </tr>
                 </tbody>
             </table>
 
@@ -358,23 +372,33 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>Task Lifecycle</h3>
             <ol style="padding-left: 1.2rem;">
-                <li><strong>Initialization:</strong> Resolves tool executables from <code>UserSettings</code> and validates the working directories.</li>
-                <li><strong>Execution:</strong> Launches <code>CmdPatchApp</code> to run the specified shell commands.</li>
-                <li><strong>Monitoring:</strong> Captures STDOUT/STDERR and streams it to a multi-format transcript (MD, HTML, PDF).</li>
-                <li><strong>Self-Healing:</strong> If a command returns a non-zero exit code, the task invokes the LLM with the error context to generate and apply source code patches.</li>
+                <li><strong>Initialization:</strong> Resolves tool executables from <code>UserSettings</code> and
+                    validates the working directories.
+                </li>
+                <li><strong>Execution:</strong> Launches <code>CmdPatchApp</code> to run the specified shell commands.
+                </li>
+                <li><strong>Monitoring:</strong> Captures STDOUT/STDERR and streams it to a multi-format transcript (MD,
+                    HTML, PDF).
+                </li>
+                <li><strong>Self-Healing:</strong> If a command returns a non-zero exit code, the task invokes the LLM
+                    with the error context to generate and apply source code patches.
+                </li>
                 <li><strong>Verification:</strong> Re-runs the command to verify the fix.</li>
-                <li><strong>Completion:</strong> Finalizes the report and updates the session state. Supports interactive approval if <code>autoFix</code> is disabled.</li>
+                <li><strong>Completion:</strong> Finalizes the report and updates the session state. Supports
+                    interactive approval if <code>autoFix</code> is disabled.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Embedded Usage (UnifiedHarness)</h3>
             <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
-                Use the <code>UnifiedHarness</code> to run AutoFix as a headless agent in CI/CD pipelines or Gradle tasks.
+                Use the <code>UnifiedHarness</code> to run AutoFix as a headless agent in CI/CD pipelines or Gradle
+                tasks.
             </p>
             <div class="panel">
                 <pre><code class="language-kotlin">// 1. Define the Execution Configuration
@@ -413,7 +437,8 @@ harness.runTask(
             </div>
 
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
-            <p style="font-size: 0.9rem; color: var(--text-dim);">The following instructions are injected into the LLM context during healing:</p>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following instructions are injected into the LLM
+                context during healing:</p>
             <div class="panel" style="background: #0d1117;">
                   <pre style="color: var(--text-tertiary);">SelfHealing - Run a command and automatically fix any issues that arise
 * Specify the commands to be executed along with their working directories

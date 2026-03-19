@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | SubPlanTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Showcase -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -218,7 +219,8 @@
         <div class="breadcrumbs">Home > Tasks > Execution > SubPlanTask</div>
         <h1>SubPlanTask</h1>
         <p class="pitch">
-            Recursive planning and execution engine. Decomposes complex objectives into manageable sub-tasks using configurable cognitive strategies and isolated execution contexts.
+            Recursive planning and execution engine. Decomposes complex objectives into manageable sub-tasks using
+            configurable cognitive strategies and isolated execution contexts.
         </p>
         <div class="badges">
             <span class="badge">Recursive</span>
@@ -227,7 +229,7 @@
         </div>
     </header>
 
-      <!-- 2. REALITY CHECK SECTION -->
+    <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -260,7 +262,7 @@
                     <div class="mock-tab">Execution</div>
                     <div class="mock-tab active">Summary</div>
                 </div>
-                  <div style="font-size: 0.95rem;">
+                <div style="font-size: 0.95rem;">
                     <h4 style="margin-top: 0; color: var(--accent-primary);"># Sub-Planning Summary</h4>
                     <p><strong>Goal:</strong> Audit the security of the auth module...</p>
                     <hr style="border: 0; border-top: 1px solid var(--border-subtle);">
@@ -269,7 +271,7 @@
                         <li>Applied patches to <code>SecurityConfig.kt</code>.</li>
                         <li>Verified login latency reduction.</li>
                     </ul>
-                      <div style="color: var(--text-tertiary); font-size: 0.875rem; margin-top: var(--space-4);">
+                    <div style="color: var(--text-tertiary); font-size: 0.875rem; margin-top: var(--space-4);">
                         <details>
                             <summary>Full Results (4 items)</summary>
                         </details>
@@ -284,9 +286,8 @@
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             View the recursive execution artifacts and generated plans within the <code>SubPlanTask</code> workspace.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
-
 
 
     <!-- 3. TABS -->
@@ -298,7 +299,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Runtime Parameters (ExecutionConfig)</h3>
             <table class="docs-table">
                 <thead>
@@ -333,11 +334,13 @@
             </table>
 
             <h3>Task Capabilities</h3>
-            <p>The <code>SubPlanTask</code> is unique because it acts as a container. It inherits the capabilities of the <code>TaskOrchestrator</code> but can be restricted to specific sub-tasks via its Type Configuration.</p>
+            <p>The <code>SubPlanTask</code> is unique because it acts as a container. It inherits the capabilities of
+                the <code>TaskOrchestrator</code> but can be restricted to specific sub-tasks via its Type
+                Configuration.</p>
         </div>
 
         <!-- TAB: CONFIG -->
-        <div id="tab-config" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-config" style="display:none;">
             <h3>Type Configuration (Static Settings)</h3>
             <table class="docs-table">
                 <thead>
@@ -373,17 +376,26 @@
 
             <h3>Lifecycle Process</h3>
             <ol style="color: var(--text-dim);">
-                <li><strong style="color: var(--text-main);">Initialization:</strong> Validates the goal and prepares the recursive environment with inherited or overridden settings.</li>
-                <li><strong style="color: var(--text-main);">Planning:</strong> The selected Cognitive Mode analyzes the goal and generates a sequence of sub-tasks.</li>
-                <li><strong style="color: var(--text-main);">Execution:</strong> Sub-tasks are executed within an isolated session context, reporting results back to the parent orchestrator.</li>
-                <li><strong style="color: var(--text-main);">Aggregation:</strong> Results are collected and processed by the <code>summaryPrompt</code> to generate a final synthesis.</li>
+                <li><strong style="color: var(--text-main);">Initialization:</strong> Validates the goal and prepares
+                    the recursive environment with inherited or overridden settings.
+                </li>
+                <li><strong style="color: var(--text-main);">Planning:</strong> The selected Cognitive Mode analyzes the
+                    goal and generates a sequence of sub-tasks.
+                </li>
+                <li><strong style="color: var(--text-main);">Execution:</strong> Sub-tasks are executed within an
+                    isolated session context, reporting results back to the parent orchestrator.
+                </li>
+                <li><strong style="color: var(--text-main);">Aggregation:</strong> Results are collected and processed
+                    by the <code>summaryPrompt</code> to generate a final synthesis.
+                </li>
             </ol>
         </div>
 
-          <!-- TAB 3: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <!-- TAB 3: INTEGRATION -->
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Embedded Execution (Kotlin)</h3>
-            <p style="color: var(--text-dim); margin-bottom: 1rem;">How to invoke a Sub-Plan agent directly from your code using the <code>UnifiedHarness</code>.</p>
+            <p style="color: var(--text-dim); margin-bottom: 1rem;">How to invoke a Sub-Plan agent directly from your
+                code using the <code>UnifiedHarness</code>.</p>
             <div class="panel">
                 <div class="panel-header">SubPlanExample.kt</div>
                 <div class="panel-content">
@@ -420,17 +432,17 @@ harness.runTask(
 </main>
 
 <script>
-      function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-        document.getElementById('tab-' + tabId).style.display = 'block';
-        event.currentTarget.classList.add('active');
-    }
+      document.getElementById('tab-' + tabId).style.display = 'block';
+      event.currentTarget.classList.add('active');
+  }
 </script>
 <script type="module">
-      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
-    initFileTree('#file-tree-demo', 'webui/workspaces/SubPlan/');
+    import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
+  initFileTree('#file-tree-demo', 'webui/workspaces/SubPlan/');
 </script>
 
 

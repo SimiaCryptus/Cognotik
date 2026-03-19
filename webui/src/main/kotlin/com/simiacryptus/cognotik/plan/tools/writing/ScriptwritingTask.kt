@@ -1146,6 +1146,7 @@ class ScriptwritingTask(
       }
     }
   }
+
   private fun getInputFileContent(): String {
     val inputFiles = executionConfig?.input_files ?: return ""
     if (inputFiles.isEmpty()) return ""
