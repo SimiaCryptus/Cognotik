@@ -59,13 +59,20 @@ abstract class ApplicationServer(
     protected open val usageServlet by lazy { ServletHolder("usage", UsageServlet()) }
     protected open val fileZip by lazy { ServletHolder("fileZip", ZipServlet(dataStorage)) }
     protected open val fileIndex by lazy {
-        ServletHolder("fileIndex", object : SessionFileServlet(dataStorage){
+        ServletHolder("fileIndex", object : SessionFileServlet(dataStorage) {
             val sessions = mutableSetOf<Session>()
             override fun onSession(session: Session) {
                 super.onSession(session)
                 if (sessions.add(session)) {
                     this@ApplicationServer.newSession(user = defaultUser, session = session)
                 }
+            }
+            override fun getZipLink(req: HttpServletRequest, filePath: String): String {
+                val session = req.pathInfo?.split("/")?.filter { it.isNotBlank() }?.firstOrNull() ?: return ""
+                val zipPath = if (filePath.isNotBlank()) filePath else "/"
+                return "${req.contextPath}/fileZip?session=${session}&path=${
+                    java.net.URLEncoder.encode(zipPath, "UTF-8")
+                }"
             }
         }).apply {
             registration.setMultipartConfig(
