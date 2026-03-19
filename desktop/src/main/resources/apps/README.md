@@ -13,6 +13,7 @@ with no local build tools required.
 | [📚 Comic Serial Generator](src/main/resources/apps/comic-serial/README.md)               | Transforms story ideas into an ongoing comic book series, generating episodes that maintain consistent characters, settings, and narrative arcs.                                                                |
 | [🧙 System Wizard](src/main/resources/apps/sys-wizard/README.md)                          | Describe a goal in plain language, and the wizard generates a shell script to accomplish it — then runs and auto-fixes the script until it succeeds.                                                            |
 | [🏗️ Webapp Builder](src/main/resources/apps/webapp-factory/README.md)                    | AI-powered web application factory that turns natural language descriptions into complete, runnable web apps with HTML, CSS, and JavaScript.                                                                    |
+| [🔮 Omega — App Factory](src/main/resources/apps/omega/README.md)                         | Meta-application that designs and produces other DocOps applications — describe the app you want in plain language and Omega analyzes, designs, generates, and reviews a complete pipeline app.                  |
 
 ## Common Architecture
 
@@ -82,6 +83,9 @@ src/main/resources/apps/
     ├── ops/
     ├── code/
     └── README.md
+└── omega/                      # 🔮 DocOps App Factory
+     ├── ops/
+     └── README.md
 ```
 
 ## Getting Started
