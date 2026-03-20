@@ -130,7 +130,7 @@ class MultiStepPatchAction : BaseAction() {
         override val settingsClass: Class<*> get() = Settings::class.java
 
         @Suppress("UNCHECKED_CAST")
-        override fun <T : Any> initSettings(session: Session): T? = Settings() as T
+        override fun <T : Any> initSettings(session: Session, user: User): T? = Settings() as T
     }
 
     class AutoDevAgent(

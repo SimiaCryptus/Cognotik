@@ -45,7 +45,7 @@ abstract class SingleTaskApp(
   override val inputCnt: Int = 1
 
   @Suppress("UNCHECKED_CAST")
-  override fun <T : Any> initSettings(session: Session): T =
+  override fun <T : Any> initSettings(session: Session, user: User): T =
     OrchestrationConfig(sessionId = session.sessionId, null, user = user) as T
 
   abstract fun instance(model: ApiChatModel): ChatInterface

@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -132,16 +131,12 @@ open class UnifiedPlanAction(
         session: Session,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val app = object : SinglePlanApp(
+        val app = SinglePlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",
-            showMenubar = false,
-            user = AppSettingsState.Companion.localUser
-        ) {
-            override fun instance(model: ApiChatModel) = model.instance()
-                ?: throw IllegalStateException("Model or Provider not set")
-        }
-      app.getSettingsFile(session, AppSettingsState.localUser).writeText(orchestrationConfig.toJson())
+            showMenubar = false
+        )
+      app.getSettingsFile(session, localUser).writeText(orchestrationConfig.toJson())
         SessionProxyServer.chats[session] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Cognotik",

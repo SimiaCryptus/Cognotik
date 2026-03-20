@@ -2,6 +2,7 @@
 let apiProviders = [];
 let availableModels = {};
 let cognitiveTypes = [];
+let appDirectory = [];
 
 // Initialize sessionId globally
 let sessionId = Utils.generateSessionId();
@@ -56,11 +57,16 @@ const taskConfigManager = new TaskConfigManager({
 
 // ===== Main Initialization =====
 document.addEventListener('DOMContentLoaded', function () {
-    setupAppCards();
     setupBasicChatModal();
     setupSettingsSection();
     setupCustomPipelineModal();
     setupUserSettingsModal();
+     loadAppDirectory().then(() => {
+         renderAppGrid();
+         setupAppCards();
+     }).catch(error => {
+         console.error('[init] Error loading app directory:', error);
+     });
 });
 
 // Load API providers and models first, then initialize everything
@@ -78,45 +84,81 @@ loadApiProviders().then(() => {
         populateQuickSettingsModels();
     });
 });
+// ===== App Directory Loading =====
+async function loadAppDirectory() {
+     console.log('[loadAppDirectory] Loading app directory...');
+     try {
+         const response = await fetch('apps.json');
+         if (response.ok) {
+             appDirectory = await response.json();
+             console.log('[loadAppDirectory] Loaded', appDirectory.length, 'apps');
+         } else {
+             console.error('[loadAppDirectory] Failed to load apps.json:', response.status);
+             appDirectory = [];
+         }
+     } catch (error) {
+         console.error('[loadAppDirectory] Error:', error);
+         appDirectory = [];
+     }
+}
+function renderAppGrid() {
+     const grid = document.getElementById('app-grid');
+     if (!grid) return;
+     grid.innerHTML = '';
+     appDirectory.forEach(app => {
+         const card = document.createElement('a');
+         card.href = '#';
+         card.className = 'app-card' + (app.cardClass ? ' ' + app.cardClass : '');
+         card.id = app.id;
+         let badgeHtml = '';
+         if (app.badge) {
+             badgeHtml = `<div class="app-card-badge${app.badgeClass ? ' ' + app.badgeClass : ''}">${app.badge}</div>`;
+         }
+         card.innerHTML = `
+             <div class="app-card-icon">${app.icon}</div>
+             <div class="app-card-body">
+                 <h3>${app.name}</h3>
+                 <p>${app.description}</p>
+             </div>
+             ${badgeHtml}
+         `;
+         grid.appendChild(card);
+     });
+}
+
 
 // ===== App Card Click Handlers =====
 function setupAppCards() {
     // Basic Chat
-    document.getElementById('app-basic-chat')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        populateBasicChatModelSelections();
-        prefillBasicChatModal();
-        document.getElementById('basic-chat-settings-modal').style.display = 'block';
+
+
+     appDirectory.forEach(app => {
+         const element = document.getElementById(app.id);
+         if (!element) return;
+
+         if (app.type === 'chat') {
+             element.addEventListener('click', function (e) {
+                 e.preventDefault();
+                 populateBasicChatModelSelections();
+                 prefillBasicChatModal();
+                 document.getElementById('basic-chat-settings-modal').style.display = 'block';
+             });
+         } else if (app.type === 'docops') {
+             element.addEventListener('click', function (e) {
+                 e.preventDefault();
+                 const docopsSessionId = Utils.generateSessionId();
+                 console.log(`[setupAppCards] Launching ${app.id} with session:`, docopsSessionId);
+                 window.location.href = `${app.path}/fileIndex/${docopsSessionId}/app.html`;
+             });
+         } else if (app.type === 'pipeline') {
+             element.addEventListener('click', function (e) {
+                 e.preventDefault();
+                 document.getElementById('custom-pipeline-modal').style.display = 'block';
+                 modelManager.populateModelSelections();
+             });
+         }
     });
 
-    // DocOps Apps
-    const docopsApps = [
-        {id: 'app-health-improvement', path: '/health-improvement/fileIndex'},
-        {id: 'app-puppy-finder', path: '/puppy-finder/fileIndex'},
-        {id: 'app-vacation-planner', path: '/vacation-planner/fileIndex'},
-        {id: 'app-webapp-factory', path: '/webapp-factory/fileIndex'},
-        {id: 'app-sys-wizard', path: '/sys-wizard/fileIndex'},
-        {id: 'app-comic-serial', path: '/comic-serial/fileIndex'},
-        {id: 'app-philosophical-calculator', path: '/philosophical-calculator/fileIndex'},
-        {id: 'app-omega', path: '/omega/fileIndex'},
-    ];
-
-    docopsApps.forEach(app => {
-        document.getElementById(app.id)?.addEventListener('click', function (e) {
-            e.preventDefault();
-            const docopsSessionId = Utils.generateSessionId();
-            console.log(`[setupAppCards] Launching ${app.id} with session:`, docopsSessionId);
-            window.location.href = `${app.path}/${docopsSessionId}/app.html`;
-        });
-    });
-
-    // Custom Pipeline
-    document.getElementById('app-custom-pipeline')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        document.getElementById('custom-pipeline-modal').style.display = 'block';
-        // Ensure models are populated in the wizard
-        modelManager.populateModelSelections();
-    });
 }
 
 // ===== Quick Settings Section =====

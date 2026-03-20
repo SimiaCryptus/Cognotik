@@ -23,12 +23,11 @@ import java.util.concurrent.ConcurrentHashMap
  * A unified application that can use different cognitive modes based on configuration.
  * This allows for switching between different planning and execution strategies.
  */
-abstract class SinglePlanApp(
+open class SinglePlanApp(
   path: String,
   applicationName: String = "Unified Planning App",
   showMenubar: Boolean = true,
-  var useExpansionSyntax: Boolean = true,
-  val user: User
+  var useExpansionSyntax: Boolean = true
 ) : ApplicationServer(
   applicationName = applicationName,
   path = path,
@@ -48,7 +47,7 @@ abstract class SinglePlanApp(
   override val stickyInput = true
   override val inputCnt: Int = 4
 
-  override fun appInfo(session: Session): Map<String, Any> {
+  override fun appInfo(session: Session, user: User): Map<String, Any> {
     val settings = getSettings(session, user, OrchestrationConfig::class.java)
     return AppInfoData(
       applicationName = applicationName,
@@ -63,10 +62,11 @@ abstract class SinglePlanApp(
   }
 
   @Suppress("UNCHECKED_CAST")
-  override fun <T : Any> initSettings(session: Session): T =
+  override fun <T : Any> initSettings(session: Session,
+                                      user: User,
+  ): T =
     OrchestrationConfig(sessionId = session.sessionId, null, user = user) as T
 
-  abstract fun instance(model: ApiChatModel): ChatInterface
 
   override fun newSession(
     user: User,
@@ -204,27 +204,37 @@ ${settings?.toJson()}
     ui: SocketManager,
     task: SessionTask,
     processor: FixedConcurrencyProcessor,
-    orchestrationConfig: OrchestrationConfig
+    orchestrationConfig: OrchestrationConfig,
+    user: User,
   ) {
 
     // Check for range expansion first
     val rangeMatch = rangeExpansionPattern.find(currentMessage)
     if (rangeMatch != null) {
-      expandRange(session, currentMessage, ui, task, processor, rangeMatch)
+      expandRange(session, currentMessage, ui, task, processor, rangeMatch, user)
       return
     }
 
     // Check for sequence expansion
     val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
     if (sequenceMatch != null) {
-      expandSequence(session, currentMessage, ui, task, processor, sequenceMatch)
+      expandSequence(session, currentMessage, ui, task, processor, sequenceMatch, user)
       return
     }
 
     // Check for parallel expansion
     val parallelMatch = expansionExpressionPattern.find(currentMessage)
     if (parallelMatch != null && parallelMatch.groupValues[1].split('|', ',').size > 1) {
-      expandParallel(session, currentMessage, ui, task, processor, parallelMatch, orchestrationConfig)
+      expandParallel(
+        session,
+        currentMessage,
+        ui,
+        task,
+        processor,
+        parallelMatch,
+        orchestrationConfig,
+        user
+      )
       return
     }
     val cognitiveMode = orchestrationConfig.cognitiveMode?.getImpl(
@@ -244,7 +254,8 @@ ${settings?.toJson()}
     ui: SocketManager,
     task: SessionTask,
     processor: FixedConcurrencyProcessor,
-    rangeMatch: MatchResult
+    rangeMatch: MatchResult,
+    user: User
   ) {
     val start = rangeMatch.groupValues[1].toInt()
     val end = rangeMatch.groupValues[2].toInt()
@@ -263,7 +274,8 @@ ${settings?.toJson()}
       processor,
       rangeMatch.value,
       items,
-      this@SinglePlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!
+      this@SinglePlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!,
+      user
     )
   }
 
@@ -276,7 +288,8 @@ ${settings?.toJson()}
     ui: SocketManager,
     task: SessionTask,
     processor: FixedConcurrencyProcessor,
-    sequenceMatch: MatchResult
+    sequenceMatch: MatchResult,
+    user: User
   ) {
     val items = sequenceMatch.groupValues[1].split(Regex("""\s*->\s*"""))
     expandSequenceItems(
@@ -287,7 +300,8 @@ ${settings?.toJson()}
       processor,
       sequenceMatch.value,
       items,
-      this@SinglePlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!
+      this@SinglePlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!,
+      user
     )
   }
 
@@ -301,7 +315,8 @@ ${settings?.toJson()}
     task: SessionTask,
     processor: FixedConcurrencyProcessor,
     parallelMatch: MatchResult,
-    orchestrationConfig: OrchestrationConfig
+    orchestrationConfig: OrchestrationConfig,
+    user: User
   ) {
     val options = parallelMatch.groupValues[1].split('|', ',')
     val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
@@ -317,7 +332,8 @@ ${settings?.toJson()}
           ui = ui,
           task = subTask,
           processor = processor,
-          orchestrationConfig = orchestrationConfig
+          orchestrationConfig = orchestrationConfig,
+          user = user,
         )
       }
     }.forEach { it.get() }
@@ -336,7 +352,8 @@ ${settings?.toJson()}
     processor: FixedConcurrencyProcessor,
     expression: String,
     items: List<String>,
-    orchestrationConfig: OrchestrationConfig
+    orchestrationConfig: OrchestrationConfig,
+    user: User
   ) {
     val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
 
@@ -350,7 +367,8 @@ ${settings?.toJson()}
         ui = ui,
         task = subTask,
         processor = processor,
-        orchestrationConfig = orchestrationConfig
+        orchestrationConfig = orchestrationConfig,
+        user = user,
       )
     }
 

@@ -35,7 +35,7 @@ abstract class ApplicationServer(
 ) : ChatServer(resourceBase, showMenubar) {
   private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
-  open fun appInfo(session: Session) = appInfoMap.getOrPut(session) {
+  open fun appInfo(session: Session, user: User) = appInfoMap.getOrPut(session) {
     AppInfoData(
       applicationName = applicationName,
       inputCnt = inputCnt,
@@ -49,8 +49,8 @@ abstract class ApplicationServer(
     ApplicationServices.fileApplicationServices().dataStorageFactory
   }
   protected open val appInfoServlet by lazy {
-    ServletHolder("appInfo", AppInfoServlet { session ->
-      appInfo(Session(session!!))
+    ServletHolder("appInfo", AppInfoServlet { session, user ->
+      appInfo(Session(session!!), user)
     })
   }
   protected open val userInfo by lazy { ServletHolder("userInfo", UserInfoServlet()) }
@@ -142,20 +142,20 @@ abstract class ApplicationServer(
 
   open val settingsClass: Class<*> get() = Map::class.java
 
-  open fun <T : Any> initSettings(session: Session): T? = null
+  open fun <T : Any> initSettings(session: Session, user: User, ): T? = null
 
   open fun <T : Any> getSettings(
     session: Session,
-    userId: User,
+    user: User,
     @Suppress("UNCHECKED_CAST") clazz: Class<T> = settingsClass as Class<T>
   ): T? {
     logger.debug(
       "Getting settings for session: {} user: {} class: {}",
       session,
-      userId.email,
+      user.email,
       clazz.simpleName
     )
-    val settingsFile = getSettingsFile(session, userId)
+    val settingsFile = getSettingsFile(session, user)
     logger.debug("Settings file path: {}", settingsFile.absolutePath)
     if (settingsFile.exists()) try {
       val text = settingsFile.readText()
@@ -168,7 +168,7 @@ abstract class ApplicationServer(
       )
       if (null == settings) {
         logger.debug("No existing settings found, initializing default settings")
-        val initSettings = initSettings<T>(session)
+        val initSettings = initSettings<T>(session, user)
         if (null != initSettings) {
           logger.debug("Writing initial settings to file")
           settingsFile.writeText(toJson(initSettings))

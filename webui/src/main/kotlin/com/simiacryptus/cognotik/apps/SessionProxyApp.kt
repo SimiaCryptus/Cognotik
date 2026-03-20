@@ -15,7 +15,7 @@ class SessionProxyServer(appname: String = "Cognotik", path: String = "/") : App
 ) {
   override val inputCnt = 0
   override val stickyInput = false
-  override fun appInfo(session: Session): Map<String, Any> {
+  override fun appInfo(session: Session, user: User): Map<String, Any> {
     val chat = chats[session]
     val appInfoData = appInfoMap[session]
     return (appInfoData ?: chat?.let { chatServer ->

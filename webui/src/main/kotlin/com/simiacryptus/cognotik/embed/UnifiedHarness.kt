@@ -127,11 +127,8 @@ open class UnifiedHarness(
       path = "/test",
       applicationName = name,
       showMenubar = showMenubar,
-      useExpansionSyntax = true,
-      user = user
+      useExpansionSyntax = true
     ) {
-      override fun instance(model: ApiChatModel) = modelInstanceFn(model, session, user)
-
       override fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
         task.resolveSystemFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
         val usageManager = ApplicationServices.fileApplicationServices().usageManager
@@ -139,9 +136,9 @@ open class UnifiedHarness(
         super.onComplete(mode, task)
       }
 
-      override fun <T : Any> initSettings(session: Session): T {
+      override fun <T : Any> initSettings(session: Session, user: User): T {
         val orchestrationConfig = config(session, getRoot(workspace, session, cognitiveSettings.type?.name ?: "plan"))
-        val settingsFile = getSettingsFile(session, user)
+        val settingsFile = getSettingsFile(session, this@UnifiedHarness.user)
         val json = orchestrationConfig.toJson()
         settingsFile.writeText(json)
         @Suppress("UNCHECKED_CAST")
@@ -195,7 +192,7 @@ open class UnifiedHarness(
     }
 
     try {
-      planApp.initSettings<Any>(session)
+      planApp.initSettings<Any>(session, user)
       val socketManager = planApp.newSession(user, session)
       if (!serverless) {
         SessionProxyServer.agents[session] = socketManager
@@ -255,13 +252,6 @@ open class UnifiedHarness(
         completionLatch.countDown()
       }
 
-      override fun <T : Any> initSettings(session: Session): T {
-        val orchestrationConfig = initSettings(session)
-        val json = orchestrationConfig.toJson()
-        getSettingsFile(session, user).writeText(json)
-        @Suppress("UNCHECKED_CAST")
-        return orchestrationConfig as T
-      }
 
       override fun newSession(user: User, session: Session): SocketManager {
         if (serverless) {
@@ -309,7 +299,7 @@ Task Type: `${taskType.name}`
       )
     }
 
-    singleTaskApp.initSettings<Any>(session)
+    singleTaskApp.initSettings<Any>(session, user)
     val socketManager = singleTaskApp.newSession(user, session)
 
     if (!serverless) {

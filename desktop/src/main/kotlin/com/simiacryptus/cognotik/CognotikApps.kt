@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik
 
-import com.simiacryptus.cognotik.CognotikApps.Companion.localUser
 import com.simiacryptus.cognotik.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
@@ -18,6 +17,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.chat.DocOpsApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import org.eclipse.jetty.webapp.WebAppContext
 import java.awt.Desktop
 import java.awt.SystemTray
@@ -199,7 +200,6 @@ open class CognotikApps(
             return ServerOptions(port, host, publicName)
         }
 
-        val localUser = com.simiacryptus.cognotik.platform.model.defaultUser
     }
 
     private fun initSystemTray() {
@@ -234,7 +234,7 @@ open class CognotikApps(
     override fun setupPlatform() {
         super.setupPlatform()
         ApplicationServices.authenticationManager = object : AuthenticationInterface {
-            override fun getUser(accessToken: String?) = localUser
+            override fun getUser(accessToken: String?) = defaultUser
             override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
             override fun logout(accessToken: String, user: User) {}
         }
@@ -247,31 +247,50 @@ open class CognotikApps(
         }
     }
 
+     data class AppDirectoryEntry(
+         val id: String,
+         val name: String,
+         val icon: String,
+         val description: String,
+         val badge: String?,
+         val badgeClass: String?,
+         val type: String,
+         val path: String,
+         val appId: String? = null,
+         val cardClass: String? = null
+     )
+
+     private fun loadAppDirectory(): List<AppDirectoryEntry> {
+         return try {
+             val json = CognotikApps::class.java.getResourceAsStream("/welcome/apps.json")
+                 ?.bufferedReader()?.readText()
+                 ?: throw IllegalStateException("apps.json not found on classpath")
+             val type = object : TypeToken<List<AppDirectoryEntry>>() {}.type
+             Gson().fromJson(json, type)
+         } catch (e: Exception) {
+             log.error("Failed to load app directory: ${e.message}", e)
+             emptyList()
+         }
+     }
+
     override val childWebApps by lazy {
         OrchestrationConfig.instanceFn =
-            { m,u -> m.instance() ?: throw IllegalStateException("Model or provider not set") }
-        listOf(
-            ChildWebApp("/puppy-finder", DocOpsApp(File("."), model, model, appId = "puppy-finder")),
-            ChildWebApp("/health-improvement", DocOpsApp(File("."), model, model, appId = "health-improvement")),
-            ChildWebApp("/sys-wizard", DocOpsApp(File("."), model, model, appId = "sys-wizard")),
-            ChildWebApp("/webapp-factory", DocOpsApp(File("."), model, model, appId = "webapp-factory")),
-            ChildWebApp("/philosophical-calculator", DocOpsApp(File("."), model, model, appId = "philosophical-calculator")),
-            ChildWebApp("/omega", DocOpsApp(File("."), model, model, appId = "omega")),
-          ChildWebApp("/vacation-planner", DocOpsApp(File("."), model, model, appId = "vacation-planner")),
-            ChildWebApp("/comic-serial", DocOpsApp(File("."), model, model, appId = "comic-serial")),
-            ChildWebApp("/proxy", SessionProxyServer("Proxy Server", "/proxy")),
-            ChildWebApp("/chat", BasicChatApp(File("."), model, model)),
-            ChildWebApp(
-                "/taskChat", object : SinglePlanApp(
-                    path = "/taskChat",
-                    applicationName = "Task-Runner",
-                    user = localUser
-                ) {
-                    override fun instance(model: ApiChatModel) = model.instance()
-                        ?: throw IllegalStateException("Model or provider not set")
-                }
-            ),
-        )
+            { m,u -> m.instance(user=u) ?: throw IllegalStateException("Model or provider not set") }
+         val apps = loadAppDirectory()
+         val docopsApps = apps.filter { it.type == "docops" }.map { entry ->
+             ChildWebApp(entry.path, DocOpsApp(File("."), model, model, appId = entry.appId ?: entry.id))
+         }
+         val staticApps = listOf(
+             ChildWebApp("/proxy", SessionProxyServer("Proxy Server", "/proxy")),
+             ChildWebApp("/chat", BasicChatApp(File("."), model, model)),
+             ChildWebApp(
+                 "/taskChat", SinglePlanApp(
+                     path = "/taskChat",
+                     applicationName = "Task-Runner"
+                 )
+             ),
+         )
+         docopsApps + staticApps
     }
 
     protected open fun onMessage(line: String?): String {
@@ -395,7 +414,7 @@ fun String?.urlEncode(): String {
 }
 
 fun ApiChatModel.instance(
-    user: User = localUser,
+    user: User,
     session: Session = globalID,
     service: ExecutorService = ApplicationServices.threadPoolManager.getPool(session, user),
     temperature: Double = 0.1
