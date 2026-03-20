@@ -549,7 +549,7 @@ function showNotification(message, type = 'info') {
 async function loadApiProviders() {
     console.log('[loadApiProviders] Loading API providers from server...');
     try {
-         const response = await fetch('apiProviders/');
+         const response = await fetch('apiProviders/?format=json');
          if (response.status >= 400) {
              console.warn('[loadApiProviders] Received HTTP', response.status, '- redirecting to login');
              window.location.href = 'login/';

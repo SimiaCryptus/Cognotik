@@ -24,7 +24,7 @@ class ApiProviderServlet : HttpServlet() {
 
   data class ProviderInfo(
     val name: String,
-    val baseUrl: String,
+    val baseUrl: String?,
     val models: List<ModelInfo>,
     val supportsChat: Boolean,
     val supportsEmbedding: Boolean
@@ -121,19 +121,26 @@ class ApiProviderServlet : HttpServlet() {
       resp.status = HttpServletResponse.SC_OK
       val acceptHeader = req.getHeader("Accept") ?: ""
 
-      if (acceptHeader.contains("application/json")) {
+      val formatParam = req.getParameter("format")
+      if (formatParam == "json" || acceptHeader.contains("application/json") || acceptHeader.contains("text/json")) {
         resp.contentType = "application/json"
+        resp.characterEncoding = "UTF-8"
         resp.writer.write(JsonUtil.toJson(response))
+        resp.writer.flush()
       } else {
         resp.contentType = "text/html"
+        resp.characterEncoding = "UTF-8"
         resp.writer.write(generateHtmlResponse(response))
+        resp.writer.flush()
       }
 
     } catch (e: Exception) {
       log.error("Error in ApiProviderServlet", e)
       resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
       resp.contentType = "application/json"
+      resp.characterEncoding = "UTF-8"
       resp.writer.write(JsonUtil.toJson(mapOf("error" to e.message)))
+      resp.writer.flush()
     }
   }
 
@@ -161,7 +168,7 @@ class ApiProviderServlet : HttpServlet() {
       """
             <div class="provider">
                 <h2>${provider.name}</h2>
-                <p><strong>Base URL:</strong> ${provider.baseUrl}</p>
+                <p><strong>Base URL:</strong> ${provider.baseUrl ?: "N/A"}</p>
                 <p><strong>Supports Chat:</strong> ${if (provider.supportsChat) "Yes" else "No"}</p>
                 <p><strong>Supports Embedding:</strong> ${if (provider.supportsEmbedding) "Yes" else "No"}</p>
                 <h3>Available Models:</h3>
