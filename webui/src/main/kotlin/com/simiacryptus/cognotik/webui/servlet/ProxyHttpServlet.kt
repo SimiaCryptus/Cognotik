@@ -34,277 +34,277 @@ import kotlin.reflect.typeOf
  * A simple reverse proxy that supports the OpenAI API
  */
 open class ProxyHttpServlet(
-    private val targetUrl: String = "https://api.openai.com/"
+  private val targetUrl: String = "https://api.openai.com/"
 ) : HttpServlet() {
 
-    open val asyncClient: CloseableHttpAsyncClient by lazy {
-        HttpAsyncClientBuilder.create()
-            .setRetryStrategy(DefaultHttpRequestRetryStrategy(0, Timeout.ofSeconds(1)))
-            .setDefaultRequestConfig(
-                RequestConfig.custom()
-                    .setConnectionRequestTimeout(Timeout.of(5, TimeUnit.MINUTES))
-                    .setResponseTimeout(Timeout.of(5, TimeUnit.MINUTES))
-                    .build()
-            )
-            .setConnectionManager(with(PoolingAsyncClientConnectionManager()) {
-                defaultMaxPerRoute = 1000
-                maxTotal = 1000
-                this
-            }).build().apply {
-                start()
-            }
-    }
+  open val asyncClient: CloseableHttpAsyncClient by lazy {
+    HttpAsyncClientBuilder.create()
+      .setRetryStrategy(DefaultHttpRequestRetryStrategy(0, Timeout.ofSeconds(1)))
+      .setDefaultRequestConfig(
+        RequestConfig.custom()
+          .setConnectionRequestTimeout(Timeout.of(5, TimeUnit.MINUTES))
+          .setResponseTimeout(Timeout.of(5, TimeUnit.MINUTES))
+          .build()
+      )
+      .setConnectionManager(with(PoolingAsyncClientConnectionManager()) {
+        defaultMaxPerRoute = 1000
+        maxTotal = 1000
+        this
+      }).build().apply {
+        start()
+      }
+  }
 
-    override fun service(req: HttpServletRequest, resp: HttpServletResponse) {
-        val asyncContext = req.startAsync()
-        asyncContext.timeout = 0
-        val requestKey = req.getHeaders("Authorization").nextElement().removePrefix("Bearer ")
-        val proxyKey = ApiKeyServlet.apiKeyRecords.find { it.apiKey.decrypt == requestKey }
-        val path = (req.servletPath ?: "").removePrefix("/")
-        val proxyRequest = getProxyRequest(req)
-        if (null != proxyKey) proxyRequest.addHeader("Authorization", "Bearer " + proxyKey.mappedKey)
-        val user = ApplicationServices.authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
-        val totalUsage =
-            ApplicationServices.fileApplicationServices().usageManager.getUserUsageSummary(user!!).values.sumOf {
-                it.cost ?: 0.0
-            }
-        if (totalUsage > (proxyKey?.budget ?: 0.0)) {
-            resp.status = 402
-            resp.contentType = "text/plain"
-            resp.writer.println("Budget exceeded")
-            asyncContext.complete()
-            return
+  override fun service(req: HttpServletRequest, resp: HttpServletResponse) {
+    val asyncContext = req.startAsync()
+    asyncContext.timeout = 0
+    val requestKey = req.getHeaders("Authorization").nextElement().removePrefix("Bearer ")
+    val proxyKey = ApiKeyServlet.apiKeyRecords.find { it.apiKey.decrypt == requestKey }
+    val path = (req.servletPath ?: "").removePrefix("/")
+    val proxyRequest = getProxyRequest(req)
+    if (null != proxyKey) proxyRequest.addHeader("Authorization", "Bearer " + proxyKey.mappedKey)
+    val user = ApplicationServices.authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
+    val totalUsage =
+      ApplicationServices.fileApplicationServices().usageManager.getUserUsageSummary(user!!).values.sumOf {
+        it.cost ?: 0.0
+      }
+    if (totalUsage > (proxyKey?.budget ?: 0.0)) {
+      resp.status = 402
+      resp.contentType = "text/plain"
+      resp.writer.println("Budget exceeded")
+      asyncContext.complete()
+      return
+    }
+    asyncClient.execute(proxyRequest, object : FutureCallback<SimpleHttpResponse> {
+      override fun completed(proxyResponse: SimpleHttpResponse?) {
+        resp.status = proxyResponse?.code ?: 500
+        proxyResponse?.headers?.forEach { header ->
+          resp.addHeader(header.name, header.value)
         }
-        asyncClient.execute(proxyRequest, object : FutureCallback<SimpleHttpResponse> {
-            override fun completed(proxyResponse: SimpleHttpResponse?) {
-                resp.status = proxyResponse?.code ?: 500
-                proxyResponse?.headers?.forEach { header ->
-                    resp.addHeader(header.name, header.value)
-                }
-                val proxyResponseBody = proxyResponse?.bodyBytes ?: ByteArray(0)
+        val proxyResponseBody = proxyResponse?.bodyBytes ?: ByteArray(0)
 
-                resp.outputStream.write(
-                    onResponse(
-                        req,
-                        path,
-                        proxyResponse,
-                        proxyResponseBody,
-                        proxyKey,
-                        proxyRequest.body?.bodyBytes
-                    )
-                )
-                asyncContext.complete()
-            }
-
-            override fun failed(exception: Exception?) {
-                resp.status = 500
-                resp.contentType = "text/plain"
-                resp.writer.println(exception?.message)
-                asyncContext.complete()
-            }
-
-            override fun cancelled() {
-                resp.status = 500
-                resp.contentType = "text/plain"
-                resp.writer.println("Cancelled")
-                asyncContext.complete()
-            }
-
-        })
-    }
-
-    private fun getProxyRequest(req: HttpServletRequest): SimpleHttpRequest {
-        val path = (req.servletPath ?: "").removePrefix("/")
-        val url = URI(targetUrl).resolve(path).toString()
-        val proxyRequest = SimpleHttpRequest(req.method, url)
-        val headers = req.headerNames.toList().filter {
-            when (it) {
-                "Authorization" -> false
-
-                "Connection" -> false
-                "Host" -> false
-                "Keep-Alive" -> false
-                "Transfer-Encoding" -> false
-                "Upgrade" -> false
-                else -> true
-            }
-        }.associateWith { req.getHeaders(it).asSequence() }.toMutableMap()
-        headers.forEach { (key, values) ->
-            values.forEach { value -> proxyRequest.addHeader(key, value) }
-        }
-        val bytes = req.inputStream.readAllBytes()
-        proxyRequest.setBody(onRequest(req, bytes), ContentType.create(req.contentType ?: "text/plain"))
-        return proxyRequest
-    }
-
-    @OptIn(ExperimentalStdlibApi::class)
-    open fun onResponse(
-        req: HttpServletRequest,
-        path: String,
-        proxyResponse: SimpleHttpResponse?,
-        bodyBytes: ByteArray,
-        proxyKey: ApiKeyServlet.ApiKeyRecord?,
-        requestBody: ByteArray?
-    ): ByteArray {
-        val body = JsonUtil.fromJson<Map<String, Any>>(
-            String(GZIPInputStream(bodyBytes.inputStream()).readAllBytes()),
-            typeOf<Map<String, Any>>().javaType
+        resp.outputStream.write(
+          onResponse(
+            req,
+            path,
+            proxyResponse,
+            proxyResponseBody,
+            proxyKey,
+            proxyRequest.body?.bodyBytes
+          )
         )
-        val parsedRequest = JsonUtil.fromJson<Map<String, Any>>(
-            String(requestBody ?: ByteArray(0)),
-            typeOf<Map<String, Any>>().javaType
-        )
-        when (path) {
-            "moderations" -> {
-                log.info(
-                    "Proxy $path\nRequest: ${
-                        JsonUtil.toJson(parsedRequest).lineSequence()
-                            .map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "  ".length -> "  "
-                                            else -> it
-                                        }
-                                    }
+        asyncContext.complete()
+      }
 
-                                    else -> "  " + it
-                                }
-                            }
-                            .joinToString("\n")
-                    }\nResponse: ${
-                        JsonUtil.toJson(body).lineSequence()
-                            .map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "  ".length -> "  "
-                                            else -> it
-                                        }
-                                    }
+      override fun failed(exception: Exception?) {
+        resp.status = 500
+        resp.contentType = "text/plain"
+        resp.writer.println(exception?.message)
+        asyncContext.complete()
+      }
 
-                                    else -> "  " + it
-                                }
-                            }
-                            .joinToString("\n")
-                    }"
-                )
-            }
+      override fun cancelled() {
+        resp.status = 500
+        resp.contentType = "text/plain"
+        resp.writer.println("Cancelled")
+        asyncContext.complete()
+      }
 
-            "chat/completions" -> {
-                log.info(
-                    "Proxy $path\nRequest: ${
-                        JsonUtil.toJson(parsedRequest).lineSequence()
-                            .map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "  ".length -> "  "
-                                            else -> it
-                                        }
-                                    }
+    })
+  }
 
-                                    else -> "  " + it
-                                }
-                            }
-                            .joinToString("\n")
-                    }\nResponse: ${
-                        JsonUtil.toJson(body).lineSequence()
-                            .map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "  ".length -> "  "
-                                            else -> it
-                                        }
-                                    }
+  private fun getProxyRequest(req: HttpServletRequest): SimpleHttpRequest {
+    val path = (req.servletPath ?: "").removePrefix("/")
+    val url = URI(targetUrl).resolve(path).toString()
+    val proxyRequest = SimpleHttpRequest(req.method, url)
+    val headers = req.headerNames.toList().filter {
+      when (it) {
+        "Authorization" -> false
 
-                                    else -> "  " + it
-                                }
-                            }
-                            .joinToString("\n")
-                    }"
-                )
-            }
-
-            else -> {
-                log.info(
-                    "Proxy $path\nRequest: ${
-                        JsonUtil.toJson(parsedRequest).lineSequence()
-                            .map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "  ".length -> "  "
-                                            else -> it
-                                        }
-                                    }
-
-                                    else -> "  " + it
-                                }
-                            }
-                            .joinToString("\n")
-                    }\nResponse: ${
-                        JsonUtil.toJson(body).lineSequence()
-                            .map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "  ".length -> "  "
-                                            else -> it
-                                        }
-                                    }
-
-                                    else -> "  " + it
-                                }
-                            }
-                            .joinToString("\n")
-                    }"
-                )
-            }
-        }
-        return bodyBytes
+        "Connection" -> false
+        "Host" -> false
+        "Keep-Alive" -> false
+        "Transfer-Encoding" -> false
+        "Upgrade" -> false
+        else -> true
+      }
+    }.associateWith { req.getHeaders(it).asSequence() }.toMutableMap()
+    headers.forEach { (key, values) ->
+      values.forEach { value -> proxyRequest.addHeader(key, value) }
     }
+    val bytes = req.inputStream.readAllBytes()
+    proxyRequest.setBody(onRequest(req, bytes), ContentType.create(req.contentType ?: "text/plain"))
+    return proxyRequest
+  }
 
-    open fun onRequest(req: HttpServletRequest, bytes: ByteArray?): ByteArray? {
-        return bytes
-    }
+  @OptIn(ExperimentalStdlibApi::class)
+  open fun onResponse(
+    req: HttpServletRequest,
+    path: String,
+    proxyResponse: SimpleHttpResponse?,
+    bodyBytes: ByteArray,
+    proxyKey: ApiKeyServlet.ApiKeyRecord?,
+    requestBody: ByteArray?
+  ): ByteArray {
+    val body = JsonUtil.fromJson<Map<String, Any>>(
+      String(GZIPInputStream(bodyBytes.inputStream()).readAllBytes()),
+      typeOf<Map<String, Any>>().javaType
+    )
+    val parsedRequest = JsonUtil.fromJson<Map<String, Any>>(
+      String(requestBody ?: ByteArray(0)),
+      typeOf<Map<String, Any>>().javaType
+    )
+    when (path) {
+      "moderations" -> {
+        log.info(
+          "Proxy $path\nRequest: ${
+            JsonUtil.toJson(parsedRequest).lineSequence()
+              .map {
+                when {
+                  it.isBlank() -> {
+                    when {
+                      it.length < "  ".length -> "  "
+                      else -> it
+                    }
+                  }
 
-    companion object {
-        val log = LoggerFactory.getLogger(ProxyHttpServlet::class.java)
-
-        @JvmStatic
-        fun main(args: Array<String>) {
-            test()
-        }
-
-        fun test() {
-
-            val server = Server(8080)
-            val contextHandlerCollection = ContextHandlerCollection()
-            val servletHandler = ServletHandler()
-            servletHandler.server = server
-            servletHandler.addServletWithMapping(ServletHolder(ProxyHttpServlet("http://localhost:8080")), "/proxy/*")
-            servletHandler.addServletWithMapping(ServletHolder(object : HttpServlet() {
-                override fun service(req: HttpServletRequest, resp: HttpServletResponse) {
-                    resp.writer.println("Hello, world!")
+                  else -> "  " + it
                 }
-            }), "/test")
-            contextHandlerCollection.addHandler(servletHandler)
-            server.handler = contextHandlerCollection
-            server.start()
+              }
+              .joinToString("\n")
+          }\nResponse: ${
+            JsonUtil.toJson(body).lineSequence()
+              .map {
+                when {
+                  it.isBlank() -> {
+                    when {
+                      it.length < "  ".length -> "  "
+                      else -> it
+                    }
+                  }
 
-            val connection = URL("http://localhost:8080/proxy/test").openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.doOutput = true
-            connection.doInput = true
-            connection.connect()
-            val inputStream = connection.inputStream
-            val outputStream = System.out
-            inputStream.copyTo(outputStream)
-            connection.disconnect()
-            server.stop()
-        }
+                  else -> "  " + it
+                }
+              }
+              .joinToString("\n")
+          }"
+        )
+      }
+
+      "chat/completions" -> {
+        log.info(
+          "Proxy $path\nRequest: ${
+            JsonUtil.toJson(parsedRequest).lineSequence()
+              .map {
+                when {
+                  it.isBlank() -> {
+                    when {
+                      it.length < "  ".length -> "  "
+                      else -> it
+                    }
+                  }
+
+                  else -> "  " + it
+                }
+              }
+              .joinToString("\n")
+          }\nResponse: ${
+            JsonUtil.toJson(body).lineSequence()
+              .map {
+                when {
+                  it.isBlank() -> {
+                    when {
+                      it.length < "  ".length -> "  "
+                      else -> it
+                    }
+                  }
+
+                  else -> "  " + it
+                }
+              }
+              .joinToString("\n")
+          }"
+        )
+      }
+
+      else -> {
+        log.info(
+          "Proxy $path\nRequest: ${
+            JsonUtil.toJson(parsedRequest).lineSequence()
+              .map {
+                when {
+                  it.isBlank() -> {
+                    when {
+                      it.length < "  ".length -> "  "
+                      else -> it
+                    }
+                  }
+
+                  else -> "  " + it
+                }
+              }
+              .joinToString("\n")
+          }\nResponse: ${
+            JsonUtil.toJson(body).lineSequence()
+              .map {
+                when {
+                  it.isBlank() -> {
+                    when {
+                      it.length < "  ".length -> "  "
+                      else -> it
+                    }
+                  }
+
+                  else -> "  " + it
+                }
+              }
+              .joinToString("\n")
+          }"
+        )
+      }
     }
+    return bodyBytes
+  }
+
+  open fun onRequest(req: HttpServletRequest, bytes: ByteArray?): ByteArray? {
+    return bytes
+  }
+
+  companion object {
+    val log = LoggerFactory.getLogger(ProxyHttpServlet::class.java)
+
+    @JvmStatic
+    fun main(args: Array<String>) {
+      test()
+    }
+
+    fun test() {
+
+      val server = Server(8080)
+      val contextHandlerCollection = ContextHandlerCollection()
+      val servletHandler = ServletHandler()
+      servletHandler.server = server
+      servletHandler.addServletWithMapping(ServletHolder(ProxyHttpServlet("http://localhost:8080")), "/proxy/*")
+      servletHandler.addServletWithMapping(ServletHolder(object : HttpServlet() {
+        override fun service(req: HttpServletRequest, resp: HttpServletResponse) {
+          resp.writer.println("Hello, world!")
+        }
+      }), "/test")
+      contextHandlerCollection.addHandler(servletHandler)
+      server.handler = contextHandlerCollection
+      server.start()
+
+      val connection = URL("http://localhost:8080/proxy/test").openConnection() as HttpURLConnection
+      connection.requestMethod = "GET"
+      connection.doOutput = true
+      connection.doInput = true
+      connection.connect()
+      val inputStream = connection.inputStream
+      val outputStream = System.out
+      inputStream.copyTo(outputStream)
+      connection.disconnect()
+      server.stop()
+    }
+  }
 
 }

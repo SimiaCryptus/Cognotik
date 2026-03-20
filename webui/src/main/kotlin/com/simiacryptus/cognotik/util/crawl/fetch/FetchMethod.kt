@@ -8,33 +8,33 @@ import java.io.File
 import java.util.concurrent.ExecutorService
 
 interface FetchStrategy : EnabledStrategy {
-    fun fetch(
-        url: String,
-        webSearchDir: File,
-        index: Int,
-        pool: ExecutorService,
-        orchestrationConfig: OrchestrationConfig
-    ): String
+  fun fetch(
+    url: String,
+    webSearchDir: File,
+    index: Int,
+    pool: ExecutorService,
+    orchestrationConfig: OrchestrationConfig
+  ): String
 }
 
 object FetchConfig {
-    var isSeleniumEnabled: Boolean = false
+  var isSeleniumEnabled: Boolean = false
 }
 
 interface FetchMethodFactory {
-    fun createStrategy(task: CrawlerAgentTask): FetchStrategy
+  fun createStrategy(task: CrawlerAgentTask): FetchStrategy
 }
 
 @Suppress("unused")
 enum class FetchMethod : FetchMethodFactory {
-    Selenium {
-        override fun createStrategy(task: CrawlerAgentTask) = Selenium().createStrategy(task)
-    },
-    HttpClient {
-        override fun createStrategy(task: CrawlerAgentTask) = HttpClientFetch().createStrategy(task)
-    };
+  Selenium {
+    override fun createStrategy(task: CrawlerAgentTask) = Selenium().createStrategy(task)
+  },
+  HttpClient {
+    override fun createStrategy(task: CrawlerAgentTask) = HttpClientFetch().createStrategy(task)
+  };
 
-    companion object {
-        val log = LoggerFactory.getLogger(FetchMethod::class.java)
-    }
+  companion object {
+    val log = LoggerFactory.getLogger(FetchMethod::class.java)
+  }
 }

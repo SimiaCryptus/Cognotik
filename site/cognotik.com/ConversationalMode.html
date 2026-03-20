@@ -2,31 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
     <!-- SEO Meta Tags -->
     <title>ConversationalMode | Cognotik</title>
-    <meta name="description" content="The interactive control loop for exploratory debugging and 'Chat with Code' workflows in Cognotik.">
-    <meta name="keywords" content="AI coding, autonomous agents, ConversationalMode, expansion syntax, topic extraction">
+    <meta content="The interactive control loop for exploratory debugging and 'Chat with Code' workflows in Cognotik."
+          name="description">
+    <meta content="AI coding, autonomous agents, ConversationalMode, expansion syntax, topic extraction"
+          name="keywords">
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="ConversationalMode | Cognotik">
-    <meta property="og:description" content="Interactive control loop for exploratory debugging and 'Chat with Code' workflows.">
-    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
-    <meta property="og:url" content="https://cognotik.com/ConversationalMode.html">
-    <meta property="og:type" content="website">
+    <meta content="ConversationalMode | Cognotik" property="og:title">
+    <meta content="Interactive control loop for exploratory debugging and 'Chat with Code' workflows."
+          property="og:description">
+    <meta content="https://cognotik.com/assets/images/og-image.png" property="og:image">
+    <meta content="https://cognotik.com/ConversationalMode.html" property="og:url">
+    <meta content="website" property="og:type">
 
     <!-- Favicon Suite -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-    <meta name="theme-color" content="#0f1115">
+    <link href="assets/icons/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="assets/icons/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
+    <meta content="#0f1115" name="theme-color">
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         .reality-check-grid {
@@ -70,36 +74,37 @@
     </style>
 </head>
 <body>
-    <cognotik-header></cognotik-header>
+<cognotik-header></cognotik-header>
 
-    <main class="page-container">
-        <!-- 1. HEADER -->
-        <header class="mb-12">
-            <nav class="text-caption text-tertiary mb-4">Home > Core > Cognitive Modes</nav>
-            <h1 class="text-title mb-2">ConversationalMode</h1>
-            <div class="flex gap-2 mb-6">
-                <span class="badge badge-primary">Core Architecture</span>
-                <span class="badge badge-success">Interactive</span>
-                <span class="badge badge-purple">Topic Aware</span>
+<main class="page-container">
+    <!-- 1. HEADER -->
+    <header class="mb-12">
+        <nav class="text-caption text-tertiary mb-4">Home > Core > Cognitive Modes</nav>
+        <h1 class="text-title mb-2">ConversationalMode</h1>
+        <div class="flex gap-2 mb-6">
+            <span class="badge badge-primary">Core Architecture</span>
+            <span class="badge badge-success">Interactive</span>
+            <span class="badge badge-purple">Topic Aware</span>
+        </div>
+        <p class="text-body-lg text-secondary">
+            The interactive control loop that orchestrates task execution, manages reasoning state, and defines the
+            agent's problem-solving persona for exploratory debugging and "Chat with Code" workflows.
+        </p>
+    </header>
+
+    <!-- 2. REALITY CHECK -->
+    <section class="reality-check-grid">
+        <!-- Input: The Configuration -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">⚙️</span> OrchestrationConfig.json
             </div>
-            <p class="text-body-lg text-secondary">
-                The interactive control loop that orchestrates task execution, manages reasoning state, and defines the agent's problem-solving persona for exploratory debugging and "Chat with Code" workflows.
-            </p>
-        </header>
-
-        <!-- 2. REALITY CHECK -->
-        <section class="reality-check-grid">
-            <!-- Input: The Configuration -->
-            <div class="panel">
-                <div class="panel-header">
-                    <span class="panel-icon">⚙️</span> OrchestrationConfig.json
+            <div class="panel-body p-0">
+                <div class="p-4 border-b border-subtle bg-app">
+                    <div class="text-caption text-tertiary mb-2">User Prompt (Expansion)</div>
+                    <code class="text-accent">"Check logs for errors in @[Production|Staging] environments."</code>
                 </div>
-                <div class="panel-body p-0">
-                    <div class="p-4 border-b border-subtle bg-app">
-                        <div class="text-caption text-tertiary mb-2">User Prompt (Expansion)</div>
-                        <code class="text-accent">"Check logs for errors in @[Production|Staging] environments."</code>
-                    </div>
-                    <pre class="m-0 border-0"><code class="language-json">{
+                <pre class="m-0 border-0"><code class="language-json">{
   "mode": "ConversationalMode",
   "useExpansionSyntax": true,
   "model_config": {
@@ -107,108 +112,119 @@
     "fast": "gpt-3.5-turbo"
   }
 }</code></pre>
-                </div>
             </div>
+        </div>
 
-            <!-- Arrow Connector -->
-            <div class="flow-arrow">→</div>
+        <!-- Arrow Connector -->
+        <div class="flow-arrow">→</div>
 
-            <!-- Output: The Transcript & State -->
-            <div class="panel">
-                <div class="panel-header">
-                    <span class="panel-icon">🧠</span> Live Transcript
-                </div>
-                <div class="panel-body">
-                    <div class="mock-browser">
-                        <div class="mock-tabs">
-                            <div class="mock-tab active">Production</div>
-                            <div class="mock-tab">Staging</div>
-                        </div>
-                        <div class="p-4">
-                            <div class="text-caption text-tertiary mb-2">[Plan] Choosing ReadLogTask...</div>
-                            <pre class="m-0 p-2 bg-app text-success text-xs">Searching Production logs...
+        <!-- Output: The Transcript & State -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">🧠</span> Live Transcript
+            </div>
+            <div class="panel-body">
+                <div class="mock-browser">
+                    <div class="mock-tabs">
+                        <div class="mock-tab active">Production</div>
+                        <div class="mock-tab">Staging</div>
+                    </div>
+                    <div class="p-4">
+                        <div class="text-caption text-tertiary mb-2">[Plan] Choosing ReadLogTask...</div>
+                        <pre class="m-0 p-2 bg-app text-success text-xs">Searching Production logs...
 Found 0 critical errors.</pre>
-                        </div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- 3. TECHNICAL DETAILS -->
-        <section class="tabs mt-12" data-tabs>
-            <div class="tabs-nav" role="tablist">
-                <button class="tab-btn active" data-tab="features" role="tab">Core Features</button>
-                <button class="tab-btn" data-tab="syntax" role="tab">Expansion Syntax</button>
-                <button class="tab-btn" data-tab="implementation" role="tab">Implementation</button>
+    <!-- 3. TECHNICAL DETAILS -->
+    <section class="tabs mt-12" data-tabs>
+        <div class="tabs-nav" role="tablist">
+            <button class="tab-btn active" data-tab="features" role="tab">Core Features</button>
+            <button class="tab-btn" data-tab="syntax" role="tab">Expansion Syntax</button>
+            <button class="tab-btn" data-tab="implementation" role="tab">Implementation</button>
+        </div>
+        <div class="tabs-content">
+            <!-- TAB: FEATURES -->
+            <div class="tab-panel active" data-tab-panel="features" role="tabpanel">
+                <h3 class="text-subheading mb-4">The Listen-Act-Reply Loop</h3>
+                <p class="text-body text-secondary mb-6">Unlike autonomous planning modes,
+                    <code>ConversationalMode</code> prioritizes immediate feedback and user steering.</p>
+                <div class="content-grid">
+                    <div class="card card-bordered p-4">
+                        <h4 class="text-accent mb-2">Topic Extraction</h4>
+                        <p class="text-body-sm text-tertiary">Automatically identifies named entities (files, classes,
+                            servers) in responses and stores them as <code>@Topics</code>.</p>
+                    </div>
+                    <div class="card card-bordered p-4">
+                        <h4 class="text-accent mb-2">Parallel Execution</h4>
+                        <p class="text-body-sm text-tertiary">Use alternative syntax to trigger multiple tasks
+                            simultaneously, rendered in a tabbed interface.</p>
+                    </div>
+                    <div class="card card-bordered p-4">
+                        <h4 class="text-accent mb-2">Context Awareness</h4>
+                        <p class="text-body-sm text-tertiary">Maintains a rolling window of history to ensure task
+                            selection is informed by previous interactions.</p>
+                    </div>
+                </div>
             </div>
-            <div class="tabs-content">
-                <!-- TAB: FEATURES -->
-                <div class="tab-panel active" data-tab-panel="features" role="tabpanel">
-                    <h3 class="text-subheading mb-4">The Listen-Act-Reply Loop</h3>
-                    <p class="text-body text-secondary mb-6">Unlike autonomous planning modes, <code>ConversationalMode</code> prioritizes immediate feedback and user steering.</p>
-                    <div class="content-grid">
-                        <div class="card card-bordered p-4">
-                            <h4 class="text-accent mb-2">Topic Extraction</h4>
-                            <p class="text-body-sm text-tertiary">Automatically identifies named entities (files, classes, servers) in responses and stores them as <code>@Topics</code>.</p>
-                        </div>
-                        <div class="card card-bordered p-4">
-                            <h4 class="text-accent mb-2">Parallel Execution</h4>
-                            <p class="text-body-sm text-tertiary">Use alternative syntax to trigger multiple tasks simultaneously, rendered in a tabbed interface.</p>
-                        </div>
-                        <div class="card card-bordered p-4">
-                            <h4 class="text-accent mb-2">Context Awareness</h4>
-                            <p class="text-body-sm text-tertiary">Maintains a rolling window of history to ensure task selection is informed by previous interactions.</p>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- TAB: SYNTAX -->
-                <div class="tab-panel" data-tab-panel="syntax" role="tabpanel">
-                    <h3 class="text-subheading mb-4">Expansion Syntax Guide</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-subtle">
-                                    <th class="py-3 px-4 text-caption text-tertiary">Syntax</th>
-                                    <th class="py-3 px-4 text-caption text-tertiary">Type</th>
-                                    <th class="py-3 px-4 text-caption text-tertiary">Behavior</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-body-sm">
-                                <tr class="border-b border-subtle">
-                                    <td class="py-3 px-4"><code class="text-accent">@[A|B]</code></td>
-                                    <td class="py-3 px-4">Alternatives</td>
-                                    <td class="py-3 px-4 text-secondary">Executes tasks for A and B in <strong>parallel</strong>.</td>
-                                </tr>
-                                <tr class="border-b border-subtle">
-                                    <td class="py-3 px-4"><code class="text-accent">@{A -> B}</code></td>
-                                    <td class="py-3 px-4">Sequence</td>
-                                    <td class="py-3 px-4 text-secondary">Executes tasks <strong>sequentially</strong> (A then B).</td>
-                                </tr>
-                                <tr class="border-b border-subtle">
-                                    <td class="py-3 px-4"><code class="text-accent">@(1..5)</code></td>
-                                    <td class="py-3 px-4">Range</td>
-                                    <td class="py-3 px-4 text-secondary">Expands to a sequence of numbers (supports <code>by</code> step).</td>
-                                </tr>
-                                <tr>
-                                    <td class="py-3 px-4"><code class="text-accent">@TopicName</code></td>
-                                    <td class="py-3 px-4">Topic Ref</td>
-                                    <td class="py-3 px-4 text-secondary">Expands to all entities discovered under that topic type.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <!-- TAB: SYNTAX -->
+            <div class="tab-panel" data-tab-panel="syntax" role="tabpanel">
+                <h3 class="text-subheading mb-4">Expansion Syntax Guide</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                        <tr class="border-b border-subtle">
+                            <th class="py-3 px-4 text-caption text-tertiary">Syntax</th>
+                            <th class="py-3 px-4 text-caption text-tertiary">Type</th>
+                            <th class="py-3 px-4 text-caption text-tertiary">Behavior</th>
+                        </tr>
+                        </thead>
+                        <tbody class="text-body-sm">
+                        <tr class="border-b border-subtle">
+                            <td class="py-3 px-4"><code class="text-accent">@[A|B]</code></td>
+                            <td class="py-3 px-4">Alternatives</td>
+                            <td class="py-3 px-4 text-secondary">Executes tasks for A and B in <strong>parallel</strong>.
+                            </td>
+                        </tr>
+                        <tr class="border-b border-subtle">
+                            <td class="py-3 px-4"><code class="text-accent">@{A -> B}</code></td>
+                            <td class="py-3 px-4">Sequence</td>
+                            <td class="py-3 px-4 text-secondary">Executes tasks <strong>sequentially</strong> (A then
+                                B).
+                            </td>
+                        </tr>
+                        <tr class="border-b border-subtle">
+                            <td class="py-3 px-4"><code class="text-accent">@(1..5)</code></td>
+                            <td class="py-3 px-4">Range</td>
+                            <td class="py-3 px-4 text-secondary">Expands to a sequence of numbers (supports
+                                <code>by</code> step).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-4"><code class="text-accent">@TopicName</code></td>
+                            <td class="py-3 px-4">Topic Ref</td>
+                            <td class="py-3 px-4 text-secondary">Expands to all entities discovered under that topic
+                                type.
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
+            </div>
 
-                <!-- TAB: IMPLEMENTATION -->
-                <div class="tab-panel" data-tab-panel="implementation" role="tabpanel">
-                    <h3 class="text-subheading mb-4">Recursive Processing</h3>
-                    <div class="code-block">
-                        <div class="code-header">
-                            <span class="code-lang">kotlin</span>
-                            <button class="copy-btn">Copy</button>
-                        </div>
-                        <pre><code class="language-kotlin">private fun processMsgRecursive(
+            <!-- TAB: IMPLEMENTATION -->
+            <div class="tab-panel" data-tab-panel="implementation" role="tabpanel">
+                <h3 class="text-subheading mb-4">Recursive Processing</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">kotlin</span>
+                        <button class="copy-btn">Copy</button>
+                    </div>
+                    <pre><code class="language-kotlin">private fun processMsgRecursive(
     currentMessage: String, 
     task: SessionTask, 
     parsingChatter: ChatInterface, 
@@ -219,44 +235,44 @@ Found 0 critical errors.</pre>
     // 3. Check for Alternatives @[A|B]
     // 4. Fallback: Execute single task
 }</code></pre>
-                    </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- 4. INTEGRATION GUIDE -->
-        <section class="mt-16">
-            <h2 class="text-heading mb-6">Integration Guide</h2>
-            <div class="content-grid">
-                <div class="panel">
-                    <div class="panel-header">Configuration</div>
-                    <div class="panel-body">
+    <!-- 4. INTEGRATION GUIDE -->
+    <section class="mt-16">
+        <h2 class="text-heading mb-6">Integration Guide</h2>
+        <div class="content-grid">
+            <div class="panel">
+                <div class="panel-header">Configuration</div>
+                <div class="panel-body">
                         <pre class="m-0"><code class="language-kotlin">val config = OrchestrationConfig(
     mode = CognitiveMode.ConversationalMode,
     overrides = mapOf(
         "useExpansionSyntax" to true
     )
 )</code></pre>
-                    </div>
-                </div>
-                <div class="panel">
-                    <div class="panel-header">Observability</div>
-                    <div class="panel-body text-body-sm text-secondary">
-                        <ul class="flex flex-col gap-2">
-                            <li>• <strong>Tabbed UI:</strong> Parallel expansions are rendered as dynamic tabs.</li>
-                            <li>• <strong>Topic Badges:</strong> Extracted topics appear as clickable metadata.</li>
-                            <li>• <strong>History:</strong> Full conversation context is injected into task selection.</li>
-                        </ul>
-                    </div>
                 </div>
             </div>
-        </section>
-    </main>
+            <div class="panel">
+                <div class="panel-header">Observability</div>
+                <div class="panel-body text-body-sm text-secondary">
+                    <ul class="flex flex-col gap-2">
+                        <li>• <strong>Tabbed UI:</strong> Parallel expansions are rendered as dynamic tabs.</li>
+                        <li>• <strong>Topic Badges:</strong> Extracted topics appear as clickable metadata.</li>
+                        <li>• <strong>History:</strong> Full conversation context is injected into task selection.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
 
-    <cognotik-footer></cognotik-footer>
+<cognotik-footer></cognotik-footer>
 
-    <script type="module" src="assets/scripts/core.js"></script>
-    <script type="module" src="assets/scripts/components/tabs.js"></script>
-    <script src="assets/scripts/vendor/prism.js"></script>
+<script src="assets/scripts/core.js" type="module"></script>
+<script src="assets/scripts/components/tabs.js" type="module"></script>
+<script src="assets/scripts/vendor/prism.js"></script>
 </body>
 </html>

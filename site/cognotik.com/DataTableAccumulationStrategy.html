@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>DataTableAccumulationStrategy | Cognotik Task Docs</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -227,13 +228,14 @@
     <header class="task-header">
         <div class="breadcrumbs">Home > Tasks > Web Crawling > Strategies</div>
         <h1>DataTableAccumulationStrategy</h1>
-          <p class="task-pitch">
-            Extracts and accumulates structured tabular data across multiple web pages with automated normalization, deduplication, and multi-format export.
+        <p class="task-pitch">
+            Extracts and accumulates structured tabular data across multiple web pages with automated normalization,
+            deduplication, and multi-format export.
         </p>
         <div class="badges">
-              <span class="badge badge-primary">Stateful: Accumulative</span>
-              <span class="badge badge-primary">Model: GPT-4o Preferred</span>
-              <span class="badge badge-success">Output: CSV/JSON/Markdown</span>
+            <span class="badge badge-primary">Stateful: Accumulative</span>
+            <span class="badge badge-primary">Model: GPT-4o Preferred</span>
+            <span class="badge badge-success">Output: CSV/JSON/Markdown</span>
         </div>
     </header>
 
@@ -263,12 +265,28 @@
                     <p style="font-size: 0.8rem; color: var(--text-dim);">Confidence: 98% | Rows: 12 | Total: 45</p>
                     <table>
                         <thead>
-                            <tr><th>Model</th><th>Price</th><th>Range</th></tr>
+                        <tr>
+                            <th>Model</th>
+                            <th>Price</th>
+                            <th>Range</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            <tr><td>Model 3</td><td>38990</td><td>333 mi</td></tr>
-                            <tr><td>Ioniq 6</td><td>42450</td><td>361 mi</td></tr>
-                            <tr><td>Air Pure</td><td>69900</td><td>419 mi</td></tr>
+                        <tr>
+                            <td>Model 3</td>
+                            <td>38990</td>
+                            <td>333 mi</td>
+                        </tr>
+                        <tr>
+                            <td>Ioniq 6</td>
+                            <td>42450</td>
+                            <td>361 mi</td>
+                        </tr>
+                        <tr>
+                            <td>Air Pure</td>
+                            <td>69900</td>
+                            <td>419 mi</td>
+                        </tr>
                         </tbody>
                     </table>
                     <div style="font-size: 0.75rem; color: var(--accent-warning);">
@@ -288,7 +306,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane">
+        <div class="tab-pane" id="tab-docs">
             <h3 style="font-family: var(--font-mono);">DataTableConfig Fields</h3>
             <table class="docs-table">
                 <thead>
@@ -312,7 +330,9 @@
                 <tr>
                     <td><code>column_types</code></td>
                     <td><code>Map&lt;String, String&gt;</code></td>
-                    <td>Mapping of column names to types (<code>string</code>, <code>number</code>, <code>boolean</code>, <code>date</code>).</td>
+                    <td>Mapping of column names to types (<code>string</code>, <code>number</code>, <code>boolean</code>,
+                        <code>date</code>).
+                    </td>
                 </tr>
                 <tr>
                     <td><code>extraction_instructions</code></td>
@@ -357,42 +377,51 @@
                 <tr>
                     <td><code>export_format</code></td>
                     <td><code>String</code></td>
-                    <td>Final output format: <code>csv</code>, <code>json</code>, or <code>markdown</code>. Default: <code>csv</code>.</td>
+                    <td>Final output format: <code>csv</code>, <code>json</code>, or <code>markdown</code>. Default:
+                        <code>csv</code>.
+                    </td>
                 </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <div class="process-step">
                 <h4>1. LLM Extraction</h4>
                 <p style="color: var(--text-dim); font-size: 0.9rem;">
-                    Uses a <code>ParsedAgent</code> to transform raw HTML or text into structured <code>ExtractedTableData</code>. The prompt is dynamically generated based on your <code>column_names</code> and <code>extraction_instructions</code>.
+                    Uses a <code>ParsedAgent</code> to transform raw HTML or text into structured <code>ExtractedTableData</code>.
+                    The prompt is dynamically generated based on your <code>column_names</code> and <code>extraction_instructions</code>.
                 </p>
             </div>
             <div class="process-step">
                 <h4>2. Normalization & Validation</h4>
                 <p style="color: var(--text-dim); font-size: 0.9rem;">
-                      Values are cleaned based on <code class="code-inline">column_types</code>. Numbers are stripped of non-numeric characters, and booleans are normalized from natural language (e.g., "Yes" → <code class="code-inline">true</code>).
+                    Values are cleaned based on <code class="code-inline">column_types</code>. Numbers are stripped of
+                    non-numeric characters, and booleans are normalized from natural language (e.g., "Yes" → <code
+                        class="code-inline">true</code>).
                 </p>
             </div>
             <div class="process-step">
                 <h4>3. Deduplication</h4>
                 <p style="color: var(--text-dim); font-size: 0.9rem;">
-                      If <code class="code-inline">key_columns</code> are provided, the strategy maintains a <code class="code-inline">ConcurrentHashMap</code> of seen keys to ensure data uniqueness across multi-page crawls.
+                    If <code class="code-inline">key_columns</code> are provided, the strategy maintains a <code
+                        class="code-inline">ConcurrentHashMap</code> of seen keys to ensure data uniqueness across
+                    multi-page crawls.
                 </p>
             </div>
             <div class="process-step">
                 <h4>4. Final Export</h4>
                 <p style="color: var(--text-dim); font-size: 0.9rem;">
-                      Upon completion, the strategy aggregates all accumulated rows and generates a final file (<code class="code-inline">data_table.csv</code>, <code class="code-inline">.json</code>, or <code class="code-inline">.md</code>) in the workspace directory.
+                    Upon completion, the strategy aggregates all accumulated rows and generates a final file (<code
+                        class="code-inline">data_table.csv</code>, <code class="code-inline">.json</code>, or <code
+                        class="code-inline">.md</code>) in the workspace directory.
                 </p>
             </div>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3 style="font-family: var(--font-mono);">Orchestration Setup</h3>
             <pre><code class="language-kotlin">val strategy = DataTableAccumulationStrategy()
 val config = DataTableAccumulationStrategy.DataTableConfig(
@@ -426,12 +455,12 @@ Return a list of rows and a confidence score.</code></pre>
 </main>
 
 <script>
-      function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabId).style.display = 'block';
-        event.currentTarget.classList.add('active');
-    }
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).style.display = 'block';
+      event.currentTarget.classList.add('active');
+  }
 </script>
 
 </body>

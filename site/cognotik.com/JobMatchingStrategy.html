@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | JobMatchingStrategy</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-  <link rel="stylesheet" href="assets/styles/main.css">
-  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -203,12 +204,14 @@
 
 <main class="task-container">
 
-      <!-- 1. PAGE HEADER -->
+    <!-- 1. PAGE HEADER -->
     <header class="page-header">
-          <div class="breadcrumbs">Home / Tasks / Analysis / Crawler / JobMatchingStrategy</div>
+        <div class="breadcrumbs">Home / Tasks / Analysis / Crawler / JobMatchingStrategy</div>
         <h1>JobMatchingStrategy</h1>
         <p class="pitch">
-            Automated recruitment intelligence agent. Analyzes job postings against candidate profiles to calculate multi-dimensional compatibility scores (Skills, Location, Salary, Work Arrangement) and generate tailored application assets.
+            Automated recruitment intelligence agent. Analyzes job postings against candidate profiles to calculate
+            multi-dimensional compatibility scores (Skills, Location, Salary, Work Arrangement) and generate tailored
+            application assets.
         </p>
         <div class="badges">
             <span class="badge">Category: Analysis</span>
@@ -217,7 +220,7 @@
         </div>
     </header>
 
-      <!-- 2. REALITY CHECK SECTION -->
+    <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -276,7 +279,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Configuration Parameters (JobMatchingConfig)</h3>
             <table class="docs-table">
                 <thead>
@@ -300,7 +303,7 @@
                 <tr>
                     <td><code>required_skills</code></td>
                     <td>List&lt;String&gt;</td>
-                          <td>Specific technical or soft skills that must be present in the job description.</td>
+                    <td>Specific technical or soft skills that must be present in the job description.</td>
                 </tr>
                 <tr>
                     <td><code>min_match_score</code></td>
@@ -330,7 +333,8 @@
                 <tr>
                     <td><code>work_arrangement_preference</code></td>
                     <td>String</td>
-                    <td>One of: <code>remote</code>, <code>hybrid</code>, <code>onsite</code>, <code>flexible</code>.</td>
+                    <td>One of: <code>remote</code>, <code>hybrid</code>, <code>onsite</code>, <code>flexible</code>.
+                    </td>
                 </tr>
                 <tr>
                     <td><code>max_days_in_office</code></td>
@@ -357,19 +361,29 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>Execution Lifecycle</h3>
             <ol style="color: var(--text-dim); line-height: 2;">
-                <li><strong style="color: var(--text-main);">Detection:</strong> Uses a fast-pass LLM check to identify if a page is a job posting (confidence > 0.7).</li>
-                <li><strong style="color: var(--text-main);">Multi-Dimensional Analysis:</strong> Extracts structured data including salary ranges, travel requirements, and relocation assistance.</li>
-                <li><strong style="color: var(--text-main);">Scoring Engine:</strong> Calculates weighted scores for Skills, Location, Salary, and Work Arrangement compatibility.</li>
-                <li><strong style="color: var(--text-main);">Asset Generation:</strong> Drafts a tailored 200-300 word cover letter and application strategy notes.</li>
-                <li><strong style="color: var(--text-main);">Persistence:</strong> Saves detailed Markdown reports to <code>websearch/job_matches/</code> with timestamps and company metadata.</li>
+                <li><strong style="color: var(--text-main);">Detection:</strong> Uses a fast-pass LLM check to identify
+                    if a page is a job posting (confidence > 0.7).
+                </li>
+                <li><strong style="color: var(--text-main);">Multi-Dimensional Analysis:</strong> Extracts structured
+                    data including salary ranges, travel requirements, and relocation assistance.
+                </li>
+                <li><strong style="color: var(--text-main);">Scoring Engine:</strong> Calculates weighted scores for
+                    Skills, Location, Salary, and Work Arrangement compatibility.
+                </li>
+                <li><strong style="color: var(--text-main);">Asset Generation:</strong> Drafts a tailored 200-300 word
+                    cover letter and application strategy notes.
+                </li>
+                <li><strong style="color: var(--text-main);">Persistence:</strong> Saves detailed Markdown reports to
+                    <code>websearch/job_matches/</code> with timestamps and company metadata.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Kotlin Implementation</h3>
             <pre><code>// Registering the strategy in a Crawler Task
 val task = CrawlerAgentTask(
@@ -393,13 +407,13 @@ val task = CrawlerAgentTask(
 </main>
 
 <script>
-      function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-        document.getElementById('tab-' + tabId).classList.add('active');
-        event.currentTarget.classList.add('active');
-    }
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+  }
 </script>
 
 </body>

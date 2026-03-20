@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | PersonaChatMode</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         .reality-check-grid {
@@ -102,7 +103,8 @@
         <div class="breadcrumbs">Home > Core > Cognitive Modes</div>
         <h1>PersonaChatMode</h1>
         <p class="pitch">
-            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the agent's problem-solving persona.
+            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the
+            agent's problem-solving persona.
         </p>
         <div class="badges">
             <span class="badge">Core Architecture</span>
@@ -119,8 +121,8 @@
                 <span class="icon">⌨️</span> User Prompt (Expansion Syntax)
             </div>
             <div style="padding: 1rem; font-family: var(--font-mono); font-size: 0.9rem;">
-                <span style="color: var(--accent-primary);">@[Refactor|Optimize]</span> the 
-                <span style="color: var(--accent-primary);">@{AuthModule}</span> 
+                <span style="color: var(--accent-primary);">@[Refactor|Optimize]</span> the
+                <span style="color: var(--accent-primary);">@{AuthModule}</span>
                 using <span style="color: var(--accent-primary);">@(1..3)</span> parallel workers.
             </div>
         </div>
@@ -139,7 +141,9 @@
                 <div class="mock-tab">Output</div>
             </div>
             <div style="padding: 1rem; background: var(--bg-app); min-height: 100px;">
-                <div style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 0.5rem;">Executing: FileModificationTask</div>
+                <div style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 0.5rem;">Executing:
+                    FileModificationTask
+                </div>
                 <div style="font-family: var(--font-mono); font-size: 0.8rem;">
                     <span style="color: #4ade80;">✔</span> Applying patch to AuthProvider.kt...<br>
                     <span style="color: #60a5fa;">ℹ</span> Persona: Scientific Method<br>
@@ -159,117 +163,119 @@
         </nav>
 
         <!-- TAB: MODES -->
-        <div id="tab-modes" class="tab-pane active">
+        <div class="tab-pane active" id="tab-modes">
             <h3>Architectural Patterns</h3>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Mode Name</th>
-                        <th>Architecture</th>
-                        <th>Best Use Case</th>
-                    </tr>
+                <tr>
+                    <th>Mode Name</th>
+                    <th>Architecture</th>
+                    <th>Best Use Case</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><strong>WaterfallMode</strong></td>
-                        <td><code>Plan -> Review -> Execute</code></td>
-                        <td>Well-defined problems requiring roadmap approval.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>ConversationalMode</strong></td>
-                        <td><code>Listen -> Act -> Reply</code></td>
-                        <td>Interactive debugging or simple "Chat with Code".</td>
-                    </tr>
-                    <tr>
-                        <td><strong>AdaptivePlanningMode</strong></td>
-                        <td><code>Loop(Think -> Act -> Reflect)</code></td>
-                        <td>Complex goals requiring research and self-correction.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>PersonaChatMode</strong></td>
-                        <td><code>Persona -> Expand -> Execute</code></td>
-                        <td>High-level orchestration with complex state management.</td>
-                    </tr>
+                <tr>
+                    <td><strong>WaterfallMode</strong></td>
+                    <td><code>Plan -> Review -> Execute</code></td>
+                    <td>Well-defined problems requiring roadmap approval.</td>
+                </tr>
+                <tr>
+                    <td><strong>ConversationalMode</strong></td>
+                    <td><code>Listen -> Act -> Reply</code></td>
+                    <td>Interactive debugging or simple "Chat with Code".</td>
+                </tr>
+                <tr>
+                    <td><strong>AdaptivePlanningMode</strong></td>
+                    <td><code>Loop(Think -> Act -> Reflect)</code></td>
+                    <td>Complex goals requiring research and self-correction.</td>
+                </tr>
+                <tr>
+                    <td><strong>PersonaChatMode</strong></td>
+                    <td><code>Persona -> Expand -> Execute</code></td>
+                    <td>High-level orchestration with complex state management.</td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: EXPANSION -->
-        <div id="tab-expansion" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-expansion" style="display:none;">
             <h3>Expansion Syntax</h3>
-            <p>PersonaChatMode supports powerful meta-programming syntax to trigger multiple tasks or parallel executions.</p>
+            <p>PersonaChatMode supports powerful meta-programming syntax to trigger multiple tasks or parallel
+                executions.</p>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Syntax</th>
-                        <th>Name</th>
-                        <th>Description</th>
-                    </tr>
+                <tr>
+                    <th>Syntax</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>@[A|B]</code></td>
-                        <td>Alternatives</td>
-                        <td>Executes the prompt once for each option in parallel.</td>
-                    </tr>
-                    <tr>
-                        <td><code>@{A -> B}</code></td>
-                        <td>Sequence</td>
-                        <td>Executes steps in order, passing context forward.</td>
-                    </tr>
-                    <tr>
-                        <td><code>@(1..5)</code></td>
-                        <td>Range</td>
-                        <td>Iterates through a numeric range.</td>
-                    </tr>
-                    <tr>
-                        <td><code>@Topic</code></td>
-                        <td>Topic Ref</td>
-                        <td>Injects aggregated entities from the conversation history.</td>
-                    </tr>
+                <tr>
+                    <td><code>@[A|B]</code></td>
+                    <td>Alternatives</td>
+                    <td>Executes the prompt once for each option in parallel.</td>
+                </tr>
+                <tr>
+                    <td><code>@{A -> B}</code></td>
+                    <td>Sequence</td>
+                    <td>Executes steps in order, passing context forward.</td>
+                </tr>
+                <tr>
+                    <td><code>@(1..5)</code></td>
+                    <td>Range</td>
+                    <td>Iterates through a numeric range.</td>
+                </tr>
+                <tr>
+                    <td><code>@Topic</code></td>
+                    <td>Topic Ref</td>
+                    <td>Injects aggregated entities from the conversation history.</td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: STRATEGIES -->
-        <div id="tab-strategies" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-strategies" style="display:none;">
             <h3>Cognitive Schema Strategies</h3>
-            <p>Strategies define the "Persona" and internal state structure, separating control flow from reasoning style.</p>
+            <p>Strategies define the "Persona" and internal state structure, separating control flow from reasoning
+                style.</p>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Strategy</th>
-                        <th>Reasoning Style</th>
-                        <th>Internal State</th>
-                    </tr>
+                <tr>
+                    <th>Strategy</th>
+                    <th>Reasoning Style</th>
+                    <th>Internal State</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><strong>Project Manager</strong></td>
-                        <td>Generalist</td>
-                        <td>Tracks short-term vs. long-term goals.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Scientific Method</strong></td>
-                        <td>Debugger</td>
-                        <td>Formulates hypotheses and tracks established facts.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Agile Developer</strong></td>
-                        <td>Coder</td>
-                        <td>Follows TDD loops: Fail -> Implement -> Refactor.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Critical Auditor</strong></td>
-                        <td>Security</td>
-                        <td>Adversarial mindset designed to find flaws.</td>
-                    </tr>
+                <tr>
+                    <td><strong>Project Manager</strong></td>
+                    <td>Generalist</td>
+                    <td>Tracks short-term vs. long-term goals.</td>
+                </tr>
+                <tr>
+                    <td><strong>Scientific Method</strong></td>
+                    <td>Debugger</td>
+                    <td>Formulates hypotheses and tracks established facts.</td>
+                </tr>
+                <tr>
+                    <td><strong>Agile Developer</strong></td>
+                    <td>Coder</td>
+                    <td>Follows TDD loops: Fail -> Implement -> Refactor.</td>
+                </tr>
+                <tr>
+                    <td><strong>Critical Auditor</strong></td>
+                    <td>Security</td>
+                    <td>Adversarial mindset designed to find flaws.</td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: IMPLEMENTATION -->
-        <div id="tab-implementation" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-implementation" style="display:none;">
             <h3>Implementation Skeleton</h3>
             <pre><code class="language-kotlin">
 // PersonaChatMode execution loop logic

@@ -77,7 +77,7 @@ class ErbTemplateEngine {
     log.debug("Template render completed, output length: {}", result.length)
     // Clear current data after rendering
     currentData = null
-    
+
     return result
   }
 
@@ -138,7 +138,7 @@ class ErbTemplateEngine {
       binding.setVariable("data", convertToGroovyValue(data))
       log.trace("Bound global data to 'data' variable")
     }
-    
+
     // Bind the first argument to the first parameter (if any)
     if (function.parameters.isNotEmpty()) {
       binding.setVariable(function.parameters[0], convertToGroovyValue(firstArg))
@@ -656,6 +656,7 @@ class ErbTemplateEngine {
 
     return endPos
   }
+
   private fun splitOnElse(block: String): Pair<String, String> {
     var depth = 0
     var pos = 0
@@ -852,7 +853,7 @@ class ErbTemplateEngine {
       binding.setVariable("data", convertToGroovyValue(data))
       log.trace("Bound global data to 'data' variable")
     }
-    
+
     // Bind arguments to parameters
     for (i in args.indices) {
       if (i < function.parameters.size) {

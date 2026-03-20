@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | NeuralNetworkLayerTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -220,17 +221,17 @@
         <div class="breadcrumbs">Home > Tasks > Reasoning > NeuralNetworkLayerTask</div>
         <h1>NeuralNetworkLayerTask</h1>
         <p class="pitch">
-            Design and analyze neural network layers with formal mathematical definitions, intuitive explanations, 
+            Design and analyze neural network layers with formal mathematical definitions, intuitive explanations,
             and rigorous stability analysis.
         </p>
         <div class="badges">
             <span class="badge">Category: Writing</span>
-              <span class="badge badge-success">Analysis: Comprehensive</span>
-              <span class="badge badge-warning">Output: Multi-Tab Report</span>
+            <span class="badge badge-success">Analysis: Comprehensive</span>
+            <span class="badge badge-warning">Output: Multi-Tab Report</span>
         </div>
     </header>
 
-      <!-- 2. REALITY CHECK SECTION -->
+    <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check-grid">
         <!-- Input -->
         <div class="panel">
@@ -269,11 +270,11 @@
                 <div style="font-size: 0.8rem;">
                     <strong style="color: var(--accent-primary);">Key Insight</strong>
                     <p style="color: var(--text-dim); font-size: 0.75rem;">
-                        The residual connection allows gradients to flow unimpeded through the identity mapping, 
+                        The residual connection allows gradients to flow unimpeded through the identity mapping,
                         mitigating the vanishing gradient problem in deep architectures.
                     </p>
                     <p style="color: var(--text-dim); font-size: 0.75rem;">
-                        <strong>Analogy:</strong> Like a bypass valve in a plumbing system that ensures water pressure 
+                        <strong>Analogy:</strong> Like a bypass valve in a plumbing system that ensures water pressure
                         remains constant even if the main filters are clogged.
                     </p>
                 </div>
@@ -284,14 +285,14 @@
     <!-- 3. TABS -->
     <section class="details-tabs">
         <nav class="tabs-nav">
-              <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
-              <button onclick="switchTab(event, 'process')">Process Lifecycle</button>
-              <button onclick="switchTab(event, 'integration')">Integration</button>
+            <button class="active" onclick="switchTab(event, 'docs')">Documentation</button>
+            <button onclick="switchTab(event, 'process')">Process Lifecycle</button>
+            <button onclick="switchTab(event, 'integration')">Integration</button>
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
-              <h2>Configuration Parameters</h2>
+        <div class="tab-pane active" id="tab-docs">
+            <h2>Configuration Parameters</h2>
             <table class="docs-table">
                 <thead>
                 <tr>
@@ -304,7 +305,7 @@
                 <tr>
                     <td><code>layer_name</code> <span class="req">*</span></td>
                     <td>String</td>
-                          <td>Name of the layer type (e.g., 'Attention', 'BatchNorm', 'Convolution').</td>
+                    <td>Name of the layer type (e.g., 'Attention', 'BatchNorm', 'Convolution').</td>
                 </tr>
                 <tr>
                     <td><code>forward_function_description</code> <span class="req">*</span></td>
@@ -329,12 +330,12 @@
                 <tr>
                     <td><code>activation</code></td>
                     <td>String</td>
-                          <td>Activation function (e.g., 'relu', 'sigmoid', 'tanh', 'none').</td>
+                    <td>Activation function (e.g., 'relu', 'sigmoid', 'tanh', 'none').</td>
                 </tr>
                 <tr>
                     <td><code>analysis_depth</code></td>
                     <td>Enum</td>
-                          <td>Analysis level: <code>basic</code>, <code>standard</code>, or <code>comprehensive</code>.</td>
+                    <td>Analysis level: <code>basic</code>, <code>standard</code>, or <code>comprehensive</code>.</td>
                 </tr>
                 <tr>
                     <td><code>include_lyapunov</code></td>
@@ -361,7 +362,7 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>Task Execution Lifecycle</h3>
             <ol style="color: var(--text-dim); padding-left: 1.2rem;">
                 <li><strong>Initialization:</strong> Validates layer specifications and input/output constraints.</li>
@@ -369,16 +370,18 @@
                 <li><strong>Intuitive Explanation:</strong> Creates real-world analogies and mental models.</li>
                 <li><strong>Conceptualization:</strong> Generates ASCII and Mermaid flow diagrams.</li>
                 <li><strong>Formalization:</strong> Derives LaTeX definitions and backpropagation gradients.</li>
-                <li><strong>Advanced Analysis:</strong> Computes Hessian structures, Lyapunov stability, and Lipschitz constants.</li>
+                <li><strong>Advanced Analysis:</strong> Computes Hessian structures, Lyapunov stability, and Lipschitz
+                    constants.
+                </li>
                 <li><strong>Implementation:</strong> Generates idiomatic code and complexity analysis.</li>
                 <li><strong>Contextualization:</strong> Performs originality assessment and use-case mapping.</li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Kotlin Integration</h3>
-                  <div class="panel-body">
+            <div class="panel-body">
                 <pre><code>val task = NeuralNetworkLayerTask(
     orchestrationConfig = config,
     planTask = NeuralNetworkLayerTaskExecutionConfigData(
@@ -395,12 +398,12 @@
 </main>
 
 <script>
-      function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabId).style.display = 'block';
-        event.currentTarget.classList.add('active');
-    }
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).style.display = 'block';
+      event.currentTarget.classList.add('active');
+  }
 </script>
 
 </body>

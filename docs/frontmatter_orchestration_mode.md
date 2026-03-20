@@ -10,14 +10,20 @@ related:
 
 ## Overview
 
-The **Frontmatter Orchestration Mode** is a cognitive mode that generates documentation-driven specifications rather than direct code artifacts. Instead of producing a task graph that directly modifies files, this mode produces a set of **frontmatter specification documents** that describe the relationships between documentation and code. These specifications are then processed by the `DocProcessor` to generate or update the final artifacts.
+The **Frontmatter Orchestration Mode** is a cognitive mode that generates documentation-driven specifications rather
+than direct code artifacts. Instead of producing a task graph that directly modifies files, this mode produces a set of
+**frontmatter specification documents** that describe the relationships between documentation and code. These
+specifications are then processed by the `DocProcessor` to generate or update the final artifacts.
 
 This approach introduces a layer of indirection that provides several benefits:
 
-1. **Declarative Intent**: The AI expresses *what* should exist and *how* files relate, not the imperative steps to create them.
-2. **Reproducibility**: The generated frontmatter specs can be version-controlled, reviewed, and re-executed independently.
+1. **Declarative Intent**: The AI expresses *what* should exist and *how* files relate, not the imperative steps to
+   create them.
+2. **Reproducibility**: The generated frontmatter specs can be version-controlled, reviewed, and re-executed
+   independently.
 3. **Separation of Concerns**: Planning (what to create) is separated from execution (how to create it).
-4. **Incremental Updates**: The `DocProcessor`'s overwrite modes (`Patch`, `PatchIfOlder`) enable intelligent incremental updates.
+4. **Incremental Updates**: The `DocProcessor`'s overwrite modes (`Patch`, `PatchIfOlder`) enable intelligent
+   incremental updates.
 
 ## Conceptual Model
 
@@ -27,7 +33,8 @@ This approach introduces a layer of indirection that provides several benefits:
 User Request → Plan (Task Graph) → Execute Tasks → Modified Files
 ```
 
-In Waterfall mode, the AI generates a direct plan of `TaskExecutionConfig` objects that are executed sequentially or in dependency order. Each task directly modifies files.
+In Waterfall mode, the AI generates a direct plan of `TaskExecutionConfig` objects that are executed sequentially or in
+dependency order. Each task directly modifies files.
 
 ### Frontmatter Orchestration Mode
 
@@ -46,7 +53,8 @@ In Frontmatter Orchestration mode:
 
 ### Phase 1: Specification Generation
 
-The AI generates markdown documents that use the frontmatter schema defined in `frontmatter_schema.md`. Each document represents a "file operator" that describes:
+The AI generates markdown documents that use the frontmatter schema defined in `frontmatter_schema.md`. Each document
+represents a "file operator" that describes:
 
 - **What file(s) to create or update** (`specifies`)
 - **What source files to use as context** (`documents`, `related`)
@@ -144,7 +152,8 @@ The generated specifications are human-readable markdown documents that can be:
 
 ### 2. Idempotent Execution
 
-Because the `DocProcessor` uses file modification times and overwrite modes, re-running the same specifications produces consistent results. This enables:
+Because the `DocProcessor` uses file modification times and overwrite modes, re-running the same specifications produces
+consistent results. This enables:
 
 - Safe re-execution after failures
 - Incremental updates when specifications change
@@ -196,14 +205,14 @@ class FrontmatterOrchestrationConfig(
 ) : CognitiveModeConfig(type = CognitiveModeType.FrontmatterOrchestration)
 ```
 
-| Field | Description |
-|-------|-------------|
-| `specsDirectory` | Directory where specification files are written |
-| `autoExecute` | Whether to automatically run `DocProcessor` after generating specs |
-| `defaultOverwriteMode` | Default overwrite mode for generated specifications |
-| `specFileExtension` | File extension for specification documents |
-| `preserveSpecs` | Whether to keep specification files after execution |
-| `maxSpecsPerPlan` | Maximum number of specifications to generate in a single plan |
+| Field                  | Description                                                        |
+|------------------------|--------------------------------------------------------------------|
+| `specsDirectory`       | Directory where specification files are written                    |
+| `autoExecute`          | Whether to automatically run `DocProcessor` after generating specs |
+| `defaultOverwriteMode` | Default overwrite mode for generated specifications                |
+| `specFileExtension`    | File extension for specification documents                         |
+| `preserveSpecs`        | Whether to keep specification files after execution                |
+| `maxSpecsPerPlan`      | Maximum number of specifications to generate in a single plan      |
 
 ## Workflow
 
@@ -315,14 +324,14 @@ The mode can mix specification generation with direct task execution:
 
 ## Comparison with Related Modes
 
-| Aspect | Waterfall | Frontmatter Orchestration |
-|--------|-----------|---------------------------|
-| Output | Task graph | Specification documents |
-| Execution | Direct task execution | DocProcessor |
-| Reviewability | JSON plan | Markdown specifications |
-| Reusability | Single execution | Re-executable specifications |
-| Granularity | Task-level | File-level |
-| Dependencies | Explicit in plan | Implicit via frontmatter |
+| Aspect        | Waterfall             | Frontmatter Orchestration    |
+|---------------|-----------------------|------------------------------|
+| Output        | Task graph            | Specification documents      |
+| Execution     | Direct task execution | DocProcessor                 |
+| Reviewability | JSON plan             | Markdown specifications      |
+| Reusability   | Single execution      | Re-executable specifications |
+| Granularity   | Task-level            | File-level                   |
+| Dependencies  | Explicit in plan      | Implicit via frontmatter     |
 
 ## Future Enhancements
 
@@ -362,11 +371,13 @@ Multi-user specification editing:
 
 ## Conclusion
 
-The Frontmatter Orchestration Mode represents a shift from imperative task execution to declarative specification. By generating file operators (frontmatter specifications) rather than direct file modifications, this mode provides:
+The Frontmatter Orchestration Mode represents a shift from imperative task execution to declarative specification. By
+generating file operators (frontmatter specifications) rather than direct file modifications, this mode provides:
 
 - **Transparency**: Clear, reviewable intermediate artifacts
 - **Reproducibility**: Idempotent, re-executable specifications
 - **Flexibility**: Composable, modifiable specifications
 - **Robustness**: Separation of planning and execution concerns
 
-This approach aligns with documentation-driven development practices and leverages the existing `DocProcessor` infrastructure for reliable file generation and updates.
+This approach aligns with documentation-driven development practices and leverages the existing `DocProcessor`
+infrastructure for reliable file generation and updates.

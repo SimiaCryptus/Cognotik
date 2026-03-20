@@ -3,19 +3,20 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | FileModificationTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         /* Page-Specific Overrides */
@@ -91,7 +92,8 @@
         <div class="breadcrumbs">Tasks / File Operations</div>
         <h1>FileModificationTask</h1>
         <p class="pitch">
-            AI-powered file modification and creation with precise diff-based editing, syntax validation, and git integration.
+            AI-powered file modification and creation with precise diff-based editing, syntax validation, and git
+            integration.
         </p>
         <div class="badges">
             <span class="badge">Category: File</span>
@@ -123,9 +125,9 @@
             <div class="mock-ui-content" style="padding: 1rem;">
                 <div style="color: #4ade80; margin-bottom: 0.5rem;">✔ File Updated Successfully</div>
                 <div style="background: #000; padding: 0.5rem; font-family: monospace; font-size: 0.8rem;">
-                    <span style="color: grey">12</span>   while(running) {<br>
+                    <span style="color: grey">12</span> while(running) {<br>
                     <span style="color: green">13 +     logger.info("Heartbeat")</span><br>
-                    <span style="color: grey">14</span>     processNext()<br>
+                    <span style="color: grey">14</span> processNext()<br>
                 </div>
             </div>
         </div>
@@ -136,7 +138,7 @@
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Explore the results of the <code>FileModificationTask</code> test suite.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
 
 
@@ -149,7 +151,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Configuration Parameters</h3>
             <table class="docs-table">
                 <thead>
@@ -195,13 +197,20 @@
         </div>
 
         <!-- TAB: PREVIEW (With Presets) -->
-        <div id="tab-preview" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-preview" style="display:none;">
             <h3>Task Lifecycle</h3>
             <ol>
-                <li><strong>Context Preparation:</strong> Gathers content from <code>files</code>, <code>related_files</code>, and git diffs.</li>
-                <li><strong>AI Execution:</strong> Sends instructions to the LLM using a specialized system prompt for diff generation.</li>
-                <li><strong>Instrumentation:</strong> The response is parsed for <code>diff</code> blocks and instrumented with "Apply" links.</li>
-                <li><strong>Review/Apply:</strong> Changes are either auto-applied or presented for manual approval.</li>
+                <li><strong>Context Preparation:</strong> Gathers content from <code>files</code>,
+                    <code>related_files</code>, and git diffs.
+                </li>
+                <li><strong>AI Execution:</strong> Sends instructions to the LLM using a specialized system prompt for
+                    diff generation.
+                </li>
+                <li><strong>Instrumentation:</strong> The response is parsed for <code>diff</code> blocks and
+                    instrumented with "Apply" links.
+                </li>
+                <li><strong>Review/Apply:</strong> Changes are either auto-applied or presented for manual approval.
+                </li>
             </ol>
         </div>
 
@@ -232,14 +241,15 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | FileModificationTask</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -388,7 +398,8 @@
         </div>
         <h1>FileModificationTask</h1>
         <p class="pitch">
-            Create new files or modify existing code with AI-powered assistance, featuring precise diff-based editing and syntax validation.
+            Create new files or modify existing code with AI-powered assistance, featuring precise diff-based editing
+            and syntax validation.
         </p>
         <div class="badges">
             <span class="badge">Category: File</span>
@@ -418,7 +429,9 @@
                     <span style="color: #3fb950;">+&nbsp;&nbsp;&nbsp;fun calculateTax(amount: Double) = amount * 0.15</span><br>
                     <span style="color: #8b949e;">&nbsp;}</span>
                 </div>
-                <button style="margin-top: 1rem; background: #238636; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer;">Apply Changes</button>
+                <button style="margin-top: 1rem; background: #238636; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer;">
+                    Apply Changes
+                </button>
             </div>
         </div>
     </section>
@@ -430,58 +443,66 @@
             <button onclick="switchTab('integration')">Integration</button>
         </nav>
 
-        <div id="tab-docs" class="tab-pane">
+        <div class="tab-pane" id="tab-docs">
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>files</code></td>
-                        <td>List&lt;String&gt;</td>
-                        <td>Target files to modify or create.</td>
-                    </tr>
-                    <tr>
-                        <td><code>related_files</code></td>
-                        <td>List&lt;String&gt;</td>
-                        <td>Additional files provided as context for the AI.</td>
-                    </tr>
-                    <tr>
-                        <td><code>includeGitDiff</code></td>
-                        <td>Boolean</td>
-                        <td>If true, includes the current git diff with HEAD for context.</td>
-                    </tr>
-                    <tr>
-                        <td><code>task_description</code> <span class="req">*</span></td>
-                        <td>String</td>
-                        <td>Natural language instructions for the modification.</td>
-                    </tr>
-                    <tr>
-                        <td><code>task_dependencies</code></td>
-                        <td>List&lt;String&gt;</td>
-                        <td>List of task descriptions this task depends on.</td>
-                    </tr>
+                <tr>
+                    <td><code>files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Target files to modify or create.</td>
+                </tr>
+                <tr>
+                    <td><code>related_files</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>Additional files provided as context for the AI.</td>
+                </tr>
+                <tr>
+                    <td><code>includeGitDiff</code></td>
+                    <td>Boolean</td>
+                    <td>If true, includes the current git diff with HEAD for context.</td>
+                </tr>
+                <tr>
+                    <td><code>task_description</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>Natural language instructions for the modification.</td>
+                </tr>
+                <tr>
+                    <td><code>task_dependencies</code></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>List of task descriptions this task depends on.</td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <div style="line-height: 1.6;">
                 <h3>Task Lifecycle</h3>
                 <ol>
-                    <li><strong>Context Preparation:</strong> Gathers content from <code>files</code>, <code>related_files</code>, and <code>task_dependencies</code>.</li>
-                    <li><strong>AI Execution:</strong> Sends instructions and context to the LLM using a specialized system prompt for diff generation.</li>
-                    <li><strong>Instrumentation:</strong> The response is parsed for <code>diff</code> blocks and instrumented with "Apply" links.</li>
-                    <li><strong>Review/Apply:</strong> Changes are either auto-applied (if <code>autoFix</code> is enabled) or presented for manual approval.</li>
+                    <li><strong>Context Preparation:</strong> Gathers content from <code>files</code>, <code>related_files</code>,
+                        and <code>task_dependencies</code>.
+                    </li>
+                    <li><strong>AI Execution:</strong> Sends instructions and context to the LLM using a specialized
+                        system prompt for diff generation.
+                    </li>
+                    <li><strong>Instrumentation:</strong> The response is parsed for <code>diff</code> blocks and
+                        instrumented with "Apply" links.
+                    </li>
+                    <li><strong>Review/Apply:</strong> Changes are either auto-applied (if <code>autoFix</code> is
+                        enabled) or presented for manual approval.
+                    </li>
                 </ol>
             </div>
         </div>
 
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Embedded Invocation</h3>
             <p>Use the <code>UnifiedHarness</code> to run this task programmatically:</p>
             <pre><code class="language-kotlin">

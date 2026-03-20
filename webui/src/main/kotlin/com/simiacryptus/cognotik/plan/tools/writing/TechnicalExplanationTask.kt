@@ -4,27 +4,24 @@ package com.simiacryptus.cognotik.plan.tools.writing
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.AbstractTask
-import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
-import com.simiacryptus.cognotik.plan.tools.TaskType
-import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.tools.*
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class TechnicalExplanationTask(
   orchestrationConfig: OrchestrationConfig, planTask: TechnicalExplanationTaskExecutionConfigData?
-) : AbstractTask<TechnicalExplanationTask.TechnicalExplanationTaskExecutionConfigData, TechnicalExplanationTask.TechnicalExplanationTypeConfig>(
-  orchestrationConfig, planTask
-) {
+) :
+  AbstractTask<TechnicalExplanationTask.TechnicalExplanationTaskExecutionConfigData, TechnicalExplanationTask.TechnicalExplanationTypeConfig>(
+    orchestrationConfig, planTask
+  ) {
   class TechnicalExplanationTypeConfig(
     @Description("Prompt template for outline generation. Use {topic}, {audience}, {audience_guidance}, {detail_level}, {detail_guidance}, {format}, {context}, {docs}, {terminology_instruction}, {analogy_instruction}, {code_instruction}, {visual_instruction} placeholders.")
     var outline_prompt: String = buildString {
@@ -505,12 +502,18 @@ class TechnicalExplanationTask(
           "comprehensive" -> "Cover all aspects thoroughly, including edge cases and advanced topics."
           else -> "Provide moderate detail with clear explanations."
         }
-        val terminologyInstruction = if (config.define_terminology) "5-10 essential terms that need definition" else "Key terminology (minimal)"
-        val analogyInstruction = if (config.use_analogies) "2-4 analogies to make complex concepts relatable" else "Analogies (if absolutely necessary)"
-        val codeInstruction = if (config.include_code_examples) "3-5 code examples to illustrate concepts" else "Code examples (minimal or none)"
-        val visualInstruction = if (config.include_visual_descriptions) "Descriptions of diagrams or visualizations that would help" else "Visual aids (if critical)"
-        val contextSection = if (priorContext.isNotBlank()) "Reference Context:\n${priorContext.truncateForDisplay(3000)}\n" else ""
-        val docsSection = if (contextFiles.isNotBlank()) "Additional Documentation:\n${contextFiles.truncateForDisplay(3000)}\n" else ""
+        val terminologyInstruction =
+          if (config.define_terminology) "5-10 essential terms that need definition" else "Key terminology (minimal)"
+        val analogyInstruction =
+          if (config.use_analogies) "2-4 analogies to make complex concepts relatable" else "Analogies (if absolutely necessary)"
+        val codeInstruction =
+          if (config.include_code_examples) "3-5 code examples to illustrate concepts" else "Code examples (minimal or none)"
+        val visualInstruction =
+          if (config.include_visual_descriptions) "Descriptions of diagrams or visualizations that would help" else "Visual aids (if critical)"
+        val contextSection =
+          if (priorContext.isNotBlank()) "Reference Context:\n${priorContext.truncateForDisplay(3000)}\n" else ""
+        val docsSection =
+          if (contextFiles.isNotBlank()) "Additional Documentation:\n${contextFiles.truncateForDisplay(3000)}\n" else ""
         val outlinePrompt = (typeConfig?.outline_prompt ?: TechnicalExplanationTypeConfig().outline_prompt)
           .replace("{topic}", topic)
           .replace("{audience}", config.target_audience)
@@ -695,9 +698,12 @@ class TechnicalExplanationTask(
           } else {
             "Explains clearly without jargon"
           }
-          val sectionExamplesInstruction = if (config.include_examples) "Includes practical examples or use cases" else "Focuses on conceptual understanding"
-          val sectionCodeInstruction = if (config.include_code_examples) "Includes code snippets with clear explanations" else "Avoids code unless absolutely necessary"
-          val sectionVisualInstruction = if (config.include_visual_descriptions) "Describes visual representations that would help" else "Uses text-based explanations"
+          val sectionExamplesInstruction =
+            if (config.include_examples) "Includes practical examples or use cases" else "Focuses on conceptual understanding"
+          val sectionCodeInstruction =
+            if (config.include_code_examples) "Includes code snippets with clear explanations" else "Avoids code unless absolutely necessary"
+          val sectionVisualInstruction =
+            if (config.include_visual_descriptions) "Describes visual representations that would help" else "Uses text-based explanations"
           val codeLangInstruction = if (config.include_code_examples) {
             buildString {
               appendLine("For code snippets, provide:")
@@ -821,10 +827,11 @@ class TechnicalExplanationTask(
           transcript?.write("\n# Comparisons\n\n".toByteArray(StandardCharsets.UTF_8))
           transcript?.write("**Status:** Comparing with related concepts...\n\n".toByteArray(StandardCharsets.UTF_8))
           comparisonTask.update()
-          val comparisonPromptText = (typeConfig?.comparison_prompt ?: TechnicalExplanationTypeConfig().comparison_prompt)
-            .replace("{topic}", topic)
-            .replace("{audience}", config.target_audience)
-            .replace("{sections_list}", sections.joinToString("\n") { "- ${it.title}" })
+          val comparisonPromptText =
+            (typeConfig?.comparison_prompt ?: TechnicalExplanationTypeConfig().comparison_prompt)
+              .replace("{topic}", topic)
+              .replace("{audience}", config.target_audience)
+              .replace("{sections_list}", sections.joinToString("\n") { "- ${it.title}" })
 
 
           val comparisonAgent = ChatAgent(
@@ -870,7 +877,11 @@ class TechnicalExplanationTask(
             }.renderMarkdown(true)
           )
           transcript?.write("\n# Revision Process\n\n".toByteArray(StandardCharsets.UTF_8))
-          transcript?.write("**Status:** Performing ${config.revision_passes} revision pass(es)...\n\n".toByteArray(StandardCharsets.UTF_8))
+          transcript?.write(
+            "**Status:** Performing ${config.revision_passes} revision pass(es)...\n\n".toByteArray(
+              StandardCharsets.UTF_8
+            )
+          )
           revisionTask.update()
 
           repeat(config.revision_passes) { passNum ->
@@ -904,7 +915,11 @@ class TechnicalExplanationTask(
             transcript?.write("\n## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray(StandardCharsets.UTF_8))
           }
 
-          overviewTask.add("✅ Phase 4 Complete: ${config.revision_passes} revision pass(es) completed\n".renderMarkdown(true))
+          overviewTask.add(
+            "✅ Phase 4 Complete: ${config.revision_passes} revision pass(es) completed\n".renderMarkdown(
+              true
+            )
+          )
         }
 
         overviewTask.add("\n### Phase 5: Final Assembly\n*Compiling complete explanation...*\n".renderMarkdown(true))
@@ -1003,7 +1018,11 @@ class TechnicalExplanationTask(
 
         log.info("TechnicalExplanationTask completed: sections=${sections.size}, words=$wordCount, time=${totalTime}ms")
 
-        task.complete("Technical explanation generation complete: $wordCount words in ${totalTime / 1000}s".renderMarkdown(true))
+        task.complete(
+          "Technical explanation generation complete: $wordCount words in ${totalTime / 1000}s".renderMarkdown(
+            true
+          )
+        )
         resultFn(finalResult)
 
       } catch (e: Exception) {
@@ -1105,30 +1124,31 @@ class TechnicalExplanationTask(
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(TechnicalExplanationTask::class.java)
+
     @JvmStatic
     val TechnicalExplanation = TaskType(
-        name = "TechnicalExplanation",
-        category = "Writing",
-        taskClass = TechnicalExplanationTask::class.java,
-        executionConfigClass = TechnicalExplanationTaskExecutionConfigData::class.java,
-        taskSettingsClass = TechnicalExplanationTypeConfig::class.java,
-        description = "Break down complex technical subjects into clear, digestible explanations",
-        tooltipHtml = buildString {
-          appendLine("Generates clear, audience-appropriate explanations of complex technical topics.")
-          appendLine("<ul>")
-          appendLine("  <li>Creates structured outline with key concepts and terminology</li>")
-          appendLine("  <li>Adjusts language and depth for target audience (layperson to expert)</li>")
-          appendLine("  <li>Generates relatable analogies and metaphors</li>")
-          appendLine("  <li>Includes code examples with detailed explanations</li>")
-          appendLine("  <li>Defines essential terminology in context</li>")
-          appendLine("  <li>Provides visual descriptions and diagrams</li>")
-          appendLine("  <li>Includes practical examples and use cases</li>")
-          appendLine("  <li>Compares with related concepts for clarity</li>")
-          appendLine("  <li>Supports multiple formats (markdown, Q&amp;A, step-by-step, tutorial)</li>")
-          appendLine("  <li>Optional revision passes for clarity improvement</li>")
-          appendLine("  <li>Ideal for documentation, onboarding, education, and knowledge sharing</li>")
-          appendLine("</ul>")
-        },
+      name = "TechnicalExplanation",
+      category = "Writing",
+      taskClass = TechnicalExplanationTask::class.java,
+      executionConfigClass = TechnicalExplanationTaskExecutionConfigData::class.java,
+      taskSettingsClass = TechnicalExplanationTypeConfig::class.java,
+      description = "Break down complex technical subjects into clear, digestible explanations",
+      tooltipHtml = buildString {
+        appendLine("Generates clear, audience-appropriate explanations of complex technical topics.")
+        appendLine("<ul>")
+        appendLine("  <li>Creates structured outline with key concepts and terminology</li>")
+        appendLine("  <li>Adjusts language and depth for target audience (layperson to expert)</li>")
+        appendLine("  <li>Generates relatable analogies and metaphors</li>")
+        appendLine("  <li>Includes code examples with detailed explanations</li>")
+        appendLine("  <li>Defines essential terminology in context</li>")
+        appendLine("  <li>Provides visual descriptions and diagrams</li>")
+        appendLine("  <li>Includes practical examples and use cases</li>")
+        appendLine("  <li>Compares with related concepts for clarity</li>")
+        appendLine("  <li>Supports multiple formats (markdown, Q&amp;A, step-by-step, tutorial)</li>")
+        appendLine("  <li>Optional revision passes for clarity improvement</li>")
+        appendLine("  <li>Ideal for documentation, onboarding, education, and knowledge sharing</li>")
+        appendLine("</ul>")
+      },
     )
   }
 }

@@ -10,15 +10,17 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.tools.TaskType
-import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
+import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
@@ -329,7 +331,7 @@ open class PlanConfigDialog(
     }
 
     private fun getVisibleModels(): List<ChatModel> =
-        ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
             apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
                 model.provider == apiData.provider && model.modelId.isNotBlank() && isVisible(model)
             } ?: listOf()
@@ -435,20 +437,20 @@ open class PlanConfigDialog(
             // Update model combo boxes
             config.defaultSmartModel?.model?.modelId?.let { modelName ->
                 visibleModelsCache.find { it.modelId == modelName }?.let { model ->
-                    settings.defaultSmartModel = model.toApiChatModel()
+                    settings.defaultSmartModel = model.toApiChatModel(localUser)
                     globalModelCombo.selectedItem = modelName
                 }
             }
 
             config.defaultFastModel?.model?.modelId?.let { modelName ->
                 visibleModelsCache.find { it.modelId == modelName }?.let { model ->
-                    settings.defaultFastModel = model.toApiChatModel()
+                    settings.defaultFastModel = model.toApiChatModel(localUser)
                     parsingModelCombo.selectedItem = modelName
                 }
             }
             config.defaultImageModel?.model?.modelId?.let { modelName ->
                 visibleModelsCache.find { it.modelId == modelName }?.let { model ->
-                    settings.defaultImageModel = model.toApiChatModel()
+                    settings.defaultImageModel = model.toApiChatModel(localUser)
                     imageChatModelCombo.selectedItem = modelName
                 }
             }
@@ -604,17 +606,17 @@ open class PlanConfigDialog(
         val selectedGlobalModel = globalModelCombo.selectedItem as? String
         if (selectedGlobalModel != null) {
             val model = visibleModelsCache.find { it.modelId == selectedGlobalModel }
-            settings.defaultSmartModel = model?.toApiChatModel()
+            settings.defaultSmartModel = model?.toApiChatModel(localUser)
         }
         val selectedParsingModel = parsingModelCombo.selectedItem as? String
         if (selectedParsingModel != null) {
             val model = visibleModelsCache.find { it.modelId == selectedParsingModel }
-            settings.defaultFastModel = model?.toApiChatModel()
+            settings.defaultFastModel = model?.toApiChatModel(localUser)
         }
         val selectedImageChatModel = imageChatModelCombo.selectedItem as? String
         if (selectedImageChatModel != null) {
             val model = visibleModelsCache.find { it.modelId == selectedImageChatModel }
-            settings.defaultImageModel = model?.toApiChatModel()
+            settings.defaultImageModel = model?.toApiChatModel(localUser)
         }
         val selectedCognitiveMode = cognitiveModeCombo.selectedItem as String
         val modeType = CognitiveModeType.valueOf(selectedCognitiveMode)
@@ -644,7 +646,7 @@ open class PlanConfigDialog(
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_ -]+$")
 
         fun isVisible(chatModel: AIModel) =
-            ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.filter { it.key?.decrypt != null }
+          ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.filter { it.key?.decrypt != null }
                 .any { it.provider == chatModel.provider }
     }
 }

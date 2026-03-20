@@ -20,7 +20,6 @@ should be updated based on source files, or as transformation rules between file
 The processor also supports fetching and caching URL-based related resources, allowing documentation to reference
 external web content as context.
 
-
 ## Frontmatter Format
 
 Frontmatter must be enclosed between `---` delimiters at the start of the markdown file:
@@ -131,8 +130,10 @@ transforms:
 
 - `$0` - The entire matched string
 - `$1`, `$2`, etc. - Captured groups from the regex pattern
-- `$1+1` - Arithmetic addition: if group 1 is numeric, replaced with (group1 + 1); otherwise the literal `+1` is appended
-- `$2-5` - Arithmetic subtraction: if group 2 is numeric, replaced with (group2 - 5); otherwise the literal `-5` is appended
+- `$1+1` - Arithmetic addition: if group 1 is numeric, replaced with (group1 + 1); otherwise the literal `+1` is
+  appended
+- `$2-5` - Arithmetic subtraction: if group 2 is numeric, replaced with (group2 - 5); otherwise the literal `-5` is
+  appended
 
 **Note:** Transform source patterns use Java regex syntax (not glob patterns). The regex is matched against file paths
 relative to the documentation file's parent directory. When rebasing, transform patterns are preserved as-is since they
@@ -140,7 +141,6 @@ are resolved relative to the doc file at usage time.
 **Data File Detection:** If a transform matches a JSON source file, it can be automatically used as a data source for
 template processing (see `data_file` under implicit frontmatter keys).
 ---
-
 
 ### `generates`
 
@@ -332,14 +332,15 @@ update_mode: OverwriteExisting
 # Force delete and regenerate
 update_mode: ForceOverwrite
 ```
+
 **Resolution Priority:** When multiple specifications apply to a single target file, the update mode is resolved in
 this order:
+
 1. `specifies` frontmatter (first non-null `update_mode`)
 2. `transforms` frontmatter (first non-null `update_mode`)
 3. `documents` frontmatter (first non-null `update_mode`)
 4. `generates` frontmatter (first non-null `update_mode`)
 5. Global `updateMode` configured on the `DocProcessor` instance
-
 
 **Use Case:** Control how the processor handles existing target files. Use `PatchExisting` or
 `PatchToUpdate` for incremental updates that preserve manual changes. Use `OverwriteExisting` or
@@ -488,6 +489,7 @@ This document specifies the API layer implementation...
 
 8. **URL Fetching and Caching:** Related resources specified as URLs (http:// or https://) are automatically fetched
    and cached locally:
+
 - Cache location: `.doc-processor-cache/url-cache` within the root directory
 - Cache TTL: 1 hour (cached content older than 1 hour is re-fetched)
 - HTML content is automatically simplified (scripts, styles, interactive elements removed)
@@ -513,24 +515,23 @@ This document specifies the API layer implementation...
     aggregating specifications. This ensures that targets are grouped consistently regardless of case differences
     in paths across different doc specs.
 
-
 ## Data Structures
 
 The frontmatter is parsed into a `DocSpec` containing:
 
-| Field            | Type                  | Description                                                                  |
-|------------------|-----------------------|------------------------------------------------------------------------------|
-| `docFile`        | `File`                | The markdown file itself                                                     |
-| `specifies`      | `List<String>`        | Glob patterns for files this doc specifies                                   |
-| `documents`      | `List<String>`        | Glob patterns for files this doc describes                                   |
-| `transforms`     | `List<TransformSpec>` | Source-to-destination transformation rules                                   |
-| `generates`      | `List<GenerateSpec>`  | Explicit generation specifications                                           |
-| `related`        | `List<String>`        | Additional context files, glob patterns, or URLs                             |
-| `taskType`       | `String?`             | Task type to use for processing (nullable, defaults to `FileModification`)   |
-| `taskConfigJson` | `String?`             | Path to JSON file with additional task configuration (nullable)              |
-| `updateMode`     | `String?`             | Per-doc update mode override (nullable, falls back to global `updateMode`)   |
-| `content`        | `String`              | The markdown body (after frontmatter)                                        |
-| `frontmatter`    | `Map<String, Any>`    | Raw parsed frontmatter                                                       |
+| Field            | Type                  | Description                                                                |
+|------------------|-----------------------|----------------------------------------------------------------------------|
+| `docFile`        | `File`                | The markdown file itself                                                   |
+| `specifies`      | `List<String>`        | Glob patterns for files this doc specifies                                 |
+| `documents`      | `List<String>`        | Glob patterns for files this doc describes                                 |
+| `transforms`     | `List<TransformSpec>` | Source-to-destination transformation rules                                 |
+| `generates`      | `List<GenerateSpec>`  | Explicit generation specifications                                         |
+| `related`        | `List<String>`        | Additional context files, glob patterns, or URLs                           |
+| `taskType`       | `String?`             | Task type to use for processing (nullable, defaults to `FileModification`) |
+| `taskConfigJson` | `String?`             | Path to JSON file with additional task configuration (nullable)            |
+| `updateMode`     | `String?`             | Per-doc update mode override (nullable, falls back to global `updateMode`) |
+| `content`        | `String`              | The markdown body (after frontmatter)                                      |
+| `frontmatter`    | `Map<String, Any>`    | Raw parsed frontmatter                                                     |
 
 **Note:** The `updateMode` field in `DocSpec` stores the per-doc override from the `update_mode` frontmatter key.
 If null, the global `updateMode` configured at the `DocProcessor` level applies.
@@ -553,16 +554,17 @@ If null, the global `updateMode` configured at the `DocProcessor` level applies.
 
 Represents the configuration for a single modification task:
 
-| Field                | Type                | Description                                              |
-|----------------------|---------------------|----------------------------------------------------------|
-| `root`               | `File`              | The root directory for path resolution                   |
-| `files`              | `List<String>?`     | Target file paths (absolute)                             |
-| `related_files`      | `List<String>?`     | Related/context file paths (absolute)                    |
-| `task_description`   | `String`            | Generated or custom task description                     |
-| `data`               | `Map<String, Any>?` | Structured data from data_file or JSON source (nullable) |
-| `taskConfigOverrides`| `Map<String, Any>?` | Overrides from task_config_json file (nullable)          |
+| Field                 | Type                | Description                                              |
+|-----------------------|---------------------|----------------------------------------------------------|
+| `root`                | `File`              | The root directory for path resolution                   |
+| `files`               | `List<String>?`     | Target file paths (absolute)                             |
+| `related_files`       | `List<String>?`     | Related/context file paths (absolute)                    |
+| `task_description`    | `String`            | Generated or custom task description                     |
+| `data`                | `Map<String, Any>?` | Structured data from data_file or JSON source (nullable) |
+| `taskConfigOverrides` | `Map<String, Any>?` | Overrides from task_config_json file (nullable)          |
 
 **Computed Properties:**
+
 - `relative_files` - Target file paths relative to root (computed from `files`)
 - `relative_related_files` - Related file paths relative to root (computed from `related_files`)
 
@@ -570,17 +572,17 @@ Represents the configuration for a single modification task:
 
 Represents a complete modification task ready for execution:
 
-| Field                | Type                     | Description                                       |
-|----------------------|--------------------------|---------------------------------------------------|
-| `data`               | `ModificationTaskConfig` | Task configuration                                |
-| `message`            | `(File) -> String`       | Function generating message content given root dir|
-| `patchProcessor`     | `PatchProcessors`        | Patch processing strategy (default: Fuzzy)        |
-| `shouldDeleteTarget` | `Boolean`                | Whether to delete the target file (default: false)|
-| `taskType`           | `TaskType<*, *>`         | The resolved task type (default: FileModification)|
+| Field                | Type                     | Description                                        |
+|----------------------|--------------------------|----------------------------------------------------|
+| `data`               | `ModificationTaskConfig` | Task configuration                                 |
+| `message`            | `(File) -> String`       | Function generating message content given root dir |
+| `patchProcessor`     | `PatchProcessors`        | Patch processing strategy (default: Fuzzy)         |
+| `shouldDeleteTarget` | `Boolean`                | Whether to delete the target file (default: false) |
+| `taskType`           | `TaskType<*, *>`         | The resolved task type (default: FileModification) |
 
 **Computed Properties:**
-- `typeConfig` - Resolved `TaskTypeConfig` from `taskConfigOverrides` or task type defaults
 
+- `typeConfig` - Resolved `TaskTypeConfig` from `taskConfigOverrides` or task type defaults
 
 ## Additional Processing Classes
 
@@ -612,23 +614,26 @@ Represents a documentation update specification:
 |-------------------|--------------|-------------------------------------------------------|
 | `docSpec`         | `DocSpec`    | The doc specification (target is the doc file itself) |
 | `supportingFiles` | `List<File>` | Source files that provide context                     |
+
 ### TaskStatusEntry
+
 Represents the status of a single target generation task in `docops.status.json`:
-| Field         | Type          | Description                                    |
+| Field | Type | Description |
 |---------------|---------------|------------------------------------------------|
-| `target`      | `String`      | The target file path                           |
+| `target`      | `String`      | The target file path |
 | `status`      | `TaskStatus`  | Current status (PENDING/RUNNING/COMPLETED/FAILED/CANCELLED) |
 | `sessionId`   | `String?`     | Associated session ID (nullable)               |
 | `startedAt`   | `String?`     | ISO timestamp when task started (nullable)     |
 | `completedAt` | `String?`     | ISO timestamp when task completed (nullable)   |
 | `error`       | `String?`     | Error message if failed (nullable)             |
-### DocOpsStatus
-Root structure for `docops.status.json`:
-| Field         | Type                          | Description                        |
-|---------------|-------------------------------|------------------------------------|
-| `lastUpdated` | `String`                      | ISO timestamp of last update       |
-| `tasks`       | `Map<String, TaskStatusEntry>`| Map of target path to status entry |
 
+### DocOpsStatus
+
+Root structure for `docops.status.json`:
+| Field | Type | Description |
+|---------------|-------------------------------|------------------------------------|
+| `lastUpdated` | `String`                      | ISO timestamp of last update |
+| `tasks`       | `Map<String, TaskStatusEntry>`| Map of target path to status entry |
 
 ## Implementation Notes
 
@@ -643,6 +648,7 @@ types:
   simple parser may have limitations with deeply nested YAML structures like maps within lists)
 
 **Parser Behavior:**
+
 - Lines are split on the first colon to extract key-value pairs
 - Lines without colons are ignored
 - If the value after the colon is empty, the parser looks for subsequent list items (lines starting with `- `)
@@ -669,7 +675,6 @@ When determining the primary source file for overwrite mode checks, the priority
 2. First spec's doc file
 3. First document match's first supporting file (or doc file if no supporting files)
 4. First generate match's first input file (or doc file if no input files)
-
 
 ### Error Handling
 
@@ -709,6 +714,7 @@ The action is available through the `DocProcessorActionGroup` which provides a s
 - ⚡ Force Update (Dangerous) (`ForceUpdate`)
 
 The dialog includes:
+
 - An "Auto-fix issues" checkbox
 - A search/filter field for tasks
 - Select All / Deselect All buttons

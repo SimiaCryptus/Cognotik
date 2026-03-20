@@ -4,54 +4,55 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import io.mockk.every
 import io.mockk.mockk
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.nio.file.Path
 
 class SessionRendererTest {
 
-    private lateinit var task: SessionTask
-    private lateinit var socketManager: SocketManager
-    private lateinit var renderer: SessionRenderer
-    private val filepath = Path.of("test.kt")
+  private lateinit var task: SessionTask
+  private lateinit var socketManager: SocketManager
+  private lateinit var renderer: SessionRenderer
+  private val filepath = Path.of("test.kt")
 
-    @BeforeEach
-    fun setup() {
-        task = mockk(relaxed = true)
-        socketManager = mockk(relaxed = true)
-        every { task.ui } returns socketManager
-        
-        val subTask = mockk<SessionTask>(relaxed = true)
-        every { socketManager.newTask(any()) } returns subTask
-        every { subTask.placeholder } returns "<placeholder>"
-        
-        // Mock hrefLink to return a string
-        every { subTask.hrefLink(any(), any(), any(), any()) } answers {
-            "<a href='#'>${arg<String>(0)}</a>"
-        }
-        every { subTask.complete(any<String>()) } answers { StringBuilder(arg<String>(0)) }
+  @BeforeEach
+  fun setup() {
+    task = mockk(relaxed = true)
+    socketManager = mockk(relaxed = true)
+    every { task.ui } returns socketManager
 
-        renderer = SessionRenderer(task)
+    val subTask = mockk<SessionTask>(relaxed = true)
+    every { socketManager.newTask(any()) } returns subTask
+    every { subTask.placeholder } returns "<placeholder>"
+
+    // Mock hrefLink to return a string
+    every { subTask.hrefLink(any(), any(), any(), any()) } answers {
+      "<a href='#'>${arg<String>(0)}</a>"
     }
+    every { subTask.complete(any<String>()) } answers { StringBuilder(arg<String>(0)) }
 
-    @Test
-    fun `renderSaveButton generates HTML`() {
-        val html = renderer.renderSaveButton(filepath, "code", "kt") {}
-        assertEquals("<placeholder>", html)
-    }
+    renderer = SessionRenderer(task)
+  }
 
-    @Test
-    fun `renderAutoApplied generates HTML`() {
-        val html = renderer.renderAutoApplied(filepath, "<revert>")
-        assertTrue(html.contains("Automatically Applied"))
-        assertTrue(html.contains("<revert>"))
-    }
+  @Test
+  fun `renderSaveButton generates HTML`() {
+    val html = renderer.renderSaveButton(filepath, "code", "kt") {}
+    assertEquals("<placeholder>", html)
+  }
 
-    @Test
-    fun `renderWarning generates HTML`() {
-        val html = renderer.renderWarning("Watch out!")
-        assertTrue(html.contains("Warning: Watch out!"))
-        assertTrue(html.contains("class=\"warning\""))
-    }
+  @Test
+  fun `renderAutoApplied generates HTML`() {
+    val html = renderer.renderAutoApplied(filepath, "<revert>")
+    assertTrue(html.contains("Automatically Applied"))
+    assertTrue(html.contains("<revert>"))
+  }
+
+  @Test
+  fun `renderWarning generates HTML`() {
+    val html = renderer.renderWarning("Watch out!")
+    assertTrue(html.contains("Warning: Watch out!"))
+    assertTrue(html.contains("class=\"warning\""))
+  }
 }

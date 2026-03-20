@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | DirectUrls Seed Method</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -207,7 +208,8 @@
         <div class="breadcrumbs">Home > Tasks > Seed Methods > DirectUrls</div>
         <h1>DirectUrls</h1>
         <p class="pitch">
-            Explicitly define the entry points for a web crawl. This method bypasses discovery logic to focus the agent on a specific set of target URLs.
+            Explicitly define the entry points for a web crawl. This method bypasses discovery logic to focus the agent
+            on a specific set of target URLs.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect Safe</span>
@@ -267,7 +269,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Configuration Parameters</h3>
             <table class="docs-table">
                 <thead>
@@ -282,7 +284,7 @@
                     <td><code>direct_urls</code> <span class="req">*</span></td>
                     <td><code>List&lt;String&gt;</code></td>
                     <td>
-                        A list of absolute URLs to be used as the starting point for the crawler. 
+                        A list of absolute URLs to be used as the starting point for the crawler.
                         Must use <code>http://</code> or <code>https://</code> protocols.
                     </td>
                 </tr>
@@ -299,32 +301,35 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>Seed Generation Lifecycle</h3>
             <div style="display: flex; flex-direction: column; gap: 1rem;">
                 <div class="panel">
                     <div class="panel-header">1. Initialization</div>
                     <div style="padding: 1rem; font-size: 0.9rem;">
-                        The system checks <code>taskConfig.direct_urls</code>. If the list is null or empty, an error is logged and an empty seed list is returned.
+                        The system checks <code>taskConfig.direct_urls</code>. If the list is null or empty, an error is
+                        logged and an empty seed list is returned.
                     </div>
                 </div>
                 <div class="panel">
                     <div class="panel-header">2. Sanitization & Filtering</div>
                     <div style="padding: 1rem; font-size: 0.9rem;">
-                        Each string is trimmed. The system filters out blank entries and validates the URI format. Non-HTTP(S) URLs are discarded with a warning.
+                        Each string is trimmed. The system filters out blank entries and validates the URI format.
+                        Non-HTTP(S) URLs are discarded with a warning.
                     </div>
                 </div>
                 <div class="panel">
                     <div class="panel-header">3. Mapping</div>
                     <div style="padding: 1rem; font-size: 0.9rem;">
-                        Valid URLs are converted into <code>SeedItem</code> objects. Titles are auto-generated as <code>"Direct URL {index + 1}"</code>.
+                        Valid URLs are converted into <code>SeedItem</code> objects. Titles are auto-generated as <code>"Direct
+                        URL {index + 1}"</code>.
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Kotlin Implementation</h3>
             <pre><code class="language-kotlin">
 // Example: Configuring a CrawlerAgentTask with DirectUrls

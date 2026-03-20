@@ -1,169 +1,198 @@
-[ {
-  "id" : "abductivereasoning",
-  "label" : "Abductive Reasoning",
-  "url" : "AbductiveReasoningTask.html",
-  "description" : "Generate and evaluate explanatory hypotheses\n\n\n                        Performs abductive reasoning (inference to best explanation) to generate and evaluate hypotheses.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/AbductiveReasoningTask.kt"
-}, {
-  "id" : "abstractionladder",
-  "label" : "Abstraction Ladder",
-  "url" : "AbstractionLadderTask.html",
-  "description" : "Traverse abstraction levels to identify patterns and design insights\n\n\n                        Analyzes concepts by moving up and down abstraction levels.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/AbstractionLadderTask.kt"
-}, {
-  "id" : "adversarialreasoning",
-  "label" : "Adversarial Reasoning",
-  "url" : "AdversarialReasoningTask.html",
-  "description" : "Red team analysis to identify vulnerabilities and weaknesses\n\n\n                        Performs adversarial reasoning and red team analysis on systems, designs, or arguments.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/AdversarialReasoningTask.kt"
-}, {
-  "id" : "analogicalreasoning",
-  "label" : "Analogical Reasoning",
-  "url" : "AnalogicalReasoningTask.html",
-  "description" : "Solve problems by finding and applying analogies from different domains\n\n\n                        Performs creative problem-solving through analogical reasoning.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/AnalogicalReasoningTask.kt"
-}, {
-  "id" : "brainstorming",
-  "label" : "Brainstorming",
-  "url" : "BrainstormingTask.html",
-  "description" : "Generate and analyze multiple solution options\n\n\n                        Systematically generates diverse options and analyzes each independently.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/BrainstormingTask.kt"
-}, {
-  "id" : "causalinference",
-  "label" : "Causal Inference",
-  "url" : "CausalInferenceTask.html",
-  "description" : "Identify causal relationships and root causes\n\n\n                        Performs causal inference analysis to identify true causal relationships.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/CausalInferenceTask.kt"
-}, {
-  "id" : "chainofthought",
-  "label" : "Chain Of Thought",
-  "url" : "ChainOfThoughtTask.html",
-  "description" : "Break down complex problems into explicit reasoning steps\n\n\n                        Performs step-by-step reasoning with validation:\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/ChainOfThoughtTask.kt"
-}, {
-  "id" : "constraintrelaxation",
-  "label" : "Constraint Relaxation",
-  "url" : "ConstraintRelaxationTask.html",
-  "description" : "Solve over-constrained problems through progressive constraint relaxation\n\n\n                        Solves complex problems by temporarily relaxing constraints and progressively reintroducing them.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/ConstraintRelaxationTask.kt"
-}, {
-  "id" : "constraintsatisfaction",
-  "label" : "Constraint Satisfaction",
-  "url" : "ConstraintSatisfactionTask.html",
-  "description" : "Solve problems with multiple competing constraints\n\n\n                        Solves constraint satisfaction problems with hard and soft constraints.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/ConstraintSatisfactionTask.kt"
-}, {
-  "id" : "counterfactualanalysis",
-  "label" : "Counterfactual Analysis",
-  "url" : "CounterfactualAnalysisTask.html",
-  "description" : "Explore what-if scenarios to understand causal relationships and decision impacts\n\n\n                        Performs counterfactual analysis to explore alternative scenarios and outcomes.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/CounterfactualAnalysisTask.kt"
-}, {
-  "id" : "decisiontree",
-  "label" : "Decision Tree",
-  "url" : "DecisionTreeTask.html",
-  "description" : "Build an LLM-driven symbolic decision tree\n\n\n                        Constructs a decision tree classifier using LLM for rule proposal and data for validation.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/DecisionTreeTask.kt"
-}, {
-  "id" : "decompositionsynthesis",
-  "label" : "Decomposition Synthesis",
-  "url" : "DecompositionSynthesisTask.html",
-  "description" : "Decompose complex problems and synthesize solutions\n\n\n                        Decomposes complex problems into manageable subproblems, solves them, and synthesizes solutions.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/DecompositionSynthesisTask.kt"
-}, {
-  "id" : "dialecticalreasoning",
-  "label" : "Dialectical Reasoning",
-  "url" : "DialecticalReasoningTask.html",
-  "description" : "Resolve contradictions through thesis-antithesis-synthesis\n\n\n                        Applies dialectical reasoning to resolve contradictions and find higher-level synthesis.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/DialecticalReasoningTask.kt"
-}, {
-  "id" : "ethicalreasoning",
-  "label" : "Ethical Reasoning",
-  "url" : "EthicalReasoningTask.html",
-  "description" : "Analyze a dilemma through multiple ethical frameworks to guide decision-making.\n\n\n                        Provides a structured analysis of a complex ethical problem or decision.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/EthicalReasoningTask.kt"
-}, {
-  "id" : "finitestatemachine",
-  "label" : "Finite State Machine",
-  "url" : "FiniteStateMachineTask.html",
-  "description" : "Model concepts using finite state machine analysis\n\n\n                  Analyzes concepts, systems, or processes using finite state machine modeling.\n                  \n                \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/FiniteStateMachineTask.kt"
-}, {
-  "id" : "functorialmapping",
-  "label" : "Functorial Mapping",
-  "url" : "FunctorialMappingTask.html",
-  "description" : "Solve complex problems by abstracting them into Category Theory and mapping them to domains with superior tools.\n\n\n                          This task implements the logic of Category Theory. It treats domains as \"Categories\" (collections of objects and arrows/morphisms).\n                          The goal is to construct a \"Functor\"—a bridge that allows you to transport a difficult problem from Domain A to Domain B, solve it there, and transport the solution back.\n                          \n                        \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/FunctorialMappingTask.kt"
-}, {
-  "id" : "gametheory",
-  "label" : "Game Theory",
-  "url" : "GameTheoryTask.html",
-  "description" : "Analyze strategic interactions using game theory\n\n\n                        Performs comprehensive game theory analysis of strategic situations.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/GameTheoryTask.kt"
-}, {
-  "id" : "geneticoptimization",
-  "label" : "Genetic Optimization",
-  "url" : "GeneticOptimizationTask.html",
-  "description" : "Iteratively evolve and perfect text through genetic algorithms\n\n\n                        Uses genetic algorithms to optimize text through iterative evolution.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/GeneticOptimizationTask.kt"
-}, {
-  "id" : "isomorphismdiscovery",
-  "label" : "Isomorphism Discovery",
-  "url" : "IsomorphismDiscoveryTask.html",
-  "description" : "Search for and validate structural mappings between two distinct domains\n\nIdentifies structural isomorphisms between domains.\n\n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/IsomorphismDiscoveryTask.kt"
-}, {
-  "id" : "lateralthinking",
-  "label" : "Lateral Thinking",
-  "url" : "LateralThinkingTask.html",
-  "description" : "Break conventional thinking patterns to find innovative solutions\n\n\n                        Applies lateral thinking techniques to generate unconventional solutions.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/LateralThinkingTask.kt"
-}, {
-  "id" : "mathematicalreasoning",
-  "label" : "Mathematical Reasoning",
-  "url" : "MathematicalReasoningTask.html",
-  "description" : "Solve mathematical problems through step-by-step logical reasoning with verifiable steps\n\n\n                          Uses path search to solve mathematical problems through rigorous step-by-step reasoning.\n                          \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/MathematicalReasoningTask.kt"
-}, {
-  "id" : "metacognitivereflection",
-  "label" : "Meta Cognitive Reflection",
-  "url" : "MetaCognitiveReflectionTask.html",
-  "description" : "Reflect on and critique reasoning processes\n\n\n                        Performs meta-cognitive reflection on task reasoning and solutions.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/MetaCognitiveReflectionTask.kt"
-}, {
-  "id" : "probabilisticreasoning",
-  "label" : "Probabilistic Reasoning",
-  "url" : "ProbabilisticReasoningTask.html",
-  "description" : "Reason under uncertainty using Bayesian analysis\n\n\n                        Performs probabilistic reasoning and Bayesian analysis under uncertainty.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/ProbabilisticReasoningTask.kt"
-}, {
-  "id" : "socraticdialogue",
-  "label" : "Socratic Dialogue",
-  "url" : "SocraticDialogueTask.html",
-  "description" : "Explore ideas through Socratic questioning\n\n\n                        Uses Socratic questioning methodology to deeply explore ideas.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/SocraticDialogueTask.kt"
-}, {
-  "id" : "structuralinvariantanalysis",
-  "label" : "Structural Invariant Analysis",
-  "url" : "StructuralInvariantAnalysisTask.html",
-  "description" : "Distill an object down to its immutable properties and symmetries\n\n\n                          Performs rigorous structural analysis to identify invariants.\n                          \n                        \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/StructuralInvariantAnalysisTask.kt"
-}, {
-  "id" : "systemsthinking",
-  "label" : "Systems Thinking",
-  "url" : "SystemsThinkingTask.html",
-  "description" : "Analyze complex systems through feedback loops and dynamics\n\n\n                        Performs systems thinking analysis to understand complex system behavior.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/SystemsThinkingTask.kt"
-}, {
-  "id" : "tablecompilation",
-  "label" : "Table Compilation",
-  "url" : "TableCompilationTask.html",
-  "description" : "Generate structured tables with AI-computed cell values\n\n\n                        Generates tables by computing each cell value using AI.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/TableCompilationTask.kt"
-}, {
-  "id" : "temporalreasoning",
-  "label" : "Temporal Reasoning",
-  "url" : "TemporalReasoningTask.html",
-  "description" : "Analyze how systems evolve over time and predict future states\n\n\n                        Performs temporal reasoning and timeline analysis to understand system evolution.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/TemporalReasoningTask.kt"
-} ]
+[
+  {
+    "id": "abductivereasoning",
+    "label": "Abductive Reasoning",
+    "url": "AbductiveReasoningTask.html",
+    "description": "Generate and evaluate explanatory hypotheses\n\n\n                        Performs abductive reasoning (inference to best explanation) to generate and evaluate hypotheses.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/AbductiveReasoningTask.kt"
+  },
+  {
+    "id": "abstractionladder",
+    "label": "Abstraction Ladder",
+    "url": "AbstractionLadderTask.html",
+    "description": "Traverse abstraction levels to identify patterns and design insights\n\n\n                        Analyzes concepts by moving up and down abstraction levels.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/AbstractionLadderTask.kt"
+  },
+  {
+    "id": "adversarialreasoning",
+    "label": "Adversarial Reasoning",
+    "url": "AdversarialReasoningTask.html",
+    "description": "Red team analysis to identify vulnerabilities and weaknesses\n\n\n                        Performs adversarial reasoning and red team analysis on systems, designs, or arguments.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/AdversarialReasoningTask.kt"
+  },
+  {
+    "id": "analogicalreasoning",
+    "label": "Analogical Reasoning",
+    "url": "AnalogicalReasoningTask.html",
+    "description": "Solve problems by finding and applying analogies from different domains\n\n\n                        Performs creative problem-solving through analogical reasoning.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/AnalogicalReasoningTask.kt"
+  },
+  {
+    "id": "brainstorming",
+    "label": "Brainstorming",
+    "url": "BrainstormingTask.html",
+    "description": "Generate and analyze multiple solution options\n\n\n                        Systematically generates diverse options and analyzes each independently.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/BrainstormingTask.kt"
+  },
+  {
+    "id": "causalinference",
+    "label": "Causal Inference",
+    "url": "CausalInferenceTask.html",
+    "description": "Identify causal relationships and root causes\n\n\n                        Performs causal inference analysis to identify true causal relationships.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/CausalInferenceTask.kt"
+  },
+  {
+    "id": "chainofthought",
+    "label": "Chain Of Thought",
+    "url": "ChainOfThoughtTask.html",
+    "description": "Break down complex problems into explicit reasoning steps\n\n\n                        Performs step-by-step reasoning with validation:\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/ChainOfThoughtTask.kt"
+  },
+  {
+    "id": "constraintrelaxation",
+    "label": "Constraint Relaxation",
+    "url": "ConstraintRelaxationTask.html",
+    "description": "Solve over-constrained problems through progressive constraint relaxation\n\n\n                        Solves complex problems by temporarily relaxing constraints and progressively reintroducing them.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/ConstraintRelaxationTask.kt"
+  },
+  {
+    "id": "constraintsatisfaction",
+    "label": "Constraint Satisfaction",
+    "url": "ConstraintSatisfactionTask.html",
+    "description": "Solve problems with multiple competing constraints\n\n\n                        Solves constraint satisfaction problems with hard and soft constraints.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/ConstraintSatisfactionTask.kt"
+  },
+  {
+    "id": "counterfactualanalysis",
+    "label": "Counterfactual Analysis",
+    "url": "CounterfactualAnalysisTask.html",
+    "description": "Explore what-if scenarios to understand causal relationships and decision impacts\n\n\n                        Performs counterfactual analysis to explore alternative scenarios and outcomes.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/CounterfactualAnalysisTask.kt"
+  },
+  {
+    "id": "decisiontree",
+    "label": "Decision Tree",
+    "url": "DecisionTreeTask.html",
+    "description": "Build an LLM-driven symbolic decision tree\n\n\n                        Constructs a decision tree classifier using LLM for rule proposal and data for validation.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/DecisionTreeTask.kt"
+  },
+  {
+    "id": "decompositionsynthesis",
+    "label": "Decomposition Synthesis",
+    "url": "DecompositionSynthesisTask.html",
+    "description": "Decompose complex problems and synthesize solutions\n\n\n                        Decomposes complex problems into manageable subproblems, solves them, and synthesizes solutions.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/DecompositionSynthesisTask.kt"
+  },
+  {
+    "id": "dialecticalreasoning",
+    "label": "Dialectical Reasoning",
+    "url": "DialecticalReasoningTask.html",
+    "description": "Resolve contradictions through thesis-antithesis-synthesis\n\n\n                        Applies dialectical reasoning to resolve contradictions and find higher-level synthesis.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/DialecticalReasoningTask.kt"
+  },
+  {
+    "id": "ethicalreasoning",
+    "label": "Ethical Reasoning",
+    "url": "EthicalReasoningTask.html",
+    "description": "Analyze a dilemma through multiple ethical frameworks to guide decision-making.\n\n\n                        Provides a structured analysis of a complex ethical problem or decision.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/EthicalReasoningTask.kt"
+  },
+  {
+    "id": "finitestatemachine",
+    "label": "Finite State Machine",
+    "url": "FiniteStateMachineTask.html",
+    "description": "Model concepts using finite state machine analysis\n\n\n                  Analyzes concepts, systems, or processes using finite state machine modeling.\n                  \n                \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/FiniteStateMachineTask.kt"
+  },
+  {
+    "id": "functorialmapping",
+    "label": "Functorial Mapping",
+    "url": "FunctorialMappingTask.html",
+    "description": "Solve complex problems by abstracting them into Category Theory and mapping them to domains with superior tools.\n\n\n                          This task implements the logic of Category Theory. It treats domains as \"Categories\" (collections of objects and arrows/morphisms).\n                          The goal is to construct a \"Functor\"—a bridge that allows you to transport a difficult problem from Domain A to Domain B, solve it there, and transport the solution back.\n                          \n                        \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/FunctorialMappingTask.kt"
+  },
+  {
+    "id": "gametheory",
+    "label": "Game Theory",
+    "url": "GameTheoryTask.html",
+    "description": "Analyze strategic interactions using game theory\n\n\n                        Performs comprehensive game theory analysis of strategic situations.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/GameTheoryTask.kt"
+  },
+  {
+    "id": "geneticoptimization",
+    "label": "Genetic Optimization",
+    "url": "GeneticOptimizationTask.html",
+    "description": "Iteratively evolve and perfect text through genetic algorithms\n\n\n                        Uses genetic algorithms to optimize text through iterative evolution.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/GeneticOptimizationTask.kt"
+  },
+  {
+    "id": "isomorphismdiscovery",
+    "label": "Isomorphism Discovery",
+    "url": "IsomorphismDiscoveryTask.html",
+    "description": "Search for and validate structural mappings between two distinct domains\n\nIdentifies structural isomorphisms between domains.\n\n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/IsomorphismDiscoveryTask.kt"
+  },
+  {
+    "id": "lateralthinking",
+    "label": "Lateral Thinking",
+    "url": "LateralThinkingTask.html",
+    "description": "Break conventional thinking patterns to find innovative solutions\n\n\n                        Applies lateral thinking techniques to generate unconventional solutions.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/LateralThinkingTask.kt"
+  },
+  {
+    "id": "mathematicalreasoning",
+    "label": "Mathematical Reasoning",
+    "url": "MathematicalReasoningTask.html",
+    "description": "Solve mathematical problems through step-by-step logical reasoning with verifiable steps\n\n\n                          Uses path search to solve mathematical problems through rigorous step-by-step reasoning.\n                          \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/MathematicalReasoningTask.kt"
+  },
+  {
+    "id": "metacognitivereflection",
+    "label": "Meta Cognitive Reflection",
+    "url": "MetaCognitiveReflectionTask.html",
+    "description": "Reflect on and critique reasoning processes\n\n\n                        Performs meta-cognitive reflection on task reasoning and solutions.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/MetaCognitiveReflectionTask.kt"
+  },
+  {
+    "id": "probabilisticreasoning",
+    "label": "Probabilistic Reasoning",
+    "url": "ProbabilisticReasoningTask.html",
+    "description": "Reason under uncertainty using Bayesian analysis\n\n\n                        Performs probabilistic reasoning and Bayesian analysis under uncertainty.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/ProbabilisticReasoningTask.kt"
+  },
+  {
+    "id": "socraticdialogue",
+    "label": "Socratic Dialogue",
+    "url": "SocraticDialogueTask.html",
+    "description": "Explore ideas through Socratic questioning\n\n\n                        Uses Socratic questioning methodology to deeply explore ideas.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/SocraticDialogueTask.kt"
+  },
+  {
+    "id": "structuralinvariantanalysis",
+    "label": "Structural Invariant Analysis",
+    "url": "StructuralInvariantAnalysisTask.html",
+    "description": "Distill an object down to its immutable properties and symmetries\n\n\n                          Performs rigorous structural analysis to identify invariants.\n                          \n                        \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/StructuralInvariantAnalysisTask.kt"
+  },
+  {
+    "id": "systemsthinking",
+    "label": "Systems Thinking",
+    "url": "SystemsThinkingTask.html",
+    "description": "Analyze complex systems through feedback loops and dynamics\n\n\n                        Performs systems thinking analysis to understand complex system behavior.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/SystemsThinkingTask.kt"
+  },
+  {
+    "id": "tablecompilation",
+    "label": "Table Compilation",
+    "url": "TableCompilationTask.html",
+    "description": "Generate structured tables with AI-computed cell values\n\n\n                        Generates tables by computing each cell value using AI.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/TableCompilationTask.kt"
+  },
+  {
+    "id": "temporalreasoning",
+    "label": "Temporal Reasoning",
+    "url": "TemporalReasoningTask.html",
+    "description": "Analyze how systems evolve over time and predict future states\n\n\n                        Performs temporal reasoning and timeline analysis to understand system evolution.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/TemporalReasoningTask.kt"
+  }
+]

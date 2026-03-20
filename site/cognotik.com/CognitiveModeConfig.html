@@ -3,16 +3,17 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | CognitiveMode</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
-    
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
+
     <!-- Mermaid for Diagrams -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
@@ -116,7 +117,8 @@
         <div class="breadcrumbs">Home > Core > Cognitive Modes</div>
         <h1>CognitiveMode</h1>
         <p class="pitch">
-            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the agent's problem-solving persona.
+            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the
+            agent's problem-solving persona.
         </p>
         <div class="badges">
             <span class="badge">Core Architecture</span>
@@ -182,7 +184,7 @@
         </nav>
 
         <!-- TAB: Built-in Modes -->
-        <div id="tab-modes" class="tab-pane active">
+        <div class="tab-pane active" id="tab-modes">
             <p>Cognotik ships with four distinct architectural patterns for problem-solving.</p>
             <table class="docs-table">
                 <thead>
@@ -218,8 +220,9 @@
         </div>
 
         <!-- TAB: Schema Strategies -->
-        <div id="tab-strategies" class="tab-pane" style="display:none;">
-            <p>Strategies define the "Persona" and internal state structure, separating control flow from reasoning style.</p>
+        <div class="tab-pane" id="tab-strategies" style="display:none;">
+            <p>Strategies define the "Persona" and internal state structure, separating control flow from reasoning
+                style.</p>
             <table class="docs-table">
                 <thead>
                 <tr>
@@ -254,8 +257,9 @@
         </div>
 
         <!-- TAB: Implementation -->
-        <div id="tab-implementation" class="tab-pane" style="display:none;">
-            <p>To create a custom mode, implement the <code>run()</code> loop. You must handle state updates and UI rendering.</p>
+        <div class="tab-pane" id="tab-implementation" style="display:none;">
+            <p>To create a custom mode, implement the <code>run()</code> loop. You must handle state updates and UI
+                rendering.</p>
             <pre><code class="language-kotlin">
 class MyCustomMode(val config: OrchestrationConfig) {
     fun run(task: SessionTask, userPrompt: String, availableTasks: List<TaskType>) {
@@ -288,9 +292,10 @@ class MyCustomMode(val config: OrchestrationConfig) {
     <!-- 4. INTEGRATION GUIDE -->
     <section class="integration-section">
         <h2>Integration Guide</h2>
-        
+
         <h3>Configuration</h3>
-        <p>Reference the mode in your <code>OrchestrationConfig</code>. Note that the <code>type</code> field drives polymorphic deserialization.</p>
+        <p>Reference the mode in your <code>OrchestrationConfig</code>. Note that the <code>type</code> field drives
+            polymorphic deserialization.</p>
         <pre><code class="language-kotlin">
 val config = OrchestrationConfig(
     // Select the architectural mode (Maps to CognitiveModeConfig.type)
@@ -311,7 +316,9 @@ val config = OrchestrationConfig(
         <ul>
             <li><strong>Mermaid Diagrams:</strong> Visualize the state machine in the transcript.</li>
             <li><strong>Collapsed Details:</strong> Use <code>&lt;details&gt;</code> tags for raw JSON state dumps.</li>
-            <li><strong>Graceful Degradation:</strong> Catch LLM hallucinations and attempt to simplify prompts before failure.</li>
+            <li><strong>Graceful Degradation:</strong> Catch LLM hallucinations and attempt to simplify prompts before
+                failure.
+            </li>
         </ul>
     </section>
 

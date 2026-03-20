@@ -136,25 +136,26 @@ configuration servlets to discover capabilities, configure the environment, and 
 Clients should fetch available configurations to render forms or validate input.
 
 **1. API Providers & Models**
-*   **Endpoint:** `/apiProviders/` (GET)
-*   **Response:** JSON Object containing configured and available providers.
-*   **Structure:**
-    ```json
-    {
-      "configuredProviders": [
-        {
-          "name": "OpenAI",
-          "baseUrl": "...",
-          "models": [
-            { "name": "gpt-4o", "maxTokens": 128000 },
-            { "name": "gpt-3.5-turbo", "maxTokens": 16000 }
-          ]
-        }
-      ],
-      "availableProviders": ["OpenAI", "Anthropic", "Ollama"]
-    }
-    ```
-*   **Usage:** Use the model names (e.g., "gpt-4o") to populate model selection dropdowns.
+
+* **Endpoint:** `/apiProviders/` (GET)
+* **Response:** JSON Object containing configured and available providers.
+* **Structure:**
+  ```json
+  {
+    "configuredProviders": [
+      {
+        "name": "OpenAI",
+        "baseUrl": "...",
+        "models": [
+          { "name": "gpt-4o", "maxTokens": 128000 },
+          { "name": "gpt-3.5-turbo", "maxTokens": 16000 }
+        ]
+      }
+    ],
+    "availableProviders": ["OpenAI", "Anthropic", "Ollama"]
+  }
+  ```
+* **Usage:** Use the model names (e.g., "gpt-4o") to populate model selection dropdowns.
 
 **2. Task Types Metadata**
 
@@ -186,11 +187,12 @@ Clients should fetch available configurations to render forms or validate input.
   ]
   ```
 * **Field Types:**
-    *   `text`, `number`, `textarea`, `checkbox`: Standard inputs.
-    *   `select`: Dropdown (includes `options` array of strings).
-    *   `subtasks`: Special type for recursive planning. Requires a nested configuration map (see Payload).
+    * `text`, `number`, `textarea`, `checkbox`: Standard inputs.
+    * `select`: Dropdown (includes `options` array of strings).
+    * `subtasks`: Special type for recursive planning. Requires a nested configuration map (see Payload).
 
 **3. Cognitive Modes Metadata**
+
 * **Endpoint:** `/cognitiveConfig` (GET)
 * **Response:** JSON Array of Cognitive Mode Definitions.
 * **Structure:** Similar to Task Types, but defines strategies (e.g., "Waterfall", "Auto Plan").
@@ -199,31 +201,32 @@ Clients should fetch available configurations to render forms or validate input.
 
 Before launching, ensure API keys are configured.
 
-*   **Endpoint:** `/userSettings/`
-*   **GET:** Returns current settings (keys are masked or present).
-*   **POST:** Save settings.
-    *   **Content-Type:** `application/x-www-form-urlencoded`
-    *   **Body:** `action=save&settings={JSON_STRING}`
-    *   **JSON Structure:**
-        ```json
-        {
-          "apis": [
-            { "provider": "OpenAI", "key": "sk-...", "baseUrl": "" }
-          ],
-          "tools": ["/path/to/local/tool"]
-        }
-        ```
+* **Endpoint:** `/userSettings/`
+* **GET:** Returns current settings (keys are masked or present).
+* **POST:** Save settings.
+    * **Content-Type:** `application/x-www-form-urlencoded`
+    * **Body:** `action=save&settings={JSON_STRING}`
+    * **JSON Structure:**
+      ```json
+      {
+        "apis": [
+          { "provider": "OpenAI", "key": "sk-...", "baseUrl": "" }
+        ],
+        "tools": ["/path/to/local/tool"]
+      }
+      ```
 
 #### C. Session Configuration & Launch
 
-To start a session, the client typically saves the session configuration to the server. The server then initializes the session state.
+To start a session, the client typically saves the session configuration to the server. The server then initializes the
+session state.
 
-*   **Endpoint:** `/taskChat/settings` (POST)
-*   **Content-Type:** `application/x-www-form-urlencoded`
-*   **Body Parameters:**
-    *   `sessionId`: String (Unique ID, e.g., `session_123456789`).
-    *   `action`: `save`
-    *   `settings`: JSON String of the `OrchestrationConfig`.
+* **Endpoint:** `/taskChat/settings` (POST)
+* **Content-Type:** `application/x-www-form-urlencoded`
+* **Body Parameters:**
+    * `sessionId`: String (Unique ID, e.g., `session_123456789`).
+    * `action`: `save`
+    * `settings`: JSON String of the `OrchestrationConfig`.
 
 **`settings` JSON Structure:**
 
@@ -241,6 +244,7 @@ To start a session, the client typically saves the session configuration to the 
 | `taskSettings`      | Map    | Map of `ConfigName -> Configuration`.           |
 
 **1. Cognitive Settings Object**
+
 ```json
 {
   "type": "Waterfall",
@@ -266,8 +270,6 @@ the `task_type` field (discriminator) matching the `id` from the metadata endpoi
   }
 }
 ```
-
-
 
 **3. Complete Example Payload (inside `settings` parameter)**
 
@@ -301,28 +303,35 @@ the `task_type` field (discriminator) matching the `id` from the metadata endpoi
 
 ### 8. Embedding and Testing (Programmatic Access)
 
-Beyond the standard Web UI and IDE plugins, Cognotik provides robust Test Harnesses for embedding agent capabilities directly into code or running integration tests. These harnesses wrap the complex server infrastructure (Jetty, Websockets, Session Management) into a simple, synchronous or asynchronous API.
+Beyond the standard Web UI and IDE plugins, Cognotik provides robust Test Harnesses for embedding agent capabilities
+directly into code or running integration tests. These harnesses wrap the complex server infrastructure (Jetty,
+Websockets, Session Management) into a simple, synchronous or asynchronous API.
 
 #### A. The Unified Harness Architecture
 
 Both `PlanHarness` and `TaskHarness` delegate to a `UnifiedHarness` designed for ephemeral execution:
-1.  **Ephemeral Workspace:** Automatically creates a timestamped temporary directory for the session (e.g., `workspaces/TaskName/test-20231027_120000`).
-2.  **Server Modes:**
-    *   **Serverless (Default for Tasks):** Runs the logic directly in the current thread/process without starting Jetty. Ideal for unit tests.
-    *   **Server (Default for Plans):** Starts a local Jetty server (default port 8082) to allow Web UI interaction.
-3.  **Session Management:** Initializes a `Session`, `User`, and `OrchestrationConfig` automatically.
-4.  **Lifecycle Management:** Blocks execution until the task completes, fails, or times out.
+
+1. **Ephemeral Workspace:** Automatically creates a timestamped temporary directory for the session (e.g.,
+   `workspaces/TaskName/test-20231027_120000`).
+2. **Server Modes:**
+    * **Serverless (Default for Tasks):** Runs the logic directly in the current thread/process without starting Jetty.
+      Ideal for unit tests.
+    * **Server (Default for Plans):** Starts a local Jetty server (default port 8082) to allow Web UI interaction.
+3. **Session Management:** Initializes a `Session`, `User`, and `OrchestrationConfig` automatically.
+4. **Lifecycle Management:** Blocks execution until the task completes, fails, or times out.
 
 #### B. PlanHarness (Full Agent Workflow)
 
-Use `PlanHarness` when you want to execute a high-level user prompt using a specific Cognitive Mode (e.g., "Waterfall" or "Auto Plan"). This simulates a full user session programmatically.
+Use `PlanHarness` when you want to execute a high-level user prompt using a specific Cognitive Mode (e.g., "Waterfall"
+or "Auto Plan"). This simulates a full user session programmatically.
 
 **Key Parameters:**
-*   `prompt`: The string instruction to the agent.
-*   `cognitiveSettings`: Configuration for the planning strategy.
-*   `openBrowser`: If `true`, opens the UI to visualize the plan (requires `serverless=false`).
-*   `serverless`: Defaults to `false`. Set to `true` to skip Jetty startup.
-*   `modelInstanceFn`: A factory function to inject API keys and model instances.
+
+* `prompt`: The string instruction to the agent.
+* `cognitiveSettings`: Configuration for the planning strategy.
+* `openBrowser`: If `true`, opens the UI to visualize the plan (requires `serverless=false`).
+* `serverless`: Defaults to `false`. Set to `true` to skip Jetty startup.
+* `modelInstanceFn`: A factory function to inject API keys and model instances.
 
 **Example Usage:**
 
@@ -346,20 +355,23 @@ harness.run() // Blocks until completion
 ```
 
 **What happens:**
-1.  The harness boots the server (unless `serverless=true`).
-2.  It injects the `prompt` as if a user typed it into the chat.
-3.  The agent plans, executes tools, and writes files to the temp workspace.
-4.  On completion, `results.md` is written, and the harness shuts down.
+
+1. The harness boots the server (unless `serverless=true`).
+2. It injects the `prompt` as if a user typed it into the chat.
+3. The agent plans, executes tools, and writes files to the temp workspace.
+4. On completion, `results.md` is written, and the harness shuts down.
 
 #### C. TaskHarness (Unit Testing Tools)
 
-Use `TaskHarness` to test a specific **Task Type** in isolation without the overhead of a planning agent. This is useful for debugging custom tools (e.g., a specific Crawler configuration or a custom API integration).
+Use `TaskHarness` to test a specific **Task Type** in isolation without the overhead of a planning agent. This is useful
+for debugging custom tools (e.g., a specific Crawler configuration or a custom API integration).
 
 **Key Parameters:**
-*   `taskType`: The definition of the tool (e.g., `FileModificationTask`).
-*   `typeConfig`: The static configuration for the tool (e.g., allowed domains for a crawler).
-*   `executionConfig`: The runtime input for the tool (e.g., the specific URL to crawl).
-*   `serverless`: Defaults to `true` for faster execution.
+
+* `taskType`: The definition of the tool (e.g., `FileModificationTask`).
+* `typeConfig`: The static configuration for the tool (e.g., allowed domains for a crawler).
+* `executionConfig`: The runtime input for the tool (e.g., the specific URL to crawl).
+* `serverless`: Defaults to `true` for faster execution.
 
 **Example Usage:**
 
@@ -388,7 +400,8 @@ harness.run()
 
 #### D. Platform Configuration
 
-When embedding these harnesses in a standalone application (outside the standard plugin environment), you may need to initialize the platform services (Authentication, Authorization, Tool Providers) before running a harness.
+When embedding these harnesses in a standalone application (outside the standard plugin environment), you may need to
+initialize the platform services (Authentication, Authorization, Tool Providers) before running a harness.
 
 ```kotlin
 // Call this once at application startup
@@ -396,6 +409,7 @@ PlanHarness.configurePlatform()
 ```
 
 This static helper ensures that:
-1.  `TaskType` and `ToolProvider` enumerations are loaded.
-2.  A default "No-Op" Authentication/Authorization manager is installed (allowing local execution without login).
-3.  Global orchestration settings are initialized.
+
+1. `TaskType` and `ToolProvider` enumerations are loaded.
+2. A default "No-Op" Authentication/Authorization manager is installed (allowing local execution without login).
+3. Global orchestration settings are initialized.

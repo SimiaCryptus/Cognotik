@@ -3,42 +3,47 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
     <!-- SEO Meta Tags -->
     <title>Agent Types | Cognotik</title>
-    <meta name="description" content="Comprehensive guide to Cognotik's strongly-typed Agent architecture including ChatAgent, ParsedAgent, CodeAgent, and specialized media agents for LLM-powered development.">
-    <meta name="keywords" content="AI coding, autonomous agents, ChatAgent, ParsedAgent, CodeAgent, LLM agents, Cognotik">
+    <meta content="Comprehensive guide to Cognotik's strongly-typed Agent architecture including ChatAgent, ParsedAgent, CodeAgent, and specialized media agents for LLM-powered development."
+          name="description">
+    <meta content="AI coding, autonomous agents, ChatAgent, ParsedAgent, CodeAgent, LLM agents, Cognotik"
+          name="keywords">
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="Agent Types | Cognotik">
-    <meta property="og:description" content="Comprehensive guide to Cognotik's strongly-typed Agent architecture for LLM-powered development.">
-    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
-    <meta property="og:url" content="https://cognotik.com/agent-types.html">
-    <meta property="og:type" content="website">
+    <meta content="Agent Types | Cognotik" property="og:title">
+    <meta content="Comprehensive guide to Cognotik's strongly-typed Agent architecture for LLM-powered development."
+          property="og:description">
+    <meta content="https://cognotik.com/assets/images/og-image.png" property="og:image">
+    <meta content="https://cognotik.com/agent-types.html" property="og:url">
+    <meta content="website" property="og:type">
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Agent Types | Cognotik">
-    <meta name="twitter:description" content="Comprehensive guide to Cognotik's strongly-typed Agent architecture for LLM-powered development.">
-    <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+    <meta content="summary_large_image" name="twitter:card">
+    <meta content="Agent Types | Cognotik" name="twitter:title">
+    <meta content="Comprehensive guide to Cognotik's strongly-typed Agent architecture for LLM-powered development."
+          name="twitter:description">
+    <meta content="https://cognotik.com/assets/images/twitter-card.png" name="twitter:image">
 
     <!-- Favicon Suite -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-    <link rel="manifest" href="site.webmanifest">
-    <meta name="theme-color" content="#0f1115">
+    <link href="assets/icons/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="assets/icons/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
+    <link href="assets/icons/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
+    <link href="assets/icons/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
+    <link href="site.webmanifest" rel="manifest">
+    <meta content="#0f1115" name="theme-color">
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 
     <style>
@@ -372,265 +377,353 @@
 </head>
 <body>
 
-    <cognotik-header></cognotik-header>
+<cognotik-header></cognotik-header>
 
-    <main class="docs-layout">
-        <aside class="docs-sidebar">
-            <nav class="docs-nav">
-                <div class="docs-nav-title">On This Page</div>
-                <a href="#core-abstraction" class="docs-nav-link">Core Abstraction</a>
-                <a href="#text-agents" class="docs-nav-link">Text & Conversational</a>
-                <a href="#structured-agents" class="docs-nav-link">Structured Data</a>
-                <a href="#action-agents" class="docs-nav-link">Action & Code</a>
-                <a href="#media-agents" class="docs-nav-link">Media Agents</a>
-                <a href="#summary" class="docs-nav-link">Summary Table</a>
-                <a href="#advanced" class="docs-nav-link">Advanced Topics</a>
-            </nav>
-        </aside>
+<main class="docs-layout">
+    <aside class="docs-sidebar">
+        <nav class="docs-nav">
+            <div class="docs-nav-title">On This Page</div>
+            <a class="docs-nav-link" href="#core-abstraction">Core Abstraction</a>
+            <a class="docs-nav-link" href="#text-agents">Text & Conversational</a>
+            <a class="docs-nav-link" href="#structured-agents">Structured Data</a>
+            <a class="docs-nav-link" href="#action-agents">Action & Code</a>
+            <a class="docs-nav-link" href="#media-agents">Media Agents</a>
+            <a class="docs-nav-link" href="#summary">Summary Table</a>
+            <a class="docs-nav-link" href="#advanced">Advanced Topics</a>
+        </nav>
+    </aside>
 
-        <div class="docs-content">
-            <header class="docs-header">
-                <h1>Agent Types</h1>
-                <p class="lead">
-                    Cognotik is designed around a strongly typed, object-oriented approach to LLM interaction. 
-                    At the core is the abstract <code>BaseAgent&lt;I, R&gt;</code>, where <code>I</code> is the Input type and <code>R</code> is the Result type.
-                </p>
-            </header>
+    <div class="docs-content">
+        <header class="docs-header">
+            <h1>Agent Types</h1>
+            <p class="lead">
+                Cognotik is designed around a strongly typed, object-oriented approach to LLM interaction.
+                At the core is the abstract <code>BaseAgent&lt;I, R&gt;</code>, where <code>I</code> is the Input type
+                and <code>R</code> is the Result type.
+            </p>
+        </header>
 
-            <section id="core-abstraction" class="agent-section">
-                <h2>1. Core Abstraction: BaseAgent</h2>
-                <div class="agent-card">
-                    <div class="agent-card-header">
-                        <span class="agent-card-title">BaseAgent&lt;I, R&gt;</span>
-                        <span class="badge badge-primary">Abstract</span>
-                    </div>
-                    <p class="agent-card-file">File: BaseAgent.kt</p>
-                    <p>All agents inherit from this class. It standardizes how inputs are converted into chat messages and how responses are returned.</p>
-                    
-                    <h4>Generic Types</h4>
-                    <ul class="io-list">
-                        <li><span class="io-label">I</span><span>Input type (e.g., <code class="io-type">List&lt;String&gt;</code>, <code class="io-type">CodeRequest</code>)</span></li>
-                        <li><span class="io-label">R</span><span>Return type (e.g., <code class="io-type">String</code>, <code class="io-type">ParsedResponse&lt;T&gt;</code>)</span></li>
-                    </ul>
-                    <h4>Key Properties</h4>
-                    <ul class="feature-list">
-                        <li><strong>model:</strong> The <code>ChatInterface</code> (the LLM provider, e.g., OpenAI, Anthropic).</li>
-                        <li><strong>temperature:</strong> Controls randomness (0.0 for deterministic, 1.0 for creative).</li>
-                        <li><strong>prompt:</strong> The system prompt/instructions.</li>
-                        <li><strong>name:</strong> Optional identifier for the agent.</li>
-                    </ul>
-
-
-                    <h4>Key Methods</h4>
-                    <ul class="feature-list">
-                        <li><strong>respond(input, messages):</strong> Core method that processes input and returns a result. Can be called with custom messages.</li>
-                        <li><strong>answer(input):</strong> Convenience method that automatically generates chat messages from input and calls <code>respond()</code>.</li>
-                        <li><strong>chatMessages(input):</strong> Abstract method that subclasses must implement to convert input into chat messages.</li>
-                        <li><strong>withModel(model):</strong> Abstract method that returns a new agent instance with a different model.</li>
-                        <li><strong>response(messages, model):</strong> Protected method that sends messages to the model and returns the raw response.</li>
-                    </ul>
+        <section class="agent-section" id="core-abstraction">
+            <h2>1. Core Abstraction: BaseAgent</h2>
+            <div class="agent-card">
+                <div class="agent-card-header">
+                    <span class="agent-card-title">BaseAgent&lt;I, R&gt;</span>
+                    <span class="badge badge-primary">Abstract</span>
                 </div>
-            </section>
+                <p class="agent-card-file">File: BaseAgent.kt</p>
+                <p>All agents inherit from this class. It standardizes how inputs are converted into chat messages and
+                    how responses are returned.</p>
 
-            <section id="text-agents" class="agent-section">
-                <h2>2. Text & Conversational Agents</h2>
-                <div class="agent-card">
-                    <div class="agent-card-header">
-                        <span class="agent-card-title">ChatAgent</span>
-                        <span class="badge badge-success">Stable</span>
+                <h4>Generic Types</h4>
+                <ul class="io-list">
+                    <li><span class="io-label">I</span><span>Input type (e.g., <code
+                            class="io-type">List&lt;String&gt;</code>, <code class="io-type">CodeRequest</code>)</span>
+                    </li>
+                    <li><span class="io-label">R</span><span>Return type (e.g., <code
+                            class="io-type">String</code>, <code class="io-type">ParsedResponse&lt;T&gt;</code>)</span>
+                    </li>
+                </ul>
+                <h4>Key Properties</h4>
+                <ul class="feature-list">
+                    <li><strong>model:</strong> The <code>ChatInterface</code> (the LLM provider, e.g., OpenAI,
+                        Anthropic).
+                    </li>
+                    <li><strong>temperature:</strong> Controls randomness (0.0 for deterministic, 1.0 for creative).
+                    </li>
+                    <li><strong>prompt:</strong> The system prompt/instructions.</li>
+                    <li><strong>name:</strong> Optional identifier for the agent.</li>
+                </ul>
+
+
+                <h4>Key Methods</h4>
+                <ul class="feature-list">
+                    <li><strong>respond(input, messages):</strong> Core method that processes input and returns a
+                        result. Can be called with custom messages.
+                    </li>
+                    <li><strong>answer(input):</strong> Convenience method that automatically generates chat messages
+                        from input and calls <code>respond()</code>.
+                    </li>
+                    <li><strong>chatMessages(input):</strong> Abstract method that subclasses must implement to convert
+                        input into chat messages.
+                    </li>
+                    <li><strong>withModel(model):</strong> Abstract method that returns a new agent instance with a
+                        different model.
+                    </li>
+                    <li><strong>response(messages, model):</strong> Protected method that sends messages to the model
+                        and returns the raw response.
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="agent-section" id="text-agents">
+            <h2>2. Text & Conversational Agents</h2>
+            <div class="agent-card">
+                <div class="agent-card-header">
+                    <span class="agent-card-title">ChatAgent</span>
+                    <span class="badge badge-success">Stable</span>
+                </div>
+                <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;String&gt;, String&gt;</div>
+                <p class="agent-card-file">File: ChatAgent.kt</p>
+                <p>The standard agent for conversational text generation. It takes a history of strings and returns a
+                    raw string response.</p>
+
+                <ul class="io-list">
+                    <li><span class="io-label">Input</span><span><code class="io-type">List&lt;String&gt;</code> (A list of user messages/questions)</span>
+                    </li>
+                    <li><span class="io-label">Output</span><span><code class="io-type">String</code> (The raw content of the LLM's response)</span>
+                    </li>
+                </ul>
+
+                <p>It constructs a chat history starting with the system <code>prompt</code>, followed by each string in
+                    the input list as a separate user message.</p>
+
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">kotlin</span>
+                        <button class="copy-btn" data-copy-target="code-chat">Copy</button>
                     </div>
-                    <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;String&gt;, String&gt;</div>
-                    <p class="agent-card-file">File: ChatAgent.kt</p>
-                    <p>The standard agent for conversational text generation. It takes a history of strings and returns a raw string response.</p>
-                    
-                    <ul class="io-list">
-                        <li><span class="io-label">Input</span><span><code class="io-type">List&lt;String&gt;</code> (A list of user messages/questions)</span></li>
-                        <li><span class="io-label">Output</span><span><code class="io-type">String</code> (The raw content of the LLM's response)</span></li>
-                    </ul>
-
-                    <p>It constructs a chat history starting with the system <code>prompt</code>, followed by each string in the input list as a separate user message.</p>
-                    
-                    <div class="code-block">
-                        <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-chat">Copy</button></div>
-                        <pre><code id="code-chat">val agent = ChatAgent(
+                    <pre><code id="code-chat">val agent = ChatAgent(
     prompt = "You are a helpful assistant.",
     model = myChatModel,
     temperature = 0.7
 )
 val response = agent.respond(listOf("Hello", "Tell me a joke"))</code></pre>
-                    </div>
-                    <div class="best-for">
-                        <div class="best-for-label">Best For</div>
-                        <p>Chatbots, summarization, creative writing, and general Q&A.</p>
-                    </div>
                 </div>
-            </section>
-
-            <section id="structured-agents" class="agent-section">
-                <h2>3. Structured Data Agents (JSON/POJO)</h2>
-                <p>These agents are designed to force the LLM to output structured data (JSON) which is then automatically deserialized into Kotlin/Java objects.</p>
-
-                <div class="agent-card">
-                    <div class="agent-card-header">
-                        <span class="agent-card-title">ParsedAgent&lt;T&gt;</span>
-                    </div>
-                    <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;String&gt;, ParsedResponse&lt;T&gt;&gt;</div>
-                    <p class="agent-card-file">File: ParsedAgent.kt</p>
-                    <p>Converts natural language input into a specific class instance (<code>T</code>).</p>
-
-                    <ul class="io-list">
-                        <li><span class="io-label">Input</span><span><code class="io-type">List&lt;String&gt;</code> (Instructions)</span></li>
-                        <li><span class="io-label">Output</span><span><code class="io-type">ParsedResponse&lt;T&gt;</code> (Contains the raw text and the deserialized object <code>obj</code>)</span></li>
-                    </ul>
-
-                    <h4>Key Features</h4>
-                    <ul class="feature-list">
-                        <li><strong>Schema Generation:</strong> Uses TypeDescriber to inject YAML schemas into prompts.</li>
-                        <li><strong>Validation:</strong> Runs <code>ValidatedObject</code> logic after deserialization.</li>
-                        <li><strong>Retries:</strong> If JSON parsing fails, it can retry with adjusted parameters (<code>deserializerRetries</code>).</li>
-                        <li><strong>Single vs. Two-Stage:</strong> <code>singleStage = false</code> (default) uses a dedicated parser agent to extract and format JSON from the response.</li>
-                        <li><strong>Custom Parser Prompt:</strong> The <code>parserPrompt</code> parameter allows additional instructions to the parser agent.</li>
-                    </ul>
-                    <div class="best-for">
-                        <div class="best-for-label">Best For</div>
-                        <p>Data extraction, converting unstructured text to structured data, API payload generation.</p>
-                    </div>
+                <div class="best-for">
+                    <div class="best-for-label">Best For</div>
+                    <p>Chatbots, summarization, creative writing, and general Q&A.</p>
                 </div>
+            </div>
+        </section>
 
-                <div class="agent-card">
-                    <div class="agent-card-header"><span class="agent-card-title">ParsedResponse&lt;T&gt;</span></div>
-                    <p class="agent-card-file">File: ParsedResponse.kt</p>
-                    <p>A wrapper holding both the raw <code>text</code> and the deserialized <code>obj</code>.</p>
-                    <ul class="feature-list">
-                        <li><strong>text:</strong> The raw response from the LLM.</li>
-                        <li><strong>obj:</strong> The deserialized object of type <code>T</code>.</li>
-                        <li><strong>clazz:</strong> The class of the deserialized object.</li>
-                        <li><strong>map(cls, fn):</strong> Transforms the object using a function while preserving the original text.</li>
-                    </ul>
+        <section class="agent-section" id="structured-agents">
+            <h2>3. Structured Data Agents (JSON/POJO)</h2>
+            <p>These agents are designed to force the LLM to output structured data (JSON) which is then automatically
+                deserialized into Kotlin/Java objects.</p>
 
-                    <div class="code-block">
-                        <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-parsed">Copy</button></div>
-                        <pre><code id="code-parsed">val response: ParsedResponse&lt;User&gt; = agent.respond(listOf("Extract user info"))
+            <div class="agent-card">
+                <div class="agent-card-header">
+                    <span class="agent-card-title">ParsedAgent&lt;T&gt;</span>
+                </div>
+                <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;String&gt;, ParsedResponse&lt;T&gt;&gt;</div>
+                <p class="agent-card-file">File: ParsedAgent.kt</p>
+                <p>Converts natural language input into a specific class instance (<code>T</code>).</p>
+
+                <ul class="io-list">
+                    <li><span class="io-label">Input</span><span><code class="io-type">List&lt;String&gt;</code> (Instructions)</span>
+                    </li>
+                    <li><span class="io-label">Output</span><span><code class="io-type">ParsedResponse&lt;T&gt;</code> (Contains the raw text and the deserialized object <code>obj</code>)</span>
+                    </li>
+                </ul>
+
+                <h4>Key Features</h4>
+                <ul class="feature-list">
+                    <li><strong>Schema Generation:</strong> Uses TypeDescriber to inject YAML schemas into prompts.</li>
+                    <li><strong>Validation:</strong> Runs <code>ValidatedObject</code> logic after deserialization.</li>
+                    <li><strong>Retries:</strong> If JSON parsing fails, it can retry with adjusted parameters (<code>deserializerRetries</code>).
+                    </li>
+                    <li><strong>Single vs. Two-Stage:</strong> <code>singleStage = false</code> (default) uses a
+                        dedicated parser agent to extract and format JSON from the response.
+                    </li>
+                    <li><strong>Custom Parser Prompt:</strong> The <code>parserPrompt</code> parameter allows additional
+                        instructions to the parser agent.
+                    </li>
+                </ul>
+                <div class="best-for">
+                    <div class="best-for-label">Best For</div>
+                    <p>Data extraction, converting unstructured text to structured data, API payload generation.</p>
+                </div>
+            </div>
+
+            <div class="agent-card">
+                <div class="agent-card-header"><span class="agent-card-title">ParsedResponse&lt;T&gt;</span></div>
+                <p class="agent-card-file">File: ParsedResponse.kt</p>
+                <p>A wrapper holding both the raw <code>text</code> and the deserialized <code>obj</code>.</p>
+                <ul class="feature-list">
+                    <li><strong>text:</strong> The raw response from the LLM.</li>
+                    <li><strong>obj:</strong> The deserialized object of type <code>T</code>.</li>
+                    <li><strong>clazz:</strong> The class of the deserialized object.</li>
+                    <li><strong>map(cls, fn):</strong> Transforms the object using a function while preserving the
+                        original text.
+                    </li>
+                </ul>
+
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">kotlin</span>
+                        <button class="copy-btn" data-copy-target="code-parsed">Copy</button>
+                    </div>
+                    <pre><code id="code-parsed">val response: ParsedResponse&lt;User&gt; = agent.respond(listOf("Extract user info"))
 val transformed: ParsedResponse&lt;UserDTO&gt; = response.map(UserDTO::class.java) { user ->
     UserDTO(user.name.uppercase(), user.email)
 }</code></pre>
-                    </div>
                 </div>
+            </div>
 
-                <div class="agent-card">
-                    <div class="agent-card-header">
-                        <span class="agent-card-title">ParsedImageAgent&lt;T&gt;</span>
-                    </div>
-                    <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;ImageAndText&gt;, ParsedResponse&lt;T&gt;&gt;</div>
-                    <p class="agent-card-file">File: ParsedImageAgent.kt</p>
-                    <p>Similar to <code>ParsedAgent</code>, but accepts images as input. It performs Visual Question Answering (VQA) where the answer is a structured object.</p>
-
-                    <ul class="io-list">
-                        <li><span class="io-label">Input</span><span><code class="io-type">List&lt;ImageAndText&gt;</code> (Text prompts paired with <code>BufferedImage</code>)</span></li>
-                        <li><span class="io-label">Output</span><span><code class="io-type">ParsedResponse&lt;T&gt;</code></span></li>
-                    </ul>
-
-                    <ul class="feature-list">
-                        <li>Images are automatically encoded to Base64 PNG format and embedded in the request.</li>
-                        <li>Supports vision-capable models (e.g., GPT-4-Vision, Claude 3).</li>
-                        <li>Includes automatic retry logic with <code>deserializerRetries</code>.</li>
-                    </ul>
-
-                    <div class="best-for">
-                        <div class="best-for-label">Best For</div>
-                        <p>Extracting data from invoices, describing UI elements in JSON, categorizing visual content, OCR with structured output.</p>
-                    </div>
+            <div class="agent-card">
+                <div class="agent-card-header">
+                    <span class="agent-card-title">ParsedImageAgent&lt;T&gt;</span>
                 </div>
+                <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;ImageAndText&gt;, ParsedResponse&lt;T&gt;&gt;</div>
+                <p class="agent-card-file">File: ParsedImageAgent.kt</p>
+                <p>Similar to <code>ParsedAgent</code>, but accepts images as input. It performs Visual Question
+                    Answering (VQA) where the answer is a structured object.</p>
 
-                <div class="agent-card">
-                    <div class="agent-card-header"><span class="agent-card-title">ProxyAgent&lt;T&gt;</span><span class="badge badge-warning">Advanced</span></div>
-                    <p class="agent-card-file">File: ProxyAgent.kt</p>
-                    <div class="info-box">
-                        <p><strong>Note:</strong> Does <em>not</em> inherit <code>BaseAgent</code>.</p>
+                <ul class="io-list">
+                    <li><span class="io-label">Input</span><span><code class="io-type">List&lt;ImageAndText&gt;</code> (Text prompts paired with <code>BufferedImage</code>)</span>
+                    </li>
+                    <li><span class="io-label">Output</span><span><code
+                            class="io-type">ParsedResponse&lt;T&gt;</code></span></li>
+                </ul>
+
+                <ul class="feature-list">
+                    <li>Images are automatically encoded to Base64 PNG format and embedded in the request.</li>
+                    <li>Supports vision-capable models (e.g., GPT-4-Vision, Claude 3).</li>
+                    <li>Includes automatic retry logic with <code>deserializerRetries</code>.</li>
+                </ul>
+
+                <div class="best-for">
+                    <div class="best-for-label">Best For</div>
+                    <p>Extracting data from invoices, describing UI elements in JSON, categorizing visual content, OCR
+                        with structured output.</p>
+                </div>
+            </div>
+
+            <div class="agent-card">
+                <div class="agent-card-header"><span class="agent-card-title">ProxyAgent&lt;T&gt;</span><span
+                        class="badge badge-warning">Advanced</span></div>
+                <p class="agent-card-file">File: ProxyAgent.kt</p>
+                <div class="info-box">
+                    <p><strong>Note:</strong> Does <em>not</em> inherit <code>BaseAgent</code>.</p>
+                </div>
+                <p>This is a "Magic" agent. It creates a dynamic Java Proxy for a given interface or class. When you
+                    call a method on the proxy, the arguments are serialized, sent to the LLM, and the LLM "executes"
+                    the logic, returning the result.</p>
+
+                <ul class="feature-list">
+                    <li><strong>Dynamic Proxy Creation:</strong> Uses Java reflection to intercept method calls.</li>
+                    <li><strong>Automatic Serialization:</strong> Arguments are converted to JSON and sent to the LLM.
+                    </li>
+                    <li><strong>Retry Logic:</strong> Automatically retries failed calls with adjusted temperature
+                        (<code>maxRetries</code>).
+                    </li>
+                    <li><strong>Validation:</strong> If the return type implements <code>ValidatedObject</code>,
+                        validation is performed.
+                    </li>
+                    <li><strong>Examples:</strong> You can provide example input/output pairs via
+                        <code>addExample()</code> to improve accuracy.
+                    </li>
+                    <li><strong>Metrics:</strong> Track performance via the <code>metrics</code> property, which
+                        includes request counts per method.
+                    </li>
+                </ul>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">kotlin</span>
+                        <button class="copy-btn" data-copy-target="code-proxy">Copy</button>
                     </div>
-                    <p>This is a "Magic" agent. It creates a dynamic Java Proxy for a given interface or class. When you call a method on the proxy, the arguments are serialized, sent to the LLM, and the LLM "executes" the logic, returning the result.</p>
-
-                    <ul class="feature-list">
-                        <li><strong>Dynamic Proxy Creation:</strong> Uses Java reflection to intercept method calls.</li>
-                        <li><strong>Automatic Serialization:</strong> Arguments are converted to JSON and sent to the LLM.</li>
-                        <li><strong>Retry Logic:</strong> Automatically retries failed calls with adjusted temperature (<code>maxRetries</code>).</li>
-                        <li><strong>Validation:</strong> If the return type implements <code>ValidatedObject</code>, validation is performed.</li>
-                        <li><strong>Examples:</strong> You can provide example input/output pairs via <code>addExample()</code> to improve accuracy.</li>
-                        <li><strong>Metrics:</strong> Track performance via the <code>metrics</code> property, which includes request counts per method.</li>
-                    </ul>
-                    <div class="code-block">
-                        <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-proxy">Copy</button></div>
-                        <pre><code id="code-proxy">interface SentimentAnalyzer {
+                    <pre><code id="code-proxy">interface SentimentAnalyzer {
     fun analyze(text: String): SentimentResult
 }
 val proxy = ProxyAgent(SentimentAnalyzer::class.java, model).create()
 val result = proxy.analyze("I love this library!") // LLM determines the return value</code></pre>
-                    </div>
-                    <div class="best-for">
-                        <div class="best-for-label">Best For</div>
-                        <p>Rapid prototyping, implementing complex logic without writing code, semantic routing, simulating service behavior.</p>
-                    </div>
                 </div>
+                <div class="best-for">
+                    <div class="best-for-label">Best For</div>
+                    <p>Rapid prototyping, implementing complex logic without writing code, semantic routing, simulating
+                        service behavior.</p>
+                </div>
+            </div>
 
-                <h3>Schema Best Practices</h3>
-                <p>To ensure reliable parsing and validation with <code>ParsedAgent</code> and <code>ParsedImageAgent</code>, follow these guidelines when defining your data classes:</p>
+            <h3>Schema Best Practices</h3>
+            <p>To ensure reliable parsing and validation with <code>ParsedAgent</code> and <code>ParsedImageAgent</code>,
+                follow these guidelines when defining your data classes:</p>
+            <ul class="feature-list">
+                <li><strong>Constructors:</strong> All fields should have a default value to ensure a no-argument
+                    constructor exists.
+                </li>
+                <li><strong>Mutability:</strong> Using <code>var</code> in data objects is recommended.</li>
+                <li><strong>Nullability:</strong> Nullable types are fully supported and handled well by Kotlin.</li>
+                <li><strong>Validation:</strong> Implement <code>ValidatedObject</code> to ensure validity. Use
+                    validation logic to modify <code>var</code> properties for canonicalization rather than just
+                    rejecting data.
+                </li>
+                <li><strong>Documentation:</strong> Use <code>@Description</code> to provide semantic guidance to the
+                    Parser LLM.
+                </li>
+                <li><strong>Naming:</strong> Use <code>user_name</code> (snake_case) for JSON compatibility.</li>
+                <li><strong>Dynamic Types:</strong> Using <code>Any</code> types is appropriate for dynamic schemas.
+                    These will be deserialized as Lists and Maps according to Jackson defaults.
+                </li>
+            </ul>
+            <div class="warning-box">
+                <p><strong>Validation Tip:</strong> Do not be too strict. Use validation to canonicalize data (e.g.,
+                    fixing formatting) rather than just rejecting it.</p>
+            </div>
+        </section>
+
+        <section class="agent-section" id="action-agents">
+            <h2>4. Action & Code Agents</h2>
+            <div class="agent-card">
+                <div class="agent-card-header">
+                    <span class="agent-card-title">CodeAgent</span>
+                    <span class="badge badge-primary">Core</span>
+                </div>
+                <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;CodeRequest, CodeResult&gt;</div>
+                <p class="agent-card-file">File: CodeAgent.kt</p>
+                <p>An autonomous agent capable of writing, executing, and fixing code in a sandboxed runtime
+                    environment.</p>
+
+                <h4>Input: CodeRequest</h4>
                 <ul class="feature-list">
-                    <li><strong>Constructors:</strong> All fields should have a default value to ensure a no-argument constructor exists.</li>
-                    <li><strong>Mutability:</strong> Using <code>var</code> in data objects is recommended.</li>
-                    <li><strong>Nullability:</strong> Nullable types are fully supported and handled well by Kotlin.</li>
-                    <li><strong>Validation:</strong> Implement <code>ValidatedObject</code> to ensure validity. Use validation logic to modify <code>var</code> properties for canonicalization rather than just rejecting data.</li>
-                    <li><strong>Documentation:</strong> Use <code>@Description</code> to provide semantic guidance to the Parser LLM.</li>
-                    <li><strong>Naming:</strong> Use <code>user_name</code> (snake_case) for JSON compatibility.</li>
-                    <li><strong>Dynamic Types:</strong> Using <code>Any</code> types is appropriate for dynamic schemas. These will be deserialized as Lists and Maps according to Jackson defaults.</li>
+                    <li><strong>messages:</strong> Chat history with role information.</li>
+                    <li><strong>codePrefix:</strong> Code to prepend before execution (e.g., imports, setup).</li>
+                    <li><strong>autoEvaluate:</strong> Whether to automatically execute and fix code.</li>
+                    <li><strong>fixIterations:</strong> Number of times to attempt fixing failed code.</li>
+                    <li><strong>fixRetries:</strong> Number of times to retry the entire coding process.</li>
                 </ul>
-                <div class="warning-box">
-                    <p><strong>Validation Tip:</strong> Do not be too strict. Use validation to canonicalize data (e.g., fixing formatting) rather than just rejecting it.</p>
-                </div>
-            </section>
 
-            <section id="action-agents" class="agent-section">
-                <h2>4. Action & Code Agents</h2>
-                <div class="agent-card">
-                    <div class="agent-card-header">
-                        <span class="agent-card-title">CodeAgent</span>
-                        <span class="badge badge-primary">Core</span>
+                <h4>Output: CodeResult</h4>
+                <ul class="feature-list">
+                    <li><strong>code:</strong> The final generated code.</li>
+                    <li><strong>status:</strong> One of <code>Coding</code>, <code>Correcting</code>,
+                        <code>Success</code>, or <code>Failure</code>.
+                    </li>
+                    <li><strong>result:</strong> Contains <code>resultValue</code> and <code>resultOutput</code>.</li>
+                    <li><strong>renderedResponse:</strong> The LLM's text response alongside the code.</li>
+                </ul>
+
+                <h4>Key Components</h4>
+                <ul class="feature-list">
+                    <li><strong>CodeRuntime:</strong> The environment where code runs (e.g., a Kotlin script engine,
+                        JavaScript engine).
+                    </li>
+                    <li><strong>symbols:</strong> A map of objects injected into the script context (allows the agent to
+                        control your application).
+                    </li>
+                    <li><strong>language:</strong> Automatically determined from the <code>CodeRuntime</code> (e.g.,
+                        "kotlin", "javascript").
+                    </li>
+                    <li><strong>codeInterceptor:</strong> A function that can transform generated code before execution
+                        (useful for logging, sanitization, or instrumentation).
+                    </li>
+                    <li><strong>evalFormat:</strong> When true, instructs the LLM to structure code as parameterized
+                        functions with a final invocation.
+                    </li>
+                    <li><strong>fallbackModel:</strong> An optional secondary model to use if the primary model fails to
+                        generate valid code.
+                    </li>
+                    <li><strong>describer:</strong> A <code>TypeDescriber</code> that generates API documentation for
+                        the injected symbols.
+                    </li>
+                </ul>
+                <h4>Self-Correction Loop</h4>
+                <p>If <code>autoEvaluate</code> is true, the agent executes the code. If it throws an exception, the
+                    agent feeds the error back to the LLM to generate a fix (up to <code>fixIterations</code> times). If
+                    the code still fails, it retries the entire process (up to <code>fixRetries</code> times).</p>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">kotlin</span>
+                        <button class="copy-btn" data-copy-target="code-agent">Copy</button>
                     </div>
-                    <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;CodeRequest, CodeResult&gt;</div>
-                    <p class="agent-card-file">File: CodeAgent.kt</p>
-                    <p>An autonomous agent capable of writing, executing, and fixing code in a sandboxed runtime environment.</p>
-
-                    <h4>Input: CodeRequest</h4>
-                    <ul class="feature-list">
-                        <li><strong>messages:</strong> Chat history with role information.</li>
-                        <li><strong>codePrefix:</strong> Code to prepend before execution (e.g., imports, setup).</li>
-                        <li><strong>autoEvaluate:</strong> Whether to automatically execute and fix code.</li>
-                        <li><strong>fixIterations:</strong> Number of times to attempt fixing failed code.</li>
-                        <li><strong>fixRetries:</strong> Number of times to retry the entire coding process.</li>
-                    </ul>
-
-                    <h4>Output: CodeResult</h4>
-                    <ul class="feature-list">
-                        <li><strong>code:</strong> The final generated code.</li>
-                        <li><strong>status:</strong> One of <code>Coding</code>, <code>Correcting</code>, <code>Success</code>, or <code>Failure</code>.</li>
-                        <li><strong>result:</strong> Contains <code>resultValue</code> and <code>resultOutput</code>.</li>
-                        <li><strong>renderedResponse:</strong> The LLM's text response alongside the code.</li>
-                    </ul>
-
-                    <h4>Key Components</h4>
-                    <ul class="feature-list">
-                        <li><strong>CodeRuntime:</strong> The environment where code runs (e.g., a Kotlin script engine, JavaScript engine).</li>
-                        <li><strong>symbols:</strong> A map of objects injected into the script context (allows the agent to control your application).</li>
-                        <li><strong>language:</strong> Automatically determined from the <code>CodeRuntime</code> (e.g., "kotlin", "javascript").</li>
-                        <li><strong>codeInterceptor:</strong> A function that can transform generated code before execution (useful for logging, sanitization, or instrumentation).</li>
-                        <li><strong>evalFormat:</strong> When true, instructs the LLM to structure code as parameterized functions with a final invocation.</li>
-                        <li><strong>fallbackModel:</strong> An optional secondary model to use if the primary model fails to generate valid code.</li>
-                        <li><strong>describer:</strong> A <code>TypeDescriber</code> that generates API documentation for the injected symbols.</li>
-                    </ul>
-                    <h4>Self-Correction Loop</h4>
-                    <p>If <code>autoEvaluate</code> is true, the agent executes the code. If it throws an exception, the agent feeds the error back to the LLM to generate a fix (up to <code>fixIterations</code> times). If the code still fails, it retries the entire process (up to <code>fixRetries</code> times).</p>
-                    <div class="code-block">
-                        <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-agent">Copy</button></div>
-                        <pre><code id="code-agent">val agent = CodeAgent(
+                    <pre><code id="code-agent">val agent = CodeAgent(
     codeRuntime = KotlinScriptRuntime(),
     symbols = mapOf("api" to myApiClient),
     model = myChatModel,
@@ -643,148 +736,216 @@ val result = agent.respond(CodeAgent.CodeRequest(
 ))
 println(result.code)
 println(result.result.resultOutput)</code></pre>
-                    </div>
-                    <div class="best-for">
-                        <div class="best-for-label">Best For</div>
-                        <p>Data analysis, complex math, controlling external APIs via script, tasks requiring iterative logic, automation.</p>
-                    </div>
                 </div>
-            </section>
-
-            <section id="media-agents" class="agent-section">
-                <h2>5. Media Agents</h2>
-
-                <div class="agent-card">
-                    <div class="agent-card-header"><span class="agent-card-title">ImageAndText</span></div>
-                    <p class="agent-card-file">File: ImageAndText.kt</p>
-                    <p>A simple data class that pairs text with an optional image.</p>
-                    <ul class="feature-list">
-                        <li><strong>text:</strong> Text content.</li>
-                        <li><strong>image:</strong> Optional <code>BufferedImage</code> (null if not present).</li>
-                    </ul>
-                    <div class="best-for">
-                        <div class="best-for-label">Best For</div>
-                        <p>Passing multimodal data to agents that accept both text and images.</p>
-                    </div>
+                <div class="best-for">
+                    <div class="best-for-label">Best For</div>
+                    <p>Data analysis, complex math, controlling external APIs via script, tasks requiring iterative
+                        logic, automation.</p>
                 </div>
+            </div>
+        </section>
 
-                <div class="agent-card">
-                    <div class="agent-card-header"><span class="agent-card-title">ImageGenerationAgent</span></div>
-                    <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;String&gt;, ImageAndText&gt;</div>
-                    <p class="agent-card-file">File: ImageGenerationAgent.kt</p>
-                    <p>Generates images from text descriptions.</p>
+        <section class="agent-section" id="media-agents">
+            <h2>5. Media Agents</h2>
 
-                    <ul class="io-list">
-                        <li><span class="io-label">Input</span><span><code class="io-type">List&lt;String&gt;</code> (User instructions)</span></li>
-                        <li><span class="io-label">Output</span><span><code class="io-type">ImageAndText</code> (The generated image and the refined prompt used)</span></li>
-                    </ul>
-
-                    <h4>Key Components</h4>
-                    <ul class="feature-list">
-                        <li><strong>textModel:</strong> A <code>ChatInterface</code> used to refine the user's request into an optimized image generation prompt.</li>
-                        <li><strong>imageModel:</strong> The image generation model (e.g., DALL-E 3).</li>
-                        <li><strong>imageClient:</strong> The <code>ImageClientInterface</code> that communicates with the image generation service.</li>
-                        <li><strong>width / height:</strong> Dimensions of the generated image (default: 1024x1024).</li>
-                    </ul>
-
-                    <h4>Workflow</h4>
-                    <ol class="feature-list">
-                        <li><strong>Refinement:</strong> Uses the text LLM to transform the user request into an optimized image generation prompt.</li>
-                        <li><strong>Length Validation:</strong> If the prompt exceeds the model's <code>maxPrompt</code> limit, it's automatically shortened.</li>
-                        <li><strong>Generation:</strong> Sends the refined prompt to the <code>ImageClientInterface</code>.</li>
-                        <li><strong>Decoding:</strong> Handles both URL-based and Base64-encoded image responses.</li>
-                    </ol>
-
-                    <div class="best-for">
-                        <div class="best-for-label">Best For</div>
-                        <p>Creating assets, visualizing concepts, generating illustrations.</p>
-                    </div>
-                </div>
-
-                <div class="agent-card">
-                    <div class="agent-card-header"><span class="agent-card-title">ImageProcessingAgent</span></div>
-                    <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;ImageAndText&gt;, ImageAndText&gt;</div>
-                    <p class="agent-card-file">File: ImageProcessingAgent.kt</p>
-                    <p>Handles Vision tasks. It can analyze images or (depending on the backend model) edit them.</p>
-
-                    <ul class="io-list">
-                        <li><span class="io-label">Input</span><span><code class="io-type">List&lt;ImageAndText&gt;</code> (Text prompts paired with images)</span></li>
-                        <li><span class="io-label">Output</span><span><code class="io-type">ImageAndText</code> (Analyzed text and optionally a modified image)</span></li>
-                    </ul>
-
-                    <ul class="feature-list">
-                        <li>Encodes images to Base64 PNG format and sends them alongside text to a vision-capable model.</li>
-                        <li>Supports multimodal responses (text and/or image).</li>
-                        <li>Falls back to input image if the model doesn't return an image.</li>
-                    </ul>
-
-                    <div class="best-for">
-                        <div class="best-for-label">Best For</div>
-                        <p>Image captioning, visual analysis, describing scenes, OCR, image editing (with capable models).</p>
-                    </div>
-                </div>
-            </section>
-
-            <section id="summary" class="agent-section">
-                <h2>Summary Table</h2>
-                <table class="summary-table">
-                    <thead>
-                        <tr><th>Agent Class</th><th>Input Type</th><th>Output Type</th><th>Primary Use Case</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td><code>ChatAgent</code></td><td><code>List&lt;String&gt;</code></td><td><code>String</code></td><td>Conversation, Q&A</td></tr>
-                        <tr><td><code>ParsedAgent&lt;T&gt;</code></td><td><code>List&lt;String&gt;</code></td><td><code>ParsedResponse&lt;T&gt;</code></td><td>Text-to-Object, Data Extraction</td></tr>
-                        <tr><td><code>CodeAgent</code></td><td><code>CodeRequest</code></td><td><code>CodeResult</code></td><td>Writing & Executing Code, Tool Use</td></tr>
-                        <tr><td><code>ImageGenerationAgent</code></td><td><code>List&lt;String&gt;</code></td><td><code>ImageAndText</code></td><td>Creating Images from text</td></tr>
-                        <tr><td><code>ImageProcessingAgent</code></td><td><code>List&lt;ImageAndText&gt;</code></td><td><code>ImageAndText</code></td><td>Analyzing/Captioning Images</td></tr>
-                        <tr><td><code>ParsedImageAgent&lt;T&gt;</code></td><td><code>List&lt;ImageAndText&gt;</code></td><td><code>ParsedResponse&lt;T&gt;</code></td><td>Image-to-Object (Visual Data Extraction)</td></tr>
-                        <tr><td><code>ProxyAgent&lt;T&gt;</code></td><td>Method Args</td><td>Method Return</td><td>Implementing Interfaces via LLM</td></tr>
-                    </tbody>
-                </table>
-            </section>
-
-            <section id="advanced" class="agent-section">
-                <h2>Advanced Topics</h2>
-
-                <h3>Code Interception in CodeAgent</h3>
-                <p>The <code>codeInterceptor</code> function allows you to transform code before execution. This is useful for:</p>
+            <div class="agent-card">
+                <div class="agent-card-header"><span class="agent-card-title">ImageAndText</span></div>
+                <p class="agent-card-file">File: ImageAndText.kt</p>
+                <p>A simple data class that pairs text with an optional image.</p>
                 <ul class="feature-list">
-                    <li><strong>Logging:</strong> Wrap code execution with logging statements.</li>
-                    <li><strong>Sanitization:</strong> Remove or modify dangerous operations.</li>
-                    <li><strong>Instrumentation:</strong> Add performance monitoring.</li>
+                    <li><strong>text:</strong> Text content.</li>
+                    <li><strong>image:</strong> Optional <code>BufferedImage</code> (null if not present).</li>
                 </ul>
-                <div class="code-block">
-                    <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-intercept">Copy</button></div>
-                    <pre><code id="code-intercept">val agent = CodeAgent(
+                <div class="best-for">
+                    <div class="best-for-label">Best For</div>
+                    <p>Passing multimodal data to agents that accept both text and images.</p>
+                </div>
+            </div>
+
+            <div class="agent-card">
+                <div class="agent-card-header"><span class="agent-card-title">ImageGenerationAgent</span></div>
+                <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;String&gt;, ImageAndText&gt;</div>
+                <p class="agent-card-file">File: ImageGenerationAgent.kt</p>
+                <p>Generates images from text descriptions.</p>
+
+                <ul class="io-list">
+                    <li><span class="io-label">Input</span><span><code class="io-type">List&lt;String&gt;</code> (User instructions)</span>
+                    </li>
+                    <li><span class="io-label">Output</span><span><code class="io-type">ImageAndText</code> (The generated image and the refined prompt used)</span>
+                    </li>
+                </ul>
+
+                <h4>Key Components</h4>
+                <ul class="feature-list">
+                    <li><strong>textModel:</strong> A <code>ChatInterface</code> used to refine the user's request into
+                        an optimized image generation prompt.
+                    </li>
+                    <li><strong>imageModel:</strong> The image generation model (e.g., DALL-E 3).</li>
+                    <li><strong>imageClient:</strong> The <code>ImageClientInterface</code> that communicates with the
+                        image generation service.
+                    </li>
+                    <li><strong>width / height:</strong> Dimensions of the generated image (default: 1024x1024).</li>
+                </ul>
+
+                <h4>Workflow</h4>
+                <ol class="feature-list">
+                    <li><strong>Refinement:</strong> Uses the text LLM to transform the user request into an optimized
+                        image generation prompt.
+                    </li>
+                    <li><strong>Length Validation:</strong> If the prompt exceeds the model's <code>maxPrompt</code>
+                        limit, it's automatically shortened.
+                    </li>
+                    <li><strong>Generation:</strong> Sends the refined prompt to the <code>ImageClientInterface</code>.
+                    </li>
+                    <li><strong>Decoding:</strong> Handles both URL-based and Base64-encoded image responses.</li>
+                </ol>
+
+                <div class="best-for">
+                    <div class="best-for-label">Best For</div>
+                    <p>Creating assets, visualizing concepts, generating illustrations.</p>
+                </div>
+            </div>
+
+            <div class="agent-card">
+                <div class="agent-card-header"><span class="agent-card-title">ImageProcessingAgent</span></div>
+                <div class="agent-card-inheritance">Inheritance: BaseAgent&lt;List&lt;ImageAndText&gt;,
+                    ImageAndText&gt;
+                </div>
+                <p class="agent-card-file">File: ImageProcessingAgent.kt</p>
+                <p>Handles Vision tasks. It can analyze images or (depending on the backend model) edit them.</p>
+
+                <ul class="io-list">
+                    <li><span class="io-label">Input</span><span><code class="io-type">List&lt;ImageAndText&gt;</code> (Text prompts paired with images)</span>
+                    </li>
+                    <li><span class="io-label">Output</span><span><code class="io-type">ImageAndText</code> (Analyzed text and optionally a modified image)</span>
+                    </li>
+                </ul>
+
+                <ul class="feature-list">
+                    <li>Encodes images to Base64 PNG format and sends them alongside text to a vision-capable model.
+                    </li>
+                    <li>Supports multimodal responses (text and/or image).</li>
+                    <li>Falls back to input image if the model doesn't return an image.</li>
+                </ul>
+
+                <div class="best-for">
+                    <div class="best-for-label">Best For</div>
+                    <p>Image captioning, visual analysis, describing scenes, OCR, image editing (with capable
+                        models).</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="agent-section" id="summary">
+            <h2>Summary Table</h2>
+            <table class="summary-table">
+                <thead>
+                <tr>
+                    <th>Agent Class</th>
+                    <th>Input Type</th>
+                    <th>Output Type</th>
+                    <th>Primary Use Case</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>ChatAgent</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td><code>String</code></td>
+                    <td>Conversation, Q&A</td>
+                </tr>
+                <tr>
+                    <td><code>ParsedAgent&lt;T&gt;</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td><code>ParsedResponse&lt;T&gt;</code></td>
+                    <td>Text-to-Object, Data Extraction</td>
+                </tr>
+                <tr>
+                    <td><code>CodeAgent</code></td>
+                    <td><code>CodeRequest</code></td>
+                    <td><code>CodeResult</code></td>
+                    <td>Writing & Executing Code, Tool Use</td>
+                </tr>
+                <tr>
+                    <td><code>ImageGenerationAgent</code></td>
+                    <td><code>List&lt;String&gt;</code></td>
+                    <td><code>ImageAndText</code></td>
+                    <td>Creating Images from text</td>
+                </tr>
+                <tr>
+                    <td><code>ImageProcessingAgent</code></td>
+                    <td><code>List&lt;ImageAndText&gt;</code></td>
+                    <td><code>ImageAndText</code></td>
+                    <td>Analyzing/Captioning Images</td>
+                </tr>
+                <tr>
+                    <td><code>ParsedImageAgent&lt;T&gt;</code></td>
+                    <td><code>List&lt;ImageAndText&gt;</code></td>
+                    <td><code>ParsedResponse&lt;T&gt;</code></td>
+                    <td>Image-to-Object (Visual Data Extraction)</td>
+                </tr>
+                <tr>
+                    <td><code>ProxyAgent&lt;T&gt;</code></td>
+                    <td>Method Args</td>
+                    <td>Method Return</td>
+                    <td>Implementing Interfaces via LLM</td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="agent-section" id="advanced">
+            <h2>Advanced Topics</h2>
+
+            <h3>Code Interception in CodeAgent</h3>
+            <p>The <code>codeInterceptor</code> function allows you to transform code before execution. This is useful
+                for:</p>
+            <ul class="feature-list">
+                <li><strong>Logging:</strong> Wrap code execution with logging statements.</li>
+                <li><strong>Sanitization:</strong> Remove or modify dangerous operations.</li>
+                <li><strong>Instrumentation:</strong> Add performance monitoring.</li>
+            </ul>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">kotlin</span>
+                    <button class="copy-btn" data-copy-target="code-intercept">Copy</button>
+                </div>
+                <pre><code id="code-intercept">val agent = CodeAgent(
     codeRuntime = runtime,
     model = model,
     codeInterceptor = { code ->
         "println(\"Executing code...\")\n$code\nprintln(\"Code executed.\")"
     }
 )</code></pre>
-                </div>
+            </div>
 
-                <h3>Fallback Models in CodeAgent</h3>
-                <p>If the primary model fails to generate valid code after all retries, the <code>fallbackModel</code> is used. This is useful for:</p>
-                <ul class="feature-list">
-                    <li><strong>Reliability:</strong> Use a more capable model as a fallback.</li>
-                    <li><strong>Cost Optimization:</strong> Use a cheaper model first, then fall back to a more expensive one.</li>
-                </ul>
-                <div class="code-block">
-                    <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-fallback">Copy</button></div>
-                    <pre><code id="code-fallback">val agent = CodeAgent(
+            <h3>Fallback Models in CodeAgent</h3>
+            <p>If the primary model fails to generate valid code after all retries, the <code>fallbackModel</code> is
+                used. This is useful for:</p>
+            <ul class="feature-list">
+                <li><strong>Reliability:</strong> Use a more capable model as a fallback.</li>
+                <li><strong>Cost Optimization:</strong> Use a cheaper model first, then fall back to a more expensive
+                    one.
+                </li>
+            </ul>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">kotlin</span>
+                    <button class="copy-btn" data-copy-target="code-fallback">Copy</button>
+                </div>
+                <pre><code id="code-fallback">val agent = CodeAgent(
     codeRuntime = runtime,
     model = cheaperModel,
     fallbackModel = moreCapableModel,
     temperature = 0.1
 )</code></pre>
-                </div>
+            </div>
 
-                <h3>Example-Based Learning in ProxyAgent</h3>
-                <p>Improve <code>ProxyAgent</code> accuracy by providing examples:</p>
-                <div class="code-block">
-                    <div class="code-header"><span class="code-lang">kotlin</span><button class="copy-btn" data-copy-target="code-examples">Copy</button></div>
-                    <pre><code id="code-examples">val agent = ProxyAgent(MyInterface::class.java, model)
+            <h3>Example-Based Learning in ProxyAgent</h3>
+            <p>Improve <code>ProxyAgent</code> accuracy by providing examples:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">kotlin</span>
+                    <button class="copy-btn" data-copy-target="code-examples">Copy</button>
+                </div>
+                <pre><code id="code-examples">val agent = ProxyAgent(MyInterface::class.java, model)
 
 // Add examples
 agent.addExample(SentimentResult(score = 0.9, label = "positive")) { proxy ->
@@ -796,55 +957,55 @@ agent.addExample(SentimentResult(score = 0.1, label = "negative")) { proxy ->
 }
 
 val finalProxy = agent.create()</code></pre>
-                </div>
-            </section>
-        </div>
-    </main>
+            </div>
+        </section>
+    </div>
+</main>
 
-    <footer class="site-footer">
-        <div class="footer-brand">
-            <img src="assets/images/logos/cognotik-mark.svg" alt="Cognotik" width="24" height="24">
-            <span>Cognotik</span>
-        </div>
-        <div class="footer-links">
-            <a href="https://github.com/SimiaCryptus/Cognotik">GitHub</a>
-            <a href="/docs">Documentation</a>
-            <a href="/agent-types.html">Agent Types</a>
-            <a href="/type-describers.html">Type Describers</a>
-        </div>
-        <p class="footer-copyright">© 2024 SimiaCryptus. Apache 2.0 License.</p>
-    </footer>
+<footer class="site-footer">
+    <div class="footer-brand">
+        <img alt="Cognotik" height="24" src="assets/images/logos/cognotik-mark.svg" width="24">
+        <span>Cognotik</span>
+    </div>
+    <div class="footer-links">
+        <a href="https://github.com/SimiaCryptus/Cognotik">GitHub</a>
+        <a href="/docs">Documentation</a>
+        <a href="/agent-types.html">Agent Types</a>
+        <a href="/type-describers.html">Type Describers</a>
+    </div>
+    <p class="footer-copyright">© 2024 SimiaCryptus. Apache 2.0 License.</p>
+</footer>
 
-    <script type="module" src="assets/scripts/core.js"></script>
-    <script>
-        // Active nav link highlighting
-        const sections = document.querySelectorAll('.agent-section');
-        const navLinks = document.querySelectorAll('.docs-nav-link');
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    navLinks.forEach(link => link.classList.remove('active'));
-                    document.querySelector(`.docs-nav-link[href="#${entry.target.id}"]`)?.classList.add('active');
-                }
-            });
-        }, { rootMargin: '-20% 0px -70% 0px' });
-        sections.forEach(s => observer.observe(s));
-
-        // Copy functionality
-        document.querySelectorAll('.copy-btn').forEach(btn => {
-            btn.onclick = () => {
-                const code = document.getElementById(btn.dataset.copyTarget).innerText;
-                navigator.clipboard.writeText(code).then(() => {
-                    const originalText = btn.innerText;
-                    btn.innerText = 'Copied!';
-                    btn.classList.add('copied');
-                    setTimeout(() => {
-                        btn.innerText = originalText;
-                        btn.classList.remove('copied');
-                    }, 2000);
-                });
-            };
+<script src="assets/scripts/core.js" type="module"></script>
+<script>
+    // Active nav link highlighting
+    const sections = document.querySelectorAll('.agent-section');
+    const navLinks = document.querySelectorAll('.docs-nav-link');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                navLinks.forEach(link => link.classList.remove('active'));
+                document.querySelector(`.docs-nav-link[href="#${entry.target.id}"]`)?.classList.add('active');
+            }
         });
-    </script>
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    sections.forEach(s => observer.observe(s));
+
+    // Copy functionality
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.onclick = () => {
+            const code = document.getElementById(btn.dataset.copyTarget).innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        };
+    });
+</script>
 </body>
 </html>

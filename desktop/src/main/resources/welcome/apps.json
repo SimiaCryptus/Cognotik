@@ -1,0 +1,111 @@
+[
+  {
+    "id": "app-basic-chat",
+    "name": "Basic Chat",
+    "icon": "💬",
+    "description": "Interactive conversation with AI. Ask questions, brainstorm ideas, or get help with any topic.",
+    "badge": "Quick Start",
+    "badgeClass": "",
+    "type": "chat",
+    "path": "/chat"
+  },
+  {
+    "id": "app-health-improvement",
+    "name": "Health Improvement",
+    "icon": "🏥",
+    "description": "Multi-round health analysis from symptom intake through differential diagnosis to action plans.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "/health-improvement",
+    "appId": "health-improvement"
+  },
+  {
+    "id": "app-webapp-factory",
+    "name": "WebApp Factory",
+    "icon": "🏗️",
+    "description": "Turn natural language descriptions into complete, runnable web apps with HTML, CSS, and JavaScript.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "/webapp-factory",
+    "appId": "webapp-factory"
+  },
+  {
+    "id": "app-sys-wizard",
+    "name": "Sys Wizard",
+    "icon": "🧙",
+    "description": "Describe a goal in plain language and get a shell script that accomplishes it — with auto-fix.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "/sys-wizard",
+    "appId": "sys-wizard"
+  },
+  {
+    "id": "app-comic-serial",
+    "name": "Comic Serial",
+    "icon": "📚",
+    "description": "Transform story ideas into an ongoing comic book series with consistent characters and arcs.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "/comic-serial",
+    "appId": "comic-serial"
+  },
+  {
+    "id": "app-philosophical-calculator",
+    "name": "Philosophical Calculator",
+    "icon": "🧮",
+    "description": "Multi-perspective analysis through philosophical, rhetorical, and creative lenses.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "/philosophical-calculator",
+    "appId": "philosophical-calculator"
+  },
+  {
+    "id": "app-puppy-finder",
+    "name": "Puppy Finder",
+    "icon": "🐶",
+    "description": "Find your perfect puppy match with AI-powered breed recommendations and search.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "/puppy-finder",
+    "appId": "puppy-finder"
+  },
+  {
+    "id": "app-vacation-planner",
+    "name": "Vacation Planner",
+    "icon": "🌴",
+    "description": "AI-powered brainstorming, planning, and organizing for the perfect weekend vacation with detailed itineraries.",
+    "badge": null,
+    "badgeClass": "",
+    "type": "docops",
+    "path": "/vacation-planner",
+    "appId": "vacation-planner"
+  },
+  {
+    "id": "app-omega",
+    "name": "Omega App Factory",
+    "icon": "🔮",
+    "description": "Meta-application that designs and produces other DocOps applications from plain language descriptions.",
+    "badge": "Advanced",
+    "badgeClass": "accent",
+    "type": "docops",
+    "path": "/omega",
+    "appId": "omega"
+  },
+  {
+    "id": "app-custom-pipeline",
+    "name": "Custom Task Pipeline",
+    "icon": "🔧",
+    "description": "Build a custom AI pipeline with configurable cognitive modes, task selection, and model settings.",
+    "badge": "Advanced",
+    "badgeClass": "muted",
+    "type": "pipeline",
+    "path": "/taskChat",
+    "cardClass": "app-card-muted"
+  }
+]

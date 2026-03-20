@@ -2,7 +2,9 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-The **Cognotik Build Integration Demo** showcases how to integrate [Cognotik](https://github.com/SimiaCryptus/Cognotik) as a build and automation tool using GitHub Actions. This repository provides working examples of AI-powered code review, automated bug fixing, and intelligent issue resolution integrated directly into your CI/CD pipeline.
+The **Cognotik Build Integration Demo** showcases how to integrate [Cognotik](https://github.com/SimiaCryptus/Cognotik)
+as a build and automation tool using GitHub Actions. This repository provides working examples of AI-powered code
+review, automated bug fixing, and intelligent issue resolution integrated directly into your CI/CD pipeline.
 
 ## Table of Contents
 
@@ -50,6 +52,7 @@ Add the following secrets to your GitHub repository (Settings → Secrets and va
 ### 3. Enable GitHub Actions
 
 The workflows in `.github/workflows/` will automatically:
+
 - Fix failing builds in pull requests
 - Create PRs to resolve issues labeled with `agent-help`
 
@@ -63,15 +66,15 @@ export GOOGLE_API_KEY="your-google-api-key"
 
 ## What is Cognotik?
 
-[Cognotik](https://github.com/SimiaCryptus/Cognotik) is a powerful AI-powered code automation framework that enables intelligent code review, generation, and modification using large language models (LLMs). This demo project shows how to leverage Cognotik's capabilities within GitHub Actions workflows.
+[Cognotik](https://github.com/SimiaCryptus/Cognotik) is a powerful AI-powered code automation framework that enables
+intelligent code review, generation, and modification using large language models (LLMs). This demo project shows how to
+leverage Cognotik's capabilities within GitHub Actions workflows.
 
 ### Key Cognotik Components Used
 
 - **Code Reviewer**: Analyzes source files against standards and suggests improvements
 - **Code Fixer**: Parses build logs and automatically fixes compilation/test errors
 - **Code Implementer**: Generates new code from natural language descriptions
-
-
 
 ## GitHub Actions Workflows
 
@@ -145,12 +148,11 @@ Automatically creates pull requests to resolve GitHub issues labeled with `agent
 
 ### Required Repository Secrets
 
-| Secret            | Description              | Required |
-|-------------------|--------------------------|----------|
-| `GOOGLE_API_KEY`  | Google Gemini API key    | Yes*     |
-| `OPENAI_API_KEY`  | OpenAI API key           | Yes*     |
+| Secret           | Description           | Required |
+|------------------|-----------------------|----------|
+| `GOOGLE_API_KEY` | Google Gemini API key | Yes*     |
+| `OPENAI_API_KEY` | OpenAI API key        | Yes*     |
 
-      
 *At least one API key is required. Google Gemini is recommended for best results.
 
 ### Optional Secrets
@@ -202,7 +204,8 @@ This demo provides three main Gradle tasks:
 
 ## Documentation Processing
 
-The **DocProcessor** enables bidirectional synchronization between documentation and code using markdown frontmatter specifications.
+The **DocProcessor** enables bidirectional synchronization between documentation and code using markdown frontmatter
+specifications.
 
 ### How It Works
 
@@ -297,5 +300,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ---
 
-Made with ❤️ by [SimiaCryptus](https://github.com/SimiaCryptus) | Powered by [Cognotik](https://github.com/SimiaCryptus/Cognotik)
+Made with ❤️ by [SimiaCryptus](https://github.com/SimiaCryptus) | Powered
+by [Cognotik](https://github.com/SimiaCryptus/Cognotik)
+
 - 📚 **Documentation Processing**: Automatically update code and docs based on markdown specifications

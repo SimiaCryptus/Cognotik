@@ -20,55 +20,55 @@ import java.io.IOException
 import java.util.concurrent.ExecutorService
 
 open class TranscriptionClient(
-    protected var key: String,
-    protected val apiBase: String,
-    logLevel: Level = Level.TRACE,
-    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    workPool: ExecutorService,
-    scheduledPool: ListeningScheduledExecutorService,
-    val provider: APIProvider = APIProvider.Companion.OpenAI,
+  protected var key: String,
+  protected val apiBase: String,
+  logLevel: Level = Level.TRACE,
+  logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+  workPool: ExecutorService,
+  scheduledPool: ListeningScheduledExecutorService,
+  val provider: APIProvider = APIProvider.Companion.OpenAI,
 ) : HttpClientManager(
-    logLevel = logLevel,
-    logStreams = logStreams,
-    workPool = workPool,
-    scheduledPool = scheduledPool
+  logLevel = logLevel,
+  logStreams = logStreams,
+  workPool = workPool,
+  scheduledPool = scheduledPool
 ) {
 
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(TranscriptionClient::class.java)
-    }
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(TranscriptionClient::class.java)
+  }
 
-    protected fun post(request: HttpPost): String = withClient { EntityUtils.toString(it.execute(request).entity) }
+  protected fun post(request: HttpPost): String = withClient { EntityUtils.toString(it.execute(request).entity) }
 
-    open fun transcription(wavAudio: ByteArray, prompt: String = "", audioModel: AudioModels): String =
-        withReliability {
-            withPerformanceLogging {
-                val url = "${apiBase}/audio/transcriptions"
-                val request = HttpPost(url)
-                request.addHeader("Accept", "application/json")
-                provider.authorize(request, key, apiBase)
-                val entity = MultipartEntityBuilder.create()
-                entity.setMode(HttpMultipartMode.EXTENDED)
-                entity.addBinaryBody("file", wavAudio, ContentType.create("audio/x-wav"), "audio.wav")
-                entity.addTextBody("model", audioModel.modelId)
-                entity.addTextBody("response_format", "json")
-                if (prompt.isNotEmpty()) entity.addTextBody("prompt", prompt)
-                request.entity = entity.build()
-                val response = post(request)
-                log.info("Transcription response received")
-                val jsonObject = Gson().fromJson(response, JsonObject::class.java)
-                if (jsonObject.has("error")) {
-                    val errorObject = jsonObject.getAsJsonObject("error")
-                    throw RuntimeException(IOException(errorObject["message"].asString))
-                }
-                try {
-                    val result =
-                        JsonUtil.objectMapper().readValue(response, ModelSchema.TranscriptionResult::class.java)
-                    result.text ?: ""
-                } catch (e: Exception) {
-                    jsonObject.get("text").asString ?: ""
-                }
-            }
+  open fun transcription(wavAudio: ByteArray, prompt: String = "", audioModel: AudioModels): String =
+    withReliability {
+      withPerformanceLogging {
+        val url = "${apiBase}/audio/transcriptions"
+        val request = HttpPost(url)
+        request.addHeader("Accept", "application/json")
+        provider.authorize(request, key, apiBase)
+        val entity = MultipartEntityBuilder.create()
+        entity.setMode(HttpMultipartMode.EXTENDED)
+        entity.addBinaryBody("file", wavAudio, ContentType.create("audio/x-wav"), "audio.wav")
+        entity.addTextBody("model", audioModel.modelId)
+        entity.addTextBody("response_format", "json")
+        if (prompt.isNotEmpty()) entity.addTextBody("prompt", prompt)
+        request.entity = entity.build()
+        val response = post(request)
+        log.info("Transcription response received")
+        val jsonObject = Gson().fromJson(response, JsonObject::class.java)
+        if (jsonObject.has("error")) {
+          val errorObject = jsonObject.getAsJsonObject("error")
+          throw RuntimeException(IOException(errorObject["message"].asString))
         }
+        try {
+          val result =
+            JsonUtil.objectMapper().readValue(response, ModelSchema.TranscriptionResult::class.java)
+          result.text ?: ""
+        } catch (e: Exception) {
+          jsonObject.get("text").asString ?: ""
+        }
+      }
+    }
 
 }

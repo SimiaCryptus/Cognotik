@@ -13,34 +13,34 @@ import com.simiacryptus.cognotik.models.ModelSchema.Usage
 @JsonDeserialize(using = LLMModelDeserializer::class)
 @JsonSerialize(using = LLMModelSerializer::class)
 open class LLMModel(
-    override val modelId: String,
-    override val provider: APIProvider?,
-    val maxTotalTokens: Int = -1,
-    val maxOutTokens: Int = maxTotalTokens,
+  override val modelId: String,
+  override val provider: APIProvider?,
+  val maxTotalTokens: Int = -1,
+  val maxOutTokens: Int = maxTotalTokens,
 ) : AIModel {
-    open fun pricing(usage: Usage): Double = 0.0
+  open fun pricing(usage: Usage): Double = 0.0
 }
 
 class LLMModelSerializer : com.fasterxml.jackson.databind.ser.std.StdSerializer<LLMModel>(LLMModel::class.java) {
-    override fun serialize(value: LLMModel, gen: JsonGenerator, provider: SerializerProvider) {
-        ((listOf(
-            ChatModel.values(),
-            EmbeddingModel.values(),
-        ).flatMap { it.entries }.find { it.value == value }?.key) ?: value.modelId)
-            .let { gen.writeString(it) }
-    }
+  override fun serialize(value: LLMModel, gen: JsonGenerator, provider: SerializerProvider) {
+    ((listOf(
+      ChatModel.values(),
+      EmbeddingModel.values(),
+    ).flatMap { it.entries }.find { it.value == value }?.key) ?: value.modelId)
+      .let { gen.writeString(it) }
+  }
 }
 
 class LLMModelDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<LLMModel>() {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): LLMModel {
-        val modelName = p.readValueAs(String::class.java)
-        listOf(
-            ChatModel.values(),
-            EmbeddingModel.values(),
-        ).flatMap { it.entries }.find { it.key == modelName }?.value?.let { return it }
-        return LLMModel(
-            modelName,
-            provider = null,
-        )
-    }
+  override fun deserialize(p: JsonParser, ctxt: DeserializationContext): LLMModel {
+    val modelName = p.readValueAs(String::class.java)
+    listOf(
+      ChatModel.values(),
+      EmbeddingModel.values(),
+    ).flatMap { it.entries }.find { it.key == modelName }?.value?.let { return it }
+    return LLMModel(
+      modelName,
+      provider = null,
+    )
+  }
 }

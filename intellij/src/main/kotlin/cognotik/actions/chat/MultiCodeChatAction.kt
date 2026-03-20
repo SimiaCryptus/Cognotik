@@ -8,9 +8,9 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
@@ -101,13 +101,13 @@ class MultiCodeChatAction : BaseAction() {
         val root: File,
         private val codeFiles: Set<Path>
     ) : ChatSocketManager(
-        session = session,
-        smartModel = model,
-        fastModel = parsingModel,
-        systemPrompt = "",
-        applicationClass = ApplicationServer::class.java,
-        storage = ApplicationServices.fileApplicationServices().dataStorageFactory,
-        budget = 2.0,
+      session = session,
+      smartModel = model,
+      fastModel = parsingModel,
+      systemPrompt = "",
+      applicationClass = ApplicationServer::class.java,
+      budget = 2.0,
+      owner = localUser,
     ) {
 
         override val systemPrompt: String

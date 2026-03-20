@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | SeedMethod</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-  <link rel="stylesheet" href="assets/styles/main.css">
-  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -181,12 +182,13 @@
 
 <main class="task-container">
 
-      <!-- PAGE HEADER -->
+    <!-- PAGE HEADER -->
     <header class="page-header">
-          <div class="breadcrumbs">Home / Tasks / Online / SeedMethod</div>
+        <div class="breadcrumbs">Home / Tasks / Online / SeedMethod</div>
         <h1>SeedMethod</h1>
         <p class="pitch">
-            Pluggable discovery strategies for web crawling. Defines how the CrawlerAgentTask identifies initial URLs using search engines, proxies, or direct input.
+            Pluggable discovery strategies for web crawling. Defines how the CrawlerAgentTask identifies initial URLs
+            using search engines, proxies, or direct input.
         </p>
         <div class="badges">
             <span class="badge">Category: Discovery</span>
@@ -238,8 +240,8 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane">
-              <h2>Available Seed Methods</h2>
+        <div class="tab-pane" id="tab-docs">
+            <h2>Available Seed Methods</h2>
             <p>The <code>SeedMethod</code> enum provides various providers for URL discovery:</p>
             <table class="docs-table">
                 <thead>
@@ -308,21 +310,29 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>Lifecycle of a Seed Strategy</h3>
             <ol>
-                <li><strong>Factory Creation:</strong> The <code>SeedMethod</code> enum acts as a factory, creating a <code>SeedStrategy</code> instance based on the user and task context.</li>
-                <li><strong>Item Retrieval:</strong> The strategy executes <code>getSeedItems()</code>, which may involve network calls to search providers or parsing local config.</li>
-                <li><strong>Filtering:</strong> Results are filtered based on <code>EnabledStrategy</code> logic and relevance scores.</li>
-                <li><strong>Injection:</strong> Discovered <code>SeedItem</code> objects are passed to the <code>CrawlerAgentTask</code> to begin the scraping phase.</li>
+                <li><strong>Factory Creation:</strong> The <code>SeedMethod</code> enum acts as a factory, creating a
+                    <code>SeedStrategy</code> instance based on the user and task context.
+                </li>
+                <li><strong>Item Retrieval:</strong> The strategy executes <code>getSeedItems()</code>, which may
+                    involve network calls to search providers or parsing local config.
+                </li>
+                <li><strong>Filtering:</strong> Results are filtered based on <code>EnabledStrategy</code> logic and
+                    relevance scores.
+                </li>
+                <li><strong>Injection:</strong> Discovered <code>SeedItem</code> objects are passed to the <code>CrawlerAgentTask</code>
+                    to begin the scraping phase.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
-              <h2>Kotlin Implementation</h2>
+        <div class="tab-pane" id="tab-integration" style="display:none;">
+            <h2>Kotlin Implementation</h2>
             <p>Registering a seed method within an orchestration flow:</p>
-              <div class="panel mt-4">
+            <div class="panel mt-4">
                 <pre><code class="language-kotlin">
 val config = CrawlerTaskExecutionConfigData(
     seed_method = SeedMethod.SearchIO_Google_Search,
@@ -343,13 +353,13 @@ val items = strategy.getSeedItems(config, orchestrationConfig)</code></pre>
 </main>
 
 <script>
-      function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-        document.getElementById('tab-' + tabId).style.display = 'block';
-        event.target.classList.add('active');
-    }
+      document.getElementById('tab-' + tabId).style.display = 'block';
+      event.target.classList.add('active');
+  }
 </script>
 
 </body>

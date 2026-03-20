@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔮 Omega — DocOps App Factory</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <div style="display: flex; align-items: center;">
+        <h1><span>🔮</span> Omega</h1>
+        <span class="header-subtitle">DocOps App Factory</span>
+    </div>
+    <div class="header-actions">
+        <span id="globalStatus" class="status-badge status-idle">Idle</span>
+    </div>
+</header>
+
+<nav class="tab-nav">
+    <a class="nav-link active" data-section="section-input" href="#">📝 Input</a>
+    <a class="nav-link" data-section="section-pipeline" href="#">⚙️ Pipeline</a>
+    <a class="nav-link" data-section="section-results" href="#">📦 Results</a>
+    <a class="nav-link" data-section="section-files" href="#">📁 Files</a>
+</nav>
+
+<main>
+    <!-- ════════════════════════════════════════════ INPUT SECTION ════════════════════════════════════════════ -->
+    <section class="section active" id="section-input">
+        <div class="card">
+            <h3>📝 Describe Your App Idea</h3>
+            <p class="desc">
+                Tell Omega what DocOps application you want to build. Be specific about purpose, inputs, outputs,
+                pipeline steps, and any special requirements (web research, iteration, human-in-the-loop, etc.).
+            </p>
+            <textarea id="ideaEditor" rows="20" placeholder="# App Idea
+
+## Purpose
+What does the app do?
+
+## User Input
+What does the user provide?
+
+## Desired Output
+What should the app produce?
+
+## Pipeline Steps (optional)
+Any specific processing stages you envision?
+
+## Special Requirements
+Any specific task types, external research, iteration, etc.?"></textarea>
+            <div class="button-row">
+                <button class="btn btn-primary" id="btnSaveIdea">💾 Save Idea</button>
+                <button class="btn btn-success" id="btnSaveAndRun">🚀 Save & Generate App</button>
+                <span class="status-msg" id="idea-status"></span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>💡 Example Ideas</h3>
+            <p class="desc">Click an example to load it into the editor:</p>
+            <div class="button-row">
+                <button class="btn btn-sm" onclick="loadExample('pitch')">📊 Pitch Deck Generator</button>
+                <button class="btn btn-sm" onclick="loadExample('blog')">✍️ Blog Post Pipeline</button>
+                <button class="btn btn-sm" onclick="loadExample('research')">🔬 Research Assistant</button>
+                <button class="btn btn-sm" onclick="loadExample('code')">💻 Code Review Pipeline</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ PIPELINE SECTION ════════════════════════════════════════════ -->
+    <section class="section" id="section-pipeline">
+        <!-- Pipeline Diagram -->
+        <div class="card">
+            <h3>🔮 Pipeline Overview</h3>
+            <div class="pipeline-diagram" id="pipelineDiagram">
+                <div class="pipeline-stage" id="stage-input">
+                    <div class="stage-icon">📝</div>
+                    <div class="stage-label">Idea</div>
+                    <div class="stage-status" id="stage-input-status">Ready</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" id="stage-analyze">
+                    <div class="stage-icon">🧠</div>
+                    <div class="stage-label">Analyze</div>
+                    <div class="stage-status" id="stage-analyze-status">Pending</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" id="stage-design">
+                    <div class="stage-icon">🏗️</div>
+                    <div class="stage-label">Design</div>
+                    <div class="stage-status" id="stage-design-status">Pending</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" id="stage-generate">
+                    <div class="stage-icon">⚡</div>
+                    <div class="stage-label">Generate</div>
+                    <div class="stage-status" id="stage-generate-status">Pending</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" id="stage-ui">
+                    <div class="stage-icon">🎨</div>
+                    <div class="stage-label">UI</div>
+                    <div class="stage-status" id="stage-ui-status">Pending</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" id="stage-readme">
+                    <div class="stage-icon">📖</div>
+                    <div class="stage-label">Docs</div>
+                    <div class="stage-status" id="stage-readme-status">Pending</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" id="stage-review">
+                    <div class="stage-icon">🔍</div>
+                    <div class="stage-label">Review</div>
+                    <div class="stage-status" id="stage-review-status">Pending</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Batch Execution -->
+        <div class="card">
+            <h3>🚀 Batch Execution</h3>
+            <p class="desc">Run the entire pipeline sequentially, or run individual steps below.</p>
+            <div class="button-row">
+                <button class="btn btn-primary" id="btnRunAll">▶ Run Entire Pipeline</button>
+                <button class="btn btn-danger btn-sm" id="btnClearLog" style="margin-left: auto;">🗑️ Clear Log</button>
+            </div>
+            <div class="batch-log" id="batch-log"></div>
+        </div>
+
+        <!-- Step 1: Analyze -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">1</span>
+                    <span class="step-title">Analyze Idea</span>
+                    <span class="step-badge pending" id="badge-analyze">pending</span>
+                </div>
+                <p class="step-desc">Decompose your app idea into pipeline stages, data flows, and file structure.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-sm btn-run"
+                            data-op="analyze_op.md" data-output="analysis.md"
+                            data-badge="badge-analyze" data-viewer="viewer-analyze"
+                            data-stage="analyze">▶ Run</button>
+                    <button class="btn btn-sm btn-view"
+                            data-file="analysis.md" data-viewer="viewer-analyze">👁 View</button>
+                </div>
+                <div id="session-link-analyze" class="session-link-container"></div>
+                <div class="viewer" id="viewer-analyze"></div>
+            </div>
+        </div>
+
+        <!-- Step 2: Design Pipeline -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">2</span>
+                    <span class="step-title">Design Pipeline</span>
+                    <span class="step-badge pending" id="badge-design">pending</span>
+                </div>
+                <p class="step-desc">Multi-perspective architectural design: DAG structure, prompts, UX, and quality checks.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-sm btn-run"
+                            data-op="design_pipeline_op.md" data-output="pipeline_design.md"
+                            data-badge="badge-design" data-viewer="viewer-design"
+                            data-stage="design">▶ Run</button>
+                    <button class="btn btn-sm btn-view"
+                            data-file="pipeline_design.md" data-viewer="viewer-design">👁 View</button>
+                </div>
+                <div id="session-link-design" class="session-link-container"></div>
+                <div class="viewer" id="viewer-design"></div>
+            </div>
+        </div>
+
+        <!-- Step 3: Generate Ops -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">3</span>
+                    <span class="step-title">Generate Op Files</span>
+                    <span class="step-badge pending" id="badge-generate">pending</span>
+                </div>
+                <p class="step-desc">Create all op files, config files, and starter templates using a SubPlan agent.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-sm btn-run"
+                            data-op="generate_ops_op.md" data-output="generated_app/"
+                            data-badge="badge-generate" data-viewer="viewer-generate"
+                            data-stage="generate">▶ Run</button>
+                    <button class="btn btn-sm btn-view"
+                            data-file="generated_app/ops/_files.json" data-viewer="viewer-generate"
+                            data-is-dir="true">👁 View Files</button>
+                </div>
+                <div id="session-link-generate" class="session-link-container"></div>
+                <div class="viewer" id="viewer-generate"></div>
+            </div>
+        </div>
+
+        <!-- Step 4: Generate UI -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">4</span>
+                    <span class="step-title">Generate UI</span>
+                    <span class="step-badge pending" id="badge-ui">pending</span>
+                </div>
+                <p class="step-desc">Build a self-contained HTML/CSS/JS interface following DocOps conventions.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-sm btn-run"
+                            data-op="generate_ui_op.md" data-output="generated_app/index.html"
+                            data-badge="badge-ui" data-viewer="viewer-ui"
+                            data-stage="ui">▶ Run</button>
+                    <button class="btn btn-sm btn-view"
+                            data-file="generated_app/index.html" data-viewer="viewer-ui">👁 View</button>
+                </div>
+                <div id="session-link-ui" class="session-link-container"></div>
+                <div class="viewer" id="viewer-ui"></div>
+            </div>
+        </div>
+
+        <!-- Step 5: Generate README -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">5</span>
+                    <span class="step-title">Generate Documentation</span>
+                    <span class="step-badge pending" id="badge-readme">pending</span>
+                </div>
+                <p class="step-desc">Write a comprehensive README with usage instructions and architecture diagrams.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-sm btn-run"
+                            data-op="generate_readme_op.md" data-output="generated_app/README.md"
+                            data-badge="badge-readme" data-viewer="viewer-readme"
+                            data-stage="readme">▶ Run</button>
+                    <button class="btn btn-sm btn-view"
+                            data-file="generated_app/README.md" data-viewer="viewer-readme">👁 View</button>
+                </div>
+                <div id="session-link-readme" class="session-link-container"></div>
+                <div class="viewer" id="viewer-readme"></div>
+            </div>
+        </div>
+
+        <!-- Step 6: Review -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">6</span>
+                    <span class="step-title">Quality Review</span>
+                    <span class="step-badge pending" id="badge-review">pending</span>
+                </div>
+                <p class="step-desc">Multi-perspective review: pipeline correctness, prompt quality, UI, and documentation.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-sm btn-run"
+                            data-op="review_op.md" data-output="review.md"
+                            data-badge="badge-review" data-viewer="viewer-review"
+                            data-stage="review">▶ Run</button>
+                    <button class="btn btn-sm btn-view"
+                            data-file="review.md" data-viewer="viewer-review">👁 View</button>
+                </div>
+                <div id="session-link-review" class="session-link-container"></div>
+                <div class="viewer" id="viewer-review"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ RESULTS SECTION ════════════════════════════════════════════ -->
+    <section class="section" id="section-results">
+        <div class="results-grid">
+            <div class="results-sidebar">
+                <div class="results-sidebar-header">📄 Documents</div>
+                <div class="results-sidebar-list" id="resultsSidebar">
+                    <div class="results-sidebar-item active" data-result="analysis" onclick="showResult('analysis')">📊 Analysis</div>
+                    <div class="results-sidebar-item" data-result="design" onclick="showResult('design')">🏗️ Pipeline Design</div>
+                    <div class="results-sidebar-item" data-result="readme" onclick="showResult('readme')">📖 README</div>
+                    <div class="results-sidebar-item" data-result="review" onclick="showResult('review')">🔍 Review</div>
+                    <div class="results-sidebar-item" data-result="ui-preview" onclick="showResult('ui-preview')">🎨 UI Preview</div>
+                </div>
+            </div>
+            <div class="results-main">
+                <div class="results-main-header">
+                    <h3 id="resultsTitle">📊 Analysis</h3>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-sm" id="btnRefreshResult" onclick="refreshCurrentResult()">🔄 Refresh</button>
+                        <button class="btn btn-success btn-sm" id="btnOpenApp" onclick="openGeneratedApp()" disabled>🌐 Open Generated App</button>
+                    </div>
+                </div>
+                <div class="results-main-body rendered-md" id="resultsBody">
+                    <div class="empty-state">
+                        <div class="icon">🔮</div>
+                        <div class="title">No results yet</div>
+                        <div class="subtitle">Run the pipeline to generate your app</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ FILES SECTION ════════════════════════════════════════════ -->
+    <section class="section" id="section-files">
+        <div class="results-grid">
+            <div class="results-sidebar">
+                <div class="results-sidebar-header">📁 Generated Files</div>
+                <div class="results-sidebar-list" id="filesSidebar">
+                    <div class="empty-state" style="padding: 30px 10px;">
+                        <div class="icon">📁</div>
+                        <div class="subtitle">No files yet</div>
+                    </div>
+                </div>
+            </div>
+            <div class="results-main">
+                <div class="results-main-header">
+                    <h3 id="filePreviewTitle">Select a file</h3>
+                    <button class="btn btn-sm" onclick="refreshFileTree()">🔄 Refresh</button>
+                </div>
+                <div class="results-main-body" id="filePreviewBody">
+                    <div class="empty-state">
+                        <div class="icon">📄</div>
+                        <div class="title">Select a file to preview</div>
+                        <div class="subtitle">Click a file in the sidebar to view its contents</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<script src="app.js"></script>
+
+</body>
+</html>

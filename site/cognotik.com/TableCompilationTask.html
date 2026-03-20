@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | TableCompilationTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Workspace Browser -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -230,12 +231,13 @@
         <div class="breadcrumbs">Home > Tasks > Reasoning > TableCompilationTask</div>
         <h1>TableCompilationTask</h1>
         <p class="pitch">
-            Generate structured tables with AI-computed cell values using parallelized partition processing and multi-format output support.
+            Generate structured tables with AI-computed cell values using parallelized partition processing and
+            multi-format output support.
         </p>
         <div class="badges">
-          <span class="badge badge-primary">Category: Reasoning</span>
-          <span class="badge badge-primary">Parallel Processing</span>
-          <span class="badge badge-success">Output: HTML/CSV/JSON</span>
+            <span class="badge badge-primary">Category: Reasoning</span>
+            <span class="badge badge-primary">Parallel Processing</span>
+            <span class="badge badge-success">Output: HTML/CSV/JSON</span>
         </div>
     </section>
 
@@ -260,28 +262,28 @@
             <div class="mock-browser">
                 <table class="rendered-table">
                     <thead>
-                        <tr>
-                            <th></th>
-                            <th>Industry</th>
-                            <th>Primary Product</th>
-                        </tr>
+                    <tr>
+                        <th></th>
+                        <th>Industry</th>
+                        <th>Primary Product</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <th>Apple</th>
-                            <td>Consumer Electronics</td>
-                            <td>iPhone</td>
-                        </tr>
-                        <tr>
-                            <th>Tesla</th>
-                            <td>Automotive / Energy</td>
-                            <td>Electric Vehicles</td>
-                        </tr>
-                        <tr>
-                            <th>Microsoft</th>
-                            <td>Software / Cloud</td>
-                            <td>Windows & Azure</td>
-                        </tr>
+                    <tr>
+                        <th>Apple</th>
+                        <td>Consumer Electronics</td>
+                        <td>iPhone</td>
+                    </tr>
+                    <tr>
+                        <th>Tesla</th>
+                        <td>Automotive / Energy</td>
+                        <td>Electric Vehicles</td>
+                    </tr>
+                    <tr>
+                        <th>Microsoft</th>
+                        <td>Software / Cloud</td>
+                        <td>Windows & Azure</td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
@@ -290,7 +292,7 @@
     <!-- 2.5 SHOWCASE (Workspace Browser) -->
     <section class="showcase-section">
         <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-dim);">Test Workspace Artifacts</h2>
-        <div id="file-tree-demo" class="panel" style="height: 250px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 250px; overflow: auto; padding: 1rem;"></div>
     </section>
 
 
@@ -303,7 +305,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane">
+        <div class="tab-pane" id="tab-docs">
             <h3>Execution Configuration</h3>
             <table class="docs-table">
                 <thead>
@@ -327,7 +329,8 @@
                 <tr>
                     <td><code>cell_query</code> <span class="req">*</span></td>
                     <td><code>String</code></td>
-                    <td>Template for cell generation. Use <code>{row}</code> and <code>{column}</code> placeholders.</td>
+                    <td>Template for cell generation. Use <code>{row}</code> and <code>{column}</code> placeholders.
+                    </td>
                 </tr>
                 <tr>
                     <td><code>task_description</code></td>
@@ -339,7 +342,7 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>Type Configuration</h3>
             <table class="docs-table" style="margin-bottom: 2rem;">
                 <thead>
@@ -361,15 +364,19 @@
             <h3>Lifecycle</h3>
             <div class="process-step">
                 <h4>1. Partitioning</h4>
-              <p>The task divides the target table into chunks based on the <code class="code-inline">partition_size</code> to optimize LLM context usage and enable parallel processing.</p>
+                <p>The task divides the target table into chunks based on the <code
+                        class="code-inline">partition_size</code> to optimize LLM context usage and enable parallel
+                    processing.</p>
             </div>
             <div class="process-step">
                 <h4>2. Batch Prompting</h4>
-              <p>For each partition, a batch prompt is constructed containing the specific row/column pairs and the <code class="code-inline">cell_query</code> template.</p>
+                <p>For each partition, a batch prompt is constructed containing the specific row/column pairs and the
+                    <code class="code-inline">cell_query</code> template.</p>
             </div>
             <div class="process-step">
                 <h4>3. Parallel Execution</h4>
-              <p>Partitions are processed using a <code class="code-inline">ChatAgent</code>. Results are parsed from the LLM response using a structured <code class="code-inline">CELL_N:</code> format.</p>
+                <p>Partitions are processed using a <code class="code-inline">ChatAgent</code>. Results are parsed from
+                    the LLM response using a structured <code class="code-inline">CELL_N:</code> format.</p>
             </div>
             <div class="process-step">
                 <h4>4. Multi-Format Rendering</h4>
@@ -378,10 +385,11 @@
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Embedded Execution (Headless)</h3>
-          <p>Use the <code class="code-inline">UnifiedHarness</code> to run this task programmatically in CI/CD or CLI tools.</p>
-              <pre><code id="code-1" class="language-kotlin">import com.simiacryptus.cognotik.plan.TaskType
+            <p>Use the <code class="code-inline">UnifiedHarness</code> to run this task programmatically in CI/CD or CLI
+                tools.</p>
+            <pre><code class="language-kotlin" id="code-1">import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.reasoning.TableCompilationTask.Companion.TableCompilation
 import com.simiacryptus.cognotik.plan.tools.reasoning.TableCompilationTask.TableCompilationTaskExecutionConfigData
 
@@ -402,7 +410,7 @@ fun generateComparisonTable(harness: UnifiedHarness, projectDir: File) {
 }</code></pre>
             <h3>Prompt Segment</h3>
             <p>The following logic is injected into the orchestrator's context:</p>
-              <pre><code id="code-2">TableCompilation - Generate structured tables with AI-computed cell values
+            <pre><code id="code-2">TableCompilation - Generate structured tables with AI-computed cell values
   ** Specify row headers in the 'rows' array
   ** Specify column headers in the 'columns' array
   ** Provide a cell_query template using {row} and {column} placeholders
@@ -414,12 +422,12 @@ fun generateComparisonTable(harness: UnifiedHarness, projectDir: File) {
 </main>
 
 <script>
-  function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabId).style.display = 'block';
-        event.target.classList.add('active');
-    }
+    function switchTab(event, tabId) {
+          document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+          document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+          document.getElementById('tab-' + tabId).style.display = 'block';
+          event.target.classList.add('active');
+      }
 </script>
 <script type="module">
     import { initFileTree } from './assets/scripts/components/GithubFileTree.js';

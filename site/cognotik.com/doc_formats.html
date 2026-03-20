@@ -2,40 +2,45 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
     <!-- SEO Meta Tags -->
     <title>Document Formats | Cognotik</title>
-    <meta name="description" content="Unified document reading API supporting PDF, Word, Excel, PowerPoint, HTML, email, and plain text formats with pagination and rendering capabilities.">
-    <meta name="keywords" content="document reader, PDF extraction, Word parser, Excel reader, document processing, text extraction, Cognotik">
+    <meta content="Unified document reading API supporting PDF, Word, Excel, PowerPoint, HTML, email, and plain text formats with pagination and rendering capabilities."
+          name="description">
+    <meta content="document reader, PDF extraction, Word parser, Excel reader, document processing, text extraction, Cognotik"
+          name="keywords">
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="Document Formats | Cognotik">
-    <meta property="og:description" content="Unified document reading API supporting PDF, Word, Excel, PowerPoint, HTML, email, and plain text formats.">
-    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
-    <meta property="og:url" content="https://cognotik.com/doc_formats.html">
-    <meta property="og:type" content="website">
+    <meta content="Document Formats | Cognotik" property="og:title">
+    <meta content="Unified document reading API supporting PDF, Word, Excel, PowerPoint, HTML, email, and plain text formats."
+          property="og:description">
+    <meta content="https://cognotik.com/assets/images/og-image.png" property="og:image">
+    <meta content="https://cognotik.com/doc_formats.html" property="og:url">
+    <meta content="website" property="og:type">
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Document Formats | Cognotik">
-    <meta name="twitter:description" content="Unified document reading API supporting PDF, Word, Excel, PowerPoint, HTML, email, and plain text formats.">
-    <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+    <meta content="summary_large_image" name="twitter:card">
+    <meta content="Document Formats | Cognotik" name="twitter:title">
+    <meta content="Unified document reading API supporting PDF, Word, Excel, PowerPoint, HTML, email, and plain text formats."
+          name="twitter:description">
+    <meta content="https://cognotik.com/assets/images/twitter-card.png" name="twitter:image">
 
     <!-- Favicon Suite -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-    <link rel="manifest" href="/site.webmanifest">
-    <meta name="theme-color" content="#0f1115">
+    <link href="assets/icons/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="assets/icons/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
+    <link href="assets/icons/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
+    <link href="assets/icons/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
+    <link href="/site.webmanifest" rel="manifest">
+    <meta content="#0f1115" name="theme-color">
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         /* Page-specific styles */
@@ -491,7 +496,8 @@
         <div class="interface-grid">
             <div class="interface-card">
                 <h4>DocumentReader</h4>
-                <p>Base interface for all readers. Extends <code>AutoCloseable</code> for proper resource management.</p>
+                <p>Base interface for all readers. Extends <code>AutoCloseable</code> for proper resource management.
+                </p>
                 <pre><code>interface DocumentReader : AutoCloseable {
   fun getText(): String
 }</code></pre>
@@ -521,10 +527,10 @@
 
         <div class="tabs" data-tabs>
             <div class="tabs-nav" role="tablist">
-                <button class="tab-btn active" data-tab="basic" role="tab" aria-selected="true">Basic Usage</button>
-                <button class="tab-btn" data-tab="paginated" role="tab" aria-selected="false">Pagination</button>
-                <button class="tab-btn" data-tab="rendering" role="tab" aria-selected="false">Rendering</button>
-                <button class="tab-btn" data-tab="config" role="tab" aria-selected="false">Configuration</button>
+                <button aria-selected="true" class="tab-btn active" data-tab="basic" role="tab">Basic Usage</button>
+                <button aria-selected="false" class="tab-btn" data-tab="paginated" role="tab">Pagination</button>
+                <button aria-selected="false" class="tab-btn" data-tab="rendering" role="tab">Rendering</button>
+                <button aria-selected="false" class="tab-btn" data-tab="config" role="tab">Configuration</button>
             </div>
             <div class="tabs-content">
                 <div class="tab-panel active" data-tab-panel="basic" role="tabpanel">
@@ -643,7 +649,8 @@ val textWithLineNumbers = reader.getText()</code></pre>
 
         <div class="reader-section">
             <h4>PDFReader</h4>
-            <p>Implements both <code>PaginatedDocumentReader</code> and <code>RenderableDocumentReader</code>. Uses Apache PDFBox for text extraction and image rendering.</p>
+            <p>Implements both <code>PaginatedDocumentReader</code> and <code>RenderableDocumentReader</code>. Uses
+                Apache PDFBox for text extraction and image rendering.</p>
             <ul>
                 <li>Supports page-range text extraction</li>
                 <li>Renders pages to <code>BufferedImage</code> at configurable DPI</li>
@@ -656,7 +663,8 @@ val textWithLineNumbers = reader.getText()</code></pre>
             <p>Extracts text from Microsoft Word files using Apache POI.</p>
             <ul>
                 <li><strong>DocxReader:</strong> Extracts text from paragraphs and tables (tab-separated cells)</li>
-                <li><strong>DocReader:</strong> Extracts text from legacy <code>.doc</code> files using HWPF library</li>
+                <li><strong>DocReader:</strong> Extracts text from legacy <code>.doc</code> files using HWPF library
+                </li>
             </ul>
         </div>
 
@@ -715,7 +723,8 @@ val textWithLineNumbers = reader.getText()</code></pre>
             <h4>OdtReader / RtfReader</h4>
             <ul>
                 <li><strong>OdtReader:</strong> Reads OpenDocument Text files using ODF Toolkit</li>
-                <li><strong>RtfReader:</strong> Reads Rich Text Format files using Java's built-in RTF support (<code>RTFEditorKit</code>)</li>
+                <li><strong>RtfReader:</strong> Reads Rich Text Format files using Java's built-in RTF support (<code>RTFEditorKit</code>)
+                </li>
             </ul>
         </div>
     </section>
@@ -754,7 +763,8 @@ val textWithLineNumbers = reader.getText()</code></pre>
     <!-- Resource Management -->
     <section>
         <h2 class="section-title">Resource Management</h2>
-        <p>All readers implement <code>AutoCloseable</code>. Always use <code>use</code> blocks or try-with-resources to ensure proper cleanup:</p>
+        <p>All readers implement <code>AutoCloseable</code>. Always use <code>use</code> blocks or try-with-resources to
+            ensure proper cleanup:</p>
         <div class="code-block">
             <div class="code-header">
                 <span class="code-lang">kotlin</span>
@@ -765,7 +775,9 @@ val textWithLineNumbers = reader.getText()</code></pre>
 } // Automatically closed</code></pre>
         </div>
         <p style="color: var(--text-muted); font-size: 0.9rem;">
-            <strong>Note:</strong> The <code>PDFReader</code> temporarily sets the thread's context class loader during image rendering to ensure proper ImageIO service provider discovery. This is handled internally and transparent to users.
+            <strong>Note:</strong> The <code>PDFReader</code> temporarily sets the thread's context class loader during
+            image rendering to ensure proper ImageIO service provider discovery. This is handled internally and
+            transparent to users.
         </p>
     </section>
 

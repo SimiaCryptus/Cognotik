@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | HttpClientFetch</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-  <link rel="stylesheet" href="assets/styles/main.css">
-  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -215,12 +216,13 @@
 
 <main class="task-container">
 
-      <!-- PAGE HEADER -->
+    <!-- PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Tasks / Online / Fetching</div>
         <h1>HttpClientFetch</h1>
         <p class="pitch">
-            Industrial-grade HTTP retrieval engine featuring SSL-bypass, automatic HTML scrubbing, and deep document text extraction for LLM context preparation.
+            Industrial-grade HTTP retrieval engine featuring SSL-bypass, automatic HTML scrubbing, and deep document
+            text extraction for LLM context preparation.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect: Safe</span>
@@ -253,9 +255,12 @@
         <div class="panel">
             <div class="panel-header"><span>📄</span> Processed Content</div>
             <div class="mock-ui-content">
-                <div style="color: #4ade80; margin-bottom: 0.5rem; font-family: var(--font-mono); font-size: 0.8rem;">✔ HTTP 200 OK [text/html]</div>
+                <div style="color: #4ade80; margin-bottom: 0.5rem; font-family: var(--font-mono); font-size: 0.8rem;">✔
+                    HTTP 200 OK [text/html]
+                </div>
                 <div style="background: #0d1117; border: 1px solid #30363d; padding: 0.75rem; border-radius: 4px;">
-                    <div style="color: #8b949e; font-size: 0.75rem; margin-bottom: 0.5rem;">// Simplified HTML Output</div>
+                    <div style="color: #8b949e; font-size: 0.75rem; margin-bottom: 0.5rem;">// Simplified HTML Output
+                    </div>
                     <div style="font-family: var(--font-mono); font-size: 0.8rem;">
                         &lt;main&gt;<br>
                         &nbsp;&nbsp;&lt;h1&gt;API Documentation&lt;/h1&gt;<br>
@@ -280,8 +285,8 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane">
-              <h2>Supported Content Types</h2>
+        <div class="tab-pane" id="tab-docs">
+            <h2>Supported Content Types</h2>
             <table class="docs-table">
                 <thead>
                 <tr>
@@ -323,45 +328,50 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
-              <ol class="step-list">
-                  <li class="step-item">
+        <div class="tab-pane" id="tab-process" style="display:none;">
+            <ol class="step-list">
+                <li class="step-item">
                     <div class="step-number">1</div>
                     <div>
                         <strong>SSL Initialization</strong>
-                          <p>Creates a permissive SSL context using <code>X509TrustManager</code> to handle self-signed or expired certificates common in internal documentation sites.</p>
+                        <p>Creates a permissive SSL context using <code>X509TrustManager</code> to handle self-signed or
+                            expired certificates common in internal documentation sites.</p>
                     </div>
-                </div>
-                  <li class="step-item">
-                    <div class="step-number">2</div>
-                    <div>
-                        <strong>Request Execution</strong>
-                        <p style="color: var(--text-dim); font-size: 0.9rem;">Dispatches GET request with <code>CognotikBot</code> User-Agent and standard browser headers to minimize bot-detection triggers.</p>
-                    </div>
-                </div>
-                  <li class="step-item">
-                    <div class="step-number">3</div>
-                    <div>
-                        <strong>Content Transformation</strong>
-                        <p style="color: var(--text-dim); font-size: 0.9rem;">HTML is scrubbed of scripts, styles, and interactive elements. Documents are parsed into plain text using specialized readers.</p>
-                    </div>
-                </div>
-                  <li class="step-item">
-                    <div class="step-number">4</div>
-                    <div>
-                        <strong>Workspace Persistence</strong>
-                        <p style="color: var(--text-dim); font-size: 0.9rem;">Saves raw, reduced, and extracted versions to the <code>webSearchDir</code> for auditability and caching.</p>
-                    </div>
-                </div>
-            </div>
         </div>
+        <li class="step-item">
+            <div class="step-number">2</div>
+            <div>
+                <strong>Request Execution</strong>
+                <p style="color: var(--text-dim); font-size: 0.9rem;">Dispatches GET request with
+                    <code>CognotikBot</code> User-Agent and standard browser headers to minimize bot-detection triggers.
+                </p>
+            </div>
+            </div>
+        <li class="step-item">
+            <div class="step-number">3</div>
+            <div>
+                <strong>Content Transformation</strong>
+                <p style="color: var(--text-dim); font-size: 0.9rem;">HTML is scrubbed of scripts, styles, and
+                    interactive elements. Documents are parsed into plain text using specialized readers.</p>
+            </div>
+            </div>
+        <li class="step-item">
+            <div class="step-number">4</div>
+            <div>
+                <strong>Workspace Persistence</strong>
+                <p style="color: var(--text-dim); font-size: 0.9rem;">Saves raw, reduced, and extracted versions to the
+                    <code>webSearchDir</code> for auditability and caching.</p>
+            </div>
+            </div>
+            </div>
+            </div>
 
-        <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
-              <h2>Kotlin Implementation</h2>
-            <div class="panel">
-                <div class="panel-header">HttpClientFetch.kt</div>
-                <pre><code>val client = HttpClient.newBuilder()
+            <!-- TAB: INTEGRATION -->
+            <div class="tab-pane" id="tab-integration" style="display:none;">
+                <h2>Kotlin Implementation</h2>
+                <div class="panel">
+                    <div class="panel-header">HttpClientFetch.kt</div>
+                    <pre><code>val client = HttpClient.newBuilder()
     .connectTimeout(Duration.ofSeconds(30))
     .followRedirects(HttpClient.Redirect.NORMAL)
     .sslContext(sslContext) // Permissive SSL
@@ -372,23 +382,24 @@ val request = HttpRequest.newBuilder()
     .header("User-Agent", "CognotikBot/1.0")
     .GET()
     .build()</code></pre>
+                </div>
+                <p style="margin-top: 1rem; color: var(--text-dim);">
+                    This strategy is automatically selected by <code>CrawlerAgentTask</code> when high-fidelity document
+                    parsing or SSL tolerance is required.
+                </p>
             </div>
-            <p style="margin-top: 1rem; color: var(--text-dim);">
-                This strategy is automatically selected by <code>CrawlerAgentTask</code> when high-fidelity document parsing or SSL tolerance is required.
-            </p>
-        </div>
     </section>
 
 </main>
 
 <script>
-      function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-        document.getElementById('tab-' + tabId).style.display = 'block';
-        event.currentTarget.classList.add('active');
-    }
+      document.getElementById('tab-' + tabId).style.display = 'block';
+      event.currentTarget.classList.add('active');
+  }
 </script>
 
 </body>

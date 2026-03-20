@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | CognitiveMode</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         .reality-check-grid {
@@ -119,7 +120,8 @@
         <div class="breadcrumbs">Home > Core > Cognitive Modes</div>
         <h1>CognitiveMode</h1>
         <p class="pitch">
-            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the agent's problem-solving persona.
+            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the
+            agent's problem-solving persona.
         </p>
         <div class="badges">
             <span class="badge">Core Architecture</span>
@@ -179,7 +181,7 @@
         </nav>
 
         <!-- TAB: MODES -->
-        <div id="tab-modes" class="tab-pane active">
+        <div class="tab-pane active" id="tab-modes">
             <h3>Architectural Patterns</h3>
             <table class="docs-table">
                 <thead>
@@ -193,7 +195,8 @@
                 <tr>
                     <td><strong>WaterfallMode</strong></td>
                     <td><code>Plan -> Review -> Execute</code></td>
-                    <td>Well-defined problems where the user must approve the entire roadmap before execution begins.</td>
+                    <td>Well-defined problems where the user must approve the entire roadmap before execution begins.
+                    </td>
                 </tr>
                 <tr>
                     <td><strong>ConversationalMode</strong></td>
@@ -215,9 +218,10 @@
         </div>
 
         <!-- TAB: STRATEGIES -->
-        <div id="tab-strategies" class="tab-pane">
+        <div class="tab-pane" id="tab-strategies">
             <h3>Reasoning Personas</h3>
-            <p>Strategies define the internal state structure and the "thinking style" injected into the Mode's loop.</p>
+            <p>Strategies define the internal state structure and the "thinking style" injected into the Mode's
+                loop.</p>
             <table class="docs-table">
                 <thead>
                 <tr>
@@ -240,7 +244,8 @@
                 <tr>
                     <td><strong>Agile Developer</strong></td>
                     <td><code>AgileState</code></td>
-                    <td>Coder. Follows a TDD loop: <code>Test Failing</code> -> <code>Implementing</code> -> <code>Refactoring</code>.</td>
+                    <td>Coder. Follows a TDD loop: <code>Test Failing</code> -> <code>Implementing</code> -> <code>Refactoring</code>.
+                    </td>
                 </tr>
                 <tr>
                     <td><strong>Critical Auditor</strong></td>
@@ -257,7 +262,7 @@
         </div>
 
         <!-- TAB: IMPLEMENTATION -->
-        <div id="tab-implementation" class="tab-pane">
+        <div class="tab-pane" id="tab-implementation">
             <h3>Custom Mode Skeleton</h3>
             <pre><code class="language-kotlin">
 class MyCustomMode(val config: OrchestrationConfig) {
@@ -289,7 +294,7 @@ class MyCustomMode(val config: OrchestrationConfig) {
     <!-- 4. INTEGRATION GUIDE -->
     <section class="integration-guide" style="margin-top: 3rem;">
         <h2>Integration Guide</h2>
-        
+
         <h3>Configuration</h3>
         <p>Reference the mode and strategy in your <code>OrchestrationConfig</code>.</p>
         <pre><code class="language-kotlin">
@@ -303,9 +308,14 @@ val config = OrchestrationConfig(
 
         <h3>Observability Standards</h3>
         <ol>
-            <li><strong>Mermaid Diagrams:</strong> Visualize the state machine in the transcript for user transparency.</li>
-            <li><strong>Collapsed Details:</strong> Use <code>&lt;details&gt;</code> tags for raw JSON state dumps to keep the UI clean.</li>
-            <li><strong>Graceful Degradation:</strong> If the LLM hallucinates, the mode must catch the error and attempt to simplify the prompt.</li>
+            <li><strong>Mermaid Diagrams:</strong> Visualize the state machine in the transcript for user transparency.
+            </li>
+            <li><strong>Collapsed Details:</strong> Use <code>&lt;details&gt;</code> tags for raw JSON state dumps to
+                keep the UI clean.
+            </li>
+            <li><strong>Graceful Degradation:</strong> If the LLM hallucinates, the mode must catch the error and
+                attempt to simplify the prompt.
+            </li>
         </ol>
     </section>
 

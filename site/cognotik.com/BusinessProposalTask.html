@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | BusinessProposalTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -210,7 +211,8 @@
         <div class="breadcrumbs">Home > Tasks > Writing > BusinessProposalTask</div>
         <h1>BusinessProposalTask</h1>
         <p class="pitch">
-            Generates comprehensive, multi-phase business proposals including stakeholder analysis, ROI projections, risk assessments, and competitive positioning.
+            Generates comprehensive, multi-phase business proposals including stakeholder analysis, ROI projections,
+            risk assessments, and competitive positioning.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect Safe</span>
@@ -278,73 +280,87 @@
         </nav>
 
         <!-- Tab 1: Documentation -->
-        <div id="tab-docs" class="tab-content active">
+        <div class="tab-content active" id="tab-docs">
             <h3>Execution Configuration</h3>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>proposal_title</code> <span class="req">*</span></td>
-                        <td>String</td>
-                        <td>The title or name of the proposal.</td>
-                    </tr>
-                    <tr>
-                        <td><code>objective</code> <span class="req">*</span></td>
-                        <td>String</td>
-                        <td>The primary objective or goal of the proposal.</td>
-                    </tr>
-                    <tr>
-                        <td><code>proposal_type</code></td>
-                        <td>String</td>
-                        <td>Type (e.g., 'project', 'investment', 'grant'). Default: <code>project</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><code>budget_range</code></td>
-                        <td>String</td>
-                        <td>Financial scope (e.g., '$50,000-$100,000').</td>
-                    </tr>
-                    <tr>
-                        <td><code>include_roi_analysis</code></td>
-                        <td>Boolean</td>
-                        <td>Include detailed ROI and financial projections. Default: <code>true</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><code>target_word_count</code></td>
-                        <td>Int</td>
-                        <td>Target word count for the complete proposal. Default: <code>3000</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><code>revision_passes</code></td>
-                        <td>Int</td>
-                        <td>Number of revision passes (0-5). Default: <code>1</code>.</td>
-                    </tr>
+                <tr>
+                    <td><code>proposal_title</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The title or name of the proposal.</td>
+                </tr>
+                <tr>
+                    <td><code>objective</code> <span class="req">*</span></td>
+                    <td>String</td>
+                    <td>The primary objective or goal of the proposal.</td>
+                </tr>
+                <tr>
+                    <td><code>proposal_type</code></td>
+                    <td>String</td>
+                    <td>Type (e.g., 'project', 'investment', 'grant'). Default: <code>project</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>budget_range</code></td>
+                    <td>String</td>
+                    <td>Financial scope (e.g., '$50,000-$100,000').</td>
+                </tr>
+                <tr>
+                    <td><code>include_roi_analysis</code></td>
+                    <td>Boolean</td>
+                    <td>Include detailed ROI and financial projections. Default: <code>true</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>target_word_count</code></td>
+                    <td>Int</td>
+                    <td>Target word count for the complete proposal. Default: <code>3000</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>revision_passes</code></td>
+                    <td>Int</td>
+                    <td>Number of revision passes (0-5). Default: <code>1</code>.</td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- Tab 2: Process -->
-        <div id="tab-process" class="tab-content">
+        <div class="tab-content" id="tab-process">
             <h3>Task Process Lifecycle</h3>
             <ol style="color: var(--text-main); font-size: 0.95rem;">
-                <li><strong>Strategic Analysis:</strong> Identifies 3-5 key stakeholders, their interests, and influence levels.</li>
-                <li><strong>ROI Analysis:</strong> (Optional) Calculates financial projections, cost breakdowns, and payback periods.</li>
-                <li><strong>Risk Assessment:</strong> (Optional) Identifies technical, financial, and operational risks with mitigation strategies.</li>
-                <li><strong>Competitive Analysis:</strong> (Optional) Compares alternatives and defines competitive advantages.</li>
+                <li><strong>Strategic Analysis:</strong> Identifies 3-5 key stakeholders, their interests, and influence
+                    levels.
+                </li>
+                <li><strong>ROI Analysis:</strong> (Optional) Calculates financial projections, cost breakdowns, and
+                    payback periods.
+                </li>
+                <li><strong>Risk Assessment:</strong> (Optional) Identifies technical, financial, and operational risks
+                    with mitigation strategies.
+                </li>
+                <li><strong>Competitive Analysis:</strong> (Optional) Compares alternatives and defines competitive
+                    advantages.
+                </li>
                 <li><strong>Timeline & Milestones:</strong> (Optional) Maps project phases and critical path items.</li>
-                <li><strong>Outline Generation:</strong> Creates a structured 6-8 section outline tailored to the proposal type.</li>
-                <li><strong>Content Generation:</strong> Iteratively writes each section, incorporating previous analysis data.</li>
-                <li><strong>Revision:</strong> Performs automated editing passes to improve tone, flow, and persuasiveness.</li>
+                <li><strong>Outline Generation:</strong> Creates a structured 6-8 section outline tailored to the
+                    proposal type.
+                </li>
+                <li><strong>Content Generation:</strong> Iteratively writes each section, incorporating previous
+                    analysis data.
+                </li>
+                <li><strong>Revision:</strong> Performs automated editing passes to improve tone, flow, and
+                    persuasiveness.
+                </li>
             </ol>
         </div>
 
         <!-- Tab 3: Integration -->
-        <div id="tab-integration" class="tab-content">
+        <div class="tab-content" id="tab-integration">
             <h3>Kotlin Implementation</h3>
             <pre><code class="language-kotlin">// Adding BusinessProposalTask to an OrchestrationConfig
 val plan = OrchestrationConfig(

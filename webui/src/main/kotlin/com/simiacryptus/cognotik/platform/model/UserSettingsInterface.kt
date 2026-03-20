@@ -16,7 +16,6 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ToolData
 import com.simiacryptus.cognotik.models.ToolProvider.Companion.discoverAllToolsFromPath
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.encrypt
 
@@ -25,21 +24,21 @@ import com.simiacryptus.cognotik.util.encrypt
  * Provides methods to retrieve and update settings for individual users.
  */
 interface UserSettingsInterface {
-    /**
-     * Retrieves the settings for a specific user.
-     *
-     * @param user The user whose settings should be retrieved. Defaults to UserSettingsManager.defaultUser
-     * @return UserSettings object containing the user's configuration
-     */
-    fun getUserSettings(user: User = UserSettingsManager.defaultUser): UserSettings
+  /**
+   * Retrieves the settings for a specific user.
+   *
+   * @param user The user whose settings should be retrieved. Defaults to UserSettingsManager.defaultUser
+   * @return UserSettings object containing the user's configuration
+   */
+  fun getUserSettings(user: User): UserSettings
 
-    /**
-     * Updates the settings for a specific user.
-     *
-     * @param user The user whose settings should be updated
-     * @param settings The new UserSettings object to save for the user
-     */
-    fun updateUserSettings(user: User, settings: UserSettings)
+  /**
+   * Updates the settings for a specific user.
+   *
+   * @param user The user whose settings should be updated
+   * @param settings The new UserSettings object to save for the user
+   */
+  fun updateUserSettings(user: User, settings: UserSettings)
 }
 
 
@@ -55,148 +54,89 @@ interface UserSettingsInterface {
 @JsonSerialize(using = UserSettingsSerializer::class)
 @JsonDeserialize(using = UserSettingsDeserializer::class)
 data class UserSettings(
-    val apis: MutableList<ApiData> = mutableListOf(),
-    val tools: MutableList<ToolData> = mutableListOf(),
-    val etc: MutableMap<String, Any> = mutableMapOf(),
-) {
-
-    /**
-     * @deprecated Use the 'apis' property instead. This provides backward compatibility
-     * for legacy code expecting a Map of APIProvider to base URL.
-     * @return Map of API providers to their base URLs extracted from the apis list
-     */
-    @get:JsonIgnore
-    @get:Deprecated("Use this.apis instead")
-    val apiBase: Map<APIProvider, String>
-        get() = apis.associate {
-            it.provider!! to (it.baseUrl ?: "")
-        }
-
-
-    @get:JsonIgnore
-    val chatModels: Map<String, ChatModel>
-        get() = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
-            val provider = APIProvider.values().find { apiData.provider == it }
-                ?: return@flatMap emptyList<Pair<String, ChatModel>>()
-            provider.getChatModels(apiData.key ?: "".encrypt, apiData.baseUrl).map { model -> model.modelId to model }
-        }.toMap()
-
-}
+  val apis: MutableList<ApiData> = mutableListOf(),
+  val tools: MutableList<ToolData> = mutableListOf(),
+  val etc: MutableMap<String, Any> = mutableMapOf(),
+  val passwordHash: String? = null,
+)
 
 /**
  * Custom JSON serializer for UserSettings.
  * Serializes UserSettings to JSON format with apis, tools, and etc fields.
  */
 class UserSettingsSerializer : JsonSerializer<UserSettings>() {
-    /**
-     * Custom JSON deserializer for UserSettings.
-     * Handles both new format (apis/tools/etc) and legacy format (apiKeys/apiBase/localTools)
-     * for backward compatibility with existing user configuration files.
-     */
-    override fun serialize(value: UserSettings, gen: JsonGenerator, serializers: SerializerProvider) {
-        gen.writeStartObject()
-        gen.writeObjectField("apis", value.apis)
-        gen.writeObjectField("tools", value.tools)
-        gen.writeObjectField("etc", value.etc)
-        gen.writeEndObject()
+  /**
+   * Custom JSON deserializer for UserSettings.
+   * Handles both new format (apis/tools/etc) and legacy format (apiKeys/apiBase/localTools)
+   * for backward compatibility with existing user configuration files.
+   */
+  override fun serialize(value: UserSettings, gen: JsonGenerator, serializers: SerializerProvider) {
+    gen.writeStartObject()
+    gen.writeObjectField("apis", value.apis)
+    gen.writeObjectField("tools", value.tools)
+    gen.writeObjectField("etc", value.etc)
+    if (value.passwordHash != null) {
+      gen.writeStringField("passwordHash", value.passwordHash)
     }
+    gen.writeEndObject()
+  }
 }
 
 class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
-    /**
-     * Custom JSON deserializer for ApiChatModel.
-     * Handles deserialization from both string format (model name) and object format
-     * (containing model and provider information).
-     */
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): UserSettings {
-        val node = p.readValueAsTree<ObjectNode>()
-        // Check if this is the new format (has apis/tools fields)
-        if (node.has("apis") || node.has("tools") || node.has("toolPaths")) {
-            val apis = if (node.has("apis")) {
-                p.codec.treeToValue(node.get("apis"), Array<ApiData>::class.java).toMutableList()
-            } else {
-                mutableListOf()
-            }
-            val tools = if (node.has("tools")) {
-                p.codec.treeToValue(node.get("tools"), Array<ToolData>::class.java).toMutableList()
-            } else {
-                mutableListOf()
-            }
-            if (tools.isEmpty()) {
-                tools.addAll(discoverAllToolsFromPath())
-            }
-            val etc = if (node.has("etc")) {
-                p.codec.treeToValue(node.get("etc"), MutableMap::class.java) as MutableMap<String, Any>
-            } else {
-                mutableMapOf()
-            }
-            return UserSettings(apis, tools, etc)
-        }
-        // Handle legacy format (apiKeys, apiBase, localTools)
-        val apiKeys = if (node.has("apiKeys")) {
-            (p.codec.treeToValue(
-                node.get("apiKeys"),
-                Map::class.java
-            ) as Map<String, String>).mapKeys { APIProvider.valueOf(it.key) }
-        } else {
-            emptyMap()
-        }
-        val apiBase = if (node.has("apiBase")) {
-            (p.codec.treeToValue(
-                node.get("apiBase"),
-                Map::class.java
-            ) as Map<String, String>).mapKeys { APIProvider.valueOf(it.key) }
-        } else {
-            emptyMap()
-        }
-        return UserSettings(toApiList(apiKeys, apiBase), discoverAllToolsFromPath().toMutableList())
+  /**
+   * Custom JSON deserializer for ApiChatModel.
+   * Handles deserialization from both string format (model name) and object format
+   * (containing model and provider information).
+   */
+  override fun deserialize(p: JsonParser, ctxt: DeserializationContext): UserSettings {
+    val node = p.readValueAsTree<ObjectNode>()
+    val passwordHash = if (node.has("passwordHash")) {
+      node.get("passwordHash").asText()
+    } else {
+      null
     }
-}
-
-class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ApiChatModel? {
-        val chatModels = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().chatModels
-        return when (p.currentToken) {
-            JsonToken.VALUE_STRING -> {
-                try {
-                    val modelName = p.readValueAs(String::class.java)
-                    // Handle string format - find model by name/key
-                    val model = chatModels.entries.find {
-                        it.key == modelName || it.value.name == modelName || it.value.modelId == modelName
-                    }?.value ?: throw IllegalArgumentException("Unknown model: $modelName")
-                    ApiChatModel(model, null)
-                } catch (e: Exception) {
-                    throw IllegalArgumentException("Error deserializing ApiChatModel: ${e.message}", e)
-                }
-            }
-
-            JsonToken.START_OBJECT -> {
-                // Handle object format
-                val node = p.readValueAsTree<ObjectNode>()
-                try {
-                    if (node.has("model") && node.has("provider")) {
-                        val model = p.codec.treeToValue(node.get("model"), ChatModel::class.java)
-                        val provider = p.codec.treeToValue(node.get("provider"), ApiData::class.java)
-                        ApiChatModel(model, provider)
-                    } else if (node.has("modelName")) {
-                        val modelName = node.get("modelName").asText()
-                        val model = chatModels.values.firstOrNull { it.modelId == modelName }
-                            ?: throw IllegalArgumentException("Unknown model: $modelName")
-                        ApiChatModel(model, null)
-                    } else {
-                        //throw IllegalArgumentException("Invalid ApiChatModel object format")
-                        null
-                    }
-                } catch (e: Exception) {
-                    throw IllegalArgumentException("Error deserializing ApiChatModel: ${e.message}", e)
-                }
-            }
-
-            else -> null // throw IllegalArgumentException("ApiChatModel must be deserialized from either a string or an object")
-        }
+    // Check if this is the new format (has apis/tools fields)
+    if (node.has("apis") || node.has("tools") || node.has("toolPaths")) {
+      val apis = if (node.has("apis")) {
+        p.codec.treeToValue(node.get("apis"), Array<ApiData>::class.java).toMutableList()
+      } else {
+        mutableListOf()
+      }
+      val tools = if (node.has("tools")) {
+        p.codec.treeToValue(node.get("tools"), Array<ToolData>::class.java).toMutableList()
+      } else {
+        mutableListOf()
+      }
+      if (tools.isEmpty()) {
+        tools.addAll(discoverAllToolsFromPath())
+      }
+      val etc = if (node.has("etc")) {
+        p.codec.treeToValue(node.get("etc"), MutableMap::class.java) as MutableMap<String, Any>
+      } else {
+        mutableMapOf()
+      }
+      return UserSettings(apis, tools, etc, passwordHash)
     }
+    // Handle legacy format (apiKeys, apiBase, localTools)
+    val apiKeys = if (node.has("apiKeys")) {
+      (p.codec.treeToValue(
+        node.get("apiKeys"),
+        Map::class.java
+      ) as Map<String, String>).mapKeys { APIProvider.valueOf(it.key) }
+    } else {
+      emptyMap()
+    }
+    val apiBase = if (node.has("apiBase")) {
+      (p.codec.treeToValue(
+        node.get("apiBase"),
+        Map::class.java
+      ) as Map<String, String>).mapKeys { APIProvider.valueOf(it.key) }
+    } else {
+      emptyMap()
+    }
+    return UserSettings(toApiList(apiKeys, apiBase), discoverAllToolsFromPath().toMutableList(), passwordHash = passwordHash)
+  }
 }
-
 
 /**
  * Configuration data for an API provider.
@@ -208,50 +148,47 @@ class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
  * @property provider The API provider type (OpenAI, Anthropic, Google, etc.)
  */
 data class ApiData(
-    val name: String? = null,
-    val key: SecureString? = null,
-    val baseUrl: String = "",
-    val provider: APIProvider? = null,
+  val name: String? = null,
+  val key: SecureString? = null,
+  val baseUrl: String = "",
+  val provider: APIProvider? = null,
 ) {
-    /**
-     * Validates this API configuration.
-     * Checks that provider is set, API key is not blank, and for chat-capable providers,
-     * ensures at least one chat model is available.
-     *
-     * @return This ApiData instance if validation passes
-     * @throws IllegalStateException if validation fails
-     */
-    fun validate(): ApiData {
-        if (provider == null) throw IllegalStateException("Provider not set or invalid")
-        if (key == null) throw IllegalStateException("API key not set")
-        // Only validate chat models for providers that support chat functionality
-        val supportsChatModels = provider.getChatModels(key, baseUrl).isNotEmpty()
-        if (supportsChatModels) {
-            val model = ChatModel.values().values.firstOrNull { it.provider == provider }
-            if (model == null) {
-                throw IllegalStateException("No chat model available for provider $provider")
-            }
-        }
-        return this
+  /**
+   * Validates this API configuration.
+   * Checks that provider is set, API key is not blank, and for chat-capable providers,
+   * ensures at least one chat model is available.
+   *
+   * @return This ApiData instance if validation passes
+   * @throws IllegalStateException if validation fails
+   */
+  fun validate(): ApiData {
+    if (provider == null) throw IllegalStateException("Provider not set or invalid")
+    if (key == null) throw IllegalStateException("API key not set")
+    // Only validate chat models for providers that support chat functionality
+    val supportsChatModels = provider.getChatModels(key, baseUrl).isNotEmpty()
+    if (supportsChatModels) {
+      val model = ChatModel.values().values.firstOrNull { it.provider == provider }
+      if (model == null) {
+        throw IllegalStateException("No chat model available for provider $provider")
+      }
     }
+    return this
+  }
 }
 
 fun ChatModel.asApiChatModel(
-    key: String? = null
-) : ApiChatModel? = ApiChatModel(
-    provider = this.provider.let { provider ->
-        ApiData(
-            name = provider?.name,
-            key = (key?.let { SecureString(it) } ?: this.provider?.defaultKey()),
-            baseUrl = provider?.base!!,
-            provider = provider
-        )
-    },
-    model = this,
+  key: String? = null
+): ApiChatModel? = ApiChatModel(
+  provider = this.provider.let { provider ->
+    ApiData(
+      name = provider?.name,
+      key = (key?.let{SecureString(it)}),
+      baseUrl = provider?.base!!,
+      provider = provider
+    )
+  },
+  model = this,
 )
-
-fun APIProvider.defaultKey() = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis
-    .find { api -> api.provider?.name == this.name }?.key
 
 /**
  * Represents a chat model with its associated API provider configuration.
@@ -259,10 +196,9 @@ fun APIProvider.defaultKey() = ApplicationServices.fileApplicationServices().use
  * @property model The chat model to use
  * @property provider Optional API configuration to use with this model (overrides default)
  */
-@JsonDeserialize(using = ApiChatModelDeserializer::class)
 data class ApiChatModel(
-    val model: ChatModel? = null,
-    val provider: ApiData? = null,
+  val model: ChatModel? = null,
+  val provider: ApiData? = null,
 )
 
 /**
@@ -274,10 +210,9 @@ data class ApiChatModel(
  * @return MutableList of ApiData objects representing the converted configuration
  */
 fun toApiList(
-    apiKeys: Map<APIProvider, String>, apiBase: Map<APIProvider, String>
+  apiKeys: Map<APIProvider, String>, apiBase: Map<APIProvider, String>
 ): MutableList<ApiData> = apiKeys.map {
-    ApiData(
-        key = SecureString(it.value), baseUrl = apiBase[it.key] ?: it.key.base, provider = it.key
-    ).validate()
+  ApiData(
+    key = SecureString(it.value), baseUrl = apiBase[it.key] ?: it.key.base, provider = it.key
+  ).validate()
 }.toMutableList()
-

@@ -15,121 +15,121 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Semaphore
 
 class ModelsLabChatClient(
-    apiKey: SecureString,
-    apiBase: String = APIProvider.ModelsLab.base!!,
-    workPool: ExecutorService,
-    logLevel: Level = Level.DEBUG,
-    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    scheduledPool: ListeningScheduledExecutorService,
+  apiKey: SecureString,
+  apiBase: String = APIProvider.ModelsLab.base!!,
+  workPool: ExecutorService,
+  logLevel: Level = Level.DEBUG,
+  logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+  scheduledPool: ListeningScheduledExecutorService,
 ) : SingleProviderChatClient(
-    APIProvider.ModelsLab,
-    apiKey = apiKey,
-    apiBase = apiBase,
-    workPool = workPool,
-    logLevel = logLevel,
-    logStreams = logStreams,
-    scheduledPool = scheduledPool
+  APIProvider.ModelsLab,
+  apiKey = apiKey,
+  apiBase = apiBase,
+  workPool = workPool,
+  logLevel = logLevel,
+  logStreams = logStreams,
+  scheduledPool = scheduledPool
 ) {
 
-    override fun authorize(
-        request: HttpRequest,
-        apiProvider: APIProvider
-    ) {
-        request.addHeader("Content-Type", "application/json")
-        request.addHeader("Accept", "application/json")
-        // ModelsLab uses API key in the request body, not headers
+  override fun authorize(
+    request: HttpRequest,
+    apiProvider: APIProvider
+  ) {
+    request.addHeader("Content-Type", "application/json")
+    request.addHeader("Accept", "application/json")
+    // ModelsLab uses API key in the request body, not headers
+  }
+
+  override fun chat(
+    chatRequest: ModelSchema.ChatRequest,
+    model: ChatModel,
+    logStreams: MutableList<java.io.BufferedOutputStream>
+  ): ModelSchema.ChatResponse {
+    return modelsLabThrottle.runWithPermit {
+      val modelsLabRequest = toModelsLab(chatRequest)
+      val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
+        .writeValueAsString(modelsLabRequest)
+
+      val rawResponse = post("$apiBase/llm/chat", json, APIProvider.ModelsLab)
+      val responseJson = fromModelsLab(rawResponse, this)
+
+      val response: ModelSchema.ChatResponse =
+        JsonUtil.objectMapper().readValue(responseJson, ModelSchema.ChatResponse::class.java)
+      if (response.usage != null && model is ChatModel) {
+        onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
+      }
+      response
     }
+  }
 
-    override fun chat(
-        chatRequest: ModelSchema.ChatRequest,
-        model: ChatModel,
-        logStreams: MutableList<java.io.BufferedOutputStream>
-    ): ModelSchema.ChatResponse {
-        return modelsLabThrottle.runWithPermit {
-            val modelsLabRequest = toModelsLab(chatRequest)
-            val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
-                .writeValueAsString(modelsLabRequest)
+  companion object {
+    private val modelsLabThrottle = Semaphore(1)
+    private val modelslab_chatRequest_prototype = ModelsLabDataModel.ChatRequest(
+      max_new_tokens = 1000,
+      no_repeat_ngram_size = 5,
+    )
 
-            val rawResponse = post("$apiBase/llm/chat", json, APIProvider.ModelsLab)
-            val responseJson = fromModelsLab(rawResponse, this)
-
-            val response: ModelSchema.ChatResponse =
-                JsonUtil.objectMapper().readValue(responseJson, ModelSchema.ChatResponse::class.java)
-            if (response.usage != null && model is ChatModel) {
-                onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
-            }
-            response
-        }
-    }
-
-    companion object {
-        private val modelsLabThrottle = Semaphore(1)
-        private val modelslab_chatRequest_prototype = ModelsLabDataModel.ChatRequest(
-            max_new_tokens = 1000,
-            no_repeat_ngram_size = 5,
-        )
-
-        fun fromModelsLab(rawResponse: String, client: ModelsLabChatClient): String {
-            val response = JsonUtil.objectMapper().readValue(rawResponse, ModelsLabDataModel.ChatResponse::class.java)
-            return when (response.status) {
-                "success" -> {
-                    JsonUtil.toJson(
-                        ModelSchema.ChatResponse(
-                            id = response.chat_id, choices = listOf(
-                                ModelSchema.ChatChoice(
-                                    message = ModelSchema.ChatMessageResponse(content = response.message), index = 0
-                                )
-                            ), usage = response.meta?.let {
-                                ModelSchema.Usage(
-                                    prompt_tokens = it.max_new_tokens?.toLong() ?: 0,
-                                    completion_tokens = 0,
-                                    total_tokens = it.max_new_tokens?.toLong() ?: 0
-                                )
-                            })
-                    )
-                }
-
-                "processing" -> {
-                    val seconds = response?.eta ?: 1
-                    client.log(Level.INFO, "Chat response is still processing; waiting ${seconds}s and trying again.")
-                    Thread.sleep(seconds * 1000L)
-                    fromModelsLab(
-                        client.post(
-                            "${client.apiBase}/llm/get_queued_response",
-                            JsonUtil.objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(
-                                mapOf(
-                                    "chat_id" to (response.meta?.chat_id ?: response.chat_id),
-                                    "key" to client.apiKey.decrypt
-                                )
-                            ),
-                            APIProvider.ModelsLab,
-                        ),
-                        client
-                    )
-                }
-
-                "error" -> {
-                    throw RuntimeException("Error in chat request: ${response.message}\n$rawResponse")
-                }
-
-                "failed" -> {
-                    throw RuntimeException("Chat request failed: ${response.message}\n$rawResponse")
-                }
-
-                else -> throw RuntimeException("Unknown status: ${response.status}\n${response.message}\n$rawResponse")
-            }
+    fun fromModelsLab(rawResponse: String, client: ModelsLabChatClient): String {
+      val response = JsonUtil.objectMapper().readValue(rawResponse, ModelsLabDataModel.ChatResponse::class.java)
+      return when (response.status) {
+        "success" -> {
+          JsonUtil.toJson(
+            ModelSchema.ChatResponse(
+              id = response.chat_id, choices = listOf(
+                ModelSchema.ChatChoice(
+                  message = ModelSchema.ChatMessageResponse(content = response.message), index = 0
+                )
+              ), usage = response.meta?.let {
+                ModelSchema.Usage(
+                  prompt_tokens = it.max_new_tokens?.toLong() ?: 0,
+                  completion_tokens = 0,
+                  total_tokens = it.max_new_tokens?.toLong() ?: 0
+                )
+              })
+          )
         }
 
-        fun toModelsLab(chatRequest: ModelSchema.ChatRequest) = modelslab_chatRequest_prototype.copy(
-            model_id = chatRequest.model,
-            system_prompt = chatRequest.messages.filter { it.role == ModelSchema.Role.system }.joinToString("\n") {
-                it.content?.joinToString("\n") { it.text ?: "" } ?: ""
-            },
-            prompt = chatRequest.messages.filter { it.role != ModelSchema.Role.system }.joinToString("\n") {
-                it.content?.joinToString("\n") { it.text ?: "" } ?: ""
-            },
-            temperature = chatRequest.temperature,
-        )
+        "processing" -> {
+          val seconds = response?.eta ?: 1
+          client.log(Level.INFO, "Chat response is still processing; waiting ${seconds}s and trying again.")
+          Thread.sleep(seconds * 1000L)
+          fromModelsLab(
+            client.post(
+              "${client.apiBase}/llm/get_queued_response",
+              JsonUtil.objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(
+                mapOf(
+                  "chat_id" to (response.meta?.chat_id ?: response.chat_id),
+                  "key" to client.apiKey.decrypt
+                )
+              ),
+              APIProvider.ModelsLab,
+            ),
+            client
+          )
+        }
 
+        "error" -> {
+          throw RuntimeException("Error in chat request: ${response.message}\n$rawResponse")
+        }
+
+        "failed" -> {
+          throw RuntimeException("Chat request failed: ${response.message}\n$rawResponse")
+        }
+
+        else -> throw RuntimeException("Unknown status: ${response.status}\n${response.message}\n$rawResponse")
+      }
     }
+
+    fun toModelsLab(chatRequest: ModelSchema.ChatRequest) = modelslab_chatRequest_prototype.copy(
+      model_id = chatRequest.model,
+      system_prompt = chatRequest.messages.filter { it.role == ModelSchema.Role.system }.joinToString("\n") {
+        it.content?.joinToString("\n") { it.text ?: "" } ?: ""
+      },
+      prompt = chatRequest.messages.filter { it.role != ModelSchema.Role.system }.joinToString("\n") {
+        it.content?.joinToString("\n") { it.text ?: "" } ?: ""
+      },
+      temperature = chatRequest.temperature,
+    )
+
+  }
 }

@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | WaterfallMode</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
     <!-- Mermaid for Diagram Rendering -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
@@ -91,7 +92,8 @@
         <div class="breadcrumbs">Home > Core > Cognitive Modes</div>
         <h1>WaterfallMode</h1>
         <p class="pitch">
-            The "Plan-Ahead" engine: Implements a structured <code>Plan -> Review -> Execute</code> strategy for well-defined goals requiring human oversight.
+            The "Plan-Ahead" engine: Implements a structured <code>Plan -> Review -> Execute</code> strategy for
+            well-defined goals requiring human oversight.
         </p>
         <div class="badges">
             <span class="badge">Core Architecture</span>
@@ -150,19 +152,27 @@
         </nav>
 
         <!-- TAB: OVERVIEW -->
-        <div id="tab-overview" class="tab-pane active">
+        <div class="tab-pane active" id="tab-overview">
             <h3>The Waterfall Lifecycle</h3>
-            <p>Unlike adaptive modes that "think as they go," WaterfallMode forces a separation between planning and action.</p>
+            <p>Unlike adaptive modes that "think as they go," WaterfallMode forces a separation between planning and
+                action.</p>
             <ol>
-                <li><strong>Plan Generation:</strong> The agent analyzes the request and generates a full <code>TaskBreakdown</code>.</li>
-                <li><strong>Review (Discussable):</strong> If <code>autoFix</code> is false, the system pauses. The user can chat with the agent to refine the plan steps before any side effects occur.</li>
-                <li><strong>Variable Substitution:</strong> If using a <code>planFile</code>, placeholders like <code>{{target_env}}</code> are injected with runtime values.</li>
-                <li><strong>Execution:</strong> The <code>TaskOrchestrator</code> executes the validated graph sequentially.</li>
+                <li><strong>Plan Generation:</strong> The agent analyzes the request and generates a full <code>TaskBreakdown</code>.
+                </li>
+                <li><strong>Review (Discussable):</strong> If <code>autoFix</code> is false, the system pauses. The user
+                    can chat with the agent to refine the plan steps before any side effects occur.
+                </li>
+                <li><strong>Variable Substitution:</strong> If using a <code>planFile</code>, placeholders like <code>{{target_env}}</code>
+                    are injected with runtime values.
+                </li>
+                <li><strong>Execution:</strong> The <code>TaskOrchestrator</code> executes the validated graph
+                    sequentially.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: CONFIG -->
-        <div id="tab-config" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-config" style="display:none;">
             <h3>WaterfallModeConfig</h3>
             <table class="docs-table">
                 <thead>
@@ -188,7 +198,7 @@
         </div>
 
         <!-- TAB: IMPLEMENTATION -->
-        <div id="tab-implementation" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-implementation" style="display:none;">
             <h3>Kotlin Implementation Skeleton</h3>
             <pre><code class="language-kotlin">
 // From WaterfallMode.kt

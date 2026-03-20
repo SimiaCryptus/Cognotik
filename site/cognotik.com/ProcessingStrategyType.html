@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | ProcessingStrategyType</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -201,7 +202,8 @@
         <div class="breadcrumbs">Home > Tools > Online > Processing > ProcessingStrategyType</div>
         <h1>ProcessingStrategyType</h1>
         <p class="pitch">
-            A factory enumeration providing specialized LLM-driven strategies for transforming raw web content into structured, actionable data.
+            A factory enumeration providing specialized LLM-driven strategies for transforming raw web content into
+            structured, actionable data.
         </p>
         <div class="badges">
             <span class="badge">Type: Enum Factory</span>
@@ -229,7 +231,9 @@ strategy.setSchema(productSchema)
         <div class="panel">
             <div class="panel-header"><span>👁️</span> Resulting Output</div>
             <div class="mock-ui-content">
-                <div style="color: var(--accent-primary); font-weight: bold; margin-bottom: 0.5rem;">Schema Extraction Result</div>
+                <div style="color: var(--accent-primary); font-weight: bold; margin-bottom: 0.5rem;">Schema Extraction
+                    Result
+                </div>
                 <div style="background: #000; padding: 0.75rem; border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
                     {<br>
                     &nbsp;&nbsp;"product_name": "Industrial Drill",<br>
@@ -249,7 +253,7 @@ strategy.setSchema(productSchema)
             <button onclick="switchTab('integration')">Integration</button>
         </nav>
 
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3 style="margin-top: 0;">Available Strategies</h3>
             <table class="industrial-table">
                 <thead>
@@ -288,28 +292,33 @@ strategy.setSchema(productSchema)
                 </tbody>
             </table>
         </div>
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3 style="margin-top: 0;">Lifecycle & Configuration</h3>
             <div class="process-step">
                 <h4>1. Strategy Instantiation</h4>
-                <p>Strategies are created via the <code>createStrategy()</code> abstract method. This ensures that the correct implementation class (e.g., <code>FactCheckingStrategy</code>) is initialized with default parameters.</p>
+                <p>Strategies are created via the <code>createStrategy()</code> abstract method. This ensures that the
+                    correct implementation class (e.g., <code>FactCheckingStrategy</code>) is initialized with default
+                    parameters.</p>
             </div>
             <div class="process-step">
                 <h4>2. Context Injection</h4>
-                <p>Before execution, the strategy is typically configured with specific context, such as a target JSON schema or a list of facts to verify.</p>
+                <p>Before execution, the strategy is typically configured with specific context, such as a target JSON
+                    schema or a list of facts to verify.</p>
             </div>
             <div class="process-step">
                 <h4>3. LLM Execution</h4>
-                <p>The strategy processes the input HTML/Text through a specialized prompt segment designed for the specific task, optimizing for token efficiency and accuracy.</p>
+                <p>The strategy processes the input HTML/Text through a specialized prompt segment designed for the
+                    specific task, optimizing for token efficiency and accuracy.</p>
             </div>
             <div class="process-step">
                 <h4>4. Validation</h4>
-                <p>Output is validated against the expected format (e.g., ensuring <code>SchemaExtraction</code> returns valid JSON) before being returned to the orchestrator.</p>
+                <p>Output is validated against the expected format (e.g., ensuring <code>SchemaExtraction</code> returns
+                    valid JSON) before being returned to the orchestrator.</p>
             </div>
         </div>
 
 
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3 style="margin-top: 0;">Kotlin Implementation</h3>
             <div class="panel">
                 <div class="panel-header">Orchestration Example</div>

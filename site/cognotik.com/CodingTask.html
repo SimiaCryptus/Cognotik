@@ -3,19 +3,20 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | CodingTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Showcase -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-  <script type="module" src="assets/scripts/components/footer.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/footer.js" type="module"></script>
 
     <style>
         :root {
@@ -199,14 +200,14 @@
 
 <cognotik-header current-page="tasks"></cognotik-header>
 
-  <main class="page-container">
+<main class="page-container">
 
     <!-- 1. HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Runtime > CodingTask</div>
         <h1>CodingTask</h1>
         <p class="pitch">
-            A high-performance execution engine bridging LLM code generation with live runtimes. 
+            A high-performance execution engine bridging LLM code generation with live runtimes.
             Orchestrates iterative feedback loops, automatic error correction, and multi-format execution transcripts.
         </p>
         <div class="badges">
@@ -245,18 +246,20 @@ val task = CodingTask(
             <div class="panel-header"><span>👁️</span> SessionTask UI</div>
             <div class="mock-ui-content">
                 <div class="session-task-node">
-                          <div style="font-weight: 600; margin-bottom: var(--space-2);">Code</div>
+                    <div style="font-weight: 600; margin-bottom: var(--space-2);">Code</div>
                     <div style="background: #0d1117; padding: 0.5rem; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: #d1d5db;">
-                        <span style="color: #ff7b72;">val</span> user = api.getUser(<span style="color: #a5d6ff;">"123"</span>)<br>
+                        <span style="color: #ff7b72;">val</span> user = api.getUser(<span
+                            style="color: #a5d6ff;">"123"</span>)<br>
                         println(<span style="color: #a5d6ff;">"User: ${user.name}"</span>)
                     </div>
                 </div>
-                      <div class="session-task-node" style="border-left-color: var(--border-subtle);">
+                <div class="session-task-node" style="border-left-color: var(--border-subtle);">
                     <span class="play-button">▶ Run</span>
                     <span style="color: var(--text-dim); font-size: 0.8rem;">Click to execute in KotlinRuntime</span>
                 </div>
                 <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 1rem;">
-                    <a href="#" style="color: var(--accent-primary); text-decoration: none;">View Transcript (MD/HTML/PDF)</a>
+                    <a href="#" style="color: var(--accent-primary); text-decoration: none;">View Transcript
+                        (MD/HTML/PDF)</a>
                 </div>
             </div>
         </div>
@@ -267,9 +270,8 @@ val task = CodingTask(
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Browse generated transcripts and execution artifacts in the <code>CodingTask</code> test workspace.
         </p>
-          <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: var(--space-4);"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: var(--space-4);"></div>
     </section>
-
 
 
     <!-- 3. TABS -->
@@ -281,7 +283,7 @@ val task = CodingTask(
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane">
+        <div class="tab-pane" id="tab-docs">
             <h3>Constructor Parameters</h3>
             <table class="docs-table">
                 <thead>
@@ -365,19 +367,29 @@ val task = CodingTask(
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>Task Lifecycle</h3>
             <ol style="color: var(--text-main); line-height: 2;">
-                <li><strong>Initialization:</strong> <code>start()</code> creates a <code>subTask</code> and optionally wraps logic in a <code>Retryable</code> container.</li>
-                <li><strong>Generation:</strong> <code>displayCode()</code> uses <code>CodeAgent</code> to generate code or extract it from a markdown-formatted request.</li>
-                <li><strong>Review:</strong> <code>displayCodeAndFeedback()</code> renders the code and checks <code>autoFix</code>. If false, it waits for user input.</li>
-                <li><strong>Execution:</strong> <code>execute()</code> invokes the <code>codeRuntime</code>, capturing <code>resultValue</code> and <code>resultOutput</code> into a <code>TabbedDisplay</code>.</li>
-                <li><strong>Persistence:</strong> <code>transcript()</code> automatically exports the session to <code>.md</code>, <code>.html</code>, and <code>.pdf</code> in the workspace.</li>
+                <li><strong>Initialization:</strong> <code>start()</code> creates a <code>subTask</code> and optionally
+                    wraps logic in a <code>Retryable</code> container.
+                </li>
+                <li><strong>Generation:</strong> <code>displayCode()</code> uses <code>CodeAgent</code> to generate code
+                    or extract it from a markdown-formatted request.
+                </li>
+                <li><strong>Review:</strong> <code>displayCodeAndFeedback()</code> renders the code and checks <code>autoFix</code>.
+                    If false, it waits for user input.
+                </li>
+                <li><strong>Execution:</strong> <code>execute()</code> invokes the <code>codeRuntime</code>, capturing
+                    <code>resultValue</code> and <code>resultOutput</code> into a <code>TabbedDisplay</code>.
+                </li>
+                <li><strong>Persistence:</strong> <code>transcript()</code> automatically exports the session to <code>.md</code>,
+                    <code>.html</code>, and <code>.pdf</code> in the workspace.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Embedded Execution (Headless)</h3>
             <p style="color: var(--text-dim); margin-bottom: 1rem;">
                 Use the <code>UnifiedHarness</code> to invoke coding tasks programmatically in CI/CD or CLI tools.
@@ -397,7 +409,7 @@ harness.runTask(
 )
 
             </code></pre>
-            
+
             <h3 style="margin-top: 2rem;">Direct Instantiation</h3>
             <pre><code class="language-kotlin">
 val codingTask = CodingTask(
@@ -425,8 +437,8 @@ codingTask.start(CodeRequest(listOf("Plot a histogram of 'age'" to Role.user)))<
     }
 </script>
 <script type="module">
-      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
-    initFileTree('#file-tree-demo', 'webui/workspaces/Coding/');
+    import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
+  initFileTree('#file-tree-demo', 'webui/workspaces/Coding/');
 </script>
 
 

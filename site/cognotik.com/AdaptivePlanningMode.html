@@ -2,42 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
 
     <!-- SEO Meta Tags -->
     <title>AdaptivePlanningMode | Cognotik</title>
-    <meta name="description" content="The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the agent's problem-solving persona.">
-    <meta name="keywords" content="AI coding, autonomous agents, AdaptivePlanningMode, cognitive modes, Cognotik">
+    <meta content="The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the agent's problem-solving persona."
+          name="description">
+    <meta content="AI coding, autonomous agents, AdaptivePlanningMode, cognitive modes, Cognotik" name="keywords">
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="AdaptivePlanningMode | Cognotik">
-    <meta property="og:description" content="The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the agent's problem-solving persona.">
-    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
-    <meta property="og:url" content="https://cognotik.com/AdaptivePlanningMode.html">
-    <meta property="og:type" content="website">
+    <meta content="AdaptivePlanningMode | Cognotik" property="og:title">
+    <meta content="The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the agent's problem-solving persona."
+          property="og:description">
+    <meta content="https://cognotik.com/assets/images/og-image.png" property="og:image">
+    <meta content="https://cognotik.com/AdaptivePlanningMode.html" property="og:url">
+    <meta content="website" property="og:type">
 
     <!-- Favicon Suite -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-    <meta name="theme-color" content="#0f1115">
+    <link href="assets/icons/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="assets/icons/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
+    <meta content="#0f1115" name="theme-color">
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-
-
-
+    <link href="assets/styles/main.css" rel="stylesheet">
 
 
-
-
-
-
-    <script type="module" src="assets/scripts/components/header.js"></script>
-    <script type="module" src="assets/scripts/components/footer.js"></script>
+    <script src="assets/scripts/components/header.js" type="module"></script>
+    <script src="assets/scripts/components/footer.js" type="module"></script>
     <script src="assets/scripts/vendor/mermaid.min.js"></script>
     <script>mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose' });</script>
 </head>
@@ -52,7 +48,8 @@
         <nav class="text-caption text-tertiary mb-2">Home > Core > Cognitive Modes</nav>
         <h1 class="text-title mb-2">AdaptivePlanningMode</h1>
         <p class="text-body-lg text-secondary mb-4">
-            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the agent's problem-solving persona.
+            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the
+            agent's problem-solving persona.
         </p>
         <div class="flex gap-2">
             <span class="badge badge-primary">Core Architecture</span>
@@ -107,7 +104,8 @@
                             C --> E[Refute Hypothesis]
                             E --> A
                         </div>
-                        <p class="mt-4"><strong>Thinking:</strong> Network checks passed. Switching strategy to Code Analysis.</p>
+                        <p class="mt-4"><strong>Thinking:</strong> Network checks passed. Switching strategy to Code
+                            Analysis.</p>
                         <p class="text-accent"><em>Executing: RunCodeTask...</em></p>
                     </div>
                 </div>
@@ -116,7 +114,6 @@
     </section>
 
     <!-- 3. TECHNICAL DETAILS -->
-
 
 
     <section class="tabs mt-12" data-tabs>
@@ -131,69 +128,75 @@
             <div class="tab-panel active" data-tab-panel="modes" role="tabpanel">
                 <table class="docs-table">
                     <thead>
-                        <tr>
-                            <th>Mode Name</th>
-                            <th>Architecture</th>
-                            <th>Best Use Case</th>
-                        </tr>
+                    <tr>
+                        <th>Mode Name</th>
+                        <th>Architecture</th>
+                        <th>Best Use Case</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td><strong>WaterfallMode</strong></td>
-                            <td><code class="code-inline">Plan -> Review -> Execute</code></td>
-                            <td>Well-defined problems where the user must approve the entire roadmap before execution begins.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>ConversationalMode</strong></td>
-                            <td><code class="code-inline">Listen -> Act -> Reply</code></td>
-                            <td>Interactive debugging, exploratory sessions, or simple "Chat with Code" workflows.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>AdaptivePlanningMode</strong></td>
-                            <td><code class="code-inline">Loop(Think -> Act -> Reflect)</code></td>
-                            <td>Complex, ambiguous goals requiring research, trial-and-error, and self-correction.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>HierarchicalPlanningMode</strong></td>
-                            <td><code class="code-inline">Tree(Decompose -> Delegate)</code></td>
-                            <td>Massive projects. Breaks goals into sub-goals and spawns SubPlanningTasks to handle them.</td>
-                        </tr>
+                    <tr>
+                        <td><strong>WaterfallMode</strong></td>
+                        <td><code class="code-inline">Plan -> Review -> Execute</code></td>
+                        <td>Well-defined problems where the user must approve the entire roadmap before execution
+                            begins.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>ConversationalMode</strong></td>
+                        <td><code class="code-inline">Listen -> Act -> Reply</code></td>
+                        <td>Interactive debugging, exploratory sessions, or simple "Chat with Code" workflows.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AdaptivePlanningMode</strong></td>
+                        <td><code class="code-inline">Loop(Think -> Act -> Reflect)</code></td>
+                        <td>Complex, ambiguous goals requiring research, trial-and-error, and self-correction.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HierarchicalPlanningMode</strong></td>
+                        <td><code class="code-inline">Tree(Decompose -> Delegate)</code></td>
+                        <td>Massive projects. Breaks goals into sub-goals and spawns SubPlanningTasks to handle them.
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
 
             <!-- TAB: STRATEGIES -->
             <div class="tab-panel" data-tab-panel="strategies" role="tabpanel">
-                <p class="mb-4 text-secondary">Strategies define the "Persona" and internal state structure. This separates control flow from reasoning style.</p>
+                <p class="mb-4 text-secondary">Strategies define the "Persona" and internal state structure. This
+                    separates control flow from reasoning style.</p>
                 <table class="docs-table">
                     <thead>
-                        <tr>
-                            <th>Strategy</th>
-                            <th>Internal State</th>
-                            <th>Reasoning Style</th>
-                        </tr>
+                    <tr>
+                        <th>Strategy</th>
+                        <th>Internal State</th>
+                        <th>Reasoning Style</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td><strong>Project Manager</strong></td>
-                            <td><code class="code-inline">ReasoningState</code></td>
-                            <td>Generalist. Tracks short-term vs. long-term goals and manages a task queue.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Scientific Method</strong></td>
-                            <td><code class="code-inline">ScientificState</code></td>
-                            <td>Debugger. Formulates hypotheses, tracks established facts, and attempts to falsify theories.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Agile Developer</strong></td>
-                            <td><code class="code-inline">AgileState</code></td>
-                            <td>Coder. Follows a TDD loop: Test Failing -> Implementing -> Refactoring.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Critical Auditor</strong></td>
-                            <td><code class="code-inline">AuditState</code></td>
-                            <td>Security. Adversarial mindset designed to find flaws rather than fix them.</td>
-                        </tr>
+                    <tr>
+                        <td><strong>Project Manager</strong></td>
+                        <td><code class="code-inline">ReasoningState</code></td>
+                        <td>Generalist. Tracks short-term vs. long-term goals and manages a task queue.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Scientific Method</strong></td>
+                        <td><code class="code-inline">ScientificState</code></td>
+                        <td>Debugger. Formulates hypotheses, tracks established facts, and attempts to falsify
+                            theories.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Agile Developer</strong></td>
+                        <td><code class="code-inline">AgileState</code></td>
+                        <td>Coder. Follows a TDD loop: Test Failing -> Implementing -> Refactoring.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Critical Auditor</strong></td>
+                        <td><code class="code-inline">AuditState</code></td>
+                        <td>Security. Adversarial mindset designed to find flaws rather than fix them.</td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
@@ -234,7 +237,8 @@ class MyCustomMode(val config: OrchestrationConfig) {
         <div class="grid md:grid-cols-2 gap-8">
             <div>
                 <h3 class="text-subheading mb-2">Configuration</h3>
-                <p class="text-secondary mb-4">Reference the mode in your <code class="code-inline">OrchestrationConfig</code> to enable autonomous planning.</p>
+                <p class="text-secondary mb-4">Reference the mode in your <code
+                        class="code-inline">OrchestrationConfig</code> to enable autonomous planning.</p>
                 <div class="code-block">
                     <pre><code class="language-kotlin">
 val config = OrchestrationConfig(
@@ -247,11 +251,17 @@ val config = OrchestrationConfig(
             </div>
             <div>
                 <h3 class="text-subheading mb-2">Observability Standards</h3>
-                <p class="text-secondary mb-4">All modes must adhere to the <strong>Transparency First</strong> principle.</p>
+                <p class="text-secondary mb-4">All modes must adhere to the <strong>Transparency First</strong>
+                    principle.</p>
                 <ul class="text-body text-secondary">
-                    <li class="mb-2"><strong>Mermaid Diagrams:</strong> Visualize the state machine in the transcript.</li>
-                    <li class="mb-2"><strong>Collapsed Details:</strong> Use <code class="code-inline">&lt;details&gt;</code> tags for raw JSON state dumps.</li>
-                    <li class="mb-2"><strong>Graceful Degradation:</strong> Catch LLM hallucinations and attempt to simplify prompts before crashing.</li>
+                    <li class="mb-2"><strong>Mermaid Diagrams:</strong> Visualize the state machine in the transcript.
+                    </li>
+                    <li class="mb-2"><strong>Collapsed Details:</strong> Use <code
+                            class="code-inline">&lt;details&gt;</code> tags for raw JSON state dumps.
+                    </li>
+                    <li class="mb-2"><strong>Graceful Degradation:</strong> Catch LLM hallucinations and attempt to
+                        simplify prompts before crashing.
+                    </li>
                 </ul>
             </div>
         </div>
@@ -259,7 +269,7 @@ val config = OrchestrationConfig(
 
 </main>
 <cognotik-footer></cognotik-footer>
-<script type="module" src="assets/scripts/core.js"></script>
+<script src="assets/scripts/core.js" type="module"></script>
 <script src="assets/scripts/vendor/prism.js"></script>
 
 <script>

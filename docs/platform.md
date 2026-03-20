@@ -98,7 +98,8 @@ val threadPoolManager = ApplicationServices.threadPoolManager
 
 ### 4. Thread Pool Management
 
-The `ThreadPoolManager` provides execution contexts scoped to specific sessions and users, ensuring proper resource isolation and logging:
+The `ThreadPoolManager` provides execution contexts scoped to specific sessions and users, ensuring proper resource
+isolation and logging:
 
 ```kotlin
 // Get a standard thread pool for a session
@@ -185,16 +186,19 @@ val messageIds = metadataStorage.getMessageIds(user, session)
 ```
 
 ## Authentication & Authorization
+
 ### Authentication
+
 The `AuthenticationManager` handles user identity:
+
 - Maps access tokens to `User` objects.
 - Manages the `sessionId` cookie.
 - Provides a `defaultUser` (e.g., `user@localhost`) for local development.
 
-
 ### File-based Authorization
 
-The `AuthorizationManager` uses resource files (e.g., `/permissions/read.txt`) to define access. It supports several operation types: `Read`, `Write`, `Public`, `Share`, `Execute`, `Delete`, and `Admin`.
+The `AuthorizationManager` uses resource files (e.g., `/permissions/read.txt`) to define access. It supports several
+operation types: `Read`, `Write`, `Public`, `Share`, `Execute`, `Delete`, and `Admin`.
 
 **Permission Files:**
 
@@ -263,11 +267,12 @@ val url = awsPlatform.upload("path/to/file.txt", "text/plain", fileBytes)
 val encrypted = awsPlatform.encrypt(data, "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012")
 val decrypted = awsPlatform.decrypt(encryptedData)
 ```
+
 **Configuration Properties:**
+
 - `share_bucket`: S3 bucket for uploads.
 - `share_base`: Base URL for shared links.
 - `aws.profile`: AWS CLI profile for credentials.
-
 
 ## Configuration
 

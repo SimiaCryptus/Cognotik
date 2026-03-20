@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | TaskType Registry</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
+
     <!-- jQuery & FileTree -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         .reality-check-grid {
@@ -87,7 +88,8 @@
         <div class="breadcrumbs">Core / Orchestration</div>
         <h1>TaskType Registry</h1>
         <p class="pitch">
-            The central metadata engine that defines, registers, and instantiates all AI-driven tasks within the Cognotik ecosystem.
+            The central metadata engine that defines, registers, and instantiates all AI-driven tasks within the
+            Cognotik ecosystem.
         </p>
         <div class="badges">
             <span class="badge">Core Component</span>
@@ -133,7 +135,7 @@ registerConstructor(
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Browse the test workspace artifacts for the TaskType registry.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
 
     <!-- 3. TABS -->
@@ -144,10 +146,12 @@ registerConstructor(
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Registry Architecture</h3>
-            <p><code>TaskType</code> is a <code>DynamicEnum</code> that maps task identifiers to their implementation classes. It ensures that every task has a valid <code>ExecutionConfig</code> and <code>TypeConfig</code>.</p>
-            
+            <p><code>TaskType</code> is a <code>DynamicEnum</code> that maps task identifiers to their implementation
+                classes. It ensures that every task has a valid <code>ExecutionConfig</code> and <code>TypeConfig</code>.
+            </p>
+
             <table class="docs-table">
                 <thead>
                 <tr>
@@ -177,10 +181,11 @@ registerConstructor(
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Invoking Tasks via UnifiedHarness</h3>
-            <p>When embedding Cognotik, use <code>TaskType</code> constants to execute specific tools programmatically.</p>
-            
+            <p>When embedding Cognotik, use <code>TaskType</code> constants to execute specific tools programmatically.
+            </p>
+
             <pre><code class="language-kotlin">
 // 1. Initialize the Harness
 val harness = UnifiedHarness(serverless = true, ...)
@@ -199,7 +204,8 @@ harness.runTask(
             </code></pre>
 
             <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(88, 166, 255, 0.1); border-left: 4px solid var(--accent-primary);">
-                <strong>Pro Tip:</strong> Use <code>TaskType.values()</code> to dynamically discover all available capabilities at runtime for building custom UIs or CLI tools.
+                <strong>Pro Tip:</strong> Use <code>TaskType.values()</code> to dynamically discover all available
+                capabilities at runtime for building custom UIs or CLI tools.
             </div>
         </div>
     </section>

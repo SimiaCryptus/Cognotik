@@ -16,39 +16,48 @@
     {
       "label": "Tools",
       "type": "submenu",
-      "items":       [ {
-        "label" : "Execution",
-        "type" : "dropdown",
-        "src" : "execution.json"
-      }, {
-        "label" : "File",
-        "type" : "dropdown",
-        "src" : "file.json"
-      }, {
-        "label" : "Games",
-        "type" : "dropdown",
-        "src" : "games.json"
-      }, {
-        "label" : "Online",
-        "type" : "dropdown",
-        "src" : "online.json"
-      }, {
-        "label" : "Reasoning",
-        "type" : "dropdown",
-        "src" : "reasoning.json"
-      }, {
-        "label" : "Session",
-        "type" : "dropdown",
-        "src" : "session.json"
-      }, {
-        "label" : "Social",
-        "type" : "dropdown",
-        "src" : "social.json"
-      }, {
-        "label" : "Writing",
-        "type" : "dropdown",
-        "src" : "writing.json"
-      } ]
+      "items": [
+        {
+          "label": "Execution",
+          "type": "dropdown",
+          "src": "execution.json"
+        },
+        {
+          "label": "File",
+          "type": "dropdown",
+          "src": "file.json"
+        },
+        {
+          "label": "Games",
+          "type": "dropdown",
+          "src": "games.json"
+        },
+        {
+          "label": "Online",
+          "type": "dropdown",
+          "src": "online.json"
+        },
+        {
+          "label": "Reasoning",
+          "type": "dropdown",
+          "src": "reasoning.json"
+        },
+        {
+          "label": "Session",
+          "type": "dropdown",
+          "src": "session.json"
+        },
+        {
+          "label": "Social",
+          "type": "dropdown",
+          "src": "social.json"
+        },
+        {
+          "label": "Writing",
+          "type": "dropdown",
+          "src": "writing.json"
+        }
+      ]
     },
     {
       "label": "Docs",

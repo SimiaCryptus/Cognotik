@@ -72,7 +72,7 @@ open class KotlinCodeRuntime(
         }
     }
 
-    override fun run(code: String): Any? {
+    override fun run(code: String, user: com.simiacryptus.cognotik.platform.model.User): Any? {
         val wrappedCode = wrapCode(code)
         log.debug(
             "Running:\n   ${

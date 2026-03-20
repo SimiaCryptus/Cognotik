@@ -5,10 +5,12 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
+import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.util.DocProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.UpdateModes
+import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -27,6 +29,11 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Example:
  *   GET /docops?sessionId=U-20260310-i2oc2f&doc=ops/foo.md&target=output.md
  *
+ * Optional model override parameters:
+ * - smartModel: (Optional) Model ID to use as the smart/primary model (e.g., "claude-3-5-sonnet-20241022")
+ * - fastModel: (Optional) Model ID to use as the fast/secondary model (e.g., "claude-3-5-haiku-20241022")
+ * - imageModel: (Optional) Model ID to use as the image model
+ *
  * The servlet parses the specified markdown file for frontmatter specifications
  * and executes the resulting documentation processing tasks.
  */
@@ -34,6 +41,7 @@ class DocProcessorServlet(
   private val dataStorage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
   private val smartModel: ChatModel = AnthropicModels.Claude45Haiku,
   private val fastModel: ChatModel = smartModel,
+  private val imageModel: ChatModel = smartModel,
 ) : HttpServlet() {
   override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
     doPost(req, resp)
@@ -56,9 +64,12 @@ class DocProcessorServlet(
     }
     val modeName = req.getParameter("mode") ?: "PatchExisting"
     val updateMode = UpdateModes.fromName(modeName) ?: UpdateModes.PatchExisting
+    val effectiveSmartModel = resolveModel(req.getParameter("smartModel")) ?: smartModel
+    val effectiveFastModel = resolveModel(req.getParameter("fastModel")) ?: fastModel
+    val effectiveImageModel = resolveModel(req.getParameter("imageModel")) ?: imageModel
     try {
       val session = Session(sessionId)
-      val user = UserSettingsManager.defaultUser
+      val user = ApplicationServices.authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
       val sessionDir = dataStorage.getSessionDir(user, session)
       if (!sessionDir.exists() || !sessionDir.isDirectory) {
         resp.status = HttpServletResponse.SC_NOT_FOUND
@@ -81,14 +92,16 @@ class DocProcessorServlet(
         return
       }
       val targetPath = req.getParameter("target")
-      log.info("DocOps request: session=$sessionId, doc=$docPath, target=$targetPath, mode=$modeName")
+      log.info("DocOps request: session=$sessionId, doc=$docPath, target=$targetPath, mode=$modeName, smartModel=${effectiveSmartModel.modelId}, fastModel=${effectiveFastModel.modelId}, imageModel=${effectiveImageModel.modelId}")
       val docProcessor = DocProcessor(
         root = sessionDir,
         docsFolder = sessionDir,
         updateMode = updateMode,
-        fastModel = fastModel,
-        smartModel = smartModel,
+        fastModel = effectiveFastModel,
+        smartModel = effectiveSmartModel,
+        imageModel = effectiveImageModel,
         autoFix = true,
+        user = user,
       )
       val docSpec = docProcessor.parseMarkdownWithFrontmatter(docFile)
       if (docSpec == null) {
@@ -174,6 +187,24 @@ class DocProcessorServlet(
 
   companion object {
     private val log = LoggerFactory.getLogger(DocProcessorServlet::class.java)
+
+    /**
+     * Resolves a model ID string to a ChatModel instance.
+     * Looks up the model in the registered ChatModel values first,
+     * then falls back to creating a generic LLMModel if not found.
+     * Returns null if the input is null or blank.
+     */
+    private fun resolveModel(modelId: String?): ChatModel? {
+      if (modelId.isNullOrBlank()) return null
+      // Look up in registered ChatModel values
+      ChatModel.values().values.find { it.modelId == modelId }?.let { return it }
+      // Fall back: create a generic ChatModel wrapper
+      log.warn("Model ID '{}' not found in registered models; creating unregistered model reference", modelId)
+      return object : ChatModel(modelId = modelId, provider = null) {
+        override fun toString() = modelId
+      }
+    }
+
     fun getCookie(req: HttpServletRequest): String? {
       return req.cookies?.find { it.name == "sessionId" }?.value
     }

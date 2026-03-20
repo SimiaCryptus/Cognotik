@@ -2,40 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
     <!-- SEO Meta Tags -->
     <title>Frontmatter Schema | Cognotik</title>
-    <meta name="description" content="YAML frontmatter schema documentation for DocProcessor - manage relationships between documentation and source code.">
-    <meta name="keywords" content="AI coding, documentation, frontmatter, YAML, DocProcessor, code generation">
+    <meta content="YAML frontmatter schema documentation for DocProcessor - manage relationships between documentation and source code."
+          name="description">
+    <meta content="AI coding, documentation, frontmatter, YAML, DocProcessor, code generation" name="keywords">
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="Frontmatter Schema | Cognotik">
-    <meta property="og:description" content="YAML frontmatter schema documentation for DocProcessor - manage relationships between documentation and source code.">
-    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
-    <meta property="og:url" content="https://cognotik.com/frontmatter.html">
-    <meta property="og:type" content="website">
+    <meta content="Frontmatter Schema | Cognotik" property="og:title">
+    <meta content="YAML frontmatter schema documentation for DocProcessor - manage relationships between documentation and source code."
+          property="og:description">
+    <meta content="https://cognotik.com/assets/images/og-image.png" property="og:image">
+    <meta content="https://cognotik.com/frontmatter.html" property="og:url">
+    <meta content="website" property="og:type">
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Frontmatter Schema | Cognotik">
-    <meta name="twitter:description" content="YAML frontmatter schema documentation for DocProcessor - manage relationships between documentation and source code.">
-    <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+    <meta content="summary_large_image" name="twitter:card">
+    <meta content="Frontmatter Schema | Cognotik" name="twitter:title">
+    <meta content="YAML frontmatter schema documentation for DocProcessor - manage relationships between documentation and source code."
+          name="twitter:description">
+    <meta content="https://cognotik.com/assets/images/twitter-card.png" name="twitter:image">
 
     <!-- Favicon Suite -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-    <link rel="manifest" href="/site.webmanifest">
-    <meta name="theme-color" content="#0f1115">
+    <link href="assets/icons/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="assets/icons/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
+    <link href="assets/icons/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
+    <link href="assets/icons/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
+    <link href="/site.webmanifest" rel="manifest">
+    <meta content="#0f1115" name="theme-color">
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         /* Page-specific styles */
@@ -334,7 +338,7 @@
         </header>
 
         <!-- Overview Section -->
-        <section id="overview" class="doc-section">
+        <section class="doc-section" id="overview">
             <h2>Overview</h2>
             <p>
                 <code>DocProcessor</code> processes markdown files that contain YAML frontmatter blocks.
@@ -347,7 +351,7 @@
         </section>
 
         <!-- Format Section -->
-        <section id="format" class="doc-section">
+        <section class="doc-section" id="format">
             <h2>Frontmatter Format</h2>
             <p>
                 Frontmatter must be enclosed between <code>---</code> delimiters at the start of the markdown file:
@@ -363,11 +367,11 @@ list_key:
         </section>
 
         <!-- Supported Keys Section -->
-        <section id="supported-keys" class="doc-section">
+        <section class="doc-section" id="supported-keys">
             <h2>Supported Keys</h2>
 
             <!-- specifies -->
-            <div id="key-specifies" class="key-card">
+            <div class="key-card" id="key-specifies">
                 <div class="key-card-header">
                     <code>specifies</code>
                     <span class="type-badge">String | List&lt;String&gt;</span>
@@ -399,13 +403,15 @@ specifies:
                         <li>Paths are resolved relative to the markdown file's directory</li>
                         <li>Bracket patterns: <code>file[0-9].txt</code> (matches character ranges)</li>
                         <li>Question mark patterns: <code>file?.txt</code> (matches single character)</li>
-                        <li>Literal paths (without wildcards) are returned even if the file doesn't exist yet, enabling creation of new files</li>
+                        <li>Literal paths (without wildcards) are returned even if the file doesn't exist yet, enabling
+                            creation of new files
+                        </li>
                     </ul>
                 </div>
             </div>
 
             <!-- documents -->
-            <div id="key-documents" class="key-card">
+            <div class="key-card" id="key-documents">
                 <div class="key-card-header">
                     <code>documents</code>
                     <span class="type-badge">String | List&lt;String&gt;</span>
@@ -437,7 +443,7 @@ documents:
             </div>
 
             <!-- transforms -->
-            <div id="key-transforms" class="key-card">
+            <div class="key-card" id="key-transforms">
                 <div class="key-card-header">
                     <code>transforms</code>
                     <span class="type-badge">String | List&lt;String&gt;</span>
@@ -451,8 +457,12 @@ documents:
                     <h4>Format</h4>
                     <p><code>sourcePattern -&gt; destinationPattern</code></p>
                     <ul>
-                        <li><code>sourcePattern</code>: A regex pattern to match source file paths (relative to the doc file's directory)</li>
-                        <li><code>destinationPattern</code>: The destination path with backreferences (<code>$0</code>, <code>$1</code>, <code>$2</code>, etc.)</li>
+                        <li><code>sourcePattern</code>: A regex pattern to match source file paths (relative to the doc
+                            file's directory)
+                        </li>
+                        <li><code>destinationPattern</code>: The destination path with backreferences (<code>$0</code>,
+                            <code>$1</code>, <code>$2</code>, etc.)
+                        </li>
                     </ul>
 
                     <div class="example-block">
@@ -486,7 +496,7 @@ transforms:
             </div>
 
             <!-- generates -->
-            <div id="key-generates" class="key-card">
+            <div class="key-card" id="key-generates">
                 <div class="key-card-header">
                     <code>generates</code>
                     <span class="type-badge">Map | List&lt;Map&gt;</span>
@@ -544,7 +554,7 @@ generates:
             </div>
 
             <!-- related -->
-            <div id="key-related" class="key-card">
+            <div class="key-card" id="key-related">
                 <div class="key-card-header">
                     <code>related</code>
                     <span class="type-badge">String | List&lt;String&gt;</span>
@@ -584,7 +594,7 @@ related:
                 </div>
             </div>
             <!-- task_type -->
-            <div id="key-task-type" class="key-card">
+            <div class="key-card" id="key-task-type">
                 <div class="key-card-header">
                     <code>task_type</code>
                     <span class="type-badge">String</span>
@@ -604,7 +614,8 @@ task_type: FileModification
 task_type: CodeReview</code></pre>
                     </div>
                     <h4>Resolution Priority</h4>
-                    <p>When multiple specifications apply to a single target file, the task type is resolved in this order:</p>
+                    <p>When multiple specifications apply to a single target file, the task type is resolved in this
+                        order:</p>
                     <ol>
                         <li><code>specifies</code> frontmatter (first non-null)</li>
                         <li><code>transforms</code> frontmatter (first non-null)</li>
@@ -624,7 +635,7 @@ task_type: CodeReview</code></pre>
                 </div>
             </div>
             <!-- task_config_json -->
-            <div id="key-task-config-json" class="key-card">
+            <div class="key-card" id="key-task-config-json">
                 <div class="key-card-header">
                     <code>task_config_json</code>
                     <span class="type-badge">String</span>
@@ -642,14 +653,15 @@ task_config_json: ./config/my-task-config.json
 task_config_json: ../shared/task-settings.json</code></pre>
                     </div>
                     <div class="note-box">
-                        <strong>Use Case:</strong> Provide detailed task configuration without cluttering the frontmatter.
+                        <strong>Use Case:</strong> Provide detailed task configuration without cluttering the
+                        frontmatter.
                         Useful for complex task types that require many parameters or when sharing configuration across
                         multiple documentation files.
                     </div>
                 </div>
             </div>
             <!-- overwrite -->
-            <div id="key-overwrite" class="key-card">
+            <div class="key-card" id="key-overwrite">
                 <div class="key-card-header">
                     <code>overwrite</code>
                     <span class="type-badge">String</span>
@@ -701,21 +713,23 @@ overwrite: OverwriteExisting</code></pre>
                     </div>
                     <div class="note-box">
                         <strong>Use Case:</strong> Control how the processor handles existing target files.
-                        Use <code>PatchExisting</code> or <code>PatchToUpdate</code> for incremental updates that preserve manual changes.
+                        Use <code>PatchExisting</code> or <code>PatchToUpdate</code> for incremental updates that
+                        preserve manual changes.
                         Use <code>OverwriteExisting</code> or <code>OverwriteToUpdate</code> for complete regeneration.
                         Use <code>SkipExisting</code> to prevent accidental overwrites.
                     </div>
                 </div>
             </div>
             <!-- prompt -->
-            <div id="key-prompt" class="key-card">
+            <div class="key-card" id="key-prompt">
                 <div class="key-card-header">
                     <code>prompt</code>
                     <span class="type-badge">String</span>
                 </div>
                 <div class="key-card-body">
                     <p>
-                        Specifies a custom prompt string to use as the task description instead of the auto-generated one.
+                        Specifies a custom prompt string to use as the task description instead of the auto-generated
+                        one.
                         Only used when there is exactly one spec for the target file.
                     </p>
                     <div class="example-block">
@@ -725,12 +739,13 @@ specifies: ../src/Main.kt
 prompt: Refactor this file to use coroutines instead of callbacks</code></pre>
                     </div>
                     <div class="note-box">
-                        <strong>Use Case:</strong> Override the default task description with a specific instruction for the AI.
+                        <strong>Use Case:</strong> Override the default task description with a specific instruction for
+                        the AI.
                     </div>
                 </div>
             </div>
             <!-- template_file -->
-            <div id="key-template-file" class="key-card">
+            <div class="key-card" id="key-template-file">
                 <div class="key-card-header">
                     <code>template_file</code>
                     <span class="type-badge">String</span>
@@ -751,7 +766,7 @@ template_file: ./templates/class-template.kt</code></pre>
                 </div>
             </div>
             <!-- data_file -->
-            <div id="key-data-file" class="key-card">
+            <div class="key-card" id="key-data-file">
                 <div class="key-card-header">
                     <code>data_file</code>
                     <span class="type-badge">String</span>
@@ -772,7 +787,8 @@ data_file: ./data/model-config.json</code></pre>
                         transform matches a JSON source file, that JSON file is automatically used as the data source.
                     </div>
                     <div class="note-box">
-                        <strong>Use Case:</strong> Provide structured data that can be used in conjunction with templates
+                        <strong>Use Case:</strong> Provide structured data that can be used in conjunction with
+                        templates
                         for code generation.
                     </div>
                 </div>
@@ -780,7 +796,7 @@ data_file: ./data/model-config.json</code></pre>
         </section>
 
         <!-- Complete Example Section -->
-        <section id="complete-example" class="doc-section">
+        <section class="doc-section" id="complete-example">
             <h2>Complete Example</h2>
             <div class="complete-example">
                 <div class="complete-example-header">api-documentation.md</div>
@@ -813,7 +829,7 @@ This document specifies the API layer implementation...</code></pre>
         </section>
 
         <!-- Processing Behavior Section -->
-        <section id="processing-behavior" class="doc-section">
+        <section class="doc-section" id="processing-behavior">
             <h2>Processing Behavior</h2>
             <ul class="behavior-list">
                 <li>
@@ -831,7 +847,8 @@ This document specifies the API layer implementation...</code></pre>
                     Question mark patterns (<code>file?.txt</code>) match single characters.
                     For <code>transforms</code>, the source pattern is a regex (not a glob) that matches against
                     file paths relative to the doc file's directory.
-                    Literal paths (without wildcards) are returned even if the target file doesn't exist, enabling file creation.
+                    Literal paths (without wildcards) are returned even if the target file doesn't exist, enabling file
+                    creation.
                 </li>
                 <li>
                     <strong>Multiple Specifications:</strong> A single target file can be specified by
@@ -839,111 +856,128 @@ This document specifies the API layer implementation...</code></pre>
                 </li>
                 <li>
                     <strong>Overwrite Modes:</strong> The processor supports different overwrite strategies
-                        for handling existing files.
-                    </li>
-                </ul>
-
-                <h3 id="overwrite-modes">Overwrite Modes</h3>
-                <table class="data-table">
-                    <thead>
-                    <tr>
-                        <th>Mode</th>
-                        <th>Description</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td><code>SkipExisting</code></td>
-                        <td>Skip files that already exist (no processing)</td>
-                    </tr>
-                    <tr>
-                        <td><code>OverwriteExisting</code></td>
-                        <td>Always overwrite existing files with full replacement</td>
-                    </tr>
-                    <tr>
-                        <td><code>OverwriteToUpdate</code></td>
-                        <td>Overwrite only if source/related files are newer than target</td>
-                    </tr>
-                    <tr>
-                        <td><code>PatchExisting</code></td>
-                        <td>Always apply fuzzy patch to existing files</td>
-                    </tr>
-                    <tr>
-                        <td><code>PatchToUpdate</code></td>
-                        <td>Apply fuzzy patch only if source/related files are newer than target (default)</td>
-                    </tr>
-                    </tbody>
-                </table>
-                <h3>File Modification Time Checking</h3>
-                <p>For <code>OverwriteToUpdate</code> and <code>PatchToUpdate</code> modes, the processor compares the target file's last modified time against:</p>
-                <ul class="behavior-list">
-                    <li>The documentation file itself</li>
-                    <li>All related files specified in the frontmatter</li>
-                    <li>All source/input files that contribute to the target</li>
-                </ul>
-                <p>If any of these are newer than the target, the target will be processed.</p>
-
-                <h3>Task Description Generation</h3>
-                <p>The processor automatically generates appropriate task descriptions based on the frontmatter type:</p>
-                <ul class="behavior-list">
-                    <li>
-                        <strong>For <code>specifies</code>/<code>transforms</code>:</strong> Updates target files based on documentation and specifications
-                    </li>
-                    <li>
-                        <strong>For <code>documents</code>:</strong> Updates documentation to reflect current source code state
-                    </li>
-                    <li>
-                        <strong>For <code>generates</code>:</strong> Generates output files based on documentation and input files
-                </li>
-                <li>
-                    <strong>Custom prompt:</strong> If a single spec has a <code>prompt</code> frontmatter key, that prompt is used directly as the task description
-                </li>
-                <li>
-                    <strong>Non-file task types:</strong> Processes the file according to the task type with documentation as context
+                    for handling existing files.
                 </li>
             </ul>
-                <h3>URL Fetching and Caching</h3>
-                <p>Related resources specified as URLs (<code>http://</code> or <code>https://</code>) are automatically fetched and cached locally:</p>
-                <ul class="behavior-list">
-                    <li>Cache location: <code>.doc-processor-cache/url-cache</code> within the root directory</li>
-                    <li>Cache TTL: 1 hour (cached content older than 1 hour is re-fetched)</li>
-                    <li>HTML content is automatically simplified (scripts, styles, interactive elements removed)</li>
-                    <li>Non-HTML content is stored as-is</li>
-                    <li>Failed fetches log a warning and return null (the resource is skipped)</li>
-                    <li>Cache files use a SHA-256 hash prefix for uniqueness</li>
-                </ul>
-                <h3>Rebasing</h3>
-                <p>
-                    Both <code>DocSpec</code> and <code>ModificationTask</code> support rebasing from one root directory
-                    to another. This is used when the IntelliJ action needs to adjust paths for a different working
-                    directory. URL-based related resources are preserved as-is during rebasing.
-                </p>
-                <h3>Primary Source Resolution</h3>
-                <p>When determining the primary source file for overwrite mode checks, the priority is:</p>
-                <ol>
-                    <li>First transform's source file</li>
-                    <li>First spec's doc file</li>
-                    <li>First document match's first supporting file (or doc file if no supporting files)</li>
-                    <li>First generate match's first input file (or doc file if no input files)</li>
-                </ol>
-                <h3>Error Handling</h3>
-                <ul class="behavior-list">
-                    <li>Invalid frontmatter YAML will cause parsing to fail</li>
-                    <li>Missing required fields in <code>generates</code> entries (like <code>output</code>) will result in incomplete specifications</li>
-                    <li>Invalid regex patterns in <code>transforms</code> will cause matching to fail for those rules</li>
-                    <li>Unknown <code>task_type</code> values will log a warning and fall back to <code>FileModification</code></li>
-                    <li>Invalid <code>task_config_json</code> paths will be stored but may cause errors during task execution</li>
-                    <li>Files without frontmatter (not starting with <code>---</code>) return null (silently skipped)</li>
-                    <li>Files with unclosed frontmatter (no closing <code>---</code>) return null</li>
-                    <li>Files with frontmatter but no <code>specifies</code>, <code>transforms</code>, <code>documents</code>, or <code>generates</code> keys return null</li>
-                    <li>Non-existent files referenced in <code>related</code> are still returned (downstream code handles them)</li>
-                    <li>URL fetch failures log a warning and return null (the resource is skipped)</li>
-                    <li>Errors processing individual target files are caught and logged; other targets continue processing</li>
-                </ul>
+
+            <h3 id="overwrite-modes">Overwrite Modes</h3>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Mode</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>SkipExisting</code></td>
+                    <td>Skip files that already exist (no processing)</td>
+                </tr>
+                <tr>
+                    <td><code>OverwriteExisting</code></td>
+                    <td>Always overwrite existing files with full replacement</td>
+                </tr>
+                <tr>
+                    <td><code>OverwriteToUpdate</code></td>
+                    <td>Overwrite only if source/related files are newer than target</td>
+                </tr>
+                <tr>
+                    <td><code>PatchExisting</code></td>
+                    <td>Always apply fuzzy patch to existing files</td>
+                </tr>
+                <tr>
+                    <td><code>PatchToUpdate</code></td>
+                    <td>Apply fuzzy patch only if source/related files are newer than target (default)</td>
+                </tr>
+                </tbody>
+            </table>
+            <h3>File Modification Time Checking</h3>
+            <p>For <code>OverwriteToUpdate</code> and <code>PatchToUpdate</code> modes, the processor compares the
+                target file's last modified time against:</p>
+            <ul class="behavior-list">
+                <li>The documentation file itself</li>
+                <li>All related files specified in the frontmatter</li>
+                <li>All source/input files that contribute to the target</li>
+            </ul>
+            <p>If any of these are newer than the target, the target will be processed.</p>
+
+            <h3>Task Description Generation</h3>
+            <p>The processor automatically generates appropriate task descriptions based on the frontmatter type:</p>
+            <ul class="behavior-list">
+                <li>
+                    <strong>For <code>specifies</code>/<code>transforms</code>:</strong> Updates target files based on
+                    documentation and specifications
+                </li>
+                <li>
+                    <strong>For <code>documents</code>:</strong> Updates documentation to reflect current source code
+                    state
+                </li>
+                <li>
+                    <strong>For <code>generates</code>:</strong> Generates output files based on documentation and input
+                    files
+                </li>
+                <li>
+                    <strong>Custom prompt:</strong> If a single spec has a <code>prompt</code> frontmatter key, that
+                    prompt is used directly as the task description
+                </li>
+                <li>
+                    <strong>Non-file task types:</strong> Processes the file according to the task type with
+                    documentation as context
+                </li>
+            </ul>
+            <h3>URL Fetching and Caching</h3>
+            <p>Related resources specified as URLs (<code>http://</code> or <code>https://</code>) are automatically
+                fetched and cached locally:</p>
+            <ul class="behavior-list">
+                <li>Cache location: <code>.doc-processor-cache/url-cache</code> within the root directory</li>
+                <li>Cache TTL: 1 hour (cached content older than 1 hour is re-fetched)</li>
+                <li>HTML content is automatically simplified (scripts, styles, interactive elements removed)</li>
+                <li>Non-HTML content is stored as-is</li>
+                <li>Failed fetches log a warning and return null (the resource is skipped)</li>
+                <li>Cache files use a SHA-256 hash prefix for uniqueness</li>
+            </ul>
+            <h3>Rebasing</h3>
+            <p>
+                Both <code>DocSpec</code> and <code>ModificationTask</code> support rebasing from one root directory
+                to another. This is used when the IntelliJ action needs to adjust paths for a different working
+                directory. URL-based related resources are preserved as-is during rebasing.
+            </p>
+            <h3>Primary Source Resolution</h3>
+            <p>When determining the primary source file for overwrite mode checks, the priority is:</p>
+            <ol>
+                <li>First transform's source file</li>
+                <li>First spec's doc file</li>
+                <li>First document match's first supporting file (or doc file if no supporting files)</li>
+                <li>First generate match's first input file (or doc file if no input files)</li>
+            </ol>
+            <h3>Error Handling</h3>
+            <ul class="behavior-list">
+                <li>Invalid frontmatter YAML will cause parsing to fail</li>
+                <li>Missing required fields in <code>generates</code> entries (like <code>output</code>) will result in
+                    incomplete specifications
+                </li>
+                <li>Invalid regex patterns in <code>transforms</code> will cause matching to fail for those rules</li>
+                <li>Unknown <code>task_type</code> values will log a warning and fall back to
+                    <code>FileModification</code></li>
+                <li>Invalid <code>task_config_json</code> paths will be stored but may cause errors during task
+                    execution
+                </li>
+                <li>Files without frontmatter (not starting with <code>---</code>) return null (silently skipped)</li>
+                <li>Files with unclosed frontmatter (no closing <code>---</code>) return null</li>
+                <li>Files with frontmatter but no <code>specifies</code>, <code>transforms</code>,
+                    <code>documents</code>, or <code>generates</code> keys return null
+                </li>
+                <li>Non-existent files referenced in <code>related</code> are still returned (downstream code handles
+                    them)
+                </li>
+                <li>URL fetch failures log a warning and return null (the resource is skipped)</li>
+                <li>Errors processing individual target files are caught and logged; other targets continue processing
+                </li>
+            </ul>
         </section>
 
         <!-- Data Structures Section -->
-        <section id="data-structures" class="doc-section">
+        <section class="doc-section" id="data-structures">
             <h2>Data Structures</h2>
             <p>The frontmatter is parsed into a <code>DocSpec</code> containing:</p>
             <table class="data-table">
@@ -1223,7 +1257,9 @@ This document specifies the API layer implementation...</code></pre>
             <ul class="behavior-list">
                 <li>Lines are split on the first colon to extract key-value pairs</li>
                 <li>Lines without colons are ignored</li>
-                <li>If the value after the colon is empty, the parser looks for subsequent list items (lines starting with <code>- </code>)</li>
+                <li>If the value after the colon is empty, the parser looks for subsequent list items (lines starting
+                    with <code>- </code>)
+                </li>
                 <li>Empty keys (colon with no value and no subsequent list items) are not added to the result map</li>
                 <li>Values are trimmed of whitespace</li>
             </ul>
@@ -1235,18 +1271,21 @@ This document specifies the API layer implementation...</code></pre>
             <ol>
                 <li>The regex is applied to the relative file path</li>
                 <li>Capture groups are extracted from the match</li>
-                <li>Backreferences (<code>$0</code>, <code>$1</code>, etc.) in the destination pattern are replaced with the captured values</li>
+                <li>Backreferences (<code>$0</code>, <code>$1</code>, etc.) in the destination pattern are replaced with
+                    the captured values
+                </li>
                 <li>The destination path is resolved relative to the documentation file's directory</li>
             </ol>
         </section>
         <!-- IntelliJ Integration Section -->
-        <section id="intellij-integration" class="doc-section">
+        <section class="doc-section" id="intellij-integration">
             <h2>IntelliJ Integration</h2>
             <p>
                 The <code>DocProcessorAction</code> provides an IntelliJ IDE action that:
             </p>
             <ol>
-                <li>Filters selected files to markdown files (<code>.md</code> or <code>.markdown</code> extensions)</li>
+                <li>Filters selected files to markdown files (<code>.md</code> or <code>.markdown</code> extensions)
+                </li>
                 <li>Creates a <code>DocProcessor</code> instance with the configured fast and smart models</li>
                 <li>Calls <code>getAll()</code> to collect all modification tasks from the selected files</li>
                 <li>Shows a <code>DocProcessorTaskDialog</code> with a checklist of tasks for user selection</li>
@@ -1301,7 +1340,7 @@ This document specifies the API layer implementation...</code></pre>
 </footer>
 
 <!-- Core Scripts -->
-<script type="module" src="assets/scripts/core.js"></script>
+<script src="assets/scripts/core.js" type="module"></script>
 
 <!-- Active nav link highlighting -->
 <script>

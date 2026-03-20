@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | CodingMode</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         .reality-check-grid {
@@ -95,7 +96,8 @@
         <div class="breadcrumbs">Home > Core > Cognitive Modes</div>
         <h1>CodingMode</h1>
         <p class="pitch">
-            The dynamic execution engine that turns reasoning into executable scripts. It orchestrates tasks through a programmable control loop, allowing for complex logic, state management, and tool manipulation.
+            The dynamic execution engine that turns reasoning into executable scripts. It orchestrates tasks through a
+            programmable control loop, allowing for complex logic, state management, and tool manipulation.
         </p>
         <div class="badges">
             <span class="badge">Core Architecture</span>
@@ -133,7 +135,8 @@
                 <span class="icon">🧠</span> Live Transcript
             </div>
             <div class="mock-ui-content" style="padding: 1rem; font-size: 0.9rem;">
-                <div style="color: var(--text-dim); margin-bottom: 0.5rem;">// Assistant generating Groovy script...</div>
+                <div style="color: var(--text-dim); margin-bottom: 0.5rem;">// Assistant generating Groovy script...
+                </div>
                 <pre style="background: #1a1a1a; padding: 0.5rem; border-radius: 4px; color: #e0e0e0; margin-bottom: 1rem;"><code>
 def result = FileModificationTask.call([
   target_file: "src/App.kt",
@@ -159,53 +162,65 @@ println "Task Result: " + result
         </nav>
 
         <!-- TAB: ARCHITECTURE -->
-        <div id="tab-architecture" class="tab-pane active">
+        <div class="tab-pane active" id="tab-architecture">
             <h3>The Execution Loop</h3>
-            <p>Unlike static planning modes, <code>CodingMode</code> operates by generating and executing code in real-time. This allows the agent to use standard programming constructs (loops, conditionals, try-catch) to handle task results.</p>
+            <p>Unlike static planning modes, <code>CodingMode</code> operates by generating and executing code in
+                real-time. This allows the agent to use standard programming constructs (loops, conditionals, try-catch)
+                to handle task results.</p>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Phase</th>
-                        <th>Description</th>
-                    </tr>
+                <tr>
+                    <th>Phase</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><strong>Planning</strong></td>
-                        <td>The <code>CodeAgent</code> analyzes the user prompt and history to generate a script.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Injection</strong></td>
-                        <td>Cognotik tasks are mapped to functions and injected into the runtime environment.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Execution</strong></td>
-                        <td>The script runs via <code>CodeRuntimes</code> (e.g., Groovy), capturing stdout and return values.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Reflection</strong></td>
-                        <td>Results are added to the conversation history, allowing the agent to iterate if errors occur.</td>
-                    </tr>
+                <tr>
+                    <td><strong>Planning</strong></td>
+                    <td>The <code>CodeAgent</code> analyzes the user prompt and history to generate a script.</td>
+                </tr>
+                <tr>
+                    <td><strong>Injection</strong></td>
+                    <td>Cognotik tasks are mapped to functions and injected into the runtime environment.</td>
+                </tr>
+                <tr>
+                    <td><strong>Execution</strong></td>
+                    <td>The script runs via <code>CodeRuntimes</code> (e.g., Groovy), capturing stdout and return
+                        values.
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Reflection</strong></td>
+                    <td>Results are added to the conversation history, allowing the agent to iterate if errors occur.
+                    </td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: SYMBOLS -->
-        <div id="tab-symbols" class="tab-pane">
+        <div class="tab-pane" id="tab-symbols">
             <h3>Runtime Environment</h3>
             <p>The following symbols are automatically available within the generated scripts:</p>
             <ul style="line-height: 1.8;">
-                <li><span class="symbol-tag">[TaskName]</span> - Every configured task is available as a callable function.</li>
+                <li><span class="symbol-tag">[TaskName]</span> - Every configured task is available as a callable
+                    function.
+                </li>
                 <li><span class="symbol-tag">workingDir</span> - The absolute path to the current workspace.</li>
-                <li><span class="symbol-tag">smartModel</span> / <span class="symbol-tag">fastModel</span> - Direct access to LLM clients for sub-reasoning.</li>
-                <li><span class="symbol-tag">task</span> - The current <code>SessionTask</code> object for UI manipulation.</li>
+                <li><span class="symbol-tag">smartModel</span> / <span class="symbol-tag">fastModel</span> - Direct
+                    access to LLM clients for sub-reasoning.
+                </li>
+                <li><span class="symbol-tag">task</span> - The current <code>SessionTask</code> object for UI
+                    manipulation.
+                </li>
             </ul>
         </div>
 
         <!-- TAB: IMPLEMENTATION -->
-        <div id="tab-implementation" class="tab-pane">
+        <div class="tab-pane" id="tab-implementation">
             <h3>Kotlin Implementation Skeleton</h3>
-            <p>The core logic from <code>CodingMode.kt</code> handles the bridge between the LLM and the local runtime.</p>
+            <p>The core logic from <code>CodingMode.kt</code> handles the bridge between the LLM and the local runtime.
+            </p>
             <pre><code class="language-kotlin">
 // From CodingMode.kt
 override fun handleUserMessage(userMessage: String, task: SessionTask) {
@@ -225,7 +240,8 @@ override fun handleUserMessage(userMessage: String, task: SessionTask) {
     <!-- 4. INTEGRATION -->
     <section style="margin-top: 3rem;">
         <h2>Integration Guide</h2>
-        <p>To use CodingMode in your application, define it in your <code>OrchestrationConfig</code>. This mode is ideal for complex engineering tasks where the agent needs to verify its own work.</p>
+        <p>To use CodingMode in your application, define it in your <code>OrchestrationConfig</code>. This mode is ideal
+            for complex engineering tasks where the agent needs to verify its own work.</p>
         <pre><code class="language-kotlin">
 val config = OrchestrationConfig(
     mode = CognitiveModeType.Coding,

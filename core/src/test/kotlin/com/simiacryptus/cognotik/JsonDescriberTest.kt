@@ -8,30 +8,30 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class JsonDescriberTest : TypeDescriberTestBase() {
-    @Test
-    override fun testDescribeType() {
-        super.testDescribeType()
-    }
+  @Test
+  override fun testDescribeType() {
+    super.testDescribeType()
+  }
 
-    @Test
-    override fun testDescribeMethod() {
+  @Test
+  override fun testDescribeMethod() {
 
-    }
+  }
 
-    override val typeDescriber: TypeDescriber get() = JsonDescriber()
-    override val classDescription: String
-        @Language("TEXT")
-        get() =
-            """{
+  override val typeDescriber: TypeDescriber get() = JsonDescriber()
+  override val classDescription: String
+    @Language("TEXT")
+    get() =
+      """{
                  "type": "object",
                  "class": "com.simiacryptus.cognotik.TypeDescriberTestBase${"$"}DataClassExample",
                  "allowed": false
                }"""
 
-    override val methodDescription
-        get() =
+  override val methodDescription
+    get() =
 
-            """
+      """
             {
               "operationId": "methodExample",
               "description": "This is a method",
@@ -56,18 +56,18 @@ class JsonDescriberTest : TypeDescriberTestBase() {
             }
             """.trimIndent()
 
-    @Test
-    override fun testDescribeRecursiveType() {
-        val expectedDescription =
+  @Test
+  override fun testDescribeRecursiveType() {
+    val expectedDescription =
 
-            """{
+      """{
                  "type": "object",
                  "class": "com.simiacryptus.cognotik.TypeDescriberTestBase${"$"}RecursiveDataClass",
                  "allowed": false
                }"""
-        val actualDescription = typeDescriber.describe(RecursiveDataClass::class.java)
-        Assertions.assertEquals(expectedDescription, actualDescription)
-    }
+    val actualDescription = typeDescriber.describe(RecursiveDataClass::class.java)
+    Assertions.assertEquals(expectedDescription, actualDescription)
+  }
 
 
 }

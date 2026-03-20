@@ -3,21 +3,22 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | PoliticalOptimizationTask</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Workspace Browser -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/variables.css">
+    <link href="assets/styles/variables.css" rel="stylesheet">
 
-  <link rel="stylesheet" href="assets/styles/main.css">
-  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -227,17 +228,18 @@
 
 <main class="task-container">
 
-      <!-- 1. PAGE HEADER -->
+    <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Home > Tasks > Social > PoliticalOptimizationTask</div>
         <h1>PoliticalOptimizationTask</h1>
         <p class="pitch">
-            Evaluates and optimizes text from multiple political perspectives using consensus-based fitness to identify unifying common ground or strategic wedge issues.
+            Evaluates and optimizes text from multiple political perspectives using consensus-based fitness to identify
+            unifying common ground or strategic wedge issues.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect Safe</span>
-              <span class="badge badge-success">Multi-Perspective Analysis</span>
-              <span class="badge badge-warning">Evolutionary Optimization</span>
+            <span class="badge badge-success">Multi-Perspective Analysis</span>
+            <span class="badge badge-warning">Evolutionary Optimization</span>
         </div>
     </header>
 
@@ -268,7 +270,7 @@
             <div class="mock-ui">
                 <div class="metric-row">
                     <span class="metric-label">Consensus Score</span>
-                      <span class="metric-value">74.2</span>
+                    <span class="metric-value">74.2</span>
                 </div>
                 <div class="metric-row">
                     <span class="metric-label">Average Quality</span>
@@ -282,7 +284,9 @@
                     </ul>
                 </div>
                 <div style="margin-top: 1rem;">
-                    <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.5rem;">POINTS OF CONTENTION</div>
+                    <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.5rem;">POINTS OF
+                        CONTENTION
+                    </div>
                     <ul style="margin: 0; padding-left: 1.2rem; font-size: 0.85rem; color: #f87171;">
                         <li>Funding via wealth tax vs. VAT</li>
                         <li>Impact on labor participation</li>
@@ -295,9 +299,11 @@
     <section class="showcase-section" style="margin-bottom: 3rem;">
         <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Cinzel', serif;">Test Workspace Browser</h2>
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
-            Explore actual artifacts, logs, and generated variants from the <code>PoliticalOptimizationTask</code> workspace.
+            Explore actual artifacts, logs, and generated variants from the <code>PoliticalOptimizationTask</code>
+            workspace.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 400px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+        <div class="panel" id="file-tree-demo"
+             style="height: 400px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
     </section>
 
 
@@ -310,7 +316,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Execution Configuration</h3>
             <table class="docs-table">
                 <thead>
@@ -376,19 +382,28 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>Task Lifecycle</h3>
             <ol style="color: var(--text-main);">
-                <li><strong>Initialization:</strong> Validates configuration (min 2 perspectives, valid consensus mode).</li>
-                <li><strong>Multi-Perspective Evaluation:</strong> The LLM assumes each political persona to score text across criteria.</li>
-                <li><strong>Consensus Scoring:</strong> Calculates signed variance where low variance = high consensus (positive) and high variance = divisive (negative).</li>
-                <li><strong>Evolutionary Loop:</strong> Performs selection, mutation (rephrase/polarize/bridge), and crossover across multiple generations.</li>
-                <li><strong>Reporting:</strong> Generates detailed analysis of common ground, points of contention, and strategy effectiveness trends.</li>
+                <li><strong>Initialization:</strong> Validates configuration (min 2 perspectives, valid consensus mode).
+                </li>
+                <li><strong>Multi-Perspective Evaluation:</strong> The LLM assumes each political persona to score text
+                    across criteria.
+                </li>
+                <li><strong>Consensus Scoring:</strong> Calculates signed variance where low variance = high consensus
+                    (positive) and high variance = divisive (negative).
+                </li>
+                <li><strong>Evolutionary Loop:</strong> Performs selection, mutation (rephrase/polarize/bridge), and
+                    crossover across multiple generations.
+                </li>
+                <li><strong>Reporting:</strong> Generates detailed analysis of common ground, points of contention, and
+                    strategy effectiveness trends.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Embedded Execution (Headless)</h3>
             <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">
                 Use the <code>UnifiedHarness</code> to run this task in CI/CD or automated scripts without a UI.
@@ -431,7 +446,8 @@ java -jar cognotik-cli.jar \
             </div>
 
             <h3 style="margin-top: 2rem;">Prompt Segment</h3>
-            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM context:</p>
+            <p style="font-size: 0.9rem; color: var(--text-dim);">The following logic is injected into the LLM
+                context:</p>
             <div class="panel" style="background: #000;">
                   <pre><code>PoliticalOptimization - Optimize text using multi-perspective political consensus analysis
   ** Specify the initial text to analyze/optimize.
@@ -452,18 +468,18 @@ java -jar cognotik-cli.jar \
 </main>
 
 <script>
-      function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-        document.getElementById('tab-' + tabId).classList.add('active');
-        event.currentTarget.classList.add('active');
-    }
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+  }
 </script>
 <script type="module">
-      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
-    // Initialize the browser for the PoliticalOptimizationTask workspace
-    initFileTree('#file-tree-demo', 'webui/workspaces/PoliticalOptimization/');
+    import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
+  // Initialize the browser for the PoliticalOptimizationTask workspace
+  initFileTree('#file-tree-demo', 'webui/workspaces/PoliticalOptimization/');
 </script>
 
 </body>

@@ -279,10 +279,10 @@ class SoftwareDesignDocumentTask(
 
         overviewTask.add(
           buildString {
-                      appendLine("**System:** ${systemDescription.take(200)}${if (systemDescription.length > 200) "..." else ""}")
-                      appendLine()
-                      appendLine("**Target Audience:** $targetAudience")
-                    }.renderMarkdown(true)
+            appendLine("**System:** ${systemDescription.take(200)}${if (systemDescription.length > 200) "..." else ""}")
+            appendLine()
+            appendLine("**Target Audience:** $targetAudience")
+          }.renderMarkdown(true)
         )
         val statusBuffer = overviewTask.add("**Status:** 🔄 Gathering context...".renderMarkdown(true))
         updateChecklist()
@@ -293,7 +293,11 @@ class SoftwareDesignDocumentTask(
             appendLine()
             appendLine("**System:** $systemDescription")
             appendLine()
-            appendLine("**Generated:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+            appendLine(
+              "**Generated:** ${
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+              }"
+            )
             appendLine()
             appendLine("---")
             appendLine()
@@ -350,14 +354,12 @@ class SoftwareDesignDocumentTask(
           log.debug("Generating use cases and actor documentation")
           val useCaseTask = tabs.newTask("Use Cases")
 
-          val useCaseBuffer = useCaseTask.add("## Use Cases\n\n🔄 Analyzing actors and use cases...".renderMarkdown(true))
+          val useCaseBuffer =
+            useCaseTask.add("## Use Cases\n\n🔄 Analyzing actors and use cases...".renderMarkdown(true))
           task.update()
 
           val useCaseAnalysis = designAgent.answer(
             listOf(
-
-
-
 
 
               buildString {
@@ -407,12 +409,12 @@ class SoftwareDesignDocumentTask(
           useCaseBuffer?.setLength(0)
           useCaseBuffer?.append(
             buildString {
-                          appendLine("## Use Cases & Actors")
-                          appendLine()
-                          appendLine("✅ Analysis complete")
-                          appendLine()
-                          appendLine(useCaseAnalysis)
-                        }.renderMarkdown(true)
+              appendLine("## Use Cases & Actors")
+              appendLine()
+              appendLine("✅ Analysis complete")
+              appendLine()
+              appendLine(useCaseAnalysis)
+            }.renderMarkdown(true)
           )
           useCaseTask.update()
           transcript?.write("## Use Cases & Actors\n\n$useCaseAnalysis\n\n---\n\n".toByteArray())
@@ -440,9 +442,6 @@ class SoftwareDesignDocumentTask(
 
           val requirementsAnalysis = designAgent.answer(
             listOf(
-
-
-
 
 
               buildString {
@@ -487,12 +486,12 @@ class SoftwareDesignDocumentTask(
           requirementsBuffer?.setLength(0)
           requirementsBuffer?.append(
             buildString {
-                          appendLine("## Requirements Specification")
-                          appendLine()
-                          appendLine("✅ Requirements defined")
-                          appendLine()
-                          appendLine(requirementsAnalysis)
-                        }.renderMarkdown(true)
+              appendLine("## Requirements Specification")
+              appendLine()
+              appendLine("✅ Requirements defined")
+              appendLine()
+              appendLine(requirementsAnalysis)
+            }.renderMarkdown(true)
           )
           requirementsTask.update()
           transcript?.write("## Requirements Specification\n\n$requirementsAnalysis\n\n---\n\n".toByteArray())
@@ -514,11 +513,6 @@ class SoftwareDesignDocumentTask(
 
           val architectureAnalysis = designAgent.answer(
             listOf(
-
-
-
-
-
 
 
               buildString {
@@ -600,12 +594,12 @@ class SoftwareDesignDocumentTask(
           architectureBuffer?.setLength(0)
           architectureBuffer?.append(
             buildString {
-                          appendLine("## System Architecture")
-                          appendLine()
-                          appendLine("✅ Architecture designed")
-                          appendLine()
-                          appendLine(architectureAnalysis)
-                        }.renderMarkdown(true)
+              appendLine("## System Architecture")
+              appendLine()
+              appendLine("✅ Architecture designed")
+              appendLine()
+              appendLine(architectureAnalysis)
+            }.renderMarkdown(true)
           )
           architectureTask.update()
           transcript?.write("## System Architecture\n\n$architectureAnalysis\n\n---\n\n".toByteArray())
@@ -631,16 +625,12 @@ class SoftwareDesignDocumentTask(
           log.debug("Generating data model and ERD")
           val dataModelTask = tabs.newTask("Data Model")
 
-          val dataModelBuffer = dataModelTask.add("## Data Model\n\n🔄 Designing data structures...".renderMarkdown(true))
+          val dataModelBuffer =
+            dataModelTask.add("## Data Model\n\n🔄 Designing data structures...".renderMarkdown(true))
           task.update()
 
           val dataModelAnalysis = designAgent.answer(
             listOf(
-
-
-
-
-
 
 
               buildString {
@@ -710,12 +700,12 @@ class SoftwareDesignDocumentTask(
           dataModelBuffer?.setLength(0)
           dataModelBuffer?.append(
             buildString {
-                          appendLine("## Data Model & ERD")
-                          appendLine()
-                          appendLine("✅ Data model designed")
-                          appendLine()
-                          appendLine(dataModelAnalysis)
-                        }.renderMarkdown(true)
+              appendLine("## Data Model & ERD")
+              appendLine()
+              appendLine("✅ Data model designed")
+              appendLine()
+              appendLine(dataModelAnalysis)
+            }.renderMarkdown(true)
           )
           dataModelTask.update()
           transcript?.write("## Data Model & ERD\n\n$dataModelAnalysis\n\n---\n\n".toByteArray())
@@ -735,11 +725,6 @@ class SoftwareDesignDocumentTask(
 
           val flowAnalysis = designAgent.answer(
             listOf(
-
-       
-
-
-
 
 
               buildString {
@@ -806,12 +791,12 @@ class SoftwareDesignDocumentTask(
           flowBuffer?.setLength(0)
           flowBuffer?.append(
             buildString {
-                          appendLine("## Flow Diagrams")
-                          appendLine()
-                          appendLine("✅ Flows documented")
-                          appendLine()
-                          appendLine(flowAnalysis)
-                        }.renderMarkdown(true)
+              appendLine("## Flow Diagrams")
+              appendLine()
+              appendLine("✅ Flows documented")
+              appendLine()
+              appendLine(flowAnalysis)
+            }.renderMarkdown(true)
           )
           flowTask.update()
           transcript?.write("## Flow Diagrams\n\n$flowAnalysis\n\n---\n\n".toByteArray())
@@ -831,13 +816,6 @@ class SoftwareDesignDocumentTask(
 
           val testPlanAnalysis = designAgent.answer(
             listOf(
-
-
-
-
-
-
-
 
 
               buildString {
@@ -904,12 +882,12 @@ class SoftwareDesignDocumentTask(
           testPlanBuffer?.setLength(0)
           testPlanBuffer?.append(
             buildString {
-                          appendLine("## Test Plan")
-                          appendLine()
-                          appendLine("✅ Test plan created")
-                          appendLine()
-                          appendLine(testPlanAnalysis)
-                        }.renderMarkdown(true)
+              appendLine("## Test Plan")
+              appendLine()
+              appendLine("✅ Test plan created")
+              appendLine()
+              appendLine(testPlanAnalysis)
+            }.renderMarkdown(true)
           )
           testPlanTask.update()
           transcript?.write("## Test Plan\n\n$testPlanAnalysis\n\n---\n\n".toByteArray())
@@ -943,12 +921,6 @@ class SoftwareDesignDocumentTask(
 
           val phasePlanAnalysis = designAgent.answer(
             listOf(
-
-
-
-
-
-
 
 
               buildString {
@@ -1015,12 +987,12 @@ class SoftwareDesignDocumentTask(
           phasePlanBuffer?.setLength(0)
           phasePlanBuffer?.append(
             buildString {
-                          appendLine("## Phase Plan")
-                          appendLine()
-                          appendLine("✅ Phases planned")
-                          appendLine()
-                          appendLine(phasePlanAnalysis)
-                        }.renderMarkdown(true)
+              appendLine("## Phase Plan")
+              appendLine()
+              appendLine("✅ Phases planned")
+              appendLine()
+              appendLine(phasePlanAnalysis)
+            }.renderMarkdown(true)
           )
           phasePlanTask.update()
           transcript?.write("## Phase Plan\n\n$phasePlanAnalysis\n\n---\n\n".toByteArray())
@@ -1047,10 +1019,6 @@ class SoftwareDesignDocumentTask(
           // Generate detailed tasks and sprints
           val projectDataAnalysis = designAgent.answer(
             listOf(
-
-
-
-
 
 
               buildString {
@@ -1139,32 +1107,32 @@ class SoftwareDesignDocumentTask(
           projectDataBuffer?.setLength(0)
           projectDataBuffer?.append(
             buildString {
-                          appendLine("## Project Data")
-                          appendLine()
-                          appendLine("✅ Project data generated")
-                          appendLine()
-                          appendLine("### Summary")
-                          appendLine()
-                          appendLine("| Category | Count |")
-                          appendLine("|----------|-------|")
-                          appendLine("| Epics | ${collectedEpics.size} |")
-                          appendLine("| Tasks | ${collectedTasks.size} |")
-                          appendLine("| Sprints | ${sprints.size} |")
-                          appendLine("| Releases | ${releases.size} |")
-                          appendLine("| Milestones | ${collectedMilestones.size} |")
-                          appendLine("| Dependencies | ${collectedDependencies.size} |")
-                          appendLine()
-                          appendLine("### Download")
-                          appendLine()
-                          appendLine("📥 [Download Project Data JSON]($jsonLink)")
-                          appendLine()
-                          appendLine("### Preview")
-                          appendLine()
-                          appendLine("```json")
-                          appendLine(jsonContent.take(2000))
-                          if (jsonContent.length > 2000) appendLine("... (truncated)")
-                          appendLine("```")
-                        }.renderMarkdown(true)
+              appendLine("## Project Data")
+              appendLine()
+              appendLine("✅ Project data generated")
+              appendLine()
+              appendLine("### Summary")
+              appendLine()
+              appendLine("| Category | Count |")
+              appendLine("|----------|-------|")
+              appendLine("| Epics | ${collectedEpics.size} |")
+              appendLine("| Tasks | ${collectedTasks.size} |")
+              appendLine("| Sprints | ${sprints.size} |")
+              appendLine("| Releases | ${releases.size} |")
+              appendLine("| Milestones | ${collectedMilestones.size} |")
+              appendLine("| Dependencies | ${collectedDependencies.size} |")
+              appendLine()
+              appendLine("### Download")
+              appendLine()
+              appendLine("📥 [Download Project Data JSON]($jsonLink)")
+              appendLine()
+              appendLine("### Preview")
+              appendLine()
+              appendLine("```json")
+              appendLine(jsonContent.take(2000))
+              if (jsonContent.length > 2000) appendLine("... (truncated)")
+              appendLine("```")
+            }.renderMarkdown(true)
           )
           projectDataTask.update()
           transcript?.write(
@@ -1192,10 +1160,10 @@ class SoftwareDesignDocumentTask(
         statusBuffer?.setLength(0)
         statusBuffer?.append(
           buildString {
-                      appendLine("---")
-                      appendLine("### ✅ Document Generation Complete")
-                      appendLine("**Total Time:** ${duration / 1000.0}s | **Tasks:** ${collectedTasks.size} | **Epics:** ${collectedEpics.size}")
-                    }.renderMarkdown(true)
+            appendLine("---")
+            appendLine("### ✅ Document Generation Complete")
+            appendLine("**Total Time:** ${duration / 1000.0}s | **Tasks:** ${collectedTasks.size} | **Epics:** ${collectedEpics.size}")
+          }.renderMarkdown(true)
         )
         overviewTask.complete()
         task.update()
@@ -1246,12 +1214,12 @@ class SoftwareDesignDocumentTask(
         )
         overviewTask.add(
           buildString {
-                      appendLine("## ❌ Error Occurred")
-                      appendLine()
-                      appendLine("**Error:** ${e.message}")
-                      appendLine()
-                      appendLine("**Type:** ${e.javaClass.simpleName}")
-                    }.renderMarkdown(true)
+            appendLine("## ❌ Error Occurred")
+            appendLine()
+            appendLine("**Error:** ${e.message}")
+            appendLine()
+            appendLine("**Type:** ${e.javaClass.simpleName}")
+          }.renderMarkdown(true)
         )
         overviewTask.update()
         task.update()
@@ -1273,15 +1241,6 @@ class SoftwareDesignDocumentTask(
     constraints: List<String> = emptyList(),
     priorContext: String,
     inputFileContext: String
-
-
-
-
-
-
-
-
-
 
 
   ): String = buildString {
@@ -1569,24 +1528,24 @@ class SoftwareDesignDocumentTask(
 
     @JvmStatic
     val SoftwareDesignDocument = TaskType(
-        name = "SoftwareDesignDocument",
-        category = "Writing",
-        taskClass = SoftwareDesignDocumentTask::class.java,
-        executionConfigClass = SoftwareDesignDocumentTaskExecutionConfigData::class.java,
-        taskSettingsClass = TaskTypeConfig::class.java,
-        description = "Generate comprehensive software design documentation",
+      name = "SoftwareDesignDocument",
+      category = "Writing",
+      taskClass = SoftwareDesignDocumentTask::class.java,
+      executionConfigClass = SoftwareDesignDocumentTaskExecutionConfigData::class.java,
+      taskSettingsClass = TaskTypeConfig::class.java,
+      description = "Generate comprehensive software design documentation",
       tooltipHtml = "Creates complete software design documentation with Mermaid diagrams." +
-              "<ul>" +
-              "<li>Use case diagrams and actor documentation</li>" +
-              "<li>Functional and non-functional requirements</li>" +
-              "<li>Architecture diagrams (C4, component, deployment)</li>" +
-              "<li>Data model and ERD diagrams</li>" +
-              "<li>Sequence and activity flow diagrams</li>" +
-              "<li>Test plan and test case documentation</li>" +
-              "<li>Phase planning with Gantt charts</li>" +
-              "<li>Project data JSON with tasks, epics, sprints, releases</li>" +
-              "<li>All diagrams use Mermaid syntax</li>" +
-              "</ul>",
+          "<ul>" +
+          "<li>Use case diagrams and actor documentation</li>" +
+          "<li>Functional and non-functional requirements</li>" +
+          "<li>Architecture diagrams (C4, component, deployment)</li>" +
+          "<li>Data model and ERD diagrams</li>" +
+          "<li>Sequence and activity flow diagrams</li>" +
+          "<li>Test plan and test case documentation</li>" +
+          "<li>Phase planning with Gantt charts</li>" +
+          "<li>Project data JSON with tasks, epics, sprints, releases</li>" +
+          "<li>All diagrams use Mermaid syntax</li>" +
+          "</ul>",
     )
   }
 }

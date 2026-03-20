@@ -13,23 +13,24 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.LoggerFactory
 
 class SymbolsDbCodeTask(
-    orchestrationConfig: OrchestrationConfig,
-    planTask: SymbolsDbCodeTaskExecutionConfigData?,
+  orchestrationConfig: OrchestrationConfig,
+  planTask: SymbolsDbCodeTaskExecutionConfigData?,
 ) : RunCodeTask<SymbolsDbCodeTaskExecutionConfigData, SymbolsDbCodeTask.SymbolsDbCodeTaskTypeConfig>(
-    orchestrationConfig,
-    planTask,
+  orchestrationConfig,
+  planTask,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   companion object {
-        @JvmStatic val SymbolsDbCode = TaskType(
-            name = "SymbolsDbCodeTask",
-            category = "Execution",
-            taskClass = SymbolsDbCodeTask::class.java,
-            executionConfigClass = SymbolsDbCodeTaskExecutionConfigData::class.java,
-            taskSettingsClass = SymbolsDbCodeTaskTypeConfig::class.java,
-            description = "Execute code snippets with predefined symbols",
-            tooltipHtml = """
+    @JvmStatic
+    val SymbolsDbCode = TaskType(
+      name = "SymbolsDbCodeTask",
+      category = "Execution",
+      taskClass = SymbolsDbCodeTask::class.java,
+      executionConfigClass = SymbolsDbCodeTaskExecutionConfigData::class.java,
+      taskSettingsClass = SymbolsDbCodeTaskTypeConfig::class.java,
+      description = "Execute code snippets with predefined symbols",
+      tooltipHtml = """
                 Executes code snippets in an interactive environment with access to a symbol graph.
                 <ul>
                   <li>Access to <code>symbols_db</code> (SymbolGraphService)</li>
@@ -38,8 +39,8 @@ class SymbolsDbCodeTask(
                   <li>Interactive result review</li>
                 </ul>
             """.trimIndent(),
-        )
-    }
+    )
+  }
 
   override fun promptSegment(): String {
     val basePrompt = super.promptSegment()
@@ -55,15 +56,15 @@ class SymbolsDbCodeTask(
         """.trimIndent()
   }
 
-    override fun symbols(): Map<String, Any> = typeConfig?.let { typeConfig ->
-      val file = root.toFile().resolve(typeConfig.symbolFile)
-      log.info("Loading symbols database from ${file.absolutePath}")
-        mapOf(
-            "symbols_db" to SymbolGraphService().apply {
-              if (file.exists()) load(file)
-            }
-        )
-    } ?: emptyMap()
+  override fun symbols(): Map<String, Any> = typeConfig?.let { typeConfig ->
+    val file = root.toFile().resolve(typeConfig.symbolFile)
+    log.info("Loading symbols database from ${file.absolutePath}")
+    mapOf(
+      "symbols_db" to SymbolGraphService().apply {
+        if (file.exists()) load(file)
+      }
+    )
+  } ?: emptyMap()
 
   override fun run(
     agent: TaskOrchestrator,
@@ -101,37 +102,37 @@ class SymbolsDbCodeTask(
 
   override fun describer() = AbbrevWhitelistYamlDescriber("com.simiacryptus")
 
-    open class SymbolsDbCodeTaskTypeConfig(
-      @Description("The code runtime to use for execution (e.g., Groovy, Kotlin).")
-        codeRuntime: CodeRuntimes? = CodeRuntimes.GroovyRuntime,
-      @Description("The relative path to the symbol graph JSON file.")
-      var symbolFile: String = "symbol_graph.json",
-      @Description("The prompt template used to describe the symbols database to the LLM.")
-      var promptTemplate: String = "You have access to a `symbols_db` object (SymbolGraphService) loaded from '{file}'."
-    ) : RunCodeTaskTypeConfig(
-        task_type = SymbolsDbCode.name,
-        codeRuntime = codeRuntime,
-        model = null,
-        name = SymbolsDbCode.name,
-    )
+  open class SymbolsDbCodeTaskTypeConfig(
+    @Description("The code runtime to use for execution (e.g., Groovy, Kotlin).")
+    codeRuntime: CodeRuntimes? = CodeRuntimes.GroovyRuntime,
+    @Description("The relative path to the symbol graph JSON file.")
+    var symbolFile: String = "symbol_graph.json",
+    @Description("The prompt template used to describe the symbols database to the LLM.")
+    var promptTemplate: String = "You have access to a `symbols_db` object (SymbolGraphService) loaded from '{file}'."
+  ) : RunCodeTaskTypeConfig(
+    task_type = SymbolsDbCode.name,
+    codeRuntime = codeRuntime,
+    model = null,
+    name = SymbolsDbCode.name,
+  )
 
-    open class SymbolsDbCodeTaskExecutionConfigData(
-      @Description("The high-level goal or objective for the code execution.")
-        goal: String? = null,
-      @Description("The working directory where the code will be executed.")
-        workingDir: String? = null,
-      @Description("A detailed description of the specific task to be performed.")
-        task_description: String? = null,
-      @Description("A list of task IDs that must be completed before this task starts.")
-        task_dependencies: List<String>? = null,
-      @Description("The current execution state of the task.")
-        state: TaskState? = null,
-    ) : RunCodeTaskExecutionConfigData(
-        goal = goal,
-        workingDir = workingDir,
-        task_description = task_description,
-        task_dependencies = task_dependencies,
-        state = state,
-        task_type = SymbolsDbCode.name
-    )
+  open class SymbolsDbCodeTaskExecutionConfigData(
+    @Description("The high-level goal or objective for the code execution.")
+    goal: String? = null,
+    @Description("The working directory where the code will be executed.")
+    workingDir: String? = null,
+    @Description("A detailed description of the specific task to be performed.")
+    task_description: String? = null,
+    @Description("A list of task IDs that must be completed before this task starts.")
+    task_dependencies: List<String>? = null,
+    @Description("The current execution state of the task.")
+    state: TaskState? = null,
+  ) : RunCodeTaskExecutionConfigData(
+    goal = goal,
+    workingDir = workingDir,
+    task_description = task_description,
+    task_dependencies = task_dependencies,
+    state = state,
+    task_type = SymbolsDbCode.name
+  )
 }

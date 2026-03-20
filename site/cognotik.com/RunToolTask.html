@@ -3,20 +3,21 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | RunToolTask - Industrial Design System</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree for Showcase -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -229,7 +230,8 @@
         <div class="breadcrumbs">Home > Tasks > Execution > RunToolTask</div>
         <h1>RunToolTask</h1>
         <p class="pitch">
-            Executes external CLI tools and scripts within the workspace environment with real-time output streaming and manual approval gates.
+            Executes external CLI tools and scripts within the workspace environment with real-time output streaming and
+            manual approval gates.
         </p>
         <div class="badges">
             <span class="badge">Category: Execution</span>
@@ -265,7 +267,7 @@
                     npm test -- --watchAll=false
                 </div>
                 <button class="btn-action">Run Tool</button>
-                
+
                 <div style="margin-top: 1.5rem; color: var(--text-dim); font-size: 0.8rem; border-top: 1px solid #333; padding-top: 1rem;">
                     <details>
                         <summary>Process Output</summary>
@@ -285,11 +287,12 @@ Time:        1.2s
     <section class="showcase-section" style="margin-bottom: 4rem;">
         <h2 style="font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 1rem;">Workspace Artifacts</h2>
         <p style="color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.9rem;">
-            The agent maintains a persistent workspace for each task. Below is the live file structure for the <code>RunToolTask</code> test workspace, showing logs and generated outputs.
+            The agent maintains a persistent workspace for each task. Below is the live file structure for the <code>RunToolTask</code>
+            test workspace, showing logs and generated outputs.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
+        <div class="panel" id="file-tree-demo"
+             style="height: 300px; overflow: auto; padding: 1rem; background: #0d1117;"></div>
     </section>
-
 
 
     <!-- 3. TABS -->
@@ -301,7 +304,7 @@ Time:        1.2s
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane">
+        <div class="tab-pane" id="tab-docs">
             <h3 style="font-size: 1.2rem; margin-top: 0;">Execution Configuration (Runtime)</h3>
             <table class="docs-table">
                 <thead>
@@ -375,7 +378,7 @@ Time:        1.2s
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3 style="font-size: 1.2rem; margin-top: 0;">Task Execution Lifecycle</h3>
             <ul class="lifecycle-list">
                 <li>
@@ -384,19 +387,23 @@ Time:        1.2s
                 </li>
                 <li>
                     <strong>2. Tool Resolution</strong>
-                    Looks up the <code>tool</code> name in <code>UserSettings</code>. Resolves the absolute path to the executable using configured providers.
+                    Looks up the <code>tool</code> name in <code>UserSettings</code>. Resolves the absolute path to the
+                    executable using configured providers.
                 </li>
                 <li>
                     <strong>3. Validation</strong>
-                    Ensures the executable exists and validates the <code>workingDir</code> relative to the project root.
+                    Ensures the executable exists and validates the <code>workingDir</code> relative to the project
+                    root.
                 </li>
                 <li>
                     <strong>4. Interaction Gate</strong>
-                    If <code>autoFix</code> is false, the task enters a pending state, rendering a "Run Tool" button for manual approval.
+                    If <code>autoFix</code> is false, the task enters a pending state, rendering a "Run Tool" button for
+                    manual approval.
                 </li>
                 <li>
                     <strong>5. Process Execution</strong>
-                    Spawns a system process via <code>ProcessBuilder</code>. Merges <code>stdout</code> and <code>stderr</code> for unified logging.
+                    Spawns a system process via <code>ProcessBuilder</code>. Merges <code>stdout</code> and
+                    <code>stderr</code> for unified logging.
                 </li>
                 <li>
                     <strong>6. Reporting & Cleanup</strong>
@@ -406,9 +413,10 @@ Time:        1.2s
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3 style="font-size: 1.2rem; margin-top: 0;">Kotlin Boilerplate</h3>
-            <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">Example of invoking RunToolTask using the <code>UnifiedHarness</code> in an embedded environment:</p>
+            <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1rem;">Example of invoking RunToolTask
+                using the <code>UnifiedHarness</code> in an embedded environment:</p>
             <pre><code class="language-kotlin">
 import com.simiacryptus.cognotik.plan.tools.run.RunToolTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.run.RunToolTask.Companion.RunTool
@@ -432,7 +440,8 @@ harness.runTask(
             </code></pre>
 
             <h3 style="font-size: 1.2rem; margin-top: 2.5rem;">LLM Prompt Segment</h3>
-            <p style="color: var(--text-dim); font-size: 0.9rem;">This segment is injected into the LLM's system prompt to define the tool's capabilities:</p>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">This segment is injected into the LLM's system prompt
+                to define the tool's capabilities:</p>
             <pre style="background: #000; color: #4ade80; border: 1px solid #222;">
 RunTool - Execute a tool with custom arguments
   * Available tools: [list of configured tools from settings]

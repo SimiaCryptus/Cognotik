@@ -25,61 +25,64 @@ import java.nio.file.Path
 import java.util.concurrent.Semaphore
 
 class IterativeFileModificationTask(
-    orchestrationConfig: OrchestrationConfig,
-    planTask: IterativeFileModificationTaskExecutionConfigData?
-) : AbstractFileTask<IterativeFileModificationTask.IterativeFileModificationTaskExecutionConfigData>(orchestrationConfig, planTask) {
+  orchestrationConfig: OrchestrationConfig,
+  planTask: IterativeFileModificationTaskExecutionConfigData?
+) : AbstractFileTask<IterativeFileModificationTask.IterativeFileModificationTaskExecutionConfigData>(
+  orchestrationConfig,
+  planTask
+) {
 
-    class IterativeFileModificationTaskExecutionConfigData(
-        files: List<String> = emptyList(),
-        related_files: List<String>? = null,
-        @Description("High-level description of the overall modification goal")
-        val modification_goal: String? = null,
-        @Description("Maximum number of change items to generate in the planning phase")
-        val max_changes: Int = 10,
-        @Description("Whether to require user approval between each change iteration")
-        val approve_each_change: Boolean = false,
-        task_description: String? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = null
-    ) : FileTaskExecutionConfig(
-        task_type = IterativeFileModification.name,
-        task_description = task_description,
-        task_dependencies = task_dependencies,
-        related_files = related_files,
-        files = files,
-        state = state
-    ), ValidatedObject {
-        override fun validate(): String? {
-            if (files.isNullOrEmpty() && related_files.isNullOrEmpty()) {
-                return "At least one file must be specified in either 'files' or 'related_files'"
-            }
-            if (modification_goal.isNullOrBlank()) {
-                return "modification_goal must be specified"
-            }
-            if (max_changes < 1 || max_changes > 50) {
-                return "max_changes must be between 1 and 50"
-            }
-            return ValidatedObject.validateFields(this)
-        }
+  class IterativeFileModificationTaskExecutionConfigData(
+    files: List<String> = emptyList(),
+    related_files: List<String>? = null,
+    @Description("High-level description of the overall modification goal")
+    val modification_goal: String? = null,
+    @Description("Maximum number of change items to generate in the planning phase")
+    val max_changes: Int = 10,
+    @Description("Whether to require user approval between each change iteration")
+    val approve_each_change: Boolean = false,
+    task_description: String? = null,
+    task_dependencies: List<String>? = null,
+    state: TaskState? = null
+  ) : FileTaskExecutionConfig(
+    task_type = IterativeFileModification.name,
+    task_description = task_description,
+    task_dependencies = task_dependencies,
+    related_files = related_files,
+    files = files,
+    state = state
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (files.isNullOrEmpty() && related_files.isNullOrEmpty()) {
+        return "At least one file must be specified in either 'files' or 'related_files'"
+      }
+      if (modification_goal.isNullOrBlank()) {
+        return "modification_goal must be specified"
+      }
+      if (max_changes < 1 || max_changes > 50) {
+        return "max_changes must be between 1 and 50"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
+
+  class IterativeFileModificationTypeConfig(
+    @Description("Model to use for the planning phase")
+    var planningModel: ApiChatModel? = null,
+    @Description("Model to use for the implementation phase")
+    var implementationModel: ApiChatModel? = null,
+    @Description("Custom system prompt for the planning agent")
+    var planningPrompt: String? = null,
+    @Description("Custom system prompt for the implementation agent")
+    var implementationPrompt: String? = null,
+  ) : TaskTypeConfig()
+
+  override val typeConfig: IterativeFileModificationTypeConfig?
+    get() = taskType.let { task_type ->
+      orchestrationConfig.taskSettings.values.firstOrNull { it.task_type == task_type } as? IterativeFileModificationTypeConfig
     }
 
-    class IterativeFileModificationTypeConfig(
-        @Description("Model to use for the planning phase")
-        var planningModel: ApiChatModel? = null,
-        @Description("Model to use for the implementation phase")
-        var implementationModel: ApiChatModel? = null,
-        @Description("Custom system prompt for the planning agent")
-        var planningPrompt: String? = null,
-        @Description("Custom system prompt for the implementation agent")
-        var implementationPrompt: String? = null,
-    ) : TaskTypeConfig()
-
-    override val typeConfig: IterativeFileModificationTypeConfig?
-        get() = taskType.let { task_type ->
-            orchestrationConfig.taskSettings.values.firstOrNull { it.task_type == task_type } as? IterativeFileModificationTypeConfig
-        }
-
-    override fun promptSegment() = """
+  override fun promptSegment() = """
 IterativeFileModification - Multi-phase file modification with planning and iterative implementation
   * First, a planning agent analyzes the goal and generates a list of discrete changes
   * Then, each change is implemented one at a time by an implementation agent
@@ -90,143 +93,144 @@ IterativeFileModification - Multi-phase file modification with planning and iter
   * Set approve_each_change to true for manual review between iterations
 """.trimIndent()
 
-    data class PlannedChange(
-        @Description("Sequential index of this change")
-        val index: Int = 0,
-        @Description("Brief title describing the change")
-        val title: String = "",
-        @Description("Detailed description of what needs to be done")
-        val description: String = "",
-        @Description("List of file paths that will be modified")
-        val targetFiles: List<String> = emptyList(),
-        @Description("Explanation of why this change is needed")
-        val rationale: String = ""
-    ) : ValidatedObject {
-        override fun validate(): String? {
-            if (title.isBlank()) return "Change title cannot be blank"
-            if (description.isBlank()) return "Change description cannot be blank"
-            return null
-        }
+  data class PlannedChange(
+    @Description("Sequential index of this change")
+    val index: Int = 0,
+    @Description("Brief title describing the change")
+    val title: String = "",
+    @Description("Detailed description of what needs to be done")
+    val description: String = "",
+    @Description("List of file paths that will be modified")
+    val targetFiles: List<String> = emptyList(),
+    @Description("Explanation of why this change is needed")
+    val rationale: String = ""
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (title.isBlank()) return "Change title cannot be blank"
+      if (description.isBlank()) return "Change description cannot be blank"
+      return null
     }
+  }
 
-    data class ModificationPlan(
-        @Description("List of planned changes in order of execution")
-        val changes: List<PlannedChange> = emptyList()
-    ) : ValidatedObject {
-        override fun validate(): String? {
-            if (changes.isEmpty()) return "At least one change must be specified"
-            return changes.mapNotNull { it.validate() }.firstOrNull()
-        }
+  data class ModificationPlan(
+    @Description("List of planned changes in order of execution")
+    val changes: List<PlannedChange> = emptyList()
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (changes.isEmpty()) return "At least one change must be specified"
+      return changes.mapNotNull { it.validate() }.firstOrNull()
     }
+  }
 
-    override fun run(
-        agent: TaskOrchestrator,
-        messages: List<String>,
-        task: SessionTask,
-        resultFn: (String) -> Unit,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        val semaphore = Semaphore(0)
-        val completionNotes = mutableListOf<String>()
-      val transcript = task.newUserFileStream(transcriptFile())
-        val tabs = TabbedDisplay(task)
+  override fun run(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    resultFn: (String) -> Unit,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    val semaphore = Semaphore(0)
+    val completionNotes = mutableListOf<String>()
+    val transcript = task.newUserFileStream(transcriptFile())
+    val tabs = TabbedDisplay(task)
 
-        try {
-            transcript?.write("# Iterative File Modification Task Transcript\n\n".toByteArray())
+    try {
+      transcript?.write("# Iterative File Modification Task Transcript\n\n".toByteArray())
 
-            // Phase 1: Planning
-            val planningTab = tabs.newTask("Planning Phase")
-            planningTab.add("Analyzing modification goal and generating change plan...".renderMarkdown())
+      // Phase 1: Planning
+      val planningTab = tabs.newTask("Planning Phase")
+      planningTab.add("Analyzing modification goal and generating change plan...".renderMarkdown())
 
-            val plannedChanges = executePlanningPhase(agent, messages, planningTab, transcript)
+      val plannedChanges = executePlanningPhase(agent, messages, planningTab, transcript)
 
-            if (plannedChanges.isEmpty()) {
-                planningTab.complete("No changes were identified by the planning agent.".renderMarkdown())
-                resultFn("No changes identified for the given modification goal.")
-                return
-            }
+      if (plannedChanges.isEmpty()) {
+        planningTab.complete("No changes were identified by the planning agent.".renderMarkdown())
+        resultFn("No changes identified for the given modification goal.")
+        return
+      }
 
-            planningTab.complete(formatPlanSummary(plannedChanges).renderMarkdown())
-            transcript?.write("\n## Planning Complete\nIdentified ${plannedChanges.size} changes to implement.\n".toByteArray())
+      planningTab.complete(formatPlanSummary(plannedChanges).renderMarkdown())
+      transcript?.write("\n## Planning Complete\nIdentified ${plannedChanges.size} changes to implement.\n".toByteArray())
 
-            // Phase 2: Iterative Implementation
-            val implementationTab = tabs.newTask("Implementation Phase")
-            implementationTab.add("Beginning iterative implementation of ${plannedChanges.size} changes...".renderMarkdown())
+      // Phase 2: Iterative Implementation
+      val implementationTab = tabs.newTask("Implementation Phase")
+      implementationTab.add("Beginning iterative implementation of ${plannedChanges.size} changes...".renderMarkdown())
 
-            val implementedChanges = mutableListOf<String>()
+      val implementedChanges = mutableListOf<String>()
 
-            for ((index, change) in plannedChanges.withIndex()) {
-                val changeTab = tabs.newTask("Change ${index + 1}: ${change.title}")
+      for ((index, change) in plannedChanges.withIndex()) {
+        val changeTab = tabs.newTask("Change ${index + 1}: ${change.title}")
 
-                transcript?.write("\n### Implementing Change ${index + 1}: ${change.title}\n".toByteArray())
+        transcript?.write("\n### Implementing Change ${index + 1}: ${change.title}\n".toByteArray())
 
-                val changeResult = executeImplementationPhase(
-                    agent = agent,
-                    change = change,
-                    previousChanges = implementedChanges,
-                    task = changeTab,
-                    transcript = transcript,
-                    completionNotes = completionNotes
-                )
+        val changeResult = executeImplementationPhase(
+          agent = agent,
+          change = change,
+          previousChanges = implementedChanges,
+          task = changeTab,
+          transcript = transcript,
+          completionNotes = completionNotes
+        )
 
-                implementedChanges.add("Change ${index + 1} (${change.title}): $changeResult")
+        implementedChanges.add("Change ${index + 1} (${change.title}): $changeResult")
 
-                // Handle approval between changes if configured
-                if (executionConfig?.approve_each_change == true && !orchestrationConfig.autoFix && index < plannedChanges.size - 1) {
-                    val approvalSemaphore = Semaphore(0)
-                    changeTab.add(acceptButtonFooter(changeTab.ui) {
-                        approvalSemaphore.release()
-                    })
-                    approvalSemaphore.acquire()
-                } else {
-                    changeTab.complete()
-                }
-            }
-
-            implementationTab.complete("All ${plannedChanges.size} changes have been processed.".renderMarkdown())
-
-            // Final Summary
-            val summary = buildFinalSummary(plannedChanges, completionNotes)
-            transcript?.write("\n## Final Summary\n$summary\n".toByteArray())
-
-            if (!orchestrationConfig.autoFix) {
-                task.add(acceptButtonFooter(task.ui) {
-                    task.complete()
-                    semaphore.release()
-                })
-                semaphore.acquire()
-            } else {
-                semaphore.release()
-            }
-
-            resultFn(summary)
-
-        } catch (e: Throwable) {
-            task.error(e)
-            log.error("Error in IterativeFileModificationTask", e)
-            transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
-            throw e
-        } finally {
-            transcript?.close()
+        // Handle approval between changes if configured
+        if (executionConfig?.approve_each_change == true && !orchestrationConfig.autoFix && index < plannedChanges.size - 1) {
+          val approvalSemaphore = Semaphore(0)
+          changeTab.add(acceptButtonFooter(changeTab.ui) {
+            approvalSemaphore.release()
+          })
+          approvalSemaphore.acquire()
+        } else {
+          changeTab.complete()
         }
+      }
+
+      implementationTab.complete("All ${plannedChanges.size} changes have been processed.".renderMarkdown())
+
+      // Final Summary
+      val summary = buildFinalSummary(plannedChanges, completionNotes)
+      transcript?.write("\n## Final Summary\n$summary\n".toByteArray())
+
+      if (!orchestrationConfig.autoFix) {
+        task.add(acceptButtonFooter(task.ui) {
+          task.complete()
+          semaphore.release()
+        })
+        semaphore.acquire()
+      } else {
+        semaphore.release()
+      }
+
+      resultFn(summary)
+
+    } catch (e: Throwable) {
+      task.error(e)
+      log.error("Error in IterativeFileModificationTask", e)
+      transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
+      throw e
+    } finally {
+      transcript?.close()
     }
+  }
 
-    private fun executePlanningPhase(
-        agent: TaskOrchestrator,
-        messages: List<String>,
-        task: SessionTask,
-        transcript: FileOutputStream?
-    ): List<PlannedChange> {
-        val typeConfig = typeConfig
-        val planningModel = typeConfig?.planningModel?.let { it.instance() }
-            ?: defaultSmart
-        val defaultChatter = planningModel.getChildClient(task)
-        val parsingChatter = defaultFast.getChildClient(task)
+  private fun executePlanningPhase(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    transcript: FileOutputStream?
+  ): List<PlannedChange> {
+    val typeConfig = typeConfig
+    val planningModel = typeConfig?.planningModel?.let { it.instance(orchestrationConfig.user) }
+      ?: defaultSmart
+    val defaultChatter = planningModel.getChildClient(task)
+    val parsingChatter = defaultFast.getChildClient(task)
 
-        val fileContext = getInputFileCode()
-        val dependencyContext = getPriorCode(agent.executionState)
+    val fileContext = getInputFileCode()
+    val dependencyContext = getPriorCode(agent.executionState)
 
-        transcript?.write("""
+    transcript?.write(
+      """
 ## Planning Phase Input
 <details>
 <summary>File Context</summary>
@@ -240,38 +244,40 @@ $fileContext
 $dependencyContext
 </details>
 
-        """.toByteArray())
+        """.toByteArray()
+    )
 
-        val planningPrompt = typeConfig?.planningPrompt ?: getDefaultPlanningPrompt()
+    val planningPrompt = typeConfig?.planningPrompt ?: getDefaultPlanningPrompt()
 
-        val planningAgent = ParsedAgent(
-            resultClass = ModificationPlan::class.java,
-            prompt = planningPrompt,
-            model = defaultChatter,
-            parsingChatter = parsingChatter
-        )
+    val planningAgent = ParsedAgent(
+      resultClass = ModificationPlan::class.java,
+      prompt = planningPrompt,
+      model = defaultChatter,
+      parsingChatter = parsingChatter
+    )
 
-        val planningInput = buildString {
-            appendLine("## Modification Goal")
-            appendLine(executionConfig?.modification_goal)
-            appendLine()
-            appendLine("## Current File Contents")
-            appendLine(fileContext)
-            if (dependencyContext.isNotBlank()) {
-                appendLine()
-                appendLine("## Context from Dependencies")
-                appendLine(dependencyContext)
-            }
-            appendLine()
-            appendLine("## Instructions")
-            appendLine("Generate a list of up to ${executionConfig?.max_changes ?: 10} discrete, ordered changes.")
-            appendLine("Each change should be atomic and independently implementable.")
-            appendLine("Return the changes as a structured list with index, title, description, targetFiles, and rationale for each.")
-        }
+    val planningInput = buildString {
+      appendLine("## Modification Goal")
+      appendLine(executionConfig?.modification_goal)
+      appendLine()
+      appendLine("## Current File Contents")
+      appendLine(fileContext)
+      if (dependencyContext.isNotBlank()) {
+        appendLine()
+        appendLine("## Context from Dependencies")
+        appendLine(dependencyContext)
+      }
+      appendLine()
+      appendLine("## Instructions")
+      appendLine("Generate a list of up to ${executionConfig?.max_changes ?: 10} discrete, ordered changes.")
+      appendLine("Each change should be atomic and independently implementable.")
+      appendLine("Return the changes as a structured list with index, title, description, targetFiles, and rationale for each.")
+    }
 
-        val planResult = planningAgent.answer(messages + listOf(planningInput))
+    val planResult = planningAgent.answer(messages + listOf(planningInput))
 
-        transcript?.write("""
+    transcript?.write(
+      """
 ## Planning Agent Response
 <details>
 <summary>Raw Output</summary>
@@ -279,73 +285,75 @@ $dependencyContext
 ${planResult.text}
 </details>
 
-        """.toByteArray())
+        """.toByteArray()
+    )
 
-        task.add(planResult.text.renderMarkdown())
+    task.add(planResult.text.renderMarkdown())
 
-        // Use parsed result, with fallback to text parsing if needed
-        val parsedChanges = planResult.obj.changes
-        return if (parsedChanges.isNotEmpty()) {
-            // Re-index the changes to ensure sequential numbering
-            parsedChanges.mapIndexed { idx, change ->
-                change.copy(
-                    index = idx + 1,
-                    targetFiles = change.targetFiles.ifEmpty { executionConfig?.files ?: emptyList() }
-                )
-            }.take(executionConfig?.max_changes ?: 10)
-        } else {
-            // Fallback to text parsing if structured parsing failed
-            parsePlannedChanges(planResult.text)
-        }
+    // Use parsed result, with fallback to text parsing if needed
+    val parsedChanges = planResult.obj.changes
+    return if (parsedChanges.isNotEmpty()) {
+      // Re-index the changes to ensure sequential numbering
+      parsedChanges.mapIndexed { idx, change ->
+        change.copy(
+          index = idx + 1,
+          targetFiles = change.targetFiles.ifEmpty { executionConfig?.files ?: emptyList() }
+        )
+      }.take(executionConfig?.max_changes ?: 10)
+    } else {
+      // Fallback to text parsing if structured parsing failed
+      parsePlannedChanges(planResult.text)
+    }
+  }
+
+  private fun executeImplementationPhase(
+    agent: TaskOrchestrator,
+    change: PlannedChange,
+    previousChanges: List<String>,
+    task: SessionTask,
+    transcript: FileOutputStream?,
+    completionNotes: MutableList<String>
+  ): String {
+    val typeConfig = typeConfig
+    val implementationModel = typeConfig?.implementationModel?.let { it.instance(orchestrationConfig.user) }
+      ?: defaultSmart
+    val chatInterface = implementationModel.getChildClient(task)
+
+    // Re-read files to get current state (may have been modified by previous iterations)
+    val currentFileContents = change.targetFiles.mapNotNull { filePath ->
+      val file = root.resolve(filePath).toFile()
+      if (file.exists()) {
+        "# $filePath\n\n${TRIPLE_TILDE}\n${file.readText()}\n${TRIPLE_TILDE}"
+      } else null
+    }.joinToString("\n\n")
+
+    val implementationPrompt = typeConfig?.implementationPrompt ?: getDefaultImplementationPrompt()
+
+    val implementationAgent = ChatAgent(
+      name = "IterativeModificationImplementer",
+      prompt = implementationPrompt,
+      model = chatInterface,
+      temperature = orchestrationConfig.temperature,
+    )
+
+    val implementationInput = buildString {
+      appendLine("## Change to Implement")
+      appendLine("**Title:** ${change.title}")
+      appendLine("**Description:** ${change.description}")
+      appendLine("**Target Files:** ${change.targetFiles.joinToString(", ")}")
+      appendLine("**Rationale:** ${change.rationale}")
+      appendLine()
+      appendLine("## Current File Contents")
+      appendLine(currentFileContents)
+      if (previousChanges.isNotEmpty()) {
+        appendLine()
+        appendLine("## Previously Implemented Changes")
+        previousChanges.forEach { appendLine("- $it") }
+      }
     }
 
-    private fun executeImplementationPhase(
-        agent: TaskOrchestrator,
-        change: PlannedChange,
-        previousChanges: List<String>,
-        task: SessionTask,
-        transcript: FileOutputStream?,
-        completionNotes: MutableList<String>
-    ): String {
-        val typeConfig = typeConfig
-        val implementationModel = typeConfig?.implementationModel?.let { it.instance() }
-            ?: defaultSmart
-        val chatInterface = implementationModel.getChildClient(task)
-
-        // Re-read files to get current state (may have been modified by previous iterations)
-        val currentFileContents = change.targetFiles.mapNotNull { filePath ->
-            val file = root.resolve(filePath).toFile()
-            if (file.exists()) {
-                "# $filePath\n\n${TRIPLE_TILDE}\n${file.readText()}\n${TRIPLE_TILDE}"
-            } else null
-        }.joinToString("\n\n")
-
-        val implementationPrompt = typeConfig?.implementationPrompt ?: getDefaultImplementationPrompt()
-
-        val implementationAgent = ChatAgent(
-            name = "IterativeModificationImplementer",
-            prompt = implementationPrompt,
-            model = chatInterface,
-            temperature = orchestrationConfig.temperature,
-        )
-
-        val implementationInput = buildString {
-            appendLine("## Change to Implement")
-            appendLine("**Title:** ${change.title}")
-            appendLine("**Description:** ${change.description}")
-            appendLine("**Target Files:** ${change.targetFiles.joinToString(", ")}")
-            appendLine("**Rationale:** ${change.rationale}")
-            appendLine()
-            appendLine("## Current File Contents")
-            appendLine(currentFileContents)
-            if (previousChanges.isNotEmpty()) {
-                appendLine()
-                appendLine("## Previously Implemented Changes")
-                previousChanges.forEach { appendLine("- $it") }
-            }
-        }
-
-        transcript?.write("""
+    transcript?.write(
+      """
 #### Implementation Input for Change ${change.index}
 <details>
 <summary>Input</summary>
@@ -353,11 +361,13 @@ ${planResult.text}
 $implementationInput
 </details>
 
-        """.toByteArray())
+        """.toByteArray()
+    )
 
-        val implementationResponse = implementationAgent.answer(listOf(implementationInput))
+    val implementationResponse = implementationAgent.answer(listOf(implementationInput))
 
-        transcript?.write("""
+    transcript?.write(
+      """
 #### Implementation Response for Change ${change.index}
 <details>
 <summary>Raw Output</summary>
@@ -365,122 +375,123 @@ $implementationInput
 $implementationResponse
 </details>
 
-        """.toByteArray())
+        """.toByteArray()
+    )
 
-        // Render with diff application links
-        val autoFix = orchestrationConfig.autoFix
-        val markdown = renderMarkdown(implementationResponse, ui = task.ui) {
-            DiffInstrumentor(
-              orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
-              SessionRenderer(task),
-            ).instrument(
-                root = agent.root,
-                response = it,
-                handle = { newCodeMap: Map<Path, String> ->
-                    newCodeMap.forEach { (path, _) ->
-                        val note =
-                            "Change ${change.index} - <a href='fileIndex/${agent.session}/$path'>$path</a> Updated"
-                        completionNotes += note
-                        transcript?.write("- $note\n".toByteArray())
-                    }
-                },
-                shouldAutoApply = { it: Path -> autoFix },
-                defaultFile = change.targetFiles.firstOrNull(),
-                resolver = ::resolveToRelativePath,
-            )
-        }
-
-        task.add(markdown)
-
-        return "Completed"
+    // Render with diff application links
+    val autoFix = orchestrationConfig.autoFix
+    val markdown = renderMarkdown(implementationResponse, ui = task.ui) {
+      DiffInstrumentor(
+        orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
+        SessionRenderer(task),
+      ).instrument(
+        root = agent.root,
+        response = it,
+        handle = { newCodeMap: Map<Path, String> ->
+          newCodeMap.forEach { (path, _) ->
+            val note =
+              "Change ${change.index} - <a href='fileIndex/${agent.session}/$path'>$path</a> Updated"
+            completionNotes += note
+            transcript?.write("- $note\n".toByteArray())
+          }
+        },
+        shouldAutoApply = { it: Path -> autoFix },
+        defaultFile = change.targetFiles.firstOrNull(),
+        resolver = ::resolveToRelativePath,
+      )
     }
 
-    private fun parsePlannedChanges(response: String): List<PlannedChange> {
-        val changes = mutableListOf<PlannedChange>()
-        val changePattern = Regex(
-            """(?:^|\n)(?:#{1,3}\s*)?(?:Change\s*)?(\d+)[.:\s]+(.+?)(?:\n|$)""",
-            RegexOption.MULTILINE
+    task.add(markdown)
+
+    return "Completed"
+  }
+
+  private fun parsePlannedChanges(response: String): List<PlannedChange> {
+    val changes = mutableListOf<PlannedChange>()
+    val changePattern = Regex(
+      """(?:^|\n)(?:#{1,3}\s*)?(?:Change\s*)?(\d+)[.:\s]+(.+?)(?:\n|$)""",
+      RegexOption.MULTILINE
+    )
+
+    val matches = changePattern.findAll(response)
+    var currentIndex = 0
+
+    for (match in matches) {
+      currentIndex++
+      val title = match.groupValues[2].trim()
+
+      // Extract description - text until next change header or end
+      val startPos = match.range.last + 1
+      val nextMatch = changePattern.find(response, startPos)
+      val endPos = nextMatch?.range?.first ?: response.length
+      val description = response.substring(startPos, endPos).trim()
+
+      // Try to extract target files from description
+      val filePattern = Regex("""(?:file[s]?|target[s]?):\s*([^\n]+)""", RegexOption.IGNORE_CASE)
+      val fileMatch = filePattern.find(description)
+      val targetFiles = fileMatch?.groupValues?.get(1)?.split(",")?.map { it.trim() }
+        ?: executionConfig?.files ?: listOf()
+
+      changes.add(
+        PlannedChange(
+          index = currentIndex,
+          title = title,
+          description = description,
+          targetFiles = targetFiles,
+          rationale = "Part of: ${executionConfig?.modification_goal}"
         )
+      )
 
-        val matches = changePattern.findAll(response)
-        var currentIndex = 0
-
-        for (match in matches) {
-            currentIndex++
-            val title = match.groupValues[2].trim()
-
-            // Extract description - text until next change header or end
-            val startPos = match.range.last + 1
-            val nextMatch = changePattern.find(response, startPos)
-            val endPos = nextMatch?.range?.first ?: response.length
-            val description = response.substring(startPos, endPos).trim()
-
-            // Try to extract target files from description
-            val filePattern = Regex("""(?:file[s]?|target[s]?):\s*([^\n]+)""", RegexOption.IGNORE_CASE)
-            val fileMatch = filePattern.find(description)
-            val targetFiles = fileMatch?.groupValues?.get(1)?.split(",")?.map { it.trim() }
-                ?: executionConfig?.files ?: listOf()
-
-            changes.add(
-                PlannedChange(
-                    index = currentIndex,
-                    title = title,
-                    description = description,
-                    targetFiles = targetFiles,
-                    rationale = "Part of: ${executionConfig?.modification_goal}"
-                )
-            )
-
-            if (currentIndex >= (executionConfig?.max_changes ?: 10)) break
-        }
-
-        // Fallback: if no structured changes found, create a single change
-        if (changes.isEmpty() && response.isNotBlank()) {
-            changes.add(
-                PlannedChange(
-                    index = 1,
-                    title = "Implement Modification",
-                    description = response,
-                    targetFiles = executionConfig?.files ?: listOf(),
-                    rationale = executionConfig?.modification_goal ?: ""
-                )
-            )
-        }
-
-        return changes
+      if (currentIndex >= (executionConfig?.max_changes ?: 10)) break
     }
 
-    private fun formatPlanSummary(changes: List<PlannedChange>): String = buildString {
-        appendLine("# Modification Plan")
-        appendLine()
-        appendLine("The following ${changes.size} changes have been identified:")
-        appendLine()
-        changes.forEach { change ->
-            appendLine("## ${change.index}. ${change.title}")
-            appendLine("**Target Files:** ${change.targetFiles.joinToString(", ")}")
-            appendLine()
-            appendLine(change.description.take(500))
-            if (change.description.length > 500) appendLine("...")
-            appendLine()
-        }
+    // Fallback: if no structured changes found, create a single change
+    if (changes.isEmpty() && response.isNotBlank()) {
+      changes.add(
+        PlannedChange(
+          index = 1,
+          title = "Implement Modification",
+          description = response,
+          targetFiles = executionConfig?.files ?: listOf(),
+          rationale = executionConfig?.modification_goal ?: ""
+        )
+      )
     }
 
-    private fun buildFinalSummary(changes: List<PlannedChange>, completionNotes: List<String>): String = buildString {
-        appendLine("### Iterative Modification Complete")
-        appendLine()
-        appendLine("**Goal:** ${executionConfig?.modification_goal}")
-        appendLine()
-        appendLine("**Changes Planned:** ${changes.size}")
-        appendLine()
-        if (completionNotes.isNotEmpty()) {
-            appendLine("**Files Modified:**")
-            completionNotes.forEach { appendLine("* $it") }
-        } else {
-            appendLine("No files were modified.")
-        }
-    }
+    return changes
+  }
 
-    private fun getDefaultPlanningPrompt(): String = """
+  private fun formatPlanSummary(changes: List<PlannedChange>): String = buildString {
+    appendLine("# Modification Plan")
+    appendLine()
+    appendLine("The following ${changes.size} changes have been identified:")
+    appendLine()
+    changes.forEach { change ->
+      appendLine("## ${change.index}. ${change.title}")
+      appendLine("**Target Files:** ${change.targetFiles.joinToString(", ")}")
+      appendLine()
+      appendLine(change.description.take(500))
+      if (change.description.length > 500) appendLine("...")
+      appendLine()
+    }
+  }
+
+  private fun buildFinalSummary(changes: List<PlannedChange>, completionNotes: List<String>): String = buildString {
+    appendLine("### Iterative Modification Complete")
+    appendLine()
+    appendLine("**Goal:** ${executionConfig?.modification_goal}")
+    appendLine()
+    appendLine("**Changes Planned:** ${changes.size}")
+    appendLine()
+    if (completionNotes.isNotEmpty()) {
+      appendLine("**Files Modified:**")
+      completionNotes.forEach { appendLine("* $it") }
+    } else {
+      appendLine("No files were modified.")
+    }
+  }
+
+  private fun getDefaultPlanningPrompt(): String = """
 You are a code modification planning agent. Your task is to analyze a modification goal and break it down into discrete, ordered changes.
 
 For each change, provide:
@@ -502,7 +513,7 @@ Each PlannedChange should have:
 - rationale: Why this change is needed
     """.trimIndent()
 
-    private fun getDefaultImplementationPrompt(): String = """
+  private fun getDefaultImplementationPrompt(): String = """
 You are a code implementation agent. Your task is to implement a specific change as part of a larger modification plan.
 
 Guidelines:
@@ -521,18 +532,18 @@ Response format:
 After the code changes, provide a brief summary of what was implemented.
     """.trimIndent()
 
-    companion object {
-        private val log = LoggerFactory.getLogger(IterativeFileModificationTask::class.java)
+  companion object {
+    private val log = LoggerFactory.getLogger(IterativeFileModificationTask::class.java)
 
-        @JvmStatic
-        val IterativeFileModification = TaskType(
-            "IterativeFileModification",
-            "File",
-            IterativeFileModificationTask::class.java,
-            IterativeFileModificationTaskExecutionConfigData::class.java,
-            IterativeFileModificationTypeConfig::class.java,
-            "Multi-phase file modification with planning and iterative implementation",
-            """
+    @JvmStatic
+    val IterativeFileModification = TaskType(
+      "IterativeFileModification",
+      "File",
+      IterativeFileModificationTask::class.java,
+      IterativeFileModificationTaskExecutionConfigData::class.java,
+      IterativeFileModificationTypeConfig::class.java,
+      "Multi-phase file modification with planning and iterative implementation",
+      """
                 Performs complex file modifications through a two-phase approach:
                 <ul>
                     <li><b>Planning Phase:</b> An AI agent analyzes the modification goal and generates a list of discrete, ordered changes</li>
@@ -544,6 +555,6 @@ After the code changes, provide a brief summary of what was implemented.
                     <li>Configurable models for planning and implementation phases</li>
                 </ul>
             """,
-        )
-    }
+    )
+  }
 }

@@ -5,7 +5,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -50,11 +50,8 @@ class SmartChatAction : BaseAction() {
                     fastModel = AppSettingsState.instance.fastChatClient,
                     systemPrompt = systemPrompt,
                     applicationClass = ApplicationServer::class.java,
-                    storage = ApplicationServices.fileApplicationServices().dataStorageFactory,
                     budget = 2.0,
-                    maxHistoryTokens = 4000,
-                    targetSummaryTokens = 1000,
-                    preserveRecentMessages = 4
+                    owner = localUser
                 )
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Smart Chat",

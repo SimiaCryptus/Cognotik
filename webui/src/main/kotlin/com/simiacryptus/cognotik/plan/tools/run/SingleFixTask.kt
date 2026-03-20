@@ -93,7 +93,7 @@ class SingleFixTask(
           val transcript = createTranscript(subTask)
           subTask.add(transcript.second.renderMarkdown())
           val model =
-            (typeConfig.model?.let { it.instance() } ?: defaultSmart).getChildClient(subTask)
+            (typeConfig.model?.let { it.instance(orchestrationConfig.user) } ?: defaultSmart).getChildClient(subTask)
           val markdownTranscript = transcript.first
           try {
             markdownTranscript?.write("## Single Fix Task Execution\n\n".toByteArray())
@@ -102,7 +102,8 @@ class SingleFixTask(
             val logFile = agent.root.toFile().resolve(logFilePath)
             if (!logFile.exists()) throw IllegalArgumentException("Log file not found: $logFile")
 
-            val workingDir = orchestrationConfig.workingDir?.let { agent.root.toFile().resolve(it) } ?: agent.root.toFile()
+            val workingDir =
+              orchestrationConfig.workingDir?.let { agent.root.toFile().resolve(it) } ?: agent.root.toFile()
 
             markdownTranscript?.write("Analyzing log file: ${logFile.absolutePath}\n".toByteArray())
 

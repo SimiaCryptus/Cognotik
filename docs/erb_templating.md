@@ -9,7 +9,9 @@ specifies: ../site/cognotik.com/erb_templating.html
 
 ## Overview
 
-The `ErbTemplateEngine` is a powerful, Ruby ERB-inspired templating engine written in Kotlin. It provides a flexible way to generate dynamic text content (particularly LaTeX documents) from JSON data. The engine supports variable interpolation, control structures, filters, custom functions, and optional type-safe schema validation.
+The `ErbTemplateEngine` is a powerful, Ruby ERB-inspired templating engine written in Kotlin. It provides a flexible way
+to generate dynamic text content (particularly LaTeX documents) from JSON data. The engine supports variable
+interpolation, control structures, filters, custom functions, and optional type-safe schema validation.
 
 ## Table of Contents
 
@@ -77,10 +79,10 @@ val data = JsonObject().apply {
 
 The engine uses ERB-style delimiters:
 
-| Syntax | Purpose | Example |
-|--------|---------|---------|
-| `<%= expr %>` | Output expression | `<%= name %>` |
-| `<% code %>` | Control structure | `<% if active %>` |
+| Syntax           | Purpose               | Example            |
+|------------------|-----------------------|--------------------|
+| `<%= expr %>`    | Output expression     | `<%= name %>`      |
+| `<% code %>`     | Control structure     | `<% if active %>`  |
 | `<%# comment %>` | Comment (in preamble) | `<%# @type ... %>` |
 
 ### Whitespace Handling
@@ -142,6 +144,7 @@ Filters transform values using the pipe (`|`) syntax. Multiple filters can be ch
 ### Built-in Filters
 
 #### `escape`
+
 Escapes special LaTeX characters.
 
 ```erb
@@ -164,6 +167,7 @@ Escapes special LaTeX characters.
 | `>`   | `\textgreater{}`     |
 
 #### `markdown`
+
 Converts basic Markdown to LaTeX.
 
 ```erb
@@ -178,6 +182,7 @@ Converts basic Markdown to LaTeX.
 | `[text](url)` | `\href{url}{text}` |
 
 #### `upper`
+
 Converts text to uppercase.
 
 ```erb
@@ -186,6 +191,7 @@ Converts text to uppercase.
 ```
 
 #### `lower`
+
 Converts text to lowercase.
 
 ```erb
@@ -194,6 +200,7 @@ Converts text to lowercase.
 ```
 
 #### `join`
+
 Joins array elements with a separator.
 
 ```erb
@@ -203,6 +210,7 @@ Joins array elements with a separator.
 ```
 
 #### `default`
+
 Provides a fallback value for empty or missing values.
 
 ```erb
@@ -352,11 +360,11 @@ Simple arithmetic expressions (like modulo) can be used in conditions:
 
 Inside a loop, a `loop` object provides metadata:
 
-| Variable | Description |
-|----------|-------------|
-| `loop.index` | Current index (0-based) |
+| Variable     | Description               |
+|--------------|---------------------------|
+| `loop.index` | Current index (0-based)   |
 | `loop.first` | `true` if first iteration |
-| `loop.last` | `true` if last iteration |
+| `loop.last`  | `true` if last iteration  |
 
 ```erb
 <% for item in items %>

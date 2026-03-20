@@ -16,9 +16,10 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel
 import com.simiacryptus.cognotik.plan.tools.writing.BusinessProposalTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -106,14 +107,15 @@ class BusinessProposalAction : BaseAction() {
             path = "/businessProposal",
             applicationName = "Business Proposal Generation",
             taskType = BusinessProposalTask.BusinessProposal,
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
-            message = "Execute task"
+            instanceFn = { model, user -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
+            message = "Execute task",
+            user = orchestrationConfig.user
         ) {
             override fun instance(model: ApiChatModel) =
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")
         }
 
-        app.getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())
+      app.getSettingsFile(session, AppSettingsState.localUser).writeText(orchestrationConfig.toJson())
         SessionProxyServer.chats[session] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Business Proposal Generation", inputCnt = 0, stickyInput = false, showMenubar = false
@@ -453,7 +455,7 @@ class BusinessProposalAction : BaseAction() {
         fun getOrchestrationConfig(): OrchestrationConfig {
             val selectedModel = modelCombo.selectedItem as? String
             val model = selectedModel?.let { modelName ->
-                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel()
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(localUser)
             }
 
             return OrchestrationConfig(
@@ -467,12 +469,13 @@ class BusinessProposalAction : BaseAction() {
                 workingDir = root.absolutePath,
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
-                )
+                ),
+                user = localUser
             )
         }
 
         private fun getVisibleModels() =
-            ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+          ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
                     model.provider == apiData.provider &&
                             model.modelId?.isNotBlank() == true &&

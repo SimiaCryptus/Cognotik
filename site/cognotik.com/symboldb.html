@@ -2,39 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <!-- SEO Meta Tags -->
     <title>Symbol Database - Cognotik</title>
-    <meta name="description" content="Graph-based code analysis and browsing system for extracting, storing, and navigating code symbols across your project.">
-    <meta name="keywords" content="AI coding, code analysis, symbol database, code navigation, TinkerGraph, IntelliJ plugin">
+    <meta content="Graph-based code analysis and browsing system for extracting, storing, and navigating code symbols across your project."
+          name="description">
+    <meta content="AI coding, code analysis, symbol database, code navigation, TinkerGraph, IntelliJ plugin"
+          name="keywords">
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="Symbol Database | Cognotik">
-    <meta property="og:description" content="Graph-based code analysis and browsing system for extracting, storing, and navigating code symbols across your project.">
-    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
-    <meta property="og:url" content="https://cognotik.com/symboldb.html">
-    <meta property="og:type" content="website">
+    <meta content="Symbol Database | Cognotik" property="og:title">
+    <meta content="Graph-based code analysis and browsing system for extracting, storing, and navigating code symbols across your project."
+          property="og:description">
+    <meta content="https://cognotik.com/assets/images/og-image.png" property="og:image">
+    <meta content="https://cognotik.com/symboldb.html" property="og:url">
+    <meta content="website" property="og:type">
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Symbol Database | Cognotik">
-    <meta name="twitter:description" content="Graph-based code analysis and browsing system for extracting, storing, and navigating code symbols across your project.">
-    <meta name="twitter:image" content="https://cognotik.com/assets/images/twitter-card.png">
+    <meta content="summary_large_image" name="twitter:card">
+    <meta content="Symbol Database | Cognotik" name="twitter:title">
+    <meta content="Graph-based code analysis and browsing system for extracting, storing, and navigating code symbols across your project."
+          name="twitter:description">
+    <meta content="https://cognotik.com/assets/images/twitter-card.png" name="twitter:image">
 
     <!-- Favicon Suite -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-    <link rel="manifest" href="/site.webmanifest">
-    <meta name="theme-color" content="#0f1115">
+    <link href="assets/icons/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="assets/icons/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
+    <link href="assets/icons/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
+    <link href="assets/icons/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
+    <link href="/site.webmanifest" rel="manifest">
+    <meta content="#0f1115" name="theme-color">
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@400;600;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         /* Page-specific styles */
@@ -353,366 +358,373 @@
     </style>
 </head>
 <body>
-    <!-- Header Component -->
-    <cognotik-header></cognotik-header>
+<!-- Header Component -->
+<cognotik-header></cognotik-header>
 
-    <!-- Main Content -->
-    <main class="task-container">
-        <header class="page-header">
-            <h1>Symbol Database</h1>
-            <p class="lead">
-                The Symbol Database (SymbolDB) is a graph-based code analysis and browsing system that extracts,
-                stores, and provides navigation for code symbols across your project. It uses Apache TinkerGraph
-                to maintain relationships between files, symbols, packages, libraries, and programming languages.
-            </p>
-            <div style="margin-top: var(--spacing-md);">
-                <span class="badge badge-primary">IntelliJ Plugin</span>
-                <span class="badge badge-success">Stable</span>
+<!-- Main Content -->
+<main class="task-container">
+    <header class="page-header">
+        <h1>Symbol Database</h1>
+        <p class="lead">
+            The Symbol Database (SymbolDB) is a graph-based code analysis and browsing system that extracts,
+            stores, and provides navigation for code symbols across your project. It uses Apache TinkerGraph
+            to maintain relationships between files, symbols, packages, libraries, and programming languages.
+        </p>
+        <div style="margin-top: var(--spacing-md);">
+            <span class="badge badge-primary">IntelliJ Plugin</span>
+            <span class="badge badge-success">Stable</span>
+        </div>
+    </header>
+
+    <section class="section">
+        <h2>Overview</h2>
+        <p>The Symbol Database consists of three main components:</p>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>🔍 Symbol Extraction Action</h3>
+                <p>An IntelliJ action that analyzes your project and extracts symbol information from source files using
+                    PSI analysis.</p>
             </div>
-        </header>
-
-        <section class="section">
-            <h2>Overview</h2>
-            <p>The Symbol Database consists of three main components:</p>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <h3>🔍 Symbol Extraction Action</h3>
-                    <p>An IntelliJ action that analyzes your project and extracts symbol information from source files using PSI analysis.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>📊 Symbol Graph Service</h3>
-                    <p>A graph-based storage and query service using TinkerGraph for efficient symbol relationship management.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>🌐 Symbol Graph Servlet</h3>
-                    <p>A web interface for browsing and searching the symbol database with syntax-highlighted source previews.</p>
-                </div>
+            <div class="feature-card">
+                <h3>📊 Symbol Graph Service</h3>
+                <p>A graph-based storage and query service using TinkerGraph for efficient symbol relationship
+                    management.</p>
             </div>
-        </section>
-
-        <section class="section">
-            <h2>Features</h2>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <h3>🌍 Multi-language Support</h3>
-                    <p>Automatically detects and categorizes symbols by programming language including Kotlin, Java, JavaScript, TypeScript, Python, Ruby, Go, Rust, C++, C, and C#.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>📁 Hierarchical Organization</h3>
-                    <p>Symbols are organized by file, package, library, and language for easy navigation and discovery.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>🔗 Reference Tracking</h3>
-                    <p>Tracks which symbols reference other symbols, enabling dependency analysis and impact assessment.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>📦 Containment Relationships</h3>
-                    <p>Tracks parent-child relationships such as methods within classes for structural understanding.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>⚡ Incremental Updates</h3>
-                    <p>Only re-analyzes files that have changed since the last extraction for efficient updates.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>🔄 VCS Integration</h3>
-                    <p>Captures last-modified timestamps from version control annotations when available.</p>
-                </div>
+            <div class="feature-card">
+                <h3>🌐 Symbol Graph Servlet</h3>
+                <p>A web interface for browsing and searching the symbol database with syntax-highlighted source
+                    previews.</p>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section class="section">
-            <h2>Graph Structure</h2>
-
-            <h3>Vertex Types</h3>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td><strong>Symbol</strong></td>
-                        <td>A named code element (class, function, field, etc.)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>File</strong></td>
-                        <td>A source file in the project</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Language</strong></td>
-                        <td>A programming language</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Library</strong></td>
-                        <td>A library or module containing symbols</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Package</strong></td>
-                        <td>A package or namespace</td>
-                    </tr>
-                    </tbody>
-                </table>
+    <section class="section">
+        <h2>Features</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>🌍 Multi-language Support</h3>
+                <p>Automatically detects and categorizes symbols by programming language including Kotlin, Java,
+                    JavaScript, TypeScript, Python, Ruby, Go, Rust, C++, C, and C#.</p>
             </div>
-
-            <h3>Edge Types</h3>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Edge</th>
-                        <th>From</th>
-                        <th>To</th>
-                        <th>Description</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td><strong>DEFINED_IN</strong></td>
-                        <td>Symbol</td>
-                        <td>File</td>
-                        <td>Symbol is defined in the file</td>
-                    </tr>
-                    <tr>
-                        <td><strong>REFERENCES</strong></td>
-                        <td>Symbol</td>
-                        <td>Symbol</td>
-                        <td>Symbol references another symbol</td>
-                    </tr>
-                    <tr>
-                        <td><strong>WRITTEN_IN</strong></td>
-                        <td>Symbol</td>
-                        <td>Language</td>
-                        <td>Symbol is written in the language</td>
-                    </tr>
-                    <tr>
-                        <td><strong>IN_LIBRARY</strong></td>
-                        <td>Symbol</td>
-                        <td>Library</td>
-                        <td>Symbol belongs to the library</td>
-                    </tr>
-                    <tr>
-                        <td><strong>IN_PACKAGE</strong></td>
-                        <td>Symbol</td>
-                        <td>Package</td>
-                        <td>Symbol belongs to the package</td>
-                    </tr>
-                    <tr>
-                        <td><strong>CONTAINS</strong></td>
-                        <td>Symbol</td>
-                        <td>Symbol</td>
-                        <td>Parent symbol contains child symbol</td>
-                    </tr>
-                    </tbody>
-                </table>
+            <div class="feature-card">
+                <h3>📁 Hierarchical Organization</h3>
+                <p>Symbols are organized by file, package, library, and language for easy navigation and discovery.</p>
             </div>
-
-            <h3>Symbol Properties</h3>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Property</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td><code>name</code></td>
-                        <td>String</td>
-                        <td>The symbol's name</td>
-                    </tr>
-                    <tr>
-                        <td><code>file</code></td>
-                        <td>String</td>
-                        <td>Path to the containing file</td>
-                    </tr>
-                    <tr>
-                        <td><code>startOffset</code></td>
-                        <td>Int</td>
-                        <td>Character offset where the symbol starts</td>
-                    </tr>
-                    <tr>
-                        <td><code>endOffset</code></td>
-                        <td>Int</td>
-                        <td>Character offset where the symbol ends</td>
-                    </tr>
-                    <tr>
-                        <td><code>line</code></td>
-                        <td>Int</td>
-                        <td>Line number of the symbol definition</td>
-                    </tr>
-                    <tr>
-                        <td><code>visibility</code></td>
-                        <td>String</td>
-                        <td>Visibility modifier (public, private, protected, package)</td>
-                    </tr>
-                    <tr>
-                        <td><code>modifiers</code></td>
-                        <td>String</td>
-                        <td>Comma-separated list of modifiers (static, final, abstract, etc.)</td>
-                    </tr>
-                    <tr>
-                        <td><code>annotations</code></td>
-                        <td>String</td>
-                        <td>Comma-separated list of annotation names</td>
-                    </tr>
-                    <tr>
-                        <td><code>lastModified</code></td>
-                        <td>Long</td>
-                        <td>Timestamp when the symbol was last modified</td>
-                    </tr>
-                    <tr>
-                        <td><code>nodeType</code></td>
-                        <td>String</td>
-                        <td>The type of symbol (class, function, field, etc.)</td>
-                    </tr>
-                    </tbody>
-                </table>
+            <div class="feature-card">
+                <h3>🔗 Reference Tracking</h3>
+                <p>Tracks which symbols reference other symbols, enabling dependency analysis and impact assessment.</p>
             </div>
-
-            <h3>Node Types</h3>
-            <p>The system automatically categorizes symbols into types based on PSI element analysis:</p>
-            <ul>
-                <li><code>class</code> - Class definitions</li>
-                <li><code>interface</code> - Interface definitions</li>
-                <li><code>enum</code> - Enumeration definitions</li>
-                <li><code>function</code> - Functions and methods</li>
-                <li><code>field</code> - Fields and properties</li>
-                <li><code>variable</code> - Local variables</li>
-                <li><code>parameter</code> - Function/method parameters</li>
-                <li><code>constructor</code> - Constructor definitions</li>
-                <li><code>object</code> - Object declarations (Kotlin)</li>
-                <li><code>annotation</code> - Annotation definitions</li>
-            </ul>
-        </section>
-
-        <section class="section">
-            <h2>Usage</h2>
-
-            <h3>Extracting Symbols</h3>
-            <ol>
-                <li>Open your project in IntelliJ IDEA</li>
-                <li>Run the <strong>Symbol Extraction</strong> action from the Cognotik menu</li>
-                <li>Wait for the background task to complete</li>
-                <li>The symbol graph is saved to <code>symbol_graph.json</code> in your project root</li>
-            </ol>
-            <p>The extraction process:</p>
-            <ul>
-                <li>Scans all source roots in your project</li>
-                <li>Analyzes each file using IntelliJ's PSI (Program Structure Interface)</li>
-                <li>Extracts named elements and their references</li>
-                <li>Stores the graph in GraphSON format</li>
-            </ul>
-
-            <h3>Browsing Symbols</h3>
-            <ol>
-                <li>Ensure <code>symbol_graph.json</code> exists in your project root</li>
-                <li>Run the <strong>Symbol Graph</strong> action from the Cognotik menu</li>
-                <li>A web browser opens to the symbol browser interface</li>
-            </ol>
-            <p><em>Note: The Symbol Graph action is only enabled when a <code>symbol_graph.json</code> file exists in the project.</em></p>
-        </section>
-
-        <section class="section">
-            <h2>Web Interface</h2>
-            <p>The Symbol Graph Servlet provides both HTML and JSON interfaces for browsing the symbol database.</p>
-
-            <h3>Endpoints</h3>
-            <div class="endpoint-list">
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/</span>
-                    <span class="endpoint-desc">Home page with navigation and search</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/search?q=&lt;query&gt;&amp;limit=&lt;n&gt;</span>
-                    <span class="endpoint-desc">Search symbols by name (default limit: 100)</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/symbol?id=&lt;id&gt;</span>
-                    <span class="endpoint-desc">Get detailed information about a specific symbol</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/files</span>
-                    <span class="endpoint-desc">Browse files hierarchically by folder</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/files/&lt;path&gt;</span>
-                    <span class="endpoint-desc">Browse a specific folder</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/languages</span>
-                    <span class="endpoint-desc">List all programming languages</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/libraries</span>
-                    <span class="endpoint-desc">List all libraries</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/packages</span>
-                    <span class="endpoint-desc">Browse packages hierarchically</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/packages/&lt;path&gt;</span>
-                    <span class="endpoint-desc">Browse a specific package path</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/types</span>
-                    <span class="endpoint-desc">List all symbol types</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/file/&lt;fileId&gt;</span>
-                    <span class="endpoint-desc">List symbols in a specific file</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/language/&lt;language&gt;</span>
-                    <span class="endpoint-desc">List symbols by language</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/library/&lt;library&gt;</span>
-                    <span class="endpoint-desc">List symbols by library</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/package/&lt;package&gt;</span>
-                    <span class="endpoint-desc">List symbols by package</span>
-                </div>
-                <div class="endpoint-item">
-                    <span class="endpoint-path">/type/&lt;nodeType&gt;</span>
-                    <span class="endpoint-desc">List symbols by type</span>
-                </div>
+            <div class="feature-card">
+                <h3>📦 Containment Relationships</h3>
+                <p>Tracks parent-child relationships such as methods within classes for structural understanding.</p>
             </div>
+            <div class="feature-card">
+                <h3>⚡ Incremental Updates</h3>
+                <p>Only re-analyzes files that have changed since the last extraction for efficient updates.</p>
+            </div>
+            <div class="feature-card">
+                <h3>🔄 VCS Integration</h3>
+                <p>Captures last-modified timestamps from version control annotations when available.</p>
+            </div>
+        </div>
+    </section>
 
-            <h3>Response Formats</h3>
-            <ul>
-                <li><strong>HTML</strong>: Default format, provides a styled web interface</li>
-                <li><strong>JSON</strong>: Add <code>?format=json</code> parameter or use <code>Accept: application/json</code> header</li>
-            </ul>
+    <section class="section">
+        <h2>Graph Structure</h2>
 
-            <h3>Symbol Detail View</h3>
-            <p>The symbol detail page shows:</p>
-            <ul>
-                <li>Symbol properties (name, file, line, visibility, etc.)</li>
-                <li>Source code preview with syntax highlighting</li>
-                <li>Parent symbol (if contained within another symbol)</li>
-                <li>Child symbols (symbols contained within this symbol)</li>
-                <li>Outgoing references (symbols this symbol references)</li>
-                <li>Incoming references (symbols that reference this symbol)</li>
-            </ul>
-        </section>
+        <h3>Vertex Types</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><strong>Symbol</strong></td>
+                    <td>A named code element (class, function, field, etc.)</td>
+                </tr>
+                <tr>
+                    <td><strong>File</strong></td>
+                    <td>A source file in the project</td>
+                </tr>
+                <tr>
+                    <td><strong>Language</strong></td>
+                    <td>A programming language</td>
+                </tr>
+                <tr>
+                    <td><strong>Library</strong></td>
+                    <td>A library or module containing symbols</td>
+                </tr>
+                <tr>
+                    <td><strong>Package</strong></td>
+                    <td>A package or namespace</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-        <section class="section">
-            <h2>API Usage</h2>
+        <h3>Edge Types</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Edge</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><strong>DEFINED_IN</strong></td>
+                    <td>Symbol</td>
+                    <td>File</td>
+                    <td>Symbol is defined in the file</td>
+                </tr>
+                <tr>
+                    <td><strong>REFERENCES</strong></td>
+                    <td>Symbol</td>
+                    <td>Symbol</td>
+                    <td>Symbol references another symbol</td>
+                </tr>
+                <tr>
+                    <td><strong>WRITTEN_IN</strong></td>
+                    <td>Symbol</td>
+                    <td>Language</td>
+                    <td>Symbol is written in the language</td>
+                </tr>
+                <tr>
+                    <td><strong>IN_LIBRARY</strong></td>
+                    <td>Symbol</td>
+                    <td>Library</td>
+                    <td>Symbol belongs to the library</td>
+                </tr>
+                <tr>
+                    <td><strong>IN_PACKAGE</strong></td>
+                    <td>Symbol</td>
+                    <td>Package</td>
+                    <td>Symbol belongs to the package</td>
+                </tr>
+                <tr>
+                    <td><strong>CONTAINS</strong></td>
+                    <td>Symbol</td>
+                    <td>Symbol</td>
+                    <td>Parent symbol contains child symbol</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-            <h3>SymbolGraphService</h3>
-            <p>The <code>SymbolGraphService</code> class provides programmatic access to the symbol graph:</p>
-            <div class="code-block">
-                <div class="code-header">
-                    <span class="code-lang">kotlin</span>
-                </div>
-                <pre><code>val service = SymbolGraphService()
+        <h3>Symbol Properties</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>name</code></td>
+                    <td>String</td>
+                    <td>The symbol's name</td>
+                </tr>
+                <tr>
+                    <td><code>file</code></td>
+                    <td>String</td>
+                    <td>Path to the containing file</td>
+                </tr>
+                <tr>
+                    <td><code>startOffset</code></td>
+                    <td>Int</td>
+                    <td>Character offset where the symbol starts</td>
+                </tr>
+                <tr>
+                    <td><code>endOffset</code></td>
+                    <td>Int</td>
+                    <td>Character offset where the symbol ends</td>
+                </tr>
+                <tr>
+                    <td><code>line</code></td>
+                    <td>Int</td>
+                    <td>Line number of the symbol definition</td>
+                </tr>
+                <tr>
+                    <td><code>visibility</code></td>
+                    <td>String</td>
+                    <td>Visibility modifier (public, private, protected, package)</td>
+                </tr>
+                <tr>
+                    <td><code>modifiers</code></td>
+                    <td>String</td>
+                    <td>Comma-separated list of modifiers (static, final, abstract, etc.)</td>
+                </tr>
+                <tr>
+                    <td><code>annotations</code></td>
+                    <td>String</td>
+                    <td>Comma-separated list of annotation names</td>
+                </tr>
+                <tr>
+                    <td><code>lastModified</code></td>
+                    <td>Long</td>
+                    <td>Timestamp when the symbol was last modified</td>
+                </tr>
+                <tr>
+                    <td><code>nodeType</code></td>
+                    <td>String</td>
+                    <td>The type of symbol (class, function, field, etc.)</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Node Types</h3>
+        <p>The system automatically categorizes symbols into types based on PSI element analysis:</p>
+        <ul>
+            <li><code>class</code> - Class definitions</li>
+            <li><code>interface</code> - Interface definitions</li>
+            <li><code>enum</code> - Enumeration definitions</li>
+            <li><code>function</code> - Functions and methods</li>
+            <li><code>field</code> - Fields and properties</li>
+            <li><code>variable</code> - Local variables</li>
+            <li><code>parameter</code> - Function/method parameters</li>
+            <li><code>constructor</code> - Constructor definitions</li>
+            <li><code>object</code> - Object declarations (Kotlin)</li>
+            <li><code>annotation</code> - Annotation definitions</li>
+        </ul>
+    </section>
+
+    <section class="section">
+        <h2>Usage</h2>
+
+        <h3>Extracting Symbols</h3>
+        <ol>
+            <li>Open your project in IntelliJ IDEA</li>
+            <li>Run the <strong>Symbol Extraction</strong> action from the Cognotik menu</li>
+            <li>Wait for the background task to complete</li>
+            <li>The symbol graph is saved to <code>symbol_graph.json</code> in your project root</li>
+        </ol>
+        <p>The extraction process:</p>
+        <ul>
+            <li>Scans all source roots in your project</li>
+            <li>Analyzes each file using IntelliJ's PSI (Program Structure Interface)</li>
+            <li>Extracts named elements and their references</li>
+            <li>Stores the graph in GraphSON format</li>
+        </ul>
+
+        <h3>Browsing Symbols</h3>
+        <ol>
+            <li>Ensure <code>symbol_graph.json</code> exists in your project root</li>
+            <li>Run the <strong>Symbol Graph</strong> action from the Cognotik menu</li>
+            <li>A web browser opens to the symbol browser interface</li>
+        </ol>
+        <p><em>Note: The Symbol Graph action is only enabled when a <code>symbol_graph.json</code> file exists in the
+            project.</em></p>
+    </section>
+
+    <section class="section">
+        <h2>Web Interface</h2>
+        <p>The Symbol Graph Servlet provides both HTML and JSON interfaces for browsing the symbol database.</p>
+
+        <h3>Endpoints</h3>
+        <div class="endpoint-list">
+            <div class="endpoint-item">
+                <span class="endpoint-path">/</span>
+                <span class="endpoint-desc">Home page with navigation and search</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/search?q=&lt;query&gt;&amp;limit=&lt;n&gt;</span>
+                <span class="endpoint-desc">Search symbols by name (default limit: 100)</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/symbol?id=&lt;id&gt;</span>
+                <span class="endpoint-desc">Get detailed information about a specific symbol</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/files</span>
+                <span class="endpoint-desc">Browse files hierarchically by folder</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/files/&lt;path&gt;</span>
+                <span class="endpoint-desc">Browse a specific folder</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/languages</span>
+                <span class="endpoint-desc">List all programming languages</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/libraries</span>
+                <span class="endpoint-desc">List all libraries</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/packages</span>
+                <span class="endpoint-desc">Browse packages hierarchically</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/packages/&lt;path&gt;</span>
+                <span class="endpoint-desc">Browse a specific package path</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/types</span>
+                <span class="endpoint-desc">List all symbol types</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/file/&lt;fileId&gt;</span>
+                <span class="endpoint-desc">List symbols in a specific file</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/language/&lt;language&gt;</span>
+                <span class="endpoint-desc">List symbols by language</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/library/&lt;library&gt;</span>
+                <span class="endpoint-desc">List symbols by library</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/package/&lt;package&gt;</span>
+                <span class="endpoint-desc">List symbols by package</span>
+            </div>
+            <div class="endpoint-item">
+                <span class="endpoint-path">/type/&lt;nodeType&gt;</span>
+                <span class="endpoint-desc">List symbols by type</span>
+            </div>
+        </div>
+
+        <h3>Response Formats</h3>
+        <ul>
+            <li><strong>HTML</strong>: Default format, provides a styled web interface</li>
+            <li><strong>JSON</strong>: Add <code>?format=json</code> parameter or use <code>Accept:
+                application/json</code> header
+            </li>
+        </ul>
+
+        <h3>Symbol Detail View</h3>
+        <p>The symbol detail page shows:</p>
+        <ul>
+            <li>Symbol properties (name, file, line, visibility, etc.)</li>
+            <li>Source code preview with syntax highlighting</li>
+            <li>Parent symbol (if contained within another symbol)</li>
+            <li>Child symbols (symbols contained within this symbol)</li>
+            <li>Outgoing references (symbols this symbol references)</li>
+            <li>Incoming references (symbols that reference this symbol)</li>
+        </ul>
+    </section>
+
+    <section class="section">
+        <h2>API Usage</h2>
+
+        <h3>SymbolGraphService</h3>
+        <p>The <code>SymbolGraphService</code> class provides programmatic access to the symbol graph:</p>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">kotlin</span>
+            </div>
+            <pre><code>val service = SymbolGraphService()
 
 // Load existing graph
 service.load(File("symbol_graph.json"))
@@ -745,15 +757,15 @@ val packageTree = service.getPackageHierarchy()
 
 // Save graph
 service.save("symbol_graph.json")</code></pre>
-            </div>
+        </div>
 
-            <h3>Symbol Properties</h3>
-            <p>Access symbol properties through the <code>Symbol</code> wrapper class:</p>
-            <div class="code-block">
-                <div class="code-header">
-                    <span class="code-lang">kotlin</span>
-                </div>
-                <pre><code>val symbol = service.getSymbol(id)
+        <h3>Symbol Properties</h3>
+        <p>Access symbol properties through the <code>Symbol</code> wrapper class:</p>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">kotlin</span>
+            </div>
+            <pre><code>val symbol = service.getSymbol(id)
 
 symbol?.id           // Unique identifier
 symbol?.name         // Symbol name
@@ -767,85 +779,124 @@ symbol?.annotations  // Annotations
 symbol?.lastModified // Last modified timestamp
 symbol?.nodeType     // Symbol type
 symbol?.properties   // All properties as a map</code></pre>
-            </div>
-        </section>
-
-        <section class="section">
-            <h2>File Format</h2>
-            <p>The symbol graph is stored in GraphSON format, a JSON-based graph serialization format used by Apache TinkerPop. The file contains:</p>
-            <ul>
-                <li>Vertices with their labels, IDs, and properties</li>
-                <li>Edges with their labels, source/target vertex IDs</li>
-            </ul>
-        </section>
-
-        <section class="section">
-            <h2>Language Detection</h2>
-            <p>Languages are detected based on file extensions:</p>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Extension</th>
-                        <th>Language</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr><td><code>.kt</code></td><td>Kotlin</td></tr>
-                    <tr><td><code>.java</code></td><td>Java</td></tr>
-                    <tr><td><code>.js</code></td><td>JavaScript</td></tr>
-                    <tr><td><code>.ts</code></td><td>TypeScript</td></tr>
-                    <tr><td><code>.py</code></td><td>Python</td></tr>
-                    <tr><td><code>.rb</code></td><td>Ruby</td></tr>
-                    <tr><td><code>.go</code></td><td>Go</td></tr>
-                    <tr><td><code>.rs</code></td><td>Rust</td></tr>
-                    <tr><td><code>.cpp</code></td><td>C++</td></tr>
-                    <tr><td><code>.c</code></td><td>C</td></tr>
-                    <tr><td><code>.cs</code></td><td>C#</td></tr>
-                    <tr><td><code>.class</code></td><td>Bytecode</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <section class="section">
-            <h2>Library and Package Detection</h2>
-            <p>The system automatically extracts library and package information from file paths:</p>
-
-            <h3>JAR Files</h3>
-            <p>For files within JAR archives (e.g., <code>/path/to/library.jar!/com/example/Class.class</code>):</p>
-            <ul>
-                <li><strong>Library</strong>: Extracted from the JAR filename</li>
-                <li><strong>Package</strong>: Extracted from the path within the JAR</li>
-            </ul>
-
-            <h3>Source Files</h3>
-            <p>For source files with standard project structure (e.g., <code>/project/src/main/kotlin/com/example/Class.kt</code>):</p>
-            <ul>
-                <li><strong>Library</strong>: Extracted from the directory containing <code>src</code></li>
-                <li><strong>Package</strong>: Extracted from the path after <code>src/main/&lt;language&gt;/</code> or <code>src/test/&lt;language&gt;/</code></li>
-            </ul>
-        </section>
-
-        <section class="section">
-            <h2>Related Documentation</h2>
-            <ul>
-                <li><a href="index.html">Cognotik Overview</a></li>
-                <li><a href="https://github.com/SimiaCryptus/Cognotik">GitHub Repository</a></li>
-            </ul>
-        </section>
-    </main>
-
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <p>&copy; 2024 Cognotik. All rights reserved.</p>
-            <div class="footer-links">
-                <a href="https://github.com/SimiaCryptus/Cognotik">GitHub</a>
-                <a href="privacy.html">Privacy Policy</a>
-                <a href="terms.html">Terms of Service</a>
-            </div>
         </div>
-    </footer>
+    </section>
+
+    <section class="section">
+        <h2>File Format</h2>
+        <p>The symbol graph is stored in GraphSON format, a JSON-based graph serialization format used by Apache
+            TinkerPop. The file contains:</p>
+        <ul>
+            <li>Vertices with their labels, IDs, and properties</li>
+            <li>Edges with their labels, source/target vertex IDs</li>
+        </ul>
+    </section>
+
+    <section class="section">
+        <h2>Language Detection</h2>
+        <p>Languages are detected based on file extensions:</p>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Extension</th>
+                    <th>Language</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>.kt</code></td>
+                    <td>Kotlin</td>
+                </tr>
+                <tr>
+                    <td><code>.java</code></td>
+                    <td>Java</td>
+                </tr>
+                <tr>
+                    <td><code>.js</code></td>
+                    <td>JavaScript</td>
+                </tr>
+                <tr>
+                    <td><code>.ts</code></td>
+                    <td>TypeScript</td>
+                </tr>
+                <tr>
+                    <td><code>.py</code></td>
+                    <td>Python</td>
+                </tr>
+                <tr>
+                    <td><code>.rb</code></td>
+                    <td>Ruby</td>
+                </tr>
+                <tr>
+                    <td><code>.go</code></td>
+                    <td>Go</td>
+                </tr>
+                <tr>
+                    <td><code>.rs</code></td>
+                    <td>Rust</td>
+                </tr>
+                <tr>
+                    <td><code>.cpp</code></td>
+                    <td>C++</td>
+                </tr>
+                <tr>
+                    <td><code>.c</code></td>
+                    <td>C</td>
+                </tr>
+                <tr>
+                    <td><code>.cs</code></td>
+                    <td>C#</td>
+                </tr>
+                <tr>
+                    <td><code>.class</code></td>
+                    <td>Bytecode</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2>Library and Package Detection</h2>
+        <p>The system automatically extracts library and package information from file paths:</p>
+
+        <h3>JAR Files</h3>
+        <p>For files within JAR archives (e.g., <code>/path/to/library.jar!/com/example/Class.class</code>):</p>
+        <ul>
+            <li><strong>Library</strong>: Extracted from the JAR filename</li>
+            <li><strong>Package</strong>: Extracted from the path within the JAR</li>
+        </ul>
+
+        <h3>Source Files</h3>
+        <p>For source files with standard project structure (e.g.,
+            <code>/project/src/main/kotlin/com/example/Class.kt</code>):</p>
+        <ul>
+            <li><strong>Library</strong>: Extracted from the directory containing <code>src</code></li>
+            <li><strong>Package</strong>: Extracted from the path after <code>src/main/&lt;language&gt;/</code> or
+                <code>src/test/&lt;language&gt;/</code></li>
+        </ul>
+    </section>
+
+    <section class="section">
+        <h2>Related Documentation</h2>
+        <ul>
+            <li><a href="index.html">Cognotik Overview</a></li>
+            <li><a href="https://github.com/SimiaCryptus/Cognotik">GitHub Repository</a></li>
+        </ul>
+    </section>
+</main>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p>&copy; 2024 Cognotik. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="https://github.com/SimiaCryptus/Cognotik">GitHub</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+        </div>
+    </div>
+</footer>
 </body>
 </html>

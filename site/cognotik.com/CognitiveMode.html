@@ -2,35 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
     <!-- SEO Meta Tags -->
     <title>CognitiveMode | Cognotik</title>
-    <meta name="description" content="Cognitive Modes represent the strategy engine of Cognotik, defining the autonomous control loop, state management, and reasoning strategy for AI agents.">
-    <meta name="keywords" content="AI coding, autonomous agents, CognitiveMode, AdaptivePlanningMode, LLM orchestration">
+    <meta content="Cognitive Modes represent the strategy engine of Cognotik, defining the autonomous control loop, state management, and reasoning strategy for AI agents."
+          name="description">
+    <meta content="AI coding, autonomous agents, CognitiveMode, AdaptivePlanningMode, LLM orchestration"
+          name="keywords">
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="CognitiveMode | Cognotik">
-    <meta property="og:description" content="The autonomous control loop that orchestrates task execution and manages reasoning state.">
-    <meta property="og:image" content="https://cognotik.com/assets/images/og-image.png">
-    <meta property="og:url" content="https://cognotik.com/CognitiveMode.html">
-    <meta property="og:type" content="website">
+    <meta content="CognitiveMode | Cognotik" property="og:title">
+    <meta content="The autonomous control loop that orchestrates task execution and manages reasoning state."
+          property="og:description">
+    <meta content="https://cognotik.com/assets/images/og-image.png" property="og:image">
+    <meta content="https://cognotik.com/CognitiveMode.html" property="og:url">
+    <meta content="website" property="og:type">
 
     <!-- Favicon Suite -->
-    <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
-    <meta name="theme-color" content="#0f1115">
+    <link href="assets/icons/favicon.svg" rel="icon" type="image/svg+xml">
+    <link href="assets/icons/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
+    <meta content="#0f1115" name="theme-color">
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
     <!-- Core Styles -->
 
-    <link rel="stylesheet" href="assets/styles/main.css">
+    <link href="assets/styles/main.css" rel="stylesheet">
 
     <!-- Components & Scripts -->
-    <script type="module" src="assets/scripts/components/header.js"></script>
-    <script type="module" src="assets/scripts/components/footer.js"></script>
+    <script src="assets/scripts/components/header.js" type="module"></script>
+    <script src="assets/scripts/components/footer.js" type="module"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
 
@@ -72,7 +76,8 @@
             <span class="badge badge-primary">Strategy Engine</span>
         </div>
         <p class="text-body-lg text-secondary">
-            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the agent's problem-solving persona.
+            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the
+            agent's problem-solving persona.
         </p>
     </header>
 
@@ -118,7 +123,8 @@
                     C --> E[Refute Hypothesis]
                     E --> A
                 </div>
-                <p class="mt-4"><strong>Thinking:</strong> Network checks passed. Switching strategy to Code Analysis.</p>
+                <p class="mt-4"><strong>Thinking:</strong> Network checks passed. Switching strategy to Code Analysis.
+                </p>
                 <p class="text-accent"><em>Executing: RunCodeTask...</em></p>
             </div>
         </div>
@@ -127,9 +133,9 @@
     <!-- 3. TECHNICAL DETAILS -->
     <section class="tabs" data-tabs>
         <div class="tabs-nav" role="tablist">
-            <button class="tab-btn active" data-tab="modes" role="tab" aria-selected="true">Built-in Modes</button>
-            <button class="tab-btn" data-tab="strategies" role="tab" aria-selected="false">Schema Strategies</button>
-            <button class="tab-btn" data-tab="impl" role="tab" aria-selected="false">Implementation</button>
+            <button aria-selected="true" class="tab-btn active" data-tab="modes" role="tab">Built-in Modes</button>
+            <button aria-selected="false" class="tab-btn" data-tab="strategies" role="tab">Schema Strategies</button>
+            <button aria-selected="false" class="tab-btn" data-tab="impl" role="tab">Implementation</button>
         </div>
 
         <div class="tabs-content">
@@ -174,7 +180,8 @@
             <!-- TAB: Strategies -->
             <div class="tab-panel" data-tab-panel="strategies" role="tabpanel">
                 <h3 class="text-heading mb-2">Cognitive Schema Strategies</h3>
-                <p class="text-secondary mb-4">Strategies define the "Persona" and internal state structure, separating control flow from reasoning style.</p>
+                <p class="text-secondary mb-4">Strategies define the "Persona" and internal state structure, separating
+                    control flow from reasoning style.</p>
                 <div class="overflow-x-auto">
                     <table class="docs-table w-100">
                         <thead>
@@ -213,7 +220,9 @@
             <!-- TAB: Implementation -->
             <div class="tab-panel" data-tab-panel="impl" role="tabpanel">
                 <h3 class="text-heading mb-2">Implementation Skeleton</h3>
-                <p class="text-secondary mb-4">To create a custom mode, extend <code class="code-inline">CognitiveMode</code> and implement the <code class="code-inline">handleUserMessage</code> loop.</p>
+                <p class="text-secondary mb-4">To create a custom mode, extend <code
+                        class="code-inline">CognitiveMode</code> and implement the <code class="code-inline">handleUserMessage</code>
+                    loop.</p>
                 <div class="code-block">
                     <div class="code-header">
                         <span class="code-lang">kotlin</span>
@@ -254,9 +263,10 @@
     <!-- 4. INTEGRATION GUIDE -->
     <section class="mt-12">
         <h2 class="text-heading mb-6">Integration Guide</h2>
-        
+
         <h3 class="text-subheading mb-2">Configuration</h3>
-        <p class="text-secondary mb-4">Reference your mode in the <code class="code-inline">OrchestrationConfig</code>.</p>
+        <p class="text-secondary mb-4">Reference your mode in the <code class="code-inline">OrchestrationConfig</code>.
+        </p>
         <div class="code-block">
             <div class="code-header">
                 <span class="code-lang">kotlin</span>
@@ -271,9 +281,14 @@
 
         <h3 class="text-subheading mb-4 mt-8">Observability Standards</h3>
         <ul class="text-body text-secondary flex flex-col gap-2">
-            <li><strong>Mermaid Diagrams:</strong> Visualize the state machine in the transcript for user transparency.</li>
-            <li><strong>Collapsed Details:</strong> Use <code class="code-inline">&lt;details&gt;</code> tags for raw JSON state dumps to keep transcripts readable.</li>
-            <li><strong>Graceful Degradation:</strong> Catch LLM hallucinations and attempt to simplify prompts before failure.</li>
+            <li><strong>Mermaid Diagrams:</strong> Visualize the state machine in the transcript for user transparency.
+            </li>
+            <li><strong>Collapsed Details:</strong> Use <code class="code-inline">&lt;details&gt;</code> tags for raw
+                JSON state dumps to keep transcripts readable.
+            </li>
+            <li><strong>Graceful Degradation:</strong> Catch LLM hallucinations and attempt to simplify prompts before
+                failure.
+            </li>
         </ul>
     </section>
 
@@ -282,8 +297,8 @@
 <cognotik-footer></cognotik-footer>
 
 <!-- Core Scripts -->
-<script type="module" src="assets/scripts/core.js"></script>
-<script type="module" src="assets/scripts/components/tabs.js"></script>
+<script src="assets/scripts/core.js" type="module"></script>
+<script src="assets/scripts/components/tabs.js" type="module"></script>
 <script src="assets/scripts/vendor/prism.js"></script>
 
 </body>

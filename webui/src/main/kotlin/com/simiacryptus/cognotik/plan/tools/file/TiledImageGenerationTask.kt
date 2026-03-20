@@ -191,7 +191,7 @@ class TiledImageGenerationTask(
           val regions = mutableListOf<GenerationRegion>()
           val (cols, rows) = if (gridSchedule != null && gridSchedule.isNotEmpty()) {
             val spec = gridSchedule.getOrElse(currentDepth) { gridSchedule.last() }
-            val parts = spec.let { listOf(it,it) }
+            val parts = spec.let { listOf(it, it) }
             if (parts.size == 2) {
               parts[0] to parts[1]
             } else {
@@ -357,13 +357,15 @@ class TiledImageGenerationTask(
                 transcript?.write(buildString {
                   appendLine("#### Cropped Region: ${region.label}")
                   appendLine("*Prompt:* $refinePrompt")
-                  appendLine("![Refined Region](${
-                    saveImage(
-                      refinedCrop,
-                      "${nextPath}_crop.${executionConfig.extension}",
-                      task
-                    )
-                  })")
+                  appendLine(
+                    "![Refined Region](${
+                      saveImage(
+                        refinedCrop,
+                        "${nextPath}_crop.${executionConfig.extension}",
+                        task
+                      )
+                    })"
+                  )
                   appendLine()
                 }.toByteArray())
 
@@ -371,7 +373,7 @@ class TiledImageGenerationTask(
                 val highResRegion = processLevel(refinedCrop, currentDepth + 1, levelPrompt, nextPath)
 
                 // Align refinedCrop to crop to find valid bounds
-                val bounds = if(executionConfig.retarget_subimages) ImagePatchLocalization.findBounds(
+                val bounds = if (executionConfig.retarget_subimages) ImagePatchLocalization.findBounds(
                   refinedCrop,
                   crop,
                   ImagePatchLocalization.SubImageBounds(0, 0, refinedCrop.width, refinedCrop.height, 0.0)
@@ -394,7 +396,8 @@ class TiledImageGenerationTask(
                 val destH = (actualH * regionScale).toInt()
 
                 val featherSize = (Math.min(destW, destH) * 0.05).toInt().coerceAtLeast(1)
-                val feathered = featherImage(sourceRegion, featherSize,
+                val feathered = featherImage(
+                  sourceRegion, featherSize,
                   destX <= 1, destY <= 1,
                   destX + destW >= fullWidth - 1, destY + destH >= fullHeight - 1
                 )
@@ -404,13 +407,15 @@ class TiledImageGenerationTask(
                 transcript?.write(buildString {
                   appendLine("#### Refined Region: ${region.label}")
                   appendLine("*Prompt:* $refinePrompt")
-                  appendLine("![Refined Region](${
-                    saveImage(
-                      highResRegion,
-                      "${nextPath}_refined.${executionConfig.extension}",
-                      task
-                    )
-                  })")
+                  appendLine(
+                    "![Refined Region](${
+                      saveImage(
+                        highResRegion,
+                        "${nextPath}_refined.${executionConfig.extension}",
+                        task
+                      )
+                    })"
+                  )
                   appendLine()
                 }.toByteArray())
               }
@@ -478,7 +483,15 @@ class TiledImageGenerationTask(
   override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
     return ui.hrefLink("Accept Image") { fn() }
   }
-  private fun featherImage(image: BufferedImage, feather: Int, left: Boolean, top: Boolean, right: Boolean, bottom: Boolean): BufferedImage {
+
+  private fun featherImage(
+    image: BufferedImage,
+    feather: Int,
+    left: Boolean,
+    top: Boolean,
+    right: Boolean,
+    bottom: Boolean
+  ): BufferedImage {
     val w = image.width
     val h = image.height
     val out = BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
@@ -506,7 +519,9 @@ class TiledImageGenerationTask(
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(TiledImageGenerationTask::class.java)
-    @JvmStatic val TiledImageGeneration = TaskType(
+
+    @JvmStatic
+    val TiledImageGeneration = TaskType(
       name = "TiledImageGeneration",
       category = "Writing",
       taskClass = TiledImageGenerationTask::class.java,

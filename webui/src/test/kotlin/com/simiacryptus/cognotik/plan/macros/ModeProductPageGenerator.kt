@@ -17,9 +17,10 @@ import java.io.File
 object ModeProductPageGenerator {
   val testName = javaClass.simpleName
   private val root = File(".")
+
   @JvmStatic
   fun main(args: Array<String>) {
-    UnifiedHarness.configurePlatform()
+    UnifiedHarness.configurePlatform(com.simiacryptus.cognotik.platform.model.defaultUser)
     val files =
       File("webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive").listFilesRecursively()
     val filter = files.filter { it.isFile && it.extension in setOf("kt") }
@@ -50,6 +51,7 @@ object ModeProductPageGenerator {
           workspace = root.absoluteFile,
           fastModel = GeminiModels.GeminiFlash_30_Preview,
           smartModel = GeminiModels.GeminiFlash_30_Preview,
+          user = com.simiacryptus.cognotik.platform.model.defaultUser,
         ) {
           override fun createWorkspace() = root.resolve("workspaces/${testName}/test-${now()}").apply { mkdirs() }
           override fun <T : TaskExecutionConfig, U : TaskTypeConfig> initSettings(

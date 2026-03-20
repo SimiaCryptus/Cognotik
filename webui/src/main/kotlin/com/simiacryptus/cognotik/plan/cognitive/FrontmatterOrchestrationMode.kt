@@ -8,10 +8,8 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -38,7 +36,7 @@ import kotlin.io.path.writeText
 open class FrontmatterOrchestrationMode(
   orchestrationConfig: OrchestrationConfig,
   session: Session,
-  user: User = defaultUser
+  user: User
 ) : CognitiveMode<FrontmatterOrchestrationMode.FrontmatterOrchestrationConfig>(
   orchestrationConfig,
   session,
@@ -455,7 +453,8 @@ Do NOT generate the actual file contents. Generate specifications that describe 
         updateMode = config.defaultOverwriteMode,
         fastModel = orchestrationConfig.defaultFast.modelType,
         smartModel = orchestrationConfig.defaultSmart.modelType,
-        autoFix = true
+        autoFix = true,
+        user = orchestrationConfig.user
       )
 
       task.add("Starting DocProcessor on `${specsDir}`...".renderMarkdown())

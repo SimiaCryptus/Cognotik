@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.audio.AudioPacket
 import com.simiacryptus.cognotik.audio.TranscriptionProcessor
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.Companion.dictationManager
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -150,7 +151,7 @@ open class DictationState {
 fun findAudioModel(model: String?) = audioModels().firstOrNull { it.modelId == model }
 
 fun audioModels(): List<AudioModels> =
-    ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap {
+  ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap {
         it.provider?.getTranscriptionModels(key = it.key!!, baseUrl = it.baseUrl) ?: listOf()
     }
 

@@ -1,151 +1,177 @@
-[ {
-  "id" : "articlegeneration",
-  "label" : "Article Generation",
-  "url" : "ArticleGenerationTask.html",
-  "description" : "Generate complete journalistic articles from investigation and analysis\n\n\n                        Extends JournalismReasoning to generate publication-ready articles.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/ArticleGenerationTask.kt"
-}, {
-  "id" : "businessproposal",
-  "label" : "Business Proposal",
-  "url" : "BusinessProposalTask.html",
-  "description" : "Generate comprehensive business proposals with ROI analysis and risk assessment\n\n\n                        Generates complete, professional business proposals for various purposes.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/BusinessProposalTask.kt"
-}, {
-  "id" : "comicbookgeneration",
-  "label" : "Comic Book Generation",
-  "url" : "ComicBookGenerationTask.html",
-  "description" : "Generate comic book scripts and visuals\n\nCreates a comic book with page/row/frame structure and optional visual generation.\n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/ComicBookGenerationTask.kt"
-}, {
-  "id" : "datatablecompilation",
-  "label" : "Data Table Compilation",
-  "url" : "DataTableCompilationTask.html",
-  "description" : "Compile structured data tables from multiple files\n\nCompile structured data tables from multiple files\n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/DataTableCompilationTask.kt"
-}, {
-  "id" : "emailcampaign",
-  "label" : "Email Campaign",
-  "url" : "EmailCampaignTask.html",
-  "description" : "Generate complete email sequences for marketing, sales, or outreach\n\n\n                        Generates complete, ready-to-use email campaigns with strategic planning.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/EmailCampaignTask.kt"
-}, {
-  "id" : "generateimage",
-  "label" : "Generate Image",
-  "url" : "ImageGenerationTask.html",
-  "description" : "Generate images using AI image generation models\n\n\n                        Creates images from text descriptions using AI models like DALL-E.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/ImageGenerationTask.kt"
-}, {
-  "id" : "generatepresentation",
-  "label" : "Generate Presentation",
-  "url" : "GeneratePresentationTask.html",
-  "description" : "Create complete Reveal.js presentations with narration support\n\n\n                        Creates professional Reveal.js presentations with speaker notes.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/GeneratePresentationTask.kt"
-}, {
-  "id" : "generateqrimage",
-  "label" : "Generate QRImage",
-  "url" : "GenerateQRImageTask.html",
-  "description" : "Generate artistic QR codes with AI styling\n\n\n                        Creates stylized QR codes using AI image processing while maintaining scannability.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/GenerateQRImageTask.kt"
-}, {
-  "id" : "generatespritesheet",
-  "label" : "Generate Sprite Sheet",
-  "url" : "GenerateSpriteSheetTask.html",
-  "description" : "Generate a sprite sheet and associated JSON metadata\n\n\n                        Creates game assets by generating a sprite sheet image and extracting coordinate data.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/GenerateSpriteSheetTask.kt"
-}, {
-  "id" : "illustratedocument",
-  "label" : "Illustrate Document",
-  "url" : "IllustrateDocumentTask.html",
-  "description" : "Analyze a document and generate images to enhance its content\n\n\n          Intelligently analyzes document content and generates contextually appropriate images.\n          \n          \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/IllustrateDocumentTask.kt"
-}, {
-  "id" : "interactivestory",
-  "label" : "Interactive Story",
-  "url" : "InteractiveStoryTask.html",
-  "description" : "Create choose-your-own-adventure narratives with branching paths\n\n\n                        Generates complete interactive stories with meaningful choices and multiple endings.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/InteractiveStoryTask.kt"
-}, {
-  "id" : "iterativegraphgeneration",
-  "label" : "Iterative Graph Generation",
-  "url" : "IterativeGraphGenerationTask.html",
-  "description" : "Extract structured knowledge from unstructured data by iteratively building an entity-relationship graph.\n\nConstructs a knowledge graph by iteratively analyzing context and adding nodes/edges.\n\n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/IterativeGraphGenerationTask.kt"
-}, {
-  "id" : "journalismreasoning",
-  "label" : "Journalism Reasoning",
-  "url" : "JournalismReasoningTask.html",
-  "description" : "Investigate stories through journalistic principles and methods\n\n\n                        Analyzes stories using professional journalism standards and practices.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/JournalismReasoningTask.kt"
-}, {
-  "id" : "narrativegeneration",
-  "label" : "Narrative Generation",
-  "url" : "NarrativeGenerationTask.html",
-  "description" : "Generate complete narratives from analysis and outlines\n\n\n                        Extends NarrativeReasoning to generate complete, publication-ready narratives.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/NarrativeGenerationTask.kt"
-}, {
-  "id" : "neuralnetworklayer",
-  "label" : "Neural Network Layer",
-  "url" : "NeuralNetworkLayerTask.html",
-  "description" : "Design and analyze neural network layers with formal mathematical definitions and intuitive explanations\n\n\n                          Comprehensive neural network layer design and analysis tool with both rigorous mathematics and intuitive explanations.\n                          \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/NeuralNetworkLayerTask.kt"
-}, {
-  "id" : "persuasiveessay",
-  "label" : "Persuasive Essay",
-  "url" : "PersuasiveEssayTask.html",
-  "description" : "Generate compelling persuasive essays with structured arguments\n\n\n                        Generates complete, well-structured persuasive essays using rhetorical techniques.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/PersuasiveEssayTask.kt"
-}, {
-  "id" : "reportgeneration",
-  "label" : "Report Generation",
-  "url" : "ReportGenerationTask.html",
-  "description" : "Generate comprehensive business reports with data analysis and recommendations\n\n\n                        Generates complete, professional business reports with structured analysis.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/ReportGenerationTask.kt"
-}, {
-  "id" : "researchpapergeneration",
-  "label" : "Research Paper Generation",
-  "url" : "ResearchPaperGenerationTask.html",
-  "description" : "Generate comprehensive academic research papers with citations\n\n\n                        Generates complete, publication-ready academic research papers.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/ResearchPaperGenerationTask.kt"
-}, {
-  "id" : "scriptwriting",
-  "label" : "Scriptwriting",
-  "url" : "ScriptwritingTask.html",
-  "description" : "Generate complete scripts for videos, podcasts, and presentations\n\n\n                        Generates production-ready scripts with dialogue, timing, and production notes.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/ScriptwritingTask.kt"
-}, {
-  "id" : "segmentedimagegeneration",
-  "label" : "Segmented Image Generation",
-  "url" : "SegmentedImageGenerationTask.html",
-  "description" : "Recursively generates and upscales images using semantic segmentation for high detail.\n\n\n      Generates a base image, identifies semantic regions of interest using AI, and recursively upscales and refines them.\n      Useful for:\n      \n                  \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/SegmentedImageGenerationTask.kt"
-}, {
-  "id" : "softwaredesigndocument",
-  "label" : "Software Design Document",
-  "url" : "SoftwareDesignDocumentTask.html",
-  "description" : "Generate comprehensive software design documentation\n\n\n                        Creates complete software design documentation with Mermaid diagrams.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/SoftwareDesignDocumentTask.kt"
-}, {
-  "id" : "technicalexplanation",
-  "label" : "Technical Explanation",
-  "url" : "TechnicalExplanationTask.html",
-  "description" : "Break down complex technical subjects into clear, digestible explanations\n\n\n                        Generates clear, audience-appropriate explanations of complex technical topics.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/TechnicalExplanationTask.kt"
-}, {
-  "id" : "tiledimagegeneration",
-  "label" : "Tiled Image Generation",
-  "url" : "TiledImageGenerationTask.html",
-  "description" : "Recursively generates and upscales images for high detail.\n\n\n      Generates a base image, identifies regions of interest, and recursively upscales and refines them using generative AI.\n      Useful for:\n      \n                  \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/TiledImageGenerationTask.kt"
-}, {
-  "id" : "tutorialgeneration",
-  "label" : "Tutorial Generation",
-  "url" : "TutorialGenerationTask.html",
-  "description" : "Create complete, step-by-step tutorials for processes and projects\n\n\n                        Generates comprehensive tutorials with clear, actionable steps.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/TutorialGenerationTask.kt"
-}, {
-  "id" : "writehtml",
-  "label" : "Write Html",
-  "url" : "WriteHtmlTask.html",
-  "description" : "Create complete HTML files with embedded CSS and JavaScript\n\n\n                        Creates standalone HTML files with embedded CSS and JavaScript.\n                        \n                      \n",
-  "code" : "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/WriteHtmlTask.kt"
-} ]
+[
+  {
+    "id": "articlegeneration",
+    "label": "Article Generation",
+    "url": "ArticleGenerationTask.html",
+    "description": "Generate complete journalistic articles from investigation and analysis\n\n\n                        Extends JournalismReasoning to generate publication-ready articles.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/ArticleGenerationTask.kt"
+  },
+  {
+    "id": "businessproposal",
+    "label": "Business Proposal",
+    "url": "BusinessProposalTask.html",
+    "description": "Generate comprehensive business proposals with ROI analysis and risk assessment\n\n\n                        Generates complete, professional business proposals for various purposes.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/BusinessProposalTask.kt"
+  },
+  {
+    "id": "comicbookgeneration",
+    "label": "Comic Book Generation",
+    "url": "ComicBookGenerationTask.html",
+    "description": "Generate comic book scripts and visuals\n\nCreates a comic book with page/row/frame structure and optional visual generation.\n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/ComicBookGenerationTask.kt"
+  },
+  {
+    "id": "datatablecompilation",
+    "label": "Data Table Compilation",
+    "url": "DataTableCompilationTask.html",
+    "description": "Compile structured data tables from multiple files\n\nCompile structured data tables from multiple files\n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/DataTableCompilationTask.kt"
+  },
+  {
+    "id": "emailcampaign",
+    "label": "Email Campaign",
+    "url": "EmailCampaignTask.html",
+    "description": "Generate complete email sequences for marketing, sales, or outreach\n\n\n                        Generates complete, ready-to-use email campaigns with strategic planning.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/EmailCampaignTask.kt"
+  },
+  {
+    "id": "generateimage",
+    "label": "Generate Image",
+    "url": "ImageGenerationTask.html",
+    "description": "Generate images using AI image generation models\n\n\n                        Creates images from text descriptions using AI models like DALL-E.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/ImageGenerationTask.kt"
+  },
+  {
+    "id": "generatepresentation",
+    "label": "Generate Presentation",
+    "url": "GeneratePresentationTask.html",
+    "description": "Create complete Reveal.js presentations with narration support\n\n\n                        Creates professional Reveal.js presentations with speaker notes.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/GeneratePresentationTask.kt"
+  },
+  {
+    "id": "generateqrimage",
+    "label": "Generate QRImage",
+    "url": "GenerateQRImageTask.html",
+    "description": "Generate artistic QR codes with AI styling\n\n\n                        Creates stylized QR codes using AI image processing while maintaining scannability.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/GenerateQRImageTask.kt"
+  },
+  {
+    "id": "generatespritesheet",
+    "label": "Generate Sprite Sheet",
+    "url": "GenerateSpriteSheetTask.html",
+    "description": "Generate a sprite sheet and associated JSON metadata\n\n\n                        Creates game assets by generating a sprite sheet image and extracting coordinate data.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/GenerateSpriteSheetTask.kt"
+  },
+  {
+    "id": "illustratedocument",
+    "label": "Illustrate Document",
+    "url": "IllustrateDocumentTask.html",
+    "description": "Analyze a document and generate images to enhance its content\n\n\n          Intelligently analyzes document content and generates contextually appropriate images.\n          \n          \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/IllustrateDocumentTask.kt"
+  },
+  {
+    "id": "interactivestory",
+    "label": "Interactive Story",
+    "url": "InteractiveStoryTask.html",
+    "description": "Create choose-your-own-adventure narratives with branching paths\n\n\n                        Generates complete interactive stories with meaningful choices and multiple endings.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/InteractiveStoryTask.kt"
+  },
+  {
+    "id": "iterativegraphgeneration",
+    "label": "Iterative Graph Generation",
+    "url": "IterativeGraphGenerationTask.html",
+    "description": "Extract structured knowledge from unstructured data by iteratively building an entity-relationship graph.\n\nConstructs a knowledge graph by iteratively analyzing context and adding nodes/edges.\n\n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/IterativeGraphGenerationTask.kt"
+  },
+  {
+    "id": "journalismreasoning",
+    "label": "Journalism Reasoning",
+    "url": "JournalismReasoningTask.html",
+    "description": "Investigate stories through journalistic principles and methods\n\n\n                        Analyzes stories using professional journalism standards and practices.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/JournalismReasoningTask.kt"
+  },
+  {
+    "id": "narrativegeneration",
+    "label": "Narrative Generation",
+    "url": "NarrativeGenerationTask.html",
+    "description": "Generate complete narratives from analysis and outlines\n\n\n                        Extends NarrativeReasoning to generate complete, publication-ready narratives.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/NarrativeGenerationTask.kt"
+  },
+  {
+    "id": "neuralnetworklayer",
+    "label": "Neural Network Layer",
+    "url": "NeuralNetworkLayerTask.html",
+    "description": "Design and analyze neural network layers with formal mathematical definitions and intuitive explanations\n\n\n                          Comprehensive neural network layer design and analysis tool with both rigorous mathematics and intuitive explanations.\n                          \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/NeuralNetworkLayerTask.kt"
+  },
+  {
+    "id": "persuasiveessay",
+    "label": "Persuasive Essay",
+    "url": "PersuasiveEssayTask.html",
+    "description": "Generate compelling persuasive essays with structured arguments\n\n\n                        Generates complete, well-structured persuasive essays using rhetorical techniques.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/PersuasiveEssayTask.kt"
+  },
+  {
+    "id": "reportgeneration",
+    "label": "Report Generation",
+    "url": "ReportGenerationTask.html",
+    "description": "Generate comprehensive business reports with data analysis and recommendations\n\n\n                        Generates complete, professional business reports with structured analysis.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/ReportGenerationTask.kt"
+  },
+  {
+    "id": "researchpapergeneration",
+    "label": "Research Paper Generation",
+    "url": "ResearchPaperGenerationTask.html",
+    "description": "Generate comprehensive academic research papers with citations\n\n\n                        Generates complete, publication-ready academic research papers.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/ResearchPaperGenerationTask.kt"
+  },
+  {
+    "id": "scriptwriting",
+    "label": "Scriptwriting",
+    "url": "ScriptwritingTask.html",
+    "description": "Generate complete scripts for videos, podcasts, and presentations\n\n\n                        Generates production-ready scripts with dialogue, timing, and production notes.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/ScriptwritingTask.kt"
+  },
+  {
+    "id": "segmentedimagegeneration",
+    "label": "Segmented Image Generation",
+    "url": "SegmentedImageGenerationTask.html",
+    "description": "Recursively generates and upscales images using semantic segmentation for high detail.\n\n\n      Generates a base image, identifies semantic regions of interest using AI, and recursively upscales and refines them.\n      Useful for:\n      \n                  \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/SegmentedImageGenerationTask.kt"
+  },
+  {
+    "id": "softwaredesigndocument",
+    "label": "Software Design Document",
+    "url": "SoftwareDesignDocumentTask.html",
+    "description": "Generate comprehensive software design documentation\n\n\n                        Creates complete software design documentation with Mermaid diagrams.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/SoftwareDesignDocumentTask.kt"
+  },
+  {
+    "id": "technicalexplanation",
+    "label": "Technical Explanation",
+    "url": "TechnicalExplanationTask.html",
+    "description": "Break down complex technical subjects into clear, digestible explanations\n\n\n                        Generates clear, audience-appropriate explanations of complex technical topics.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/TechnicalExplanationTask.kt"
+  },
+  {
+    "id": "tiledimagegeneration",
+    "label": "Tiled Image Generation",
+    "url": "TiledImageGenerationTask.html",
+    "description": "Recursively generates and upscales images for high detail.\n\n\n      Generates a base image, identifies regions of interest, and recursively upscales and refines them using generative AI.\n      Useful for:\n      \n                  \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/TiledImageGenerationTask.kt"
+  },
+  {
+    "id": "tutorialgeneration",
+    "label": "Tutorial Generation",
+    "url": "TutorialGenerationTask.html",
+    "description": "Create complete, step-by-step tutorials for processes and projects\n\n\n                        Generates comprehensive tutorials with clear, actionable steps.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/TutorialGenerationTask.kt"
+  },
+  {
+    "id": "writehtml",
+    "label": "Write Html",
+    "url": "WriteHtmlTask.html",
+    "description": "Create complete HTML files with embedded CSS and JavaScript\n\n\n                        Creates standalone HTML files with embedded CSS and JavaScript.\n                        \n                      \n",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/WriteHtmlTask.kt"
+  }
+]

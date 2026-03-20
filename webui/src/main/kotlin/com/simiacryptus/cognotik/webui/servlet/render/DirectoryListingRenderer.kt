@@ -9,7 +9,8 @@ data class DirectoryPageModel(
   val toolbarActions: String = "",
   val additionalSections: String = "",
   val additionalStyles: String = "",
-  val additionalScripts: String = ""
+  val additionalScripts: String = "",
+  val actualFilePath: String = ""
 )
 
 object DirectoryListingRenderer {
@@ -22,7 +23,8 @@ object DirectoryListingRenderer {
     toolbarActions = model.toolbarActions,
     additionalSections = model.additionalSections,
     additionalStyles = model.additionalStyles,
-    additionalScripts = model.additionalScripts
+    additionalScripts = model.additionalScripts,
+    actualFilePath = model.actualFilePath
   )
 
   fun generateBreadcrumbs(currentPath: String, servletBaseHref: String): String {
@@ -58,7 +60,8 @@ object DirectoryListingRenderer {
     toolbarActions: String = "",
     additionalSections: String = "",
     additionalStyles: String = "",
-    additionalScripts: String = ""
+    additionalScripts: String = "",
+    actualFilePath: String = ""
   ) = """
 |<!DOCTYPE html>
 |<html lang="en">
@@ -270,8 +273,25 @@ object DirectoryListingRenderer {
 |            background-color: #e9ecef;
 |            color: #0a58ca;
 |        }
-|        $additionalStyles
-|    </style>
+|        .filesystem-path {
+|            font-size: 0.75rem;
+|            color: #adb5bd;
+|            padding: 0.25rem 1rem 0.5rem 1rem;
+|            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+|            word-break: break-all;
+|            user-select: all;
+|        }
+|        .filesystem-path summary {
+|            cursor: pointer;
+|            color: #adb5bd;
+|            font-size: 0.75rem;
+|            outline: none;
+|        }
+|        .filesystem-path summary:hover {
+|            color: #6c757d;
+|        }
+        $additionalStyles
+    </style>
 |    <script>
 |        function setupDropZone() {
 |            const dropZone = document.getElementById('drop-zone');
@@ -389,6 +409,7 @@ object DirectoryListingRenderer {
 |           <ol class="breadcrumb">
 |               ${generateBreadcrumbs(currentPath, servletBaseHref)}
 |           </ol>
+|           ${if (actualFilePath.isNotBlank()) """<span class="filesystem-path" title="Filesystem path">$actualFilePath</span>""" else ""}
 |        </nav>
 |
 |        <div class="section upload-section">

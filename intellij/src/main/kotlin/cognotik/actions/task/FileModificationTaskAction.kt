@@ -16,9 +16,10 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
@@ -26,7 +27,6 @@ import com.simiacryptus.cognotik.plan.tools.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -107,14 +107,15 @@ class FileModificationTaskAction : BaseAction() {
             path = "/fileModificationTask",
             applicationName = "File Modification Task",
             taskType = FileModification,
-            instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
-            message = "Execute task"
+            instanceFn = { model, user -> model.instance() ?: throw IllegalStateException("Model or Provider not set") },
+            message = "Execute task",
+            user = orchestrationConfig.user
         ) {
             override fun instance(model: ApiChatModel) = model.instance()
                 ?: throw IllegalStateException("Model or Provider not set")
         }
 
-        app.getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())
+      app.getSettingsFile(session, AppSettingsState.localUser).writeText(orchestrationConfig.toJson())
         SessionProxyServer.chats[session] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "File Modification Task",
@@ -261,7 +262,7 @@ class FileModificationTaskAction : BaseAction() {
         fun getOrchestrationConfig(): OrchestrationConfig {
             val selectedModel = modelCombo.selectedItem as? String
             val model = selectedModel?.let { modelName ->
-                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel()
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(localUser)
             }
 
             return OrchestrationConfig(
@@ -278,12 +279,13 @@ class FileModificationTaskAction : BaseAction() {
                 ),
                 taskSettings = mutableMapOf(
                     FileModificationTask.FileModification.name to TaskTypeConfig(task_type = FileModification.name)
-                )
+                ),
+                user = localUser
             )
         }
 
         private fun getVisibleModels() =
-            ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+          ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
                     model.provider == apiData.provider && model.modelId?.isNotBlank() == true && PlanConfigDialog.isVisible(
                         model

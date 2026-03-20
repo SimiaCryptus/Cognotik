@@ -117,7 +117,7 @@ class SubPlanTask(
       transcript?.write("## Sub-Planning Task Initialization\n".toByteArray())
       val typeConfig = this.typeConfig ?: throw RuntimeException()
       val cognitiveMode = (typeConfig.cognitiveMode?.newSettings() ?: orchestrationConfig.cognitiveSettings
-        ?: CognitiveModeType.Adaptive.newSettings())
+      ?: CognitiveModeType.Adaptive.newSettings())
       val subConfig = orchestrationConfig.copy(
         taskSettings = typeConfig.taskSettings,
         cognitiveSettings = typeConfig.cognitiveSettings ?: orchestrationConfig.cognitiveSettings,
@@ -304,7 +304,7 @@ class SubPlanTask(
   ): ChatAgent {
     // Use an agent to create a summary
     val typeConfig = typeConfig ?: throw RuntimeException()
-    val model = (typeConfig.model?.let { it.instance() }
+    val model = (typeConfig.model?.let { it.instance(orchestrationConfig.user) }
       ?: defaultSmart).getChildClient(task)
 
     val summaryAgent = ChatAgent(

@@ -3,21 +3,22 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | GameLevelDesignTask - AI-Powered Level Design</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
     <!-- jQuery & FileTree Dependencies -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jqueryfiletree@2.1.4/dist/jQueryFileTree.min.js"></script>
 
-    <link rel="stylesheet" href="assets/styles/variables.css">
+    <link href="assets/styles/variables.css" rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
 
@@ -225,16 +226,17 @@
         <div class="breadcrumbs">Home > Tasks > Games > GameLevelDesignTask</div>
         <h1>GameLevelDesignTask</h1>
         <p class="pitch">
-            Generates production-ready game level designs with comprehensive documentation, including layout, encounters, pacing analysis, and player guidance.
+            Generates production-ready game level designs with comprehensive documentation, including layout,
+            encounters, pacing analysis, and player guidance.
         </p>
         <div class="badges">
             <span class="badge">Side-Effect Safe</span>
-              <span class="badge badge-success">GPT-4 Preferred</span>
-              <span class="badge badge-warning">Category: Games</span>
+            <span class="badge badge-success">GPT-4 Preferred</span>
+            <span class="badge badge-warning">Category: Games</span>
         </div>
     </section>
 
-      <!-- 2. REALITY CHECK SECTION -->
+    <!-- 2. REALITY CHECK SECTION -->
     <section class="reality-check">
         <!-- Input -->
         <div class="panel code-panel">
@@ -257,17 +259,27 @@
         <div class="panel ui-panel">
             <div class="panel-header">👁️ User UI</div>
             <div class="ui-panel-content">
-                <div style="color: var(--accent-primary); font-weight: bold; margin-bottom: 0.5rem;"># Level Design: The Obsidian Vault</div>
+                <div style="color: var(--accent-primary); font-weight: bold; margin-bottom: 0.5rem;"># Level Design: The
+                    Obsidian Vault
+                </div>
                 <div style="font-family: var(--font-mono); font-size: 0.75rem; background: #000; padding: 0.5rem; border-radius: 4px; margin-bottom: 1rem; color: #4ade80; border: 1px solid var(--border-subtle);">
-                      [S] -- [Z1] -- [Z2]<br>
-                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
+                    [S] -- [Z1] -- [Z2]<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[P1] -- [B]
                 </div>
                 <div style="font-size: 0.8rem;">
-                    <div style="margin-bottom: 0.3rem;"><span style="color: #4ade80;">✔</span> <strong>Phase 1:</strong> Level structure created (9 zones)</div>
-                    <div style="margin-bottom: 0.3rem;"><span style="color: #4ade80;">✔</span> <strong>Phase 2:</strong> 6 encounters designed</div>
-                    <div style="margin-bottom: 0.3rem;"><span style="color: #4ade80;">✔</span> <strong>Phase 3:</strong> Pacing curve analyzed (Intensity: 82/100)</div>
-                    <div style="margin-bottom: 0.3rem;"><span style="color: #4ade80;">✔</span> <strong>Phase 4:</strong> 15 collectibles placed</div>
+                    <div style="margin-bottom: 0.3rem;"><span style="color: #4ade80;">✔</span> <strong>Phase 1:</strong>
+                        Level structure created (9 zones)
+                    </div>
+                    <div style="margin-bottom: 0.3rem;"><span style="color: #4ade80;">✔</span> <strong>Phase 2:</strong>
+                        6 encounters designed
+                    </div>
+                    <div style="margin-bottom: 0.3rem;"><span style="color: #4ade80;">✔</span> <strong>Phase 3:</strong>
+                        Pacing curve analyzed (Intensity: 82/100)
+                    </div>
+                    <div style="margin-bottom: 0.3rem;"><span style="color: #4ade80;">✔</span> <strong>Phase 4:</strong>
+                        15 collectibles placed
+                    </div>
                 </div>
             </div>
         </div>
@@ -278,7 +290,7 @@
         <p style="color: var(--text-dim); margin-bottom: 1rem;">
             Explore actual level design artifacts generated by this task in the Cognotik workspace.
         </p>
-        <div id="file-tree-demo" class="panel" style="height: 300px; overflow: auto; padding: 1rem;"></div>
+        <div class="panel" id="file-tree-demo" style="height: 300px; overflow: auto; padding: 1rem;"></div>
     </section>
 
 
@@ -291,7 +303,7 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <table class="docs-table">
                 <thead>
                 <tr>
@@ -309,7 +321,9 @@
                 <tr>
                     <td><code>game_type</code></td>
                     <td>String</td>
-                    <td>The type of game (e.g., 'platformer', 'shooter', 'puzzle', 'rpg', 'metroidvania'). Default: <code>"platformer"</code>.</td>
+                    <td>The type of game (e.g., 'platformer', 'shooter', 'puzzle', 'rpg', 'metroidvania'). Default:
+                        <code>"platformer"</code>.
+                    </td>
                 </tr>
                 <tr>
                     <td><code>level_duration_minutes</code></td>
@@ -329,7 +343,9 @@
                 <tr>
                     <td><code>level_theme</code></td>
                     <td>String</td>
-                    <td>Level theme (e.g., 'forest', 'dungeon', 'city', 'space_station'). Default: <code>"dungeon"</code>.</td>
+                    <td>Level theme (e.g., 'forest', 'dungeon', 'city', 'space_station'). Default:
+                        <code>"dungeon"</code>.
+                    </td>
                 </tr>
                 <tr>
                     <td><code>pacing_style</code></td>
@@ -376,71 +392,77 @@
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
-              <ul class="process-list">
-                  <li class="process-step">
+        <div class="tab-pane" id="tab-process" style="display:none;">
+            <ul class="process-list">
+                <li class="process-step">
                     <div class="step-number">01</div>
                     <div>
                         <strong>Context Gathering</strong>
-                        <p>Analyzes <code>input_files</code> and prior orchestration state to ensure the level fits existing game mechanics, narrative context, or code standards.</p>
+                        <p>Analyzes <code>input_files</code> and prior orchestration state to ensure the level fits
+                            existing game mechanics, narrative context, or code standards.</p>
                     </div>
-                </div>
-                  <li class="process-step">
-                    <div class="step-number">02</div>
-                    <div>
-                        <strong>Phase 1: Level Structure</strong>
-                        <p>Generates the macro-layout, including zones, connections, and an ASCII visual representation of the map.</p>
-                    </div>
-                </div>
-                  <li class="process-step">
-                    <div class="step-number">03</div>
-                    <div>
-                        <strong>Phase 2: Encounter Design</strong>
-                        <p>Populates zones with combat, puzzles, and environmental challenges, including enemy composition and rewards.</p>
-                    </div>
-                </div>
-                  <li class="process-step">
-                    <div class="step-number">04</div>
-                    <div>
-                        <strong>Phase 3: Pacing Analysis</strong>
-                        <p>Calculates intensity curves, identifies the climax location, and strategically places rest points.</p>
-                    </div>
-                </div>
-                  <li class="process-step">
-                    <div class="step-number">05</div>
-                    <div>
-                        <strong>Phase 4: Content Placement</strong>
-                        <p>Adds collectibles and secret areas based on the theme and difficulty tier.</p>
-                    </div>
-                </div>
-                  <li class="process-step">
-                    <div class="step-number">06</div>
-                    <div>
-                        <strong>Phase 5: UX & Guidance</strong>
-                        <p>Defines implicit (environmental) and explicit (markers) player guidance systems.</p>
-                    </div>
-                </div>
-                  <li class="process-step">
-                    <div class="step-number">07</div>
-                    <div>
-                        <strong>Phase 6: Difficulty Variants</strong>
-                       <p>Generates optional balance adjustments for Easy, Hard, and Expert modes for accessibility.</p>
-                    </div>
-                </div>
-                  <li class="process-step">
-                    <div class="step-number">08</div>
-                    <div>
-                        <strong>Phase 7: Final Assembly</strong>
-                        <p>Compiles all phases into a comprehensive Markdown document, generates HTML/PDF exports, and provides a summary of generation statistics.</p>
-                    </div>
-            </div>
         </div>
+        <li class="process-step">
+            <div class="step-number">02</div>
+            <div>
+                <strong>Phase 1: Level Structure</strong>
+                <p>Generates the macro-layout, including zones, connections, and an ASCII visual representation of the
+                    map.</p>
+            </div>
+            </div>
+        <li class="process-step">
+            <div class="step-number">03</div>
+            <div>
+                <strong>Phase 2: Encounter Design</strong>
+                <p>Populates zones with combat, puzzles, and environmental challenges, including enemy composition and
+                    rewards.</p>
+            </div>
+            </div>
+        <li class="process-step">
+            <div class="step-number">04</div>
+            <div>
+                <strong>Phase 3: Pacing Analysis</strong>
+                <p>Calculates intensity curves, identifies the climax location, and strategically places rest
+                    points.</p>
+            </div>
+            </div>
+        <li class="process-step">
+            <div class="step-number">05</div>
+            <div>
+                <strong>Phase 4: Content Placement</strong>
+                <p>Adds collectibles and secret areas based on the theme and difficulty tier.</p>
+            </div>
+            </div>
+        <li class="process-step">
+            <div class="step-number">06</div>
+            <div>
+                <strong>Phase 5: UX & Guidance</strong>
+                <p>Defines implicit (environmental) and explicit (markers) player guidance systems.</p>
+            </div>
+            </div>
+        <li class="process-step">
+            <div class="step-number">07</div>
+            <div>
+                <strong>Phase 6: Difficulty Variants</strong>
+                <p>Generates optional balance adjustments for Easy, Hard, and Expert modes for accessibility.</p>
+            </div>
+            </div>
+        <li class="process-step">
+            <div class="step-number">08</div>
+            <div>
+                <strong>Phase 7: Final Assembly</strong>
+                <p>Compiles all phases into a comprehensive Markdown document, generates HTML/PDF exports, and provides
+                    a summary of generation statistics.</p>
+            </div>
+            </div>
+            </div>
 
-        <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
-            <h4>Orchestration Boilerplate</h4>
-            <p style="font-size: 0.9rem; color: var(--text-dim);">Directly instantiate the task within an existing orchestration context.</p>
-            <pre><code class="language-kotlin">
+            <!-- TAB: INTEGRATION -->
+            <div class="tab-pane" id="tab-integration" style="display:none;">
+                <h4>Orchestration Boilerplate</h4>
+                <p style="font-size: 0.9rem; color: var(--text-dim);">Directly instantiate the task within an existing
+                    orchestration context.</p>
+                <pre><code class="language-kotlin">
 val task = GameLevelDesignTask(
     orchestrationConfig = config,
     planTask = GameLevelDesignTask.GameLevelDesignTaskExecutionConfigData(
@@ -453,10 +475,11 @@ val task = GameLevelDesignTask(
 orchestrator.runTask(task)
             </code></pre>
 
-            <div class="integration-section">
-                <h4>Embedded Execution (Headless)</h4>
-                <p style="font-size: 0.9rem; color: var(--text-dim);">Use the <code>UnifiedHarness</code> to run the task in a CI/CD or CLI environment.</p>
-                <pre><code class="language-kotlin">
+                <div class="integration-section">
+                    <h4>Embedded Execution (Headless)</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-dim);">Use the <code>UnifiedHarness</code> to run the
+                        task in a CI/CD or CLI environment.</p>
+                    <pre><code class="language-kotlin">
 val harness = UnifiedHarness(serverless = true, openBrowser = false)
 harness.start()
 
@@ -471,12 +494,13 @@ harness.runTask(
     workspace = File("./game-project")
 )
                 </code></pre>
-            </div>
+                </div>
 
-            <div class="integration-section">
-                <h4>Test Case Example (JSON)</h4>
-                <p style="font-size: 0.9rem; color: var(--text-dim);">A standard test case for validating level generation logic.</p>
-                <pre><code class="language-json">
+                <div class="integration-section">
+                    <h4>Test Case Example (JSON)</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-dim);">A standard test case for validating level
+                        generation logic.</p>
+                    <pre><code class="language-json">
 {
   "level_name": "Neon District",
   "game_type": "shooter",
@@ -491,10 +515,10 @@ harness.runTask(
   "input_files": ["docs/lore/neon_district.md", "src/mechanics/ShootingSystem.kt"]
 }
                 </code></pre>
-            </div>
+                </div>
 
-            <h4>LLM Prompt Segment</h4>
-            <pre><code class="language-text">
+                <h4>LLM Prompt Segment</h4>
+                <pre><code class="language-text">
 GameLevelDesign - Generate complete game level designs with layout, pacing, and encounters
   ** Optionally, list input files (supports glob patterns) to be examined for context
   ** Specify level name and game type (platformer, shooter, puzzle, rpg, etc.)
@@ -507,8 +531,8 @@ GameLevelDesign - Generate complete game level designs with layout, pacing, and 
   ** Produces complete level design with ASCII visualization
   ** Includes encounter progression, pacing analysis, and player guidance
 ** Ideal for game development, level design documentation, and prototyping</code></pre>
-            </code></pre>
-        </div>
+                </code></pre>
+            </div>
     </section>
 
 </main>
@@ -522,8 +546,8 @@ GameLevelDesign - Generate complete game level designs with layout, pacing, and 
     }
 </script>
 <script type="module">
-      import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
-    initFileTree('#file-tree-demo', 'webui/workspaces/GameLevelDesign/');
+    import { initFileTree } from '/assets/scripts/components/GithubFileTree.js';
+  initFileTree('#file-tree-demo', 'webui/workspaces/GameLevelDesign/');
 </script>
 
 </body>

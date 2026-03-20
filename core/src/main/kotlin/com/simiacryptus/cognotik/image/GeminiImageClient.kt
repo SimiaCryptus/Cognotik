@@ -14,147 +14,147 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 
 class GeminiImageClient(
-    apiKey: SecureString,
-    workPool: ExecutorService,
-    logLevel: Level = Level.DEBUG,
-    logStreams: MutableList<BufferedOutputStream>,
-    scheduledPool: ListeningScheduledExecutorService,
-    useVertexAI: Boolean = false,
-    project: String? = null,
-    location: String? = null,
+  apiKey: SecureString,
+  workPool: ExecutorService,
+  logLevel: Level = Level.DEBUG,
+  logStreams: MutableList<BufferedOutputStream>,
+  scheduledPool: ListeningScheduledExecutorService,
+  useVertexAI: Boolean = false,
+  project: String? = null,
+  location: String? = null,
 ) : HttpClientManager(
-    logLevel = logLevel,
-    logStreams = logStreams,
-    workPool = workPool,
-    scheduledPool = scheduledPool
+  logLevel = logLevel,
+  logStreams = logStreams,
+  workPool = workPool,
+  scheduledPool = scheduledPool
 ), ImageClientInterface {
 
-    private val client: Client = buildClient(apiKey, useVertexAI, project, location)
+  private val client: Client = buildClient(apiKey, useVertexAI, project, location)
 
-    private fun buildClient(
-        apiKey: SecureString,
-        useVertexAI: Boolean,
-        project: String?,
-        location: String?
-    ): Client {
-        val builder = Client.builder()
+  private fun buildClient(
+    apiKey: SecureString,
+    useVertexAI: Boolean,
+    project: String?,
+    location: String?
+  ): Client {
+    val builder = Client.builder()
 
-        if (useVertexAI) {
-            builder.vertexAI(true)
-            if (project != null && location != null) {
-                builder.project(project).location(location)
-            } else {
-                builder.apiKey(apiKey.decrypt)
-            }
-        } else {
-            builder.apiKey(apiKey.decrypt)
-        }
-
-        return builder.build()
+    if (useVertexAI) {
+      builder.vertexAI(true)
+      if (project != null && location != null) {
+        builder.project(project).location(location)
+      } else {
+        builder.apiKey(apiKey.decrypt)
+      }
+    } else {
+      builder.apiKey(apiKey.decrypt)
     }
 
-    override fun createImage(request: ImageGenerationRequest): ImageGenerationResponse {
-        return withReliability {
-            withPerformanceLogging {
-                try {
-                    val config = buildGenerateImagesConfig(request)
+    return builder.build()
+  }
 
-                    log(
-                        Level.DEBUG,
-                        "Sending image generation request to Gemini SDK for model: ${request.model}",
-                        logStreams
-                    )
+  override fun createImage(request: ImageGenerationRequest): ImageGenerationResponse {
+    return withReliability {
+      withPerformanceLogging {
+        try {
+          val config = buildGenerateImagesConfig(request)
 
-                    val response: GenerateImagesResponse =
-                        client.models.generateImages(request.model, request.prompt, config)
+          log(
+            Level.DEBUG,
+            "Sending image generation request to Gemini SDK for model: ${request.model}",
+            logStreams
+          )
 
-                    val imageData = response.generatedImages().orElse(emptyList()).mapNotNull { generatedImage ->
-                        generatedImage.image().orElse(null)?.let { image ->
-                            // Convert the image to base64 or URL format
-                            val imageBytes = image.imageBytes().orElse(null)
-                            val imageUrl = image.gcsUri().orElse(null)
+          val response: GenerateImagesResponse =
+            client.models.generateImages(request.model, request.prompt, config)
 
-                            ImageObject(
-                                url = imageUrl,
-                                b64_json = imageBytes?.let { Base64.getEncoder().encodeToString(it) }
-                            )
-                        }
-                    }
+          val imageData = response.generatedImages().orElse(emptyList()).mapNotNull { generatedImage ->
+            generatedImage.image().orElse(null)?.let { image ->
+              // Convert the image to base64 or URL format
+              val imageBytes = image.imageBytes().orElse(null)
+              val imageUrl = image.gcsUri().orElse(null)
 
-                    val model = GeminiImageModels.values.values.find { it.modelId.equals(request.model, true) }
-                    val dims = request.size?.split("x")
-                    if (model != null) {
-                        onUsage(
-                            model, Usage(
-                                completion_tokens = imageData.size.toLong(),
-                                cost = model.pricing(
-                                    width = dims?.get(0)?.toInt() ?: 1024,
-                                    height = dims?.get(1)?.toInt() ?: 1024
-                                ) * imageData.size
-                            )
-                        )
-                    }
-
-                    ImageGenerationResponse(
-                        created = System.currentTimeMillis() / 1000,
-                        data = imageData
-                    )
-                } catch (e: Exception) {
-                    log.error("Error during Gemini image generation", e)
-                    throw e
-                }
+              ImageObject(
+                url = imageUrl,
+                b64_json = imageBytes?.let { Base64.getEncoder().encodeToString(it) }
+              )
             }
-        }
-    }
+          }
 
-    private fun buildGenerateImagesConfig(request: ImageGenerationRequest): GenerateImagesConfig? {
-        val builder = GenerateImagesConfig.builder()
+          val model = GeminiImageModels.values.values.find { it.modelId.equals(request.model, true) }
+          val dims = request.size?.split("x")
+          if (model != null) {
+            onUsage(
+              model, Usage(
+                completion_tokens = imageData.size.toLong(),
+                cost = model.pricing(
+                  width = dims?.get(0)?.toInt() ?: 1024,
+                  height = dims?.get(1)?.toInt() ?: 1024
+                ) * imageData.size
+              )
+            )
+          }
 
-        request.n?.let { builder.numberOfImages(it) }
-
-        // Set output format based on response_format
-        when (request.response_format) {
-            "b64_json" -> builder.outputMimeType("image/jpeg")
-            "url" -> builder.outputMimeType("image/jpeg")
-            else -> builder.outputMimeType("image/jpeg")
-        }
-
-        // Include safety attributes
-        builder.includeSafetyAttributes(true)
-
-        // Parse size if provided
-        request.size?.let { size ->
-            val dims = size.split("x")
-            if (dims.size == 2) {
-                try {
-                    val width = dims[0].toInt()
-                    val height = dims[1].toInt()
-                    // Note: Gemini SDK may have specific size constraints
-                    // You may need to validate or adjust these values
-                } catch (e: NumberFormatException) {
-                    log.warn("Invalid size format: $size")
-                }
-            }
-        }
-
-        return builder.build()
-    }
-
-    override fun getModels(): List<ImageModel>? {
-        return try {
-            GeminiImageModels.values.values.toList()
+          ImageGenerationResponse(
+            created = System.currentTimeMillis() / 1000,
+            data = imageData
+          )
         } catch (e: Exception) {
-            log.warn("Failed to fetch Gemini image models: ${e.message}")
-            listOf()
+          log.error("Error during Gemini image generation", e)
+          throw e
         }
+      }
+    }
+  }
+
+  private fun buildGenerateImagesConfig(request: ImageGenerationRequest): GenerateImagesConfig? {
+    val builder = GenerateImagesConfig.builder()
+
+    request.n?.let { builder.numberOfImages(it) }
+
+    // Set output format based on response_format
+    when (request.response_format) {
+      "b64_json" -> builder.outputMimeType("image/jpeg")
+      "url" -> builder.outputMimeType("image/jpeg")
+      else -> builder.outputMimeType("image/jpeg")
     }
 
-    fun onUsage(model: ImageModel, usage: Usage) {
-        // Override this method to track usage
+    // Include safety attributes
+    builder.includeSafetyAttributes(true)
+
+    // Parse size if provided
+    request.size?.let { size ->
+      val dims = size.split("x")
+      if (dims.size == 2) {
+        try {
+          val width = dims[0].toInt()
+          val height = dims[1].toInt()
+          // Note: Gemini SDK may have specific size constraints
+          // You may need to validate or adjust these values
+        } catch (e: NumberFormatException) {
+          log.warn("Invalid size format: $size")
+        }
+      }
     }
 
+    return builder.build()
+  }
 
-    companion object {
-        private val log = LoggerFactory.getLogger(GeminiImageClient::class.java)
+  override fun getModels(): List<ImageModel>? {
+    return try {
+      GeminiImageModels.values.values.toList()
+    } catch (e: Exception) {
+      log.warn("Failed to fetch Gemini image models: ${e.message}")
+      listOf()
     }
+  }
+
+  fun onUsage(model: ImageModel, usage: Usage) {
+    // Override this method to track usage
+  }
+
+
+  companion object {
+    private val log = LoggerFactory.getLogger(GeminiImageClient::class.java)
+  }
 }

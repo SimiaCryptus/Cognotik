@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -18,7 +19,6 @@ import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
@@ -27,7 +27,6 @@ import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -131,12 +130,12 @@ class MultiStepPatchAction : BaseAction() {
         override val settingsClass: Class<*> get() = Settings::class.java
 
         @Suppress("UNCHECKED_CAST")
-        override fun <T : Any> initSettings(session: Session): T? = Settings() as T
+        override fun <T : Any> initSettings(session: Session, user: User): T? = Settings() as T
     }
 
     class AutoDevAgent(
         val session: Session,
-        val user: User = defaultUser,
+        val user: User = localUser,
         val ui: SocketManager,
         val model: ChatInterface,
         val parsingModel: ChatInterface,

@@ -7,8 +7,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
@@ -121,13 +121,13 @@ open class ModifyFilesAction(
         private val files: Set<Path>,
         private val showLineNumbers: Boolean = false
     ) : ChatSocketManager(
-        session = session,
-        smartModel = model,
-        fastModel = parsingModel,
-        systemPrompt = "",
-        applicationClass = ApplicationServer::class.java,
-        storage = ApplicationServices.fileApplicationServices().dataStorageFactory,
-        budget = 2.0,
+      session = session,
+      smartModel = model,
+      fastModel = parsingModel,
+      systemPrompt = "",
+      applicationClass = ApplicationServer::class.java,
+      budget = 2.0,
+      owner = localUser,
     ) {
         override val systemPrompt: String
             get() = """

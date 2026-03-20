@@ -17,85 +17,114 @@
 <script src="modules/validation.js"></script>
 <script src="modules/models.js"></script>
 <script src="modules/task-config.js"></script>
-<script src="modules/http.js"></script>
-<script src="modules/validation.js"></script>
-<script src="modules/ui.js"></script>
-<script src="modules/models.js"></script>
 
-<div class="menu-bar">
+<!-- Top Bar -->
+<div class="top-bar">
     <div class="logo-container">
         <img alt="Cognotik Logo" class="logo" src="logo.svg">
-        <span style="font: bold">Cognotik</span>
+        <span class="logo-text">Cognotik</span>
     </div>
-    <div style="width: inherit;"></div>
-    <button class="menu-button" id="open-basic-chat">Basic Chat</button>
-    <!-- DocOps Apps Dropdown Menu -->
-    <div class="menu-dropdown" id="docops-menu">
-        <button class="menu-button" id="docops-menu-btn">DocOps Apps ▾</button>
-        <div class="menu-dropdown-content" id="docops-menu-content">
-            <a href="#" class="menu-dropdown-item" id="open-health-improvement">
-                <span class="menu-dropdown-icon">🏥</span>
-                <span>Health Improvement</span>
-            </a>
-            <a href="#" class="menu-dropdown-item" id="open-puppy-finder">
-                <span class="menu-dropdown-icon">🐶</span>
-                <span>Puppy Finder</span>
-            </a>
-            <a href="#" class="menu-dropdown-item" id="open-webapp-factory">
-                <span class="menu-dropdown-icon">🏗️</span>
-                <span>WebApp Factory</span>
-            </a>
-            <a href="#" class="menu-dropdown-item" id="open-sys-wizard">
-                <span class="menu-dropdown-icon">🧙</span>
-                <span>Sys Wizard</span>
-            </a>
-            <a href="#" class="menu-dropdown-item" id="open-comic-serial">
-                <span class="menu-dropdown-icon">📚</span>
-                <span>Comic Serial</span>
-            </a>
-        </div>
-    </div>
-    <!-- Modal for Basic Chat Settings -->
-    <div class="modal" id="basic-chat-settings-modal">
-        <div class="modal-content">
-            <span class="close" id="close-basic-chat-modal">&times;</span>
-            <h3>Basic Chat Settings</h3>
-            <form id="basic-chat-settings-form">
-                <div class="form-group">
-                    <label for="basic-chat-model">Model:</label>
-                    <select id="basic-chat-model" required>
-                        <option value="GPT4o">GPT-4o</option>
-                        <option value="GPT4">GPT-4</option>
-                        <option value="GPT35Turbo">GPT-3.5 Turbo</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="basic-chat-parsing-model">Parsing Model:</label>
-                    <select id="basic-chat-parsing-model" required>
-                        <option value="GPT4oMini">GPT-4o Mini</option>
-                        <option value="GPT35Turbo">GPT-3.5 Turbo</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="basic-chat-temperature">Temperature: <span class="tooltip">?<span
-                            class="tooltiptext"><strong>Temperature Control</strong><br><br>Controls the randomness and creativity of AI responses:<br><br>• <strong>0.0-0.3:</strong> More deterministic and focused<br>• <strong>0.4-0.6:</strong> Balanced creativity<br>• <strong>0.7-1.0:</strong> More creative and varied</span></span></label>
-                    <input id="basic-chat-temperature" max="1" min="0" step="0.01" type="range" value="0.3">
-                    <span id="basic-chat-temperature-value">0.3</span>
-                </div>
-                <div class="form-group">
-                    <label for="basic-chat-budget">Budget ($):</label>
-                    <input id="basic-chat-budget" max="1000" min="0" required step="0.01" type="number" value="2.0">
-                </div>
-                <div class="button-group">
-                    <button class="button secondary" id="cancel-basic-chat-settings" type="button">Cancel</button>
-                    <button class="button" id="submit-basic-chat-settings" type="submit">Continue to Chat</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    <button class="menu-button" id="user-settings-btn">User Settings</button>
+    <div class="top-bar-spacer"></div>
+    <button class="top-bar-btn" id="user-settings-btn">
+        <span class="btn-icon">⚙️</span> Settings
+    </button>
 </div>
 
+<!-- Hero Section -->
+<section class="hero">
+    <h1>Welcome to Cognotik</h1>
+    <p class="hero-subtitle">AI-powered applications for analysis, creation, and automation</p>
+</section>
+
+<!-- App Grid -->
+<section class="app-grid-section">
+    <h2 class="section-title">Applications</h2>
+     <div class="app-grid" id="app-grid">
+         <!-- App cards are dynamically generated from apps.json -->
+     </div>
+</section>
+
+<!-- Settings Section (collapsible) -->
+<section class="settings-section" id="settings-section">
+    <div class="settings-header" id="settings-header-toggle">
+        <h2 class="section-title" style="margin-bottom:0;">
+            <span class="settings-toggle-icon" id="settings-toggle-icon">▶</span>
+            Quick Settings
+        </h2>
+        <p class="settings-subtitle">Model defaults and API configuration</p>
+    </div>
+    <div class="settings-body" id="settings-body">
+        <div class="settings-grid">
+            <div class="settings-card">
+                <h4>Default Models</h4>
+                <div class="form-group">
+                    <label for="default-smart-model">Smart Model:</label>
+                    <select id="default-smart-model"></select>
+                </div>
+                <div class="form-group">
+                    <label for="default-fast-model">Fast Model:</label>
+                    <select id="default-fast-model"></select>
+                </div>
+                <div class="form-group">
+                    <label for="default-image-model">Image Model:</label>
+                    <select id="default-image-model"></select>
+                </div>
+            </div>
+            <div class="settings-card">
+                <h4>Defaults</h4>
+                <div class="form-group">
+                    <label for="default-temperature">Temperature:
+                        <span class="tooltip">?<span class="tooltiptext"><strong>Temperature Control</strong><br><br>Controls the randomness and creativity of AI responses:<br><br>• <strong>0.0-0.3:</strong> More deterministic and focused<br>• <strong>0.4-0.6:</strong> Balanced creativity<br>• <strong>0.7-1.0:</strong> More creative and varied</span></span>
+                    </label>
+                    <input id="default-temperature" max="1" min="0" step="0.05" type="range" value="0.3">
+                    <span id="default-temperature-value">0.3</span>
+                </div>
+                <div class="form-group">
+                    <label for="default-budget">Budget ($):</label>
+                    <input id="default-budget" max="1000" min="0" required step="0.01" type="number" value="2.0">
+                </div>
+                <div class="button-group" style="margin-top:15px;">
+                    <button class="button" id="save-quick-settings">Save Defaults</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Basic Chat Settings Modal -->
+<div class="modal" id="basic-chat-settings-modal">
+    <div class="modal-content">
+        <span class="close" id="close-basic-chat-modal">&times;</span>
+        <h3>Basic Chat Settings</h3>
+        <form id="basic-chat-settings-form">
+            <div class="form-group">
+                <label for="basic-chat-model">Model:</label>
+                <select id="basic-chat-model" required></select>
+            </div>
+            <div class="form-group">
+                <label for="basic-chat-parsing-model">Parsing Model:</label>
+                <select id="basic-chat-parsing-model" required></select>
+            </div>
+            <div class="form-group">
+                <label for="basic-chat-temperature">Temperature:
+                    <span class="tooltip">?<span class="tooltiptext"><strong>Temperature Control</strong><br><br>Controls the randomness and creativity of AI responses:<br><br>• <strong>0.0-0.3:</strong> More deterministic and focused<br>• <strong>0.4-0.6:</strong> Balanced creativity<br>• <strong>0.7-1.0:</strong> More creative and varied</span></span>
+                </label>
+                <input id="basic-chat-temperature" max="1" min="0" step="0.01" type="range" value="0.3">
+                <span id="basic-chat-temperature-value">0.3</span>
+            </div>
+            <div class="form-group">
+                <label for="basic-chat-budget">Budget ($):</label>
+                <input id="basic-chat-budget" max="1000" min="0" required step="0.01" type="number" value="2.0">
+            </div>
+            <div class="button-group">
+                <button class="button secondary" id="cancel-basic-chat-settings" type="button">Cancel</button>
+                <button class="button" id="submit-basic-chat-settings" type="submit">Start Chat</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- User Settings Modal -->
 <div class="modal" id="user-settings-modal">
     <div class="modal-content">
         <span class="close" id="close-user-settings-modal">&times;</span>
@@ -108,9 +137,7 @@
 
         <div class="tab-content active" id="api-keys-tab">
             <p>Configure your API keys for different AI providers:</p>
-            <div id="api-keys-container">
-                <!-- API keys will be populated here -->
-            </div>
+            <div id="api-keys-container"></div>
         </div>
 
         <div class="tab-content" id="local-tools-tab">
@@ -118,9 +145,7 @@
             <div class="form-group">
                 <label for="local-tools-list">Local Tools:</label>
                 <div id="local-tools-container">
-                    <div id="local-tools-list">
-                        <!-- Local tools will be listed here -->
-                    </div>
+                    <div id="local-tools-list"></div>
                     <div class="tool-actions">
                         <input id="new-tool-path" placeholder="Enter tool path or command" type="text">
                         <button class="button" id="add-local-tool">Add Tool</button>
@@ -136,160 +161,153 @@
     </div>
 </div>
 
-<div class="wizard-nav">
-    <div class="wizard-step active" data-step="cognitive-mode">
-        <div class="step-number">1</div>
-        <div class="step-text">Choose Mode</div>
-    </div>
-    <div class="wizard-step" data-step="task-settings">
-        <div class="step-number">2</div>
-        <div class="step-text">Configure Settings</div>
-    </div>
-    <div class="wizard-step" data-step="task-selection">
-        <div class="step-number">3</div>
-        <div class="step-text">Select Tasks</div>
-    </div>
-    <div class="wizard-step" data-step="launch">
-        <div class="step-number">4</div>
-        <div class="step-text">Launch</div>
-    </div>
-</div>
+<!-- Custom Pipeline Modal (full wizard) -->
+<div class="modal" id="custom-pipeline-modal">
+    <div class="modal-content modal-content-wide">
+        <span class="close" id="close-pipeline-modal">&times;</span>
 
-<div class="wizard-content active" id="cognitive-mode">
-    <div class="wizard-buttons">
-        <div></div> <!-- Empty div for spacing -->
-        <button class="button" id="next-to-task-settings">Next: Configure Settings</button>
-    </div>
-    <h3>Step 1: Choose Cognitive Mode</h3>
-    <p>Select how you want the AI to approach your tasks:</p>
-    <div class="form-group">
-        <div class="task-toggle">
-            <div>
-                <input checked id="single-task-mode" name="cognitive-mode" type="radio" value="Chat">
-                <label for="single-task-mode">Chat</label>
-                <span class="tooltip">?<span class="tooltiptext">
+        <div class="wizard-nav">
+            <div class="wizard-step active" data-step="cognitive-mode">
+                <div class="step-number">1</div>
+                <div class="step-text">Choose Mode</div>
+            </div>
+            <div class="wizard-step" data-step="task-settings">
+                <div class="step-number">2</div>
+                <div class="step-text">Configure Settings</div>
+            </div>
+            <div class="wizard-step" data-step="task-selection">
+                <div class="step-number">3</div>
+                <div class="step-text">Select Tasks</div>
+            </div>
+            <div class="wizard-step" data-step="launch">
+                <div class="step-number">4</div>
+                <div class="step-text">Launch</div>
+            </div>
+        </div>
+
+        <div class="wizard-content active" id="cognitive-mode">
+            <div class="wizard-buttons">
+                <div></div>
+                <button class="button" id="next-to-task-settings">Next: Configure Settings</button>
+            </div>
+            <h3>Step 1: Choose Cognitive Mode</h3>
+            <p>Select how you want the AI to approach your tasks:</p>
+            <div class="form-group">
+                <div class="task-toggle">
                     <div>
-                        <h2>Interactive Conversation with AI Assistance</h2>
-                        <ul class="features-list">
-                            <li>Execute individual tasks</li>
-                            <li>Direct Q&A format</li>
-                            <li>Best for focused, specific questions</li>
-                            <li>Real-time collaboration</li>
-                        </ul>
+                        <input checked id="single-task-mode" name="cognitive-mode" type="radio" value="Chat">
+                        <label for="single-task-mode">Chat</label>
+                        <span class="tooltip">?<span class="tooltiptext">
+                            <h2>Interactive Conversation with AI Assistance</h2>
+                            <ul class="features-list">
+                                <li>Execute individual tasks</li>
+                                <li>Direct Q&amp;A format</li>
+                                <li>Best for focused, specific questions</li>
+                                <li>Real-time collaboration</li>
+                            </ul>
+                        </span></span>
                     </div>
-                </span></span>
-            </div>
-        </div>
-        <div id="auto-plan-settings"
-             style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-            <div class="form-group">
-                <label for="max-task-history">Max Task History Chars:</label>
-                <input id="max-task-history" max="100000" min="1000" type="number" value="20000">
-            </div>
-            <div class="form-group">
-                <label for="max-tasks-per-iteration">Max Tasks Per Iteration:</label>
-                <input id="max-tasks-per-iteration" max="10" min="1" type="number" value="3">
-            </div>
-            <div class="form-group">
-                <label for="max-iterations">Max Iterations:</label>
-                <input id="max-iterations" max="1000" min="1" type="number" value="100">
-            </div>
-        </div>
-    </div>
-</div>
-<div class="wizard-content" id="task-settings">
-    <div class="wizard-buttons">
-        <button class="button secondary" id="back-to-cognitive-mode">Back</button>
-        <button class="button" id="next-to-task-selection">Next: Select Tasks</button>
-    </div>
-    <h3>Step 2: Configure Settings</h3>
-    <p>Configure model and environment settings:</p>
-
-    <div class="form-group">
-        <label for="model-selection">Smart Model:</label>
-        <select id="model-selection">
-        </select>
-    </div>
-
-<div class="form-group">
-        <label for="parsing-model">Fast Model:</label>
-        <select id="parsing-model">
-        </select>
-    </div>
-   <div class="form-group">
-       <label for="image-model">Image Model:</label>
-       <select id="image-model">
-       </select>
-   </div>
-
-    <div class="form-group">
-        <label for="working-dir">Working Directory:</label>
-        <div style="display: flex; gap: 10px;">
-            <input id="working-dir" style="flex-grow: 1;" type="text" value=".">
-            <button class="button secondary" id="generate-working-dir">New Directory</button>
-            <!--<button class="button secondary" id="select-working-dir">Select Directory</button>-->
-        </div>
-    </div>
-    <div class="form-group">
-        <label for="temperature">Temperature: <span class="tooltip">?<span class="tooltiptext"><strong>Temperature Control</strong><br><br>Controls the randomness and creativity of AI responses:<br><br>• <strong>0.0-0.3:</strong> More deterministic and focused<br>• <strong>0.4-0.6:</strong> Balanced creativity<br>• <strong>0.7-1.0:</strong> More creative and varied</span></span></label>
-        <input id="temperature" max="1" min="0" step="0.1" type="range" value="0.2">
-        <span id="temperature-value">0.2</span>
-    </div>
-    <div class="form-group">
-        <div class="task-toggle">
-            <div>
-                <input id="auto-fix" name="auto-fix" type="checkbox">
-                <label for="auto-fix">Enable Full Automation</label>
-                <span class="tooltip">?<span
-                        class="tooltiptext">Automatically accept actions and proceed with processing.</span></span>
-            </div>
-
-            <div id="graph-settings"
-                 style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-                <div class="form-group">
-                    <label for="graph-file">Graph File Path:</label>
-                    <input id="graph-file" placeholder="Enter path to graph file" type="text">
+                </div>
+                <div id="auto-plan-settings"
+                     style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <div class="form-group">
+                        <label for="max-task-history">Max Task History Chars:</label>
+                        <input id="max-task-history" max="100000" min="1000" type="number" value="20000">
+                    </div>
+                    <div class="form-group">
+                        <label for="max-tasks-per-iteration">Max Tasks Per Iteration:</label>
+                        <input id="max-tasks-per-iteration" max="10" min="1" type="number" value="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="max-iterations">Max Iterations:</label>
+                        <input id="max-iterations" max="1000" min="1" type="number" value="100">
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-</div>
-<div class="wizard-content" id="task-selection">
-    <div class="wizard-buttons">
-        <button class="button secondary" id="back-to-task-settings">Back</button>
-        <button class="button" id="next-to-launch">Next: Review & Launch</button>
-    </div>
-    <h3>Step 3: Select Tasks</h3>
-    <p>Choose which tasks you want to enable:</p>
-    <div class="form-group" id="task-toggles">
-        <!-- Task toggles will be populated here -->
-    </div>
-</div>
+        <div class="wizard-content" id="task-settings">
+            <div class="wizard-buttons">
+                <button class="button secondary" id="back-to-cognitive-mode">Back</button>
+                <button class="button" id="next-to-task-selection">Next: Select Tasks</button>
+            </div>
+            <h3>Step 2: Configure Settings</h3>
+            <p>Configure model and environment settings:</p>
+            <div class="form-group">
+                <label for="model-selection">Smart Model:</label>
+                <select id="model-selection"></select>
+            </div>
+            <div class="form-group">
+                <label for="parsing-model">Fast Model:</label>
+                <select id="parsing-model"></select>
+            </div>
+            <div class="form-group">
+                <label for="image-model">Image Model:</label>
+                <select id="image-model"></select>
+            </div>
+            <div class="form-group">
+                <label for="working-dir">Working Directory:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input id="working-dir" style="flex-grow: 1;" type="text" value=".">
+                    <button class="button secondary" id="generate-working-dir">New Directory</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="temperature">Temperature:
+                    <span class="tooltip">?<span class="tooltiptext"><strong>Temperature Control</strong><br><br>Controls the randomness and creativity of AI responses:<br><br>• <strong>0.0-0.3:</strong> More deterministic and focused<br>• <strong>0.4-0.6:</strong> Balanced creativity<br>• <strong>0.7-1.0:</strong> More creative and varied</span></span>
+                </label>
+                <input id="temperature" max="1" min="0" step="0.1" type="range" value="0.2">
+                <span id="temperature-value">0.2</span>
+            </div>
+            <div class="form-group">
+                <div class="task-toggle">
+                    <div>
+                        <input id="auto-fix" name="auto-fix" type="checkbox">
+                        <label for="auto-fix">Enable Full Automation</label>
+                        <span class="tooltip">?<span class="tooltiptext">Automatically accept actions and proceed with processing.</span></span>
+                    </div>
+                    <div id="graph-settings"
+                         style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        <div class="form-group">
+                            <label for="graph-file">Graph File Path:</label>
+                            <input id="graph-file" placeholder="Enter path to graph file" type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<div class="wizard-content" id="launch">
-    <div class="wizard-buttons">
-        <button class="button secondary" id="back-to-task-selection">Back</button>
-        <button class="button" id="launch-session">Launch AI Session</button>
-    </div>
-    <h3>Step 4: Review & Launch</h3>
-    <p>Review your configuration and launch your AI development session:</p>
+        <div class="wizard-content" id="task-selection">
+            <div class="wizard-buttons">
+                <button class="button secondary" id="back-to-task-settings">Back</button>
+                <button class="button" id="next-to-launch">Next: Review &amp; Launch</button>
+            </div>
+            <h3>Step 3: Select Tasks</h3>
+            <p>Choose which tasks you want to enable:</p>
+            <div class="form-group" id="task-toggles"></div>
+        </div>
 
-    <div class="form-group">
-        <h4>Cognitive Mode</h4>
-        <div id="cognitive-mode-summary"></div>
+        <div class="wizard-content" id="launch">
+            <div class="wizard-buttons">
+                <button class="button secondary" id="back-to-task-selection">Back</button>
+                <button class="button" id="launch-session">Launch AI Session</button>
+            </div>
+            <h3>Step 4: Review &amp; Launch</h3>
+            <p>Review your configuration and launch your AI development session:</p>
+            <div class="form-group">
+                <h4>Cognitive Mode</h4>
+                <div id="cognitive-mode-summary"></div>
+            </div>
+            <div class="form-group">
+                <h4>Task Settings</h4>
+                <div id="task-settings-summary"></div>
+            </div>
+            <div class="form-group">
+                <h4>API Settings</h4>
+                <div id="api-settings-summary"></div>
+            </div>
+        </div>
     </div>
-
-    <div class="form-group">
-        <h4>Task Settings</h4>
-        <div id="task-settings-summary"></div>
-    </div>
-
-    <div class="form-group">
-        <h4>API Settings</h4>
-        <div id="api-settings-summary"></div>
-    </div>
-
 </div>
 
 <div class="loading" id="loading">
@@ -297,12 +315,13 @@
     <p>Setting up your session...</p>
 </div>
 
-<footer style="margin-top: 40px; text-align: center; font-size: 0.8em; color: #7f8c8d;">
+<footer>
     <div class="footer-content">
         <img alt="Cognotik Logo" class="footer-logo" height="24" src="logo.svg" width="24">
         <p>Cognotik &copy; 2025 SimiaCryptus Software</p>
     </div>
 </footer>
+
 <script src="welcome.js"></script>
 </body>
 </html>

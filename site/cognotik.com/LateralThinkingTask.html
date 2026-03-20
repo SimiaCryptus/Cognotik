@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | LateralThinkingTask - Industrial Reasoning</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -187,12 +188,13 @@
         <div class="breadcrumbs">Home > Tasks > Reasoning > LateralThinkingTask</div>
         <h1>LateralThinkingTask</h1>
         <p class="pitch">
-            Break conventional thinking patterns to find innovative solutions using structured techniques like reversal, random stimulus, and provocation.
+            Break conventional thinking patterns to find innovative solutions using structured techniques like reversal,
+            random stimulus, and provocation.
         </p>
         <div class="badges">
-              <span class="badge badge-primary">Category: Reasoning</span>
-              <span class="badge badge-success">Side-Effect Safe</span>
-              <span class="badge badge-warning">GPT-4 Preferred</span>
+            <span class="badge badge-primary">Category: Reasoning</span>
+            <span class="badge badge-success">Side-Effect Safe</span>
+            <span class="badge badge-warning">GPT-4 Preferred</span>
         </div>
     </section>
 
@@ -221,11 +223,12 @@
         <div class="panel ui-panel">
             <div class="panel-header">👁️ Session UI: Summary Tab</div>
             <div class="ui-panel-content">
-                  <div style="border-left: 4px solid var(--accent-primary); padding-left: var(--space-4); margin-bottom: var(--space-4);">
+                <div style="border-left: 4px solid var(--accent-primary); padding-left: var(--space-4); margin-bottom: var(--space-4);">
                     <h4 style="margin: 0;">Idea: The "Anti-Subscription"</h4>
                     <small style="color: var(--text-dim);">Technique: Reversal | Novelty: 85% | Feasibility: 60%</small>
                 </div>
-                <p style="font-size: 0.85rem;">Instead of trying to keep users, we make it incredibly easy to leave and reward them for returning later. This removes the "commitment anxiety" during signup.</p>
+                <p style="font-size: 0.85rem;">Instead of trying to keep users, we make it incredibly easy to leave and
+                    reward them for returning later. This removes the "commitment anxiety" during signup.</p>
                 <div style="background: #000; padding: 0.5rem; border-radius: 4px; font-size: 0.8rem;">
                     <span style="color: #4ade80;">✔ Synthesized 12 insights</span><br>
                     <span style="color: #4ade80;">✔ Feasibility evaluation complete</span>
@@ -244,7 +247,7 @@
 
         <div class="tab-content">
             <!-- TAB: DOCS -->
-            <div id="tab-docs" class="tab-pane">
+            <div class="tab-pane" id="tab-docs">
                 <h3>Execution Configuration</h3>
                 <table class="docs-table">
                     <thead>
@@ -263,7 +266,9 @@
                     <tr>
                         <td><code>techniques</code></td>
                         <td>List&lt;String&gt;</td>
-                        <td>reversal, random_stimulus, challenge_assumptions, exaggeration, escape, metaphor, provocation.</td>
+                        <td>reversal, random_stimulus, challenge_assumptions, exaggeration, escape, metaphor,
+                            provocation.
+                        </td>
                     </tr>
                     <tr>
                         <td><code>num_alternatives</code></td>
@@ -288,25 +293,33 @@
                     <tr>
                         <td><code>input_files</code></td>
                         <td>List&lt;String&gt;</td>
-                              <td>Glob patterns for context (e.g. <code class="code-inline">**/*.kt</code>).</td>
+                        <td>Glob patterns for context (e.g. <code class="code-inline">**/*.kt</code>).</td>
                     </tr>
                     </tbody>
                 </table>
             </div>
 
             <!-- TAB: PROCESS -->
-            <div id="tab-process" class="tab-pane" style="display:none;">
+            <div class="tab-pane" id="tab-process" style="display:none;">
                 <h3>Task Lifecycle</h3>
                 <ol style="font-size: 0.95rem; color: var(--text-main);">
-                    <li><strong>Context Gathering:</strong> Reads specified <code>input_files</code> and prior execution state to ground the problem.</li>
-                    <li><strong>Technique Application:</strong> Iterates through selected techniques, generating <code>LateralIdea</code> objects with novelty and feasibility scores.</li>
-                    <li><strong>Synthesis:</strong> A specialized agent analyzes patterns across all techniques to find breakthrough "Recommended Approaches".</li>
-                    <li><strong>Feasibility Pass:</strong> (Optional) Ranks ideas by practical implementation complexity and resource requirements.</li>
+                    <li><strong>Context Gathering:</strong> Reads specified <code>input_files</code> and prior execution
+                        state to ground the problem.
+                    </li>
+                    <li><strong>Technique Application:</strong> Iterates through selected techniques, generating <code>LateralIdea</code>
+                        objects with novelty and feasibility scores.
+                    </li>
+                    <li><strong>Synthesis:</strong> A specialized agent analyzes patterns across all techniques to find
+                        breakthrough "Recommended Approaches".
+                    </li>
+                    <li><strong>Feasibility Pass:</strong> (Optional) Ranks ideas by practical implementation complexity
+                        and resource requirements.
+                    </li>
                 </ol>
             </div>
 
             <!-- TAB: INTEGRATION -->
-            <div id="tab-integration" class="tab-pane" style="display:none;">
+            <div class="tab-pane" id="tab-integration" style="display:none;">
                 <h3>Kotlin Boilerplate</h3>
                 <pre><code class="language-kotlin">
 val task = LateralThinkingTask(

@@ -1,0 +1,19 @@
+{
+  "cognitiveSettings": {
+    "variables": {},
+    "type": "Waterfall"
+  },
+  "taskSettings": {
+    "FileModification_FileModification": {
+      "task_type": "FileModification",
+      "name": "FileModification",
+      "verbose": false
+    }
+  },
+  "purpose": "",
+  "summaryPrompt": "Create a comprehensive summary of the generated DocOps application.\n\nOriginal Goal: {goal}\n\nThe summary should:\n- List all files created and their purposes\n- Describe the pipeline flow\n- Note any issues or incomplete items\n- Confirm all op files have valid frontmatter\n\nUse markdown formatting.",
+  "name": "SubPlan",
+  "task_type": "SubPlan",
+  "verbose": false,
+  "cognitiveMode": "Waterfall"
+}

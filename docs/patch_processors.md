@@ -7,7 +7,8 @@ specifies: ../site/cognotik.com/patch-processors.html
 
 ## What is PatchProcessor?
 
-PatchProcessor is an intelligent code patching system that applies modifications to source code using sophisticated matching
+PatchProcessor is an intelligent code patching system that applies modifications to source code using sophisticated
+matching
 algorithms. Unlike traditional diff/patch tools that require exact line matches, PatchProcessor can intelligently match
 and apply patches even when the source code has minor variations, making it ideal for AI-assisted code modification
 workflows.
@@ -293,7 +294,8 @@ private fun subsequenceLinking(
 - Depth-limited (default: 100) to prevent infinite recursion
 - Hierarchical matching that adapts to code structure
 
-**Why it works**: Remaining unmatched blocks may contain islands of similarity that benefit from the same matching strategy.
+**Why it works**: Remaining unmatched blocks may contain islands of similarity that benefit from the same matching
+strategy.
 
 ### 3. **Intelligent Fuzzy Matching**
 
@@ -310,14 +312,17 @@ Matching logic:
 1. **Exact Match**: Normalized lines are identical → match
 2. **Empty Lines**: Both empty → match
 3. **Structural Type Checking**:
-  - List items only match list items
-  - Headers only match headers
-  - Block quotes only match block quotes
-  - Code blocks only match code blocks
+
+- List items only match list items
+- Headers only match headers
+- Block quotes only match block quotes
+- Code blocks only match code blocks
+
 4. **Levenshtein Distance**: For longer lines, calculate edit distance
-  - Threshold: `line_length / levenshteinThresholdDivisor`
-  - Default divisor: 4 (stricter = higher divisor)
-  - Only applied to lines longer than `minLineLengthForFuzzyMatch` (default: 5)
+
+- Threshold: `line_length / levenshteinThresholdDivisor`
+- Default divisor: 4 (stricter = higher divisor)
+- Only applied to lines longer than `minLineLengthForFuzzyMatch` (default: 5)
 
 **Why it's novel**:
 
@@ -339,8 +344,9 @@ Three-tier matching strategy:
 1. **Exact Block Match**: Find identical contiguous block in source
 2. **Anchor Match**: Match first and last lines, replace content between
 3. **Fuzzy Scoring**: Slide window across source, score matches
-  - Requires `snippetMatchThreshold` match (default: 80%)
-  - Optionally requires anchor match (first or last line exact)
+
+- Requires `snippetMatchThreshold` match (default: 80%)
+- Optionally requires anchor match (first or last line exact)
 
 **Why it's novel**: Handles AI-generated patches that provide updated code blocks without explicit diff markers.
 
@@ -401,14 +407,16 @@ Treats patch matching as a molecular binding problem:
 ### Algorithm
 
 1. **Calculate Binding Energy Matrix**: Energy for each line pair
-  - Perfect match: -10.0 × line_length
-  - Similarity-based: -10.0 × similarity × line_length
-  - Length penalty: entropyPenalty × |length_diff|
+
+- Perfect match: -10.0 × line_length
+- Similarity-based: -10.0 × similarity × line_length
+- Length penalty: entropyPenalty × |length_diff|
 
 2. **Find Optimal Alignment**: Dynamic programming with thermodynamic scoring
-  - Similar to Needleman-Wunsch algorithm
-  - Incorporates cooperativity bonuses
-  - Finds lowest free energy configuration
+
+- Similar to Needleman-Wunsch algorithm
+- Incorporates cooperativity bonuses
+- Finds lowest free energy configuration
 
 3. **Generate Diff**: Convert alignment to standard diff format
 

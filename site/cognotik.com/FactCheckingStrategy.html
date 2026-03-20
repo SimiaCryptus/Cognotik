@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | FactCheckingStrategy</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -122,7 +123,7 @@
         <div class="breadcrumbs">Home / Strategies / Web Processing / FactCheckingStrategy</div>
         <h1>FactCheckingStrategy</h1>
         <p class="pitch">
-            Verifies specific claims against web page content using LLM-driven evidence extraction, 
+            Verifies specific claims against web page content using LLM-driven evidence extraction,
             confidence scoring, and multi-source cross-referencing.
         </p>
         <div class="badges">
@@ -183,70 +184,76 @@
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane">
+        <div class="tab-pane" id="tab-docs">
             <h3>Configuration Parameters</h3>
             <table class="docs-table">
                 <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Type</th>
-                        <th>Default</th>
-                        <th>Description</th>
-                    </tr>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><code>claims_to_verify</code> <span class="req">*</span></td>
-                        <td>List&lt;String&gt;</td>
-                        <td>-</td>
-                        <td>The specific statements or facts to be verified against the crawled content.</td>
-                    </tr>
-                    <tr>
-                        <td><code>confidence_threshold</code></td>
-                        <td>Double</td>
-                        <td>0.8</td>
-                        <td>Required confidence level (0.0-1.0) for a verdict to be considered definitive.</td>
-                    </tr>
-                    <tr>
-                        <td><code>required_sources</code></td>
-                        <td>Int</td>
-                        <td>3</td>
-                        <td>Number of supporting sources required to reach a SUPPORTED verdict.</td>
-                    </tr>
-                    <tr>
-                        <td><code>contradiction_threshold</code></td>
-                        <td>Int</td>
-                        <td>2</td>
-                        <td>Number of contradicting sources required to reach a CONTRADICTED verdict.</td>
-                    </tr>
+                <tr>
+                    <td><code>claims_to_verify</code> <span class="req">*</span></td>
+                    <td>List&lt;String&gt;</td>
+                    <td>-</td>
+                    <td>The specific statements or facts to be verified against the crawled content.</td>
+                </tr>
+                <tr>
+                    <td><code>confidence_threshold</code></td>
+                    <td>Double</td>
+                    <td>0.8</td>
+                    <td>Required confidence level (0.0-1.0) for a verdict to be considered definitive.</td>
+                </tr>
+                <tr>
+                    <td><code>required_sources</code></td>
+                    <td>Int</td>
+                    <td>3</td>
+                    <td>Number of supporting sources required to reach a SUPPORTED verdict.</td>
+                </tr>
+                <tr>
+                    <td><code>contradiction_threshold</code></td>
+                    <td>Int</td>
+                    <td>2</td>
+                    <td>Number of contradicting sources required to reach a CONTRADICTED verdict.</td>
+                </tr>
                 </tbody>
             </table>
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-process" style="display:none;">
             <h3>Execution Lifecycle</h3>
             <ol style="color: var(--text-main); padding-left: 1.2rem;">
                 <li style="margin-bottom: 1rem;">
-                    <strong>Analysis:</strong> For every page crawled, the strategy uses an LLM to analyze the content against each claim.
+                    <strong>Analysis:</strong> For every page crawled, the strategy uses an LLM to analyze the content
+                    against each claim.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong>Evidence Extraction:</strong> Specific excerpts are extracted and assigned relevance and credibility scores.
+                    <strong>Evidence Extraction:</strong> Specific excerpts are extracted and assigned relevance and
+                    credibility scores.
                 </li>
                 <li style="margin-bottom: 1rem;">
                     <strong>State Management:</strong> Results are aggregated in a thread-safe global state using <code>ConcurrentHashMap</code>.
                 </li>
                 <li style="margin-bottom: 1rem;">
-                    <strong>Early Termination:</strong> The crawler stops automatically once the <code>required_sources</code> (default 3) or <code>contradiction_threshold</code> (default 2) is met for all claims.
+                    <strong>Early Termination:</strong> The crawler stops automatically once the
+                    <code>required_sources</code> (default 3) or <code>contradiction_threshold</code> (default 2) is met
+                    for all claims.
                 </li>
                 <li>
-                    <strong>Synthesis:</strong> A final Markdown report is generated calculating overall verdicts (SUPPORTED, CONTRADICTED, MIXED, or INSUFFICIENT_EVIDENCE) based on average confidence and source counts.
+                    <strong>Synthesis:</strong> A final Markdown report is generated calculating overall verdicts
+                    (SUPPORTED, CONTRADICTED, MIXED, or INSUFFICIENT_EVIDENCE) based on average confidence and source
+                    counts.
                 </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Kotlin Integration</h3>
             <pre><code class="language-kotlin">// Registering the strategy within a CrawlerAgentTask
 val task = CrawlerAgentTask(

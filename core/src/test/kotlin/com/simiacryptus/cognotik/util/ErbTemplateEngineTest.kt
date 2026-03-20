@@ -155,6 +155,7 @@ return "PREFIX_" + text
       }
       assertEquals("PREFIX_TEST", engine.render(template, data).trim())
     }
+
     @Test
     fun `should access global data from function`() {
       val template = """
@@ -168,6 +169,7 @@ return data.title + " " + name
       }
       assertEquals("Hello World", engine.render(template, data).trim())
     }
+
     @Test
     fun `should access nested global data from function`() {
       val template = """
@@ -184,6 +186,7 @@ return prefix + ": " + data.user.firstName + " " + data.user.lastName
       }
       assertEquals("Name: John Doe", engine.render(template, data).trim())
     }
+
     @Test
     fun `should access global data array from function`() {
       val template = """
@@ -201,6 +204,7 @@ return "Total: " + data.items.size()
       }
       assertEquals("Total: 3", engine.render(template, data).trim())
     }
+
     @Test
     fun `should use global data as filter with value`() {
       val template = """

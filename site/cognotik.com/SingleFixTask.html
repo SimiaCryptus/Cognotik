@@ -3,9 +3,10 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>SingleFixTask - Cognotik</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"
+          rel="stylesheet">
     <style>
         :root {
             --bg-app: #0f1115;
@@ -466,155 +467,166 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header Section -->
-        <section class="task-header">
-            <div class="breadcrumbs">
-                <a href="/">Home</a> &gt; <a href="/#tasks">Tasks</a> &gt; <a href="/#execution">Execution</a> &gt; SingleFixTask
-            </div>
-            <div class="header-top">
-                <h1 class="task-title">SingleFixTask</h1>
-                <span class="badge badge-category">Execution</span>
-                <span class="badge badge-model">GPT-4 Preferred</span>
-            </div>
-            <p class="header-pitch">
-                Analyzes a provided log file for errors and attempts to fix them in the codebase without executing commands. Performs one-pass analysis and fix generation.
-            </p>
-        </section>
+<div class="container">
+    <!-- Header Section -->
+    <section class="task-header">
+        <div class="breadcrumbs">
+            <a href="/">Home</a> &gt; <a href="/#tasks">Tasks</a> &gt; <a href="/#execution">Execution</a> &gt;
+            SingleFixTask
+        </div>
+        <div class="header-top">
+            <h1 class="task-title">SingleFixTask</h1>
+            <span class="badge badge-category">Execution</span>
+            <span class="badge badge-model">GPT-4 Preferred</span>
+        </div>
+        <p class="header-pitch">
+            Analyzes a provided log file for errors and attempts to fix them in the codebase without executing commands.
+            Performs one-pass analysis and fix generation.
+        </p>
+    </section>
 
-        <!-- Reality Check Section -->
-        <section class="reality-check">
-            <h2 class="reality-check-title">Input vs. Output</h2>
-            <div class="reality-check-grid">
-                <!-- Input: Configuration -->
-                <div class="panel code-panel">
-                    <div class="panel-header">
-                        <span class="icon">⚙️</span> TaskConfig.json
-                    </div>
-                    <pre><code class="language-json">{
+    <!-- Reality Check Section -->
+    <section class="reality-check">
+        <h2 class="reality-check-title">Input vs. Output</h2>
+        <div class="reality-check-grid">
+            <!-- Input: Configuration -->
+            <div class="panel code-panel">
+                <div class="panel-header">
+                    <span class="icon">⚙️</span> TaskConfig.json
+                </div>
+                <pre><code class="language-json">{
   "task_type": "SingleFix",
   "logFile": "build/logs/compilation_errors.log",
   "task_description": "Fix compilation errors",
   "task_dependencies": ["CompileTask"],
   "state": "pending"
 }</code></pre>
+            </div>
+
+            <!-- Arrow Connector -->
+            <div class="flow-arrow">→</div>
+
+            <!-- Output: User UI -->
+            <div class="panel ui-panel">
+                <div class="panel-header">
+                    <span class="icon">👁️</span> User UI
                 </div>
-
-                <!-- Arrow Connector -->
-                <div class="flow-arrow">→</div>
-
-                <!-- Output: User UI -->
-                <div class="panel ui-panel">
-                    <div class="panel-header">
-                        <span class="icon">👁️</span> User UI
+                <div class="mock-browser">
+                    <h3>✓ Analysis Complete</h3>
+                    <p>Analyzed log file: <code>build/logs/compilation_errors.log</code></p>
+                    <p>Found <strong>3 errors</strong> and generated fixes.</p>
+                    <div class="diff-view">
+                        <div class="diff-line-remove">- Missing import: java.util.List</div>
+                        <div class="diff-line-add">+ Added import statement</div>
+                        <div style="margin-top: 0.5rem; color: var(--text-dimmer);">...</div>
+                        <div class="diff-line-remove">- Type mismatch in method signature</div>
+                        <div class="diff-line-add">+ Corrected parameter types</div>
                     </div>
-                    <div class="mock-browser">
-                        <h3>✓ Analysis Complete</h3>
-                        <p>Analyzed log file: <code>build/logs/compilation_errors.log</code></p>
-                        <p>Found <strong>3 errors</strong> and generated fixes.</p>
-                        <div class="diff-view">
-                            <div class="diff-line-remove">- Missing import: java.util.List</div>
-                            <div class="diff-line-add">+ Added import statement</div>
-                            <div style="margin-top: 0.5rem; color: var(--text-dimmer);">...</div>
-                            <div class="diff-line-remove">- Type mismatch in method signature</div>
-                            <div class="diff-line-add">+ Corrected parameter types</div>
-                        </div>
-                        <p style="margin-top: 0.75rem; color: var(--text-dimmer); font-size: 0.85rem;">
-                            Transcript: <a href="#">SingleFixTask_full_report_20240115143022.md</a>
-                        </p>
-                    </div>
+                    <p style="margin-top: 0.75rem; color: var(--text-dimmer); font-size: 0.85rem;">
+                        Transcript: <a href="#">SingleFixTask_full_report_20240115143022.md</a>
+                    </p>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Tabbed Details Section -->
-        <section class="task-details">
-            <div class="tabs-nav">
-                <button class="tab-button active" data-tab="documentation">Documentation</button>
-                <button class="tab-button" data-tab="config-process">Config & Process</button>
-                <button class="tab-button" data-tab="integration">Integration</button>
-            </div>
+    <!-- Tabbed Details Section -->
+    <section class="task-details">
+        <div class="tabs-nav">
+            <button class="tab-button active" data-tab="documentation">Documentation</button>
+            <button class="tab-button" data-tab="config-process">Config & Process</button>
+            <button class="tab-button" data-tab="integration">Integration</button>
+        </div>
 
-            <!-- Tab 1: Documentation -->
-            <div id="documentation" class="tab-content active">
-                <h3 class="section-header">Configuration Parameters</h3>
-                <table class="config-table">
-                    <thead>
-                        <tr>
-                            <th>Field Name</th>
-                            <th>Type</th>
-                            <th>Default</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <span class="field-name">logFile</span>
-                                <span class="required-badge">Required</span>
-                            </td>
-                            <td><span class="field-type">String</span></td>
-                            <td><code>—</code></td>
-                            <td class="field-description">The path to the log file containing errors to analyze and fix.</td>
-                        </tr>
-                        <tr>
-                            <td><span class="field-name">task_description</span></td>
-                            <td><span class="field-type">String</span></td>
-                            <td><code>null</code></td>
-                            <td class="field-description">Optional description of the task for context and logging.</td>
-                        </tr>
-                        <tr>
-                            <td><span class="field-name">task_dependencies</span></td>
-                            <td><span class="field-type">List&lt;String&gt;</span></td>
-                            <td><code>[]</code></td>
-                            <td class="field-description">List of task names that must complete before this task executes.</td>
-                        </tr>
-                        <tr>
-                            <td><span class="field-name">state</span></td>
-                            <td><span class="field-type">TaskState</span></td>
-                            <td><code>pending</code></td>
-                            <td class="field-description">Current execution state of the task (pending, running, completed, failed).</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- Tab 1: Documentation -->
+        <div class="tab-content active" id="documentation">
+            <h3 class="section-header">Configuration Parameters</h3>
+            <table class="config-table">
+                <thead>
+                <tr>
+                    <th>Field Name</th>
+                    <th>Type</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>
+                        <span class="field-name">logFile</span>
+                        <span class="required-badge">Required</span>
+                    </td>
+                    <td><span class="field-type">String</span></td>
+                    <td><code>—</code></td>
+                    <td class="field-description">The path to the log file containing errors to analyze and fix.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">task_description</span></td>
+                    <td><span class="field-type">String</span></td>
+                    <td><code>null</code></td>
+                    <td class="field-description">Optional description of the task for context and logging.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">task_dependencies</span></td>
+                    <td><span class="field-type">List&lt;String&gt;</span></td>
+                    <td><code>[]</code></td>
+                    <td class="field-description">List of task names that must complete before this task executes.</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">state</span></td>
+                    <td><span class="field-type">TaskState</span></td>
+                    <td><code>pending</code></td>
+                    <td class="field-description">Current execution state of the task (pending, running, completed,
+                        failed).
+                    </td>
+                </tr>
+                </tbody>
+            </table>
 
-                <h3 class="section-header">Task Characteristics</h3>
-                <ul>
-                    <li><strong>Side-Effect Safe:</strong> Does not execute commands or modify files directly during analysis.</li>
-                    <li><strong>Single Pass:</strong> Analyzes the log file once and generates fixes in a single pass.</li>
-                    <li><strong>Model Requirement:</strong> GPT-4 or equivalent for accurate error analysis and fix generation.</li>
-                    <li><strong>Token Usage:</strong> Medium (depends on log file size, typically 2K-10K tokens).</li>
-                    <li><strong>Dependencies:</strong> Typically follows compilation or build tasks that generate error logs.</li>
-                </ul>
+            <h3 class="section-header">Task Characteristics</h3>
+            <ul>
+                <li><strong>Side-Effect Safe:</strong> Does not execute commands or modify files directly during
+                    analysis.
+                </li>
+                <li><strong>Single Pass:</strong> Analyzes the log file once and generates fixes in a single pass.</li>
+                <li><strong>Model Requirement:</strong> GPT-4 or equivalent for accurate error analysis and fix
+                    generation.
+                </li>
+                <li><strong>Token Usage:</strong> Medium (depends on log file size, typically 2K-10K tokens).</li>
+                <li><strong>Dependencies:</strong> Typically follows compilation or build tasks that generate error
+                    logs.
+                </li>
+            </ul>
 
-                <h3 class="section-header">Output</h3>
-                <p class="text-muted">
-                    The task generates a markdown transcript file containing:
-                </p>
-                <ul>
-                    <li>Analysis of errors found in the log file</li>
-                    <li>Proposed fixes with code diffs</li>
-                    <li>File paths and line numbers affected</li>
-                    <li>Execution summary and any errors encountered</li>
-                </ul>
-            </div>
+            <h3 class="section-header">Output</h3>
+            <p class="text-muted">
+                The task generates a markdown transcript file containing:
+            </p>
+            <ul>
+                <li>Analysis of errors found in the log file</li>
+                <li>Proposed fixes with code diffs</li>
+                <li>File paths and line numbers affected</li>
+                <li>Execution summary and any errors encountered</li>
+            </ul>
+        </div>
 
-            <!-- Tab 2: Configuration & Process -->
-            <div id="config-process" class="tab-content">
-                <h3 class="section-header">Type Configuration</h3>
-                <p class="text-muted">Static settings defined when the task is registered:</p>
-                <pre><code class="language-kotlin">class SingleFixTaskTypeConfig(
+        <!-- Tab 2: Configuration & Process -->
+        <div class="tab-content" id="config-process">
+            <h3 class="section-header">Type Configuration</h3>
+            <p class="text-muted">Static settings defined when the task is registered:</p>
+            <pre><code class="language-kotlin">class SingleFixTaskTypeConfig(
     name: String? = "SingleFix",
     model: ApiChatModel? = null
 ) : TaskTypeConfig(name, name, model)</code></pre>
-                <ul>
-                    <li><strong>name:</strong> Task identifier (default: "SingleFix")</li>
-                    <li><strong>model:</strong> LLM model instance for error analysis (default: orchestration config model)</li>
-                </ul>
+            <ul>
+                <li><strong>name:</strong> Task identifier (default: "SingleFix")</li>
+                <li><strong>model:</strong> LLM model instance for error analysis (default: orchestration config model)
+                </li>
+            </ul>
 
-                <h3 class="section-header">Runtime Configuration</h3>
-                <p class="text-muted">Dynamic parameters provided at execution time:</p>
-                <pre><code class="language-kotlin">class SingleFixTaskExecutionConfigData(
+            <h3 class="section-header">Runtime Configuration</h3>
+            <p class="text-muted">Dynamic parameters provided at execution time:</p>
+            <pre><code class="language-kotlin">class SingleFixTaskExecutionConfigData(
     @Description("The path to the log file containing errors")
     var logFile: String? = null,
     task_description: String? = null,
@@ -622,59 +634,67 @@
     state: TaskState? = null
 ) : TaskExecutionConfig(...)</code></pre>
 
-                <h3 class="section-header">Task Process Lifecycle</h3>
-                <div class="process-steps">
-                    <div class="process-step">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <h4>Initialization</h4>
-                            <p>Validates the log file path and ensures the file exists. Loads project context and initializes the LLM model.</p>
-                        </div>
-                    </div>
-                    <div class="process-step">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <h4>Log Analysis</h4>
-                            <p>Reads the log file and parses error messages. Identifies affected files and error types (syntax, type mismatch, missing imports, etc.).</p>
-                        </div>
-                    </div>
-                    <div class="process-step">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <h4>Fix Generation</h4>
-                            <p>Uses the LLM to generate patch-based fixes for each error. Validates fixes against the codebase structure.</p>
-                        </div>
-                    </div>
-                    <div class="process-step">
-                        <div class="step-number">4</div>
-                        <div class="step-content">
-                            <h4>Transcript Generation</h4>
-                            <p>Creates a detailed markdown transcript with analysis results, proposed fixes, and execution summary.</p>
-                        </div>
-                    </div>
-                    <div class="process-step">
-                        <div class="step-number">5</div>
-                        <div class="step-content">
-                            <h4>Completion</h4>
-                            <p>Returns success status and provides link to the generated transcript for user review.</p>
-                        </div>
+            <h3 class="section-header">Task Process Lifecycle</h3>
+            <div class="process-steps">
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Initialization</h4>
+                        <p>Validates the log file path and ensures the file exists. Loads project context and
+                            initializes the LLM model.</p>
                     </div>
                 </div>
-
-                <h3 class="section-header">Error Handling</h3>
-                <ul>
-                    <li><strong>Missing Log File:</strong> Throws IllegalArgumentException with descriptive message.</li>
-                    <li><strong>Invalid Configuration:</strong> Validation fails if logFile is null or blank.</li>
-                    <li><strong>Execution Errors:</strong> Caught and logged; stack trace included in transcript if autoFix is enabled.</li>
-                    <li><strong>Recovery:</strong> Task completes with error status; user can review transcript and retry with corrected configuration.</li>
-                </ul>
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Log Analysis</h4>
+                        <p>Reads the log file and parses error messages. Identifies affected files and error types
+                            (syntax, type mismatch, missing imports, etc.).</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Fix Generation</h4>
+                        <p>Uses the LLM to generate patch-based fixes for each error. Validates fixes against the
+                            codebase structure.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Transcript Generation</h4>
+                        <p>Creates a detailed markdown transcript with analysis results, proposed fixes, and execution
+                            summary.</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h4>Completion</h4>
+                        <p>Returns success status and provides link to the generated transcript for user review.</p>
+                    </div>
+                </div>
             </div>
 
-            <!-- Tab 3: Integration -->
-            <div id="integration" class="tab-content">
-                <h3 class="section-header">Adding to OrchestrationConfig</h3>
-                <p class="text-muted">Copy-pasteable Kotlin code to register this task:</p>
-                <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.run.SingleFixTask
+            <h3 class="section-header">Error Handling</h3>
+            <ul>
+                <li><strong>Missing Log File:</strong> Throws IllegalArgumentException with descriptive message.</li>
+                <li><strong>Invalid Configuration:</strong> Validation fails if logFile is null or blank.</li>
+                <li><strong>Execution Errors:</strong> Caught and logged; stack trace included in transcript if autoFix
+                    is enabled.
+                </li>
+                <li><strong>Recovery:</strong> Task completes with error status; user can review transcript and retry
+                    with corrected configuration.
+                </li>
+            </ul>
+        </div>
+
+        <!-- Tab 3: Integration -->
+        <div class="tab-content" id="integration">
+            <h3 class="section-header">Adding to OrchestrationConfig</h3>
+            <p class="text-muted">Copy-pasteable Kotlin code to register this task:</p>
+            <pre><code class="language-kotlin">import com.simiacryptus.cognotik.plan.tools.run.SingleFixTask
 
 // In your OrchestrationConfig setup:
 val singleFixTask = SingleFixTask(
@@ -695,24 +715,25 @@ taskOrchestrator.registerTask(
     )
 )</code></pre>
 
-                <h3 class="section-header">Prompt Segment</h3>
-                <p class="text-muted">The text injected into the LLM prompt:</p>
-                <pre><code class="language-text">Analyze the log file '{logFile}' and fix any errors found.</code></pre>
-                <p class="text-muted mt-2">
-                    This prompt is combined with the project context (file tree, code snippets) and the log file contents to guide the LLM in generating appropriate fixes.
-                </p>
+            <h3 class="section-header">Prompt Segment</h3>
+            <p class="text-muted">The text injected into the LLM prompt:</p>
+            <pre><code class="language-text">Analyze the log file '{logFile}' and fix any errors found.</code></pre>
+            <p class="text-muted mt-2">
+                This prompt is combined with the project context (file tree, code snippets) and the log file contents to
+                guide the LLM in generating appropriate fixes.
+            </p>
 
-                <h3 class="section-header">Typical Workflow</h3>
-                <ol>
-                    <li>A build or compilation task generates an error log file</li>
-                    <li>SingleFixTask is triggered with the log file path</li>
-                    <li>Task analyzes errors and generates fixes using the LLM</li>
-                    <li>Fixes are presented in a transcript for user review</li>
-                    <li>User can apply fixes manually or integrate with automated patching</li>
-                </ol>
+            <h3 class="section-header">Typical Workflow</h3>
+            <ol>
+                <li>A build or compilation task generates an error log file</li>
+                <li>SingleFixTask is triggered with the log file path</li>
+                <li>Task analyzes errors and generates fixes using the LLM</li>
+                <li>Fixes are presented in a transcript for user review</li>
+                <li>User can apply fixes manually or integrate with automated patching</li>
+            </ol>
 
-                <h3 class="section-header">Configuration Example</h3>
-                <pre><code class="language-json">{
+            <h3 class="section-header">Configuration Example</h3>
+            <pre><code class="language-json">{
   "tasks": [
     {
       "type": "CompileTask",
@@ -730,40 +751,40 @@ taskOrchestrator.registerTask(
     }
   ]
 }</code></pre>
-            </div>
-        </section>
-    </div>
+        </div>
+    </section>
+</div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script>
-        // Initialize syntax highlighting
-        document.querySelectorAll('pre code').forEach(block => {
-            hljs.highlightElement(block);
-        });
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+    // Initialize syntax highlighting
+    document.querySelectorAll('pre code').forEach(block => {
+        hljs.highlightElement(block);
+    });
 
-        // Tab switching functionality
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const tabName = this.getAttribute('data-tab');
+    // Tab switching functionality
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
 
-                // Remove active class from all buttons and contents
-                document.querySelectorAll('.tab-button').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                });
+            // Remove active class from all buttons and contents
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
 
-                // Add active class to clicked button and corresponding content
-                this.classList.add('active');
-                document.getElementById(tabName).classList.add('active');
+            // Add active class to clicked button and corresponding content
+            this.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
 
-                // Re-highlight code in the newly visible tab
-                document.getElementById(tabName).querySelectorAll('pre code').forEach(block => {
-                    hljs.highlightElement(block);
-                });
+            // Re-highlight code in the newly visible tab
+            document.getElementById(tabName).querySelectorAll('pre code').forEach(block => {
+                hljs.highlightElement(block);
             });
         });
-    </script>
+    });
+</script>
 </body>
 </html>

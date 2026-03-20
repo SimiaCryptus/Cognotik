@@ -83,7 +83,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
     var plot_continuity: PlotContinuityDetails? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
-  )    : TaskExecutionConfig(
+  ) : TaskExecutionConfig(
     task_type = ComicBookGeneration.name,
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
@@ -327,7 +327,10 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
                 log.info("Loaded reference image for character '${ref.character_name}' from $referenceImagePath")
               }
             } catch (e: Exception) {
-              log.warn("Failed to load reference image for character '${ref.character_name}' from $referenceImagePath", e)
+              log.warn(
+                "Failed to load reference image for character '${ref.character_name}' from $referenceImagePath",
+                e
+              )
               transcript?.write("**Warning:** Failed to load reference image for '${ref.character_name}': ${e.message}\n\n".toByteArray())
             }
           }
@@ -390,7 +393,12 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
               // Use user-provided reference image if available
               val userRefImage = preloadedCharacterRefImages[char.name]
               if (userRefImage != null) {
-                inputs.add(ImageAndText(text = "User-provided reference image for ${char.name}. Match this character's appearance closely.", image = userRefImage))
+                inputs.add(
+                  ImageAndText(
+                    text = "User-provided reference image for ${char.name}. Match this character's appearance closely.",
+                    image = userRefImage
+                  )
+                )
               }
 
               if (lastImage != null) {
@@ -591,6 +599,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ComicBookGenerationTask::class.java)
+
     @JvmStatic
     val ComicBookGeneration = TaskType(
       name = "ComicBookGeneration",

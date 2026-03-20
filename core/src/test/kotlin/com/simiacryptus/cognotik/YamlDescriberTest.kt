@@ -9,16 +9,16 @@ import org.junit.jupiter.api.Test
 
 class YamlDescriberTest : TypeDescriberTestBase() {
 
-    @Test
-    override fun testDescribeMethod() {
-        super.testDescribeMethod()
-    }
+  @Test
+  override fun testDescribeMethod() {
+    super.testDescribeMethod()
+  }
 
-    override val typeDescriber: TypeDescriber get() = YamlDescriber()
-    override val classDescription: String
-        get() =
+  override val typeDescriber: TypeDescriber get() = YamlDescriber()
+  override val classDescription: String
+    get() =
 
-            """
+      """
             type: object
             class: com.simiacryptus.cognotik.TypeDescriberTestBase${'$'}DataClassExample
             properties:
@@ -39,9 +39,9 @@ class YamlDescriberTest : TypeDescriberTestBase() {
                   type: integer
                 """.trimIndent()
 
-    override val methodDescription
-        get() =
-            """
+  override val methodDescription
+    get() =
+      """
             operationId: methodExample
             description: This is a method
             parameters:
@@ -56,11 +56,11 @@ class YamlDescriberTest : TypeDescriberTestBase() {
                   type: string
             """.trimIndent()
 
-    @Test
-    override fun testDescribeRecursiveType() {
-        val expectedDescription =
+  @Test
+  override fun testDescribeRecursiveType() {
+    val expectedDescription =
 
-            """
+      """
             type: object
             class: com.simiacryptus.cognotik.TypeDescriberTestBase${'$'}RecursiveDataClass
             properties:
@@ -70,51 +70,51 @@ class YamlDescriberTest : TypeDescriberTestBase() {
                 description: "Recursive reference"
                 ...
             """.trimIndent()
-        val actualDescription = typeDescriber.describe(RecursiveDataClass::class.java)
-        Assertions.assertEquals(expectedDescription, actualDescription)
-    }
+    val actualDescription = typeDescriber.describe(RecursiveDataClass::class.java)
+    Assertions.assertEquals(expectedDescription, actualDescription)
+  }
 
-    @Test
-    fun testDescribedTypesPreventRecursion() {
-        val describer = YamlDescriber()
-        val describedTypes = mutableSetOf<String>()
-        val description = describer.describe(RecursiveType::class.java, null, 10, describedTypes)
-        assertTrue(description.contains("..."), "Description should contain recursion prevention marker")
-        assertTrue(
-            describedTypes.contains(RecursiveType::class.java.name),
-            "Described types should contain RecursiveType"
-        )
-    }
+  @Test
+  fun testDescribedTypesPreventRecursion() {
+    val describer = YamlDescriber()
+    val describedTypes = mutableSetOf<String>()
+    val description = describer.describe(RecursiveType::class.java, null, 10, describedTypes)
+    assertTrue(description.contains("..."), "Description should contain recursion prevention marker")
+    assertTrue(
+      describedTypes.contains(RecursiveType::class.java.name),
+      "Described types should contain RecursiveType"
+    )
+  }
 
-    @Test
-    fun testDescribedTypesTrackMultipleTypes() {
-        val describer = YamlDescriber()
-        val describedTypes = mutableSetOf<String>()
-        describer.describe(FirstType::class.java, null, 10, describedTypes)
-        describer.describe(SecondType::class.java, null, 10, describedTypes)
-        assertTrue(describedTypes.contains(FirstType::class.java.name), "Described types should contain FirstType")
-        assertTrue(describedTypes.contains(SecondType::class.java.name), "Described types should contain SecondType")
-    }
+  @Test
+  fun testDescribedTypesTrackMultipleTypes() {
+    val describer = YamlDescriber()
+    val describedTypes = mutableSetOf<String>()
+    describer.describe(FirstType::class.java, null, 10, describedTypes)
+    describer.describe(SecondType::class.java, null, 10, describedTypes)
+    assertTrue(describedTypes.contains(FirstType::class.java.name), "Described types should contain FirstType")
+    assertTrue(describedTypes.contains(SecondType::class.java.name), "Described types should contain SecondType")
+  }
 
-    data class RecursiveType(val self: RecursiveType?)
-    data class FirstType(val name: String)
-    data class SecondType(val id: Int)
+  data class RecursiveType(val self: RecursiveType?)
+  data class FirstType(val name: String)
+  data class SecondType(val id: Int)
 
-    @Suppress("unused")
-    enum class TestEnum {
-        FIRST_OPTION, SECOND_OPTION, THIRD_OPTION
-    }
+  @Suppress("unused")
+  enum class TestEnum {
+    FIRST_OPTION, SECOND_OPTION, THIRD_OPTION
+  }
 
-    @Test
-    fun testDescribeEnumType() {
-        val expectedDescription = """
+  @Test
+  fun testDescribeEnumType() {
+    val expectedDescription = """
          type: enumeration
          values:
            - FIRST_OPTION
            - SECOND_OPTION
            - THIRD_OPTION
          """.trimIndent()
-        val actualDescription = typeDescriber.describe(TestEnum::class.java)
-        Assertions.assertEquals(expectedDescription, actualDescription)
-    }
+    val actualDescription = typeDescriber.describe(TestEnum::class.java)
+    Assertions.assertEquals(expectedDescription, actualDescription)
+  }
 }

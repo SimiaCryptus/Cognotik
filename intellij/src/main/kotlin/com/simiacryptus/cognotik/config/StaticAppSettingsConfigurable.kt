@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.config
 
 import com.intellij.util.xmlb.XmlSerializerUtil
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
@@ -8,7 +9,6 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ToolData
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettings
@@ -208,8 +208,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         val dialog = JDialog(null as Frame?, "Export Configuration", true)
         dialog.layout = BorderLayout()
 
-        val userSettings =
-            ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.getUserSettings()
+      val userSettings =
+        ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.getUserSettings(
+          localUser
+        )
         val fullConfig = try {
             val encryptedSettings = AppSettingsState.instance.copy()
             // Export UserSettings with encrypted keys
@@ -395,7 +397,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 )
                 log.debug("Decrypting ${importedUserSettings.apis.size} API configurations")
                 ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.updateUserSettings(
-                    UserSettingsManager.defaultUser, importedUserSettings
+                  AppSettingsState.localUser, importedUserSettings
                 )
                 log.info("Successfully imported configuration with ${importedUserSettings.apis.size} API configurations")
             } else {
@@ -435,9 +437,9 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             // Refresh API table with current user settings
             val tableModel = component.apis.model as DefaultTableModel
             tableModel.rowCount = 0
-            val userSettings = ApplicationServices.fileApplicationServices(
-                AppSettingsState.pluginHome
-            ).userSettingsManager.getUserSettings()
+          val userSettings = ApplicationServices.fileApplicationServices(
+            AppSettingsState.pluginHome
+          ).userSettingsManager.getUserSettings(localUser)
             userSettings.apis.forEach { api ->
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""
@@ -456,9 +458,9 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     override fun read(component: AppSettingsComponent, settings: AppSettingsState) {
         log.debug("Reading settings from UI components")
         try {
-            val userSettings = ApplicationServices.fileApplicationServices(
-                AppSettingsState.pluginHome
-            ).userSettingsManager.getUserSettings()
+          val userSettings = ApplicationServices.fileApplicationServices(
+            AppSettingsState.pluginHome
+          ).userSettingsManager.getUserSettings(localUser)
             log.debug("Current user has ${userSettings.apis.size} API configurations")
 
             val fastModelName = component.fastModel.selectedItem as String?
@@ -573,7 +575,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 }
             }
             ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.updateUserSettings(
-                UserSettingsManager.defaultUser,
+              AppSettingsState.localUser,
                 userSettings
             )
             log.info("Successfully read settings with ${userSettings.apis.size} API configurations")

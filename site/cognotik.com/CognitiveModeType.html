@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | CognitiveMode</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/styles/main.css">
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
 
@@ -104,7 +105,8 @@
         <div class="breadcrumbs">Home > Core > Cognitive Modes</div>
         <h1>CognitiveMode</h1>
         <p class="pitch">
-            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the agent's problem-solving persona.
+            The autonomous control loop that orchestrates task execution, manages reasoning state, and defines the
+            agent's problem-solving persona.
         </p>
         <div class="badges">
             <span class="badge">Core Architecture</span>
@@ -138,12 +140,12 @@
                 <div class="markdown-body">
                     <h3>State: Hypothesis Testing</h3>
                     <div class="mermaid">
-                      graph TD
-                      A[Analyze Error] --> B{Hypothesis?}
-                      B -->|Network| C[Check DNS]
-                      B -->|Code| D[Run Linter]
-                      C --> E[Refute Hypothesis]
-                      E --> A
+                        graph TD
+                        A[Analyze Error] --> B{Hypothesis?}
+                        B -->|Network| C[Check DNS]
+                        B -->|Code| D[Run Linter]
+                        C --> E[Refute Hypothesis]
+                        E --> A
                     </div>
                     <p><strong>Thinking:</strong> Network checks passed. Switching strategy to Code Analysis.</p>
                     <p><em>Executing: RunCodeTask...</em></p>
@@ -162,7 +164,7 @@
         </nav>
 
         <!-- TAB: BUILT-IN MODES -->
-        <div id="tab-modes" class="tab-pane active">
+        <div class="tab-pane active" id="tab-modes">
             <h3>Architectural Patterns</h3>
             <p>Cognotik implements several distinct modes for orchestrating agent behavior.</p>
             <table class="docs-table">
@@ -224,9 +226,10 @@
         </div>
 
         <!-- TAB: STRATEGIES -->
-        <div id="tab-strategies" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-strategies" style="display:none;">
             <h3>Cognitive Schema Strategies</h3>
-            <p>Strategies define the "Persona" and internal state structure, separating control flow from reasoning style.</p>
+            <p>Strategies define the "Persona" and internal state structure, separating control flow from reasoning
+                style.</p>
             <table class="docs-table">
                 <thead>
                 <tr>
@@ -261,7 +264,7 @@
         </div>
 
         <!-- TAB: SKELETON -->
-        <div id="tab-skeleton" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-skeleton" style="display:none;">
             <h3>Implementation Skeleton</h3>
             <p>To create a custom mode, implement the <code>run()</code> loop and handle state updates.</p>
             <pre><code class="language-kotlin">
@@ -293,7 +296,7 @@ class MyCustomMode(val config: OrchestrationConfig) {
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane" style="display:none;">
+        <div class="tab-pane" id="tab-integration" style="display:none;">
             <h3>Integration Guide</h3>
             <p>Reference your mode in the <code>OrchestrationConfig</code>.</p>
             <pre><code class="language-kotlin">
@@ -313,8 +316,10 @@ val config = OrchestrationConfig(
             <h4>Observability Standards</h4>
             <ul>
                 <li><strong>Mermaid Diagrams:</strong> Visualize the state machine in the transcript.</li>
-                <li><strong>Collapsed Details:</strong> Use <code>&lt;details&gt;</code> tags for raw JSON state dumps.</li>
-                <li><strong>Graceful Degradation:</strong> Catch LLM hallucinations and attempt prompt simplification.</li>
+                <li><strong>Collapsed Details:</strong> Use <code>&lt;details&gt;</code> tags for raw JSON state dumps.
+                </li>
+                <li><strong>Graceful Degradation:</strong> Catch LLM hallucinations and attempt prompt simplification.
+                </li>
             </ul>
         </div>
 

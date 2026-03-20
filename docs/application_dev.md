@@ -1,14 +1,17 @@
-This guide outlines how to build AI-driven web applications using the Cognotik framework and how to programmatically launch sessions for those applications (e.g., from an IDE plugin).
+This guide outlines how to build AI-driven web applications using the Cognotik framework and how to programmatically
+launch sessions for those applications (e.g., from an IDE plugin).
 
-The framework relies on a central **Session Proxy** that routes incoming web traffic (identified by a Session ID) to specific **Application Server** instances.
+The framework relies on a central **Session Proxy** that routes incoming web traffic (identified by a Session ID) to
+specific **Application Server** instances.
 
 ---
 
 ## Part 1: Creating an Application
 
 There are two main ways to create an application:
-1.  **General Application:** Inherit from `ApplicationServer` for full control (interactive chat, custom flows).
-2.  **Single Task Application:** Inherit from `SingleTaskApp` for "fire-and-forget" tasks (e.g., "Refactor this file").
+
+1. **General Application:** Inherit from `ApplicationServer` for full control (interactive chat, custom flows).
+2. **Single Task Application:** Inherit from `SingleTaskApp` for "fire-and-forget" tasks (e.g., "Refactor this file").
 
 ### Option A: The General Application (`ApplicationServer`)
 
@@ -68,7 +71,8 @@ class MyCustomChatApp : ApplicationServer(
 
 ### Option B: The Single Task Application (`SingleTaskApp`)
 
-Use this for specific, automated workflows (like the `FileModificationTask` in your provided code). This pre-configures the agent to run immediately upon session start.
+Use this for specific, automated workflows (like the `FileModificationTask` in your provided code). This pre-configures
+the agent to run immediately upon session start.
 
 ```kotlin
 import com.simiacryptus.cognotik.apps.SingleTaskApp
@@ -102,11 +106,13 @@ class MyRefactoringApp(
 
 ## Part 2: Launching an Application Session
 
-Once you have an application class, you don't "start" the app server for every user. Instead, you create a **Session**, instantiate your App for that session, and register it with the global `SessionProxyServer`.
+Once you have an application class, you don't "start" the app server for every user. Instead, you create a **Session**,
+instantiate your App for that session, and register it with the global `SessionProxyServer`.
 
 This is typically done in an Action handler (like `FileModificationTaskAction.kt`).
 
 ### Step 1: Generate a Session ID and Setup Storage
+
 Generate a unique ID and define where the data for this session lives.
 
 ```kotlin
@@ -118,7 +124,9 @@ DataStorage.sessionPaths[session] = projectRoot
 ```
 
 ### Step 2: Configure and Instantiate the App
-Create an instance of your application class. If using `SingleTaskApp`, you must write the configuration to the settings file so the app knows what to do when it wakes up.
+
+Create an instance of your application class. If using `SingleTaskApp`, you must write the configuration to the settings
+file so the app knows what to do when it wakes up.
 
 ```kotlin
 // 1. Create the App Instance
@@ -141,7 +149,9 @@ app.getSettingsFile(session, UserSettingsManager.defaultUser)
 ```
 
 ### Step 3: Register with SessionProxyServer
-This is the most critical step. The `SessionProxyServer` acts as the router. You must tell it: "When a browser requests `/#<session_id>`, use *this* app instance."
+
+This is the most critical step. The `SessionProxyServer` acts as the router. You must tell it: "When a browser requests
+`/#<session_id>`, use *this* app instance."
 
 ```kotlin
 import com.simiacryptus.cognotik.util.SessionProxyServer
@@ -168,6 +178,7 @@ SessionProxyServer.metadataStorage.setSessionName(
 ```
 
 ### Step 4: Open the Browser
+
 Construct the URL pointing to the local server with the session hash fragment.
 
 ```kotlin
@@ -194,12 +205,15 @@ Thread {
 
 ## Summary of Architecture
 
-1.  **`SessionProxyServer`**: The singleton Jetty handler. It holds a map `chats: MutableMap<Session, ChatServer>`.
-2.  **`ApplicationServer`**: Your custom logic. It manages the `SocketManager`.
-3.  **`SocketManager`**: The bridge between Kotlin code and the HTML/JS frontend. It allows you to push updates (`newTask`, `add`, `complete`) to the browser.
-4.  **`DataStorage`**: Manages file persistence. `DataStorage.sessionPaths` maps a logical session ID to a physical folder on your hard drive.
+1. **`SessionProxyServer`**: The singleton Jetty handler. It holds a map `chats: MutableMap<Session, ChatServer>`.
+2. **`ApplicationServer`**: Your custom logic. It manages the `SocketManager`.
+3. **`SocketManager`**: The bridge between Kotlin code and the HTML/JS frontend. It allows you to push updates (
+   `newTask`, `add`, `complete`) to the browser.
+4. **`DataStorage`**: Manages file persistence. `DataStorage.sessionPaths` maps a logical session ID to a physical
+   folder on your hard drive.
 
 ### Checklist for Developers
+
 1.  [ ] Define your App class (extending `ApplicationServer` or `SingleTaskApp`).
 2.  [ ] Create a `Session` object.
 3.  [ ] Set `DataStorage.sessionPaths[session]`.

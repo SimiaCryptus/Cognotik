@@ -2,13 +2,9 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.AbstractTask
-import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
-import com.simiacryptus.cognotik.plan.tools.TaskType
-import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.tools.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -947,9 +943,10 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
             appendLine()
             appendLine("**⏱️ Estimated Time:** ${outline.estimated_time} minutes")
             appendLine()
-            appendLine("**🎯 Skill Level:** ${
+            appendLine(
+              "**🎯 Skill Level:** ${
                 executionConfig.skill_level.replaceFirstChar {
-                    if (it.isLowerCase()) it.titlecase(getDefault()) else it.toString()
+                  if (it.isLowerCase()) it.titlecase(getDefault()) else it.toString()
                 }
             }")
             appendLine()
@@ -1247,6 +1244,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(TutorialGenerationTask::class.java)
+
     @JvmStatic
     val TutorialGeneration = TaskType(
       name = "TutorialGeneration",

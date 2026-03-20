@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.util
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -19,15 +20,16 @@ open class FileGenerator {
     },
     targetFile: (File) -> File = { it },
     updateMode: UpdateMode = UpdateModes.SkipExisting,
-    generationPrompt: (File, File) -> String,
-    concurrencyLimit: Int = 4
+    concurrencyLimit: Int = 4,
+    user: User = com.simiacryptus.cognotik.platform.model.defaultUser
   ) {
     val concurrencyProcessor = FixedConcurrencyProcessor(
       pool = Executors.newCachedThreadPool(),
       concurrencyLimit = concurrencyLimit
     )
     object : UnifiedHarness(
-      showMenubar = true
+      showMenubar = true,
+      user = user
     ) {
       override fun createTempDirectory(prefix: String) = root
         .resolve("workspaces/${javaClass.simpleName}/test-${PlanHarness.now()}")

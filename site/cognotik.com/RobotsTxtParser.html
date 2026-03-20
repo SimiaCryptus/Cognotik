@@ -3,15 +3,16 @@
 <head>
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik | RobotsTxtParser</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap"
+          rel="stylesheet">
 
-  <link rel="stylesheet" href="assets/styles/main.css">
-  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link href="assets/styles/main.css" rel="stylesheet">
+    <script src="assets/scripts/components/CognotikHeader.js" type="module"></script>
 
     <style>
         :root {
@@ -205,16 +206,17 @@
 
 <main class="task-container">
 
-      <!-- 1. PAGE HEADER -->
+    <!-- 1. PAGE HEADER -->
     <header class="page-header">
         <div class="breadcrumbs">Tools / Online / RobotsTxtParser</div>
         <h1>RobotsTxtParser</h1>
         <p class="pitch">
-            High-performance, thread-safe robots.txt compliance engine. Handles wildcard matching, crawl-delay directives, and sitemap discovery with built-in caching.
+            High-performance, thread-safe robots.txt compliance engine. Handles wildcard matching, crawl-delay
+            directives, and sitemap discovery with built-in caching.
         </p>
         <div class="badges">
-              <span class="badge badge-success">Side-Effect: Safe</span>
-              <span class="badge badge-warning">Network: Required</span>
+            <span class="badge badge-success">Side-Effect: Safe</span>
+            <span class="badge badge-warning">Network: Required</span>
             <span class="badge">Thread-Safe</span>
         </div>
     </header>
@@ -272,7 +274,7 @@ val delay = parser.getCrawlDelay("https://example.com")
         </nav>
 
         <!-- TAB: DOCS -->
-        <div id="tab-docs" class="tab-pane active">
+        <div class="tab-pane active" id="tab-docs">
             <h3>Core Methods</h3>
             <table class="docs-table">
                 <thead>
@@ -334,12 +336,16 @@ val delay = parser.getCrawlDelay("https://example.com")
         </div>
 
         <!-- TAB: PROCESS -->
-        <div id="tab-process" class="tab-pane">
+        <div class="tab-pane" id="tab-process">
             <h3>Execution Lifecycle</h3>
             <ol style="color: var(--text-main); padding-left: 1.2rem;">
                 <li><strong>Normalization:</strong> Extracts the base URL (scheme, host, port) from the target URI.</li>
-                <li><strong>Cache Lookup:</strong> Checks <code>ConcurrentHashMap</code> for existing <code>RobotsTxt</code> object.</li>
-                <li><strong>Fetch (on Miss):</strong> Executes a GET request to <code>/robots.txt</code> with User-Agent <code>CognotikBot/1.0</code>.</li>
+                <li><strong>Cache Lookup:</strong> Checks <code>ConcurrentHashMap</code> for existing
+                    <code>RobotsTxt</code> object.
+                </li>
+                <li><strong>Fetch (on Miss):</strong> Executes a GET request to <code>/robots.txt</code> with User-Agent
+                    <code>CognotikBot/1.0</code>.
+                </li>
                 <li><strong>Parsing:</strong>
                     <ul style="margin-top: 0.5rem; color: var(--text-dim);">
                         <li>Filters directives by User-Agent (matches <code>*</code> or <code>cognotik</code>).</li>
@@ -347,12 +353,13 @@ val delay = parser.getCrawlDelay("https://example.com")
                         <li>Extracts <code>Crawl-delay</code> and <code>Sitemap</code> links.</li>
                     </ul>
                 </li>
-                <li><strong>Matching:</strong> Evaluates <code>Allow</code> rules first (precedence), then <code>Disallow</code>.</li>
+                <li><strong>Matching:</strong> Evaluates <code>Allow</code> rules first (precedence), then <code>Disallow</code>.
+                </li>
             </ol>
         </div>
 
         <!-- TAB: INTEGRATION -->
-        <div id="tab-integration" class="tab-pane">
+        <div class="tab-pane" id="tab-integration">
             <h3>Boilerplate</h3>
             <pre><code class="language-kotlin">
 import com.simiacryptus.cognotik.plan.tools.online.RobotsTxtParser
@@ -373,13 +380,13 @@ class WebScraper(private val parser: RobotsTxtParser = RobotsTxtParser()) {
 </main>
 
 <script>
-      function switchTab(event, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
 
-        document.getElementById('tab-' + tabId).classList.add('active');
-        event.currentTarget.classList.add('active');
-    }
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+  }
 </script>
 
 </body>

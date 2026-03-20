@@ -1,40 +1,41 @@
 package com.simiacryptus.cognotik.plan.tools.session
 
-import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask.CommandSessionTaskExecutionConfigData
+import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
 
 object CommandSessionTaskTest {
 
-    @JvmStatic
-    @BeforeAll
-    fun setup() {
-      UnifiedHarness.configurePlatform()
-    }
+  @JvmStatic
+  @BeforeAll
+  fun setup() {
+    UnifiedHarness.configurePlatform(com.simiacryptus.cognotik.platform.model.defaultUser)
+  }
 
-    @org.junit.jupiter.api.Tag("Integration")
-    //@org.junit.jupiter.api.Test
-    @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
-    fun test() {
-        TaskHarness(
-            taskType = CommandSessionTask.CommandSession,
-            typeConfig = TaskTypeConfig(
-                task_type = CommandSessionTask.CommandSession.name
-            ),
-            executionConfig = CommandSessionTaskExecutionConfigData(
-                command = listOf("bash"),
-                inputs = listOf(
-                    "export TEST_VAR='Cognotik Session'",
-                    "echo \"Value: \$TEST_VAR\"",
-                    "pwd"
-                ),
-                idle_timeout = 500,
-                task_description = "Execute stateful bash commands to verify session functionality",
-            ),
-            timeoutMinutes = 10,
-        ).run()
-    }
+  @org.junit.jupiter.api.Tag("Integration")
+  //@org.junit.jupiter.api.Test
+  @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
+  fun test() {
+    TaskHarness(
+      taskType = CommandSessionTask.CommandSession,
+      typeConfig = TaskTypeConfig(
+        task_type = CommandSessionTask.CommandSession.name
+      ),
+      executionConfig = CommandSessionTaskExecutionConfigData(
+        command = listOf("bash"),
+        inputs = listOf(
+          "export TEST_VAR='Cognotik Session'",
+          "echo \"Value: \$TEST_VAR\"",
+          "pwd"
+        ),
+        idle_timeout = 500,
+        task_description = "Execute stateful bash commands to verify session functionality",
+      ),
+      timeoutMinutes = 10,
+      user = com.simiacryptus.cognotik.platform.model.defaultUser,
+    ).run()
+  }
 }

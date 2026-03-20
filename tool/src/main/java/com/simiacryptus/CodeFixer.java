@@ -13,12 +13,14 @@ import java.io.File;
 import java.util.List;
 import java.util.Objects;
 
+import static com.simiacryptus.cognotik.platform.model.UserKt.defaultUser;
 import static com.simiacryptus.cognotik.util.CognotikUtils.*;
 
 @SuppressWarnings("unused")
 public record CodeFixer(String taskDescription, List<String> relatedFiles) {
     public static final String PROMPT = "Fix the build errors reported in build.log";
     public static final int PORT = 8030;
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(CodeFixer.class);
 
     public static void main(String[] args) {
         String taskDescription = args.length > 0 ? args[0] : PROMPT;
@@ -26,17 +28,15 @@ public record CodeFixer(String taskDescription, List<String> relatedFiles) {
                 args.length > 1 ? args[1] : "build.log"
         );
         configureEnvironmentalKeys();
-        UnifiedHarness.configurePlatform();
+        UnifiedHarness.configurePlatform(defaultUser);
         new CodeFixer(taskDescription, relatedFiles).run();
     }
-
-    private static final Logger log = org.slf4j.LoggerFactory.getLogger(CodeFixer.class);
 
     public void run() {
         ChatModel chatModel = GeminiModels.getGeminiFlash_30_Preview();
 
         var fileModification = FileModificationTask.getFileModification();
-        FileModificationTask.FileModificationTaskExecutionConfigData  config = new FileModificationTask.FileModificationTaskExecutionConfigData();
+        FileModificationTask.FileModificationTaskExecutionConfigData config = new FileModificationTask.FileModificationTaskExecutionConfigData();
         config.setTask_description(this.taskDescription());
         config.setRelated_files(this.relatedFiles());
 
@@ -44,7 +44,7 @@ public record CodeFixer(String taskDescription, List<String> relatedFiles) {
                 fileModification,
                 new TaskTypeConfig(fileModification.getName(), fileModification.getName(), getChatModel(chatModel)),
                 config,
-                (model, session) -> getInterface(getChatModel(Objects.requireNonNull(model.getModel())), session),
+                (model, session, user) -> getInterface(getChatModel(Objects.requireNonNull(model.getModel())), session),
                 PORT,
                 true,
                 false,
@@ -53,7 +53,8 @@ public record CodeFixer(String taskDescription, List<String> relatedFiles) {
                 chatModel,
                 chatModel,
                 new File("."),
-                0.0
+                0.0,
+                defaultUser
         ) {
             @NotNull
             @Override

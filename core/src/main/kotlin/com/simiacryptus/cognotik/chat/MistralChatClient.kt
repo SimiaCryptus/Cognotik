@@ -14,95 +14,95 @@ import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
 data class MistralChatRequest(
-    val messages: List<MistralChatMessage>,
-    val model: String,
-    @JsonProperty("max_tokens") val max_tokens: Int? = null,
-    val temperature: Double? = null,
-    val stream: Boolean? = null,
-    val stop: List<String>? = null,
-    @JsonProperty("top_p") val top_p: Double? = null,
-    @JsonProperty("random_seed") val random_seed: Int? = null
+  val messages: List<MistralChatMessage>,
+  val model: String,
+  @JsonProperty("max_tokens") val max_tokens: Int? = null,
+  val temperature: Double? = null,
+  val stream: Boolean? = null,
+  val stop: List<String>? = null,
+  @JsonProperty("top_p") val top_p: Double? = null,
+  @JsonProperty("random_seed") val random_seed: Int? = null
 )
 
 data class MistralChatMessage(
-    val role: ModelSchema.Role,
-    val content: String
+  val role: ModelSchema.Role,
+  val content: String
 )
 
 
 class MistralChatClient(
-    apiKey: SecureString,
-    workPool: ExecutorService,
-    logLevel: Level = Level.DEBUG,
-    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    apiBase: String,
-    scheduledPool: ListeningScheduledExecutorService,
+  apiKey: SecureString,
+  workPool: ExecutorService,
+  logLevel: Level = Level.DEBUG,
+  logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+  apiBase: String,
+  scheduledPool: ListeningScheduledExecutorService,
 ) : SingleProviderChatClient(
-    APIProvider.Mistral,
-    apiKey = apiKey,
-    apiBase = apiBase,
-    workPool = workPool,
-    logLevel = logLevel,
-    logStreams = logStreams,
-    scheduledPool = scheduledPool
+  APIProvider.Mistral,
+  apiKey = apiKey,
+  apiBase = apiBase,
+  workPool = workPool,
+  logLevel = logLevel,
+  logStreams = logStreams,
+  scheduledPool = scheduledPool
 ) {
-    override fun authorize(
-        request: HttpRequest,
-        apiProvider: APIProvider
-    ) {
-        request.addHeader(HEADER_CONTENT_TYPE, APPLICATION_JSON)
-        request.addHeader(HEADER_ACCEPT, APPLICATION_JSON)
-        request.addHeader(HEADER_AUTHORIZATION, "Bearer ${apiKey.decrypt}")
-        require(null == budget || budget!!.toDouble() > 0.0) { "Budget Exceeded" }
-    }
+  override fun authorize(
+    request: HttpRequest,
+    apiProvider: APIProvider
+  ) {
+    request.addHeader(HEADER_CONTENT_TYPE, APPLICATION_JSON)
+    request.addHeader(HEADER_ACCEPT, APPLICATION_JSON)
+    request.addHeader(HEADER_AUTHORIZATION, "Bearer ${apiKey.decrypt}")
+    require(null == budget || budget!!.toDouble() > 0.0) { "Budget Exceeded" }
+  }
 
-    override fun chat(
-        chatRequest: ModelSchema.ChatRequest,
-        model: ChatModel,
-        logStreams: MutableList<java.io.BufferedOutputStream>
-    ): ModelSchema.ChatResponse {
-        log.info("Starting Mistral chat with model: ${model.modelId}")
+  override fun chat(
+    chatRequest: ModelSchema.ChatRequest,
+    model: ChatModel,
+    logStreams: MutableList<java.io.BufferedOutputStream>
+  ): ModelSchema.ChatResponse {
+    log.info("Starting Mistral chat with model: ${model.modelId}")
 
-        return withReliability {
-            withPerformanceLogging {
-                val mistralRequest = toMistral(chatRequest)
-                val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(mistralRequest)
+    return withReliability {
+      withPerformanceLogging {
+        val mistralRequest = toMistral(chatRequest)
+        val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
+          .writeValueAsString(mistralRequest)
 
-                val result = post("$apiBase/chat/completions", json, APIProvider.Mistral)
-                checkError(result)
-                val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
+        val result = post("$apiBase/chat/completions", json, APIProvider.Mistral)
+        checkError(result)
+        val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
 
-                if (response.usage != null && model is ChatModel) {
-                    onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
-                }
-
-                response
-            }
+        if (response.usage != null && model is ChatModel) {
+          onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
         }
+
+        response
+      }
     }
+  }
 
-    companion object {
-        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(MistralChatClient::class.java)
-        const val HEADER_CONTENT_TYPE = "Content-Type"
-        const val HEADER_ACCEPT = "Accept"
-        const val HEADER_AUTHORIZATION = "Authorization"
-        const val APPLICATION_JSON = "application/json"
+  companion object {
+    private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(MistralChatClient::class.java)
+    const val HEADER_CONTENT_TYPE = "Content-Type"
+    const val HEADER_ACCEPT = "Accept"
+    const val HEADER_AUTHORIZATION = "Authorization"
+    const val APPLICATION_JSON = "application/json"
 
-        fun toMistral(chatRequest: ModelSchema.ChatRequest): MistralChatRequest = MistralChatRequest(
-            messages = chatRequest.messages.map { message ->
-                MistralChatMessage(
-                    role = message.role!!,
-                    content = message.content?.joinToString("\n") { it.text ?: "" } ?: "",
-                )
-            },
-            model = chatRequest.model!!,
-            max_tokens = chatRequest.max_tokens,
-            temperature = chatRequest.temperature,
-            stream = false,
-            stop = chatRequest.stop?.map { if (it.isEmpty()) "" else it.toString() },
-            //top_p = chatRequest.top_p,
-            //random_seed = chatRequest.seed
+    fun toMistral(chatRequest: ModelSchema.ChatRequest): MistralChatRequest = MistralChatRequest(
+      messages = chatRequest.messages.map { message ->
+        MistralChatMessage(
+          role = message.role!!,
+          content = message.content?.joinToString("\n") { it.text ?: "" } ?: "",
         )
-    }
+      },
+      model = chatRequest.model!!,
+      max_tokens = chatRequest.max_tokens,
+      temperature = chatRequest.temperature,
+      stream = false,
+      stop = chatRequest.stop?.map { if (it.isEmpty()) "" else it.toString() },
+      //top_p = chatRequest.top_p,
+      //random_seed = chatRequest.seed
+    )
+  }
 }

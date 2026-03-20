@@ -9,9 +9,9 @@ import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -184,7 +184,7 @@ class ImageDecompositionTask(
         val allNodes = ConcurrentLinkedQueue<AnalysisNode>()
         val rootNodes = mutableListOf<AnalysisNode>()
         val model =
-          (typeConfig?.model?.let { it.instance() } ?: defaultSmart).getChildClient(task)
+          (typeConfig?.model?.let { it.instance(orchestrationConfig.user) } ?: defaultSmart).getChildClient(task)
 
         (0 until pages).forEach { page ->
           logTab.add("Processing page ${page + 1} of $pages".renderMarkdown())
@@ -471,7 +471,9 @@ If a region looks like it contains smaller details (text, faces, objects) that a
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ImageDecompositionTask::class.java)
-    @JvmStatic val ImageDecomposition = TaskType(
+
+    @JvmStatic
+    val ImageDecomposition = TaskType(
       name = "ImageDecomposition",
       category = "File",
       taskClass = ImageDecompositionTask::class.java,

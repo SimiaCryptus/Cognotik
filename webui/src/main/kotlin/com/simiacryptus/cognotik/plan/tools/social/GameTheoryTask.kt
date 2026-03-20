@@ -19,25 +19,26 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class GameTheoryTask(
-    orchestrationConfig: OrchestrationConfig,
-    planTask: GameTheoryTaskExecutionConfigData?
+  orchestrationConfig: OrchestrationConfig,
+  planTask: GameTheoryTaskExecutionConfigData?
 ) : AbstractTask<GameTheoryTask.GameTheoryTaskExecutionConfigData, GameTheoryTask.GameTheoryTypeConfig>(
-    orchestrationConfig,
-    planTask
+  orchestrationConfig,
+  planTask
 ) {
-    val maxOutputLengthPerField = 10000
+  val maxOutputLengthPerField = 10000
 
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)
 
-        @JvmStatic val GameTheory = TaskType(
-          name = "GameTheory",
-          category = "Reasoning",
-          taskClass = GameTheoryTask::class.java,
-          executionConfigClass = GameTheoryTaskExecutionConfigData::class.java,
-          taskSettingsClass = GameTheoryTypeConfig::class.java,
-          description = "Analyze strategic interactions using game theory",
-          tooltipHtml = """
+    @JvmStatic
+    val GameTheory = TaskType(
+      name = "GameTheory",
+      category = "Reasoning",
+      taskClass = GameTheoryTask::class.java,
+      executionConfigClass = GameTheoryTaskExecutionConfigData::class.java,
+      taskSettingsClass = GameTheoryTypeConfig::class.java,
+      description = "Analyze strategic interactions using game theory",
+      tooltipHtml = """
                         Performs comprehensive game theory analysis of strategic situations.
                         <ul>
                           <li>Analyzes game structure and player strategies</li>
@@ -51,35 +52,35 @@ class GameTheoryTask(
                           <li>Useful for competitive analysis, negotiation, and strategic planning</li>
                         </ul>
                       """,
-        )
-        private val textExtensions = setOf(
-            "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs",
-            "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml",
-            "yml", "properties", "gradle", "maven"
-        )
+    )
+    private val textExtensions = setOf(
+      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs",
+      "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml",
+      "yml", "properties", "gradle", "maven"
+    )
 
-        fun isTextFile(file: File): Boolean {
-            return textExtensions.contains(file.extension.lowercase())
-        }
-
-        fun extractDocumentContent(file: File) = try {
-            file.getDocumentReader().use { reader ->
-                when (reader) {
-                    is PaginatedDocumentReader ->
-                        reader.getText(0, reader.getPageCount())
-
-                    else -> reader.getText()
-                }
-            }
-        } catch (e: Exception) {
-            log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
-            try {
-                file.readText()
-            } catch (e2: Exception) {
-                "Error reading file: ${e2.message}"
-            }
-        }
+    fun isTextFile(file: File): Boolean {
+      return textExtensions.contains(file.extension.lowercase())
     }
+
+    fun extractDocumentContent(file: File) = try {
+      file.getDocumentReader().use { reader ->
+        when (reader) {
+          is PaginatedDocumentReader ->
+            reader.getText(0, reader.getPageCount())
+
+          else -> reader.getText()
+        }
+      }
+    } catch (e: Exception) {
+      log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+      try {
+        file.readText()
+      } catch (e2: Exception) {
+        "Error reading file: ${e2.message}"
+      }
+    }
+  }
 
   class GameTheoryTypeConfig(
     var analysis_temperature: Double = 0.3,
@@ -199,88 +200,88 @@ Provide this in a clear, structured format.
   ) : TaskTypeConfig()
 
 
-    data class GameAnalysis(
-      @Description("The type of game identified (e.g., cooperative, non-cooperative, zero-sum, sequential)")
-      var game_type: String? = null,
-      @Description("List of players/agents identified in the game")
-      var players: List<String>? = null,
-      @Description("Map of player names to their available strategies")
-      var strategies: Map<String, List<String>>? = null,
-      @Description("Summary of the payoff matrix or payoff structure")
-      var payoff_matrix: String? = null,
-      @Description("List of Nash equilibria identified, described as strategy profiles")
-      var nash_equilibria: List<String>? = null,
-      @Description("Map of player names to their dominant strategy, if any")
-      var dominant_strategies: Map<String, String>? = null,
-      @Description("List of Pareto optimal outcomes identified")
-      var pareto_optimal_outcomes: List<String>? = null,
-      @Description("Map of player names to their strategic recommendation")
-      var recommendations: Map<String, String>? = null
-    ) : ValidatedObject {
-      override fun validate(): String? {
-        game_type = game_type?.trim()?.ifBlank { null }
-        players = players?.filter { it.isNotBlank() }?.map { it.trim() }
-        nash_equilibria = nash_equilibria?.filter { it.isNotBlank() }?.map { it.trim() }
-        pareto_optimal_outcomes = pareto_optimal_outcomes?.filter { it.isNotBlank() }?.map { it.trim() }
-        return null
-      }
+  data class GameAnalysis(
+    @Description("The type of game identified (e.g., cooperative, non-cooperative, zero-sum, sequential)")
+    var game_type: String? = null,
+    @Description("List of players/agents identified in the game")
+    var players: List<String>? = null,
+    @Description("Map of player names to their available strategies")
+    var strategies: Map<String, List<String>>? = null,
+    @Description("Summary of the payoff matrix or payoff structure")
+    var payoff_matrix: String? = null,
+    @Description("List of Nash equilibria identified, described as strategy profiles")
+    var nash_equilibria: List<String>? = null,
+    @Description("Map of player names to their dominant strategy, if any")
+    var dominant_strategies: Map<String, String>? = null,
+    @Description("List of Pareto optimal outcomes identified")
+    var pareto_optimal_outcomes: List<String>? = null,
+    @Description("Map of player names to their strategic recommendation")
+    var recommendations: Map<String, String>? = null
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      game_type = game_type?.trim()?.ifBlank { null }
+      players = players?.filter { it.isNotBlank() }?.map { it.trim() }
+      nash_equilibria = nash_equilibria?.filter { it.isNotBlank() }?.map { it.trim() }
+      pareto_optimal_outcomes = pareto_optimal_outcomes?.filter { it.isNotBlank() }?.map { it.trim() }
+      return null
     }
+  }
 
   private val codeFiles = mutableMapOf<Path, String>()
 
-    class GameTheoryTaskExecutionConfigData(
-        @Description("The strategic situation or game to analyze")
-        var game_scenario: String? = null,
-        @Description("List of players/agents in the game")
-        var players: List<String>? = null,
-        @Description("Available strategies for each player (optional, can be inferred)")
-        var player_strategies: Map<String, List<String>>? = null,
-        @Description("Type of game: cooperative, non-cooperative, zero-sum, repeated, sequential")
-        var game_type: String? = "non-cooperative",
-        @Description("Whether to construct a payoff matrix")
-        var build_payoff_matrix: Boolean = true,
-        @Description("Whether to identify Nash equilibria")
-        var find_nash_equilibria: Boolean = true,
-        @Description("Whether to analyze dominant strategies")
-        var analyze_dominant_strategies: Boolean = true,
-        @Description("Whether to identify Pareto optimal outcomes")
-        var find_pareto_optimal: Boolean = true,
-        @Description("Whether to provide strategic recommendations for each player")
-        var provide_recommendations: Boolean = true,
-        @Description("Whether to analyze the game as a repeated game")
-        var repeated_game_analysis: Boolean = false,
-        @Description("Number of iterations for repeated game analysis")
-        var iterations: Int = 10,
-        @Description("Additional context or constraints")
-        var additional_context: String? = null,
-        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        var input_files: List<String>? = null,
-        task_description: String? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = TaskState.Pending,
-    ) : TaskExecutionConfig(
-        task_type = GameTheory.name,
-        task_description = task_description ?: "Analyze game theory scenario: ${game_scenario?.take(1000)}",
-        task_dependencies = task_dependencies?.toMutableList(),
-        state = state
-    ), ValidatedObject {
-        override fun validate(): String? {
-          game_scenario = game_scenario?.trim()
-          if (game_scenario.isNullOrBlank()) return "game_scenario must not be null or blank"
-          players = players?.map { it.trim() }?.filter { it.isNotBlank() }
-          if (players.isNullOrEmpty()) return "players list must not be null or empty"
-          game_type = game_type?.trim()?.ifBlank { null } ?: "non-cooperative"
-          iterations = iterations.coerceIn(1, 1000)
-            if (repeated_game_analysis && iterations < 2) {
-              iterations = 2
-            }
-          additional_context = additional_context?.trim()?.ifBlank { null }
-            return ValidatedObject.validateFields(this)
-        }
+  class GameTheoryTaskExecutionConfigData(
+    @Description("The strategic situation or game to analyze")
+    var game_scenario: String? = null,
+    @Description("List of players/agents in the game")
+    var players: List<String>? = null,
+    @Description("Available strategies for each player (optional, can be inferred)")
+    var player_strategies: Map<String, List<String>>? = null,
+    @Description("Type of game: cooperative, non-cooperative, zero-sum, repeated, sequential")
+    var game_type: String? = "non-cooperative",
+    @Description("Whether to construct a payoff matrix")
+    var build_payoff_matrix: Boolean = true,
+    @Description("Whether to identify Nash equilibria")
+    var find_nash_equilibria: Boolean = true,
+    @Description("Whether to analyze dominant strategies")
+    var analyze_dominant_strategies: Boolean = true,
+    @Description("Whether to identify Pareto optimal outcomes")
+    var find_pareto_optimal: Boolean = true,
+    @Description("Whether to provide strategic recommendations for each player")
+    var provide_recommendations: Boolean = true,
+    @Description("Whether to analyze the game as a repeated game")
+    var repeated_game_analysis: Boolean = false,
+    @Description("Number of iterations for repeated game analysis")
+    var iterations: Int = 10,
+    @Description("Additional context or constraints")
+    var additional_context: String? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    var input_files: List<String>? = null,
+    task_description: String? = null,
+    task_dependencies: List<String>? = null,
+    state: TaskState? = TaskState.Pending,
+  ) : TaskExecutionConfig(
+    task_type = GameTheory.name,
+    task_description = task_description ?: "Analyze game theory scenario: ${game_scenario?.take(1000)}",
+    task_dependencies = task_dependencies?.toMutableList(),
+    state = state
+  ), ValidatedObject {
+    override fun validate(): String? {
+      game_scenario = game_scenario?.trim()
+      if (game_scenario.isNullOrBlank()) return "game_scenario must not be null or blank"
+      players = players?.map { it.trim() }?.filter { it.isNotBlank() }
+      if (players.isNullOrEmpty()) return "players list must not be null or empty"
+      game_type = game_type?.trim()?.ifBlank { null } ?: "non-cooperative"
+      iterations = iterations.coerceIn(1, 1000)
+      if (repeated_game_analysis && iterations < 2) {
+        iterations = 2
+      }
+      additional_context = additional_context?.trim()?.ifBlank { null }
+      return ValidatedObject.validateFields(this)
     }
+  }
 
-    override fun promptSegment(): String {
-        return """
+  override fun promptSegment(): String {
+    return """
 GameTheory - Analyze strategic interactions using game theory
   ** Specify the strategic situation or game scenario
   ** Define players and their available strategies
@@ -297,56 +298,56 @@ GameTheory - Analyze strategic interactions using game theory
      - Market strategy
      - Conflict resolution
         """.trimIndent()
+  }
+
+  override fun run(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    resultFn: (String) -> Unit,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
+    val gameScenario = executionConfig?.game_scenario
+    val players = executionConfig?.players
+    val startTime = System.currentTimeMillis()
+    log.info("Task 'GameTheory' started for scenario: ${gameScenario?.take(50)}. Details logged to transcript.")
+
+    if (gameScenario.isNullOrBlank()) {
+      val errorMsg = "CONFIGURATION ERROR: No game scenario specified"
+      log.error(errorMsg)
+      task.safeComplete(errorMsg, log)
+      resultFn(errorMsg)
+      return
     }
 
-    override fun run(
-        agent: TaskOrchestrator,
-        messages: List<String>,
-        task: SessionTask,
-        resultFn: (String) -> Unit,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-      val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
-      val gameScenario = executionConfig?.game_scenario
-      val players = executionConfig?.players
-        val startTime = System.currentTimeMillis()
-      log.info("Task 'GameTheory' started for scenario: ${gameScenario?.take(50)}. Details logged to transcript.")
+    if (players.isNullOrEmpty()) {
+      val errorMsg = "CONFIGURATION ERROR: No players specified"
+      log.error(errorMsg)
+      task.safeComplete(errorMsg, log)
+      resultFn(errorMsg)
+      return
+    }
 
-        if (gameScenario.isNullOrBlank()) {
-            val errorMsg = "CONFIGURATION ERROR: No game scenario specified"
-            log.error(errorMsg)
-            task.safeComplete(errorMsg, log)
-            resultFn(errorMsg)
-            return
-        }
+    val api = defaultSmart
+    val effectiveTypeConfig = typeConfig ?: GameTheoryTypeConfig()
 
-        if (players.isNullOrEmpty()) {
-            val errorMsg = "CONFIGURATION ERROR: No players specified"
-            log.error(errorMsg)
-            task.safeComplete(errorMsg, log)
-            resultFn(errorMsg)
-            return
-        }
-
-      val api = defaultSmart
-      val effectiveTypeConfig = typeConfig ?: GameTheoryTypeConfig()
-
-      task.ui.pool.submit {
-        var transcript: OutputStream? = null
-        try {
-          transcript = task.newUserFileStream(transcriptFile())
+    task.ui.pool.submit {
+      var transcript: OutputStream? = null
+      try {
+        transcript = task.newUserFileStream(transcriptFile())
         val tabs = TabbedDisplay(task)
         val overviewTask = tabs.newTask("Overview")
 
-          transcript?.write("# Game Theory Analysis\n\n".toByteArray())
-          transcript?.write(
-            "**Started:** ${
-              LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-            }\n\n".toByteArray()
-          )
+        transcript?.write("# Game Theory Analysis\n\n".toByteArray())
+        transcript?.write(
+          "**Started:** ${
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+          }\n\n".toByteArray()
+        )
 
-          val overviewTaskStatus = overviewTask.add(
-                    """
+        val overviewTaskStatus = overviewTask.add(
+          """
             |## Game Theory Analysis
             |
             |**Scenario:** $gameScenario
@@ -356,10 +357,10 @@ GameTheory - Analyze strategic interactions using game theory
             |**Game Type:** ${executionConfig?.game_type}
             |**Status:** 🔄 Initializing analysis...
         """.trimMargin().renderMarkdown()
-                )
+        )
 
-          transcript?.write(
-            """
+        transcript?.write(
+          """
         |## Game Theory Analysis
         |
         |**Scenario:** $gameScenario
@@ -368,48 +369,48 @@ GameTheory - Analyze strategic interactions using game theory
         |**Game Type:** ${executionConfig.game_type}
         |
         |""".trimMargin().toByteArray()
-            )
-            overviewTask.update()
+        )
+        overviewTask.update()
 
-            log.debug("Retrieving prior context from execution state")
-            val priorContext = getPriorCode(agent.executionState)
+        log.debug("Retrieving prior context from execution state")
+        val priorContext = getPriorCode(agent.executionState)
 
-            // Build context section
-            val contextBuilder = StringBuilder()
-            if (priorContext.isNotBlank()) {
-                contextBuilder.append("## Context from Previous Tasks\n\n")
-                contextBuilder.append(priorContext)
-                contextBuilder.append("\n\n")
+        // Build context section
+        val contextBuilder = StringBuilder()
+        if (priorContext.isNotBlank()) {
+          contextBuilder.append("## Context from Previous Tasks\n\n")
+          contextBuilder.append(priorContext)
+          contextBuilder.append("\n\n")
 
-                val contextTask = tabs.newTask("Context")
-              contextTask.add(
-                """
+          val contextTask = tabs.newTask("Context")
+          contextTask.add(
+            """
             |# Context from Previous Tasks
             |
             |$priorContext
             """.trimMargin().renderMarkdown()
-              )
-                transcript?.write(
-                    """
+          )
+          transcript?.write(
+            """
           |## Context from Previous Tasks
           |
           |$priorContext
           |
           |""".trimMargin().toByteArray()
-                )
-              contextTask.complete()
-            }
+          )
+          contextTask.complete()
+        }
 
-            if (executionConfig.additional_context?.isNotBlank() == true) {
-                contextBuilder.append("## Additional Context\n\n")
-                contextBuilder.append(executionConfig.additional_context)
-                contextBuilder.append("\n\n")
-            }
+        if (executionConfig.additional_context?.isNotBlank() == true) {
+          contextBuilder.append("## Additional Context\n\n")
+          contextBuilder.append(executionConfig.additional_context)
+          contextBuilder.append("\n\n")
+        }
 
-            // Update overview
-            overviewTaskStatus?.clear()
-          overviewTask.add(
-              """
+        // Update overview
+        overviewTaskStatus?.clear()
+        overviewTask.add(
+          """
             |## Game Theory Analysis
             |
             |**Scenario:** $gameScenario
@@ -420,232 +421,236 @@ GameTheory - Analyze strategic interactions using game theory
             |
             |**Status:** 🔄 Analyzing game structure...
         """.trimMargin().renderMarkdown()
-            )
-            overviewTask.update()
+        )
+        overviewTask.update()
 
-            // Step 1: Analyze game structure and strategies
-            var stepStartTime = System.currentTimeMillis()
-            log.debug("Analyzing game structure")
-            val structureTask = tabs.newTask("Game Structure")
-          val structureLoading =
-            structureTask.add("## Game Structure\n\n🔄 Analyzing game structure and strategies...".renderMarkdown())
+        // Step 1: Analyze game structure and strategies
+        var stepStartTime = System.currentTimeMillis()
+        log.debug("Analyzing game structure")
+        val structureTask = tabs.newTask("Game Structure")
+        val structureLoading =
+          structureTask.add("## Game Structure\n\n🔄 Analyzing game structure and strategies...".renderMarkdown())
 
-            val structurePrompt = buildStructurePrompt(gameScenario, players, contextBuilder.toString())
+        val structurePrompt = buildStructurePrompt(gameScenario, players, contextBuilder.toString())
 
-            val chatAgent = ChatAgent(
-                prompt = structurePrompt,
-                model = api,
-              temperature = effectiveTypeConfig.analysis_temperature
-            )
+        val chatAgent = ChatAgent(
+          prompt = structurePrompt,
+          model = api,
+          temperature = effectiveTypeConfig.analysis_temperature
+        )
 
-            val structureAnalysis = chatAgent.answer(toInput(structurePrompt))
-            log.info("Structure analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${structureAnalysis.length} characters")
-          transcript?.write("## Game Structure Analysis\n${structureAnalysis.wrapInDetails("Full Analysis")}\n\n".toByteArray())
+        val structureAnalysis = chatAgent.answer(toInput(structurePrompt))
+        log.info("Structure analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${structureAnalysis.length} characters")
+        transcript?.write("## Game Structure Analysis\n${structureAnalysis.wrapInDetails("Full Analysis")}\n\n".toByteArray())
 
-            structureLoading?.clear()
-            structureTask.add(
-              """
+        structureLoading?.clear()
+        structureTask.add(
+          """
             |## Game Structure Analysis
             |
             |✅ Analysis complete
             |
             |$structureAnalysis
             """.trimMargin().renderMarkdown()
-            )
-          structureTask.complete()
+        )
+        structureTask.complete()
 
-            // Step 2: Build payoff matrix if requested
-            var payoffMatrix = ""
-            if (executionConfig.build_payoff_matrix) {
-                stepStartTime = System.currentTimeMillis()
-                log.debug("Building payoff matrix")
-                val payoffTask = tabs.newTask("Payoff Matrix")
-              val payoffLoading = payoffTask.add("## Payoff Matrix\n\n🔄 Constructing payoff matrix...".renderMarkdown())
+        // Step 2: Build payoff matrix if requested
+        var payoffMatrix = ""
+        if (executionConfig.build_payoff_matrix) {
+          stepStartTime = System.currentTimeMillis()
+          log.debug("Building payoff matrix")
+          val payoffTask = tabs.newTask("Payoff Matrix")
+          val payoffLoading = payoffTask.add("## Payoff Matrix\n\n🔄 Constructing payoff matrix...".renderMarkdown())
 
-              val payoffPrompt = effectiveTypeConfig.payoff_matrix_prompt
+          val payoffPrompt = effectiveTypeConfig.payoff_matrix_prompt
 
-                payoffMatrix = chatAgent.answer(toInput(payoffPrompt))
-                log.info("Payoff matrix generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${payoffMatrix.length} characters")
-              transcript?.write("## Payoff Matrix\n${payoffMatrix.wrapInDetails("Full Matrix")}\n\n".toByteArray())
+          payoffMatrix = chatAgent.answer(toInput(payoffPrompt))
+          log.info("Payoff matrix generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${payoffMatrix.length} characters")
+          transcript?.write("## Payoff Matrix\n${payoffMatrix.wrapInDetails("Full Matrix")}\n\n".toByteArray())
 
-                payoffLoading?.clear()
-                payoffTask.add(
-                  """
+          payoffLoading?.clear()
+          payoffTask.add(
+            """
             |## Payoff Matrix
             |
             |✅ Matrix constructed
             |
             |$payoffMatrix
             """.trimMargin().renderMarkdown()
-                )
-              payoffTask.complete()
-            }
+          )
+          payoffTask.complete()
+        }
 
-            // Step 3: Find Nash equilibria if requested
-            var nashEquilibria = ""
-            if (executionConfig.find_nash_equilibria) {
-                stepStartTime = System.currentTimeMillis()
-                log.debug("Finding Nash equilibria")
-                val nashTask = tabs.newTask("Nash Equilibria")
-              val nashLoading = nashTask.add("## Nash Equilibria\n\n🔄 Identifying Nash equilibria...".renderMarkdown())
+        // Step 3: Find Nash equilibria if requested
+        var nashEquilibria = ""
+        if (executionConfig.find_nash_equilibria) {
+          stepStartTime = System.currentTimeMillis()
+          log.debug("Finding Nash equilibria")
+          val nashTask = tabs.newTask("Nash Equilibria")
+          val nashLoading = nashTask.add("## Nash Equilibria\n\n🔄 Identifying Nash equilibria...".renderMarkdown())
 
-              val nashPrompt = effectiveTypeConfig.nash_equilibria_prompt
+          val nashPrompt = effectiveTypeConfig.nash_equilibria_prompt
 
-                nashEquilibria = chatAgent.answer(toInput(nashPrompt))
-                log.info("Nash equilibria analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${nashEquilibria.length} characters")
-              transcript?.write("## Nash Equilibria Analysis\n${nashEquilibria.wrapInDetails("Full Analysis")}\n\n".toByteArray())
+          nashEquilibria = chatAgent.answer(toInput(nashPrompt))
+          log.info("Nash equilibria analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${nashEquilibria.length} characters")
+          transcript?.write("## Nash Equilibria Analysis\n${nashEquilibria.wrapInDetails("Full Analysis")}\n\n".toByteArray())
 
-                nashLoading?.clear()
-                nashTask.add(
-                  """
+          nashLoading?.clear()
+          nashTask.add(
+            """
             |## Nash Equilibria Analysis
             |
             |✅ Analysis complete
             |
             |$nashEquilibria
             """.trimMargin().renderMarkdown()
-                )
-              nashTask.complete()
-            }
+          )
+          nashTask.complete()
+        }
 
-            // Step 4: Analyze dominant strategies if requested
-            var dominantStrategies = ""
-            if (executionConfig.analyze_dominant_strategies) {
-                stepStartTime = System.currentTimeMillis()
-                log.debug("Analyzing dominant strategies")
-                val dominantTask = tabs.newTask("Dominant Strategies")
-              val dominantLoading =
-                dominantTask.add("## Dominant Strategies\n\n🔄 Analyzing dominant strategies...".renderMarkdown())
+        // Step 4: Analyze dominant strategies if requested
+        var dominantStrategies = ""
+        if (executionConfig.analyze_dominant_strategies) {
+          stepStartTime = System.currentTimeMillis()
+          log.debug("Analyzing dominant strategies")
+          val dominantTask = tabs.newTask("Dominant Strategies")
+          val dominantLoading =
+            dominantTask.add("## Dominant Strategies\n\n🔄 Analyzing dominant strategies...".renderMarkdown())
 
-              val dominantPrompt = effectiveTypeConfig.dominant_strategies_prompt
+          val dominantPrompt = effectiveTypeConfig.dominant_strategies_prompt
 
-                dominantStrategies = chatAgent.answer(toInput(dominantPrompt))
-                log.info("Dominant strategies analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${dominantStrategies.length} characters")
-              transcript?.write("## Dominant Strategies Analysis\n${dominantStrategies.wrapInDetails("Full Analysis")}\n\n".toByteArray())
+          dominantStrategies = chatAgent.answer(toInput(dominantPrompt))
+          log.info("Dominant strategies analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${dominantStrategies.length} characters")
+          transcript?.write("## Dominant Strategies Analysis\n${dominantStrategies.wrapInDetails("Full Analysis")}\n\n".toByteArray())
 
-                dominantLoading?.clear()
-                dominantTask.add(
-                  """
+          dominantLoading?.clear()
+          dominantTask.add(
+            """
             |## Dominant Strategies Analysis
             |
             |✅ Analysis complete
             |
             |$dominantStrategies
             """.trimMargin().renderMarkdown()
-                )
-              dominantTask.complete()
-            }
+          )
+          dominantTask.complete()
+        }
 
-            // Step 5: Find Pareto optimal outcomes if requested
-            var paretoOptimal = ""
-            if (executionConfig.find_pareto_optimal) {
-                stepStartTime = System.currentTimeMillis()
-                log.debug("Finding Pareto optimal outcomes")
-                val paretoTask = tabs.newTask("Pareto Optimality")
-              val paretoLoading =
-                paretoTask.add("## Pareto Optimality\n\n🔄 Identifying Pareto optimal outcomes...".renderMarkdown())
+        // Step 5: Find Pareto optimal outcomes if requested
+        var paretoOptimal = ""
+        if (executionConfig.find_pareto_optimal) {
+          stepStartTime = System.currentTimeMillis()
+          log.debug("Finding Pareto optimal outcomes")
+          val paretoTask = tabs.newTask("Pareto Optimality")
+          val paretoLoading =
+            paretoTask.add("## Pareto Optimality\n\n🔄 Identifying Pareto optimal outcomes...".renderMarkdown())
 
-              val paretoPrompt = effectiveTypeConfig.pareto_optimal_prompt
+          val paretoPrompt = effectiveTypeConfig.pareto_optimal_prompt
 
-                paretoOptimal = chatAgent.answer(toInput(paretoPrompt))
-                log.info("Pareto optimality analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${paretoOptimal.length} characters")
-              transcript?.write("## Pareto Optimality Analysis\n${paretoOptimal.wrapInDetails("Full Analysis")}\n\n".toByteArray())
+          paretoOptimal = chatAgent.answer(toInput(paretoPrompt))
+          log.info("Pareto optimality analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${paretoOptimal.length} characters")
+          transcript?.write("## Pareto Optimality Analysis\n${paretoOptimal.wrapInDetails("Full Analysis")}\n\n".toByteArray())
 
-                paretoLoading?.clear()
-                paretoTask.add(
-                  """
+          paretoLoading?.clear()
+          paretoTask.add(
+            """
             |## Pareto Optimality Analysis
             |
             |✅ Analysis complete
             |
             |$paretoOptimal
             """.trimMargin().renderMarkdown()
-                )
-              paretoTask.complete()
-            }
+          )
+          paretoTask.complete()
+        }
 
-            // Step 6: Repeated game analysis if requested
-            var repeatedGameAnalysis = ""
-            if (executionConfig.repeated_game_analysis) {
-                stepStartTime = System.currentTimeMillis()
-                log.debug("Analyzing repeated game dynamics")
-                val repeatedTask = tabs.newTask("Repeated Game")
-              val repeatedLoading =
-                repeatedTask.add("## Repeated Game Analysis\n\n🔄 Analyzing repeated game dynamics...".renderMarkdown())
+        // Step 6: Repeated game analysis if requested
+        var repeatedGameAnalysis = ""
+        if (executionConfig.repeated_game_analysis) {
+          stepStartTime = System.currentTimeMillis()
+          log.debug("Analyzing repeated game dynamics")
+          val repeatedTask = tabs.newTask("Repeated Game")
+          val repeatedLoading =
+            repeatedTask.add("## Repeated Game Analysis\n\n🔄 Analyzing repeated game dynamics...".renderMarkdown())
 
-              val repeatedPrompt = effectiveTypeConfig.repeated_game_prompt_template
-                .replace("{iterations}", executionConfig.iterations.toString())
+          val repeatedPrompt = effectiveTypeConfig.repeated_game_prompt_template
+            .replace("{iterations}", executionConfig.iterations.toString())
 
-                repeatedGameAnalysis = chatAgent.answer(toInput(repeatedPrompt))
-                log.info("Repeated game analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${repeatedGameAnalysis.length} characters")
-              transcript?.write("## Repeated Game Analysis\n${repeatedGameAnalysis.wrapInDetails("Full Analysis")}\n\n".toByteArray())
+          repeatedGameAnalysis = chatAgent.answer(toInput(repeatedPrompt))
+          log.info("Repeated game analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${repeatedGameAnalysis.length} characters")
+          transcript?.write("## Repeated Game Analysis\n${repeatedGameAnalysis.wrapInDetails("Full Analysis")}\n\n".toByteArray())
 
-                repeatedLoading?.clear()
-                repeatedTask.add(
-                  """
+          repeatedLoading?.clear()
+          repeatedTask.add(
+            """
             |## Repeated Game Analysis
             |
             |✅ Analysis complete
             |
             |$repeatedGameAnalysis
             """.trimMargin().renderMarkdown()
-                )
-              repeatedTask.complete()
-            }
+          )
+          repeatedTask.complete()
+        }
 
-            // Step 7: Provide strategic recommendations if requested
-            var recommendations = ""
-            if (executionConfig.provide_recommendations) {
-                stepStartTime = System.currentTimeMillis()
-                log.debug("Generating strategic recommendations")
-                val recommendTask = tabs.newTask("Recommendations")
-              val recommendLoading =
-                recommendTask.add("## Strategic Recommendations\n\n🔄 Generating recommendations...".renderMarkdown())
+        // Step 7: Provide strategic recommendations if requested
+        var recommendations = ""
+        if (executionConfig.provide_recommendations) {
+          stepStartTime = System.currentTimeMillis()
+          log.debug("Generating strategic recommendations")
+          val recommendTask = tabs.newTask("Recommendations")
+          val recommendLoading =
+            recommendTask.add("## Strategic Recommendations\n\n🔄 Generating recommendations...".renderMarkdown())
 
-              val recommendPrompt = effectiveTypeConfig.recommendations_prompt_template
-                .replace("{players}", players.joinToString(", "))
+          val recommendPrompt = effectiveTypeConfig.recommendations_prompt_template
+            .replace("{players}", players.joinToString(", "))
 
-                recommendations = chatAgent.answer(toInput(recommendPrompt))
-                log.info("Recommendations generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${recommendations.length} characters")
-              transcript?.write("## Strategic Recommendations\n${recommendations.wrapInDetails("Full Recommendations")}\n\n".toByteArray())
+          recommendations = chatAgent.answer(toInput(recommendPrompt))
+          log.info("Recommendations generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${recommendations.length} characters")
+          transcript?.write("## Strategic Recommendations\n${recommendations.wrapInDetails("Full Recommendations")}\n\n".toByteArray())
 
-                recommendLoading?.clear()
-                recommendTask.add(
-                  """
+          recommendLoading?.clear()
+          recommendTask.add(
+            """
             |## Strategic Recommendations
             |
             |✅ Recommendations complete
             |
             |$recommendations
             """.trimMargin().renderMarkdown()
-                )
-              recommendTask.complete()
-            }
+          )
+          recommendTask.complete()
+        }
 
-            // Step 8: Generate comprehensive summary using ParsedAgent
-            stepStartTime = System.currentTimeMillis()
-            log.debug("Generating structured summary")
-            val summaryTask = tabs.newTask("Summary")
-          val summaryLoading = summaryTask.add("## Summary\n\n🔄 Generating comprehensive summary...".renderMarkdown())
+        // Step 8: Generate comprehensive summary using ParsedAgent
+        stepStartTime = System.currentTimeMillis()
+        log.debug("Generating structured summary")
+        val summaryTask = tabs.newTask("Summary")
+        val summaryLoading = summaryTask.add("## Summary\n\n🔄 Generating comprehensive summary...".renderMarkdown())
 
-          val summaryPrompt = effectiveTypeConfig.summary_prompt
+        val summaryPrompt = effectiveTypeConfig.summary_prompt
 
-            val parsedAgent = ParsedAgent(
-                resultClass = GameAnalysis::class.java,
-                prompt = summaryPrompt,
-                model = api,
-              temperature = effectiveTypeConfig.summary_temperature,
-                parsingChatter = defaultFast,
-              deserializerRetries = 2,
-            )
+        val parsedAgent = ParsedAgent(
+          resultClass = GameAnalysis::class.java,
+          prompt = summaryPrompt,
+          model = api,
+          temperature = effectiveTypeConfig.summary_temperature,
+          parsingChatter = defaultFast,
+          deserializerRetries = 2,
+        )
 
-            val gameAnalysis = parsedAgent.answer(toInput(summaryPrompt)).obj
-            log.info("Structured summary generated in ${System.currentTimeMillis() - stepStartTime}ms")
-          transcript?.write("## Game Theory Analysis Summary\n${gameAnalysis.toString().wrapInDetails("Structured Data")}\n\n".toByteArray())
+        val gameAnalysis = parsedAgent.answer(toInput(summaryPrompt)).obj
+        log.info("Structured summary generated in ${System.currentTimeMillis() - stepStartTime}ms")
+        transcript?.write(
+          "## Game Theory Analysis Summary\n${
+            gameAnalysis.toString().wrapInDetails("Structured Data")
+          }\n\n".toByteArray()
+        )
 
-            summaryLoading?.clear()
-            summaryTask.add(
-              """
+        summaryLoading?.clear()
+        summaryTask.add(
+          """
             |## Game Theory Analysis Summary
             |
             |✅ Summary complete
@@ -668,31 +673,31 @@ GameTheory - Analyze strategic interactions using game theory
             |### Strategic Recommendations
             |${gameAnalysis.recommendations?.entries?.joinToString("\n") { "- **${it.key}**: ${it.value}" } ?: "None provided"}
             """.trimMargin().renderMarkdown()
-            )
-          summaryTask.complete()
+        )
+        summaryTask.complete()
 
-          // Build final result
-          val finalResult = buildFinalResult(
-            gameScenario, players, executionConfig,
-            structureAnalysis, payoffMatrix, nashEquilibria,
-            dominantStrategies, paretoOptimal, repeatedGameAnalysis,
-            recommendations, startTime
-          )
+        // Build final result
+        val finalResult = buildFinalResult(
+          gameScenario, players, executionConfig,
+          structureAnalysis, payoffMatrix, nashEquilibria,
+          dominantStrategies, paretoOptimal, repeatedGameAnalysis,
+          recommendations, startTime
+        )
 
-          val duration = System.currentTimeMillis() - startTime
-          val summary = "Game theory analysis completed for scenario: $gameScenario"
-          log.info("$summary (duration: ${duration}ms, players: ${players.size}, game_type: ${executionConfig?.game_type})")
-          transcript?.write("\n---\n".toByteArray())
-          transcript?.write("**Analysis completed in ${duration / 1000}s**\n".toByteArray())
-          transcript?.write(
-            "**Finished:** ${
-              LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-            }\n".toByteArray()
-          )
+        val duration = System.currentTimeMillis() - startTime
+        val summary = "Game theory analysis completed for scenario: $gameScenario"
+        log.info("$summary (duration: ${duration}ms, players: ${players.size}, game_type: ${executionConfig?.game_type})")
+        transcript?.write("\n---\n".toByteArray())
+        transcript?.write("**Analysis completed in ${duration / 1000}s**\n".toByteArray())
+        transcript?.write(
+          "**Finished:** ${
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+          }\n".toByteArray()
+        )
 
-          // Update overview with completion (after transcript write, before resultFn)
-            overviewTask.add(
-              """
+        // Update overview with completion (after transcript write, before resultFn)
+        overviewTask.add(
+          """
 ## Game Theory Analysis
 
 **Scenario:** $gameScenario
@@ -705,31 +710,31 @@ GameTheory - Analyze strategic interactions using game theory
 
 **Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
         """.renderMarkdown()
-            )
-          overviewTask.complete()
+        )
+        overviewTask.complete()
 
-          task.complete()
-          resultFn(finalResult)
+        task.complete()
+        resultFn(finalResult)
 
+      } catch (e: Exception) {
+        val duration = System.currentTimeMillis() - startTime
+        log.error("GameTheory task failed after ${duration}ms for scenario: $gameScenario", e)
+        try {
+          task.error(e)
+        } catch (_: Exception) {
+          // UI error reporting is best-effort
+        }
+        transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
+        resultFn("ERROR: Game theory analysis failed - ${e.message}")
+      } finally {
+        try {
+          transcript?.close()
         } catch (e: Exception) {
-          val duration = System.currentTimeMillis() - startTime
-          log.error("GameTheory task failed after ${duration}ms for scenario: $gameScenario", e)
-          try {
-            task.error(e)
-          } catch (_: Exception) {
-            // UI error reporting is best-effort
-          }
-          transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
-          resultFn("ERROR: Game theory analysis failed - ${e.message}")
-        } finally {
-          try {
-            transcript?.close()
-          } catch (e: Exception) {
-            log.warn("Failed to close transcript", e)
-          }
+          log.warn("Failed to close transcript", e)
         }
       }
     }
+  }
 
   private fun buildFinalResult(
     gameScenario: String,
@@ -822,32 +827,32 @@ GameTheory - Analyze strategic interactions using game theory
       }
     }
 
-    private fun buildStructurePrompt(
-        gameScenario: String,
-        players: List<String>,
-        context: String
-    ): String {
-        val strategiesSection = if (executionConfig?.player_strategies?.isNotEmpty() == true) {
-          """
+  private fun buildStructurePrompt(
+    gameScenario: String,
+    players: List<String>,
+    context: String
+  ): String {
+    val strategiesSection = if (executionConfig?.player_strategies?.isNotEmpty() == true) {
+      """
             |## Known Strategies:
             |${
-                executionConfig.player_strategies?.entries?.joinToString("\n") { (player, strategies) ->
-                    "- **$player**: ${strategies.joinToString(", ")}"
-                }
-            }
-            """.trimMargin()
-        } else {
-            "## Note: Identify available strategies for each player from the scenario."
+        executionConfig.player_strategies?.entries?.joinToString("\n") { (player, strategies) ->
+          "- **$player**: ${strategies.joinToString(", ")}"
         }
-
-      val effectiveTypeConfig = typeConfig ?: GameTheoryTypeConfig()
-      return effectiveTypeConfig.structure_prompt_template
-        .replace("{game_scenario}", gameScenario)
-        .replace("{players}", players.joinToString("\n") { "- $it" })
-        .replace("{strategies_section}", strategiesSection)
-        .replace("{game_type}", executionConfig?.game_type ?: "non-cooperative")
-        .replace("{context}", context)
+      }
+            """.trimMargin()
+    } else {
+      "## Note: Identify available strategies for each player from the scenario."
     }
+
+    val effectiveTypeConfig = typeConfig ?: GameTheoryTypeConfig()
+    return effectiveTypeConfig.structure_prompt_template
+      .replace("{game_scenario}", gameScenario)
+      .replace("{players}", players.joinToString("\n") { "- $it" })
+      .replace("{strategies_section}", strategiesSection)
+      .replace("{game_type}", executionConfig?.game_type ?: "non-cooperative")
+      .replace("{context}", context)
+  }
 }
 
 

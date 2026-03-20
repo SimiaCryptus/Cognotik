@@ -44,7 +44,7 @@ class RenderErbTemplateTask(
       if (data == null || data!!.isEmpty()) {
         return "template_data must be provided and non-empty"
       }
-      if(files.size != 1) {
+      if (files.size != 1) {
         return "Only one output file path is supported"
       }
       return ValidatedObject.validateFields(this)
