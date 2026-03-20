@@ -57,29 +57,8 @@ data class UserSettings(
   val apis: MutableList<ApiData> = mutableListOf(),
   val tools: MutableList<ToolData> = mutableListOf(),
   val etc: MutableMap<String, Any> = mutableMapOf(),
-) {
-
-  /**
-   * @deprecated Use the 'apis' property instead. This provides backward compatibility
-   * for legacy code expecting a Map of APIProvider to base URL.
-   * @return Map of API providers to their base URLs extracted from the apis list
-   */
-  @get:JsonIgnore
-  @get:Deprecated("Use this.apis instead")
-  val apiBase: Map<APIProvider, String>
-    get() = apis.associate {
-      it.provider!! to (it.baseUrl ?: "")
-    }
-
-
-  fun chatModels(user: User): Map<String, ChatModel> =
-    ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user).apis.flatMap { apiData ->
-      val provider = APIProvider.values().find { apiData.provider == it }
-        ?: return@flatMap emptyList<Pair<String, ChatModel>>()
-      provider.getChatModels(apiData.key ?: "".encrypt, apiData.baseUrl).map { model -> model.modelId to model }
-    }.toMap()
-
-}
+  val passwordHash: String? = null,
+)
 
 /**
  * Custom JSON serializer for UserSettings.
@@ -96,6 +75,9 @@ class UserSettingsSerializer : JsonSerializer<UserSettings>() {
     gen.writeObjectField("apis", value.apis)
     gen.writeObjectField("tools", value.tools)
     gen.writeObjectField("etc", value.etc)
+    if (value.passwordHash != null) {
+      gen.writeStringField("passwordHash", value.passwordHash)
+    }
     gen.writeEndObject()
   }
 }
@@ -108,6 +90,11 @@ class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
    */
   override fun deserialize(p: JsonParser, ctxt: DeserializationContext): UserSettings {
     val node = p.readValueAsTree<ObjectNode>()
+    val passwordHash = if (node.has("passwordHash")) {
+      node.get("passwordHash").asText()
+    } else {
+      null
+    }
     // Check if this is the new format (has apis/tools fields)
     if (node.has("apis") || node.has("tools") || node.has("toolPaths")) {
       val apis = if (node.has("apis")) {
@@ -128,7 +115,7 @@ class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
       } else {
         mutableMapOf()
       }
-      return UserSettings(apis, tools, etc)
+      return UserSettings(apis, tools, etc, passwordHash)
     }
     // Handle legacy format (apiKeys, apiBase, localTools)
     val apiKeys = if (node.has("apiKeys")) {
@@ -147,7 +134,7 @@ class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
     } else {
       emptyMap()
     }
-    return UserSettings(toApiList(apiKeys, apiBase), discoverAllToolsFromPath().toMutableList())
+    return UserSettings(toApiList(apiKeys, apiBase), discoverAllToolsFromPath().toMutableList(), passwordHash = passwordHash)
   }
 }
 
@@ -229,4 +216,3 @@ fun toApiList(
     key = SecureString(it.value), baseUrl = apiBase[it.key] ?: it.key.base, provider = it.key
   ).validate()
 }.toMutableList()
-

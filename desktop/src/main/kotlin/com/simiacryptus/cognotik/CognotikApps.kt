@@ -233,11 +233,11 @@ open class CognotikApps(
 
     override fun setupPlatform() {
         super.setupPlatform()
-        ApplicationServices.authenticationManager = object : AuthenticationInterface {
-            override fun getUser(accessToken: String?) = defaultUser
-            override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-            override fun logout(accessToken: String, user: User) {}
-        }
+//        ApplicationServices.authenticationManager = object : AuthenticationInterface {
+//            override fun getUser(accessToken: String?) = defaultUser
+//            override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
+//            override fun logout(accessToken: String, user: User) {}
+//        }
         ApplicationServices.authorizationManager = object : AuthorizationManager() {
             override fun isAuthorized(
                 applicationClass: Class<*>?,
@@ -283,12 +283,7 @@ open class CognotikApps(
          val staticApps = listOf(
              ChildWebApp("/proxy", SessionProxyServer("Proxy Server", "/proxy")),
              ChildWebApp("/chat", BasicChatApp(File("."), model, model)),
-             ChildWebApp(
-                 "/taskChat", SinglePlanApp(
-                     path = "/taskChat",
-                     applicationName = "Task-Runner"
-                 )
-             ),
+             ChildWebApp("/taskChat", SinglePlanApp("/taskChat", "Task-Runner")),
          )
          docopsApps + staticApps
     }

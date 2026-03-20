@@ -549,7 +549,13 @@ function showNotification(message, type = 'info') {
 async function loadApiProviders() {
     console.log('[loadApiProviders] Loading API providers from server...');
     try {
-        const providersResponse = await httpService.getApiProviders();
+         const response = await fetch('apiProviders/');
+         if (response.status >= 400) {
+             console.warn('[loadApiProviders] Received HTTP', response.status, '- redirecting to login');
+             window.location.href = 'login/';
+             return;
+         }
+         const providersResponse = await response.json();
 
         const providers = providersResponse.configuredProviders || [];
         const availableProvidersList = providersResponse.availableProviders || [];

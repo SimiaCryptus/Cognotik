@@ -71,6 +71,9 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized ApiKeyServlet") }
   open val taskConfigServlet: HttpServlet = TaskConfigServlet()
     .also { log.debug("Initialized TaskConfigServlet") }
+  open val simpleLoginServlet: HttpServlet = SimpleLoginServlet()
+    .also { log.debug("Initialized SimpleLoginServlet") }
+
 
   protected open val docopsServlet by lazy { DocProcessorServlet() }
 
@@ -133,7 +136,6 @@ abstract class ApplicationDirectory(
   open fun webAppContexts() = listOfNotNull(
     run { log.debug("Creating web app contexts"); null },
     newWebAppContext("/logout", logoutServlet),
-//        newWebAppContext("/proxy", proxyHttpServlet),
     newWebAppContext("/userInfo", userInfoServlet).let {
       log.debug("Configuring userInfo context with authentication")
       authenticatedWebsite()?.configure(it, true) ?: it
@@ -162,6 +164,9 @@ abstract class ApplicationDirectory(
       log.debug("Configuring cognitiveConfig context with authentication")
       authenticatedWebsite()?.configure(it, true) ?: it
     },
+   newWebAppContext("/login", simpleLoginServlet).also {
+     log.debug("Configuring login context")
+   },
     newWebAppContext("/", welcomeResources, "welcome", welcomeServlet).let {
       log.debug("Configuring root context with welcome resources")
       authenticatedWebsite()?.configure(it, false) ?: it

@@ -24,7 +24,9 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
       if (file.exists()) {
         try {
           log.info("Loading existing user settings for user: {} from file: {}", user, file)
-          return@getOrPut JsonUtil.fromJson(file.readText(), UserSettings::class.java)
+          val text = file.readText()
+          val fromJson = JsonUtil.fromJson<UserSettings>(text, UserSettings::class.java)
+          return@getOrPut fromJson
         } catch (e: Throwable) {
           log.error("Failed to load user settings for user: {} from file: {}.", user, file, e)
         }
@@ -40,7 +42,8 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
     val file = File(userConfigDirectory, "$user.json")
     file.parentFile.mkdirs()
     try {
-      file.writeText(JsonUtil.toJson(settings))
+      val json = JsonUtil.toJson(settings)
+      file.writeText(json)
       log.info("Successfully updated user settings for user: {} at file: {}", user, file)
     } catch (e: Exception) {
       log.error("Failed to write user settings for user: {} to file: {}", user, file, e)
