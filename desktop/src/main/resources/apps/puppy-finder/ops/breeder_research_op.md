@@ -1,5 +1,5 @@
 ---
-transforms: \.\./(.+)_breed\.md -> ../breeder_research/$1.md
+transforms: \.\./breeds/(.+)\.md -> ../research/$1.md
 related: requirements.md
 task_type: CrawlerAgent
 ---

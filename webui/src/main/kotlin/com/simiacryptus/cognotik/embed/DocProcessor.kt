@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.Render
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.asApiChatModel
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -1129,10 +1130,13 @@ class DocProcessor(
     mod: ModificationTask,
     harness: UnifiedHarness,
     task: SessionTask? = null,
-    model: ChatInterface = harness.fastModel.asApiChatModel()?.instance(user)?.let {
-      if (task != null) it.getChildClient(task) else it
-    } ?: throw IllegalStateException("Fast model is not an API chat model")
+    model: ChatInterface? = null
   ): TaskExecutionConfig {
+    val model = model ?: (harness.fastModel).asApiChatModel(
+      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
+    ).let {
+      if (task != null) it.getChildClient(task) else it
+    }
     val newRoot = mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
     return when {
       FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass) -> {
@@ -1189,6 +1193,14 @@ class DocProcessor(
       }
     }.jsonCast(mod.taskType.executionConfigClass)
   }
+
+  fun ChatModel.asApiChatModel(
+    userSettings: UserSettings
+  ) = asApiChatModel(
+    (userSettings.apis.find { it.provider?.name == provider?.name }?.key
+      ?: throw IllegalStateException("API key for model provider ${provider?.name} not found in user settings")).decrypt!!).instance(
+    user
+  )
 
 
   /**

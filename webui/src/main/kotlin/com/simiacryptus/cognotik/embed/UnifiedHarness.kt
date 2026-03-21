@@ -44,12 +44,16 @@ open class UnifiedHarness(
   val captureMessages: Boolean = serverless,
   val redirectData: Boolean = serverless,
   val modelInstanceFn: (ApiChatModel, Session, User) -> ChatInterface = { model, session, user ->
-    val api = model.findApi(user)
-    val model =
-      model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
+    val api = model.provider
+    if (api == null) {
+      throw IllegalArgumentException("No API found for model: ${model.toJson()}")
+    }
+    val model = model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider.name}")
     model.instance(
-      key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
-      base = api.apiBase ?: throw IllegalArgumentException("No API found for provider: ${model.provider?.name}"),
+      key = if (api.key != null) api.key else {
+        throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}")
+      },
+      base = api.apiBase,
       onUsage = { model, usage ->
         ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
           session = session,

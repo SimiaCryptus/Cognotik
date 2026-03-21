@@ -181,12 +181,12 @@ data class ApiData(
 }
 
 fun ChatModel.asApiChatModel(
-  key: String? = null
-): ApiChatModel? = ApiChatModel(
+  key: String
+): ApiChatModel = ApiChatModel(
   provider = this.provider.let { provider ->
     ApiData(
       name = provider?.name,
-      key = (key?.let{SecureString(it)}),
+      key = SecureString(key),
       baseUrl = provider?.base!!,
       provider = provider
     )
