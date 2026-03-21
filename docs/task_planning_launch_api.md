@@ -233,8 +233,8 @@ session state.
 | Field               | Type   | Description                                     |
 |:--------------------|:-------|:------------------------------------------------|
 | `sessionId`         | String | Unique identifier for the session.              |
-| `defaultSmartModel` | String | Model ID (e.g., "gpt-4o") from `/apiProviders`. |
-| `defaultFastModel`  | String | Model ID (e.g., "gpt-4o-mini").                 |
+| `smartModel` | String | Model ID (e.g., "gpt-4o") from `/apiProviders`. |
+| `fastModel`  | String | Model ID (e.g., "gpt-4o-mini").                 |
 | `imageChatModel`    | String | Model ID for image generation (optional).       |
 | `budget`            | Number | Max cost in USD.                                |
 | `temperature`       | Number | 0.0 to 1.0.                                     |
@@ -280,8 +280,8 @@ the `task_type` field (discriminator) matching the `id` from the metadata endpoi
   "temperature": 0.2,
   "maxIterations": 15,
   "autoFix": true,
-  "defaultSmartModel": "gpt-4o",
-  "defaultFastModel": "gpt-3.5-turbo",
+  "smartModel": "gpt-4o",
+  "fastModel": "gpt-3.5-turbo",
   "cognitiveSettings": {
     "type": "Waterfall"
   },

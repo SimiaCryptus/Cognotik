@@ -353,11 +353,11 @@ class IllustrateDocumentAction : BaseAction() {
 
             return OrchestrationConfig(
                 "Config",
-                defaultSmartModel = textModel ?: AppSettingsState.instance.smartModel
+                smartModel = (textModel ?: AppSettingsState.instance.smartModel)?.model?.modelId
                 ?: throw IllegalStateException("No model configured"),
-                defaultFastModel = AppSettingsState.instance.fastModel
+                fastModel = AppSettingsState.instance.fastModel?.model?.modelId
                     ?: throw IllegalStateException("Fast model not configured"),
-                defaultImageModel = imageModel ?: AppSettingsState.instance.imageChatModel
+                imageModel = (imageModel ?: AppSettingsState.instance.imageChatModel)?.model?.modelId
                 ?: throw IllegalStateException("No image model configured"),
                 temperature = temperatureSlider.value / 100.0,
                 autoFix = true,
@@ -371,7 +371,7 @@ class IllustrateDocumentAction : BaseAction() {
 
         private fun getVisibleModels() =
           fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
+                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.filter { model ->
                     model.provider == apiData.provider && model.modelId.isNotBlank() && PlanConfigDialog.isVisible(
                         model
                     )

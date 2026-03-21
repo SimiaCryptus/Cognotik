@@ -78,6 +78,7 @@ class AnthropicChatClient(
 
 
   private fun fetchAllModels(): List<ModelInfo> {
+    require(!apiBase.isBlank())
     val allModels = mutableListOf<ModelInfo>()
     var hasMore = true
     var afterId: String? = null

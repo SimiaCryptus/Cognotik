@@ -113,7 +113,7 @@ class MultiStepPatchAction : BaseAction() {
                 user = user,
                 ui = ui,
                 model = settings.model!!,
-                parsingModel = AppSettingsState.instance.fastChatClient,
+                fastModel = AppSettingsState.instance.fastChatClient,
                 event = event,
                 processor = AppSettingsState.instance.processor,
             ).start(
@@ -138,7 +138,7 @@ class MultiStepPatchAction : BaseAction() {
         val user: User = localUser,
         val ui: SocketManager,
         val model: ChatInterface,
-        val parsingModel: ChatInterface,
+        val fastModel: ChatInterface,
         val event: AnActionEvent,
         val processor: PatchProcessor,
     ) {
@@ -151,7 +151,7 @@ class MultiStepPatchAction : BaseAction() {
           For each task, provide a list of files to be modified and a description of the changes to be made.
         """.trimIndent(),
                 model = model,
-                parsingChatter = parsingModel,
+                parsingChatter = fastModel,
             ),
             ActorTypes.TaskCodingActor to ChatAgent(
                 prompt = "Implement the changes to the codebase as described in the task list.\n\n" + processor.patchFormatPrompt,

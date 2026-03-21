@@ -16,21 +16,21 @@ object FileChannelCache {
     .newBuilder().maximumSize(100)
     .expireAfterAccess(10, TimeUnit.SECONDS)
     .removalListener(RemovalListener<File, FileChannel> { notification ->
-      log.info("Closing FileChannel for file: ${notification.key}")
+      log.debug("Closing FileChannel for file: ${notification.key}")
       try {
         val channel = notification.value
         if (channel == null) {
           log.error("FileChannel is null for file: ${notification.key}")
         } else {
           channel.close()
-          log.info("Successfully closed FileChannel for file: ${notification.key}")
+          log.debug("Successfully closed FileChannel for file: ${notification.key}")
         }
       } catch (e: Throwable) {
         log.error("Error closing FileChannel for file: ${notification.key}", e)
       }
     }).build(object : CacheLoader<File, FileChannel>() {
       override fun load(key: File): FileChannel {
-        log.info("Opening FileChannel for file: ${key.absolutePath}")
+        log.debug("Opening FileChannel for file: ${key.absolutePath}")
         return FileChannel.open(key.toPath(), StandardOpenOption.READ)
       }
     })

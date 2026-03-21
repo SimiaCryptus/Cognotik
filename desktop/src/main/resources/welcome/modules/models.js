@@ -56,9 +56,9 @@ class ModelManager {
         }
 
 
-        const savedDefaultModel = this.appState.taskSettings.defaultSmartModel;
-        const savedParsingModel = this.appState.taskSettings.defaultFastModel;
-        const savedImageModel = this.appState.taskSettings.imageChatModel;
+        const savedDefaultModel = this.appState.taskSettings.smartModel;
+        const savedParsingModel = this.appState.taskSettings.fastModel;
+        const savedImageModel = this.appState.taskSettings.imageModel;
 
         this.clearModelSelections(modelSelect, parsingModelSelect, imageModelSelect);
         this.addAvailableModels(modelSelect, parsingModelSelect, imageModelSelect);
@@ -108,21 +108,21 @@ class ModelManager {
             modelSelect.value = savedDefaultModel;
         } else if (modelSelect.options.length > 0) {
             modelSelect.selectedIndex = 0;
-            this.appState.updateTaskSetting('defaultSmartModel', modelSelect.value);
+            this.appState.updateTaskSetting('smartModel', modelSelect.value);
         }
 
         if (savedParsingModel && Array.from(parsingModelSelect.options).some(opt => opt.value === savedParsingModel)) {
             parsingModelSelect.value = savedParsingModel;
         } else if (parsingModelSelect.options.length > 0) {
             parsingModelSelect.selectedIndex = 0;
-            this.appState.updateTaskSetting('defaultFastModel', parsingModelSelect.value);
+            this.appState.updateTaskSetting('fastModel', parsingModelSelect.value);
         }
 
         if (savedImageModel && Array.from(imageModelSelect.options).some(opt => opt.value === savedImageModel)) {
             imageModelSelect.value = savedImageModel;
         } else if (imageModelSelect.options.length > 0) {
             imageModelSelect.selectedIndex = 0;
-            this.appState.updateTaskSetting('defaultFastModel', imageModelSelect.value);
+            this.appState.updateTaskSetting('fastModel', imageModelSelect.value);
         }
 
     }

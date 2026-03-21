@@ -15,6 +15,8 @@ import javax.swing.JOptionPane
 import javax.swing.SwingUtilities
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.net.URLEncoder
+import java.net.URLDecoder
 
 class SimpleLoginServlet : HttpServlet() {
 
@@ -114,10 +116,11 @@ class SimpleLoginServlet : HttpServlet() {
   private fun handleLogin(req: HttpServletRequest, resp: HttpServletResponse) {
     val username = req.getParameter("username")?.trim()
     val password = req.getParameter("password")
+   val target = req.getParameter("target")
 
     if (username.isNullOrBlank() || password.isNullOrBlank()) {
       log.warn("Login attempt with missing credentials")
-      serveLoginPage(req, resp, error = "Username and password are required.")
+     serveLoginPage(req, resp, error = "Username and password are required.", target = target)
       return
     }
 
@@ -128,14 +131,14 @@ class SimpleLoginServlet : HttpServlet() {
 
       if (settings.passwordHash == null) {
         log.warn("Login attempt for user without password set: {}", username)
-        serveLoginPage(req, resp, error = "User not found. Please register first.")
+       serveLoginPage(req, resp, error = "User not found. Please register first.", target = target)
         return
       }
 
       val inputHash = hashPassword(password)
       if (inputHash != settings.passwordHash) {
         log.warn("Failed login attempt for user: {}", username)
-        serveLoginPage(req, resp, error = "Invalid username or password.")
+       serveLoginPage(req, resp, error = "Invalid username or password.", target = target)
         return
       }
 
@@ -149,10 +152,17 @@ class SimpleLoginServlet : HttpServlet() {
       resp.addCookie(cookie)
 
       log.info("User logged in successfully: {}", username)
-      resp.sendRedirect("/")
+     val redirectUrl = if (!target.isNullOrBlank()) {
+       try {
+         URLDecoder.decode(target, "UTF-8")
+       } catch (e: Exception) {
+         "/"
+       }
+     } else "/"
+     resp.sendRedirect(redirectUrl)
     } catch (e: Exception) {
       log.error("Error during login for user: {}", username, e)
-      serveLoginPage(req, resp, error = "An error occurred during login.")
+     serveLoginPage(req, resp, error = "An error occurred during login.", target = target)
     }
   }
 
@@ -160,19 +170,20 @@ class SimpleLoginServlet : HttpServlet() {
     val username = req.getParameter("username")?.trim()
     val password = req.getParameter("password")
     val confirmPassword = req.getParameter("confirmPassword")
+   val target = req.getParameter("target")
 
     if (username.isNullOrBlank() || password.isNullOrBlank() || confirmPassword.isNullOrBlank()) {
-      serveRegistrationPage(req, resp, error = "All fields are required.")
+     serveRegistrationPage(req, resp, error = "All fields are required.", target = target)
       return
     }
 
     if (password != confirmPassword) {
-      serveRegistrationPage(req, resp, error = "Passwords do not match.")
+     serveRegistrationPage(req, resp, error = "Passwords do not match.", target = target)
       return
     }
 
-    if (password.length < 6) {
-      serveRegistrationPage(req, resp, error = "Password must be at least 6 characters long.")
+    if (password.isEmpty()) {
+     serveRegistrationPage(req, resp, error = "Password cannot be empty.", target = target)
       return
     }
 
@@ -182,14 +193,14 @@ class SimpleLoginServlet : HttpServlet() {
       val existingSettings = fileServices.userSettingsManager.getUserSettings(user)
 
       if (existingSettings.passwordHash != null) {
-        serveRegistrationPage(req, resp, error = "User already exists. Please login instead.")
+       serveRegistrationPage(req, resp, error = "User already exists. Please login instead.", target = target)
         return
       }
        // Debounce registration attempts by IP + username
        val throttleKey = "${req.remoteAddr}:$username"
        if (isThrottled(throttleKey)) {
          log.warn("Registration attempt throttled for key: {}", throttleKey)
-         serveRegistrationPage(req, resp, error = "Too many registration attempts. Please try again later.")
+        serveRegistrationPage(req, resp, error = "Too many registration attempts. Please try again later.", target = target)
          return
        }
        // Ask the local operator for confirmation via Swing dialog
@@ -201,7 +212,7 @@ class SimpleLoginServlet : HttpServlet() {
        }
        if (!approved) {
          log.info("Registration denied by operator for user: {}", username)
-         serveRegistrationPage(req, resp, error = "Registration was not approved. Please contact the administrator.")
+        serveRegistrationPage(req, resp, error = "Registration was not approved. Please contact the administrator.", target = target)
          return
        }
 
@@ -221,14 +232,26 @@ class SimpleLoginServlet : HttpServlet() {
       cookie.isHttpOnly = true
       resp.addCookie(cookie)
 
-      resp.sendRedirect("/")
+     val redirectUrl = if (!target.isNullOrBlank()) {
+       try {
+         URLDecoder.decode(target, "UTF-8")
+       } catch (e: Exception) {
+         "/"
+       }
+     } else "/"
+     resp.sendRedirect(redirectUrl)
     } catch (e: Exception) {
       log.error("Error during registration for user: {}", username, e)
-      serveRegistrationPage(req, resp, error = "An error occurred during registration.")
+     serveRegistrationPage(req, resp, error = "An error occurred during registration.", target = target)
     }
   }
 
-  private fun serveLoginPage(req: HttpServletRequest, resp: HttpServletResponse, error: String? = null) {
+private fun serveLoginPage(req: HttpServletRequest, resp: HttpServletResponse, error: String? = null, target: String? = null) {
+   val effectiveTarget = target ?: req.getParameter("target")
+   val targetParam = if (!effectiveTarget.isNullOrBlank()) effectiveTarget else null
+   val encodedTarget = targetParam?.let { URLEncoder.encode(it, "UTF-8") }
+   val targetHiddenField = if (encodedTarget != null) """<input type="hidden" name="target" value="$encodedTarget">""" else ""
+   val registerLink = if (encodedTarget != null) "/login?action=register&target=$encodedTarget" else "/login?action=register"
     resp.contentType = "text/html"
     resp.characterEncoding = "UTF-8"
     resp.writer.write(
@@ -259,20 +282,21 @@ class SimpleLoginServlet : HttpServlet() {
                 <div class="login-container">
                     <h2>Login</h2>
                     ${if (error != null) """<div class="error">$error</div>""" else ""}
-                    <form method="POST" action="/login/">
+                    <form method="POST" action="/login/" autocomplete="on">
                         <input type="hidden" name="action" value="login">
+                       $targetHiddenField
                         <div class="form-group">
                             <label for="username">Username</label>
-                            <input type="text" id="username" name="username" required autofocus>
+                            <input type="text" id="username" name="username" autocomplete="username" required autofocus>
                         </div>
                         <div class="form-group">
                             <label for="password">Password</label>
-                            <input type="password" id="password" name="password" required>
+                            <input type="password" id="password" name="password" autocomplete="current-password" required>
                         </div>
                         <button type="submit">Login</button>
                     </form>
                     <div class="links">
-                        <a href="/login?action=register">Don't have an account? Register</a>
+                       <a href="$registerLink">Don't have an account? Register</a>
                     </div>
                 </div>
             </body>
@@ -281,7 +305,12 @@ class SimpleLoginServlet : HttpServlet() {
     )
   }
 
-  private fun serveRegistrationPage(req: HttpServletRequest, resp: HttpServletResponse, error: String? = null) {
+private fun serveRegistrationPage(req: HttpServletRequest, resp: HttpServletResponse, error: String? = null, target: String? = null) {
+   val effectiveTarget = target ?: req.getParameter("target")
+   val targetParam = if (!effectiveTarget.isNullOrBlank()) effectiveTarget else null
+   val encodedTarget = targetParam?.let { URLEncoder.encode(it, "UTF-8") }
+   val targetHiddenField = if (encodedTarget != null) """<input type="hidden" name="target" value="$encodedTarget">""" else ""
+   val loginLink = if (encodedTarget != null) "/login/?target=$encodedTarget" else "/login/"
     resp.contentType = "text/html"
     resp.characterEncoding = "UTF-8"
     resp.writer.write(
@@ -306,32 +335,84 @@ class SimpleLoginServlet : HttpServlet() {
                     .links { text-align: center; margin-top: 1rem; }
                     .links a { color: #4a90d9; text-decoration: none; }
                     .links a:hover { text-decoration: underline; }
+                    .password-strength { margin-top: 0.4rem; font-size: 0.85rem; min-height: 1.2em; }
+                    .strength-meter { height: 4px; border-radius: 2px; background: #eee; margin-top: 0.3rem; overflow: hidden; }
+                    .strength-meter-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background-color 0.3s; width: 0%; }
+                    .strength-weak { color: #d9534f; }
+                    .strength-fair { color: #f0ad4e; }
+                    .strength-good { color: #5cb85c; }
+                    .strength-strong { color: #0275d8; }
                 </style>
             </head>
             <body>
                 <div class="login-container">
                     <h2>Register</h2>
                     ${if (error != null) """<div class="error">$error</div>""" else ""}
-                    <form method="POST" action="/login/">
+                    <form method="POST" action="/login/" autocomplete="on">
                         <input type="hidden" name="action" value="register">
+                       $targetHiddenField
                         <div class="form-group">
                             <label for="username">Username</label>
-                            <input type="text" id="username" name="username" required autofocus>
+                            <input type="text" id="username" name="username" autocomplete="username" required autofocus>
                         </div>
                         <div class="form-group">
                             <label for="password">Password</label>
-                            <input type="password" id="password" name="password" required>
+                            <input type="password" id="password" name="password" autocomplete="new-password" required>
+                            <div class="strength-meter"><div class="strength-meter-fill" id="strengthMeterFill"></div></div>
+                            <div class="password-strength" id="passwordStrength"></div>
                         </div>
                         <div class="form-group">
                             <label for="confirmPassword">Confirm Password</label>
-                            <input type="password" id="confirmPassword" name="confirmPassword" required>
+                            <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required>
+                            <div class="password-strength" id="confirmMatch"></div>
                         </div>
                         <button type="submit">Register</button>
                     </form>
                     <div class="links">
-                        <a href="/login/">Already have an account? Login</a>
+                       <a href="$loginLink">Already have an account? Login</a>
                     </div>
                 </div>
+                <script>
+                (function() {
+                  var pw = document.getElementById('password');
+                  var cpw = document.getElementById('confirmPassword');
+                  var strengthEl = document.getElementById('passwordStrength');
+                  var meterFill = document.getElementById('strengthMeterFill');
+                  var matchEl = document.getElementById('confirmMatch');
+                  function evaluateStrength(p) {
+                    if (!p) return { score: 0, label: '', cls: '', tips: [] };
+                    var score = 0; var tips = [];
+                    if (p.length >= 6) score++; else tips.push('6+ characters recommended');
+                    if (p.length >= 10) score++;
+                    if (/[a-z]/.test(p) && /[A-Z]/.test(p)) score++; else if (p.length > 0) tips.push('mix upper & lowercase');
+                    if (/\d/.test(p)) score++; else tips.push('add a number');
+                    if (/[^a-zA-Z0-9]/.test(p)) score++; else tips.push('add a special character');
+                    if (score <= 1) return { score: score, label: 'Weak', cls: 'strength-weak', tips: tips };
+                    if (score <= 2) return { score: score, label: 'Fair', cls: 'strength-fair', tips: tips };
+                    if (score <= 3) return { score: score, label: 'Good', cls: 'strength-good', tips: tips };
+                    return { score: score, label: 'Strong', cls: 'strength-strong', tips: [] };
+                  }
+                  function update() {
+                    var r = evaluateStrength(pw.value);
+                    if (!pw.value) { strengthEl.textContent = ''; meterFill.style.width = '0%'; meterFill.style.backgroundColor = '#eee'; }
+                    else {
+                      var pct = Math.min(100, (r.score / 5) * 100);
+                      var colors = { 'strength-weak': '#d9534f', 'strength-fair': '#f0ad4e', 'strength-good': '#5cb85c', 'strength-strong': '#0275d8' };
+                      meterFill.style.width = pct + '%';
+                      meterFill.style.backgroundColor = colors[r.cls] || '#eee';
+                      var tip = r.tips.length > 0 ? ' \u2014 ' + r.tips.slice(0, 2).join(', ') : '';
+                      strengthEl.innerHTML = '<span class="' + r.cls + '">' + r.label + tip + '</span>';
+                    }
+                    if (cpw.value && pw.value !== cpw.value) {
+                      matchEl.innerHTML = '<span class="strength-weak">Passwords do not match</span>';
+                    } else if (cpw.value && pw.value === cpw.value) {
+                      matchEl.innerHTML = '<span class="strength-good">Passwords match</span>';
+                    } else { matchEl.textContent = ''; }
+                  }
+                  pw.addEventListener('input', update);
+                  cpw.addEventListener('input', update);
+                })();
+                </script>
             </body>
             </html>
             """.trimIndent()

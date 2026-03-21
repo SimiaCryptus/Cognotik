@@ -209,7 +209,7 @@ class AndroidCognotikApps private constructor(
 
         val planSettings = object : PlanSettings(
             defaultModel = model.instance()!!,
-            parsingModel = model.instance()!!,
+            fastModel = model.instance()!!,
             workingDir = filesDir
         ) {
             override fun instance(model: ApiChatModel): Chatter {

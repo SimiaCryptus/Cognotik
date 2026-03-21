@@ -67,7 +67,7 @@ object CognotikUtils {
 
     return resolvedModel.instance(
       apiKey,
-      api!!.baseUrl,
+      api?.apiBase ?: throw IllegalArgumentException("No API found for provider: ${model.provider?.name}"),
       Level.INFO,
       mutableListOf(),
       Executors.newCachedThreadPool(),

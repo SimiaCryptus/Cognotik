@@ -1,25 +1,24 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.RecordingThreadFactory
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
+import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 
 class SessionThreadsServlet : HttpServlet() {
-  override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    resp.contentType = "text/html"
-    resp.status = HttpServletResponse.SC_OK
-    if (req.parameterMap.containsKey("sessionId")) {
-      val session = Session(req.getParameter("sessionId"))
-      val user = authenticationManager.getUser(req.getCookie())
+  override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+    response.contentType = "text/html"
+    response.status = HttpServletResponse.SC_OK
+    if (request.parameterMap.containsKey("sessionId")) {
+      val session = Session(request.getParameter("sessionId"))
+      val user = authenticate(request, response) ?: return
       val pool = threadPoolManager.getPool(session, user)
 
 
-      resp.writer.write(
+      response.writer.write(
         """
             <html>
             <head>
@@ -110,8 +109,8 @@ class SessionThreadsServlet : HttpServlet() {
             """.trimIndent()
       )
     } else {
-      resp.status = HttpServletResponse.SC_BAD_REQUEST
-      resp.writer.write("Session ID is required")
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.writer.write("Session ID is required")
     }
   }
 }

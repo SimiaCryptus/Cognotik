@@ -31,7 +31,7 @@ class CodeChatAction : BaseAction() {
             codeSelection = editor.caretModel.primaryCaret.selectedText ?: editor.document.text,
             filename = filename,
             model = AppSettingsState.instance.smartChatClient,
-            parsingModel = AppSettingsState.instance.fastChatClient,
+            fastModel = AppSettingsState.instance.fastChatClient,
             storage = ApplicationServices.fileApplicationServices().dataStorageFactory
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(

@@ -24,7 +24,7 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
       model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
     model.instance(
       key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
-      base = api.baseUrl,
+      base = api.apiBase ?: throw IllegalArgumentException("No API found for provider: ${model.provider?.name}"),
       onUsage = { model, usage ->
         ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
           session,

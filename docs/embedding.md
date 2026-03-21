@@ -338,8 +338,8 @@ harness.runPlan(
             workingDir = workspace.absolutePath,
 
             // Model Selection
-            defaultSmartModel = OpenAIModels.GPT4o.asApiChatModel(),
-            defaultFastModel = OpenAIModels.GPT35Turbo.asApiChatModel(),
+            smartModel = OpenAIModels.GPT4o.asApiChatModel(),
+            fastModel = OpenAIModels.GPT35Turbo.asApiChatModel(),
 
             // Safety Limits
             budget = 2.00,          // Max $2.00 USD spend

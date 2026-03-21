@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.instance
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
@@ -44,8 +45,8 @@ open class ConversationalMode(
 ) {
 
   init {
-    require(orchestrationConfig.defaultSmartModel != null) { "Default model must be specified in orchestration config" }
-    require(orchestrationConfig.defaultFastModel != null) { "Parsing model must be specified in orchestration config" }
+    require(orchestrationConfig.smartModel?.instance(orchestrationConfig.user) != null) { "Default model must be specified in orchestration config" }
+    require(orchestrationConfig.fastModel?.instance(orchestrationConfig.user) != null) { "Parsing model must be specified in orchestration config" }
   }
 
   private val messagesLock = Any()

@@ -3,28 +3,24 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
+import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 
 class UsageServlet : HttpServlet() {
-  public override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    resp.contentType = "text/html"
-    resp.status = HttpServletResponse.SC_OK
+  public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+    response.contentType = "text/html"
+    response.status = HttpServletResponse.SC_OK
 
     val usageManager = ApplicationServices.fileApplicationServices().usageManager
-    if (req.parameterMap.containsKey("sessionId")) {
-      val session = Session(req.getParameter("sessionId"))
-      serve(resp, usageManager.getSessionUsageSummary(session))
+    if (request.parameterMap.containsKey("sessionId")) {
+      val session = Session(request.getParameter("sessionId"))
+      serve(response, usageManager.getSessionUsageSummary(session))
     } else {
-      val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
-      if (null == userinfo) {
-        resp.status = HttpServletResponse.SC_BAD_REQUEST
-      } else {
-        val usage = usageManager.getUserUsageSummary(userinfo)
-        serve(resp, usage)
-      }
+      val userinfo = authenticate(request, response) ?: return
+      val usage = usageManager.getUserUsageSummary(userinfo)
+      serve(response, usage)
     }
   }
 

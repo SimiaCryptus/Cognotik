@@ -126,7 +126,7 @@ class AutoFixTask(
           val transcriptPath = transcriptFile()
           val transcript: FileOutputStream? = subTask.newUserFileStream(transcriptPath)
           val model = (typeConfig.model?.let { it.instance(orchestrationConfig.user) } ?: defaultSmart).getChildClient(subTask)
-          val parsingModel = defaultFast.getChildClient(subTask)
+          val fastModel = defaultFast.getChildClient(subTask)
           try {
             transcript?.write("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
             transcript?.write("## Self-Healing Task Execution\n\n".toByteArray())
@@ -171,7 +171,7 @@ class AutoFixTask(
               ),
               files = agent.files,
               model = model,
-              parsingModel = parsingModel,
+              fastModel = fastModel,
               processor = orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
             ).run(
               task = subTask, model = model

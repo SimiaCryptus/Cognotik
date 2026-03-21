@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.apps
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
@@ -8,6 +9,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.instance
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
@@ -32,7 +34,7 @@ abstract class SingleTaskApp(
   val taskConfig: TaskExecutionConfig = TaskExecutionConfig(task_type = taskType.name),
   val instanceFn: ((ApiChatModel, User) -> ChatInterface)?,
   var message: String,
-  val user: User
+  val user: User,
 ) : ApplicationServer(
   applicationName = applicationName,
   path = path,
@@ -45,8 +47,9 @@ abstract class SingleTaskApp(
   override val inputCnt: Int = 1
 
   @Suppress("UNCHECKED_CAST")
-  override fun <T : Any> initSettings(session: Session, user: User): T =
-    OrchestrationConfig(sessionId = session.sessionId, null, user = user) as T
+  override fun <T : Any> initSettings(session: Session, user: User) =
+    OrchestrationConfig(sessionId = session.sessionId, user = user) as T
+
 
   abstract fun instance(model: ApiChatModel): ChatInterface
 
@@ -68,8 +71,8 @@ abstract class SingleTaskApp(
     user: User,
     socketManager: SocketManager,
   ) {
-    val orchestrationConfig = getOrchestrationConfig(session, user)
     if (null != instanceFn) OrchestrationConfig.instanceFn = instanceFn
+    val orchestrationConfig = getOrchestrationConfig(session, user)
     socketManager.newTask(cancelable = false, root = true).expandable(
       "Session Info", """
     Session ID: `${session}`
@@ -100,7 +103,12 @@ abstract class SingleTaskApp(
   open fun getOrchestrationConfig(
     session: Session,
     user: User
-  ): OrchestrationConfig? = getSettings(session, user, OrchestrationConfig::class.java)
+  ): OrchestrationConfig? = getSettings(session, user, OrchestrationConfig::class.java) ?: initOrchestrationConfig(session, user)
+
+  open fun initOrchestrationConfig(
+    session: Session,
+    user: User
+  ): OrchestrationConfig = initSettings(session, user)
 
   protected open fun onTaskComplete(result: String, task: SessionTask) {}
   protected open fun onTaskError(e: Throwable) {}

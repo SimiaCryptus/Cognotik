@@ -33,9 +33,9 @@ class AppState {
 
     getDefaultTaskSettings() {
         return {
-            defaultSmartModel: 'GPT4o',
-            defaultFastModel: 'GPT4oMini',
-            imageChatModel: '',
+            smartModel: 'GPT4o',
+            fastModel: 'GPT4oMini',
+            imageModel: '',
             workingDir: '',
             temperature: 0.3,
             autoFix: false,

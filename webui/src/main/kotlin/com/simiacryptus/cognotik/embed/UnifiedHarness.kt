@@ -49,7 +49,7 @@ open class UnifiedHarness(
       model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
     model.instance(
       key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
-      base = api.baseUrl,
+      base = api.apiBase ?: throw IllegalArgumentException("No API found for provider: ${model.provider?.name}"),
       onUsage = { model, usage ->
         ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
           session = session,
@@ -238,6 +238,8 @@ open class UnifiedHarness(
     ) {
       override fun instance(model: ApiChatModel) = modelInstanceFn(model, session, user)
 
+      override fun initOrchestrationConfig(session: Session, user: User) = initSettings(session)
+
       override fun onTaskComplete(result: String, task: SessionTask) {
         log.info("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
@@ -357,9 +359,9 @@ Task Type: `${taskType.name}`
   ): OrchestrationConfig = OrchestrationConfig(
     sessionId = session.sessionId,
     workingDir = finalWorkspace.absolutePath,
-    defaultFastModel = fastModel.asApiChatModel(),
-    defaultSmartModel = smartModel.asApiChatModel(),
-    defaultImageModel = imageModel.asApiChatModel(),
+    fastModel = fastModel.modelId,
+    smartModel = smartModel.modelId,
+    imageModel = imageModel.modelId,
     autoFix = autoFix,
     temperature = temperature,
     cognitiveSettings = cognitiveSettings,
@@ -377,9 +379,9 @@ Task Type: `${taskType.name}`
     taskSettings = mutableMapOf(
       typeConfig.name!! to typeConfig
     ),
-    defaultFastModel = fastModel.asApiChatModel(),
-    defaultSmartModel = smartModel.asApiChatModel(),
-    defaultImageModel = imageModel.asApiChatModel(),
+    fastModel = fastModel.modelId,
+    smartModel = smartModel.modelId,
+    imageModel = imageModel.modelId,
     autoFix = autoFix,
     temperature = temperature,
     user = user,

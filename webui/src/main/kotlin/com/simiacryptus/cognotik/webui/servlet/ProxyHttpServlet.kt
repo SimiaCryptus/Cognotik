@@ -1,10 +1,9 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
+import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -55,37 +54,37 @@ open class ProxyHttpServlet(
       }
   }
 
-  override fun service(req: HttpServletRequest, resp: HttpServletResponse) {
-    val asyncContext = req.startAsync()
+  override fun service(request: HttpServletRequest, response: HttpServletResponse) {
+    val asyncContext = request.startAsync()
     asyncContext.timeout = 0
-    val requestKey = req.getHeaders("Authorization").nextElement().removePrefix("Bearer ")
+    val requestKey = request.getHeaders("Authorization").nextElement().removePrefix("Bearer ")
     val proxyKey = ApiKeyServlet.apiKeyRecords.find { it.apiKey.decrypt == requestKey }
-    val path = (req.servletPath ?: "").removePrefix("/")
-    val proxyRequest = getProxyRequest(req)
+    val path = (request.servletPath ?: "").removePrefix("/")
+    val proxyRequest = getProxyRequest(request)
     if (null != proxyKey) proxyRequest.addHeader("Authorization", "Bearer " + proxyKey.mappedKey)
-    val user = ApplicationServices.authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
+    val user = authenticate(request, response)
     val totalUsage =
       ApplicationServices.fileApplicationServices().usageManager.getUserUsageSummary(user!!).values.sumOf {
         it.cost ?: 0.0
       }
     if (totalUsage > (proxyKey?.budget ?: 0.0)) {
-      resp.status = 402
-      resp.contentType = "text/plain"
-      resp.writer.println("Budget exceeded")
+      response.status = 402
+      response.contentType = "text/plain"
+      response.writer.println("Budget exceeded")
       asyncContext.complete()
       return
     }
     asyncClient.execute(proxyRequest, object : FutureCallback<SimpleHttpResponse> {
       override fun completed(proxyResponse: SimpleHttpResponse?) {
-        resp.status = proxyResponse?.code ?: 500
+        response.status = proxyResponse?.code ?: 500
         proxyResponse?.headers?.forEach { header ->
-          resp.addHeader(header.name, header.value)
+          response.addHeader(header.name, header.value)
         }
         val proxyResponseBody = proxyResponse?.bodyBytes ?: ByteArray(0)
 
-        resp.outputStream.write(
+        response.outputStream.write(
           onResponse(
-            req,
+            request,
             path,
             proxyResponse,
             proxyResponseBody,
@@ -97,16 +96,16 @@ open class ProxyHttpServlet(
       }
 
       override fun failed(exception: Exception?) {
-        resp.status = 500
-        resp.contentType = "text/plain"
-        resp.writer.println(exception?.message)
+        response.status = 500
+        response.contentType = "text/plain"
+        response.writer.println(exception?.message)
         asyncContext.complete()
       }
 
       override fun cancelled() {
-        resp.status = 500
-        resp.contentType = "text/plain"
-        resp.writer.println("Cancelled")
+        response.status = 500
+        response.contentType = "text/plain"
+        response.writer.println("Cancelled")
         asyncContext.complete()
       }
 

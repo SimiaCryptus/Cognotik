@@ -150,9 +150,13 @@ class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
 data class ApiData(
   val name: String? = null,
   val key: SecureString? = null,
-  val baseUrl: String = "",
+  val baseUrl: String? = null,
   val provider: APIProvider? = null,
 ) {
+  val apiBase get() = when {
+    !baseUrl.isNullOrBlank() -> baseUrl
+    else -> provider?.base?.ifBlank { null }
+  } ?: throw RuntimeException("Cannot get api base for $name")
   /**
    * Validates this API configuration.
    * Checks that provider is set, API key is not blank, and for chat-capable providers,
@@ -165,7 +169,7 @@ data class ApiData(
     if (provider == null) throw IllegalStateException("Provider not set or invalid")
     if (key == null) throw IllegalStateException("API key not set")
     // Only validate chat models for providers that support chat functionality
-    val supportsChatModels = provider.getChatModels(key, baseUrl).isNotEmpty()
+    val supportsChatModels = provider.getChatModels(key, apiBase).isNotEmpty()
     if (supportsChatModels) {
       val model = ChatModel.values().values.firstOrNull { it.provider == provider }
       if (model == null) {

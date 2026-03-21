@@ -94,7 +94,7 @@ class AwsChatClient(
           }
         }
       } catch (e: Exception) {
-        log.error("Failed to list foundation models from AWS Bedrock: ${e.message}", e)
+        log.warn("Failed to list foundation models from AWS Bedrock: ${e.message}")
         emptyList()
       }
       val response2 = try {
@@ -113,7 +113,7 @@ class AwsChatClient(
           }
         }
       } catch (e: Exception) {
-        log.error("Failed to list custom models from AWS Bedrock: ${e.message}", e)
+        log.info("Failed to list custom models from AWS Bedrock: ${e.message}")
         emptyList()
       }
       log.debug("Processing ${awsAuth.models.size} configured model mappings")

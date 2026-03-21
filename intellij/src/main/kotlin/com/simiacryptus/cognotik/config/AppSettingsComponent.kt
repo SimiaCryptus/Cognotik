@@ -562,7 +562,7 @@ class AppSettingsComponent : Disposable {
                     api.key?.decrypt != null
                 }.flatMap { api ->
                     try {
-                        api.provider?.getChatModels(api.key!!, api.baseUrl)?.filter { model ->
+                        api.provider?.getChatModels(api.key!!, api.apiBase ?: throw IllegalArgumentException("No API found for provider: ${api.provider?.name}"))?.filter { model ->
                             isVisible(model)
                         }?.map { it.name to it } ?: emptyList()
                     } catch (e: Exception) {
@@ -589,7 +589,7 @@ class AppSettingsComponent : Disposable {
                 }.flatMap { api ->
                     try {
                         val imageModels: List<ImageModel>? =
-                            api.provider?.getImageModels(api.key!!, api.baseUrl)
+                            api.provider?.getImageModels(api.key!!, api.apiBase ?: throw IllegalArgumentException("No API found for provider: ${api.provider?.name}"))
                         imageModels?.filter { model ->
                             isVisible(model)
                         }?.map { it.modelId to it } ?: emptyList()
@@ -615,7 +615,7 @@ class AppSettingsComponent : Disposable {
                 }.flatMap { api ->
                     try {
                         val embeddingModels: List<EmbeddingModel>? =
-                            api.provider?.getEmbeddingModels(api.key!!, api.baseUrl)
+                            api.provider?.getEmbeddingModels(api.key!!, api.apiBase ?: throw IllegalArgumentException("No API found for provider: ${api.provider?.name}"))
                         embeddingModels?.filter { model ->
                             isVisible(model)
                         }?.map { it.modelId to it } ?: emptyList()
@@ -645,7 +645,7 @@ class AppSettingsComponent : Disposable {
 
         val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }.filter { modelItem ->
             val chatModel = apis.filter { it.key?.decrypt != null }.firstNotNullOfOrNull { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelId == modelItem }
+                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.find { it.modelId == modelItem }
             }
             if (chatModel == null) {
                 false
@@ -657,18 +657,18 @@ class AppSettingsComponent : Disposable {
             val model =
                 apis.filter { it.key?.decrypt != null }
                     .find { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
                             ?.any { it.modelId == modelItem } == true
                     }
                     ?.let { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
                             ?.find { it.modelId == modelItem }
                     }!!
             "${model.provider?.name} - ${model.modelId}"
         }.toList()
         val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }.filter { modelItem ->
             val chatModel = apis.filter { it.key?.decrypt != null }.firstNotNullOfOrNull { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelId == modelItem }
+                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.find { it.modelId == modelItem }
             }
             if (chatModel == null) {
                 false
@@ -681,11 +681,11 @@ class AppSettingsComponent : Disposable {
                 //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
                 apis.filter { it.key?.decrypt != null }
                     .find { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
                             ?.any { it.modelId == modelItem } == true
                     }
                     ?.let { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
                             ?.find { it.modelId == modelItem }
                     }
             "${model?.provider?.name} - ${model?.modelId}"
@@ -693,7 +693,7 @@ class AppSettingsComponent : Disposable {
         val imageChatModelItems =
             (0 until imageChatModel.itemCount).map { imageChatModel.getItemAt(it) }.filter { modelItem ->
                 val chatModel = apis.filter { it.key?.decrypt != null }.firstNotNullOfOrNull { apiData ->
-                    apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelId == modelItem }
+                    apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.find { it.modelId == modelItem }
                 }
                 if (chatModel == null) {
                     false
@@ -705,11 +705,11 @@ class AppSettingsComponent : Disposable {
                 val model =
                     apis.filter { it.key?.decrypt != null }
                         .find { apiData ->
-                            apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                            apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
                                 ?.any { it.modelId == modelItem } == true
                         }
                         ?.let { apiData ->
-                            apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                            apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
                                 ?.find { it.modelId == modelItem }
                         }
                 "${model?.provider?.name} - ${model?.modelId}"
@@ -767,7 +767,7 @@ class AppSettingsComponent : Disposable {
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""
                 val key = api.key?.decrypt ?: ""
-                val url = api.baseUrl
+                val url = api.apiBase
                 model.addRow(arrayOf(providerName, name, key, url))
             }
             log.debug("Successfully populated API table with ${userSettings.apis.size} entries")
@@ -811,11 +811,11 @@ class AppSettingsComponent : Disposable {
                 val model = userSettings.apis
                     .filter { it.key?.decrypt != null }
                     .find { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
                             ?.any { it.modelId == value } == true
                     }
                     ?.let { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelId == value }
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.find { it.modelId == value }
                     }
                 text = "${model?.provider?.name} - $value"
             }

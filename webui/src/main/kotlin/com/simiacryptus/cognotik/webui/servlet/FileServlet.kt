@@ -28,7 +28,7 @@ abstract class FileServlet : HttpServlet() {
   abstract fun getDir(req: HttpServletRequest): File?
 
   override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    log.info("Received GET request for path: ${req.pathInfo ?: req.servletPath}")
+    log.debug("Received GET request for path: ${req.pathInfo ?: req.servletPath}")
     try {
       val pathSegments = PathUtils.parsePath(req.pathInfo ?: req.servletPath ?: "/")
       val dir = getDir(req)
@@ -153,7 +153,7 @@ abstract class FileServlet : HttpServlet() {
     val fileName = file.name
     val extension = fileName.split(".").lastOrNull()
     extension?.let {
-      log.info("File does not exist: ${file.absolutePath}, checking for markdown alternative for extension: $it")
+      log.debug("File does not exist: ${file.absolutePath}, checking for markdown alternative for extension: $it")
     }
     when {
       setOf("html", "pdf", "txt").contains(extension) -> {
@@ -169,14 +169,14 @@ abstract class FileServlet : HttpServlet() {
             MarkdownRenderer.renderMarkdown(mdFile, resp, fileName.endsWith(".pdf"))
           }
         } else {
-          log.warn("File not found: ${file.absolutePath}")
+          log.debug("File not found: ${file.absolutePath}")
           resp.status = HttpServletResponse.SC_NOT_FOUND
           resp.writer.write("File not found")
         }
       }
 
       else -> {
-        log.warn("File not found: ${file.absolutePath}")
+        log.debug("File not found: ${file.absolutePath}")
         resp.status = HttpServletResponse.SC_NOT_FOUND
         resp.writer.write("File not found")
       }

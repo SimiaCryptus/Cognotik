@@ -94,8 +94,6 @@ open class DocProcessorAction(
             title: String = "Documentation Processor"
         ): SocketManager = BasicChatApp(
           root = root,
-          model = model ?: throw IllegalStateException("Smart model not configured"),
-          parsingModel = model,
         ).newSession(
           localUser,
           session = Session.newUserID()

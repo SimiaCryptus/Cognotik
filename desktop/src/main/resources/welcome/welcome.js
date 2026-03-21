@@ -201,9 +201,9 @@ function setupSettingsSection() {
         const temperature = document.getElementById('default-temperature')?.value;
         const budget = document.getElementById('default-budget')?.value;
 
-        if (smartModel) localStorage.setItem('defaultSmartModel', smartModel);
-        if (fastModel) localStorage.setItem('defaultFastModel', fastModel);
-        if (imageModel) localStorage.setItem('defaultImageModel', imageModel);
+        if (smartModel) localStorage.setItem('smartModel', smartModel);
+        if (fastModel) localStorage.setItem('fastModel', fastModel);
+        if (imageModel) localStorage.setItem('imageModel', imageModel);
         if (temperature) localStorage.setItem('temperature', temperature);
         if (budget) localStorage.setItem('budget', budget);
 
@@ -250,9 +250,9 @@ function populateQuickSettingsModels() {
     }
 
     // Restore saved selections
-    const savedSmart = localStorage.getItem('defaultSmartModel');
-    const savedFast = localStorage.getItem('defaultFastModel');
-    const savedImage = localStorage.getItem('defaultImageModel');
+    const savedSmart = localStorage.getItem('smartModel');
+    const savedFast = localStorage.getItem('fastModel');
+    const savedImage = localStorage.getItem('imageModel');
 
     if (savedSmart && Array.from(smartSelect.options).some(o => o.value === savedSmart)) {
         smartSelect.value = savedSmart;
@@ -291,11 +291,11 @@ function setupBasicChatModal() {
         e.preventDefault();
 
         const model = document.getElementById('basic-chat-model').value;
-        const defaultFastModel = document.getElementById('basic-chat-parsing-model').value;
+        const fastModel = document.getElementById('basic-chat-parsing-model').value;
         const temperatureInput = document.getElementById('basic-chat-temperature').value;
         const budgetInput = document.getElementById('basic-chat-budget').value;
 
-        if (!model || !defaultFastModel || !temperatureInput || !budgetInput) {
+        if (!model || !fastModel || !temperatureInput || !budgetInput) {
             notificationService.showNotification('Please fill in all required fields', 'error');
             return;
         }
@@ -309,12 +309,12 @@ function setupBasicChatModal() {
         }
 
         // Save to localStorage
-        localStorage.setItem('defaultSmartModel', model);
-        localStorage.setItem('defaultFastModel', defaultFastModel);
+        localStorage.setItem('smartModel', model);
+        localStorage.setItem('fastModel', fastModel);
         localStorage.setItem('temperature', String(temperature));
         localStorage.setItem('budget', String(budget));
         localStorage.setItem('basicChatModel', model);
-        localStorage.setItem('basicChatParsingModel', defaultFastModel);
+        localStorage.setItem('basicChatParsingModel', fastModel);
         localStorage.setItem('basicChatTemperature', String(temperature));
         localStorage.setItem('basicChatBudget', String(budget));
 
@@ -322,7 +322,7 @@ function setupBasicChatModal() {
 
         httpService.saveChatSettings(chatSessionId, {
             model: model,
-            defaultFastModel: defaultFastModel,
+            fastModel: fastModel,
             temperature: temperature,
             budget: budget
         }).then(response => {
@@ -338,13 +338,13 @@ function setupBasicChatModal() {
 }
 
 function prefillBasicChatModal() {
-    const defaultSmartModel = localStorage.getItem('defaultSmartModel') || localStorage.getItem('basicChatModel') || 'GPT4o';
-    const defaultFastModel = localStorage.getItem('defaultFastModel') || localStorage.getItem('basicChatParsingModel') || 'GPT4oMini';
+    const smartModel = localStorage.getItem('smartModel') || localStorage.getItem('basicChatModel') || 'GPT4o';
+    const fastModel = localStorage.getItem('fastModel') || localStorage.getItem('basicChatParsingModel') || 'GPT4oMini';
     const temperature = localStorage.getItem('temperature') || localStorage.getItem('basicChatTemperature') || '0.3';
     const budget = localStorage.getItem('budget') || localStorage.getItem('basicChatBudget') || '2.0';
 
-    document.getElementById('basic-chat-model').value = defaultSmartModel;
-    document.getElementById('basic-chat-parsing-model').value = defaultFastModel;
+    document.getElementById('basic-chat-model').value = smartModel;
+    document.getElementById('basic-chat-parsing-model').value = fastModel;
     document.getElementById('basic-chat-temperature').value = temperature;
     document.getElementById('basic-chat-temperature-value').textContent = temperature;
     document.getElementById('basic-chat-budget').value = budget;
@@ -440,9 +440,9 @@ function setupCustomPipelineModal() {
     });
 
     document.getElementById('next-to-task-selection')?.addEventListener('click', () => {
-        appState.updateTaskSetting('defaultSmartModel', document.getElementById('model-selection')?.value);
-        appState.updateTaskSetting('defaultFastModel', document.getElementById('parsing-model')?.value);
-        appState.updateTaskSetting('imageChatModel', document.getElementById('image-model')?.value);
+        appState.updateTaskSetting('smartModel', document.getElementById('model-selection')?.value);
+        appState.updateTaskSetting('fastModel', document.getElementById('parsing-model')?.value);
+        appState.updateTaskSetting('imageModel', document.getElementById('image-model')?.value);
         appState.updateTaskSetting('workingDir', document.getElementById('working-dir')?.value);
         appState.updateTaskSetting('temperature', parseFloat(document.getElementById('temperature')?.value));
         appState.updateTaskSetting('autoFix', document.getElementById('auto-fix')?.checked);
@@ -550,8 +550,8 @@ async function loadApiProviders() {
     console.log('[loadApiProviders] Loading API providers from server...');
     try {
          const response = await fetch('apiProviders/?format=json');
-         if (response.status >= 400) {
-             console.warn('[loadApiProviders] Received HTTP', response.status, '- redirecting to login');
+          if (response.redirected || response.status >= 300) {
+              console.warn('[loadApiProviders] Detected redirect (redirected:', response.redirected, ', status:', response.status, ', url:', response.url, ') - redirecting to login');
              window.location.href = 'login/';
              return;
          }

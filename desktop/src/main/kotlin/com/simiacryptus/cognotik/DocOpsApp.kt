@@ -25,10 +25,10 @@ import java.io.File
 class DocOpsApp(
     root: File,
     val model: ChatModel,
-    val parsingModel: ChatModel,
+    val fastModel: ChatModel,
     val settings: Settings = Settings(
         model = model,
-        parsingModel = parsingModel,
+        fastModel = fastModel,
     ),
     val appId: String,
     applicationName: String = appId,
@@ -42,7 +42,7 @@ class DocOpsApp(
 
     data class Settings(
         val model: ChatModel,
-        val parsingModel: ChatModel,
+        val fastModel: ChatModel,
         val temperature: Double = 0.3,
         val budget: Double = 2.0,
     )
@@ -52,7 +52,7 @@ class DocOpsApp(
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session, user: User): T = Settings(
         model = model,
-        parsingModel = parsingModel,
+        fastModel = fastModel,
     ) as T
 
     override fun newSession(user: User, session: Session): SocketManager {

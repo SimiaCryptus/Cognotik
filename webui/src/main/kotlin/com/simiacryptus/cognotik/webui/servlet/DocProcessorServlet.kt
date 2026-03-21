@@ -4,13 +4,11 @@ import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
-import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.util.DocProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.UpdateModes
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
+import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -39,59 +37,56 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class DocProcessorServlet(
   private val dataStorage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
-  private val smartModel: ChatModel = AnthropicModels.Claude45Haiku,
-  private val fastModel: ChatModel = smartModel,
-  private val imageModel: ChatModel = smartModel,
 ) : HttpServlet() {
   override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
     doPost(req, resp)
   }
 
-  override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-    val sessionId = req.getParameter("sessionId")
-    val docPath = req.getParameter("doc")
+  override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
+    val sessionId = request.getParameter("sessionId")
+    val docPath = request.getParameter("doc")
     if (sessionId.isNullOrBlank()) {
-      resp.status = HttpServletResponse.SC_BAD_REQUEST
-      resp.contentType = "application/json"
-      resp.writer.write("""{"error": "Missing required parameter: sessionId"}""")
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.contentType = "application/json"
+      response.writer.write("""{"error": "Missing required parameter: sessionId"}""")
       return
     }
     if (docPath.isNullOrBlank()) {
-      resp.status = HttpServletResponse.SC_BAD_REQUEST
-      resp.contentType = "application/json"
-      resp.writer.write("""{"error": "Missing required parameter: doc"}""")
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.contentType = "application/json"
+      response.writer.write("""{"error": "Missing required parameter: doc"}""")
       return
     }
-    val modeName = req.getParameter("mode") ?: "PatchExisting"
+    val modeName = request.getParameter("mode") ?: "PatchExisting"
     val updateMode = UpdateModes.fromName(modeName) ?: UpdateModes.PatchExisting
-    val effectiveSmartModel = resolveModel(req.getParameter("smartModel")) ?: smartModel
-    val effectiveFastModel = resolveModel(req.getParameter("fastModel")) ?: fastModel
-    val effectiveImageModel = resolveModel(req.getParameter("imageModel")) ?: imageModel
+    val effectiveSmartModel = resolveModel(request.getParameter("smartModel")) ?: AnthropicModels.Claude45Haiku
+    val effectiveFastModel = resolveModel(request.getParameter("fastModel")) ?: AnthropicModels.Claude45Haiku
+    val effectiveImageModel = resolveModel(request.getParameter("imageModel")) ?: AnthropicModels.Claude45Haiku
     try {
       val session = Session(sessionId)
-      val user = ApplicationServices.authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
+      val user = authenticate(request, response) ?: return
       val sessionDir = dataStorage.getSessionDir(user, session)
       if (!sessionDir.exists() || !sessionDir.isDirectory) {
-        resp.status = HttpServletResponse.SC_NOT_FOUND
-        resp.contentType = "application/json"
-        resp.writer.write("""{"error": "Session directory not found: $sessionId"}""")
+        response.status = HttpServletResponse.SC_NOT_FOUND
+        response.contentType = "application/json"
+        response.writer.write("""{"error": "Session directory not found: $sessionId"}""")
         return
       }
       val docFile = sessionDir.resolve(docPath)
       if (!docFile.exists() || !docFile.isFile) {
-        resp.status = HttpServletResponse.SC_NOT_FOUND
-        resp.contentType = "application/json"
-        resp.writer.write("""{"error": "Document file not found: $docPath"}""")
+        response.status = HttpServletResponse.SC_NOT_FOUND
+        response.contentType = "application/json"
+        response.writer.write("""{"error": "Document file not found: $docPath"}""")
         return
       }
 // Validate the doc file is within the session directory
       if (!docFile.canonicalPath.startsWith(sessionDir.canonicalPath)) {
-        resp.status = HttpServletResponse.SC_FORBIDDEN
-        resp.contentType = "application/json"
-        resp.writer.write("""{"error": "Access denied: document path is outside session directory"}""")
+        response.status = HttpServletResponse.SC_FORBIDDEN
+        response.contentType = "application/json"
+        response.writer.write("""{"error": "Access denied: document path is outside session directory"}""")
         return
       }
-      val targetPath = req.getParameter("target")
+      val targetPath = request.getParameter("target")
       log.info("DocOps request: session=$sessionId, doc=$docPath, target=$targetPath, mode=$modeName, smartModel=${effectiveSmartModel.modelId}, fastModel=${effectiveFastModel.modelId}, imageModel=${effectiveImageModel.modelId}")
       val docProcessor = DocProcessor(
         root = sessionDir,
@@ -105,9 +100,9 @@ class DocProcessorServlet(
       )
       val docSpec = docProcessor.parseMarkdownWithFrontmatter(docFile)
       if (docSpec == null) {
-        resp.status = HttpServletResponse.SC_BAD_REQUEST
-        resp.contentType = "application/json"
-        resp.writer.write("""{"error": "No valid frontmatter found in document: $docPath. Ensure the file has 'specifies', 'documents', 'transforms', or 'generates' frontmatter."}""")
+        response.status = HttpServletResponse.SC_BAD_REQUEST
+        response.contentType = "application/json"
+        response.writer.write("""{"error": "No valid frontmatter found in document: $docPath. Ensure the file has 'specifies', 'documents', 'transforms', or 'generates' frontmatter."}""")
         return
       }
       val allTasks = docProcessor.getAll(docFile)
@@ -127,14 +122,14 @@ class DocProcessorServlet(
         allTasks
       }
       if (tasksToRun.isEmpty()) {
-        resp.status = HttpServletResponse.SC_BAD_REQUEST
-        resp.contentType = "application/json"
+        response.status = HttpServletResponse.SC_BAD_REQUEST
+        response.contentType = "application/json"
         val msg = if (!targetPath.isNullOrBlank()) {
           "No tasks found for target '$targetPath' in document '$docPath'"
         } else {
           "No tasks found in document '$docPath'"
         }
-        resp.writer.write("""{"error": "$msg"}""")
+        response.writer.write("""{"error": "$msg"}""")
         return
       }
       log.info("Executing ${tasksToRun.size} DocOps task(s) for session $sessionId")
@@ -149,10 +144,10 @@ class DocProcessorServlet(
       val processedFiles = tasksToRun.flatMap { task ->
         task.data.relative_files ?: emptyList()
       }.distinct()
-      resp.status = HttpServletResponse.SC_OK
-      resp.contentType = "application/json"
-      resp.characterEncoding = "UTF-8"
-      resp.writer.write(buildString {
+      response.status = HttpServletResponse.SC_OK
+      response.contentType = "application/json"
+      response.characterEncoding = "UTF-8"
+      response.writer.write(buildString {
         append("""{"success": true""")
         append(""", "tasksExecuted": ${tasksToRun.size}""")
         append(""", "sessions": ${resultSessions.size}""")
@@ -178,10 +173,10 @@ class DocProcessorServlet(
       log.info("DocOps processing complete: ${tasksToRun.size} tasks, ${resultSessions.size} sessions")
     } catch (e: Exception) {
       log.error("Error processing DocOps request", e)
-      resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      resp.contentType = "application/json"
+      response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      response.contentType = "application/json"
       val errorMsg = (e.message ?: "Unknown error").replace("\"", "\\\"").replace("\n", " ")
-      resp.writer.write("""{"error": "Processing failed: $errorMsg"}""")
+      response.writer.write("""{"error": "Processing failed: $errorMsg"}""")
     }
   }
 
