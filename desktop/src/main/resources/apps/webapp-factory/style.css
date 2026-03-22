@@ -123,15 +123,17 @@ header .subtitle {
     border-bottom-color: var(--color-primary);
 }
 #pipeline-nav a.nav-link-launch {
-    color: var(--color-text-muted);
-    opacity: 0.4;
-    pointer-events: none;
+    color: var(--color-launch);
+    opacity: 0.7;
     position: relative;
     transition: all 0.3s;
 }
+#pipeline-nav a.nav-link-launch:hover {
+    opacity: 1;
+    color: var(--color-launch-hover);
+}
 #pipeline-nav a.nav-link-launch.visible {
     opacity: 1;
-    pointer-events: auto;
     color: var(--color-launch);
     border-bottom-color: var(--color-launch);
     animation: glow-launch 2s ease-in-out infinite;
@@ -289,6 +291,59 @@ textarea:focus {
     padding: 0.35rem 0.7rem;
     font-size: 0.82rem;
 }
+/* Model Settings */
+.model-settings-grid {
+     display: grid;
+     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+     gap: 1.25rem;
+     margin-bottom: 0.5rem;
+}
+.model-setting {
+     display: flex;
+     flex-direction: column;
+     gap: 0.3rem;
+}
+.model-setting label {
+     font-weight: 600;
+     font-size: 0.95rem;
+     color: var(--color-text);
+}
+.model-setting-desc {
+     color: var(--color-text-muted);
+     font-size: 0.82rem;
+     margin-bottom: 0.35rem;
+}
+.model-select {
+     width: 100%;
+     padding: 0.55rem 0.75rem;
+     background: var(--color-bg);
+     color: var(--color-text);
+     border: 1px solid var(--color-border);
+     border-radius: 6px;
+     font-size: 0.88rem;
+     font-family: inherit;
+     cursor: pointer;
+     transition: border-color 0.2s;
+     appearance: none;
+     -webkit-appearance: none;
+     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238890a8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+     background-repeat: no-repeat;
+     background-position: right 0.75rem center;
+     padding-right: 2rem;
+}
+.model-select:focus {
+     outline: none;
+     border-color: var(--color-primary);
+}
+.model-select:hover {
+     border-color: var(--color-primary);
+}
+.model-select option {
+     background: var(--color-surface);
+     color: var(--color-text);
+     padding: 0.4rem;
+}
+
 
 /* Status messages */
 .status-msg {
@@ -350,19 +405,6 @@ textarea:focus {
 .preview-banner-text span {
     font-size: 0.88rem;
     color: var(--color-text-muted);
-}
-/* App Preview Iframe */
-.preview-frame-container {
-    position: relative;
-    width: 100%;
-    min-height: 200px;
-}
-.app-preview-iframe {
-    width: 100%;
-    height: 600px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    background: #fff;
 }
 
 
@@ -797,6 +839,194 @@ textarea:focus {
     color: var(--color-accent);
     animation: pulse-badge 1.5s ease-in-out infinite;
 }
+/* Git status display */
+.git-status-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.git-status-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+.git-status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.git-status-indicator.clean {
+    background: rgba(74, 222, 128, 0.15);
+    color: var(--color-success);
+}
+.git-status-indicator.dirty {
+    background: rgba(245, 158, 66, 0.15);
+    color: var(--color-accent);
+}
+.git-status-indicator.uninit {
+    background: rgba(136, 144, 168, 0.15);
+    color: var(--color-text-muted);
+}
+.git-branch-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    background: rgba(108, 140, 255, 0.15);
+    color: var(--color-primary);
+}
+.git-changes-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.git-changes-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+}
+.git-changes-list li:nth-child(odd) {
+    background: rgba(255,255,255,0.02);
+}
+.git-change-badge {
+    display: inline-block;
+    min-width: 28px;
+    text-align: center;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.git-change-badge.modified { background: rgba(245, 158, 66, 0.2); color: var(--color-accent); }
+.git-change-badge.added { background: rgba(74, 222, 128, 0.2); color: var(--color-success); }
+.git-change-badge.deleted { background: rgba(248, 113, 113, 0.2); color: var(--color-danger); }
+.git-change-badge.untracked { background: rgba(108, 140, 255, 0.2); color: var(--color-primary); }
+.git-change-badge.renamed { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+/* Git branch list */
+.git-branch-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.git-branch-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.git-branch-item:hover {
+    background: var(--color-surface-alt);
+}
+.git-branch-item.current {
+    background: rgba(108, 140, 255, 0.1);
+    border: 1px solid rgba(108, 140, 255, 0.25);
+}
+.git-branch-item .branch-name {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-weight: 500;
+}
+.git-branch-item .branch-current-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-success);
+    letter-spacing: 0.04em;
+}
+/* Git commit log */
+.git-commit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.git-commit-entry {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 6px;
+    border-left: 3px solid var(--color-border);
+    transition: background 0.2s;
+}
+.git-commit-entry:hover {
+    background: rgba(255,255,255,0.02);
+}
+.git-commit-hash {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.8rem;
+    color: var(--color-primary);
+    flex-shrink: 0;
+    min-width: 70px;
+}
+.git-commit-info {
+    flex: 1;
+    min-width: 0;
+}
+.git-commit-message {
+    font-weight: 500;
+    font-size: 0.92rem;
+    color: var(--color-text);
+    word-break: break-word;
+}
+.git-commit-meta {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-top: 0.15rem;
+}
+
+/* Tips grid */
+.tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+.tip-item {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.85rem;
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    transition: border-color 0.2s;
+}
+.tip-item:hover {
+    border-color: var(--color-primary);
+}
+.tip-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+.tip-item strong {
+    display: block;
+    font-size: 0.92rem;
+    color: var(--color-text);
+    margin-bottom: 0.2rem;
+}
+.tip-text {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+}
+
 
 /* Responsive */
 @media (max-width: 640px) {

@@ -50,15 +50,16 @@ class FileModificationTask(
     state = state
   ), ValidatedObject {
     override fun validate(): String? {
-      if (files.isNullOrEmpty() && related_files.isNullOrEmpty()) {
+      if (files.orEmpty().none { it.isNotBlank() } && related_files.orEmpty().none { it.isNotBlank() }) {
         return "At least one file must be specified in either 'files' or 'related_files'"
       }
       return ValidatedObject.validateFields(this)
     }
   }
 
-  private fun getInputFileWithDiff() = if (!executionConfig?.includeGitDiff!!) getInputFileCode()
-  else getInputFileCode { file ->
+  private fun getInputFileWithDiff() = if (!executionConfig?.includeGitDiff!!) getInputFileCode {
+    formatFileForLLM(it).toString()
+  } else getInputFileCode { file ->
     formatFileForLLM(file).toString() + (file.toString().getGitDiff()?.let { diff ->
       "\n\nGit diff for $file:\n$diff"
     } ?: "")
@@ -95,7 +96,7 @@ FileModification - Modify existing files or create new files
         val dependencyContext = agent.executionState?.tasksByDescription?.filter {
           executionConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskExecutionConfigData
         }?.entries?.joinToString("\n\n") {
-          (it.value as FileModificationTaskExecutionConfigData).files?.joinToString("\n") { path ->
+          (it.value as FileModificationTaskExecutionConfigData).files?.filter { it.isNotBlank() }?.joinToString("\n") { path ->
             val file = root.resolve(path).toFile()
             if (file.exists()) {
               val relativePath = root.relativize(file.toPath())
@@ -253,14 +254,14 @@ $codeResult
   }
 
   fun getDefaultFile() =
-    if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).isEmpty()) {
+    if (((executionConfig?.related_files ?: listOf()).filter { it.isNotBlank() } + (executionConfig?.files ?: listOf()).filter { it.isNotBlank() }).isEmpty()) {
       null
-    } else if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files
-        ?: listOf())).distinct().size == 1
+    } else if (((executionConfig?.related_files ?: listOf()).filter { it.isNotBlank() } + (executionConfig?.files
+        ?: listOf()).filter { it.isNotBlank() }).distinct().size == 1
     ) {
-      ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).last()
-    } else if ((executionConfig?.files ?: listOf()).distinct().size == 1) {
-      (executionConfig?.files ?: listOf()).first()
+      ((executionConfig?.related_files ?: listOf()).filter { it.isNotBlank() } + (executionConfig?.files ?: listOf()).filter { it.isNotBlank() }).last()
+    } else if ((executionConfig?.files ?: listOf()).filter { it.isNotBlank() }.distinct().size == 1) {
+      (executionConfig?.files ?: listOf()).filter { it.isNotBlank() }.firstOrNull()
     } else {
       null
     }

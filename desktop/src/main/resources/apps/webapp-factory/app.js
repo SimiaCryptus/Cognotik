@@ -15,13 +15,108 @@
         basePath = window.location.pathname.replace(/\/[^/]*$/, '');
     }
     const proxyBase = '/proxy/';
+     // === Model management state ===
+     let availableModels = {};
+    // === Compute app base path (e.g. /webapp-factory) for ZIP/Git endpoints ===
+    const appBase = fileIndexIdx >= 2 ? pathParts.slice(0, fileIndexIdx).join('/') : '';
+
     // === Compute the URL for the generated app's index.html ===
     const appIndexUrl = basePath + '/code/index.html';
+     // === Model loading and selection ===
+     async function loadApiProviders() {
+         try {
+             const response = await fetch('/apiProviders/?format=json');
+             if (response.status >= 400) {
+                 console.warn('Could not load API providers (status ' + response.status + ')');
+                 return;
+             }
+             const providersResponse = await response.json();
+             const providers = providersResponse.configuredProviders || [];
+             availableModels = {};
+             providers.forEach(provider => {
+                 if (provider.models && provider.models.length > 0) {
+                     availableModels[provider.name] = provider.models.map(model => ({
+                         id: model.name,
+                         name: model.name,
+                         description: model.maxTokens
+                             ? `Max tokens: ${model.maxTokens}`
+                             : ''
+                     }));
+                 }
+             });
+             populateModelDropdowns();
+         } catch (e) {
+             console.warn('Failed to load API providers:', e);
+             setModelDropdownsError('Failed to load models');
+         }
+     }
+     function populateModelDropdowns() {
+         const smartSelect = document.getElementById('model-smart');
+         const fastSelect = document.getElementById('model-fast');
+         if (!smartSelect || !fastSelect) return;
+         [smartSelect, fastSelect].forEach(sel => { sel.innerHTML = ''; });
+         const addedModels = new Set();
+         let totalModels = 0;
+         for (const [provider, models] of Object.entries(availableModels)) {
+             models.forEach(model => {
+                 if (!addedModels.has(model.id)) {
+                     [smartSelect, fastSelect].forEach(sel => {
+                         const option = document.createElement('option');
+                         option.value = model.id;
+                         option.textContent = model.description
+                             ? `${model.name} (${provider}) — ${model.description}`
+                             : `${model.name} (${provider})`;
+                         sel.appendChild(option);
+                     });
+                     addedModels.add(model.id);
+                     totalModels++;
+                 }
+             });
+         }
+         if (totalModels === 0) {
+             [smartSelect, fastSelect].forEach(sel => {
+                 const option = document.createElement('option');
+                 option.value = '';
+                 option.textContent = 'No models available — configure API keys first';
+                 sel.appendChild(option);
+             });
+             return;
+         }
+         // Restore saved selections
+         const savedSmart = localStorage.getItem('webappFactory_smartModel');
+         const savedFast = localStorage.getItem('webappFactory_fastModel');
+         if (savedSmart && Array.from(smartSelect.options).some(o => o.value === savedSmart)) {
+             smartSelect.value = savedSmart;
+         }
+         if (savedFast && Array.from(fastSelect.options).some(o => o.value === savedFast)) {
+             fastSelect.value = savedFast;
+         }
+     }
+     function setModelDropdownsError(message) {
+         const smartSelect = document.getElementById('model-smart');
+         const fastSelect = document.getElementById('model-fast');
+         [smartSelect, fastSelect].forEach(sel => {
+             if (!sel) return;
+             sel.innerHTML = '';
+             const option = document.createElement('option');
+             option.value = '';
+             option.textContent = message;
+             sel.appendChild(option);
+         });
+     }
+     function getSelectedModels() {
+         const smartSelect = document.getElementById('model-smart');
+         const fastSelect = document.getElementById('model-fast');
+         return {
+             smartModel: smartSelect ? smartSelect.value : '',
+             fastModel: fastSelect ? fastSelect.value : '',
+         };
+     }
+
     function updateLaunchLinks() {
         const links = [
             document.getElementById('nav-launch-app'),
             document.getElementById('btn-launch-app-banner'),
-            document.getElementById('btn-launch-app-new-window'),
             document.getElementById('btn-open-app-results'),
         ];
         links.forEach(el => {
@@ -42,31 +137,24 @@
         const available = await checkAppAvailable();
         const banner = document.getElementById('app-preview-banner');
         const navLaunch = document.getElementById('nav-launch-app');
-        const iframe = document.getElementById('app-preview-iframe');
-        const placeholder = document.getElementById('preview-placeholder');
         if (available) {
             if (banner) banner.style.display = 'flex';
             if (navLaunch) navLaunch.classList.add('visible');
-            if (iframe) {
-                iframe.src = appIndexUrl;
-                iframe.style.display = 'block';
-            }
-            if (placeholder) placeholder.style.display = 'none';
         } else {
             if (banner) banner.style.display = 'none';
             if (navLaunch) navLaunch.classList.remove('visible');
-            if (iframe) iframe.style.display = 'none';
-            if (placeholder) placeholder.style.display = 'block';
         }
     }
 
     // === Status polling state ===
     let statusPollTimer = null;
     const STATUS_POLL_INTERVAL = 3000;
-    const taskTargetToBadge = {
-        'code/': 'badge-render',
-    };
-    const activeTaskSessions = {};
+    // Track which badge to update for code/ target (render vs update)
+    let activeCodeBadge = 'badge-render';
+    // Track the task session ID we initiated, so we can distinguish our task from stale status
+    let activeCodeTaskSessionId = null;
+    // Track whether any operation is currently in flight for code/
+    let codeOperationInFlight = false;
     // === File I/O helpers ===
     async function readFile(filePath) {
         const url = basePath + '/' + filePath;
@@ -111,7 +199,15 @@
         return data.entries || [];
     }
     async function runDocOp(opPath, targetPath) {
-        const url = `/docops?sessionId=${encodeURIComponent(sessionId)}&doc=${encodeURIComponent(opPath)}&target=${encodeURIComponent(targetPath)}`;
+         const params = new URLSearchParams({
+             sessionId: sessionId,
+             doc: opPath,
+             target: targetPath
+         });
+         const models = getSelectedModels();
+         if (models.smartModel) params.set('smartModel', models.smartModel);
+         if (models.fastModel) params.set('fastModel', models.fastModel);
+         const url = `/docops?${params.toString()}`;
         const resp = await fetch(url, { method: 'POST' });
         if (!resp.ok) {
             const errText = await resp.text().catch(() => '');
@@ -140,20 +236,33 @@
     function updateTaskStatusUI(target, taskInfo) {
         const status = taskInfo.status;
         const taskSessionId = taskInfo.sessionId;
-        const badgeId = taskTargetToBadge[target];
+        let badgeId = null;
+        if (target === 'code/') {
+            // If we have an active operation in flight, only update if the session matches
+            // or if we don't have a known session yet
+            if (codeOperationInFlight && activeCodeTaskSessionId && taskSessionId !== activeCodeTaskSessionId) {
+                // This is a stale status from a previous operation, ignore it
+                return;
+            }
+            badgeId = activeCodeBadge;
+        }
+        if (!badgeId) {
+            // Unknown target, skip badge update
+        }
         if (badgeId) {
             if (status === 'RUNNING') {
                 setBadge(badgeId, 'running');
             } else if (status === 'COMPLETED') {
                 setBadge(badgeId, 'done');
+                if (target === 'code/') {
+                    codeOperationInFlight = false;
+                }
             } else if (status === 'ERROR' || status === 'FAILED') {
                 setBadge(badgeId, 'error');
+                if (target === 'code/') {
+                    codeOperationInFlight = false;
+                }
             }
-        }
-        if (status === 'RUNNING') {
-            activeTaskSessions[target] = taskSessionId;
-        } else {
-            delete activeTaskSessions[target];
         }
         updateSessionLinks(target, taskInfo);
     }
@@ -244,7 +353,8 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 anyRunning = true;
             }
             // Keep results section session link updated
-            if (target === 'code/' && taskInfo.sessionId) {
+            if (target === 'code/' && taskInfo.sessionId &&
+                (!activeCodeTaskSessionId || taskInfo.sessionId === activeCodeTaskSessionId)) {
                 updateResultsSessionLink(taskInfo);
             }
         }
@@ -268,6 +378,11 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             for (const t of info.targets) {
                 const task = tasks[t];
                 if (!task) { allDone = false; continue; }
+                // Skip stale sessions
+                if (t === 'code/' && activeCodeTaskSessionId && task.sessionId !== activeCodeTaskSessionId) {
+                    allDone = false;
+                    continue;
+                }
                 anyTarget = true;
                 if (task.status === 'RUNNING') {
                     anyRunning = true;
@@ -370,28 +485,14 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
     // === Navigation ===
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', function(e) {
-            e.preventDefault();
             const sectionId = this.dataset.section;
+            if (!sectionId) return; // skip links without a section (e.g. launch app)
+            e.preventDefault();
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             this.classList.add('active');
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
         });
-    });
-    // === Preview controls ===
-    document.getElementById('btn-refresh-preview')?.addEventListener('click', function() {
-        const iframe = document.getElementById('app-preview-iframe');
-        if (iframe && iframe.src) {
-            iframe.src = appIndexUrl + '?t=' + Date.now();
-        }
-        showAppPreview();
-    });
-    // Prevent nav-launch-app from navigating when app isn't ready
-    document.getElementById('nav-launch-app')?.addEventListener('click', function(e) {
-        if (!this.classList.contains('visible')) {
-            e.preventDefault();
-            alert('Your webapp hasn\'t been built yet. Run the pipeline first!');
-        }
     });
 
     // === Results Tabs ===
@@ -413,6 +514,14 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         } catch (e) {
             console.warn('Could not load idea.md:', e);
         }
+        try {
+            const notesContent = await readFile('notes.md');
+            if (notesContent !== null) {
+                document.getElementById('notes-editor').value = notesContent;
+            }
+        } catch (e) {
+            console.warn('Could not load notes.md:', e);
+        }
     }
     // === Save idea ===
     document.getElementById('save-idea').addEventListener('click', async function() {
@@ -427,6 +536,99 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             this.disabled = false;
         }
     });
+    // === Save notes ===
+    document.getElementById('save-notes')?.addEventListener('click', async function() {
+        const content = document.getElementById('notes-editor').value;
+        try {
+            this.disabled = true;
+            await writeFile('notes.md', content);
+            setStatus('notes-status', '✓ Saved successfully', 'success');
+        } catch (e) {
+            setStatus('notes-status', '✗ ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+    // === Run Update ===
+    document.getElementById('run-update')?.addEventListener('click', async function() {
+        const notesContent = document.getElementById('notes-editor').value;
+        if (!notesContent.trim()) {
+            alert('Please write some update notes first describing what you\'d like to change.');
+            return;
+        }
+        // Auto-save notes before running
+        try {
+            await writeFile('notes.md', notesContent);
+        } catch (e) {
+            console.warn('Could not auto-save notes.md:', e);
+        }
+        // Also auto-save idea if present
+        const ideaContent = document.getElementById('idea-editor').value;
+        if (ideaContent.trim()) {
+            try {
+                await writeFile('idea.md', ideaContent);
+            } catch (e) {
+                console.warn('Could not auto-save idea.md:', e);
+            }
+        }
+        const badgeId = 'badge-update';
+        const outputPath = 'code/';
+        setBadge(badgeId, 'running');
+        activeCodeBadge = badgeId;
+        codeOperationInFlight = true;
+        activeCodeTaskSessionId = null;
+        this.disabled = true;
+        startStatusPolling();
+        try {
+            const taskId = await runDocOp('ops/update_op.md', outputPath);
+            const cleanTaskId = taskId ? taskId.trim() : '';
+            if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                activeCodeTaskSessionId = cleanTaskId;
+                updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
+                logBatchHtml(`Update session started: <a href="${getProxyUrl(cleanTaskId)}" target="_blank" class="monitor-link">📡 Monitor Live Session (${escapeHtml(cleanTaskId)})</a>`, 'info');
+            }
+            await waitForTask(outputPath);
+            setBadge(badgeId, 'done');
+            // Show updated README
+            const viewer = document.getElementById('viewer-update');
+            if (viewer) {
+                try {
+                    const content = await readFile('code/README.md');
+                    if (content) {
+                        viewer.innerHTML = renderMarkdown(content);
+                        viewer.classList.add('visible');
+                    }
+                } catch (e) { /* non-critical */ }
+            }
+            // Refresh app preview
+            await showAppPreview();
+            // Auto-refresh the project files list
+            document.getElementById('btn-refresh-files-results')?.click();
+            // Auto-commit to Git if repo is initialized
+            await autoGitCommitAfterBuild('Update: ' + (notesContent.substring(0, 60).split('\n')[0] || 'Applied updates'));
+        } catch (e) {
+            setBadge(badgeId, 'error');
+            alert('Update failed: ' + e.message);
+        } finally {
+            this.disabled = false;
+        }
+    });
+     // === Save model settings ===
+     document.getElementById('save-models')?.addEventListener('click', function() {
+         const models = getSelectedModels();
+         if (models.smartModel) localStorage.setItem('webappFactory_smartModel', models.smartModel);
+         if (models.fastModel) localStorage.setItem('webappFactory_fastModel', models.fastModel);
+         setStatus('model-status', '✓ Model settings saved', 'success');
+     });
+     // === Refresh models ===
+     document.getElementById('refresh-models')?.addEventListener('click', async function() {
+         this.disabled = true;
+         setStatus('model-status', 'Loading models…', '');
+         await loadApiProviders();
+         setStatus('model-status', '✓ Models refreshed', 'success');
+         this.disabled = false;
+     });
+
     // === View file buttons ===
     async function viewFile(filePath, viewerId) {
         const viewer = document.getElementById(viewerId);
@@ -498,6 +700,12 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             const badgeId = this.dataset.badge;
             const outputPath = this.dataset.output;
             const viewerId = this.dataset.viewer;
+            // Track which badge is active for this target
+            if (outputPath === 'code/') {
+                activeCodeBadge = badgeId;
+                codeOperationInFlight = true;
+                activeCodeTaskSessionId = null;
+            }
             // Auto-save idea before running
             const ideaContent = document.getElementById('idea-editor').value;
             if (ideaContent.trim()) {
@@ -517,6 +725,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 const taskId = await runDocOp(opPath, outputPath);
                 const cleanTaskId = taskId ? taskId.trim() : '';
                 if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                    if (outputPath === 'code/') activeCodeTaskSessionId = cleanTaskId;
                     updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
                     logBatchHtml(`Session started: <a href="${getProxyUrl(cleanTaskId)}" target="_blank" class="monitor-link">📡 Monitor Live Session (${escapeHtml(cleanTaskId)})</a>`, 'info');
                 }
@@ -546,6 +755,9 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
     document.getElementById('run-all').addEventListener('click', async function() {
         this.disabled = true;
         startStatusPolling();
+        activeCodeBadge = 'badge-render';
+        codeOperationInFlight = true;
+        activeCodeTaskSessionId = null;
         batchLog.innerHTML = '';
         // Auto-save idea
         const ideaContent = document.getElementById('idea-editor').value;
@@ -563,10 +775,12 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         }
         try {
             logBatch('Starting: Render Project', 'info');
+            // Note: "Render Project" -> "Build Project" in UI, but op path unchanged
             setBadge('badge-render', 'running');
             const taskId = await runDocOp('ops/render_op.md', 'code/');
             const cleanTaskId = taskId ? taskId.trim() : '';
             if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                activeCodeTaskSessionId = cleanTaskId;
                 const proxyUrl = getProxyUrl(cleanTaskId);
                 logBatchHtml(`Session started: <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">📡 Monitor Live Session (${escapeHtml(cleanTaskId)})</a>`, 'info');
                 updateSessionLinks('code/', { status: 'RUNNING', sessionId: cleanTaskId });
@@ -578,9 +792,9 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             const completedTask = finalStatus?.tasks?.['code/'];
             if (completedTask && completedTask.sessionId) {
                 const proxyUrl = getProxyUrl(completedTask.sessionId);
-                logBatchHtml(`✓ Completed: Render Project — <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">📋 View Session Log (${escapeHtml(completedTask.sessionId)})</a>`, 'success');
+                logBatchHtml(`✓ Completed: Build Project — <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">📋 View Session Log (${escapeHtml(completedTask.sessionId)})</a>`, 'success');
             } else {
-                logBatch('✓ Completed: Render Project', 'success');
+                logBatch('✓ Completed: Build Project', 'success');
             }
             // Show the README
             try {
@@ -596,6 +810,20 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             logBatch('🎉 Pipeline complete! Check the Results tab for output.', 'success');
             // Show the app preview
             await showAppPreview();
+            // Auto-refresh the project files list
+            document.getElementById('btn-refresh-files-results')?.click();
+            // Auto-commit to Git if repo is initialized
+            await autoGitCommitAfterBuild('Build: ' + (ideaContent.substring(0, 60).split('\n')[0] || 'Pipeline run'));
+            // Auto-load the README in results
+            try {
+                const readmeContent = await readFile('code/README.md');
+                if (readmeContent) {
+                    const resultReadme = document.getElementById('result-readme');
+                    if (resultReadme) {
+                        resultReadme.innerHTML = renderMarkdown(readmeContent);
+                    }
+                }
+            } catch (e) { /* non-critical */ }
         } catch (e) {
             setBadge('badge-render', 'error');
             // Try to get session link for the failed task
@@ -612,18 +840,10 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         }
     });
     // === Results section: refresh project files ===
-    document.getElementById('btn-refresh-files-results').addEventListener('click', async function() {
+    document.getElementById('btn-refresh-files-results')?.addEventListener('click', async function() {
         const container = document.getElementById('files-results-container');
         try {
-            const entries = await listAllFiles();
-            // Filter out system/config files, show project output files
-            const skipFiles = new Set(['idea.md', 'app.html', 'app.js', 'style.css', 'marked.min.js', 'docops.status.json', '_files.json']);
-            const projectFiles = entries.filter(e => {
-                if (e.type === 'directory') return true;
-                if (skipFiles.has(e.name)) return false;
-                if (e.name.startsWith('.')) return false;
-                return true;
-            });
+            const projectFiles = await listFiles('code');
             if (projectFiles.length === 0) {
                 container.innerHTML = '<p class="placeholder">No project files found. Run the pipeline first.</p>';
                 return;
@@ -632,7 +852,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             for (const entry of projectFiles) {
                 const section = document.createElement('div');
                 section.className = 'result-file-section';
-                const icon = entry.type === 'directory' ? '📁' : getFileIcon(entry.name);
+                const icon = getFileIcon(entry.name);
                 const header = document.createElement('div');
                 header.className = 'result-file-header';
                 header.innerHTML = `<span class="result-file-icon">${icon}</span> <span>${escapeHtml(entry.name)}</span>`;
@@ -640,12 +860,11 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 const body = document.createElement('div');
                 body.className = 'result-file-body';
                 body.style.display = 'none';
-                if (entry.type === 'file') {
                     header.addEventListener('click', async function() {
                         if (body.style.display === 'none') {
                             if (!body.dataset.loaded) {
                                 try {
-                                    const content = await readFile(entry.name);
+                                    const content = await readFile('code/' + entry.name);
                                     if (content) {
                                         if (entry.name.endsWith('.md')) {
                                             body.innerHTML = renderMarkdown(content);
@@ -665,67 +884,6 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                             body.style.display = 'none';
                         }
                     });
-                } else if (entry.type === 'directory') {
-                    header.addEventListener('click', async function() {
-                        if (body.style.display === 'none') {
-                            if (!body.dataset.loaded) {
-                                try {
-                                    const dirFiles = await listFiles(entry.name);
-                                    if (dirFiles.length === 0) {
-                                        body.innerHTML = '<p class="placeholder">Empty directory.</p>';
-                                    } else {
-                                        let html = '<div class="file-grid">';
-                                        for (const f of dirFiles) {
-                                            html += `<div class="file-card">
-<div class="file-card-icon">${getFileIcon(f.name)}</div>
-<div class="file-card-name">${escapeHtml(f.name)}</div>
-<button class="btn btn-view btn-sm" data-dir-file="${escapeHtml(entry.name + '/' + f.name)}">👁 View</button>
-</div>`;
-                                        }
-                                        html += '</div>';
-                                        body.innerHTML = html;
-                                        // Attach view handlers for directory files
-                                        body.querySelectorAll('[data-dir-file]').forEach(btn => {
-                                            btn.addEventListener('click', async function(e) {
-                                                e.stopPropagation();
-                                                const filePath = this.dataset.dirFile;
-                                                const card = this.closest('.file-card');
-                                                const existingViewer = card.querySelector('.file-viewer');
-                                                if (existingViewer) {
-                                                    existingViewer.remove();
-                                                    return;
-                                                }
-                                                try {
-                                                    const content = await readFile(filePath);
-                                                    const viewer = document.createElement('div');
-                                                    viewer.className = 'file-viewer';
-                                                    if (content) {
-                                                        if (filePath.endsWith('.md')) {
-                                                            viewer.innerHTML = renderMarkdown(content);
-                                                        } else {
-                                                            viewer.innerHTML = '<pre><code>' + escapeHtml(content) + '</code></pre>';
-                                                        }
-                                                    } else {
-                                                        viewer.innerHTML = '<p class="placeholder">Empty file.</p>';
-                                                    }
-                                                    card.appendChild(viewer);
-                                                } catch (err) {
-                                                    alert('Error loading file: ' + err.message);
-                                                }
-                                            });
-                                        });
-                                    }
-                                } catch (e) {
-                                    body.innerHTML = '<p class="placeholder" style="color:var(--color-danger);">Error listing directory.</p>';
-                                }
-                                body.dataset.loaded = 'true';
-                            }
-                            body.style.display = 'block';
-                        } else {
-                            body.style.display = 'none';
-                        }
-                    });
-                }
                 section.appendChild(header);
                 section.appendChild(body);
                 container.appendChild(section);
@@ -773,13 +931,29 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         let anyRunning = false;
         if (statusData && statusData.tasks) {
             for (const [target, taskInfo] of Object.entries(statusData.tasks)) {
-                updateTaskStatusUI(target, taskInfo);
-                if (taskInfo.status === 'RUNNING') {
-                    anyRunning = true;
-                }
-                // Also update the results section session link
-                if (target === 'code/' && taskInfo.sessionId) {
-                    updateResultsSessionLink(taskInfo);
+                if (target === 'code/') {
+                    // On page load, accept whatever status is there
+                    // since we don't know if it was render or update
+                    const status = taskInfo.status;
+                    if (status === 'RUNNING') {
+                        anyRunning = true;
+                        codeOperationInFlight = true;
+                        activeCodeTaskSessionId = taskInfo.sessionId || null;
+                        setBadge(activeCodeBadge, 'running');
+                    } else if (status === 'COMPLETED') {
+                        setBadge('badge-render', 'done');
+                    } else if (status === 'ERROR' || status === 'FAILED') {
+                        setBadge('badge-render', 'error');
+                    }
+                    updateSessionLinks(target, taskInfo);
+                    if (taskInfo.sessionId) {
+                        updateResultsSessionLink(taskInfo);
+                    }
+                } else {
+                    updateTaskStatusUI(target, taskInfo);
+                    if (taskInfo.status === 'RUNNING') {
+                        anyRunning = true;
+                    }
                 }
             }
         }
@@ -878,9 +1052,427 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             container.style.display = 'none';
         }
     }
+    // =========================================================
+    // === ZIP Download Helpers ===
+    // =========================================================
+    function downloadZip(path) {
+        if (!sessionId) {
+            alert('No session ID available. Cannot download ZIP.');
+            return;
+        }
+        const encodedPath = encodeURIComponent(path || '/');
+        window.location.href = `${appBase}/fileZip?session=${encodeURIComponent(sessionId)}&path=${encodedPath}`;
+    }
+
+    // ZIP buttons in Pipeline section
+    document.getElementById('btn-zip-project-pipeline')?.addEventListener('click', function() {
+        downloadZip('/code');
+    });
+
+    // ZIP button in Results > Files tab
+    document.getElementById('btn-zip-from-results')?.addEventListener('click', function() {
+        downloadZip('/code');
+    });
+
+    // ZIP buttons in Results > Download tab
+    document.getElementById('btn-zip-whole-project')?.addEventListener('click', function() {
+        downloadZip('/');
+    });
+    document.getElementById('btn-zip-code-only')?.addEventListener('click', function() {
+        downloadZip('/code');
+    });
+    document.getElementById('btn-zip-custom')?.addEventListener('click', function() {
+        const customPath = document.getElementById('zip-custom-path')?.value?.trim() || '/';
+        downloadZip(customPath);
+    });
+
+    // =========================================================
+    // === Git REST API Helpers ===
+    // =========================================================
+    const gitApiBase = basePath + '/.git/api';
+
+    async function gitApiCall(action, options) {
+        const url = gitApiBase + '/' + action;
+        const resp = await fetch(url, {
+            credentials: 'include',
+            ...options
+        });
+        if (!resp.ok) {
+            const text = await resp.text().catch(() => '');
+            throw new Error(`Git API ${action} failed: ${resp.status} ${resp.statusText}\n${text}`);
+        }
+        const data = await resp.json();
+        if (data.success === false) {
+            throw new Error(data.error || `Git ${action} failed`);
+        }
+        return data;
+    }
+
+    // --- Git Status ---
+    async function refreshGitStatus() {
+        const display = document.getElementById('git-status-display');
+        if (!display) return;
+        display.style.display = 'block';
+        display.innerHTML = '<p class="placeholder">Loading status…</p>';
+        try {
+            const data = await gitApiCall('status');
+            if (!data.initialized) {
+                display.innerHTML = `
+                    <div class="git-status-box">
+                        <div class="git-status-header">
+                            <span class="git-status-indicator uninit">⚪ Not Initialized</span>
+                        </div>
+                        <p style="color:var(--color-text-muted); font-size:0.9rem;">
+                            ${escapeHtml(data.message || 'No Git repository found.')}
+                            Click <strong>Initialize Repository</strong> to start tracking changes.
+                        </p>
+                    </div>`;
+                return data;
+            }
+            const cleanClass = data.clean ? 'clean' : 'dirty';
+            const cleanLabel = data.clean ? '✅ Clean' : '⚠️ Uncommitted Changes';
+            let changesHtml = '';
+            if (data.changes && data.changes.length > 0) {
+                const changeItems = data.changes.map(c => {
+                    const badgeClass = getChangeBadgeClass(c.status);
+                    const label = getChangeLabel(c.status);
+                    return `<li><span class="git-change-badge ${badgeClass}">${escapeHtml(c.status)}</span> <span>${escapeHtml(c.file)}</span> <span style="color:var(--color-text-muted);font-size:0.75rem;">${escapeHtml(label)}</span></li>`;
+                }).join('');
+                changesHtml = `
+                    <div>
+                        <strong style="font-size:0.88rem; color:var(--color-text-muted);">Changes (${data.changes.length}):</strong>
+                        <ul class="git-changes-list" style="margin-top:0.4rem;">${changeItems}</ul>
+                    </div>`;
+            }
+            display.innerHTML = `
+                <div class="git-status-box">
+                    <div class="git-status-header">
+                        <span class="git-status-indicator ${cleanClass}">${cleanLabel}</span>
+                        <span class="git-branch-badge">🌿 ${escapeHtml(data.currentBranch || 'unknown')}</span>
+                    </div>
+                    ${changesHtml}
+                </div>`;
+            return data;
+        } catch (e) {
+            display.innerHTML = `<p class="placeholder" style="color:var(--color-danger);">Error: ${escapeHtml(e.message)}</p>`;
+            return null;
+        }
+    }
+
+    function getChangeBadgeClass(status) {
+        switch (status) {
+            case 'M': return 'modified';
+            case 'A': return 'added';
+            case 'D': return 'deleted';
+            case 'R': return 'renamed';
+            case '??': return 'untracked';
+            default: return 'modified';
+        }
+    }
+    function getChangeLabel(status) {
+        switch (status) {
+            case 'M': return 'Modified';
+            case 'A': return 'Added';
+            case 'D': return 'Deleted';
+            case 'R': return 'Renamed';
+            case '??': return 'Untracked';
+            default: return status;
+        }
+    }
+
+    document.getElementById('btn-git-status')?.addEventListener('click', refreshGitStatus);
+
+    // --- Git Init ---
+    document.getElementById('btn-git-init')?.addEventListener('click', async function() {
+        this.disabled = true;
+        setStatus('git-status-msg', 'Initializing repository…', '');
+        try {
+            const data = await gitApiCall('init', { method: 'POST' });
+            setStatus('git-status-msg', '✓ ' + (data.message || 'Repository initialized'), 'success');
+            await refreshGitStatus();
+        } catch (e) {
+            setStatus('git-status-msg', '✗ ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+
+    // --- Git Commit ---
+    document.getElementById('btn-git-commit')?.addEventListener('click', async function() {
+        const messageInput = document.getElementById('git-commit-message');
+        const message = messageInput?.value?.trim() || '';
+        this.disabled = true;
+        setStatus('git-commit-status', 'Committing…', '');
+        try {
+            const body = {};
+            if (message) body.message = message;
+            const data = await gitApiCall('commit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const commitHash = data.commitHash ? ` (${data.commitHash.substring(0, 8)})` : '';
+            setStatus('git-commit-status', '✓ ' + (data.message || 'Committed') + commitHash, 'success');
+            if (messageInput) messageInput.value = '';
+            await refreshGitStatus();
+        } catch (e) {
+            setStatus('git-commit-status', '✗ ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+
+    // --- Git Branches ---
+    async function refreshGitBranches() {
+        const display = document.getElementById('git-branches-display');
+        if (!display) return;
+        display.style.display = 'block';
+        display.innerHTML = '<p class="placeholder">Loading branches…</p>';
+        try {
+            const data = await gitApiCall('branches');
+            if (!data.branches || data.branches.length === 0) {
+                display.innerHTML = '<p class="placeholder">No branches found. Initialize the repository first.</p>';
+                return data;
+            }
+            const branchItems = data.branches.map(b => {
+                const currentClass = b.current ? ' current' : '';
+                const currentTag = b.current ? '<span class="branch-current-tag">● current</span>' : '';
+                return `<li class="git-branch-item${currentClass}" data-branch="${escapeHtml(b.name)}">
+                    <span>🌿</span>
+                    <span class="branch-name">${escapeHtml(b.name)}</span>
+                    ${currentTag}
+                </li>`;
+            }).join('');
+            display.innerHTML = `<ul class="git-branch-list">${branchItems}</ul>`;
+            // Click to switch branch
+            display.querySelectorAll('.git-branch-item:not(.current)').forEach(item => {
+                item.addEventListener('click', async function() {
+                    const branchName = this.dataset.branch;
+                    if (!branchName) return;
+                    if (!confirm(`Switch to branch "${branchName}"?`)) return;
+                    setStatus('git-branch-status', 'Switching…', '');
+                    try {
+                        await gitApiCall('checkout', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ branch: branchName, create: false })
+                        });
+                        setStatus('git-branch-status', '✓ Switched to ' + branchName, 'success');
+                        await refreshGitBranches();
+                        await refreshGitStatus();
+                    } catch (e) {
+                        setStatus('git-branch-status', '✗ ' + e.message, 'error');
+                    }
+                });
+            });
+            return data;
+        } catch (e) {
+            display.innerHTML = `<p class="placeholder" style="color:var(--color-danger);">Error: ${escapeHtml(e.message)}</p>`;
+            return null;
+        }
+    }
+
+    document.getElementById('btn-git-branches')?.addEventListener('click', refreshGitBranches);
+
+    // Switch to existing branch
+    document.getElementById('btn-git-checkout')?.addEventListener('click', async function() {
+        const branchName = document.getElementById('git-branch-name')?.value?.trim();
+        if (!branchName) {
+            alert('Please enter a branch name.');
+            return;
+        }
+        this.disabled = true;
+        setStatus('git-branch-status', 'Switching…', '');
+        try {
+            const data = await gitApiCall('checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ branch: branchName, create: false })
+            });
+            setStatus('git-branch-status', '✓ ' + (data.message || 'Switched to ' + branchName), 'success');
+            document.getElementById('git-branch-name').value = '';
+            await refreshGitBranches();
+            await refreshGitStatus();
+        } catch (e) {
+            setStatus('git-branch-status', '✗ ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+
+    // Create and switch to new branch
+    document.getElementById('btn-git-create-branch')?.addEventListener('click', async function() {
+        const branchName = document.getElementById('git-branch-name')?.value?.trim();
+        if (!branchName) {
+            alert('Please enter a name for the new branch.');
+            return;
+        }
+        this.disabled = true;
+        setStatus('git-branch-status', 'Creating branch…', '');
+        try {
+            const data = await gitApiCall('checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ branch: branchName, create: true })
+            });
+            setStatus('git-branch-status', '✓ ' + (data.message || 'Created and switched to ' + branchName), 'success');
+            document.getElementById('git-branch-name').value = '';
+            await refreshGitBranches();
+            await refreshGitStatus();
+        } catch (e) {
+            setStatus('git-branch-status', '✗ ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+
+    // --- Git Log ---
+    async function refreshGitLog() {
+        const display = document.getElementById('git-log-display');
+        if (!display) return;
+        display.style.display = 'block';
+        display.innerHTML = '<p class="placeholder">Loading commit history…</p>';
+        const maxCount = document.getElementById('git-log-count')?.value || '20';
+        try {
+            const data = await gitApiCall('log?maxCount=' + encodeURIComponent(maxCount));
+            if (!data.commits || data.commits.length === 0) {
+                display.innerHTML = '<p class="placeholder">No commits found. Make your first commit!</p>';
+                return;
+            }
+            const commitItems = data.commits.map(c => {
+                const shortHash = (c.hash || '').substring(0, 8);
+                const date = c.date ? new Date(c.date).toLocaleString() : '';
+                return `<div class="git-commit-entry">
+                    <span class="git-commit-hash" title="${escapeHtml(c.hash || '')}">${escapeHtml(shortHash)}</span>
+                    <div class="git-commit-info">
+                        <div class="git-commit-message">${escapeHtml(c.message || '(no message)')}</div>
+                        <div class="git-commit-meta">${escapeHtml(c.author || '')} · ${escapeHtml(date)}</div>
+                    </div>
+                </div>`;
+            }).join('');
+            display.innerHTML = `<div class="git-commit-list">${commitItems}</div>`;
+        } catch (e) {
+            display.innerHTML = `<p class="placeholder" style="color:var(--color-danger);">Error: ${escapeHtml(e.message)}</p>`;
+        }
+    }
+
+    document.getElementById('btn-git-log')?.addEventListener('click', refreshGitLog);
+
+    // =========================================================
+    // === Git Quick Actions ===
+    // =========================================================
+
+    // Quick Snapshot: init if needed, then commit with timestamp
+    document.getElementById('quick-snapshot')?.addEventListener('click', async function() {
+        setStatus('git-quick-status', 'Taking snapshot…', '');
+        try {
+            // Ensure initialized
+            const status = await gitApiCall('status');
+            if (!status.initialized) {
+                await gitApiCall('init', { method: 'POST' });
+            }
+            // Commit
+            const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            const data = await gitApiCall('commit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: 'Snapshot ' + timestamp })
+            });
+            const commitHash = data.commitHash ? ` (${data.commitHash.substring(0, 8)})` : '';
+            setStatus('git-quick-status', '✓ Snapshot taken' + commitHash, 'success');
+            await refreshGitStatus();
+            await refreshGitLog();
+        } catch (e) {
+            setStatus('git-quick-status', '✗ ' + e.message, 'error');
+        }
+    });
+
+    // Quick Experiment: commit current, create experiment branch
+    document.getElementById('quick-branch-experiment')?.addEventListener('click', async function() {
+        setStatus('git-quick-status', 'Setting up experiment…', '');
+        try {
+            // Ensure initialized
+            const status = await gitApiCall('status');
+            if (!status.initialized) {
+                await gitApiCall('init', { method: 'POST' });
+            }
+            // Commit current work
+            if (!status.clean) {
+                await gitApiCall('commit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: 'Save before experiment' })
+                });
+            }
+            // Create experiment branch
+            const expName = 'experiment-' + Date.now().toString(36);
+            await gitApiCall('checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ branch: expName, create: true })
+            });
+            setStatus('git-quick-status', '✓ Switched to branch: ' + expName, 'success');
+            await refreshGitBranches();
+            await refreshGitStatus();
+        } catch (e) {
+            setStatus('git-quick-status', '✗ ' + e.message, 'error');
+        }
+    });
+
+    // Quick Backup & Download: commit then ZIP
+    document.getElementById('quick-backup-zip')?.addEventListener('click', async function() {
+        setStatus('git-quick-status', 'Backing up…', '');
+        try {
+            // Ensure initialized
+            const status = await gitApiCall('status');
+            if (!status.initialized) {
+                await gitApiCall('init', { method: 'POST' });
+            }
+            // Commit
+            const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            await gitApiCall('commit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: 'Backup ' + timestamp })
+            });
+            setStatus('git-quick-status', '✓ Committed. Downloading ZIP…', 'success');
+            // Download ZIP
+            downloadZip('/');
+        } catch (e) {
+            // If "nothing to commit", still download
+            if (e.message && e.message.includes('Nothing to commit')) {
+                setStatus('git-quick-status', '✓ Already up to date. Downloading ZIP…', 'success');
+                downloadZip('/');
+            } else {
+                setStatus('git-quick-status', '✗ ' + e.message, 'error');
+            }
+        }
+    });
+
+    // =========================================================
+    // === Auto-commit after successful pipeline runs ===
+    // =========================================================
+    async function autoGitCommitAfterBuild(message) {
+        try {
+            const status = await gitApiCall('status');
+            if (status.initialized && !status.clean) {
+                await gitApiCall('commit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message || 'Auto-commit after build' })
+                });
+                logBatch('📌 Auto-committed changes to Git', 'success');
+            }
+        } catch (e) {
+            // Non-critical, just log
+            console.warn('Auto-commit failed:', e);
+        }
+    }
+
     // === Initialize ===
     loadInitialFiles();
     checkExistingFiles();
     showAppPreview();
     startStatusPolling();
+     loadApiProviders();
 })();

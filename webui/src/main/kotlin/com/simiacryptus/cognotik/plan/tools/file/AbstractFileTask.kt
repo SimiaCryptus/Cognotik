@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
-import kotlin.io.path.exists
 
 abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
   orchestrationConfig: OrchestrationConfig,
@@ -36,31 +35,54 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     state = state
   )
 
-  protected fun getInputFileCode(fn: (File) -> (CharSequence) = ::formatFileForLLM) =
-    getInputFiles().joinToString("\n\n") { fn(it) }
+  protected fun getInputFileCode(fn: (File) -> (CharSequence) = ::formatFileForLLM): String {
+    val inputFiles = getInputFiles()
+    return inputFiles.joinToString("\n\n") { fn(it) }
+  }
 
-  protected fun getInputFiles(): List<File> =
-    ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf()))
+  protected fun getInputFiles(): List<File> {
+    val strings = (executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())
+    val flatMap = strings
       .flatMap { pattern: String ->
-        if (root.resolve(pattern).exists()) {
-          return@flatMap listOf(root.resolve(pattern).toFile())
-        }
-        val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-        (FileSelectionUtils.filteredWalk(root.toFile()) {
-          //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
-          when {
-            FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-            it.isDirectory -> true
-            !matcher.matches(root.relativize(it.toPath())) -> false
-            else -> true
+        val resolved = root.toFile().resolve(pattern).canonicalFile
+        if (resolved.exists()) {
+          listOf(resolved)
+        } else {
+          val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+          val filteredWalk = FileSelectionUtils.filteredWalk(root.toFile()) { file ->
+            //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+            val relativize = file.relativeTo(root.toFile())
+            when {
+              FileSelectionUtils.isLLMIgnored(file.toPath()) -> false
+              !file.exists() -> false
+              file.isDirectory -> true
+              !matcher.matches(relativize.toPath()) -> false
+              else -> true
+            }
           }
-        })
-      }.filter { file ->
-        file.isFile && file.exists() && !isIgnored(file)
+          filteredWalk
+        }
+      }
+    return flatMap.filter { file ->
+      //file.isFile && file.exists() && !isIgnored(file)
+      if (file.isDirectory) {
+        //          log.debug("Including directory: ${file.path}")
+        true
+      } else if (!file.exists()) {
+        //          log.warn("File does not exist: ${file.path}")
+        false
+      } else if (isIgnored(file)) {
+        //          log.info("Ignoring file based on extension: ${file.path}")
+        false
+      } else {
+        //          log.debug("Including file: ${file.path}")
+        true
+      }
       }
       .distinct()
       .filterNotNull()
       .sortedBy { it }
+  }
 
 
   protected open fun isIgnored(file: File): Boolean = when (file.extension) {

@@ -166,7 +166,13 @@ class DocProcessor(
     synchronized(statusLock) {
       val now = nowTimestamp()
       val taskEntries = tasks.associate { task ->
-        val targetKey = task.data.relative_files?.firstOrNull() ?: "unknown"
+        val targetKey = task.data.files?.firstOrNull()?.let { filePath ->
+          try {
+            File(filePath).canonicalFile.relativeTo(root.canonicalFile).toString()
+          } catch (_: IllegalArgumentException) {
+            File(filePath).canonicalFile.absolutePath
+          }
+        } ?: "unknown"
         targetKey to TaskStatusEntry(
           target = targetKey,
           status = TaskStatus.PENDING
@@ -1061,6 +1067,14 @@ class DocProcessor(
     // by buildModificationTask -> resolveEffectiveRoot. If the effective root differs from
     // this.root (the global root), we need to rebase the task so that relative paths
     // are computed against the target folder.
+    // Compute the target key BEFORE rebasing, so it's relative to the global root
+    val targetKey = mod.data.files?.firstOrNull()?.let { filePath ->
+      try {
+        File(filePath).canonicalFile.relativeTo(root.canonicalFile).toString()
+      } catch (_: IllegalArgumentException) {
+        File(filePath).canonicalFile.absolutePath
+      }
+    } ?: "unknown"
     val effectiveRoot = mod.data.root
     val needsRebase = try {
       effectiveRoot.canonicalPath != this.root.canonicalPath
@@ -1074,7 +1088,6 @@ class DocProcessor(
     } else {
       mod
     }
-    val targetKey = mod.data.relative_files?.firstOrNull() ?: "unknown"
     harness.resetSession()
     if (cancelFlag.get()) {
       log.info("Cancellation requested, skipping execution of remaining tasks")

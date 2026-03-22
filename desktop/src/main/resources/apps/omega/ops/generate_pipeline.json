@@ -11,7 +11,7 @@
     }
   },
   "purpose": "",
-  "summaryPrompt": "Create a comprehensive summary of the generated DocOps application.\n\nOriginal Goal: {goal}\n\nThe summary should:\n- List all files created and their purposes\n- Describe the pipeline flow\n- Note any issues or incomplete items\n- Confirm all op files have valid frontmatter\n\nUse markdown formatting.",
+  "summaryPrompt": "Create a summary of all generated pipeline files.\n\nList:\n- All op files created and their transform patterns\n- All supporting files created\n- The complete DAG execution order\n- Any issues or notes\n\nUse markdown formatting.",
   "name": "SubPlan",
   "task_type": "SubPlan",
   "verbose": false,

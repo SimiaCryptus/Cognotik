@@ -1,55 +1,83 @@
 ---
-task_type: FileModification
 folder: ../generated_app/
 related:
+  - ../requirements.md
   - ../idea.md
-  - ../UI.md
-  - ../analysis.md
-  - ../generated_app/ops/*.*
-  - ../pipeline_design.md
+  - ../docs/UI.md
+  - ../generated_app/ops/*.md
+  - ../generated_app/README.md
 ---
 
-Generate a complete, self-contained HTML file that serves as the UI for the DocOps application.
+Generate a complete HTML/JS/CSS project that serves as the UI for the generated DocOps application.
 
-The UI must follow the established DocOps app conventions:
+## IMPORTANT
+
+* DO NOT edit the ops files
+* ONLY create new files in the current directory (which is implicitly `generated_app/`)
+* At the end of the task, generate a brief `README.md` (in the implicit `generated_app/` directory) that explains the purpose of the generated app, summarizes the UI features, and provides instructions for how to use it.
+
+## Context
+
+The related file `UI.md` is the authoritative developer guide for building DocOps app UIs. Follow its conventions exactly.
+
+The `ops/*.md` files show you the actual pipeline that was generated — read them to understand what steps exist, what files they produce, and what the user needs to interact with.
 
 ## Architecture Requirements
 
-* **Vanilla HTML, CSS, and JavaScript** — no frameworks, no build tools
-* **Session-based**: Extract session ID from the URL path
-* **File I/O via REST**: Use `GET` to read files, `PUT` to write files from the session workspace
-* **Doc op execution**: Use `POST /docops` to trigger pipeline steps
-* **Status polling**: Poll `docops.status.json` to track task progress and update UI badges
+* **Vanilla HTML, CSS, and JavaScript** — no frameworks, no build tools, everything inline in one file
+* **IIFE-wrapped** JavaScript to avoid global scope pollution
+* **Session-based**: Extract `sessionId` and `basePath` from `window.location.pathname`
+* **File I/O via REST**: `GET` to read, `PUT` to write, `HEAD` to check existence
+* **DocOps execution**: `POST /docops` with `{path: "..."}` body
+* **Status polling**: Poll `docops.status.json` for task progress
 
-## UI Structure
+## Required UI Sections
 
-Based on the pipeline design, create appropriate panels:
+### Input Tab
+* Editable textarea(s) for each user input file specified in the requirements
+* Save buttons that `PUT` content to the session filesystem
+* Placeholder text with instructions
 
-* **Input panel(s)**: Editable textarea(s) for user input files, with Save buttons
-* **Action button(s)**: Buttons to trigger each pipeline stage (or groups of stages)
-* **Output panel(s)**: Read-only rendered markdown panels for generated outputs
-* **Status indicators**: Badges or icons showing step status (pending, running, complete, failed)
-* **Navigation**: If the app has multiple rounds or phases, provide clear navigation
+### Pipeline Tab
+* A card for each pipeline step with:
+  - Title and description
+  - "Run" button with `data-op` attribute pointing to the op file path
+  - Status badge (pending → running → done / error)
+  - "View Output" button to inspect results
+  - Session monitoring link (`/proxy/#sessionId`) shown while running
+* "Run All" button that executes steps sequentially, updating badges as each completes
+* Batch execution log area
 
-## Implementation Details
+### Results Tab
+* Rendered markdown viewers for each final output file
+* Refresh buttons
+* Tabbed sub-navigation if there are multiple outputs
 
-* Use `marked.js` (from CDN) for markdown rendering
-* Compute `basePath` from `window.location.pathname` to handle session-scoped file paths
-* Implement `loadFile(path)`, `saveFile(path, content)`, `runDocOp(opPath)`, and `pollStatus()` utility functions
-* Style with clean, modern CSS (inline in the HTML file)
-* Use CSS Grid or Flexbox for layout
-* Include responsive design for reasonable screen sizes
-* Add loading spinners or progress indicators during AI operations
-* Handle errors gracefully with user-visible messages
+## Implementation Checklist
+
+* [ ] Parse URL: `const parts = window.location.pathname.split('/'); const sessionId = parts[2]; const basePath = parts.slice(0, 4).join('/');`
+* [ ] `loadFile(path)` — GET with text response
+* [ ] `saveFile(path, content)` — PUT with text body
+* [ ] `runOp(opPath)` — POST to `/docops` with JSON body
+* [ ] `pollStatus(callback)` — GET `docops.status.json`, parse JSON, invoke callback with status map
+* [ ] `waitForTask(taskId, onComplete)` — poll until task reaches terminal state
+* [ ] Use `marked.min.js` from CDN for markdown rendering
+* [ ] Dark theme with CSS custom properties
+* [ ] Responsive layout with CSS Grid or Flexbox
+* [ ] Loading spinners during AI operations
+* [ ] Graceful error handling with user-visible messages
+* [ ] Auto-save input before running pipeline steps
+* [ ] Check for existing files on page load to restore state
 
 ## REST API Reference
 
 | Endpoint | Method | Purpose |
 |---|---|---|
-| `{basePath}/{file}` | `GET` | Read file |
-| `{basePath}/{file}` | `PUT` | Write file |
-| `{basePath}/{dir}/_files.json` | `GET` | List directory |
-| `/docops` | `POST` | Execute doc op (body: `{"path": "{basePath}/ops/{op_file}.md"}`) |
-| `{basePath}/docops.status.json` | `GET` | Poll status |
+| `{basePath}/{file}` | `GET` | Read file content |
+| `{basePath}/{file}` | `PUT` | Write file content |
+| `{basePath}/{file}` | `HEAD` | Check file existence |
+| `{basePath}/{dir}/_files.json` | `GET` | List directory contents |
+| `/docops` | `POST` | Execute op (body: `{"path": "{basePath}/ops/{name}.md"}`) |
+| `{basePath}/docops.status.json` | `GET` | Poll task status |
 
-Produce a complete, working HTML file with all CSS and JavaScript inline.
+Produce a complete, working HTML file with all CSS and JavaScript inline. It must work correctly when served at a DocOps session URL.
