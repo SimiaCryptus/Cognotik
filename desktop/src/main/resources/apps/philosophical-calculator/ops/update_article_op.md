@@ -1,6 +1,8 @@
 ---
 specifies: ../content.md
-related: 
+related:
+  - ../instruct.md
+  - ../summary.md
   - ../brainstorm.md
   - ../notes/*.**
   - ../dialectical.md
@@ -14,6 +16,7 @@ related:
 ---
 
 * Update the document
+* Follow guidance in `instruct.md`
 * Synthesize insights from the provided analytical outputs (dialectical
   - game theory
   - etc.) into the main content

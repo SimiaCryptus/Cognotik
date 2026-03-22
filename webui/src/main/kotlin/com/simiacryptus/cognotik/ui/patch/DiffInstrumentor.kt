@@ -354,11 +354,11 @@ class DiffInstrumentor(
     val shouldAutoApplyResult = shouldAutoApply(filepath)
     log.debug("shouldAutoApply({})={}, isValid={}", filepath, shouldAutoApplyResult, isValid)
     return "\n" + if (isValid && shouldAutoApplyResult) {
-      log.info("Auto-applying diff to {}", filepath)
+      log.debug("Auto-applying diff to {}", filepath)
       when (val state = controller.apply()) {
         is ApplyState.Applied -> {
           handle(mapOf(relativePath to state.newCode))
-          log.info("Successfully auto-applied diff to {}", filepath)
+          log.debug("Successfully auto-applied diff to {}", filepath)
           val revertButton = renderer.renderApplyDiffButton(filepath, diffVal, onApply = {}, onRevert = {
             log.info("User triggered revert for auto-applied diff: {}", filepath)
             controller.revert()

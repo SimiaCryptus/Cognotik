@@ -1,5 +1,162 @@
 (function () {
     'use strict';
+     // ========================================================================
+     // Model Management
+     // ========================================================================
+     var availableModels = {};
+     async function loadApiProviders() {
+         try {
+             var response = await fetch('/apiProviders/?format=json');
+             if (response.status >= 400) {
+                 console.warn('Could not load API providers:', response.status);
+                 return;
+             }
+             var providersResponse = await response.json();
+             var providers = providersResponse.configuredProviders || [];
+             availableModels = {};
+             providers.forEach(function (provider) {
+                 if (provider.models && provider.models.length > 0) {
+                     availableModels[provider.name] = provider.models.map(function (model) {
+                         return {
+                             id: model.name,
+                             name: model.name,
+
+                             description: model.maxTokens
+                                 ? 'Max tokens: ' + model.maxTokens
+                                 : 'No token limit specified'
+                         };
+                     });
+                 }
+             });
+
+             populateModelDropdowns();
+             renderProviderInfo();
+         } catch (e) {
+             console.warn('Failed to load API providers:', e);
+         }
+     }
+
+     function populateModelDropdowns() {
+         var smartSelect = document.getElementById('smart-model-select');
+         var fastSelect = document.getElementById('fast-model-select');
+         var imageSelect = document.getElementById('image-model-select');
+
+         if (!smartSelect || !fastSelect || !imageSelect) return;
+
+         var selects = [smartSelect, fastSelect, imageSelect];
+         selects.forEach(function (sel) { sel.innerHTML = ''; });
+
+         // Add default/empty option
+         selects.forEach(function (sel) {
+             var opt = document.createElement('option');
+             opt.value = '';
+             opt.textContent = '— Server Default —';
+             sel.appendChild(opt);
+         });
+
+         var addedModels = {};
+         var totalModels = 0;
+
+         for (var provider in availableModels) {
+             if (!availableModels.hasOwnProperty(provider)) continue;
+             var models = availableModels[provider];
+
+             // Create optgroup for each provider
+             var groups = selects.map(function () {
+                 var group = document.createElement('optgroup');
+                 group.label = provider;
+                 return group;
+             });
+
+             var groupHasModels = false;
+
+             models.forEach(function (model) {
+                 if (addedModels[model.id]) return;
+                 addedModels[model.id] = true;
+                 groupHasModels = true;
+                 totalModels++;
+
+                 groups.forEach(function (group) {
+                     var option = document.createElement('option');
+                     option.value = model.id;
+                     option.textContent = model.name;
+                     if (model.description) {
+                         option.title = model.description;
+                     }
+                     group.appendChild(option);
+                 });
+             });
+
+             if (groupHasModels) {
+                 selects.forEach(function (sel, idx) {
+                     sel.appendChild(groups[idx]);
+                 });
+             }
+         }
+
+         if (totalModels === 0) {
+             selects.forEach(function (sel) {
+                 var opt = document.createElement('option');
+                 opt.value = '';
+                 opt.textContent = 'No models available — configure API keys';
+                 opt.disabled = true;
+                 sel.appendChild(opt);
+             });
+         }
+
+         // Restore saved selections
+         var savedSmart = localStorage.getItem('philcalc_smartModel');
+         var savedFast = localStorage.getItem('philcalc_fastModel');
+         var savedImage = localStorage.getItem('philcalc_imageModel');
+
+         if (savedSmart && hasOption(smartSelect, savedSmart)) smartSelect.value = savedSmart;
+         if (savedFast && hasOption(fastSelect, savedFast)) fastSelect.value = savedFast;
+         if (savedImage && hasOption(imageSelect, savedImage)) imageSelect.value = savedImage;
+     }
+
+     function hasOption(selectEl, value) {
+         for (var i = 0; i < selectEl.options.length; i++) {
+             if (selectEl.options[i].value === value) return true;
+         }
+         return false;
+     }
+
+     function renderProviderInfo() {
+         var container = document.getElementById('provider-info');
+         if (!container) return;
+
+         var providerNames = Object.keys(availableModels);
+         if (providerNames.length === 0) {
+             container.innerHTML = '<p class="placeholder">No API providers configured. Please set up API keys in the main application settings.</p>';
+             return;
+         }
+
+         var html = '<div class="provider-list">';
+         providerNames.forEach(function (name) {
+             var models = availableModels[name];
+             html += '<div class="provider-item">';
+             html += '<div class="provider-name">🔌 ' + escapeHtml(name) + ' <span class="provider-model-count">(' + models.length + ' model' + (models.length !== 1 ? 's' : '') + ')</span></div>';
+             html += '<div class="provider-models">';
+             models.forEach(function (model) {
+                 html += '<span class="provider-model-tag" title="' + escapeHtml(model.description) + '">' + escapeHtml(model.name) + '</span>';
+             });
+             html += '</div>';
+             html += '</div>';
+         });
+         html += '</div>';
+         container.innerHTML = html;
+     }
+
+     function getSelectedModels() {
+         var smartSelect = document.getElementById('smart-model-select');
+         var fastSelect = document.getElementById('fast-model-select');
+         var imageSelect = document.getElementById('image-model-select');
+         return {
+             smartModel: smartSelect ? smartSelect.value : '',
+             fastModel: fastSelect ? fastSelect.value : '',
+             imageModel: imageSelect ? imageSelect.value : ''
+         };
+     }
 
     // ========================================================================
     // URL Parsing & Session Setup
@@ -19,6 +176,13 @@
 
     const proxyBase = '/proxy/';
     function getProxyUrl(id) { return proxyBase + '#' + id; }
+    // ========================================================================
+    // Viewer State (declared early so all handlers can access)
+    // ========================================================================
+    var viewerRawContent = {}; // viewerId -> raw markdown string
+    var viewerModes = {};      // viewerId -> 'rendered' | 'markdown'
+    var zoomedViewerId = null;
+
 
     // ========================================================================
     // File I/O
@@ -43,10 +207,14 @@
     }
 
     async function runDocOp(opPath, targetPath) {
-        const url = '/docops?sessionId=' + encodeURIComponent(sessionId) +
+         var models = getSelectedModels();
+         var url = '/docops?sessionId=' + encodeURIComponent(sessionId) +
             '&doc=' + encodeURIComponent(opPath) +
             '&target=' + encodeURIComponent(targetPath);
-        const resp = await fetch(url, { method: 'POST' });
+         if (models.smartModel) url += '&smartModel=' + encodeURIComponent(models.smartModel);
+         if (models.fastModel) url += '&fastModel=' + encodeURIComponent(models.fastModel);
+         if (models.imageModel) url += '&imageModel=' + encodeURIComponent(models.imageModel);
+        var resp = await fetch(url, { method: 'POST' });
         if (!resp.ok) {
             const errText = await resp.text().catch(function () { return ''; });
             throw new Error('DocOps failed: ' + resp.status + '\n' + errText);
@@ -308,6 +476,26 @@
     // ========================================================================
     // Save Buttons
     // ========================================================================
+     document.getElementById('save-model-settings').addEventListener('click', function () {
+         var models = getSelectedModels();
+         localStorage.setItem('philcalc_smartModel', models.smartModel);
+         localStorage.setItem('philcalc_fastModel', models.fastModel);
+         localStorage.setItem('philcalc_imageModel', models.imageModel);
+         setStatus('model-status', '✓ Model settings saved', 'success');
+     });
+     document.getElementById('reload-models').addEventListener('click', async function () {
+         this.disabled = true;
+         setStatus('model-status', 'Loading models…', '');
+         try {
+             await loadApiProviders();
+             setStatus('model-status', '✓ Models reloaded', 'success');
+         } catch (e) {
+             setStatus('model-status', '✗ ' + e.message, 'error');
+         } finally {
+             this.disabled = false;
+         }
+     });
+
     document.getElementById('save-notes').addEventListener('click', async function () {
         var content = document.getElementById('notes-editor').value;
         if (!content.trim()) {
@@ -352,12 +540,17 @@
             var content = await readFile(filePath);
             if (content === null) {
                 viewer.innerHTML = '<p class="placeholder">File not found. Run the operation first.</p>';
+                viewerRawContent[viewerId] = null;
             } else {
-                viewer.innerHTML = renderMarkdown(content);
+                viewerRawContent[viewerId] = content;
+                viewerModes[viewerId] = viewerModes[viewerId] || 'rendered';
+                renderViewerContent(viewerId);
+                ensureViewerToolbar(viewerId);
             }
             viewer.classList.add('visible');
         } catch (e) {
             viewer.innerHTML = '<p class="placeholder" style="color: var(--color-danger);">Error: ' + escapeHtml(e.message) + '</p>';
+            viewerRawContent[viewerId] = null;
             viewer.classList.add('visible');
         }
     }
@@ -369,7 +562,7 @@
     });
 
     // Results refresh buttons
-    document.querySelectorAll('.btn-refresh').forEach(function (btn) {
+    document.querySelectorAll('.btn-refresh[data-file]').forEach(function (btn) {
         btn.addEventListener('click', async function () {
             var viewerId = this.dataset.viewer;
             var viewer = document.getElementById(viewerId);
@@ -378,11 +571,33 @@
                 var content = await readFile(this.dataset.file);
                 if (content === null) {
                     viewer.innerHTML = '<p class="placeholder">File not found. Run the operation first.</p>';
+                    viewerRawContent[viewerId] = null;
                 } else {
-                    viewer.innerHTML = renderMarkdown(content);
+                    viewerRawContent[viewerId] = content;
+                    viewerModes[viewerId] = viewerModes[viewerId] || 'rendered';
+                    renderViewerContent(viewerId);
+                    ensureViewerToolbar(viewerId);
                 }
             } catch (e) {
                 viewer.innerHTML = '<p class="placeholder" style="color: var(--color-danger);">Error: ' + escapeHtml(e.message) + '</p>';
+                viewerRawContent[viewerId] = null;
+            }
+        });
+    });
+    // Auto-load results when switching to Results tab
+    document.querySelectorAll('.results-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            // After switching tab, auto-refresh the active panel's viewer if it has no content
+            var tabId = this.dataset.tab;
+            var panel = document.getElementById(tabId);
+            if (!panel) return;
+            var refreshBtn = panel.querySelector('.btn-refresh[data-file]');
+            if (refreshBtn) {
+                var viewerId = refreshBtn.dataset.viewer;
+                var viewer = document.getElementById(viewerId);
+                if (viewer && (!viewerRawContent[viewerId])) {
+                    refreshBtn.click();
+                }
             }
         });
     });
@@ -425,7 +640,10 @@
                     if (viewer) {
                         var content = await readFile(outputPath);
                         if (content) {
-                            viewer.innerHTML = renderMarkdown(content);
+                            viewerRawContent[viewerId] = content;
+                            viewerModes[viewerId] = viewerModes[viewerId] || 'rendered';
+                            renderViewerContent(viewerId);
+                            ensureViewerToolbar(viewerId);
                             viewer.classList.add('visible');
                         }
                     }
@@ -466,7 +684,10 @@
                         if (content) {
                             var viewer = document.getElementById(step.viewer);
                             if (viewer) {
-                                viewer.innerHTML = renderMarkdown(content);
+                                viewerRawContent[step.viewer] = content;
+                                viewerModes[step.viewer] = viewerModes[step.viewer] || 'rendered';
+                                renderViewerContent(step.viewer);
+                                ensureViewerToolbar(step.viewer);
                                 viewer.classList.add('visible');
                             }
                         }
@@ -735,6 +956,7 @@
     loadInitialFiles();
     checkExistingFiles();
     startStatusPolling();
+     loadApiProviders();
     // ========================================================================
     // File Upload
     // ========================================================================
@@ -814,46 +1036,33 @@
     }
     async function refreshUploadedFileList() {
         try {
-            var resp = await fetch(basePath + '/notes/');
+            var resp = await fetch(basePath + '/notes/_files.json');
             if (!resp.ok) {
                 uploadedFilesList.innerHTML = '';
                 return;
             }
-            var text = await resp.text();
-            // Try to parse as JSON directory listing
             var files = [];
             try {
-                var json = JSON.parse(text);
-                if (Array.isArray(json)) {
-                    files = json;
-                } else if (json.files && Array.isArray(json.files)) {
-                    files = json.files;
-                } else if (json.children && Array.isArray(json.children)) {
-                    files = json.children;
+                var json = await resp.json();
+                var entries = json.entries || json.files || json.children || [];
+                if (Array.isArray(entries)) {
+                    files = entries.filter(function (e) {
+                        // Only include files, not directories
+                        if (typeof e === 'string') return true;
+                        if (e && e.type === 'file') return true;
+                        if (e && !e.type && e.name) return true; // assume file if no type
+                        return false;
+                    }).map(function (e) {
+                        if (typeof e === 'string') return e;
+                        return e.name || e.fileName || String(e);
+                    });
                 }
             } catch (e) {
-                // Try to parse as HTML directory listing
-                var parser = new DOMParser();
-                var doc = parser.parseFromString(text, 'text/html');
-                var links = doc.querySelectorAll('a');
-                links.forEach(function (a) {
-                    var href = a.getAttribute('href');
-                    if (href && href !== '../' && href !== './' && href !== '/') {
-                        var name = decodeURIComponent(href.replace(/\/$/, '').split('/').pop());
-                        if (name && name !== '.' && name !== '..') {
-                            files.push(name);
-                        }
-                    }
-                });
+                console.warn('Could not parse _files.json response:', e);
             }
-            // Normalize file entries to strings
-            files = files.map(function (f) {
-                if (typeof f === 'string') return f;
-                if (f && f.name) return f.name;
-                if (f && f.fileName) return f.fileName;
-                return String(f);
-            }).filter(function (f) {
-                return f && f !== '.' && f !== '..';
+            // Filter out meta files
+            files = files.filter(function (f) {
+                return f && f !== '.' && f !== '..' && f !== '_files.json' && f !== '.gitignore';
             });
             renderFileList(files);
         } catch (e) {
@@ -921,5 +1130,178 @@
     });
     // Load file list on startup
     refreshUploadedFileList();
+    // ========================================================================
+    // Viewer Mode Toggle (Markdown source vs Rendered HTML) & Zoom
+    // ========================================================================
+    function renderViewerContent(viewerId) {
+        var viewer = document.getElementById(viewerId);
+        if (!viewer) return;
+        var raw = viewerRawContent[viewerId];
+        if (raw === undefined || raw === null) return;
+        var mode = viewerModes[viewerId] || 'rendered';
+        if (mode === 'markdown') {
+            viewer.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
+        } else {
+            var html = renderMarkdown(raw);
+            if (!html || html.trim() === '') {
+                // Fallback: if renderMarkdown returns empty, show as pre-formatted text
+                viewer.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
+            } else {
+                viewer.innerHTML = html;
+            }
+        }
+    }
+    function ensureViewerToolbar(viewerId) {
+        var toolbar = document.getElementById('toolbar-' + viewerId);
+        if (toolbar) return toolbar;
+        var viewer = document.getElementById(viewerId);
+        if (!viewer || !viewer.parentElement) return null;
+        toolbar = document.createElement('div');
+        toolbar.id = 'toolbar-' + viewerId;
+        toolbar.className = 'viewer-toolbar';
+        var currentMode = viewerModes[viewerId] || 'rendered';
+        var btnLabel = currentMode === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+        toolbar.innerHTML =
+            '<button class="btn btn-sm btn-toolbar btn-toggle-mode" data-viewer="' + viewerId + '" title="Toggle Markdown / Rendered">' + btnLabel + '</button>' +
+            '<button class="btn btn-sm btn-toolbar btn-zoom" data-viewer="' + viewerId + '" title="Zoom / Fullscreen">' +
+            '🔍 Zoom</button>';
+        viewer.parentElement.insertBefore(toolbar, viewer);
+        // Attach toggle handler
+        toolbar.querySelector('.btn-toggle-mode').addEventListener('click', function () {
+            var vid = this.dataset.viewer;
+            var current = viewerModes[vid] || 'rendered';
+            viewerModes[vid] = current === 'rendered' ? 'markdown' : 'rendered';
+            this.textContent = viewerModes[vid] === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+            renderViewerContent(vid);
+            // Also update zoom overlay if open
+            if (zoomedViewerId === vid) {
+                var zoomBody = document.getElementById('zoom-overlay-body');
+                if (zoomBody) {
+                    var raw = viewerRawContent[vid];
+                    if (viewerModes[vid] === 'markdown') {
+                        zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
+                    } else {
+                        zoomBody.innerHTML = renderMarkdown(raw);
+                    }
+                }
+            }
+        });
+        // Attach zoom handler
+        toolbar.querySelector('.btn-zoom').addEventListener('click', function () {
+            var vid = this.dataset.viewer;
+            openZoomOverlay(vid);
+        });
+        return toolbar;
+    }
+    function openZoomOverlay(viewerId) {
+        var raw = viewerRawContent[viewerId];
+        if (raw === undefined || raw === null) return;
+        zoomedViewerId = viewerId;
+        var overlay = document.getElementById('zoom-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'zoom-overlay';
+            overlay.className = 'zoom-overlay';
+            overlay.innerHTML =
+                '<div class="zoom-overlay-header">' +
+                '<span class="zoom-title" id="zoom-overlay-title"></span>' +
+                '<div class="zoom-header-buttons">' +
+                '<button class="btn btn-sm btn-toolbar" id="zoom-toggle-mode">📝 Markdown</button>' +
+                '<button class="btn btn-sm btn-toolbar" id="zoom-close-btn">✕ Close</button>' +
+                '</div>' +
+                '</div>' +
+                '<div class="zoom-overlay-body" id="zoom-overlay-body"></div>';
+            document.body.appendChild(overlay);
+            document.getElementById('zoom-close-btn').addEventListener('click', function () {
+                closeZoomOverlay();
+            });
+            document.getElementById('zoom-toggle-mode').addEventListener('click', function () {
+                if (!zoomedViewerId) return;
+                var current = viewerModes[zoomedViewerId] || 'rendered';
+                viewerModes[zoomedViewerId] = current === 'rendered' ? 'markdown' : 'rendered';
+                this.textContent = viewerModes[zoomedViewerId] === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+                // Update both zoom and inline viewer
+                renderViewerContent(zoomedViewerId);
+                var zoomBody = document.getElementById('zoom-overlay-body');
+                var raw2 = viewerRawContent[zoomedViewerId];
+                if (viewerModes[zoomedViewerId] === 'markdown') {
+                    zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw2) + '</pre>';
+                } else {
+                    zoomBody.innerHTML = renderMarkdown(raw2);
+                }
+                // Sync inline toolbar button text
+                var inlineBtn = document.querySelector('#toolbar-' + zoomedViewerId + ' .btn-toggle-mode');
+                if (inlineBtn) {
+                    inlineBtn.textContent = viewerModes[zoomedViewerId] === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+                }
+            });
+            // Close on Escape
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && zoomedViewerId) closeZoomOverlay();
+            });
+        }
+        var mode = viewerModes[viewerId] || 'rendered';
+        var zoomBody = document.getElementById('zoom-overlay-body');
+        var zoomTitle = document.getElementById('zoom-overlay-title');
+        var zoomToggle = document.getElementById('zoom-toggle-mode');
+        zoomTitle.textContent = viewerId.replace(/^(viewer-|result-)/, '').replace(/-/g, ' ');
+        zoomToggle.textContent = mode === 'rendered' ? '📝 Markdown' : '🌐 Rendered';
+        if (mode === 'markdown') {
+            zoomBody.innerHTML = '<pre class="markdown-source">' + escapeHtml(raw) + '</pre>';
+        } else {
+            zoomBody.innerHTML = renderMarkdown(raw);
+        }
+        overlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeZoomOverlay() {
+        var overlay = document.getElementById('zoom-overlay');
+        if (overlay) {
+            overlay.classList.remove('visible');
+        }
+        document.body.style.overflow = '';
+        zoomedViewerId = null;
+    }
+    // ========================================================================
+    // Content Editor (content.md)
+    // ========================================================================
+    var contentEditorEl = document.getElementById('content-editor');
+    var contentEditorContainer = document.getElementById('content-editor-container');
+    document.getElementById('edit-content-btn').addEventListener('click', async function () {
+        // Load current content.md into editor
+        try {
+            var content = await readFile('content.md');
+            contentEditorEl.value = content || '';
+        } catch (e) {
+            contentEditorEl.value = '';
+        }
+        contentEditorContainer.classList.add('visible');
+    });
+    document.getElementById('save-content-btn').addEventListener('click', async function () {
+        var content = contentEditorEl.value;
+        try {
+            this.disabled = true;
+            await writeFile('content.md', content);
+            setStatus('content-editor-status', '✓ Saved content.md', 'success');
+            // Refresh any open viewers showing content.md
+            var viewerIds = ['viewer-content', 'viewer-update', 'result-content'];
+            for (var i = 0; i < viewerIds.length; i++) {
+                var vid = viewerIds[i];
+                viewerRawContent[vid] = content;
+                var viewer = document.getElementById(vid);
+                if (viewer && viewer.classList.contains('visible')) {
+                    renderViewerContent(vid);
+                }
+            }
+        } catch (e) {
+            setStatus('content-editor-status', '✗ ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+    document.getElementById('close-content-editor-btn').addEventListener('click', function () {
+        contentEditorContainer.classList.remove('visible');
+    });
+
 
 })();

@@ -67,7 +67,7 @@ abstract class FileServlet : HttpServlet() {
   }
 
   override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-    log.info("Received POST request for path: ${req.pathInfo ?: req.servletPath}")
+    log.debug("Received POST request for path: ${req.pathInfo ?: req.servletPath}")
     try {
       val gitAction = req.getParameter("gitAction")
       if (gitAction != null && isGitEnabled(req)) {
@@ -159,7 +159,7 @@ abstract class FileServlet : HttpServlet() {
       setOf("html", "pdf", "txt").contains(extension) -> {
         val mdFile = File(file.parentFile, fileName.substringBeforeLast(".") + ".md")
         if (mdFile.exists() && mdFile.isFile) {
-          log.info("Found markdown file, rendering: ${mdFile.absolutePath}")
+          log.debug("Found markdown file, rendering: ${mdFile.absolutePath}")
           if (extension == "txt") {
             resp.contentType = "text/plain"
             resp.characterEncoding = "UTF-8"

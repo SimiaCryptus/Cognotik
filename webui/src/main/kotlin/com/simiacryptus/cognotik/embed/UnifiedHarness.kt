@@ -322,7 +322,7 @@ Task Type: `${taskType.name}`
       }
     }
 
-    log.info("Waiting for task completion...")
+    log.debug("Waiting for task completion...")
     if (!completionLatch.await(timeoutMinutes, TimeUnit.MINUTES)) {
       throw RuntimeException("Task timed out after $timeoutMinutes minutes")
     }

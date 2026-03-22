@@ -79,6 +79,7 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
    */
   protected open fun formatFileForLLM(relativePath: File): CharSequence = try {
     val file = root.toFile().resolve(relativePath)
+    val relativePath = root.relativize(file.toPath()).toString()
     val content = if (!isTextFile(file)) {
       extractDocumentContent(file)
     } else {

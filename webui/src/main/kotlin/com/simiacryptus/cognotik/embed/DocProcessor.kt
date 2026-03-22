@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
@@ -370,7 +371,7 @@ class DocProcessor(
     val spec: DocSpec
   )
 
-  class ModificationTaskConfig(
+  data class ModificationTaskConfig(
     val root: File,
     val files: List<String>? = null,
     val related_files: List<String>? = null,
@@ -378,6 +379,10 @@ class DocProcessor(
     val data: Map<String, Any>? = null,
     val taskConfigOverrides: Map<String, Any>? = null,
   ) {
+    fun relativizePaths() = copy(
+      files = relative_files,
+      related_files = relative_related_files
+    )
     val relative_files: List<String>?
       get() = files?.map { filePath ->
         try {
@@ -397,17 +402,9 @@ class DocProcessor(
         }
       }
 
-    fun rebase(newRoot: File) = ModificationTaskConfig(
-      root = newRoot,
-      files = files,
-      related_files = related_files,
-      task_description = task_description,
-      data = data,
-      taskConfigOverrides = taskConfigOverrides
-    )
   }
 
-  class ModificationTask(
+  data class ModificationTask(
     val data: ModificationTaskConfig,
     val message: (File) -> String = { "" },
     val patchProcessor: PatchProcessor? = null,
@@ -420,14 +417,7 @@ class DocProcessor(
         return jsonCast ?: taskType.newSettings() ?: TaskTypeConfig(task_type = taskType.name)
       }
 
-    fun rebase(prevRoot: File, newRoot: File) = if (newRoot == prevRoot) this
-    else ModificationTask(
-      data = data.rebase(newRoot),
-      message = message,
-      patchProcessor = patchProcessor,
-      shouldDeleteTarget = shouldDeleteTarget,
-      taskType = taskType
-    )
+    fun rebase(prevRoot: File, newRoot: File) = if (newRoot == prevRoot) this else copy(data = data.copy(root = newRoot,),)
 
     fun message(): String {
       return message(data.root)
@@ -1137,21 +1127,21 @@ class DocProcessor(
     ).let {
       if (task != null) it.getChildClient(task) else it
     }
-    val newRoot = mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
+    val data = mod.data.relativizePaths()
     return when {
       FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass) -> {
         val baseCfgJson = mapOf(
           "task_type" to mod.taskType.name,
-        ) + mod.data.jsonCast<Map<String, Any>>()
-        mod.data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
+        ) + data.jsonCast<Map<String, Any>>()
+        data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
       }
 
       RenderErbTemplateTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass) -> {
         val baseCfgJson = mapOf(
           "task_type" to mod.taskType.name,
-          "template_file" to mod.data.related_files?.firstOrNull { it.endsWith(".erb") }
-        ) + mod.data.jsonCast<Map<String, Any>>()
-        mod.data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
+          "template_file" to data.related_files?.firstOrNull { it.endsWith(".erb") }
+        ) + data.jsonCast<Map<String, Any>>()
+        data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
       }
 
       else -> {
@@ -1159,6 +1149,7 @@ class DocProcessor(
         mod.patchProcessor?.apply {
           harness.processor = this
         }
+        val newRoot = data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
         val orchestrationConfig = harness.createSettings(
           session = Session.newGlobalID(),
           autoFix = true,
@@ -1167,9 +1158,9 @@ class DocProcessor(
         )
         val contextMessages = buildList {
           add("Task type: ${mod.taskType.name}")
-          add("Task description: ${mod.data.task_description}")
-          mod.data.relative_files?.forEach { add("Target file: $it") }
-          mod.data.relative_related_files?.forEach { relatedFile ->
+          add("Task description: ${data.task_description}")
+          data.relative_files?.forEach { add("Target file: $it") }
+          data.relative_related_files?.forEach { relatedFile ->
             val resolvedFile =
               if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
             if (resolvedFile.exists()) {
@@ -1182,7 +1173,7 @@ class DocProcessor(
         val (_, taskConfig) = ConversationalMode.requestToTask(
           defaultModel = model,
           fastModel = model,
-          userMessage = mod.data.task_description,
+          userMessage = data.task_description,
           orchestrationConfig = orchestrationConfig,
           prompt = "Execute the following task based on the provided context. Task type: ${mod.taskType.name}",
           history = contextMessages,

@@ -56,7 +56,7 @@ class DiffApplyController(
             )
             if (state.compareAndSet(current, applied)) {
               fs.writeText(filepath, result.newCode)
-              log.info(
+              log.debug(
                 "Successfully applied diff to {}: {} -> {} chars",
                 filepath,
                 originalCode.length,
