@@ -68,17 +68,24 @@ class DocOpsApp(
             val entries = jarFile.entries()
             while (entries.hasMoreElements()) {
                 val entry = entries.nextElement()
-                if (entry.name.startsWith(resourcePath.substring(1))) {
-                    val entryPath = entry.name.substring(resourcePath.length)
-                    if (entry.isDirectory) {
-                        sessionRoot.resolve(entryPath).mkdirs()
-                    } else {
-                        jarFile.getInputStream(entry).use { input ->
-                            sessionRoot.resolve(entryPath).outputStream().use { output ->
-                                input.copyTo(output)
+                try {
+                    if (entry.name.startsWith(resourcePath.substring(1))) {
+                        val entryPath = entry.name.substring(resourcePath.length)
+                        if (entry.isDirectory) {
+                            sessionRoot.resolve(entryPath).mkdirs()
+                        } else {
+                            val targetFile = sessionRoot.resolve(entryPath)
+                            targetFile.parentFile?.mkdirs()
+                            jarFile.getInputStream(entry).readAllBytes().let { input ->
+                                targetFile.outputStream().use { output ->
+                                    output.write(input)
+                                }
                             }
                         }
                     }
+                } catch (e: Exception) {
+                    org.slf4j.LoggerFactory.getLogger(DocOpsApp::class.java)
+                        .warn("Failed to extract resource entry: ${entry.name}: ${e.message}", e)
                 }
             }
         } else {

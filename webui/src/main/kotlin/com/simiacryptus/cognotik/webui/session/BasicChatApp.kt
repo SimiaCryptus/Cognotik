@@ -13,10 +13,13 @@ import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
+import kotlin.String
 
 class BasicChatApp(
   root: File,
   applicationName: String = "Chat",
+  val model: String? = null,
+  val fastModel: String? = null,
 ) : ApplicationServer(
   applicationName = applicationName,
   path = root.absolutePath,
@@ -43,7 +46,7 @@ class BasicChatApp(
       ?: SessionProxyServer.agents[session])?.apply {
       return this;
     }
-    val settings = getSettings(session, user, Settings::class.java) ?: throw RuntimeException()
+    val settings = getSettings(session, user, Settings::class.java) ?: Settings(   )
 
     fun instance(model: String): ChatInterface? {
       val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
@@ -77,8 +80,8 @@ class BasicChatApp(
       }
     }
 
-    val smartModel = settings.model ?: throw RuntimeException()
-    val fastModel = settings.fastModel ?: throw RuntimeException()
+    val smartModel = settings.model ?: model ?: throw RuntimeException()
+    val fastModel = settings.fastModel ?: fastModel ?: throw RuntimeException()
     val smartApi = instance(smartModel)
     val fastApi = instance(fastModel)
     return ChatSocketManager(
