@@ -4,6 +4,7 @@ related:
   - ../requirements.md
   - ../idea.md
   - ../docs/UI.md
+  - ../docs/MODELS.md
   - ../generated_app/ops/*.md
   - ../generated_app/README.md
 ---

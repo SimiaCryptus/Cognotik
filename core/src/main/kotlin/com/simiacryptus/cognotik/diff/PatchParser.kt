@@ -1,23 +1,78 @@
 package com.simiacryptus.cognotik.diff
 
 import com.simiacryptus.cognotik.util.LoggerFactory
+import java.nio.file.Path
 
 interface PatchParser {
 
-  sealed class ResponseSegment {
-    data class Markdown(val content: String) : ResponseSegment()
-    data class NewFileBlock(
-      val filename: String,
+  sealed class ResponseSegment(val filename: String?, val content: String) {
+    class Markdown(content: String) : ResponseSegment(null, content)
+    class NewFileBlock(
+      filename: String,
       val language: String,
-      val code: String,
+      content: String,
       val originalRange: IntRange
-    ) : ResponseSegment()
+    ) : ResponseSegment(filename, content)
 
-    data class DiffBlock(
-      val filename: String,
-      val diff: String,
+    class DiffBlock(
+      filename: String,
+      content: String,
       val originalRange: IntRange
-    ) : ResponseSegment()
+    ) : ResponseSegment(filename, content)
+
+    companion object {
+      private val log = LoggerFactory.getLogger(ResponseSegment::class.java)
+    }
+
+
+    fun calcFilename(root: Path): Path {
+      var file = filename?.let { root.resolve(it).normalize() }
+        ?: throw IllegalStateException("Cannot calculate filename for segment without filename: $this")
+      // look for repeated segments like "src/utils/src/utils/exampleUtils.js" and reduce to single path if not found
+      val parts = Path.of(filename!!).normalize().toList().map { it.toString() }
+      // Try to find a repeated prefix subsequence in the path parts
+      for (len in 1..parts.size / 2) {
+        val prefix = parts.subList(0, len)
+        val nextChunk = parts.subList(len, minOf(len * 2, parts.size))
+        val subList = nextChunk.subList(0, minOf(prefix.size, nextChunk.size))
+        if (prefix == subList && prefix.size <= nextChunk.size) {
+          // Found a repeated prefix - reconstruct without the duplication
+          val deduplicated = parts.subList(len, parts.size).joinToString("/")
+          val candidate = root.resolve(deduplicated).normalize()
+          file = candidate
+          break
+        }
+      }
+      // Also check if the filename itself starts with a prefix that matches part of the root path
+      val rootParts = root.normalize().toList().map { it.toString() }
+      val fileParts = Path.of(filename!!).normalize().toList().map { it.toString() }
+      // Check if the file path starts with segments that overlap with the end of the root path
+      for (overlap in minOf(rootParts.size, fileParts.size) downTo 1) {
+        val rootSuffix = rootParts.subList(rootParts.size - overlap, rootParts.size)
+        val filePrefix = fileParts.subList(0, overlap)
+        if (rootSuffix == filePrefix) {
+          val trimmedPath = fileParts.subList(overlap, fileParts.size).joinToString("/")
+          if (trimmedPath.isNotEmpty()) {
+            val candidate = root.resolve(trimmedPath).normalize()
+            file = candidate
+            break
+          }
+        }
+      }
+      return root.relativize(file)
+    }
+
+    fun removeCodeFences(): String {
+      return when {
+        content.trim().startsWith(TRIPLE_TILDE) && content.endsWith(TRIPLE_TILDE) ->
+          content.trim().lines()
+            .drop(1)
+            .dropLast(1)
+            .joinToString("\n")
+
+        else -> content
+      }
+    }
   }
 
   val patchFormatPrompt: String
@@ -75,6 +130,14 @@ ${TRIPLE_TILDE}
     response: String,
     defaultFile: String? = null
   ): List<ResponseSegment> {
+    return parse(response, defaultFile, null)
+  }
+
+  fun parse(
+    response: String,
+    defaultFile: String? = null,
+    root: Path? = null
+  ): List<ResponseSegment> {
     log.debug("Parsing response: {} chars, defaultFile={}", response.length, defaultFile)
     if (response.isBlank()) {
       log.debug("Response is blank, returning empty list")
@@ -83,7 +146,7 @@ ${TRIPLE_TILDE}
     // Check for explicit marker syntax first
     if (hasExplicitMarkers(response)) {
       log.debug("Detected explicit <<<FILE>>> markers, using explicit parser")
-      return parseExplicitMarkers(response, defaultFile)
+      return parseExplicitMarkers(response, defaultFile).maybeResolveFilenames(root)
     }
     val initiator = this.getInitiatorPattern()
     // Auto-close unclosed code blocks
@@ -99,7 +162,7 @@ ${TRIPLE_TILDE}
     val codeBlockMatches = this.getMarkdownCodeBlockMatches(normalizedResponse)
     val segments = markdowns(codeBlockMatches, normalizedResponse, normalizedResponseLines, defaultFile)
     log.debug("Parsed {} total segments from response", segments.size)
-    return segments
+    return segments.maybeResolveFilenames(root)
   }
 
   private fun getInitiatorPattern() = "(?s)${TRIPLE_TILDE}\\w*\n".toRegex()
@@ -133,7 +196,7 @@ ${TRIPLE_TILDE}
             segments.add(
               ResponseSegment.DiffBlock(
                 filename = normalizedName,
-                diff = code.trimEnd(),
+                content = code.trimEnd(),
                 originalRange = IntRange.EMPTY
               )
             )
@@ -142,7 +205,7 @@ ${TRIPLE_TILDE}
               ResponseSegment.NewFileBlock(
                 filename = normalizedName,
                 language = "",
-                code = code.trimIndent().trimEnd(),
+                content = code.trimIndent().trimEnd(),
                 originalRange = IntRange.EMPTY
               )
             )
@@ -303,7 +366,7 @@ ${TRIPLE_TILDE}
             segments.add(
               ResponseSegment.DiffBlock(
                 filename = normalizedName,
-                diff = code,
+                content = code,
                 originalRange = matchRange
               )
             )
@@ -312,7 +375,7 @@ ${TRIPLE_TILDE}
               ResponseSegment.NewFileBlock(
                 filename = normalizedName,
                 language = lang,
-                code = code.trimIndent(),
+                content = code.trimIndent(),
                 originalRange = matchRange
               )
             )
@@ -490,6 +553,36 @@ ${TRIPLE_TILDE}
       }
     }.isEmpty()
   }
+  private fun List<ResponseSegment>.maybeResolveFilenames(root: Path?): List<ResponseSegment> {
+    if (root == null) return this
+    return map { segment ->
+      if (segment.filename == null) return@map segment
+      try {
+        val resolved = segment.calcFilename(root)
+        val relativePath = root.relativize(resolved).toString().replace('\\', '/')
+        when (segment) {
+          is ResponseSegment.DiffBlock -> ResponseSegment.DiffBlock(
+            filename = relativePath,
+            content = segment.content,
+            originalRange = segment.originalRange
+          )
+
+          is ResponseSegment.NewFileBlock -> ResponseSegment.NewFileBlock(
+            filename = relativePath,
+            language = segment.language,
+            content = segment.content,
+            originalRange = segment.originalRange
+          )
+
+          is ResponseSegment.Markdown -> segment
+        }
+      } catch (e: Exception) {
+        log.debug("Failed to resolve filename '{}' against root '{}': {}", segment.filename, root, e.message)
+        segment
+      }
+    }
+  }
+
 
   companion object {
     private val log = LoggerFactory.getLogger(PatchParser::class.java)

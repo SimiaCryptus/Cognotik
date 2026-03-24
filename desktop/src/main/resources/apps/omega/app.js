@@ -338,6 +338,7 @@
     // Badge mapping: target path -> badge ID
     var targetBadgeMap = {
         'requirements.md': 'badge-requirements',
+         'requirements_review.md': 'badge-review',
         'generated_app/ops': 'badge-pipeline',
         'generated_app': 'badge-ui'
     };
@@ -345,6 +346,7 @@
     // Pipeline node mapping
     var targetNodeMap = {
         'requirements.md': 'pnode-requirements',
+         'requirements_review.md': 'pnode-review',
         'generated_app/ops': 'pnode-pipeline',
         'generated_app': 'pnode-ui'
     };
@@ -661,7 +663,7 @@
 
     // Auto-save relevant files before running an operation
     async function autoSaveBeforeRun(opPath) {
-        if (opPath.indexOf('requirements') >= 0 || opPath.indexOf('generate_pipeline') >= 0 || opPath.indexOf('generate_ui') >= 0) {
+         if (opPath.indexOf('requirements') >= 0 || opPath.indexOf('review_requirements') >= 0 || opPath.indexOf('refine_requirements') >= 0 || opPath.indexOf('generate_pipeline') >= 0 || opPath.indexOf('generate_ui') >= 0) {
             var ideaContent = document.getElementById('idea-editor').value;
             if (ideaContent.trim()) {
                 await writeFile('idea.md', ideaContent);
@@ -765,6 +767,22 @@
                     preSave: async function() { await writeFile('idea.md', ideaContent); }
                 },
                 {
+                     op: 'ops/review_requirements_op.md',
+                     output: 'requirements_review.md',
+                     badge: 'badge-review',
+                     nodeId: 'pnode-review',
+                     viewer: 'viewer-review',
+                     label: 'Review Requirements'
+                 },
+                 {
+                     op: 'ops/refine_requirements_op.md',
+                     output: 'requirements.md',
+                     badge: 'badge-refine',
+                     nodeId: 'pnode-refine',
+                     viewer: 'viewer-refine',
+                     label: 'Refine Requirements'
+                 },
+                 {
                     op: 'ops/generate_pipeline_op.md',
                     output: 'generated_app/ops/',
                     badge: 'badge-pipeline',
@@ -860,6 +878,17 @@
             viewer.innerHTML = '<p class="placeholder" style="color:var(--color-danger);">Error: ' + escapeHtml(e.message) + '</p>';
         }
     });
+     // === Results: Refresh Review ===
+     document.getElementById('refresh-review').addEventListener('click', async function() {
+         var viewer = document.getElementById('result-review');
+         try {
+             var content = await readFile('requirements_review.md');
+             viewer.innerHTML = content ? renderMarkdown(content) : '<p class="placeholder">Requirements review not generated yet.</p>';
+         } catch (e) {
+             viewer.innerHTML = '<p class="placeholder" style="color:var(--color-danger);">Error: ' + escapeHtml(e.message) + '</p>';
+         }
+     });
+
 
     // === Results: Refresh Ops List ===
     document.getElementById('refresh-ops-list').addEventListener('click', async function() {
@@ -937,6 +966,7 @@
             var tabId = activeTab.dataset.tab;
             if (tabId === 'tab-readme') document.getElementById('refresh-readme').click();
             else if (tabId === 'tab-requirements') document.getElementById('refresh-requirements').click();
+             else if (tabId === 'tab-review') document.getElementById('refresh-review').click();
             else if (tabId === 'tab-ops') document.getElementById('refresh-ops-list').click();
             else if (tabId === 'tab-ui-preview') document.getElementById('refresh-ui-source').click();
             else if (tabId === 'tab-files') await loadAllFiles();
@@ -1075,6 +1105,7 @@
         // Fall back to file existence checks
         var checks = [
             { file: 'requirements.md', badge: 'badge-requirements', node: 'pnode-requirements' },
+         { file: 'requirements_review.md', badge: 'badge-review', node: 'pnode-review' },
             { file: 'generated_app/README.md', badge: 'badge-pipeline', node: 'pnode-pipeline' },
             { file: 'generated_app/index.html', badge: 'badge-ui', node: 'pnode-ui' }
         ];

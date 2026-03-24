@@ -142,6 +142,16 @@ Special Requirements: Use CrawlerAgent for web research"></textarea>
                     <div class="pipeline-node-label">Requirements</div>
                 </div>
                 <div class="pipeline-arrow">→</div>
+             <div class="pipeline-node" id="pnode-review">
+                 <div class="pipeline-node-icon">🔍</div>
+                 <div class="pipeline-node-label">Review</div>
+             </div>
+             <div class="pipeline-arrow">→</div>
+             <div class="pipeline-node" id="pnode-refine">
+                 <div class="pipeline-node-icon">✏️</div>
+                 <div class="pipeline-node-label">Refine</div>
+             </div>
+             <div class="pipeline-arrow">→</div>
                 <div class="pipeline-node" id="pnode-pipeline">
                     <div class="pipeline-node-icon">⚙️</div>
                     <div class="pipeline-node-label">Pipeline</div>
@@ -182,6 +192,50 @@ Special Requirements: Use CrawlerAgent for web research"></textarea>
             <div class="step">
                 <div class="step-header">
                     <span class="step-number">2</span>
+                     <span class="step-title">Review Requirements</span>
+                     <span class="step-badge pending" id="badge-review">pending</span>
+                 </div>
+                 <p class="step-desc">Perform a rigorous multi-perspective review of the requirements document — evaluating it from end-user, pipeline architect, UI/UX, product scope, and quality engineering viewpoints.</p>
+                 <div class="button-row">
+                     <button class="btn btn-primary btn-run"
+                             data-op="ops/review_requirements_op.md"
+                             data-output="requirements_review.md"
+                             data-badge="badge-review"
+                             data-viewer="viewer-review">▶ Run</button>
+                     <button class="btn btn-view"
+                             data-file="requirements_review.md"
+                             data-viewer="viewer-review">👁 View</button>
+                 </div>
+                 <div class="viewer" id="viewer-review"></div>
+             </div>
+         </div>
+         <!-- Step 3: Refine Requirements -->
+         <div class="card">
+             <div class="step">
+                 <div class="step-header">
+                     <span class="step-number">3</span>
+                     <span class="step-title">Refine Requirements</span>
+                     <span class="step-badge pending" id="badge-refine">pending</span>
+                 </div>
+                 <p class="step-desc">Iteratively improve the requirements document by incorporating findings from the multi-perspective review, addressing issues from highest to lowest severity.</p>
+                 <div class="button-row">
+                     <button class="btn btn-primary btn-run"
+                             data-op="ops/refine_requirements_op.md"
+                             data-output="requirements.md"
+                             data-badge="badge-refine"
+                             data-viewer="viewer-refine">▶ Run</button>
+                     <button class="btn btn-view"
+                             data-file="requirements.md"
+                             data-viewer="viewer-refine">👁 View</button>
+                 </div>
+                 <div class="viewer" id="viewer-refine"></div>
+             </div>
+         </div>
+         <!-- Step 4: Pipeline Ops -->
+         <div class="card">
+             <div class="step">
+                 <div class="step-header">
+                     <span class="step-number">4</span>
                     <span class="step-title">Generate Pipeline Ops</span>
                     <span class="step-badge pending" id="badge-pipeline">pending</span>
                 </div>
@@ -204,7 +258,7 @@ Special Requirements: Use CrawlerAgent for web research"></textarea>
         <div class="card">
             <div class="step">
                 <div class="step-header">
-                    <span class="step-number">3</span>
+                     <span class="step-number">5</span>
                     <span class="step-title">Generate UI</span>
                     <span class="step-badge pending" id="badge-ui">pending</span>
                 </div>
@@ -392,7 +446,8 @@ Special Requirements: Use CrawlerAgent for web research"></textarea>
 
         <div class="results-tabs">
             <button class="results-tab active" data-tab="tab-readme">📄 README</button>
-            <button class="results-tab" data-tab="tab-requirements">📋 Requirements</button>
+             <button class="results-tab" data-tab="tab-requirements">📋 Requirements</button>
+             <button class="results-tab" data-tab="tab-review">🔍 Review</button>
             <button class="results-tab" data-tab="tab-ops">⚙️ Pipeline Ops</button>
             <button class="results-tab" data-tab="tab-ui-preview">🎨 UI Source</button>
             <button class="results-tab" data-tab="tab-files">📂 All Files</button>
@@ -421,6 +476,18 @@ Special Requirements: Use CrawlerAgent for web research"></textarea>
                 </div>
             </div>
         </div>
+         <!-- Review Tab -->
+         <div class="tab-panel" id="tab-review">
+             <div class="card">
+                 <div class="button-row" style="margin-top:0; margin-bottom:0.75rem;">
+                     <button class="btn btn-sm" id="refresh-review">🔄 Refresh</button>
+                 </div>
+                 <div class="result-viewer" id="result-review">
+                     <p class="placeholder">Run the Review Requirements step to see the analysis here.</p>
+                 </div>
+             </div>
+         </div>
+
 
         <!-- Pipeline Ops Tab -->
         <div class="tab-panel" id="tab-ops">
