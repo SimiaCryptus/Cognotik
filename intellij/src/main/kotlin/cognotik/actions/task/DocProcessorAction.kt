@@ -29,8 +29,9 @@ import com.simiacryptus.cognotik.util.DocProcessor.Companion.newProcessor
 import com.simiacryptus.cognotik.util.DocProcessor.ModificationTask
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
-import com.simiacryptus.cognotik.webui.chat.BasicChatApp
+import com.simiacryptus.cognotik.webui.session.ServerlessSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.linkToSession
 import java.awt.BorderLayout
@@ -92,14 +93,16 @@ open class DocProcessorAction(
             root: File,
             model: ChatModel?,
             title: String = "Documentation Processor"
-        ): SocketManager = BasicChatApp(
-          root = root,
-        ).newSession(
-          localUser,
-          session = Session.newUserID()
-        )?.let { socketManager ->
-            SessionProxyServer.agents[socketManager.sessionId] = socketManager
-            ApplicationServer.appInfoMap[socketManager.sessionId] = AppInfoData(
+        ): SocketManager {
+            val session = Session.newUserID()
+            DataStorage.sessionPaths[session] = root
+            val socketManager = ServerlessSocketManager(
+                session = session,
+                owner = localUser,
+                clazz = DocProcessorAction::class.java
+            )
+            SessionProxyServer.agents[session] = socketManager
+            ApplicationServer.appInfoMap[session] = AppInfoData(
                 applicationName = title,
                 inputCnt = 1,
                 stickyInput = false,
@@ -111,13 +114,13 @@ open class DocProcessorAction(
                     CognotikAppServer.getServer(
                         AppSettingsState.instance.listeningEndpoint,
                         AppSettingsState.instance.listeningPort
-                    ).server.uri.resolve("/#" + socketManager.sessionId)
+                    ).server.uri.resolve("/#$session")
                 )
             } catch (e: Throwable) {
                 log.warn("Error opening browser", e)
             }
-            socketManager
-        } ?: throw RuntimeException("Failed to create chat session")
+            return socketManager
+        }
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
