@@ -458,19 +458,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             appname.add(JLabel("Cognotik"), FlowLayout.LEFT)
             appname.add(JLabel(MyIcons.icon), FlowLayout.LEFT)
             return appname
-            /*
-                  val header = JPanel(BorderLayout())
-                  header.add(appname, BorderLayout.WEST)
-                  header.add(JLabel(String.format("<html><a href=\"\">%s</a></html>", getMessage("header.rateUs"))).apply {
-                    cursor = Cursor(Cursor.HAND_CURSOR)
-                    addMouseListener(object : MouseAdapter() {
-                      override fun mouseClicked(e: MouseEvent) = browse(
-                        URI("https://plugins.jetbrains.com/plugin/20724-ai-coding-assistant/edit/reviews")
-                      )
-                    })
-                  }, BorderLayout.EAST)
-                  return header
-            */
         }
 
         private fun setSelectedModel(tree: JTree, modelName: String) {

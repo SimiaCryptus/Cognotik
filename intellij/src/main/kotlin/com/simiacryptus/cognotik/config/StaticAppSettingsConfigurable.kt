@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.util.toJson
+import com.simiacryptus.cognotik.util.BrowseUtil
 import java.awt.*
 import java.io.File
 import java.io.FileReader
@@ -109,6 +110,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         add(JLabel("Disable Auto-Open URLs:"))
                         add(component.disableAutoOpenUrls)
+                    })
+                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                        add(JLabel("Preferred Browser:"))
+                        add(component.preferredBrowser)
                     })
                     add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         add(JLabel("Enable Diff Logging:"))
@@ -424,6 +429,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.listeningEndpoint.text = settings.listeningEndpoint
             component.suppressErrors.isSelected = settings.suppressErrors
             component.disableAutoOpenUrls.isSelected = settings.disableAutoOpenUrls
+            component.preferredBrowser.selectedItem = settings.preferredBrowser ?: BrowseUtil.BROWSER_SYSTEM_DEFAULT
             settings.fastModel?.model?.let { component.fastModel.selectedItem = it.modelId }
             settings.smartModel?.model?.let { component.smartModel.selectedItem = it.modelId }
             settings.imageChatModel?.model?.let { component.imageChatModel.selectedItem = it.modelId }
@@ -432,7 +438,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.temperature.text = settings.temperature.toString()
             component.embeddingModel.selectedItem = settings.embeddingModel
             component.shellCommand.text = settings.shellCommand
-            component.showWelcomeScreen.isSelected = settings.showWelcomeScreen
             component.patchProcessor.selectedItem = settings.processor.label
             // Refresh API table with current user settings
             val tableModel = component.apis.model as DefaultTableModel
@@ -501,6 +506,9 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.imageModel = imageModel?.let { ApiImageModel(it, imageApiData) }
             settings.devActions = component.devActions.isSelected
             settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
+            settings.preferredBrowser = (component.preferredBrowser.selectedItem as? String)?.let {
+                if (it == BrowseUtil.BROWSER_SYSTEM_DEFAULT) null else it
+            }
             settings.temperature = component.temperature.text.safeDouble()
             settings.embeddingModel = component.embeddingModel.selectedItem?.let {
                 when (it) {
@@ -510,7 +518,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 }
             }
             settings.shellCommand = component.shellCommand.text
-            settings.showWelcomeScreen = component.showWelcomeScreen.isSelected
             settings.processor = component.patchProcessor.selectedItem?.let {
               when (it) {
                   is String -> try {

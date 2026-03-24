@@ -81,7 +81,7 @@ data class AppSettingsState(
     var suppressErrors: Boolean = false,
     var devActions: Boolean = false,
     var disableAutoOpenUrls: Boolean = false,
-    var showWelcomeScreen: Boolean = true,
+    var preferredBrowser: String? = null,
     var greetedVersion: String = "",
     var shellCommand: String = getDefaultShell(),
     var feedbackRequested: Boolean = false,
@@ -214,7 +214,7 @@ data class AppSettingsState(
         if (suppressErrors != other.suppressErrors) return false
         if (devActions != other.devActions) return false
         if (disableAutoOpenUrls != other.disableAutoOpenUrls) return false
-        if (showWelcomeScreen != other.showWelcomeScreen) return false
+        if (preferredBrowser != other.preferredBrowser) return false
         if (greetedVersion != other.greetedVersion) return false
         if (shellCommand != other.shellCommand) return false
         if (savedPlanConfigs != other.savedPlanConfigs) return false
@@ -261,7 +261,7 @@ data class AppSettingsState(
         result = 31 * result + suppressErrors.hashCode()
         result = 31 * result + devActions.hashCode()
         result = 31 * result + disableAutoOpenUrls.hashCode()
-        result = 31 * result + showWelcomeScreen.hashCode()
+        result = 31 * result + (preferredBrowser?.hashCode() ?: 0)
         result = 31 * result + greetedVersion.hashCode()
         result = 31 * result + shellCommand.hashCode()
         result = 31 * result + (savedPlanConfigs?.hashCode() ?: 0)

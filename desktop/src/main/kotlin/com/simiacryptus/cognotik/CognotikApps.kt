@@ -396,8 +396,6 @@ open class CognotikApps(
         socketThread = null
     }
 
-    override fun browse() {}
-
 }
 
 fun String?.urlEncode(): String {

@@ -23,7 +23,6 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
-import com.simiacryptus.cognotik.util.showDocument
 import software.amazon.awssdk.regions.Region
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -83,14 +82,6 @@ class PluginStartupActivity : ProjectActivity {
             } finally {
                 currentThread.contextClassLoader = prevClassLoader
             }
-            if (AppSettingsState.instance.showWelcomeScreen || AppSettingsState.instance.greetedVersion != AppSettingsState.WELCOME_VERSION) {
-                log.debug("Showing welcome screen - showWelcomeScreen: ${AppSettingsState.instance.showWelcomeScreen}, greetedVersion: ${AppSettingsState.instance.greetedVersion}")
-                if (project.showDocument("welcomePage.md")) return
-                AppSettingsState.instance.greetedVersion = AppSettingsState.WELCOME_VERSION
-                AppSettingsState.instance.showWelcomeScreen = false
-                log.info("Welcome screen display completed")
-            }
-
         } catch (e: Exception) {
             log.error("Critical error during plugin startup - plugin may not function correctly", e)
         }
