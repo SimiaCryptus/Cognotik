@@ -129,7 +129,7 @@ class AppSettingsComponent : Disposable {
     val preferredBrowser = ComboBox<String>().apply {
         BrowseUtil.getAvailableBrowsers().forEach { addItem(it) }
         isEditable = false
-        selectedItem = AppSettingsState.instance.preferredBrowser ?: BrowseUtil.BROWSER_SYSTEM_DEFAULT
+        selectedItem = AppSettingsState.instance.preferredBrowser
     }
 
 

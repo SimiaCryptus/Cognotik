@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.util.BrowseUtil
+import com.simiacryptus.cognotik.util.BrowseUtil.BROWSER_INTELLIJ_BUILTIN
 import java.awt.*
 import java.io.File
 import java.io.FileReader
@@ -429,7 +430,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.listeningEndpoint.text = settings.listeningEndpoint
             component.suppressErrors.isSelected = settings.suppressErrors
             component.disableAutoOpenUrls.isSelected = settings.disableAutoOpenUrls
-            component.preferredBrowser.selectedItem = settings.preferredBrowser ?: BrowseUtil.BROWSER_SYSTEM_DEFAULT
+            component.preferredBrowser.selectedItem = settings.preferredBrowser
             settings.fastModel?.model?.let { component.fastModel.selectedItem = it.modelId }
             settings.smartModel?.model?.let { component.smartModel.selectedItem = it.modelId }
             settings.imageChatModel?.model?.let { component.imageChatModel.selectedItem = it.modelId }
@@ -508,7 +509,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
             settings.preferredBrowser = (component.preferredBrowser.selectedItem as? String)?.let {
                 if (it == BrowseUtil.BROWSER_SYSTEM_DEFAULT) null else it
-            }
+            } ?: BROWSER_INTELLIJ_BUILTIN
             settings.temperature = component.temperature.text.safeDouble()
             settings.embeddingModel = component.embeddingModel.selectedItem?.let {
                 when (it) {
