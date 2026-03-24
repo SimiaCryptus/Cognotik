@@ -6,7 +6,8 @@ import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
+import com.simiacryptus.cognotik.webui.application.getCookie
+import com.simiacryptus.cognotik.webui.application.authenticate
 import com.simiacryptus.cognotik.webui.servlet.util.PathUtils.parsePath
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServletRequest
@@ -25,11 +26,11 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
     private val log = LoggerFactory.getLogger(SessionFileServlet::class.java)
   }
 
-  override fun getDir(req: HttpServletRequest): File? {
-    val pathInfo = req.pathInfo ?: req.servletPath
+  override fun getDir(request: HttpServletRequest): File? {
+    val pathInfo = request.pathInfo ?: request.servletPath
     val pathSegments = parsePath(pathInfo ?: "/")
     val session = Session(parsePath(pathInfo ?: "/").first())
-    val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
+    val user = ApplicationServices.authenticationManager.getUser(request.getCookie())
     onSession(session,user)
     val sessionDir = dataStorage.getSessionDir(user, session)
     val dataDir = dataStorage.getDataDir(user, session)
@@ -78,87 +79,87 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
     super.doPost(req, resp)
   }
 
-  private fun handleGitApiGet(req: HttpServletRequest, resp: HttpServletResponse, pathInfo: String) {
+  private fun handleGitApiGet(request: HttpServletRequest, response: HttpServletResponse, pathInfo: String) {
     try {
       val pathSegments = parsePath(pathInfo)
       val session = Session(pathSegments.first())
-      val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
+      val user = authenticate(request, response) ?: return
       onSession(session,user)
       val sessionDir = dataStorage.getSessionDir(user, session)
       // Extract the git API action from the path
       val gitApiIndex = pathSegments.indexOf(".git")
       if (gitApiIndex == -1 || gitApiIndex + 2 >= pathSegments.size) {
-        resp.status = HttpServletResponse.SC_BAD_REQUEST
-        resp.contentType = "application/json"
-        resp.writer.write("""{"error": "Invalid git API path"}""")
+        response.status = HttpServletResponse.SC_BAD_REQUEST
+        response.contentType = "application/json"
+        response.writer.write("""{"error": "Invalid git API path"}""")
         return
       }
       val action = pathSegments[gitApiIndex + 2] // .git/api/<action>
       when (action) {
-        "status" -> gitStatus(sessionDir, resp)
-        "branches" -> gitListBranches(sessionDir, resp)
-        "log" -> gitLog(sessionDir, req, resp)
+        "status" -> gitStatus(sessionDir, response)
+        "branches" -> gitListBranches(sessionDir, response)
+        "log" -> gitLog(sessionDir, request, response)
         else -> {
-          resp.status = HttpServletResponse.SC_BAD_REQUEST
-          resp.contentType = "application/json"
-          resp.writer.write("""{"error": "Unknown git GET action: $action"}""")
+          response.status = HttpServletResponse.SC_BAD_REQUEST
+          response.contentType = "application/json"
+          response.writer.write("""{"error": "Unknown git GET action: $action"}""")
         }
       }
     } catch (e: Exception) {
       log.error("Error handling git API GET request", e)
-      resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      resp.contentType = "application/json"
-      resp.writer.write("""{"error": "Git operation failed: ${e.message}"}""")
+      response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      response.contentType = "application/json"
+      response.writer.write("""{"error": "Git operation failed: ${e.message}"}""")
     }
   }
 
-  private fun handleGitApiPost(req: HttpServletRequest, resp: HttpServletResponse, pathInfo: String) {
+  private fun handleGitApiPost(request: HttpServletRequest, response: HttpServletResponse, pathInfo: String) {
     try {
       val pathSegments = parsePath(pathInfo)
       val session = Session(pathSegments.first())
-      val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
+      val user = authenticate(request, response) ?: return
       onSession(session,user)
       val sessionDir = dataStorage.getSessionDir(user, session)
       val gitApiIndex = pathSegments.indexOf(".git")
       if (gitApiIndex == -1 || gitApiIndex + 2 >= pathSegments.size) {
-        resp.status = HttpServletResponse.SC_BAD_REQUEST
-        resp.contentType = "application/json"
-        resp.writer.write("""{"error": "Invalid git API path"}""")
+        response.status = HttpServletResponse.SC_BAD_REQUEST
+        response.contentType = "application/json"
+        response.writer.write("""{"error": "Invalid git API path"}""")
         return
       }
       val action = pathSegments[gitApiIndex + 2]
       when (action) {
-        "init" -> gitInit(sessionDir, resp)
+        "init" -> gitInit(sessionDir, response)
         "commit" -> {
-          val body = req.reader.readText()
+          val body = request.reader.readText()
           val message = parseJsonField(body, "message") ?: "Auto-commit"
-          gitCommit(sessionDir, message, resp)
+          gitCommit(sessionDir, message, response)
         }
 
         "checkout" -> {
-          val body = req.reader.readText()
+          val body = request.reader.readText()
           val branch = parseJsonField(body, "branch")
           val create = parseJsonField(body, "create")?.toBoolean() ?: false
           if (branch.isNullOrBlank()) {
-            resp.status = HttpServletResponse.SC_BAD_REQUEST
-            resp.contentType = "application/json"
-            resp.writer.write("""{"error": "Branch name is required"}""")
+            response.status = HttpServletResponse.SC_BAD_REQUEST
+            response.contentType = "application/json"
+            response.writer.write("""{"error": "Branch name is required"}""")
             return
           }
-          gitCheckout(sessionDir, branch, create, resp)
+          gitCheckout(sessionDir, branch, create, response)
         }
 
         else -> {
-          resp.status = HttpServletResponse.SC_BAD_REQUEST
-          resp.contentType = "application/json"
-          resp.writer.write("""{"error": "Unknown git POST action: $action"}""")
+          response.status = HttpServletResponse.SC_BAD_REQUEST
+          response.contentType = "application/json"
+          response.writer.write("""{"error": "Unknown git POST action: $action"}""")
         }
       }
     } catch (e: Exception) {
       log.error("Error handling git API POST request", e)
-      resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      resp.contentType = "application/json"
-      resp.writer.write("""{"error": "Git operation failed: ${e.message}"}""")
+      response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      response.contentType = "application/json"
+      response.writer.write("""{"error": "Git operation failed: ${e.message}"}""")
     }
   }
 
@@ -477,14 +478,14 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet()
   }
 
 
-  override fun listContents(file: File?, req: HttpServletRequest): Pair<String, String> {
-    file?.let { return super.listContents(it, req) }
-    val pathInfo = req.pathInfo ?: req.servletPath
+  override fun listContents(file: File?, request: HttpServletRequest): Pair<String, String> {
+    file?.let { return super.listContents(it, request) }
+    val pathInfo = request.pathInfo ?: request.servletPath
     val session = Session(parsePath(pathInfo ?: "/").first())
-    val user = ApplicationServices.authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
+    val user = ApplicationServices.authenticationManager.getUser(request.getCookie(AuthenticationInterface.AUTH_COOKIE))
     onSession(session,user)
-    val sessionPair = listContents(dataStorage.getSessionDir(user, session), req)
-    val dataPair = listContents(dataStorage.getDataDir(user, session), req)
+    val sessionPair = listContents(dataStorage.getSessionDir(user, session), request)
+    val dataPair = listContents(dataStorage.getDataDir(user, session), request)
     return Pair(sessionPair.first + dataPair.first, sessionPair.second + dataPair.second)
   }
 

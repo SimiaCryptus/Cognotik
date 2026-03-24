@@ -15,24 +15,24 @@ import java.nio.channels.FileChannel
 object FileRequestHandler {
   private val log = LoggerFactory.getLogger(FileRequestHandler::class.java)
   fun serveFile(file: File, req: HttpServletRequest, resp: HttpServletResponse) {
-    log.info("File found: ${file.absolutePath}")
+    log.debug("File found: ${file.absolutePath}")
     var channel = FileChannelCache.get(file)
     while (!channel.isOpen) {
-      log.warn("FileChannel is not open, refreshing cache for file: ${file.absolutePath}")
+      log.debug("FileChannel is not open, refreshing cache for file: ${file.absolutePath}")
       FileChannelCache.refresh(file)
       channel = FileChannelCache.get(file)
     }
     if (channel.size() > 1024 * 1024 * 1) {
-      log.info("File is large, using writeLarge method for file: ${file.absolutePath}")
+      log.debug("File is large, using writeLarge method for file: ${file.absolutePath}")
       writeLarge(channel, resp, file, req)
     } else {
-      log.info("File is small, using writeSmall method for file: ${file.absolutePath}")
+      log.debug("File is small, using writeSmall method for file: ${file.absolutePath}")
       writeSmall(channel, resp, file, req)
     }
   }
 
   fun writeSmall(channel: FileChannel, resp: HttpServletResponse, file: File, req: HttpServletRequest) {
-    log.info("Writing small file: ${file.absolutePath}")
+    log.debug("Writing small file: ${file.absolutePath}")
     resp.contentType = MimeTypeResolver.getMimeType(file.name)
     resp.status = HttpServletResponse.SC_OK
     val async = req.startAsync()
@@ -45,7 +45,7 @@ object FileRequestHandler {
             byteBuffer.clear()
             val readBytes = channel.read(byteBuffer)
             if (readBytes == -1) {
-              log.info("Completed writing small file: ${file.absolutePath}")
+              log.debug("Completed writing small file: ${file.absolutePath}")
               async.complete()
               FileChannelCache.put(file, channel)
               return

@@ -14,6 +14,7 @@
 
 <nav class="tab-nav">
     <a href="#" class="nav-link active" data-section="section-input">📝 Input</a>
+     <a href="#" class="nav-link" data-section="section-settings">🤖 Models</a>
     <a href="#" class="nav-link" data-section="section-pipeline">⚙️ Pipeline</a>
     <a href="#" class="nav-link" data-section="section-lenses">🔬 Lenses</a>
     <a href="#" class="nav-link" data-section="section-results">📊 Results</a>
@@ -55,6 +56,59 @@
             </div>
         </div>
     </section>
+<!-- ==================== SETTINGS SECTION ==================== -->
+<section id="section-settings" class="section">
+     <h2>🤖 Model Selection</h2>
+     <div class="card">
+         <h3>🧠 AI Models</h3>
+         <p>Select which AI models to use for processing. Models are loaded from your configured API providers.</p>
+         <div class="model-selection-grid">
+             <div class="model-field">
+                 <label for="smart-model-select">
+                     <span class="model-label-icon">⚡</span>
+                     Smart Model
+                     <span class="model-label-hint">Primary model for complex reasoning tasks</span>
+                 </label>
+                 <select id="smart-model-select" class="model-select">
+                     <option value="">Loading models…</option>
+                 </select>
+             </div>
+             <div class="model-field">
+                 <label for="fast-model-select">
+                     <span class="model-label-icon">🚀</span>
+                     Fast Model
+                     <span class="model-label-hint">Secondary model for parsing and lighter tasks</span>
+                 </label>
+                 <select id="fast-model-select" class="model-select">
+                     <option value="">Loading models…</option>
+                 </select>
+             </div>
+             <div class="model-field">
+                 <label for="image-model-select">
+                     <span class="model-label-icon">🖼️</span>
+                     Image Model
+                     <span class="model-label-hint">Model for image generation (narrative, comic lenses)</span>
+                 </label>
+                 <select id="image-model-select" class="model-select">
+                     <option value="">Loading models…</option>
+                 </select>
+             </div>
+         </div>
+         <div class="button-row">
+             <button class="btn btn-primary" id="save-model-settings">💾 Save Model Settings</button>
+             <button class="btn btn-secondary" id="reload-models">🔄 Reload Models</button>
+             <span id="model-status" class="status-msg"></span>
+         </div>
+     </div>
+     <div class="card">
+         <h3>📋 Available Providers</h3>
+         <p>Models are grouped by API provider. Only providers with configured API keys are shown.</p>
+         <div id="provider-info" class="provider-info">
+             <p class="placeholder">Loading provider information…</p>
+         </div>
+     </div>
+</section>
+
 
     <!-- ==================== PIPELINE SECTION ==================== -->
     <section id="section-pipeline" class="section">
@@ -435,6 +489,19 @@
                 <div class="card">
                     <div class="button-row">
                         <button class="btn btn-secondary btn-refresh" data-file="content.md" data-viewer="result-content">🔄 Refresh</button>
+                        <button class="btn btn-primary" id="edit-content-btn">✏️ Edit Article</button>
+                    </div>
+                    <!-- Content Editor (hidden by default) -->
+                    <div id="content-editor-container" class="content-editor-container">
+                        <div class="content-editor-header">
+                            <h4>✏️ Edit content.md</h4>
+                            <div class="button-row">
+                                <button class="btn btn-primary btn-sm" id="save-content-btn">💾 Save</button>
+                                <button class="btn btn-secondary btn-sm" id="close-content-editor-btn">✕ Close</button>
+                                <span id="content-editor-status" class="status-msg"></span>
+                            </div>
+                        </div>
+                        <textarea id="content-editor" rows="25" placeholder="Edit the article content here..."></textarea>
                     </div>
                     <div class="result-viewer" id="result-content">
                         <p class="placeholder">Run the pipeline to generate the article.</p>

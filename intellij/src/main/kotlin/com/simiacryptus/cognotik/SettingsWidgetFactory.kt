@@ -126,7 +126,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
               )
             val pairs = userSettings.apis.flatMap { apiData ->
                 try {
-                    (apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl) ?: listOf())
+                    (apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}")) ?: listOf())
                         .map { model -> apiData.provider?.name!! to model }
                 } catch (e: Exception) {
                     log.warn("Failed to retrieve models for provider: ${apiData.provider?.name}", e)
@@ -176,10 +176,10 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     val modelName = selectedPath.lastPathComponent.toString()
                     val apis = userSettings.apis
                     val apiData = apis.find { apiData ->
-                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
                             ?.find { modelName == it.name } != null
                     }
-                    val chatModel = apiData?.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                    val chatModel = apiData?.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))
                         ?.find { it.name == modelName }
                     when (title) {
                         "Smart Model" -> AppSettingsState.instance.smartModel =

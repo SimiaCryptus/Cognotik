@@ -29,7 +29,7 @@ abstract class PatchApp(
   override val root: File,
   protected val settings: Settings,
   val model: ChatInterface,
-  val parsingModel: ChatInterface,
+  val fastModel: ChatInterface,
   private val promptPrefix: String = """The following command was run and produced an error:""",
   val processor: PatchProcessor,
 ) : ApplicationServer(
@@ -494,7 +494,7 @@ abstract class PatchApp(
         )
       ) else recentErrors(),
       model = model,
-      parsingChatter = parsingModel,
+      parsingChatter = fastModel,
       prompt = ("""
           You are a helpful AI that helps people with coding.
 

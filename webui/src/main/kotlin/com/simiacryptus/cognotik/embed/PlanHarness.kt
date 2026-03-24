@@ -15,7 +15,6 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.asApiChatModel
 import java.awt.*
 import java.awt.image.BufferedImage
 import java.io.File
@@ -32,7 +31,7 @@ open class PlanHarness(
       model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
     model.instance(
       key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
-      base = api.baseUrl,
+      base = api.apiBase ?: throw IllegalArgumentException("No API base found for provider: ${model.provider?.name}"),
       onUsage = { model, usage ->
         ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
           session = session,
@@ -99,9 +98,9 @@ open class PlanHarness(
   ): OrchestrationConfig = OrchestrationConfig(
     sessionId = session.sessionId,
     workingDir = workspace?.absolutePath ?: finalWorkspace.absolutePath,
-    defaultFastModel = fastModel.asApiChatModel(),
-    defaultSmartModel = smartModel.asApiChatModel(),
-    defaultImageModel = imageModel.asApiChatModel(),
+    fastModel = fastModel.modelId,
+    smartModel = smartModel.modelId,
+    imageModel = imageModel.modelId,
     autoFix = !openBrowser,
     cognitiveSettings = cognitiveSettings,
     user = user,
@@ -126,7 +125,7 @@ open class PlanHarness(
       model.instance(
         key = api?.key
           ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
-        base = api.baseUrl,
+        base = api.apiBase,
         onUsage = { model, usage ->
           ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
             session = session,

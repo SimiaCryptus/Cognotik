@@ -111,7 +111,7 @@ class DiffChatAction : BaseAction() {
             codeSelection = rawText,
             filename = filename,
             model = AppSettingsState.instance.smartChatClient,
-            parsingModel = AppSettingsState.instance.fastChatClient,
+            fastModel = AppSettingsState.instance.fastChatClient,
             storage = ApplicationServices.fileApplicationServices().dataStorageFactory
         ) {
             override val systemPrompt: String

@@ -1,6 +1,6 @@
 {
   "sessionId" : "G-20260115-KS2W",
-  "defaultSmartModel" : {
+  "smartModel" : {
     "model" : {
       "name" : "GeminiFlash_30_Preview",
       "modelName" : "gemini-3-flash-preview",
@@ -17,7 +17,7 @@
       "provider" : "Gemini"
     }
   },
-  "defaultFastModel" : {
+  "fastModel" : {
     "model" : {
       "name" : "GeminiFlash_30_Preview",
       "modelName" : "gemini-3-flash-preview",
@@ -34,7 +34,7 @@
       "provider" : "Gemini"
     }
   },
-  "defaultImageModel" : {
+  "imageModel" : {
     "model" : {
       "name" : "GeminiFlash_20_Preview_Image_Generation",
       "modelName" : "gemini-2.5-flash-image-preview",

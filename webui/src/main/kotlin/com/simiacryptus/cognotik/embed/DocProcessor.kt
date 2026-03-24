@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
@@ -17,6 +18,7 @@ import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.Render
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.asApiChatModel
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -164,7 +166,13 @@ class DocProcessor(
     synchronized(statusLock) {
       val now = nowTimestamp()
       val taskEntries = tasks.associate { task ->
-        val targetKey = task.data.relative_files?.firstOrNull() ?: "unknown"
+        val targetKey = task.data.files?.firstOrNull()?.let { filePath ->
+          try {
+            File(filePath).canonicalFile.relativeTo(root.canonicalFile).toString()
+          } catch (_: IllegalArgumentException) {
+            File(filePath).canonicalFile.absolutePath
+          }
+        } ?: "unknown"
         targetKey to TaskStatusEntry(
           target = targetKey,
           status = TaskStatus.PENDING
@@ -369,7 +377,7 @@ class DocProcessor(
     val spec: DocSpec
   )
 
-  class ModificationTaskConfig(
+  data class ModificationTaskConfig(
     val root: File,
     val files: List<String>? = null,
     val related_files: List<String>? = null,
@@ -377,6 +385,10 @@ class DocProcessor(
     val data: Map<String, Any>? = null,
     val taskConfigOverrides: Map<String, Any>? = null,
   ) {
+    fun relativizePaths() = copy(
+      files = relative_files,
+      related_files = relative_related_files
+    )
     val relative_files: List<String>?
       get() = files?.map { filePath ->
         try {
@@ -396,17 +408,9 @@ class DocProcessor(
         }
       }
 
-    fun rebase(newRoot: File) = ModificationTaskConfig(
-      root = newRoot,
-      files = files,
-      related_files = related_files,
-      task_description = task_description,
-      data = data,
-      taskConfigOverrides = taskConfigOverrides
-    )
   }
 
-  class ModificationTask(
+  data class ModificationTask(
     val data: ModificationTaskConfig,
     val message: (File) -> String = { "" },
     val patchProcessor: PatchProcessor? = null,
@@ -419,14 +423,7 @@ class DocProcessor(
         return jsonCast ?: taskType.newSettings() ?: TaskTypeConfig(task_type = taskType.name)
       }
 
-    fun rebase(prevRoot: File, newRoot: File) = if (newRoot == prevRoot) this
-    else ModificationTask(
-      data = data.rebase(newRoot),
-      message = message,
-      patchProcessor = patchProcessor,
-      shouldDeleteTarget = shouldDeleteTarget,
-      taskType = taskType
-    )
+    fun rebase(prevRoot: File, newRoot: File) = if (newRoot == prevRoot) this else copy(data = data.copy(root = newRoot,),)
 
     fun message(): String {
       return message(data.root)
@@ -1070,6 +1067,14 @@ class DocProcessor(
     // by buildModificationTask -> resolveEffectiveRoot. If the effective root differs from
     // this.root (the global root), we need to rebase the task so that relative paths
     // are computed against the target folder.
+    // Compute the target key BEFORE rebasing, so it's relative to the global root
+    val targetKey = mod.data.files?.firstOrNull()?.let { filePath ->
+      try {
+        File(filePath).canonicalFile.relativeTo(root.canonicalFile).toString()
+      } catch (_: IllegalArgumentException) {
+        File(filePath).canonicalFile.absolutePath
+      }
+    } ?: "unknown"
     val effectiveRoot = mod.data.root
     val needsRebase = try {
       effectiveRoot.canonicalPath != this.root.canonicalPath
@@ -1083,7 +1088,6 @@ class DocProcessor(
     } else {
       mod
     }
-    val targetKey = mod.data.relative_files?.firstOrNull() ?: "unknown"
     harness.resetSession()
     if (cancelFlag.get()) {
       log.info("Cancellation requested, skipping execution of remaining tasks")
@@ -1129,25 +1133,28 @@ class DocProcessor(
     mod: ModificationTask,
     harness: UnifiedHarness,
     task: SessionTask? = null,
-    model: ChatInterface = harness.fastModel.asApiChatModel()?.instance(user)?.let {
-      if (task != null) it.getChildClient(task) else it
-    } ?: throw IllegalStateException("Fast model is not an API chat model")
+    model: ChatInterface? = null
   ): TaskExecutionConfig {
-    val newRoot = mod.data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
+    val model = model ?: (harness.fastModel).asApiChatModel(
+      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
+    ).let {
+      if (task != null) it.getChildClient(task) else it
+    }
+    val data = mod.data.relativizePaths()
     return when {
       FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass) -> {
         val baseCfgJson = mapOf(
           "task_type" to mod.taskType.name,
-        ) + mod.data.jsonCast<Map<String, Any>>()
-        mod.data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
+        ) + data.jsonCast<Map<String, Any>>()
+        data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
       }
 
       RenderErbTemplateTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass) -> {
         val baseCfgJson = mapOf(
           "task_type" to mod.taskType.name,
-          "template_file" to mod.data.related_files?.firstOrNull { it.endsWith(".erb") }
-        ) + mod.data.jsonCast<Map<String, Any>>()
-        mod.data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
+          "template_file" to data.related_files?.firstOrNull { it.endsWith(".erb") }
+        ) + data.jsonCast<Map<String, Any>>()
+        data.taskConfigOverrides?.let { baseCfgJson + it } ?: baseCfgJson
       }
 
       else -> {
@@ -1155,6 +1162,7 @@ class DocProcessor(
         mod.patchProcessor?.apply {
           harness.processor = this
         }
+        val newRoot = data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
         val orchestrationConfig = harness.createSettings(
           session = Session.newGlobalID(),
           autoFix = true,
@@ -1163,9 +1171,9 @@ class DocProcessor(
         )
         val contextMessages = buildList {
           add("Task type: ${mod.taskType.name}")
-          add("Task description: ${mod.data.task_description}")
-          mod.data.relative_files?.forEach { add("Target file: $it") }
-          mod.data.relative_related_files?.forEach { relatedFile ->
+          add("Task description: ${data.task_description}")
+          data.relative_files?.forEach { add("Target file: $it") }
+          data.relative_related_files?.forEach { relatedFile ->
             val resolvedFile =
               if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
             if (resolvedFile.exists()) {
@@ -1178,7 +1186,7 @@ class DocProcessor(
         val (_, taskConfig) = ConversationalMode.requestToTask(
           defaultModel = model,
           fastModel = model,
-          userMessage = mod.data.task_description,
+          userMessage = data.task_description,
           orchestrationConfig = orchestrationConfig,
           prompt = "Execute the following task based on the provided context. Task type: ${mod.taskType.name}",
           history = contextMessages,
@@ -1189,6 +1197,14 @@ class DocProcessor(
       }
     }.jsonCast(mod.taskType.executionConfigClass)
   }
+
+  fun ChatModel.asApiChatModel(
+    userSettings: UserSettings
+  ) = asApiChatModel(
+    (userSettings.apis.find { it.provider?.name == provider?.name }?.key
+      ?: throw IllegalStateException("API key for model provider ${provider?.name} not found in user settings")).decrypt!!).instance(
+    user
+  )
 
 
   /**

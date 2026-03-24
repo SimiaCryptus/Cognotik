@@ -24,6 +24,164 @@
     function getProxyUrl(id) {
         return proxyBase + '#' + id;
     }
+     // ========================================
+     // Model Management
+     // ========================================
+     var availableModels = {};
+     async function loadApiProviders() {
+         try {
+             var response = await fetch('/apiProviders/?format=json');
+             if (response.status >= 400) {
+                 console.warn('Could not load API providers (status ' + response.status + ')');
+                 return;
+             }
+             var providersResponse = await response.json();
+             var providers = providersResponse.configuredProviders || [];
+             availableModels = {};
+             providers.forEach(function(provider) {
+                 if (provider.models && provider.models.length > 0) {
+                     availableModels[provider.name] = provider.models.map(function(model) {
+                         return {
+                             id: model.name,
+                             name: model.name,
+                             description: model.maxTokens
+                                 ? 'Max tokens: ' + model.maxTokens
+                                 : 'No token limit specified'
+                         };
+                     });
+                 }
+             });
+             populateModelDropdowns();
+         } catch (e) {
+             console.warn('Failed to load API providers:', e);
+         }
+     }
+     function populateModelDropdowns() {
+         var smartSelect = document.getElementById('comic-smart-model');
+         var fastSelect = document.getElementById('comic-fast-model');
+         var imageSelect = document.getElementById('comic-image-model');
+         if (!smartSelect || !fastSelect || !imageSelect) return;
+         [smartSelect, fastSelect, imageSelect].forEach(function(sel) {
+             sel.innerHTML = '';
+         });
+         var addedModels = new Set();
+         var hasModels = false;
+         for (var provider in availableModels) {
+             if (!availableModels.hasOwnProperty(provider)) continue;
+             availableModels[provider].forEach(function(model) {
+                 if (!addedModels.has(model.id)) {
+                     [smartSelect, fastSelect, imageSelect].forEach(function(sel) {
+                         var option = document.createElement('option');
+                         option.value = model.id;
+                         option.textContent = model.name + ' (' + provider + ')';
+                         if (model.description) {
+                             option.title = model.description;
+                         }
+                         sel.appendChild(option);
+                     });
+                     addedModels.add(model.id);
+                     hasModels = true;
+                 }
+             });
+         }
+         if (!hasModels) {
+             [smartSelect, fastSelect, imageSelect].forEach(function(sel) {
+                 var option = document.createElement('option');
+                 option.value = '';
+                 option.textContent = 'No models available — check API provider settings';
+                 sel.appendChild(option);
+             });
+         }
+         // Restore saved selections
+         var savedSmart = localStorage.getItem('comicSmartModel');
+         var savedFast = localStorage.getItem('comicFastModel');
+         var savedImage = localStorage.getItem('comicImageModel');
+         if (savedSmart && Array.from(smartSelect.options).some(function(o) { return o.value === savedSmart; })) {
+             smartSelect.value = savedSmart;
+         }
+         if (savedFast && Array.from(fastSelect.options).some(function(o) { return o.value === savedFast; })) {
+             fastSelect.value = savedFast;
+         }
+         if (savedImage && Array.from(imageSelect.options).some(function(o) { return o.value === savedImage; })) {
+             imageSelect.value = savedImage;
+         }
+         updateModelSummary();
+     }
+     function getSelectedModels() {
+         var smartSelect = document.getElementById('comic-smart-model');
+         var fastSelect = document.getElementById('comic-fast-model');
+         var imageSelect = document.getElementById('comic-image-model');
+         return {
+             smartModel: smartSelect ? smartSelect.value : '',
+             fastModel: fastSelect ? fastSelect.value : '',
+             imageModel: imageSelect ? imageSelect.value : ''
+         };
+     }
+     function updateModelSummary() {
+         var summaryEl = document.getElementById('model-summary');
+         if (!summaryEl) return;
+         var models = getSelectedModels();
+         var rows = [
+             { label: '🧠 Smart Model', value: models.smartModel },
+             { label: '⚡ Fast Model', value: models.fastModel },
+             { label: '🎨 Image Model', value: models.imageModel }
+         ];
+         var html = '';
+         rows.forEach(function(row) {
+             var valueClass = row.value ? 'model-summary-value' : 'model-summary-value not-set';
+             var valueText = row.value || 'Not set';
+             var indicatorClass = row.value ? 'model-indicator' : 'model-indicator no-model';
+             html +=
+                 '<div class="model-summary-row">' +
+                 '<span class="model-summary-label">' + row.label + '</span>' +
+                 '<span class="' + valueClass + '">' + escapeHtml(valueText) + '</span>' +
+                 '<span class="' + indicatorClass + '"><span class="model-dot"></span>' + (row.value ? 'Active' : 'None') + '</span>' +
+                 '</div>';
+         });
+         summaryEl.innerHTML = html;
+     }
+     // Save model settings
+     var saveModelBtn = document.getElementById('save-model-settings');
+     if (saveModelBtn) {
+         saveModelBtn.addEventListener('click', function() {
+             var models = getSelectedModels();
+             if (models.smartModel) localStorage.setItem('comicSmartModel', models.smartModel);
+             else localStorage.removeItem('comicSmartModel');
+             if (models.fastModel) localStorage.setItem('comicFastModel', models.fastModel);
+             else localStorage.removeItem('comicFastModel');
+             if (models.imageModel) localStorage.setItem('comicImageModel', models.imageModel);
+             else localStorage.removeItem('comicImageModel');
+             updateModelSummary();
+             setStatus('model-status', '✓ Model settings saved', 'success');
+         });
+     }
+     // Reset model settings
+     var resetModelBtn = document.getElementById('reset-model-settings');
+     if (resetModelBtn) {
+         resetModelBtn.addEventListener('click', function() {
+             localStorage.removeItem('comicSmartModel');
+             localStorage.removeItem('comicFastModel');
+             localStorage.removeItem('comicImageModel');
+             var smartSelect = document.getElementById('comic-smart-model');
+             var fastSelect = document.getElementById('comic-fast-model');
+             var imageSelect = document.getElementById('comic-image-model');
+             if (smartSelect && smartSelect.options.length > 0) smartSelect.selectedIndex = 0;
+             if (fastSelect && fastSelect.options.length > 0) fastSelect.selectedIndex = 0;
+             if (imageSelect && imageSelect.options.length > 0) imageSelect.selectedIndex = 0;
+             updateModelSummary();
+             setStatus('model-status', '✓ Model settings reset to defaults', 'success');
+         });
+     }
+     // Update summary when dropdowns change
+     ['comic-smart-model', 'comic-fast-model', 'comic-image-model'].forEach(function(id) {
+         var el = document.getElementById(id);
+         if (el) {
+             el.addEventListener('change', function() {
+                 updateModelSummary();
+             });
+         }
+     });
+
 
     // ========================================
     // File I/O
@@ -66,12 +224,22 @@
     }
 
     async function runDocOp(opPath, targetPath) {
-        const url = '/docops?sessionId=' + encodeURIComponent(sessionId) +
-            '&doc=' + encodeURIComponent(opPath) +
-            '&target=' + encodeURIComponent(targetPath);
-        const resp = await fetch(url, { method: 'POST' });
+         var params = new URLSearchParams({
+             sessionId: sessionId,
+             doc: opPath,
+             target: targetPath
+         });
+
+         // Add model overrides
+         var models = getSelectedModels();
+         if (models.smartModel) params.set('smartModel', models.smartModel);
+         if (models.fastModel) params.set('fastModel', models.fastModel);
+         if (models.imageModel) params.set('imageModel', models.imageModel);
+
+         var url = '/docops?' + params.toString();
+        var resp = await fetch(url, { method: 'POST' });
         if (!resp.ok) {
-            const errText = await resp.text().catch(function() {
+            var errText = await resp.text().catch(function() {
                 return '';
             });
             throw new Error('DocOps failed: ' + resp.status + '\n' + errText);
@@ -928,5 +1096,6 @@
     loadInitialFiles();
     checkExistingFiles();
     startStatusPolling();
+     loadApiProviders();
 
 })();

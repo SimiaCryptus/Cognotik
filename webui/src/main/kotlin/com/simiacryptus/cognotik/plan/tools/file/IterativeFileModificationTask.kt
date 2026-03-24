@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -11,6 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
+import com.simiacryptus.cognotik.ui.patch.RealFileSystem
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -35,8 +35,6 @@ class IterativeFileModificationTask(
   class IterativeFileModificationTaskExecutionConfigData(
     files: List<String> = emptyList(),
     related_files: List<String>? = null,
-    @Description("High-level description of the overall modification goal")
-    val modification_goal: String? = null,
     @Description("Maximum number of change items to generate in the planning phase")
     val max_changes: Int = 10,
     @Description("Whether to require user approval between each change iteration")
@@ -55,9 +53,6 @@ class IterativeFileModificationTask(
     override fun validate(): String? {
       if (files.isNullOrEmpty() && related_files.isNullOrEmpty()) {
         return "At least one file must be specified in either 'files' or 'related_files'"
-      }
-      if (modification_goal.isNullOrBlank()) {
-        return "modification_goal must be specified"
       }
       if (max_changes < 1 || max_changes > 50) {
         return "max_changes must be between 1 and 50"
@@ -136,6 +131,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
 
     try {
       transcript?.write("# Iterative File Modification Task Transcript\n\n".toByteArray())
+      transcript?.flush()
 
       // Phase 1: Planning
       val planningTab = tabs.newTask("Planning Phase")
@@ -151,6 +147,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
 
       planningTab.complete(formatPlanSummary(plannedChanges).renderMarkdown())
       transcript?.write("\n## Planning Complete\nIdentified ${plannedChanges.size} changes to implement.\n".toByteArray())
+      transcript?.flush()
 
       // Phase 2: Iterative Implementation
       val implementationTab = tabs.newTask("Implementation Phase")
@@ -175,7 +172,9 @@ IterativeFileModification - Multi-phase file modification with planning and iter
         implementedChanges.add("Change ${index + 1} (${change.title}): $changeResult")
 
         // Handle approval between changes if configured
-        if (executionConfig?.approve_each_change == true && !orchestrationConfig.autoFix && index < plannedChanges.size - 1) {
+        if ((executionConfig?.approve_each_change
+            ?: false) && !orchestrationConfig.autoFix && index < plannedChanges.size - 1
+        ) {
           val approvalSemaphore = Semaphore(0)
           changeTab.add(acceptButtonFooter(changeTab.ui) {
             approvalSemaphore.release()
@@ -191,6 +190,7 @@ IterativeFileModification - Multi-phase file modification with planning and iter
       // Final Summary
       val summary = buildFinalSummary(plannedChanges, completionNotes)
       transcript?.write("\n## Final Summary\n$summary\n".toByteArray())
+      transcript?.flush()
 
       if (!orchestrationConfig.autoFix) {
         task.add(acceptButtonFooter(task.ui) {
@@ -258,7 +258,7 @@ $dependencyContext
 
     val planningInput = buildString {
       appendLine("## Modification Goal")
-      appendLine(executionConfig?.modification_goal)
+      appendLine(executionConfig?.task_description)
       appendLine()
       appendLine("## Current File Contents")
       appendLine(fileContext)
@@ -320,18 +320,18 @@ ${planResult.text}
     val chatInterface = implementationModel.getChildClient(task)
 
     // Re-read files to get current state (may have been modified by previous iterations)
-    val currentFileContents = change.targetFiles.mapNotNull { filePath ->
-      val file = root.resolve(filePath).toFile()
+    val currentFileContents = change.targetFiles.mapNotNull { targetFilePath ->
+      val file = root.resolve(targetFilePath).toFile()
+      val relativePath = file.relativeTo(root.toFile()).path
       if (file.exists()) {
-        "# $filePath\n\n${TRIPLE_TILDE}\n${file.readText()}\n${TRIPLE_TILDE}"
+        "# $relativePath\n\n${TRIPLE_TILDE}\n${file.readText()}\n${TRIPLE_TILDE}"
       } else null
     }.joinToString("\n\n")
 
-    val implementationPrompt = typeConfig?.implementationPrompt ?: getDefaultImplementationPrompt()
-
     val implementationAgent = ChatAgent(
       name = "IterativeModificationImplementer",
-      prompt = implementationPrompt,
+      prompt = (typeConfig?.implementationPrompt ?: getDefaultImplementationPrompt())
+          + "\n\n" + orchestrationConfig.processor.patchFormatPrompt,
       model = chatInterface,
       temperature = orchestrationConfig.temperature,
     )
@@ -382,8 +382,9 @@ $implementationResponse
     val autoFix = orchestrationConfig.autoFix
     val markdown = renderMarkdown(implementationResponse, ui = task.ui) {
       DiffInstrumentor(
-        orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
+        orchestrationConfig.processor,
         SessionRenderer(task),
+        RealFileSystem(),
       ).instrument(
         root = agent.root,
         response = it,
@@ -392,7 +393,11 @@ $implementationResponse
             val note =
               "Change ${change.index} - <a href='fileIndex/${agent.session}/$path'>$path</a> Updated"
             completionNotes += note
-            transcript?.write("- $note\n".toByteArray())
+            try {
+              transcript?.write("- $note\n".toByteArray())
+            } catch (e: Exception) {
+              log.warn("Failed to write to transcript for change ${change.index}, path: $path", e)
+            }
           }
         },
         shouldAutoApply = { it: Path -> autoFix },
@@ -401,7 +406,12 @@ $implementationResponse
       )
     }
 
-    task.add(markdown)
+    if (autoFix) {
+      task.complete(markdown)
+    } else {
+      task.add(markdown)
+    }
+    transcript?.flush()
 
     return "Completed"
   }
@@ -438,7 +448,7 @@ $implementationResponse
           title = title,
           description = description,
           targetFiles = targetFiles,
-          rationale = "Part of: ${executionConfig?.modification_goal}"
+          rationale = "Part of: ${executionConfig?.task_description}"
         )
       )
 
@@ -453,7 +463,7 @@ $implementationResponse
           title = "Implement Modification",
           description = response,
           targetFiles = executionConfig?.files ?: listOf(),
-          rationale = executionConfig?.modification_goal ?: ""
+          rationale = executionConfig?.task_description ?: ""
         )
       )
     }
@@ -479,7 +489,7 @@ $implementationResponse
   private fun buildFinalSummary(changes: List<PlannedChange>, completionNotes: List<String>): String = buildString {
     appendLine("### Iterative Modification Complete")
     appendLine()
-    appendLine("**Goal:** ${executionConfig?.modification_goal}")
+    appendLine("**Goal:** ${executionConfig?.task_description}")
     appendLine()
     appendLine("**Changes Planned:** ${changes.size}")
     appendLine()
@@ -513,7 +523,7 @@ Each PlannedChange should have:
 - rationale: Why this change is needed
     """.trimIndent()
 
-  private fun getDefaultImplementationPrompt(): String = """
+   private fun getDefaultImplementationPrompt(): String = """
 You are a code implementation agent. Your task is to implement a specific change as part of a larger modification plan.
 
 Guidelines:
@@ -523,13 +533,8 @@ Guidelines:
 - Provide clear, well-documented code
 - Consider edge cases and error handling
 
-Response format:
-- For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path
-- For new files: Use ${TRIPLE_TILDE} code blocks with a header specifying the new file path
-- The diff format should use + for line additions, - for line deletions
-- Include 2 lines of context before and after every change in diffs
-
 After the code changes, provide a brief summary of what was implemented.
+
     """.trimIndent()
 
   companion object {

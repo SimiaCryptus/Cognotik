@@ -61,7 +61,7 @@ class ImageChatAction : BaseAction() {
                 SessionProxyServer.agents[session] = CodeChatManager(
                     session = session,
                     model = AppSettingsState.instance.imageChatClient,
-                    parsingModel = AppSettingsState.instance.fastChatClient,
+                    fastModel = AppSettingsState.instance.fastChatClient,
                     root = root.toFile(),
                     codeFiles = codeFiles
                 )
@@ -103,13 +103,13 @@ class ImageChatAction : BaseAction() {
     inner class CodeChatManager(
         session: Session,
         model: ChatInterface,
-        parsingModel: ChatInterface,
+        fastModel: ChatInterface,
         val root: File,
         private val codeFiles: Set<Path>
     ) : ChatSocketManager(
       session = session,
       smartModel = model,
-      fastModel = parsingModel,
+      fastModel = fastModel,
       systemPrompt = "",
       applicationClass = ApplicationServer::class.java,
       budget = 2.0,

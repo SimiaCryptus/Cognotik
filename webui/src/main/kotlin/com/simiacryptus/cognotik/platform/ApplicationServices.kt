@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.platform
 
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.file.AuthenticationManager
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -66,3 +67,7 @@ open class FileApplicationServices(val rootDir: File?) {
     )
   }
 }
+
+fun ChatModel.instance(user: User)  = ApiChatModel(model = this,
+  provider = ApplicationServices.fileApplicationServices().userSettingsManager
+    .getUserSettings(user).apis.find { it.provider == this.provider })

@@ -351,8 +351,7 @@ fun ApiImageModel.instance(): com.simiacryptus.cognotik.image.ImageClientInterfa
     }
     return provider?.provider?.getImageClient(
         key = provider.key ?: throw IllegalArgumentException("API key is not set"),
-        base = provider.baseUrl ?: provider.provider?.base
-        ?: throw IllegalArgumentException("API base for ${provider.provider?.name} is not set"),
+        base = provider.apiBase,
         workPool = AppSettingsState.workPool,
         scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
             AppSettingsState.currentSession,

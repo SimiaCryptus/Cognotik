@@ -129,7 +129,7 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
                   fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.find { it.provider == model.provider }
                 return TranscriptionClient(
                     key = apiData?.key?.decrypt ?: throw IOException("API key for ${model.provider} not configured"),
-                    apiBase = apiData.baseUrl,
+                    apiBase = apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"),
                     logLevel = Level.DEBUG,
                     logStreams = mutableListOf(),
                     workPool = ApplicationServices.threadPoolManager.getPool(

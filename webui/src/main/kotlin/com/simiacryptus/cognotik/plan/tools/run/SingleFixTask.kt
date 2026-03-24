@@ -120,7 +120,7 @@ class SingleFixTask(
                 includeLineNumbers = false,
               ),
               model = model,
-              parsingModel = defaultFast,
+              fastModel = defaultFast,
               processor = orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
             ) {
               override fun codeFiles(): Set<Path> {

@@ -44,12 +44,16 @@ open class UnifiedHarness(
   val captureMessages: Boolean = serverless,
   val redirectData: Boolean = serverless,
   val modelInstanceFn: (ApiChatModel, Session, User) -> ChatInterface = { model, session, user ->
-    val api = model.findApi(user)
-    val model =
-      model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
+    val api = model.provider
+    if (api == null) {
+      throw IllegalArgumentException("No API found for model: ${model.toJson()}")
+    }
+    val model = model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider.name}")
     model.instance(
-      key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
-      base = api.baseUrl,
+      key = if (api.key != null) api.key else {
+        throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}")
+      },
+      base = api.apiBase,
       onUsage = { model, usage ->
         ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
           session = session,
@@ -238,6 +242,8 @@ open class UnifiedHarness(
     ) {
       override fun instance(model: ApiChatModel) = modelInstanceFn(model, session, user)
 
+      override fun initOrchestrationConfig(session: Session, user: User) = initSettings(session)
+
       override fun onTaskComplete(result: String, task: SessionTask) {
         log.info("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
@@ -316,7 +322,7 @@ Task Type: `${taskType.name}`
       }
     }
 
-    log.info("Waiting for task completion...")
+    log.debug("Waiting for task completion...")
     if (!completionLatch.await(timeoutMinutes, TimeUnit.MINUTES)) {
       throw RuntimeException("Task timed out after $timeoutMinutes minutes")
     }
@@ -357,9 +363,9 @@ Task Type: `${taskType.name}`
   ): OrchestrationConfig = OrchestrationConfig(
     sessionId = session.sessionId,
     workingDir = finalWorkspace.absolutePath,
-    defaultFastModel = fastModel.asApiChatModel(),
-    defaultSmartModel = smartModel.asApiChatModel(),
-    defaultImageModel = imageModel.asApiChatModel(),
+    fastModel = fastModel.modelId,
+    smartModel = smartModel.modelId,
+    imageModel = imageModel.modelId,
     autoFix = autoFix,
     temperature = temperature,
     cognitiveSettings = cognitiveSettings,
@@ -377,9 +383,9 @@ Task Type: `${taskType.name}`
     taskSettings = mutableMapOf(
       typeConfig.name!! to typeConfig
     ),
-    defaultFastModel = fastModel.asApiChatModel(),
-    defaultSmartModel = smartModel.asApiChatModel(),
-    defaultImageModel = imageModel.asApiChatModel(),
+    fastModel = fastModel.modelId,
+    smartModel = smartModel.modelId,
+    imageModel = imageModel.modelId,
     autoFix = autoFix,
     temperature = temperature,
     user = user,

@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.instance
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
@@ -44,8 +45,8 @@ open class ConversationalMode(
 ) {
 
   init {
-    require(orchestrationConfig.defaultSmartModel != null) { "Default model must be specified in orchestration config" }
-    require(orchestrationConfig.defaultFastModel != null) { "Parsing model must be specified in orchestration config" }
+    require(orchestrationConfig.smartModel?.instance(orchestrationConfig.user) != null) { "Default model must be specified in orchestration config" }
+    require(orchestrationConfig.fastModel?.instance(orchestrationConfig.user) != null) { "Parsing model must be specified in orchestration config" }
   }
 
   private val messagesLock = Any()
@@ -465,8 +466,11 @@ open class ConversationalMode(
       singleStage: Boolean = false,
       taskTypes: List<TaskType<*, *>> = TaskType.getAvailableTaskTypes(orchestrationConfig),
     ): Pair<ParsedResponse<Tasks>, TaskExecutionConfig> {
+      log.debug("requestToTask called with userMessage: ${userMessage.take(200)}, history size: ${history.size}, singleStage: $singleStage")
+      log.debug("Available task types: ${taskTypes.joinToString(", ") { it.name }}")
       val describer = TaskContextYamlDescriber(orchestrationConfig)
       Tasks.initDescriber(orchestrationConfig, describer)
+      log.debug("Initialized describer and Tasks schema")
       val parsedActor = ParsedAgent(
         name = "TaskChooser",
         resultClass = Tasks::class.java,
@@ -492,7 +496,7 @@ open class ConversationalMode(
           if (orchestrationConfig.taskSettings.values.any { it.name != null }) {
             append("\nNote: Some task types have multiple configurations available. You can specify which configuration to use by setting the task_config_name field.")
           }
-        },
+        }.also { log.debug("Constructed prompt for ParsedAgent (length: ${it.length}):\n${it.take(500)}...") },
         model = defaultModel,
         parsingChatter = fastModel,
         temperature = orchestrationConfig.temperature,
@@ -504,15 +508,33 @@ open class ConversationalMode(
         }),
         singleStage = singleStage
       )
+      log.debug("ParsedAgent created, sending request with ${history.size} history messages")
       // Use the expanded userMessage with full conversation context for task selection
-      val answer = parsedActor.answer(
-        history + listOf(
-          "USER: $userMessage",
-          "Please choose a single task to execute based on the current conversation context above."
-        )
+      val inputMessages = history + listOf(
+        "USER: $userMessage",
+        "Please choose a single task to execute based on the current conversation context above."
       )
-      val chosenTask = answer.obj.tasks?.firstOrNull() ?: throw IllegalStateException("No task was selected")
+      log.debug("Input messages to ParsedAgent (count: ${inputMessages.size}): ${inputMessages.lastOrNull()?.take(200)}")
+      val answer = try {
+        parsedActor.answer(inputMessages).also {
+          log.info("ParsedAgent returned response with ${it.obj.tasks?.size ?: 0} task(s)")
+          log.debug("ParsedAgent raw response text (first 500 chars): ${it.text.take(500)}")
+        }
+      } catch (e: Exception) {
+        log.error("ParsedAgent failed to produce a valid response for userMessage: ${userMessage.take(200)}", e)
+        throw e
+      }
+      val chosenTask = answer.obj.tasks?.firstOrNull() ?: run {
+        log.error("No task was selected from ParsedAgent response. Raw text: ${answer.text.take(500)}")
+        throw IllegalStateException("No task was selected")
+      }
+      log.info(
+        "Selected task type: ${chosenTask.task_type}, config name: ${chosenTask.task_description ?: "(default)"}, " +
+            "for userMessage: ${userMessage.take(100)}"
+      )
+      log.debug("Chosen task details: ${JsonUtil.toJson(chosenTask)}")
       return Pair(answer, chosenTask)
     }
   }
+
 }

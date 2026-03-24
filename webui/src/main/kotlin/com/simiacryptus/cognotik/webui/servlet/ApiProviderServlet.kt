@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
+import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -24,7 +24,7 @@ class ApiProviderServlet : HttpServlet() {
 
   data class ProviderInfo(
     val name: String,
-    val baseUrl: String,
+    val baseUrl: String?,
     val models: List<ModelInfo>,
     val supportsChat: Boolean,
     val supportsEmbedding: Boolean
@@ -35,10 +35,9 @@ class ApiProviderServlet : HttpServlet() {
     val maxTokens: Int? = null
   )
 
-  public override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+  public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     try {
-      val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
-
+      val userinfo = authenticate(request, response) ?: return
       val userSettings = ApplicationServices.fileApplicationServices()
         .userSettingsManager.getUserSettings(userinfo)
       // Get all available providers (including unconfigured)
@@ -69,7 +68,7 @@ class ApiProviderServlet : HttpServlet() {
             val models = try {
               provider.getChatModels(
                 key = apiConfig.key,
-                baseUrl = apiConfig.baseUrl
+                baseUrl = apiConfig.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}")
               ).map { model ->
                 ModelInfo(
                   name = model.modelId,
@@ -84,7 +83,7 @@ class ApiProviderServlet : HttpServlet() {
             val supportsEmbedding = try {
               provider.getEmbeddingClient(
                 key = apiConfig.key,
-                base = apiConfig.baseUrl,
+                base = apiConfig.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}"),
                 workPool = com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService(),
                 scheduledPool = com.google.common.util.concurrent.MoreExecutors.listeningDecorator(
                   java.util.concurrent.Executors.newScheduledThreadPool(1)
@@ -101,7 +100,7 @@ class ApiProviderServlet : HttpServlet() {
             providers.add(
               ProviderInfo(
                 name = provider.name,
-                baseUrl = apiConfig.baseUrl,
+                baseUrl = apiConfig.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiConfig.provider?.name}"),
                 models = models,
                 supportsChat = models.isNotEmpty(),
                 supportsEmbedding = supportsEmbedding
@@ -112,28 +111,35 @@ class ApiProviderServlet : HttpServlet() {
           log.error("Error processing provider ${provider.name}", e)
         }
       }
-      val response = ApiProvidersResponse(
+
+
+      response.status = HttpServletResponse.SC_OK
+      val acceptHeader = request.getHeader("Accept") ?: ""
+
+      val formatParam = request.getParameter("format")
+      val apiResponse = ApiProvidersResponse(
         configuredProviders = providers,
         availableProviders = availableProviders
       )
-
-
-      resp.status = HttpServletResponse.SC_OK
-      val acceptHeader = req.getHeader("Accept") ?: ""
-
-      if (acceptHeader.contains("application/json")) {
-        resp.contentType = "application/json"
-        resp.writer.write(JsonUtil.toJson(response))
+      if (formatParam == "json" || acceptHeader.contains("application/json") || acceptHeader.contains("text/json")) {
+        response.contentType = "application/json"
+        response.characterEncoding = "UTF-8"
+        response.writer.write(JsonUtil.toJson(apiResponse))
+        response.writer.flush()
       } else {
-        resp.contentType = "text/html"
-        resp.writer.write(generateHtmlResponse(response))
+        response.contentType = "text/html"
+        response.characterEncoding = "UTF-8"
+        response.writer.write(generateHtmlResponse(apiResponse))
+        response.writer.flush()
       }
 
     } catch (e: Exception) {
       log.error("Error in ApiProviderServlet", e)
-      resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-      resp.contentType = "application/json"
-      resp.writer.write(JsonUtil.toJson(mapOf("error" to e.message)))
+      response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      response.contentType = "application/json"
+      response.characterEncoding = "UTF-8"
+      response.writer.write(JsonUtil.toJson(mapOf("error" to e.message)))
+      response.writer.flush()
     }
   }
 
@@ -161,7 +167,7 @@ class ApiProviderServlet : HttpServlet() {
       """
             <div class="provider">
                 <h2>${provider.name}</h2>
-                <p><strong>Base URL:</strong> ${provider.baseUrl}</p>
+                <p><strong>Base URL:</strong> ${provider.baseUrl ?: "N/A"}</p>
                 <p><strong>Supports Chat:</strong> ${if (provider.supportsChat) "Yes" else "No"}</p>
                 <p><strong>Supports Embedding:</strong> ${if (provider.supportsEmbedding) "Yes" else "No"}</p>
                 <h3>Available Models:</h3>

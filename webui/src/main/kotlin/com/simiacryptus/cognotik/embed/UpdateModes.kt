@@ -82,14 +82,8 @@ enum class UpdateModes : UpdateMode {
       source: File,
       target: File,
       relatedFiles: List<File>,
-    ): UpdatePrepareResult? {
-      return if (target.exists()) {
-        log.debug("Patching existing file: ${target.absolutePath}")
-        UpdatePrepareResult(PatchProcessors.Fuzzy)
-      } else {
-        log.debug("Creating new file via full replacement (target does not exist): ${target.absolutePath}")
-        UpdatePrepareResult(PatchProcessors.FullReplacement)
-      }
+    ): UpdatePrepareResult {
+      return         UpdatePrepareResult(PatchProcessors.Fuzzy)
     }
   },
 
@@ -101,7 +95,7 @@ enum class UpdateModes : UpdateMode {
     ): UpdatePrepareResult? {
       if (!target.exists()) {
         log.debug("Creating new file (target does not exist): ${target.absolutePath}")
-        return UpdatePrepareResult(PatchProcessors.FullReplacement)
+        return UpdatePrepareResult(PatchProcessors.Fuzzy)
       }
       val sourceModified = lastModifiedOfSources(source, relatedFiles)
       val targetModified = target.lastModified()

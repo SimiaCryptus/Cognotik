@@ -292,11 +292,11 @@ class WriteHtmlAction : BaseAction() {
 
             return OrchestrationConfig(
                 "Config",
-                defaultSmartModel = model ?: AppSettingsState.instance.smartModel
+                smartModel = (model ?: AppSettingsState.instance.smartModel)?.model?.modelId
                 ?: throw IllegalStateException("No model configured"),
-                defaultFastModel = AppSettingsState.instance.fastModel
+                fastModel = AppSettingsState.instance.fastModel?.model?.modelId
                     ?: throw IllegalStateException("Fast model not configured"),
-                defaultImageModel = imageModel ?: AppSettingsState.instance.smartModel
+                imageModel = (imageModel ?: AppSettingsState.instance.smartModel)?.model?.modelId
                 ?: throw IllegalStateException("No image model configured"),
                 temperature = temperatureSlider.value / 100.0,
                 autoFix = autoFixCheckbox.isSelected,
@@ -310,7 +310,7 @@ class WriteHtmlAction : BaseAction() {
 
         private fun getVisibleModels() =
           ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
+                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.filter { model ->
                   model.provider == apiData.provider && model.modelId.isNotBlank() && PlanConfigDialog.isVisible(model)
                 } ?: listOf()
             }.distinctBy { it.modelId }.sortedBy { "${it.provider?.name} - ${it.modelId}" }

@@ -1,12 +1,10 @@
 package com.simiacryptus.cognotik.apps
 
-import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -52,7 +50,7 @@ open class SinglePlanApp(
     return AppInfoData(
       applicationName = applicationName,
       inputCnt = when {
-        settings?.cognitiveMode == CognitiveModeType.Chat -> 0
+        settings?.let { it.cognitiveSettings?.type } == CognitiveModeType.Chat -> 0
         else -> 4
       },
       stickyInput = stickyInput,
@@ -74,7 +72,7 @@ open class SinglePlanApp(
   ): SocketManager {
     val socketManager = super.newSession(user, session)!!
     val settings = getSettings(session, user, OrchestrationConfig::class.java)
-    useExpansionSyntax = when (settings?.cognitiveMode) {
+    useExpansionSyntax = when (settings?.let { it.cognitiveSettings?.type }) {
       CognitiveModeType.Chat -> true
       else -> false
     }
@@ -141,7 +139,7 @@ ${settings?.toJson()}
         }
       } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
-      val cognitiveMode = (settings.cognitiveMode ?: CognitiveModeType.Chat).getImpl(
+      val cognitiveMode = (settings.cognitiveSettings?.type ?: CognitiveModeType.Chat).getImpl(
         orchestrationConfig = settings,
         session = session,
         user = user
@@ -237,7 +235,7 @@ ${settings?.toJson()}
       )
       return
     }
-    val cognitiveMode = orchestrationConfig.cognitiveMode?.getImpl(
+    val cognitiveMode = orchestrationConfig.cognitiveSettings?.type?.getImpl(
       orchestrationConfig = orchestrationConfig,
       session = session,
       user = user

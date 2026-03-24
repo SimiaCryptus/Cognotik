@@ -152,7 +152,7 @@ fun findAudioModel(model: String?) = audioModels().firstOrNull { it.modelId == m
 
 fun audioModels(): List<AudioModels> =
   ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap {
-        it.provider?.getTranscriptionModels(key = it.key!!, baseUrl = it.baseUrl) ?: listOf()
+        it.provider?.getTranscriptionModels(key = it.key!!, baseUrl = it.apiBase) ?: listOf()
     }
 
 private fun Project.currentEditor() = FileEditorManager

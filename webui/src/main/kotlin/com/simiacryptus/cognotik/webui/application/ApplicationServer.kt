@@ -25,6 +25,7 @@ import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.Logger
 import java.io.File
+import java.net.URLEncoder
 
 abstract class ApplicationServer(
   final override val applicationName: String,
@@ -135,7 +136,7 @@ abstract class ApplicationServer(
   ) {
     logger.warn(
       "userMessage not implemented for application: {} - session: {} user: {}",
-      applicationName, session, user?.email ?: "anonymous"
+      applicationName, session, user.email
     )
     throw UnsupportedOperationException("userMessage not implemented for $applicationName")
   }
@@ -212,8 +213,8 @@ abstract class ApplicationServer(
       FilterHolder { request, response, chain ->
         val requestPath = (request as HttpServletRequest).requestURI
         logger.debug("Processing request: {} for application: {}", requestPath, applicationName)
-        val user = authenticationManager.getUser((request as HttpServletRequest).getCookie())
-        logger.debug("Authenticated user: {} for request: {}", user?.email ?: "anonymous", requestPath)
+        val user = authenticate(request, response as HttpServletResponse) ?: return@FilterHolder
+        logger.debug("Authenticated user: {} for request: {}", user.email, requestPath)
         val canRead = authorizationManager.isAuthorized(
           applicationClass = this@ApplicationServer.javaClass,
           user = user,
@@ -222,7 +223,7 @@ abstract class ApplicationServer(
         logger.debug(
           "Authorization check result: {} for user: {} on path: {}",
           canRead,
-          user?.email ?: "anonymous",
+          user.email,
           requestPath
         )
         if (canRead) {
@@ -231,11 +232,11 @@ abstract class ApplicationServer(
         } else {
           logger.warn(
             "Access denied for user: {} on path: {} in application: {}",
-            user?.email ?: "anonymous",
+            user.email,
             requestPath,
             applicationName
           )
-          response?.writer?.write("Access Denied")
+          response.writer?.write("Access Denied")
           (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
         }
       }, "/*", null
@@ -269,12 +270,31 @@ abstract class ApplicationServer(
     @JvmStatic
     val log: Logger = LoggerFactory.getLogger(ApplicationServer::class.java)
 
-    fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COOKIE) =
-      cookies?.find { it.name == name }?.value.also { cookie ->
-        log.debug("Retrieved cookie '{}': {}", name, if (cookie != null) "[PRESENT]" else "[NOT_FOUND]")
-      }
-
     val appInfoMap = mutableMapOf<Session, AppInfoData>()
   }
 
+}
+
+fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COOKIE) =
+  cookies?.find { it.name == name }?.value.also { cookie ->
+    ApplicationServer.Companion.log.debug("Retrieved cookie '{}': {}", name, if (cookie != null) "[PRESENT]" else "[NOT_FOUND]")
+  }
+
+fun authenticate(
+  request: HttpServletRequest,
+  response: HttpServletResponse
+): User? {
+  try {
+    val user = authenticationManager.getUser(request.getCookie())
+    return user
+  } catch (e: RuntimeException) {
+    ApplicationServer.log.debug(e.message)
+    response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+    val originalRequest = request.requestURL.toString()
+    val queryString = request.queryString
+    val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
+    val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
+    response.setHeader("Location", "/login/?target=$encodedTarget")
+    return null
+  }
 }

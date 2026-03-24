@@ -67,7 +67,7 @@ class ChatWithCommitAction : AnAction() {
             codeSelection = diffInfo,
             filename = "commit_changes.diff",
             model = AppSettingsState.instance.smartChatClient,
-            parsingModel = AppSettingsState.instance.fastChatClient,
+            fastModel = AppSettingsState.instance.fastChatClient,
             storage = ApplicationServices.fileApplicationServices().dataStorageFactory
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(

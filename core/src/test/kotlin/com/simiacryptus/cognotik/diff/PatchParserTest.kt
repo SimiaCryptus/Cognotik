@@ -67,8 +67,8 @@ fun hello() {
       val diffBlocks = result.filterIsInstance<PatchParser.ResponseSegment.DiffBlock>()
       assertEquals(1, diffBlocks.size)
       assertEquals("src/main/Example.kt", diffBlocks[0].filename)
-      assertTrue(diffBlocks[0].diff.contains("-    println(\"Hello\")"))
-      assertTrue(diffBlocks[0].diff.contains("+    println(\"Hello World\")"))
+      assertTrue(diffBlocks[0].content.contains("-    println(\"Hello\")"))
+      assertTrue(diffBlocks[0].content.contains("+    println(\"Hello World\")"))
     }
 
     @Test
@@ -149,7 +149,7 @@ println("New file")
       assertEquals(1, newFileBlocks.size)
       assertEquals("src/main/NewFile.kt", newFileBlocks[0].filename)
       assertEquals("kotlin", newFileBlocks[0].language)
-      assertTrue(newFileBlocks[0].code.contains("fun newFunction()"))
+      assertTrue(newFileBlocks[0].content.contains("fun newFunction()"))
     }
 
     @Test
@@ -523,7 +523,7 @@ This is more text.
       val newFileBlocks = result.filterIsInstance<PatchParser.ResponseSegment.NewFileBlock>()
       if (newFileBlocks.isNotEmpty()) {
         assertEquals("src/main/Empty.kt", newFileBlocks[0].filename)
-        assertTrue(newFileBlocks[0].code.isBlank())
+        assertTrue(newFileBlocks[0].content.isBlank())
       }
     }
 
@@ -559,36 +559,6 @@ val x = 1
       val diffBlocks = result.filterIsInstance<PatchParser.ResponseSegment.DiffBlock>()
       assertEquals(1, diffBlocks.size)
       assertEquals("src/main/MarkerFile.kt", diffBlocks[0].filename)
-    }
-  }
-
-  @Nested
-  inner class ResponseSegmentTypes {
-    @Test
-    fun `Markdown segment data class equality`() {
-      val seg1 = PatchParser.ResponseSegment.Markdown("hello")
-      val seg2 = PatchParser.ResponseSegment.Markdown("hello")
-      val seg3 = PatchParser.ResponseSegment.Markdown("world")
-      assertEquals(seg1, seg2)
-      assertNotEquals(seg1, seg3)
-    }
-
-    @Test
-    fun `DiffBlock segment data class equality`() {
-      val seg1 = PatchParser.ResponseSegment.DiffBlock("file.kt", "+line", 0..10)
-      val seg2 = PatchParser.ResponseSegment.DiffBlock("file.kt", "+line", 0..10)
-      val seg3 = PatchParser.ResponseSegment.DiffBlock("other.kt", "+line", 0..10)
-      assertEquals(seg1, seg2)
-      assertNotEquals(seg1, seg3)
-    }
-
-    @Test
-    fun `NewFileBlock segment data class equality`() {
-      val seg1 = PatchParser.ResponseSegment.NewFileBlock("file.kt", "kotlin", "code", 0..10)
-      val seg2 = PatchParser.ResponseSegment.NewFileBlock("file.kt", "kotlin", "code", 0..10)
-      val seg3 = PatchParser.ResponseSegment.NewFileBlock("file.kt", "java", "code", 0..10)
-      assertEquals(seg1, seg2)
-      assertNotEquals(seg1, seg3)
     }
   }
 

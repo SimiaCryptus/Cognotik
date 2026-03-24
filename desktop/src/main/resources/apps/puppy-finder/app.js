@@ -17,6 +17,16 @@
     // Base URL for proxy links (root-relative)
     const proxyBase = '/proxy/';
 
+    // === Model management state ===
+    let availableModels = {};
+
+    function getSelectedSmartModel() {
+        return localStorage.getItem('pf-smartModel') || '';
+    }
+    function getSelectedFastModel() {
+        return localStorage.getItem('pf-fastModel') || '';
+    }
+
     // === Status polling state ===
     let statusPollTimer = null;
     const STATUS_POLL_INTERVAL = 3000; // ms
@@ -61,7 +71,18 @@
         return (data.entries || []).filter(e => e.type === 'file');
     }
     async function runDocOp(opPath, targetPath) {
-        const url = `/docops?sessionId=${encodeURIComponent(sessionId)}&doc=${encodeURIComponent(opPath)}&target=${encodeURIComponent(targetPath)}`;
+        const params = new URLSearchParams({
+            sessionId: sessionId,
+            doc: opPath,
+            target: targetPath
+        });
+        // Add model overrides if selected
+        const smartModel = getSelectedSmartModel();
+        const fastModel = getSelectedFastModel();
+        if (smartModel) params.set('smartModel', smartModel);
+        if (fastModel) params.set('fastModel', fastModel);
+
+        const url = `/docops?${params.toString()}`;
         const resp = await fetch(url, { method: 'POST' });
         if (!resp.ok) {
             const errText = await resp.text().catch(() => '');
@@ -69,6 +90,148 @@
         }
         return await resp.text();
     }
+
+    // === Model loading ===
+    async function loadApiProviders() {
+        try {
+            const response = await fetch('/apiProviders/?format=json');
+            if (response.status >= 400) {
+                console.warn('Could not load API providers:', response.status);
+                return;
+            }
+            const providersResponse = await response.json();
+            const providers = providersResponse.configuredProviders || [];
+
+            availableModels = {};
+            providers.forEach(provider => {
+                if (provider.models && provider.models.length > 0) {
+                    availableModels[provider.name] = provider.models.map(model => ({
+                        id: model.name,
+                        name: model.name,
+                        description: model.maxTokens
+                            ? `Max tokens: ${model.maxTokens.toLocaleString()}`
+                            : ''
+                    }));
+                }
+            });
+
+            populateModelDropdowns();
+            showProviderInfo(providers);
+        } catch (e) {
+            console.warn('Failed to load API providers:', e);
+        }
+    }
+
+    function populateModelDropdowns() {
+        const smartSelect = document.getElementById('smart-model-select');
+        const fastSelect = document.getElementById('fast-model-select');
+        if (!smartSelect || !fastSelect) return;
+
+        smartSelect.innerHTML = '<option value="">(Server Default)</option>';
+        fastSelect.innerHTML = '<option value="">(Server Default)</option>';
+
+        const addedModels = new Set();
+
+        for (const [provider, models] of Object.entries(availableModels)) {
+            models.forEach(model => {
+                if (!addedModels.has(model.id)) {
+                    [smartSelect, fastSelect].forEach(sel => {
+                        const option = document.createElement('option');
+                        option.value = model.id;
+                        option.textContent = model.description
+                            ? `${model.name} (${provider}) — ${model.description}`
+                            : `${model.name} (${provider})`;
+                        sel.appendChild(option);
+                    });
+                    addedModels.add(model.id);
+                }
+            });
+        }
+
+        // Restore saved selections
+        const savedSmart = localStorage.getItem('pf-smartModel');
+        if (savedSmart && Array.from(smartSelect.options).some(o => o.value === savedSmart)) {
+            smartSelect.value = savedSmart;
+        }
+        const savedFast = localStorage.getItem('pf-fastModel');
+        if (savedFast && Array.from(fastSelect.options).some(o => o.value === savedFast)) {
+            fastSelect.value = savedFast;
+        }
+    }
+
+    function showProviderInfo(providers) {
+        const box = document.getElementById('model-info-box');
+        const list = document.getElementById('provider-list');
+        if (!box || !list) return;
+
+        const configured = providers.filter(p => p.models && p.models.length > 0);
+        if (configured.length === 0) {
+            box.style.display = 'none';
+            return;
+        }
+
+        box.style.display = 'block';
+        list.innerHTML = '';
+        configured.forEach(provider => {
+            const item = document.createElement('div');
+            item.className = 'provider-item';
+            item.innerHTML = `
+                <span class="provider-badge">✓</span>
+                <strong>${escapeHtml(provider.name)}</strong>
+                <span class="model-count">${provider.models.length} model(s)</span>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    // Save model settings
+    document.getElementById('save-models').addEventListener('click', function() {
+        const smartModel = document.getElementById('smart-model-select').value;
+        const fastModel = document.getElementById('fast-model-select').value;
+        localStorage.setItem('pf-smartModel', smartModel);
+        localStorage.setItem('pf-fastModel', fastModel);
+        setStatus('models-status', '✓ Model settings saved', 'success');
+    });
+
+    // === Full-window modal ===
+    function openFullscreenModal(title, htmlContent) {
+        const modal = document.getElementById('fullscreen-modal');
+        const modalTitle = document.getElementById('fullscreen-modal-title');
+        const modalBody = document.getElementById('fullscreen-modal-body');
+        modalTitle.textContent = title;
+        modalBody.innerHTML = htmlContent;
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeFullscreenModal() {
+        const modal = document.getElementById('fullscreen-modal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+    document.getElementById('fullscreen-modal-close').addEventListener('click', closeFullscreenModal);
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('fullscreen-modal');
+            if (!modal.classList.contains('hidden')) {
+                closeFullscreenModal();
+            }
+        }
+    });
+
+    async function openFileInFullscreen(filePath, title) {
+        try {
+            const content = await readFile(filePath);
+            if (content === null) {
+                openFullscreenModal(title || filePath, '<p class="placeholder">File not found.</p>');
+            } else {
+                openFullscreenModal(title || filePath, renderMarkdown(content));
+            }
+        } catch (e) {
+            openFullscreenModal(title || filePath, '<p class="placeholder" style="color:var(--color-danger);">Error: ' + escapeHtml(e.message) + '</p>');
+        }
+    }
+
     // === Status polling ===
     async function fetchDocopsStatus() {
         try {
@@ -101,11 +264,6 @@
                 setBadge(badgeId, 'error');
             }
         }
-        // Handle breeder_research targets
-        if (target.startsWith('breeder_research/')) {
-            // Update the research badge if any research task is running
-            // (handled in the aggregate check below)
-        }
         // Track active sessions
         if (status === 'RUNNING') {
             activeTaskSessions[target] = taskSessionId;
@@ -114,11 +272,40 @@
         }
         // Update session link display
         updateSessionLinks(target, taskInfo);
+        // Update per-breed research status in breed cards
+     if (target.startsWith('research/')) {
+            updateBreedResearchStatus(target, taskInfo);
+        }
     }
+
+    function updateBreedResearchStatus(target, taskInfo) {
+     const breedName = target.replace('research/', '').replace('.md', '');
+        const statusEls = document.querySelectorAll(`[data-breed-research-status="${breedName}"]`);
+        statusEls.forEach(el => {
+            el.className = 'breed-research-status';
+            if (taskInfo.status === 'RUNNING') {
+                el.textContent = '⏳ Researching…';
+                el.classList.add('running');
+            } else if (taskInfo.status === 'COMPLETED') {
+                el.textContent = '✅ Research complete';
+                el.classList.add('done');
+            } else if (taskInfo.status === 'ERROR' || taskInfo.status === 'FAILED') {
+                el.textContent = '❌ Research failed';
+                el.classList.add('error');
+            } else {
+                el.textContent = '';
+            }
+        });
+        // Enable/disable per-breed research buttons
+        const btns = document.querySelectorAll(`[data-breed-research="${breedName}"]`);
+        btns.forEach(btn => {
+            btn.disabled = taskInfo.status === 'RUNNING';
+        });
+    }
+
     function updateSessionLinks(target, taskInfo) {
         const status = taskInfo.status;
         const taskSessionId = taskInfo.sessionId;
-        // Find the appropriate viewer/step area to show the link
         let linkContainerId = null;
         if (target === 'ideas.md') {
             linkContainerId = 'session-link-brainstorm';
@@ -126,17 +313,15 @@
             linkContainerId = 'session-link-expand';
         } else if (target === 'final_summary.md') {
             linkContainerId = 'session-link-summary';
-        } else if (target.startsWith('breeder_research/')) {
+     } else if (target.startsWith('research/')) {
             linkContainerId = 'session-link-research';
         }
         if (!linkContainerId) return;
         let container = document.getElementById(linkContainerId);
         if (!container) {
-            // Create the container dynamically near the relevant step
             container = document.createElement('div');
             container.id = linkContainerId;
             container.className = 'session-link-container';
-            // Find parent step
             let parentStep = null;
             if (linkContainerId === 'session-link-brainstorm') {
                 parentStep = document.getElementById('viewer-brainstorm')?.parentElement;
@@ -148,7 +333,6 @@
                 parentStep = document.getElementById('viewer-research')?.parentElement;
             }
             if (parentStep) {
-                // Insert before the viewer
                 const viewer = parentStep.querySelector('.viewer');
                 if (viewer) {
                     parentStep.insertBefore(container, viewer);
@@ -160,8 +344,8 @@
         if (!container) return;
         if (status === 'RUNNING' && taskSessionId) {
             const proxyUrl = getProxyUrl(taskSessionId);
-            const breedLabel = target.startsWith('breeder_research/')
-                ? ' (' + target.replace('breeder_research/', '').replace('.md', '').replace(/_/g, ' ') + ')'
+         const breedLabel = target.startsWith('research/')
+             ? ' (' + target.replace('research/', '').replace('.md', '').replace(/_/g, ' ') + ')'
                 : '';
             container.innerHTML = `<div class="session-monitor-link">
                 <span class="monitor-pulse">●</span>
@@ -208,17 +392,16 @@
             if (taskInfo.status === 'RUNNING') {
                 anyRunning = true;
             }
-            if (target.startsWith('breeder_research/')) {
-                anyResearchTask = true;
-                if (taskInfo.status === 'RUNNING') {
-                    anyResearchRunning = true;
-                    allResearchDone = false;
-                } else if (taskInfo.status !== 'COMPLETED') {
-                    allResearchDone = false;
-                }
+     if (target.startsWith('research/')) {
+         anyResearchTask = true;
+         if (taskInfo.status === 'RUNNING') {
+             anyResearchRunning = true;
+             allResearchDone = false;
+         } else if (taskInfo.status !== 'COMPLETED') {
+             allResearchDone = false;
+         }
             }
         }
-        // Update research badge based on aggregate status
         if (anyResearchTask) {
             if (anyResearchRunning) {
                 setBadge('badge-research', 'running');
@@ -226,7 +409,6 @@
                 setBadge('badge-research', 'done');
             }
         }
-        // Update pipeline diagram stages
         updatePipelineDiagram(statusData.tasks);
         return anyRunning;
     }
@@ -235,12 +417,11 @@
             'input': { targets: ['requirements.md'], el: null },
             'brainstorm': { targets: ['ideas.md'], el: null },
             'expand': { targets: ['expand_status.md'], el: null },
-            'research': { targets: [], el: null }, // dynamic
+            'research': { targets: [], el: null },
             'summary': { targets: ['final_summary.md'], el: null },
         };
-        // Collect research targets
         for (const target of Object.keys(tasks)) {
-            if (target.startsWith('breeder_research/')) {
+         if (target.startsWith('research/')) {
                 stageMap.research.targets.push(target);
             }
         }
@@ -288,13 +469,8 @@
     function startStatusPolling() {
         if (statusPollTimer) return;
         statusPollTimer = setInterval(async () => {
-            const anyRunning = await pollStatus();
-            if (!anyRunning && statusPollTimer) {
-                // Keep polling at a slower rate even when idle, to catch external changes
-                // But we could stop if desired
-            }
+            await pollStatus();
         }, STATUS_POLL_INTERVAL);
-        // Also poll immediately
         pollStatus();
     }
     function stopStatusPolling() {
@@ -346,11 +522,14 @@
     function showLoading(text) {
         const overlay = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
-        loadingText.textContent = text || 'Processing...';
-        overlay.classList.remove('hidden');
+        if (overlay && loadingText) {
+            loadingText.textContent = text || 'Processing...';
+            overlay.classList.remove('hidden');
+        }
     }
     function hideLoading() {
-        document.getElementById('loading-overlay').classList.add('hidden');
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) overlay.classList.add('hidden');
     }
     // === Batch log ===
     const batchLog = document.getElementById('batch-log');
@@ -430,7 +609,10 @@
             if (content === null) {
                 viewer.innerHTML = '<p class="placeholder">File not found. Run the operation first.</p>';
             } else {
-                viewer.innerHTML = renderMarkdown(content);
+                viewer.innerHTML = renderMarkdown(content) +
+                    `<div class="button-row" style="margin-top:12px; border-top:1px solid var(--color-border); padding-top:12px;">
+                        <button class="btn btn-expand" onclick="window.__pfExpandFile('${escapeHtml(filePath)}', '${escapeHtml(filePath)}')">🔎 Full Window View</button>
+                    </div>`;
             }
             viewer.classList.add('visible');
         } catch (e) {
@@ -438,6 +620,11 @@
             viewer.classList.add('visible');
         }
     }
+    // Expose for inline onclick
+    window.__pfExpandFile = function(filePath, title) {
+        openFileInFullscreen(filePath, title);
+    };
+
     document.querySelectorAll('.btn-view').forEach(btn => {
         btn.addEventListener('click', function() {
             viewFile(this.dataset.file, this.dataset.viewer);
@@ -455,7 +642,10 @@
                 if (content === null) {
                     viewer.innerHTML = '<p class="placeholder">File not found. Run the pipeline first.</p>';
                 } else {
-                    viewer.innerHTML = renderMarkdown(content);
+                    viewer.innerHTML = renderMarkdown(content) +
+                        `<div class="button-row" style="margin-top:12px; border-top:1px solid var(--color-border); padding-top:12px;">
+                            <button class="btn btn-expand" onclick="window.__pfExpandFile('${escapeHtml(filePath)}', '${escapeHtml(filePath)}')">🔎 Full Window View</button>
+                        </div>`;
                 }
             } catch (e) {
                 viewer.innerHTML = '<p class="placeholder" style="color: var(--color-danger);">Error: ' + escapeHtml(e.message) + '</p>';
@@ -464,10 +654,9 @@
     });
     // === Helper: wait for task completion by polling status ===
     async function waitForTask(targetPath, maxWaitMs) {
-        const maxWait = maxWaitMs || 600000; // 10 min default
+        const maxWait = maxWaitMs || 600000;
         const pollInterval = 2000;
         const startTime = Date.now();
-
         while (Date.now() - startTime < maxWait) {
             const statusData = await fetchDocopsStatus();
             if (statusData && statusData.tasks && statusData.tasks[targetPath]) {
@@ -494,23 +683,23 @@
             this.disabled = true;
             startStatusPolling();
             try {
-                // Fire off the doc op (this may return quickly while processing continues)
                 const taskId = await runDocOp(opPath, outputPath);
                 const cleanTaskId = taskId ? taskId.trim() : '';
                 if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
                     updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
                 }
-                // Wait for actual completion via status polling
                 await waitForTask(outputPath);
                 setBadge(badgeId, 'done');
-                // Auto-show result
                 if (viewerId) {
                     const viewer = document.getElementById(viewerId);
                     if (viewer) {
                         try {
                             const content = await readFile(outputPath);
                             if (content) {
-                                viewer.innerHTML = renderMarkdown(content);
+                                viewer.innerHTML = renderMarkdown(content) +
+                                    `<div class="button-row" style="margin-top:12px; border-top:1px solid var(--color-border); padding-top:12px;">
+                                        <button class="btn btn-expand" onclick="window.__pfExpandFile('${escapeHtml(outputPath)}', '${escapeHtml(outputPath)}')">🔎 Full Window View</button>
+                                    </div>`;
                                 viewer.classList.add('visible');
                             }
                         } catch (e) { /* non-critical */ }
@@ -536,17 +725,35 @@
             }
             container.style.display = 'block';
             grid.innerHTML = '';
+
+            // Check existing research files
+            let researchFiles = [];
+            try {
+                 researchFiles = await listFiles('research');
+            } catch (e) { /* ignore */ }
+            const researchFileNames = new Set(researchFiles.map(f => f.name));
+
             files.forEach(file => {
                 const card = document.createElement('div');
                 card.className = 'breed-card';
-                const name = file.name.replace(/\.md$/, '').replace(/_/g, ' ').replace(/-/g, ' ');
+                const breedKey = file.name.replace(/\.md$/, '');
+                const name = breedKey.replace(/_/g, ' ').replace(/-/g, ' ');
                 const displayName = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                const hasResearch = researchFileNames.has(file.name);
+                const researchStatusText = hasResearch ? '✅ Research complete' : '';
+                const researchStatusClass = hasResearch ? 'done' : '';
+
                 card.innerHTML = `
-<div class="breed-card-icon">🐕</div>
-<div class="breed-card-name">${escapeHtml(displayName)}</div>
-<div class="breed-card-file">${escapeHtml(file.name)}</div>
-${showViewButtons ? `<button class="btn btn-view btn-sm" data-breed-file="breeds/${file.name}">👁 View</button>` : ''}
-`;
+                    <div class="breed-card-icon">🐕</div>
+                    <div class="breed-card-name">${escapeHtml(displayName)}</div>
+                    <div class="breed-card-file">${escapeHtml(file.name)}</div>
+                    ${showViewButtons ? `
+                        <button class="btn btn-view btn-sm" data-breed-file="breeds/${file.name}" data-breed-name="${escapeHtml(displayName)}">👁 View</button>
+                        <button class="btn btn-expand btn-sm" data-breed-expand="breeds/${file.name}" data-breed-name="${escapeHtml(displayName)}">🔎 Full View</button>
+                        <button class="btn btn-research btn-sm" data-breed-research="${escapeHtml(breedKey)}" data-breed-name="${escapeHtml(displayName)}">🔍 Research Breeders</button>
+                        <div class="breed-research-status ${researchStatusClass}" data-breed-research-status="${escapeHtml(breedKey)}">${researchStatusText}</div>
+                    ` : ''}
+                `;
                 grid.appendChild(card);
             });
             // Attach view handlers
@@ -570,6 +777,47 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-breed-file="breeds
                         }
                     });
                 });
+                // Attach full-view handlers
+                grid.querySelectorAll('[data-breed-expand]').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        openFileInFullscreen(this.dataset.breedExpand, this.dataset.breedName || 'Breed Profile');
+                    });
+                });
+                // Attach per-breed research handlers
+                grid.querySelectorAll('[data-breed-research]').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        const breedKey = this.dataset.breedResearch;
+                        const breedName = this.dataset.breedName || breedKey;
+                     const outputPath = 'research/' + breedKey + '.md';
+                        this.disabled = true;
+                        const statusEl = this.closest('.breed-card').querySelector(`[data-breed-research-status="${breedKey}"]`);
+                        if (statusEl) {
+                            statusEl.textContent = '⏳ Researching…';
+                            statusEl.className = 'breed-research-status running';
+                        }
+                        startStatusPolling();
+                        try {
+                            const taskId = await runDocOp('ops/breeder_research_op.md', outputPath);
+                            const cleanTaskId = taskId ? taskId.trim() : '';
+                            if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                                updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
+                            }
+                            await waitForTask(outputPath);
+                            if (statusEl) {
+                                statusEl.textContent = '✅ Research complete';
+                                statusEl.className = 'breed-research-status done';
+                            }
+                        } catch (e) {
+                            if (statusEl) {
+                                statusEl.textContent = '❌ Research failed';
+                                statusEl.className = 'breed-research-status error';
+                            }
+                            alert(`Research failed for ${breedName}: ${e.message}`);
+                        } finally {
+                            this.disabled = false;
+                        }
+                    });
+                });
             }
             return files;
         } catch (e) {
@@ -583,7 +831,7 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-breed-file="breeds
     // === Research list management ===
     async function refreshResearchList(containerId, gridId, showViewButtons) {
         try {
-            const files = await listFiles('breeder_research');
+         const files = await listFiles('research');
             const container = document.getElementById(containerId);
             const grid = document.getElementById(gridId);
             if (files.length === 0) {
@@ -598,11 +846,14 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-breed-file="breeds
                 const name = file.name.replace(/\.md$/, '').replace(/_/g, ' ').replace(/-/g, ' ');
                 const displayName = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
                 card.innerHTML = `
-<div class="breed-card-icon">🔍</div>
-<div class="breed-card-name">${escapeHtml(displayName)}</div>
-<div class="breed-card-file">${escapeHtml(file.name)}</div>
-${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="breeder_research/${file.name}">👁 View</button>` : ''}
-`;
+                    <div class="breed-card-icon">🔍</div>
+                    <div class="breed-card-name">${escapeHtml(displayName)}</div>
+                    <div class="breed-card-file">${escapeHtml(file.name)}</div>
+                    ${showViewButtons ? `
+                     <button class="btn btn-view btn-sm" data-research-file="research/${file.name}" data-research-name="${escapeHtml(displayName)}">👁 View</button>
+                     <button class="btn btn-expand btn-sm" data-research-expand="research/${file.name}" data-research-name="${escapeHtml(displayName)}">🔎 Full View</button>
+                    ` : ''}
+                `;
                 grid.appendChild(card);
             });
             if (showViewButtons) {
@@ -623,6 +874,12 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
                         } catch (e) {
                             alert('Error loading file: ' + e.message);
                         }
+                    });
+                });
+                // Attach full-view handlers for research
+                grid.querySelectorAll('[data-research-expand]').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        openFileInFullscreen(this.dataset.researchExpand, '🔍 ' + (this.dataset.researchName || 'Breeder Research'));
                     });
                 });
             }
@@ -653,7 +910,7 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
             let errorCount = 0;
             for (const file of breedFiles) {
                 const breedName = file.name.replace(/\.md$/, '');
-                const outputPath = 'breeder_research/' + breedName + '.md';
+             const outputPath = 'research/' + breedName + '.md';
                 logBatch(`Researching breeders for: ${breedName}`, 'info');
                 try {
                     const taskId = await runDocOp('ops/breeder_research_op.md', outputPath);
@@ -663,7 +920,6 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
                         logBatchHtml(`Session started: <a href="${proxyUrl}" target="_blank" class="monitor-link">Monitor Live Session (${cleanTaskId})</a>`, 'info');
                         updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
                     }
-                    // Wait for completion
                     await waitForTask(outputPath);
                     logBatch(`✓ Completed research for: ${breedName}`, 'success');
                     successCount++;
@@ -713,7 +969,10 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
                         if (content) {
                             const viewer = document.getElementById(step.viewer);
                             if (viewer) {
-                                viewer.innerHTML = renderMarkdown(content);
+                                viewer.innerHTML = renderMarkdown(content) +
+                                    `<div class="button-row" style="margin-top:12px; border-top:1px solid var(--color-border); padding-top:12px;">
+                                        <button class="btn btn-expand" onclick="window.__pfExpandFile('${escapeHtml(step.output)}', '${escapeHtml(step.output)}')">🔎 Full Window View</button>
+                                    </div>`;
                                 viewer.classList.add('visible');
                             }
                         }
@@ -759,7 +1018,6 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
         startStatusPolling();
         batchLog.innerHTML = '';
         try {
-            // Step 3: research (uses the multi-breed runner)
             logBatch('Starting: Breeder Research (all breeds)', 'info');
             setBadge('badge-research', 'running');
             const breedFiles = await listFiles('breeds');
@@ -782,7 +1040,6 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
             }
             setBadge('badge-research', 'done');
             logBatch('✓ Breeder Research complete', 'success');
-            // Step 4: summary
             await runSequential([
                 {
                     op: 'ops/breeder_summary_op.md', output: 'final_summary.md',
@@ -802,7 +1059,6 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
         startStatusPolling();
         batchLog.innerHTML = '';
         try {
-            // Steps 1-2
             await runSequential([
                 {
                     op: 'ops/breed_brainstorm_op.md', output: 'ideas.md',
@@ -814,7 +1070,6 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
                     afterFn: () => refreshBreedList('breed-list-container', 'breed-grid', true)
                 },
             ]);
-            // Step 3: research all breeds
             logBatch('Starting: Breeder Research (all breeds)', 'info');
             setBadge('badge-research', 'running');
             const breedFiles = await listFiles('breeds');
@@ -832,7 +1087,6 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
             }
             setBadge('badge-research', 'done');
             logBatch('✓ Breeder Research complete', 'success');
-            // Step 4: summary
             await runSequential([
                 {
                     op: 'ops/breeder_summary_op.md', output: 'final_summary.md',
@@ -863,12 +1117,23 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
                 section.className = 'result-breed-section';
                 const header = document.createElement('div');
                 header.className = 'result-breed-header';
-                header.innerHTML = `<span class="result-breed-icon">🐕</span> <span>${escapeHtml(displayName)}</span>`;
+                header.innerHTML = `
+                    <span class="result-breed-icon">🐕</span>
+                    <span style="flex:1">${escapeHtml(displayName)}</span>
+                    <button class="btn btn-expand btn-sm" data-result-expand="breeds/${file.name}" data-result-name="${escapeHtml(displayName)}">🔎 Full View</button>
+                `;
                 header.style.cursor = 'pointer';
                 const body = document.createElement('div');
                 body.className = 'result-breed-body';
                 body.style.display = 'none';
-                header.addEventListener('click', async function() {
+                // Click on text area toggles accordion, click on button opens fullscreen
+                header.addEventListener('click', async function(e) {
+                    if (e.target.closest('[data-result-expand]')) {
+                        e.stopPropagation();
+                        const btn = e.target.closest('[data-result-expand]');
+                        openFileInFullscreen(btn.dataset.resultExpand, '🐕 ' + (btn.dataset.resultName || 'Breed Profile'));
+                        return;
+                    }
                     if (body.style.display === 'none') {
                         if (!body.dataset.loaded) {
                             try {
@@ -896,7 +1161,7 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
     document.getElementById('btn-refresh-research-results').addEventListener('click', async function() {
         const container = document.getElementById('research-results-container');
         try {
-            const files = await listFiles('breeder_research');
+         const files = await listFiles('research');
             if (files.length === 0) {
                 container.innerHTML = '<p class="placeholder">No breeder research found. Run the pipeline first.</p>';
                 return;
@@ -909,16 +1174,26 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
                 section.className = 'result-breed-section';
                 const header = document.createElement('div');
                 header.className = 'result-breed-header';
-                header.innerHTML = `<span class="result-breed-icon">🔍</span> <span>${escapeHtml(displayName)}</span>`;
+                header.innerHTML = `
+                    <span class="result-breed-icon">🔍</span>
+                    <span style="flex:1">${escapeHtml(displayName)}</span>
+                 <button class="btn btn-expand btn-sm" data-result-expand="research/${file.name}" data-result-name="${escapeHtml(displayName)}">🔎 Full View</button>
+                `;
                 header.style.cursor = 'pointer';
                 const body = document.createElement('div');
                 body.className = 'result-breed-body';
                 body.style.display = 'none';
-                header.addEventListener('click', async function() {
+                header.addEventListener('click', async function(e) {
+                    if (e.target.closest('[data-result-expand]')) {
+                        e.stopPropagation();
+                        const btn = e.target.closest('[data-result-expand]');
+                        openFileInFullscreen(btn.dataset.resultExpand, '🔍 ' + (btn.dataset.resultName || 'Breeder Research'));
+                        return;
+                    }
                     if (body.style.display === 'none') {
                         if (!body.dataset.loaded) {
                             try {
-                                const content = await readFile('breeder_research/' + file.name);
+                             const content = await readFile('research/' + file.name);
                                 body.innerHTML = content ? renderMarkdown(content) : '<p class="placeholder">Empty file.</p>';
                             } catch (e) {
                                 body.innerHTML = '<p class="placeholder" style="color:var(--color-danger);">Error loading.</p>';
@@ -940,10 +1215,8 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
     });
     // === Check existing files on load ===
     async function checkExistingFiles() {
-        // First check docops.status.json for authoritative task status
         const statusData = await fetchDocopsStatus();
         let anyRunning = false;
-
         if (statusData && statusData.tasks) {
             for (const [target, taskInfo] of Object.entries(statusData.tasks)) {
                 updateTaskStatusUI(target, taskInfo);
@@ -952,18 +1225,15 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
                 }
             }
         }
-
-        // Fall back to file existence checks for tasks not in status
         const checks = [
             { file: 'ideas.md', badge: 'badge-brainstorm' },
             { file: 'expand_status.md', badge: 'badge-expand' },
             { file: 'final_summary.md', badge: 'badge-summary' },
         ];
         for (const check of checks) {
-            // Only set done if not already set by status data
             const badge = document.getElementById(check.badge);
-            if (badge && badge.classList.contains('running')) continue; // don't override running
-            if (badge && badge.textContent === 'done') continue; // already done
+            if (badge && badge.classList.contains('running')) continue;
+            if (badge && badge.textContent === 'done') continue;
             try {
                 const content = await readFile(check.file);
                 if (content !== null && content.trim().length > 0) {
@@ -971,30 +1241,26 @@ ${showViewButtons ? `<button class="btn btn-view btn-sm" data-research-file="bre
                 }
             } catch (e) { /* leave as pending */ }
         }
-
-        // Check breeds directory
         try {
             const breedFiles = await listFiles('breeds');
             if (breedFiles.length > 0) {
                 await refreshBreedList('breed-list-container', 'breed-grid', true);
             }
         } catch (e) { /* ignore */ }
-        // Check research directory
         try {
-            const researchFiles = await listFiles('breeder_research');
+         const researchFiles = await listFiles('research');
             if (researchFiles.length > 0) {
                 setBadge('badge-research', 'done');
                 await refreshResearchList('research-list-container', 'research-grid', true);
             }
         } catch (e) { /* ignore */ }
-        // Start polling if anything is running
         if (anyRunning) {
             startStatusPolling();
         }
     }
     // === Initialize ===
     loadInitialFiles();
+    loadApiProviders();
     checkExistingFiles();
-    // Start background status polling (slow rate) to catch external changes
     startStatusPolling();
 })();

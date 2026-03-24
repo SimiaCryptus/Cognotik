@@ -48,7 +48,7 @@ framework offers several distinct modes, each suited for different kinds of prob
 
 This is the central configuration file that governs the behavior of the entire framework. It allows you to customize:
 
-* The AI models used for planning and parsing (`defaultModel`, `parsingModel`).
+* The AI models used for planning and parsing (`defaultModel`, `fastModel`).
 * The default **Cognitive Mode** to use.
 * Which **Tasks** are enabled and their specific settings (`taskSettings`).
 * The execution environment, such as the working directory and shell commands.

@@ -42,33 +42,34 @@ class DiffInstrumentor(
     val result = StringBuilder()
     for (segment in segments) {
       when (segment) {
-        is ResponseSegment.Markdown -> result.appendLine(segment.content)
+        is ResponseSegment.Markdown -> result.appendLine(segment.removeCodeFences())
         is ResponseSegment.NewFileBlock -> {
-          val filename = prefilterFilename(segment.filename) ?: segment.filename
+         val rawFilename = segment.filename ?: ""
+         val filename = prefilterFilename(rawFilename) ?: rawFilename
           log.debug(
             "Processing new file block: filename={}, language={}, code length={}",
             filename,
             segment.language,
-            segment.code.length
+            segment.removeCodeFences().length
           )
           if (filename.isBlank()) {
             log.warn("Blank filename after prefiltering for new file block, rendering as code block")
-            result.appendLine("```${segment.language}\n${segment.code}\n```")
+            result.appendLine("```${segment.language}\n${segment.removeCodeFences()}\n```")
             continue
           }
           val resolved = resolveNewFilePath(root, filename, resolver)
           if (resolved == null) {
-            result.appendLine("```${segment.language}\n${segment.code}\n```")
+            result.appendLine("```${segment.language}\n${segment.removeCodeFences()}\n```")
             continue
           }
           val filepath = fs.resolve(root, resolved)
           log.debug("Resolved new file path: {}", filepath)
-          result.appendLine(renderNewFile(filepath, segment.code, segment.language, handle, shouldAutoApply))
+          result.appendLine(renderNewFile(filepath, segment.removeCodeFences(), segment.language, handle, shouldAutoApply))
         }
 
         is ResponseSegment.DiffBlock -> {
-          var filename = segment.filename
-          log.debug("Processing diff block: filename={}, diff length={}", filename, segment.diff.length)
+          var filename = segment.calcFilename(root).toString()
+          log.debug("Processing diff block: filename={}, diff length={}", filename, segment.removeCodeFences().length)
           if (filename.isBlank() || !filename.contains('.')) {
             if (defaultFile != null) filename = defaultFile
             else {
@@ -76,14 +77,44 @@ class DiffInstrumentor(
                 "Blank or extensionless filename '{}' with no default file, rendering as diff code block",
                 segment.filename
               )
-              result.appendLine("```diff\n${segment.diff}\n```")
+              result.appendLine("```diff\n${segment.removeCodeFences()}\n```")
               continue
             }
           }
           val resolved = resolveWithBestEffort(root, filename, resolver)
           if (resolved == null) {
-            result.appendLine("```diff\n${segment.diff}\n```")
-            continue
+             // Treat as "create file" by applying the diff to blank content
+             log.info("File '{}' not found, treating diff as new file creation", filename)
+             val diffContent = segment.removeCodeFences()
+            val stdDiffContent = "```diff\n${diffContent}\n```"
+             val applyResult = try {
+               processor.apply("", stdDiffContent, filename)
+             } catch (e: Throwable) {
+               log.warn("Failed to apply diff to blank content for new file '{}': {}", filename, e.message, e)
+               null
+             }
+            if (applyResult != null && applyResult.isValid && applyResult.newCode.isNotBlank()) {
+               // Resolve the path for the new file
+               val newFileResolved = resolveNewFilePath(root, filename, resolver)
+               if (newFileResolved != null) {
+                 val filepath = fs.resolve(root, newFileResolved)
+                 log.debug("Creating new file from diff: {}", filepath)
+                 val lang = filepath.name.substringAfterLast('.', "")
+                 result.appendLine(renderNewFile(filepath, applyResult.newCode, lang, handle, shouldAutoApply))
+               } else {
+                 log.warn("Could not resolve new file path for '{}', rendering as diff code block", filename)
+                 result.appendLine(stdDiffContent)
+               }
+             } else {
+               log.warn(
+                 "Could not apply diff to blank content for '{}' (isValid={}, errors={}), rendering as diff code block",
+                 filename,
+                 applyResult?.isValid,
+                 applyResult?.errors?.joinToString("; ") { it.message }
+               )
+               result.appendLine(stdDiffContent)
+             }
+             continue
           }
           val filepath = fs.resolve(root, resolved)
           val relativize = try {
@@ -92,7 +123,7 @@ class DiffInstrumentor(
             log.warn("Could not relativize path {} against root {}: {}", filepath, root, e.message)
             filepath
           }
-          result.appendLine(renderDiffBlock(filepath, relativize, segment.diff, handle, shouldAutoApply))
+          result.appendLine(renderDiffBlock(filepath, relativize, segment.removeCodeFences(), handle, shouldAutoApply))
         }
       }
     }
@@ -111,6 +142,34 @@ class DiffInstrumentor(
     filename: String,
     resolver: (Path, String) -> String?
   ): String? {
+    // First, check for overlap between filename components and root's trailing components.
+    // This must happen before direct resolution to avoid duplicating path components
+    // e.g., filename="generated_app/ops/file.md", root ends with "generated_app/ops"
+    val filenameParts = filename.replace("\\", "/").split("/")
+    val rootParts = root.toString().replace("\\", "/").split("/")
+    var bestOverlap = 0
+    for (overlapLen in minOf(filenameParts.size - 1, rootParts.size) downTo 1) {
+      val rootSuffix = rootParts.subList(rootParts.size - overlapLen, rootParts.size)
+      val filenamePrefix = filenameParts.subList(0, overlapLen)
+      if (rootSuffix == filenamePrefix) {
+        bestOverlap = overlapLen
+        break
+      }
+    }
+
+    if (bestOverlap > 0) {
+      val effectiveRelativePath = filenameParts.subList(bestOverlap, filenameParts.size).joinToString("/")
+      val directPath = root.resolve(effectiveRelativePath).normalize()
+      if (directPath.startsWith(root)) {
+        val relativePath = root.relativize(directPath).toString()
+        log.info(
+          "Treating '{}' as new file path with {}-component overlap with root: '{}'",
+          filename, bestOverlap, relativePath
+        )
+        return relativePath
+      }
+    }
+
     // Strategy 1: Direct resolution (only succeeds if file already exists)
     val direct = resolver(root, filename)
     if (direct != null) {
@@ -130,7 +189,12 @@ class DiffInstrumentor(
       }
     }
     // Strategy 3: Treat as a new file path relative to root (no filesystem search)
-    val directPath = root.resolve(filename).normalize()
+    val effectiveRelativePath = if (bestOverlap > 0) {
+      filenameParts.subList(bestOverlap, filenameParts.size).joinToString("/")
+    } else {
+      filename
+    }
+    val directPath = root.resolve(effectiveRelativePath).normalize()
     if (directPath.startsWith(root)) {
       val relativePath = root.relativize(directPath).toString()
       log.info("Treating '{}' as new file path: '{}'", filename, relativePath)
@@ -354,11 +418,11 @@ class DiffInstrumentor(
     val shouldAutoApplyResult = shouldAutoApply(filepath)
     log.debug("shouldAutoApply({})={}, isValid={}", filepath, shouldAutoApplyResult, isValid)
     return "\n" + if (isValid && shouldAutoApplyResult) {
-      log.info("Auto-applying diff to {}", filepath)
+      log.debug("Auto-applying diff to {}", filepath)
       when (val state = controller.apply()) {
         is ApplyState.Applied -> {
           handle(mapOf(relativePath to state.newCode))
-          log.info("Successfully auto-applied diff to {}", filepath)
+          log.debug("Successfully auto-applied diff to {}", filepath)
           val revertButton = renderer.renderApplyDiffButton(filepath, diffVal, onApply = {}, onRevert = {
             log.info("User triggered revert for auto-applied diff: {}", filepath)
             controller.revert()

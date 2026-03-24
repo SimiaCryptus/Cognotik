@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode.Companion.requestToTask
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
@@ -111,7 +110,7 @@ open class ParallelMode(
             val renderedMessage = renderTemplate(plan.template, combination)
             task.expandable("Parameters", "```json\n${JsonUtil.toJson(combination)}\n```".renderMarkdown())
             task.expandable("Rendered Message", "```text\n${renderedMessage}\n```".renderMarkdown())
-            val (_, chosenTask) = requestToTask(
+            val (_, chosenTask) = ConversationalMode.requestToTask(
               defaultModel = orchestrationConfig.defaultSmart.getChildClient(task),
               fastModel = orchestrationConfig.defaultFast.getChildClient(task),
               userMessage = renderedMessage,

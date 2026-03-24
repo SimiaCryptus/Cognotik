@@ -1,10 +1,9 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
+import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -15,11 +14,11 @@ class SessionListServlet(
   private val prefix: String,
   private val applicationServer: ApplicationServer
 ) : HttpServlet() {
-  override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    resp.contentType = "text/html"
-    resp.status = HttpServletResponse.SC_OK
-    val user = authenticationManager.getUser(req.getCookie())
-    val sessions = dataStorage.listSessions(user, req.contextPath)
+  override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+    response.contentType = "text/html"
+    response.status = HttpServletResponse.SC_OK
+    val user = authenticate(request, response)
+    val sessions = dataStorage.listSessions(user, request.contextPath)
     val sessionRows = sessions.joinToString("") { session ->
       val sessionName = dataStorage.getSessionName(user, session)
       val sessionTime = dataStorage.getSessionTime(user, session) ?: return@joinToString ""
@@ -34,7 +33,7 @@ class SessionListServlet(
     }
     val title = """Sessions"""
 
-    resp.writer.write(
+    response.writer.write(
       """
             <html>
             <head>

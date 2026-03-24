@@ -15,6 +15,7 @@
 <nav id="pipeline-nav">
 <ul>
 <li><a class="nav-link active" data-section="section-input" href="#section-input">📝 Requirements</a></li>
+<li><a class="nav-link" data-section="section-models" href="#section-models">🤖 Models</a></li>
 <li><a class="nav-link" data-section="section-pipeline" href="#section-pipeline">⚙️ Pipeline</a></li>
 <li><a class="nav-link" data-section="section-results" href="#section-results">📊 Results</a></li>
 </ul>
@@ -43,6 +44,39 @@ Location: Pacific Northwest, USA"></textarea>
 </div>
 </div>
 </section>
+<!-- Section: Model Selection -->
+<section class="section" id="section-models">
+<h2>🤖 Model Selection</h2>
+<div class="card">
+<h3>AI Model Configuration</h3>
+<p class="help-text">Select which AI models to use for pipeline operations. Models are loaded from your configured API providers.</p>
+<div class="model-settings-grid">
+<div class="model-setting">
+<label for="smart-model-select">🧠 Smart Model</label>
+<p class="help-text">Primary model for complex reasoning tasks (brainstorming, summaries).</p>
+<select id="smart-model-select" class="model-select">
+<option value="">Loading models…</option>
+</select>
+</div>
+<div class="model-setting">
+<label for="fast-model-select">⚡ Fast Model</label>
+<p class="help-text">Secondary model for simpler/faster tasks (expansion, parsing).</p>
+<select id="fast-model-select" class="model-select">
+<option value="">Loading models…</option>
+</select>
+</div>
+</div>
+<div class="button-row">
+<button class="btn btn-primary" id="save-models">💾 Save Model Settings</button>
+<span class="status-msg" id="models-status"></span>
+</div>
+<div class="model-info-box" id="model-info-box" style="display:none;">
+<h4>📋 Configured Providers</h4>
+<div id="provider-list"></div>
+</div>
+</div>
+</section>
+
 <!-- Section: Pipeline -->
 <section class="section" id="section-pipeline">
 <h2>⚙️ Pipeline Execution</h2>
@@ -235,6 +269,17 @@ data-output="final_summary.md" data-viewer="viewer-summary">▶ Run
 </div>
 </section>
 </div>
+<!-- Full-Window Viewer Modal -->
+<div id="fullscreen-modal" class="fullscreen-modal hidden">
+<div class="fullscreen-modal-header">
+<span class="fullscreen-modal-title" id="fullscreen-modal-title">Document Viewer</span>
+<div class="fullscreen-modal-actions">
+<button class="btn btn-secondary btn-sm" id="fullscreen-modal-close">✕ Close</button>
+</div>
+</div>
+<div class="fullscreen-modal-body" id="fullscreen-modal-body"></div>
+</div>
+
 <script src="marked.min.js"></script>
 <script src="app.js"></script>
 </body>

@@ -122,7 +122,7 @@ class CommandAutofixAction : BaseAction() {
                     settings = settings,
                     files = files.map { it.toFile }.toTypedArray(),
                     model = AppSettingsState.instance.smartChatClient.getChildClient(),
-                    parsingModel = AppSettingsState.instance.fastChatClient.getChildClient(),
+                    fastModel = AppSettingsState.instance.fastChatClient.getChildClient(),
                     processor = AppSettingsState.instance.processor
                 )
                 val session = Session.newGlobalID()

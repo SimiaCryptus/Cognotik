@@ -43,14 +43,14 @@ abstract class ChatServer(
         this.availableExtensionNames.remove("permessage-deflate")
       }
       trafficLog.debug("Configuring WebSocket factory with settings: autoFragment=false, idleTimeout=10min, bufferSizes=1MB")
-      factory.setCreator { req, resp ->
+      factory.setCreator { request, response ->
         try {
-          if (req.parameterMap.containsKey("sessionId")) {
-            val session = Session(req.parameterMap["sessionId"]?.first()!!)
+          if (request.parameterMap.containsKey("sessionId")) {
+            val session = Session(request.parameterMap["sessionId"]?.first()!!)
             trafficLog.debug("WebSocket connection request for session: {}", session)
             val sessionManager = sessions.computeIfAbsent(session) { s ->
               val user =
-                authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
+                authenticationManager.getUser(request.getCookie(AuthenticationInterface.AUTH_COOKIE))
               trafficLog.debug(
                 "Creating new session manager for session: {}, user: {}",
                 s,
@@ -66,7 +66,7 @@ abstract class ChatServer(
         } catch (e: Exception) {
           log.debug("Error configuring websocket", e)
           trafficLog.error("WebSocket configuration error: ${e.message}", e)
-          resp.sendError(500, e.message)
+          response.sendError(500, e.message)
           null
         }
       }

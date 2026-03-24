@@ -65,7 +65,7 @@ open class ModifyFilesAction(
             SessionProxyServer.agents[session] = PatchChatManager(
                 session = session,
                 model = AppSettingsState.instance.smartChatClient,
-                parsingModel = AppSettingsState.instance.fastChatClient,
+                fastModel = AppSettingsState.instance.fastChatClient,
                 root = root.toFile(),
                 files = initialFiles,
                 showLineNumbers = showLineNumbers
@@ -116,14 +116,14 @@ open class ModifyFilesAction(
     inner class PatchChatManager(
         session: Session,
         model: ChatInterface,
-        parsingModel: ChatInterface,
+        fastModel: ChatInterface,
         val root: File,
         private val files: Set<Path>,
         private val showLineNumbers: Boolean = false
     ) : ChatSocketManager(
       session = session,
       smartModel = model,
-      fastModel = parsingModel,
+      fastModel = fastModel,
       systemPrompt = "",
       applicationClass = ApplicationServer::class.java,
       budget = 2.0,

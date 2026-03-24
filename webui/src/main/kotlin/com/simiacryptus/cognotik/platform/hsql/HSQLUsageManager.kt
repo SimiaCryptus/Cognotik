@@ -100,7 +100,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
   }
 
   private fun saveUsageValues(usageKey: UsageInterface.UsageKey, usageValues: UsageInterface.UsageValues) {
-    log.info(
+    log.debug(
       "Saving usage values for session: {}, user: {}, model: {}",
       usageKey.session,
       usageKey.user?.email,

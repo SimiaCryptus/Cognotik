@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -40,9 +39,9 @@ open class UnifiedPlanAction(
             e.project,
             OrchestrationConfig(
                 "Init",
-                defaultSmartModel = AppSettingsState.instance.smartModel
+                smartModel = AppSettingsState.instance.smartModel?.model?.modelId
                     ?: throw IllegalStateException("Smart model not configured"),
-                defaultFastModel = AppSettingsState.instance.fastModel
+                fastModel = AppSettingsState.instance.fastModel?.model?.modelId
                     ?: throw IllegalStateException("Fast model not configured"),
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
@@ -140,7 +139,7 @@ open class UnifiedPlanAction(
         SessionProxyServer.chats[session] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Cognotik",
-            inputCnt = when (orchestrationConfig.cognitiveMode) {
+            inputCnt = when (orchestrationConfig.cognitiveSettings?.type) {
                 CognitiveModeType.Chat -> 0
                 else -> 4
             },

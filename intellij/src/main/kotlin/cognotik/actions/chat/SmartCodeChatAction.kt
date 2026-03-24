@@ -54,7 +54,7 @@ class SmartCodeChatAction : BaseAction() {
                 SessionProxyServer.agents[session] = SmartCodeChatManager(
                     session = session,
                     model = AppSettingsState.instance.smartChatClient,
-                    parsingModel = AppSettingsState.instance.fastChatClient,
+                    fastModel = AppSettingsState.instance.fastChatClient,
                     root = root.toFile(),
                     codeFiles = codeFiles
                 )
@@ -96,13 +96,13 @@ class SmartCodeChatAction : BaseAction() {
     inner class SmartCodeChatManager(
         session: Session,
         model: ChatInterface,
-        parsingModel: ChatInterface,
+        fastModel: ChatInterface,
         val root: File,
         private val codeFiles: Set<Path>
     ) : SmartChatSocketManager(
       session = session,
       smartModel = model,
-      fastModel = parsingModel,
+      fastModel = fastModel,
       systemPrompt = "",
       applicationClass = ApplicationServer::class.java,
       budget = 2.0,

@@ -17,13 +17,13 @@ class CmdPatchApp(
   settings: Settings,
   val files: Array<out File>?,
   model: ChatInterface,
-  parsingModel: ChatInterface,
+  fastModel: ChatInterface,
   processor: PatchProcessor,
 ) : PatchApp(
   root.toFile(),
   settings,
   model,
-  parsingModel = parsingModel,
+  fastModel = fastModel,
   processor = processor,
 ) {
 
@@ -123,7 +123,7 @@ class CmdPatchApp(
           val task = task.ui.newTask(false).apply { tabs[cmdString] = placeholder }
           task.add("Working Directory: ${cmdSettings.workingDirectory}")
           task.add("Command: $cmdString")
-          task.add("Model: $model / $parsingModel")
+          task.add("Model: $model / $fastModel")
           val process = processBuilder.start()
           task.add("Started at: ${Instant.now()}")
           val cancelButton = task.add(task.hrefLink("Stop") {

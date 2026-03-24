@@ -46,7 +46,7 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
             codeSelection = diffInfo,
             filename = "working_copy_changes.diff",
             model = AppSettingsState.instance.smartChatClient,
-            parsingModel = AppSettingsState.instance.fastChatClient,
+            fastModel = AppSettingsState.instance.fastChatClient,
             storage = ApplicationServices.fileApplicationServices().dataStorageFactory
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(

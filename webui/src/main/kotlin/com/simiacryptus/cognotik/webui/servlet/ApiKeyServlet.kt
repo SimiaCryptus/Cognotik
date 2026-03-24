@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.platform.model.toApiList
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.encrypt
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
+import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -32,24 +32,24 @@ class ApiKeyServlet : HttpServlet() {
     val welcomeMessage: String = "Welcome to our service!"
   )
 
-  override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+  override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
 
 
-    resp.contentType = "text/html"
-    val user = ApplicationServices.authenticationManager.getUser(req.getCookie()) ?: return resp.sendError(
+    response.contentType = "text/html"
+    val user = authenticate(request, response) ?: return response.sendError(
       HttpServletResponse.SC_UNAUTHORIZED
     )
-    val action = req.getParameter("action")
-    val apiKey = req.getParameter("apiKey")
-    val provider = req.getParameter("provider")
+    val action = request.getParameter("action")
+    val apiKey = request.getParameter("apiKey")
+    val provider = request.getParameter("provider")
 
     when (action.lowercase(Locale.ROOT)) {
       "edit" -> {
         val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey && it.owner == user.email }
         if (record != null) {
-          serveEditPage(req, resp, record)
+          serveEditPage(request, response, record)
         } else {
-          resp.writer.write("API Key record not found")
+          response.writer.write("API Key record not found")
         }
       }
 
@@ -59,17 +59,17 @@ class ApiKeyServlet : HttpServlet() {
         if (record != null) {
           apiKeyRecords.remove(record)
           saveRecords()
-          resp.writer.write("API Key record deleted")
+          response.writer.write("API Key record deleted")
         } else {
-          resp.writer.write("API Key record not found")
+          response.writer.write("API Key record not found")
         }
       }
 
       "create" -> {
         val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
         serveEditPage(
-          req,
-          resp,
+          request,
+          response,
           ApiKeyRecord(
             owner = user.email,
             apiKey = UUID.randomUUID().toString().encrypt,
@@ -87,34 +87,34 @@ class ApiKeyServlet : HttpServlet() {
           throw IllegalArgumentException("API Key record not found, or you do not have permission to access it, or you are the owner.")
         }
 
-        serveInviteConfirmationPage(resp, record, user)
+        serveInviteConfirmationPage(response, record, user)
       }
 
       else -> {
-        resp.writer.write(indexPage(req))
+        response.writer.write(indexPage(request, response))
       }
     }
 
   }
 
-  override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-    val action = req.getParameter("action")
-    val apiKey = req.getParameter("apiKey")
-    val mappedKey = req.getParameter("mappedKey")
-    val budget = req.getParameter("budget")?.toDoubleOrNull()
-    val comment = req.getParameter("comment")
+  override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
+    val action = request.getParameter("action")
+    val apiKey = request.getParameter("apiKey")
+    val mappedKey = request.getParameter("mappedKey")
+    val budget = request.getParameter("budget")?.toDoubleOrNull()
+    val comment = request.getParameter("comment")
 
-    val welcomeMessage = req.getParameter("welcomeMessage")
-    val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
+    val welcomeMessage = request.getParameter("welcomeMessage")
+    val user = authenticate(request, response)
     val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey }
 
     if (action == "acceptInvite") {
       if (apiKey.isNullOrEmpty()) {
-        resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "API Key is missing")
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "API Key is missing")
       } else if (user == null) {
-        resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "User not found")
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "User not found")
       } else if (record == null) {
-        resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid API Key or User not found")
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid API Key or User not found")
       } else {
         fileApplicationServices().userSettingsManager.updateUserSettings(
           user, UserSettings(
@@ -125,7 +125,7 @@ class ApiKeyServlet : HttpServlet() {
             mutableListOf()
           )
         )
-        resp.sendRedirect("/")
+        response.sendRedirect("/")
 
       }
     } else if (record != null && budget != null && user == null) {
@@ -139,7 +139,7 @@ class ApiKeyServlet : HttpServlet() {
         )
       )
       saveRecords()
-      resp.sendRedirect("?action=edit&apiKey=$apiKey&editSuccess=true")
+      response.sendRedirect("?action=edit&apiKey=$apiKey&editSuccess=true")
     } else if (apiKey != null && budget != null) {
 
       val newRecord = ApiKeyRecord(
@@ -152,7 +152,7 @@ class ApiKeyServlet : HttpServlet() {
       )
       apiKeyRecords.add(newRecord)
       saveRecords()
-      resp.sendRedirect(
+      response.sendRedirect(
         "?action=edit&apiKey=${
           URLEncoder.encode(
             apiKey,
@@ -162,12 +162,12 @@ class ApiKeyServlet : HttpServlet() {
       )
 
     } else {
-      resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid input")
+      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid input")
     }
   }
 
-  private fun indexPage(req: HttpServletRequest): String {
-    val user = ApplicationServices.authenticationManager.getUser(req.getCookie()) ?: return ""
+  private fun indexPage(request: HttpServletRequest, response: HttpServletResponse): String {
+    val user = authenticate(request, response) ?: return ""
     return """
           <html>
           <head>
@@ -217,12 +217,12 @@ class ApiKeyServlet : HttpServlet() {
     )
   }
 
-  private fun serveEditPage(req: HttpServletRequest, resp: HttpServletResponse, record: ApiKeyRecord) {
-    val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
+  private fun serveEditPage(request: HttpServletRequest, response: HttpServletResponse, record: ApiKeyRecord) {
+    val userinfo = authenticate(request, response)
     val usageSummary: Map<String, ModelSchema.Usage> =
       ApplicationServices.fileApplicationServices().usageManager.getUserUsageSummary(user = userinfo!!)
 
-    resp.writer.write(
+    response.writer.write(
       """
       <html>
       <head>

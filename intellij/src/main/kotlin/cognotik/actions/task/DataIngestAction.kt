@@ -24,7 +24,6 @@ import com.simiacryptus.cognotik.plan.tools.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -259,11 +258,11 @@ class DataIngestAction : BaseAction() {
 
             return OrchestrationConfig(
                 "Config",
-                defaultSmartModel = model ?: AppSettingsState.instance.smartModel
+                smartModel = (model ?: AppSettingsState.instance.smartModel)?.model?.modelId
                 ?: throw IllegalStateException("No model configured"),
-                defaultFastModel = AppSettingsState.instance.fastModel
+                fastModel = AppSettingsState.instance.fastModel?.model?.modelId
                     ?: throw IllegalStateException("Fast model not configured"),
-                defaultImageModel = AppSettingsState.instance.imageChatModel ?: AppSettingsState.instance.smartModel
+                imageModel = (AppSettingsState.instance.imageChatModel ?: AppSettingsState.instance.smartModel)?.model?.modelId
                 ?: throw IllegalStateException("No image model configured"),
                 temperature = temperatureSlider.value / 100.0,
                 autoFix = false,
@@ -277,7 +276,7 @@ class DataIngestAction : BaseAction() {
 
         private fun getVisibleModels() =
           ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
+                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.filter { model ->
                   model.provider == apiData.provider && model.modelId.isNotBlank() && PlanConfigDialog.isVisible(model)
                 } ?: listOf()
             }.distinctBy { it.modelId }.sortedBy { "${it.provider?.name} - ${it.modelId}" }

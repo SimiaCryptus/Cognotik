@@ -50,6 +50,8 @@
 
 
     <logger name="com.simiacryptus" level="INFO"/>
+    <logger name="com.simiacryptus.cognotik.plan.cognitive" level="DEBUG"/>
+
     <!-- Chat Traffic Logger -->
     <logger name="TRAFFIC.com.simiacryptus.cognotik.webui.chat" level="INFO" additivity="false">
         <appender-ref ref="CHAT_TRAFFIC_FILE"/>

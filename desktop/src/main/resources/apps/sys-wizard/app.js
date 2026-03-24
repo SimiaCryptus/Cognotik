@@ -17,6 +17,12 @@
 
     const proxyBase = '/proxy/';
     function getProxyUrl(id) { return proxyBase + '#' + id; }
+     // === Display Session ID ===
+     var sessionDisplay = document.getElementById('session-id-display');
+     if (sessionDisplay && sessionId) {
+         sessionDisplay.textContent = 'Session: ' + sessionId;
+     }
+
 
     // === File I/O ===
     async function readFile(filePath) {
@@ -250,6 +256,35 @@
         batchLog.appendChild(entry);
         batchLog.scrollTop = batchLog.scrollHeight;
     }
+     // === Character Count ===
+     var goalEditor = document.getElementById('goal-editor');
+     var charCount = document.getElementById('char-count');
+     if (goalEditor && charCount) {
+         goalEditor.addEventListener('input', function () {
+             var len = this.value.length;
+             charCount.textContent = len + ' character' + (len !== 1 ? 's' : '');
+         });
+     }
+     // === Example Prompts ===
+     var examplePrompts = {
+         docker: 'List all running Docker containers, find any using more than 1GB of memory, stop idle containers that have been running for more than 7 days, and write a summary report to /tmp/docker-report.txt',
+         logs: 'Analyze the last 1000 lines of /var/log/syslog, identify the top 10 most frequent error messages, group them by service name, and write a summary report to /tmp/log-analysis.txt',
+         backup: 'Create a compressed backup of the /home directory (excluding .cache and node_modules), save it to /tmp/home-backup-$(date +%Y%m%d).tar.gz, and verify the archive integrity',
+         sysinfo: 'Collect comprehensive system information including OS version, CPU, memory, disk usage, network interfaces, running services, and open ports. Write a formatted report to /tmp/system-info.txt'
+     };
+     document.querySelectorAll('.btn-example').forEach(function (btn) {
+         btn.addEventListener('click', function () {
+             var key = this.dataset.example;
+             if (examplePrompts[key] && goalEditor) {
+                 goalEditor.value = examplePrompts[key];
+                 goalEditor.focus();
+                 if (charCount) {
+                     charCount.textContent = goalEditor.value.length + ' characters';
+                 }
+             }
+         });
+     });
+
 
     // === Navigation ===
     document.querySelectorAll('.nav-link').forEach(function (link) {
@@ -274,7 +309,7 @@
 
     // === Save Goal ===
     document.getElementById('save-goal').addEventListener('click', async function () {
-        var content = document.getElementById('goal-editor').value;
+         var content = goalEditor.value;
         if (!content.trim()) {
             setStatus('goal-status', '✗ Please enter a goal first', 'error');
             return;
@@ -283,14 +318,17 @@
             this.disabled = true;
             await writeFile('goal.md', content);
             setStatus('goal-status', '✓ Goal saved', 'success');
-            var stageEl = document.getElementById('stage-goal-status');
-            if (stageEl) { stageEl.textContent = 'Saved'; stageEl.className = 'stage-status done'; }
+             updatePipelineStage('goal', 'completed');
         } catch (e) {
             setStatus('goal-status', '✗ ' + e.message, 'error');
         } finally {
             this.disabled = false;
         }
     });
+     // === Save & Run Pipeline ===
+     document.getElementById('save-and-run').addEventListener('click', function () {
+         document.getElementById('run-all').click();
+     });
 
     // === View File Buttons ===
     function isScriptFile(filePath) {
@@ -348,22 +386,150 @@
         });
     });
 
-    // === Copy Script Button ===
+     // === Copy Script ===
     document.getElementById('copy-script').addEventListener('click', async function () {
         try {
             var content = await readFile('code/script.sh');
             if (content === null) {
-                alert('No script generated yet. Run the pipeline first.');
+                 showToast('No script generated yet. Run the pipeline first.', 'error');
                 return;
             }
             await navigator.clipboard.writeText(content);
-            this.textContent = '✓ Copied!';
+             this.innerHTML = '<span class="btn-icon">✓</span> Copied!';
             var self = this;
-            setTimeout(function () { self.textContent = '📋 Copy to Clipboard'; }, 2000);
+             setTimeout(function () { self.innerHTML = '<span class="btn-icon">📋</span> Copy'; }, 2000);
         } catch (e) {
-            alert('Failed to copy: ' + e.message);
+             showToast('Failed to copy: ' + e.message, 'error');
         }
     });
+     // === Download Script ===
+     document.getElementById('download-script').addEventListener('click', async function () {
+         try {
+             var content = await readFile('code/script.sh');
+             if (content === null) {
+                 showToast('No script generated yet. Run the pipeline first.', 'error');
+                 return;
+             }
+             var blob = new Blob([content], { type: 'text/x-shellscript' });
+             var url = URL.createObjectURL(blob);
+             var a = document.createElement('a');
+             a.href = url;
+             a.download = 'script.sh';
+             document.body.appendChild(a);
+             a.click();
+             document.body.removeChild(a);
+             URL.revokeObjectURL(url);
+             showToast('Script downloaded!', 'success');
+         } catch (e) {
+             showToast('Failed to download: ' + e.message, 'error');
+         }
+     });
+     // === Toast Notifications ===
+     function showToast(message, type) {
+         var container = document.getElementById('toast-container');
+         if (!container) return;
+         var toast = document.createElement('div');
+         toast.className = 'toast toast-' + (type || 'info');
+         toast.textContent = message;
+         container.appendChild(toast);
+         setTimeout(function () {
+             toast.classList.add('removing');
+             setTimeout(function () {
+                 if (toast.parentNode) toast.parentNode.removeChild(toast);
+             }, 300);
+         }, 4000);
+     }
+     // === Progress Bar ===
+     function showProgress(label, percent) {
+         var bar = document.getElementById('global-progress');
+         var fill = document.getElementById('progress-fill');
+         var labelEl = document.getElementById('progress-label');
+         if (!bar || !fill || !labelEl) return;
+         bar.classList.add('visible');
+         labelEl.textContent = label || '';
+         if (percent === undefined || percent === null || percent < 0) {
+             fill.style.width = '';
+             fill.classList.add('indeterminate');
+         } else {
+             fill.classList.remove('indeterminate');
+             fill.style.width = Math.min(100, Math.max(0, percent)) + '%';
+         }
+     }
+     function hideProgress() {
+         var bar = document.getElementById('global-progress');
+         var fill = document.getElementById('progress-fill');
+         if (bar) bar.classList.remove('visible');
+         if (fill) { fill.classList.remove('indeterminate'); fill.style.width = '0%'; }
+     }
+     // === Pipeline Stage Diagram ===
+     function updatePipelineStage(stage, state) {
+         var stageEl = document.getElementById('pipeline-stage-' + stage);
+         var statusEl = document.getElementById('stage-' + stage + '-status');
+         if (stageEl) {
+             stageEl.classList.remove('active', 'completed', 'error');
+             if (state === 'active') stageEl.classList.add('active');
+             else if (state === 'completed') stageEl.classList.add('completed');
+             else if (state === 'error') stageEl.classList.add('error');
+         }
+         if (statusEl) {
+             if (state === 'active') { statusEl.textContent = 'Running…'; statusEl.className = 'stage-status running'; }
+             else if (state === 'completed') { statusEl.textContent = 'Done'; statusEl.className = 'stage-status done'; }
+             else if (state === 'error') { statusEl.textContent = 'Error'; statusEl.className = 'stage-status error'; }
+             else if (state === 'pending') { statusEl.textContent = 'Pending'; statusEl.className = 'stage-status'; }
+             else { statusEl.textContent = state; statusEl.className = 'stage-status done'; }
+         }
+         // Update connectors
+         updateConnectors();
+     }
+     function updateConnectors() {
+         var stageGoal = document.getElementById('pipeline-stage-goal');
+         var stageCodegen = document.getElementById('pipeline-stage-codegen');
+         var stageRun = document.getElementById('pipeline-stage-run');
+         var conn1 = document.getElementById('connector-1');
+         var conn2 = document.getElementById('connector-2');
+         if (conn1) {
+             conn1.classList.remove('active', 'completed');
+             if (stageGoal && stageGoal.classList.contains('completed')) {
+                 if (stageCodegen && (stageCodegen.classList.contains('active'))) conn1.classList.add('active');
+                 else if (stageCodegen && stageCodegen.classList.contains('completed')) conn1.classList.add('completed');
+             }
+         }
+         if (conn2) {
+             conn2.classList.remove('active', 'completed');
+             if (stageCodegen && stageCodegen.classList.contains('completed')) {
+                 if (stageRun && stageRun.classList.contains('active')) conn2.classList.add('active');
+                 else if (stageRun && stageRun.classList.contains('completed')) conn2.classList.add('completed');
+             }
+         }
+     }
+     // === Results Summary ===
+     function updateResultsSummary(scriptStatus, executionStatus) {
+         var summary = document.getElementById('results-summary');
+         if (!summary) return;
+         summary.style.display = 'block';
+         var scriptStat = document.getElementById('summary-script-status');
+         var execStat = document.getElementById('summary-execution-status');
+         if (scriptStat) {
+             var val = scriptStat.querySelector('.stat-value');
+             if (val) {
+                 val.textContent = scriptStatus || '—';
+                 val.className = 'stat-value';
+                 if (scriptStatus === 'Generated') val.classList.add('success');
+                 else if (scriptStatus === 'Error') val.classList.add('error');
+             }
+         }
+         if (execStat) {
+             var val2 = execStat.querySelector('.stat-value');
+             if (val2) {
+                 val2.textContent = executionStatus || '—';
+                 val2.className = 'stat-value';
+                 if (executionStatus === 'Success') val2.classList.add('success');
+                 else if (executionStatus === 'Failed') val2.classList.add('error');
+                 else if (executionStatus === 'Running…') val2.classList.add('running');
+             }
+         }
+     }
+
 
     // === Run Operation Buttons ===
     document.querySelectorAll('.btn-run').forEach(function (btn) {
@@ -374,16 +540,18 @@
             var viewerId = this.dataset.viewer;
 
             // Auto-save goal before running
-            var goalContent = document.getElementById('goal-editor').value;
+             var goalContent = goalEditor.value;
             if (!goalContent.trim()) {
-                alert('Please enter a goal first.');
+                 showToast('Please enter a goal first.', 'error');
                 return;
             }
             await writeFile('goal.md', goalContent);
+             updatePipelineStage('goal', 'completed');
 
             setBadge(badgeId, 'running');
             this.disabled = true;
             startStatusPolling();
+             showProgress('Running ' + opPath + '…', -1);
 
             try {
                 var taskId = await runDocOp(opPath, outputPath);
@@ -406,19 +574,23 @@
                 }
             } catch (e) {
                 setBadge(badgeId, 'error');
-                alert('Operation failed: ' + e.message);
+                 showToast('Operation failed: ' + e.message, 'error');
             } finally {
                 this.disabled = false;
+                 hideProgress();
             }
         });
     });
 
     // === Batch Execution ===
     async function runSequential(steps) {
-        for (var i = 0; i < steps.length; i++) {
+         var totalSteps = steps.length;
+         for (var i = 0; i < totalSteps; i++) {
             var step = steps[i];
             logBatch('Starting: ' + step.label, 'info');
             setBadge(step.badge, 'running');
+             if (step.stage) updatePipelineStage(step.stage, 'active');
+             showProgress(step.label + '…', Math.round((i / totalSteps) * 100));
 
             try {
                 var taskId = await runDocOp(step.op, step.output);
@@ -429,6 +601,7 @@
                 }
                 await waitForTask(step.output);
                 setBadge(step.badge, 'done');
+                 if (step.stage) updatePipelineStage(step.stage, 'completed');
                 logBatch('✓ Completed: ' + step.label, 'success');
 
                 if (step.viewer) {
@@ -447,17 +620,19 @@
                 if (step.afterFn) await step.afterFn();
             } catch (e) {
                 setBadge(step.badge, 'error');
+                 if (step.stage) updatePipelineStage(step.stage, 'error');
                 logBatch('✗ Failed: ' + step.label + ' — ' + e.message, 'error');
                 throw e;
             }
         }
+         showProgress('Complete', 100);
     }
 
     document.getElementById('run-all').addEventListener('click', async function () {
         // Auto-save goal
-        var goalContent = document.getElementById('goal-editor').value;
+         var goalContent = goalEditor.value;
         if (!goalContent.trim()) {
-            alert('Please enter a goal first.');
+             showToast('Please enter a goal first.', 'error');
             return;
         }
 
@@ -468,8 +643,7 @@
         try {
             await writeFile('goal.md', goalContent);
             logBatch('✓ Goal saved', 'success');
-            var stageEl = document.getElementById('stage-goal-status');
-            if (stageEl) { stageEl.textContent = 'Saved'; stageEl.className = 'stage-status done'; }
+             updatePipelineStage('goal', 'completed');
 
             await runSequential([
                 {
@@ -477,7 +651,8 @@
                     output: 'code/script.sh',
                     badge: 'badge-codegen',
                     viewer: 'viewer-codegen',
-                    label: 'Generate Shell Script'
+                     label: 'Generate Shell Script',
+                     stage: 'codegen'
                 },
                 {
                     op: 'ops/run_op.md',
@@ -485,6 +660,7 @@
                     badge: 'badge-run',
                     viewer: 'viewer-run',
                     label: 'Run & Auto-Fix',
+                     stage: 'run',
                     afterFn: async function () {
                         // Refresh the script viewer too since auto-fix may have modified it
                         try {
@@ -500,6 +676,8 @@
                 }
             ]);
             logBatch('🎉 Pipeline complete!', 'success');
+             showToast('Pipeline complete!', 'success');
+             updateResultsSummary('Generated', 'Success');
 
             // Auto-switch to results tab
             document.querySelectorAll('.nav-link').forEach(function (l) { l.classList.remove('active'); });
@@ -512,8 +690,15 @@
             await loadResults();
         } catch (e) {
             logBatch('Pipeline stopped due to error.', 'error');
+             showToast('Pipeline stopped due to error.', 'error');
+             updateResultsSummary(
+                 document.getElementById('badge-codegen').classList.contains('done') ? 'Generated' : 'Error',
+                 'Failed'
+             );
         } finally {
             this.disabled = false;
+             hideProgress();
+             stopStatusPolling();
         }
     });
 
@@ -563,6 +748,17 @@
                     else if (taskInfo.status === 'ERROR' || taskInfo.status === 'FAILED') setBadge(badgeId, 'error');
                 }
                 updateSessionLinks(target, taskInfo);
+                 // Update pipeline diagram from status
+                 var stageMapDiagram = {
+                     'code/script.sh': 'codegen',
+                     'code/fix_log.md': 'run'
+                 };
+                 var diagramStage = stageMapDiagram[target];
+                 if (diagramStage) {
+                     if (taskInfo.status === 'RUNNING') updatePipelineStage(diagramStage, 'active');
+                     else if (taskInfo.status === 'COMPLETED') updatePipelineStage(diagramStage, 'completed');
+                     else if (taskInfo.status === 'ERROR' || taskInfo.status === 'FAILED') updatePipelineStage(diagramStage, 'error');
+                 }
             }
         }
 
@@ -577,7 +773,12 @@
             if (badge && (badge.classList.contains('running') || badge.textContent === 'done')) continue;
             try {
                 var content = await readFile(check.file);
-                if (content !== null && content.trim().length > 0) setBadge(check.badge, 'done');
+                 if (content !== null && content.trim().length > 0) {
+                     setBadge(check.badge, 'done');
+                     var fileStageMap = { 'code/script.sh': 'codegen', 'code/fix_log.md': 'run' };
+                     var fStage = fileStageMap[check.file];
+                     if (fStage) updatePipelineStage(fStage, 'completed');
+                 }
             } catch (e) { /* leave as pending */ }
         }
 
@@ -585,12 +786,24 @@
         try {
             var goalContent = await readFile('goal.md');
             if (goalContent !== null && goalContent.trim().length > 0) {
-                var stageEl = document.getElementById('stage-goal-status');
-                if (stageEl) { stageEl.textContent = 'Saved'; stageEl.className = 'stage-status done'; }
+                 updatePipelineStage('goal', 'completed');
             }
         } catch (e) { /* ignore */ }
 
-        if (anyRunning) startStatusPolling();
+         if (anyRunning) {
+             startStatusPolling();
+         }
+         // Update results summary if files exist
+         try {
+             var scriptExists = await readFile('code/script.sh');
+             var logExists = await readFile('code/fix_log.md');
+             if (scriptExists || logExists) {
+                 updateResultsSummary(
+                     scriptExists ? 'Generated' : '—',
+                     logExists ? 'Success' : '—'
+                 );
+             }
+         } catch (e) { /* ignore */ }
     }
 
     // === Load Initial Files ===
@@ -598,7 +811,10 @@
         try {
             var content = await readFile('goal.md');
             if (content !== null) {
-                document.getElementById('goal-editor').value = content;
+                 goalEditor.value = content;
+                 if (charCount) {
+                     charCount.textContent = content.length + ' character' + (content.length !== 1 ? 's' : '');
+                 }
             }
         } catch (e) {
             console.warn('Could not load goal.md:', e);
@@ -608,6 +824,5 @@
     // === Initialize ===
     loadInitialFiles();
     checkExistingFiles();
-    startStatusPolling();
 
 })();

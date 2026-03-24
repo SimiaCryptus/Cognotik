@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
+import com.simiacryptus.cognotik.webui.application.getCookie
+import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.*
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -18,10 +18,7 @@ class SessionIdFilter(
     if (request is HttpServletRequest && response is HttpServletResponse) {
       if (isSecure(request)) {
         val sessionIdCookie = request.getCookie()
-        if (sessionIdCookie == null || null == ApplicationServices.authenticationManager.getUser(
-            sessionIdCookie
-          )
-        ) {
+        if (sessionIdCookie == null || null == authenticate(request, response)        ) {
           val queryString = request.queryString
           val originalUrl =
             if (queryString != null) "${request.requestURL}?${queryString}" else request.requestURL.toString()

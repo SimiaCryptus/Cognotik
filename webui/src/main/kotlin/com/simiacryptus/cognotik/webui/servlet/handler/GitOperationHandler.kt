@@ -204,7 +204,7 @@ object GitOperationHandler {
   }
 
   fun executeGitCommand(workDir: File, vararg command: String): String {
-    log.info("Executing git command in ${workDir.absolutePath}: ${command.joinToString(" ")}")
+    log.debug("Executing git command in ${workDir.absolutePath}: ${command.joinToString(" ")}")
     val processBuilder = ProcessBuilder(*command)
       .directory(workDir)
       .redirectErrorStream(true)

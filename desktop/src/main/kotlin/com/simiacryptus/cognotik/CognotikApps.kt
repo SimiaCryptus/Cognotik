@@ -282,7 +282,7 @@ open class CognotikApps(
          }
          val staticApps = listOf(
              ChildWebApp("/proxy", SessionProxyServer("Proxy Server", "/proxy")),
-             ChildWebApp("/chat", BasicChatApp(File("."), model, model)),
+             ChildWebApp("/chat", BasicChatApp(File("."))),
              ChildWebApp("/taskChat", SinglePlanApp("/taskChat", "Task-Runner")),
          )
          docopsApps + staticApps

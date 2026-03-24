@@ -2,21 +2,19 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
+import com.simiacryptus.cognotik.webui.application.authenticate
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.http.MimeTypes
 import java.nio.file.NoSuchFileException
 
-open class WelcomeServlet(private val parent: ApplicationDirectory) :
-  HttpServlet() {
-  override fun doGet(req: HttpServletRequest?, resp: HttpServletResponse?) {
+open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServlet() {
+  override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
     log.debug("Received GET request for path: ${req?.servletPath}")
     val path = req?.servletPath ?: "/"
     when {
@@ -31,12 +29,12 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) :
       }
 
       path == "/apps" -> {
-        log.info("Serving app list for path: $path")
+        log.debug("Serving app list for path: $path")
         serveAppList(req!!, resp)
       }
 
       else -> {
-        log.info("Serving resource for path: $path")
+        log.debug("Serving resource for path: $path")
         serveResource(req, resp, path)
       }
     }
@@ -72,24 +70,24 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) :
     }
   }
 
-  private fun serveUserInfo(req: HttpServletRequest, resp: HttpServletResponse) {
+  private fun serveUserInfo(request: HttpServletRequest, response: HttpServletResponse) {
     log.debug("Starting to serve user info")
-    val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
+    val user = authenticate(request, response) ?: return
     log.debug("Retrieved user: ${user?.email ?: "anonymous"}")
     val mapper = jacksonObjectMapper()
-    resp.contentType = "application/json"
+    response.contentType = "application/json"
     try {
-      mapper.writeValue(resp.outputStream, user)
+      mapper.writeValue(response.outputStream, user)
       log.debug("Successfully served user info for user: ${user?.email ?: "anonymous"}")
     } catch (e: Exception) {
       log.error("Error serving user info for user: ${user?.email ?: "anonymous"}", e)
-      resp.sendError(500, "Error retrieving user information")
+      response.sendError(500, "Error retrieving user information")
     }
   }
 
-  private fun serveAppList(req: HttpServletRequest, resp: HttpServletResponse?) {
+  private fun serveAppList(request: HttpServletRequest, response: HttpServletResponse) {
     log.debug("Starting to serve app list")
-    val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
+    val user = authenticate(request, response) ?: return
     log.debug("Retrieved user for app list: ${user?.email ?: "anonymous"}")
     log.debug("Total child web apps available: ${parent.childWebApps.size}")
     val authorizedApps = parent.childWebApps.filter {
@@ -115,15 +113,15 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) :
     log.info("Serving ${authorizedApps.size} authorized apps for user: ${user?.email ?: "anonymous"}")
     val mapper = jacksonObjectMapper()
     mapper.enable(SerializationFeature.INDENT_OUTPUT)
-    resp?.contentType = "application/json"
+    response?.contentType = "application/json"
     lateinit var valueAsString: String
     try {
       valueAsString = mapper.writeValueAsString(authorizedApps)
-      resp?.outputStream?.write(valueAsString.toByteArray())
+      response?.outputStream?.write(valueAsString.toByteArray())
       log.debug("Successfully served app list")
     } catch (e: Exception) {
       log.error("Error serving app list: $valueAsString", e)
-      resp?.sendError(500, "Error retrieving application list")
+      response?.sendError(500, "Error retrieving application list")
     }
   }
 
@@ -138,7 +136,7 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) :
       else -> try {
         resp ?: throw IllegalStateException("Response is null")
         resp.contentType = MimeTypes.getDefaultMimeByExtension(requestURI.split("/").last())
-        log.info("Serving resource: $requestURI as ${resp.contentType}")
+        log.debug("Serving resource: $requestURI as ${resp.contentType}")
         val inputStream = parent.welcomeResources.addPath(requestURI)?.inputStream
         if (inputStream != null) {
           inputStream.copyTo(resp.outputStream!!)
@@ -151,7 +149,7 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) :
         log.warn("Resource not found: $requestURI", e)
         resp?.sendError(404)
       } catch (e: Exception) {
-        log.error("Error serving resource: $requestURI", e)
+        log.debug("Error serving resource: $requestURI", e)
         resp?.sendError(500, "Error serving resource")
       }
     }
