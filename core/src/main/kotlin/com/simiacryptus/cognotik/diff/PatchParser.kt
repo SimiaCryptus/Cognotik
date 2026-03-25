@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.diff
 
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.nio.file.Path
+import kotlin.io.path.pathString
 
 interface PatchParser {
 
@@ -26,10 +27,11 @@ interface PatchParser {
 
 
     fun calcFilename(root: Path): Path {
+      val root = root.normalize().removeAllUpperDirectories()
       var file = filename?.let { root.resolve(it).normalize() }
         ?: throw IllegalStateException("Cannot calculate filename for segment without filename: $this")
       // look for repeated segments like "src/utils/src/utils/exampleUtils.js" and reduce to single path if not found
-      val parts = Path.of(filename!!).normalize().toList().map { it.toString() }
+      val parts = Path.of(filename).normalize().toList().map { it.toString() }
       // Try to find a repeated prefix subsequence in the path parts
       for (len in 1..parts.size / 2) {
         val prefix = parts.subList(0, len)
@@ -61,6 +63,8 @@ interface PatchParser {
       }
       return root.relativize(file)
     }
+    fun Path.removeAllUpperDirectories(): Path =
+      this.pathString.split("/").dropWhile { it == "." || it == ".." }.joinToString("/").let { Path.of(it) }
 
     fun removeCodeFences(): String {
       return when {
@@ -144,25 +148,26 @@ ${TRIPLE_TILDE}
       return emptyList()
     }
     // Check for explicit marker syntax first
-    if (hasExplicitMarkers(response)) {
+    return if (hasExplicitMarkers(response)) {
       log.debug("Detected explicit <<<FILE>>> markers, using explicit parser")
-      return parseExplicitMarkers(response, defaultFile).maybeResolveFilenames(root)
-    }
-    val initiator = this.getInitiatorPattern()
-    // Auto-close unclosed code blocks
-    val normalizedResponse = (if (response.contains(initiator) &&
-      !response.split(initiator, 2)[1].contains("\n```(?![^\n])".toRegex())
-    ) {
-      log.debug("Auto-closing unclosed code block in response")
-      response + "\n```\n"
+      parseExplicitMarkers(response, defaultFile).maybeResolveFilenames(root)
     } else {
-      response
-    })
-    val normalizedResponseLines = normalizedResponse.lines()
-    val codeBlockMatches = this.getMarkdownCodeBlockMatches(normalizedResponse)
-    val segments = markdowns(codeBlockMatches, normalizedResponse, normalizedResponseLines, defaultFile)
-    log.debug("Parsed {} total segments from response", segments.size)
-    return segments.maybeResolveFilenames(root)
+      val initiator = this.getInitiatorPattern()
+      // Auto-close unclosed code blocks
+      val normalizedResponse = (if (response.contains(initiator) &&
+        !response.split(initiator, 2)[1].contains("\n```(?![^\n])".toRegex())
+      ) {
+        log.debug("Auto-closing unclosed code block in response")
+        response + "\n```\n"
+      } else {
+        response
+      })
+      val normalizedResponseLines = normalizedResponse.lines()
+      val codeBlockMatches = this.getMarkdownCodeBlockMatches(normalizedResponse)
+      val segments = markdowns(codeBlockMatches, normalizedResponse, normalizedResponseLines, defaultFile)
+      log.debug("Parsed {} total segments from response", segments.size)
+      segments.maybeResolveFilenames(root)
+    }
   }
 
   private fun getInitiatorPattern() = "(?s)${TRIPLE_TILDE}\\w*\n".toRegex()

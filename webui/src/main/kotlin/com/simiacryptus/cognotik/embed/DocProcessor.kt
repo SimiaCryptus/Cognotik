@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
@@ -168,9 +167,9 @@ class DocProcessor(
       val taskEntries = tasks.associate { task ->
         val targetKey = task.data.files?.firstOrNull()?.let { filePath ->
           try {
-            File(filePath).canonicalFile.relativeTo(root.canonicalFile).toString()
+            filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
           } catch (_: IllegalArgumentException) {
-            File(filePath).canonicalFile.absolutePath
+            filePath.canonicalFile.absolutePath
           }
         } ?: "unknown"
         targetKey to TaskStatusEntry(
@@ -250,7 +249,7 @@ class DocProcessor(
         return null
       }
 
-      val contentType = response.headers().firstValue("Content-Type").orElse("")
+      val contentType = response.headers().firstValue("Content-Type").orElse("")!!
       val body = response.body() ?: ""
 
       val content = if (contentType.startsWith("text/html") || contentType.isEmpty()) {
@@ -379,32 +378,28 @@ class DocProcessor(
 
   data class ModificationTaskConfig(
     val root: File,
-    val files: List<String>? = null,
-    val related_files: List<String>? = null,
+    val files: List<File>? = null,
+    val related_files: List<File>? = null,
     val task_description: String = "",
     val data: Map<String, Any>? = null,
     val taskConfigOverrides: Map<String, Any>? = null,
   ) {
-    fun relativizePaths() = copy(
-      files = relative_files,
-      related_files = relative_related_files
-    )
     val relative_files: List<String>?
       get() = files?.map { filePath ->
         try {
-          File(filePath).canonicalFile.relativeTo(root.canonicalFile).toString()
+          filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
         } catch (_: IllegalArgumentException) {
           // File is outside root, return absolute path
-          File(filePath).canonicalFile.absolutePath
+          filePath.canonicalFile.absolutePath
         }
       }
     val relative_related_files: List<String>?
       get() = related_files?.map { filePath ->
         try {
-          File(filePath).canonicalFile.relativeTo(root.canonicalFile).toString()
+          filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
         } catch (_: IllegalArgumentException) {
           // File is outside root, return absolute path
-          File(filePath).canonicalFile.absolutePath
+          filePath.canonicalFile.absolutePath
         }
       }
 
@@ -552,14 +547,14 @@ class DocProcessor(
       for (transform in spec.transforms) {
         val sourceRegex = try {
           Pattern.compile(transform.sourcePattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
           continue
         }
         for (targetPath in newTargetPaths) {
           val targetFile = File(targetPath)
           val relativePath = try {
             targetFile.relativeTo(spec.docFile.parentFile.absoluteFile).path.replace("\\", "/")
-          } catch (e: IllegalArgumentException) {
+          } catch (_: IllegalArgumentException) {
             continue
           }
           val matcher = sourceRegex.matcher(relativePath)
@@ -567,7 +562,7 @@ class DocProcessor(
             val destPath = applyBackreferences(transform.destinationPattern, matcher)
             val destFile = try {
               spec.docFile.parentFile.resolve(destPath).canonicalFile
-            } catch (e: Exception) {
+            } catch (_: Exception) {
               spec.docFile.parentFile.resolve(destPath)
             }
             val destAbsPath = destFile.absolutePath
@@ -612,7 +607,7 @@ class DocProcessor(
     val targetFileObj = File(targetFile)
     val relativeTarget = try {
       targetFileObj.relativeTo(root.absoluteFile)
-    } catch (e: IllegalArgumentException) {
+    } catch (_: IllegalArgumentException) {
       log.warn("Target file is outside root: $targetFile")
       return null
     }
@@ -648,9 +643,9 @@ class DocProcessor(
       val targetFile1 = File(targetFile)
       return ModificationTask(
         data = ModificationTaskConfig(
-          files = listOf(targetFileObj.absolutePath),
+          files = listOf(targetFileObj.absoluteFile),
           related_files = relatedFiles.map { file ->
-            file.canonicalFile.absolutePath
+            file.canonicalFile.absoluteFile
           }.distinct(),
           task_description = buildCombinedTaskDescription(
             specs,
@@ -954,7 +949,7 @@ class DocProcessor(
       .map { spec ->
         val resolvedFolder = try {
           spec.docFile.parentFile.resolve(spec.targetFolder!!).canonicalFile
-        } catch (e: Exception) {
+        } catch (_: Exception) {
           spec.docFile.parentFile.resolve(spec.targetFolder!!)
         }
         log.info("Doc ${spec.docFile.name} targets folder '${spec.targetFolder}' -> ${resolvedFolder.absolutePath}")
@@ -1070,9 +1065,9 @@ class DocProcessor(
     // Compute the target key BEFORE rebasing, so it's relative to the global root
     val targetKey = mod.data.files?.firstOrNull()?.let { filePath ->
       try {
-        File(filePath).canonicalFile.relativeTo(root.canonicalFile).toString()
+        filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
       } catch (_: IllegalArgumentException) {
-        File(filePath).canonicalFile.absolutePath
+        filePath.canonicalFile.absolutePath
       }
     } ?: "unknown"
     val effectiveRoot = mod.data.root
@@ -1140,7 +1135,7 @@ class DocProcessor(
     ).let {
       if (task != null) it.getChildClient(task) else it
     }
-    val data = mod.data.relativizePaths()
+    val data = mod.data.copy()
     return when {
       FileTaskExecutionConfig::class.java.isAssignableFrom(mod.taskType.executionConfigClass) -> {
         val baseCfgJson = mapOf(
@@ -1162,7 +1157,8 @@ class DocProcessor(
         mod.patchProcessor?.apply {
           harness.processor = this
         }
-        val newRoot = data.relative_files?.firstOrNull()?.let { root.resolve(it).parentFile } ?: root
+        val newRoot = data.files?.firstOrNull()?.parentFile ?: root
+        val data1 = data.copy(root = newRoot)
         val orchestrationConfig = harness.createSettings(
           session = Session.newGlobalID(),
           autoFix = true,
@@ -1171,9 +1167,9 @@ class DocProcessor(
         )
         val contextMessages = buildList {
           add("Task type: ${mod.taskType.name}")
-          add("Task description: ${data.task_description}")
-          data.relative_files?.forEach { add("Target file: $it") }
-          data.relative_related_files?.forEach { relatedFile ->
+          add("Task description: ${data1.task_description}")
+          data1.relative_files?.forEach { text -> add("Target file: $text") }
+          data1.relative_related_files?.forEach { relatedFile ->
             val resolvedFile =
               if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
             if (resolvedFile.exists()) {
@@ -1186,7 +1182,7 @@ class DocProcessor(
         val (_, taskConfig) = ConversationalMode.requestToTask(
           defaultModel = model,
           fastModel = model,
-          userMessage = data.task_description,
+          userMessage = data1.task_description,
           orchestrationConfig = orchestrationConfig,
           prompt = "Execute the following task based on the provided context. Task type: ${mod.taskType.name}",
           history = contextMessages,
@@ -1219,13 +1215,13 @@ class DocProcessor(
     if (tasks.isEmpty()) return tasks
     // Build a map from target file path to task
     val taskByTarget = tasks.associateBy { task ->
-      task.data.files?.firstOrNull()?.let { normalizePath(File(root, it).canonicalPath) } ?: ""
+      task.data.files?.firstOrNull()?.let { normalizePath(it.canonicalPath) } ?: ""
     }.filterKeys { it.isNotEmpty() }
     // Build adjacency list: task -> tasks it depends on (tasks that modify files in its related_files)
     val dependencies = tasks.associateWith { task ->
       task.data.related_files?.mapNotNull { relatedFile ->
         val canonicalPath = try {
-          normalizePath(File(root, relatedFile).canonicalPath)
+          normalizePath(relatedFile.canonicalPath)
         } catch (e: Exception) {
           log.warn("Failed to resolve related file path: $relatedFile", e)
           return@mapNotNull null
