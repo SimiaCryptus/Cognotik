@@ -23,6 +23,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.BrowseUtil
 import java.awt.*
 import java.awt.event.ActionEvent
 import javax.swing.*
@@ -124,6 +125,13 @@ class AppSettingsComponent : Disposable {
 
     @Name("Disable Auto-Open URLs")
     val disableAutoOpenUrls = JBCheckBox()
+    @Name("Preferred Browser")
+    val preferredBrowser = ComboBox<String>().apply {
+        BrowseUtil.getAvailableBrowsers().forEach { addItem(it) }
+        isEditable = false
+        selectedItem = AppSettingsState.instance.preferredBrowser
+    }
+
 
     @Name("Shell Command")
     val shellCommand = JBTextField()

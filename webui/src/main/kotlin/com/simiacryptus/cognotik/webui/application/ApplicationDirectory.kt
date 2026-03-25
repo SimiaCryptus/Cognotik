@@ -21,8 +21,6 @@ import org.eclipse.jetty.util.resource.ResourceCollection
 import org.eclipse.jetty.webapp.WebAppClassLoader
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
-import java.awt.Desktop
-import java.net.URI
 import java.util.*
 import kotlin.system.exitProcess
 
@@ -109,7 +107,6 @@ abstract class ApplicationDirectory(
       isLocked = true
       val server = start(port, "127.0.0.1", *(webAppContexts()))
       log.info("Server started successfully on port $port")
-      browse()
       server.join()
     } catch (e: Throwable) {
       e.printStackTrace()
@@ -119,17 +116,6 @@ abstract class ApplicationDirectory(
     } finally {
       Thread.sleep(1000)
       exitProcess(0)
-    }
-  }
-
-  protected open fun browse() {
-    try {
-      log.info("Attempting to open browser to: $domainName/")
-      Desktop.getDesktop().browse(URI("$domainName/"))
-      log.info("Browser opened successfully")
-    } catch (e: Throwable) {
-      log.warn("Failed to open browser automatically: ${e.message}")
-
     }
   }
 

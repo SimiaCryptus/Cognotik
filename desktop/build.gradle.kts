@@ -38,6 +38,13 @@ tasks.register<JavaExec>("runCognotikApps") {
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass.set("com.simiacryptus.cognotik.CognotikApps")
 }
+tasks.register<JavaExec>("runCognotikAppsFromJar") {
+     group = "application"
+     description = "Runs the CognotikApps main class from the shadow (fat) JAR, to test packaged resource handling"
+     dependsOn("shadowJar")
+     classpath = files(tasks.named<ShadowJar>("shadowJar").get().archiveFile)
+     mainClass.set("com.simiacryptus.cognotik.CognotikApps")
+}
 
 
 java {

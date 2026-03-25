@@ -1,7 +1,7 @@
 ---
 specifies: ../summary.md
 related:
-  - ../notes/*.**
+  - ../notes/*.*
   - ../content.md
 ---
 

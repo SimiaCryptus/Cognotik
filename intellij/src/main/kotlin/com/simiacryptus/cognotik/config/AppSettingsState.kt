@@ -28,6 +28,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.BrowseUtil.BROWSER_INTELLIJ_BUILTIN
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -81,8 +82,7 @@ data class AppSettingsState(
     var suppressErrors: Boolean = false,
     var devActions: Boolean = false,
     var disableAutoOpenUrls: Boolean = false,
-    var showWelcomeScreen: Boolean = true,
-    var greetedVersion: String = "",
+    var preferredBrowser: String = BROWSER_INTELLIJ_BUILTIN,
     var shellCommand: String = getDefaultShell(),
     var feedbackRequested: Boolean = false,
     var feedbackOptOut: Boolean = false,
@@ -214,8 +214,7 @@ data class AppSettingsState(
         if (suppressErrors != other.suppressErrors) return false
         if (devActions != other.devActions) return false
         if (disableAutoOpenUrls != other.disableAutoOpenUrls) return false
-        if (showWelcomeScreen != other.showWelcomeScreen) return false
-        if (greetedVersion != other.greetedVersion) return false
+        if (preferredBrowser != other.preferredBrowser) return false
         if (shellCommand != other.shellCommand) return false
         if (savedPlanConfigs != other.savedPlanConfigs) return false
         if (savedCommandConfigsJson != other.savedCommandConfigsJson) return false
@@ -261,8 +260,7 @@ data class AppSettingsState(
         result = 31 * result + suppressErrors.hashCode()
         result = 31 * result + devActions.hashCode()
         result = 31 * result + disableAutoOpenUrls.hashCode()
-        result = 31 * result + showWelcomeScreen.hashCode()
-        result = 31 * result + greetedVersion.hashCode()
+        result = 31 * result + preferredBrowser.hashCode()
         result = 31 * result + shellCommand.hashCode()
         result = 31 * result + (savedPlanConfigs?.hashCode() ?: 0)
         result = 31 * result + (savedCommandConfigsJson?.hashCode() ?: 0)
