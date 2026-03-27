@@ -1,0 +1,18 @@
+Pipeline operations for npm-based client-side web application projects.
+Shell scripts in ../code/ serve as the central entrypoints for critical commands:
+   - compile.sh → build invocation (used by build_op)
+   - test.sh    → test invocation (used by test_run_op)
+   - install.sh → dependency installation (used by install_op)
+These scripts must NOT be bypassed or modified to work around errors.
+They provide platform routing flexibility with consistent error handling.
+
+
+Recommended execution order:
+1. design_op    - Capture technology and architecture decisions
+2. scaffold_op  - Generate project skeleton and configs
+3. install_op   - Run install.sh (dependency installation)
+4. implement_op - Write application source code
+5. test_write_op - Write test files
+6. build_op     - Run compile.sh (with auto-fix)
+7. test_run_op  - Run test.sh (with auto-fix)
+8. update_op    - Apply iterative changes from user notes
