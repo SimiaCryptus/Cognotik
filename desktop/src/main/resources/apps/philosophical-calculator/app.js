@@ -273,7 +273,8 @@
         'gametheory.md': 'badge-gametheory',
         'narrative.md': 'badge-narrative',
         'comic.md': 'badge-comic',
-        'technical_explanation.md': 'badge-technical'
+        'technical_explanation.md': 'badge-technical',
+        'illustrated_content.md': 'badge-illustration'
     };
 
     function startStatusPolling() {
@@ -749,9 +750,6 @@
         }
     });
 
-    // ========================================================================
-    // Full Pipeline (Core + All Lenses + Update)
-    // ========================================================================
     var lensDefinitions = [
         { key: 'brainstorm', op: 'ops/brainstorm_op.md', output: 'brainstorm.md', badge: 'badge-brainstorm', viewer: 'viewer-brainstorm', label: 'Brainstorm' },
         { key: 'dialectical', op: 'ops/dialectical_op.md', output: 'dialectical.md', badge: 'badge-dialectical', viewer: 'viewer-dialectical', label: 'Dialectical Analysis' },
@@ -761,62 +759,15 @@
         { key: 'gametheory', op: 'ops/gametheory_op.md', output: 'gametheory.md', badge: 'badge-gametheory', viewer: 'viewer-gametheory', label: 'Game Theory Analysis' },
         { key: 'narrative', op: 'ops/narrative_op.md', output: 'narrative.md', badge: 'badge-narrative', viewer: 'viewer-narrative', label: 'Narrative Dramatization' },
         { key: 'comic', op: 'ops/comic_op.md', output: 'comic.md', badge: 'badge-comic', viewer: 'viewer-comic', label: 'Comic Book Generation' },
-        { key: 'technical', op: 'ops/technical_explanation_op.md', output: 'technical_explanation.md', badge: 'badge-technical', viewer: 'viewer-technical', label: 'Technical Explanation' }
+        { key: 'technical', op: 'ops/technical_explanation_op.md', output: 'technical_explanation.md', badge: 'badge-technical', viewer: 'viewer-technical', label: 'Technical Explanation' },
+        { key: 'illustration', op: 'ops/illustration_op.md', output: 'content.md', badge: 'badge-illustration', viewer: 'viewer-illustration', label: 'Illustrate Document' }
     ];
 
-    document.getElementById('run-full-pipeline').addEventListener('click', async function () {
-        var notesContent = document.getElementById('notes-editor').value;
-        if (!notesContent.trim()) {
-            alert('Please enter your notes first.');
-            return;
-        }
-        await writeFile('notes/notes.md', notesContent);
-        var instructContent = document.getElementById('instruct-editor').value;
-        if (instructContent.trim()) {
-            await writeFile('instruct.md', instructContent);
-        }
 
-        this.disabled = true;
-        document.getElementById('run-core-pipeline').disabled = true;
-        var batchLog = document.getElementById('batch-log');
-        batchLog.innerHTML = '';
-        startStatusPolling();
 
-        try {
-            // Phase 1: Core pipeline
-            logBatch('═══ Phase 1: Core Pipeline ═══', 'info', 'batch-log');
-            await runSequential([
-                { op: 'ops/summarize_op.md', output: 'summary.md', badge: 'badge-summary', viewer: 'viewer-summary', label: 'Summarize Notes' },
-                { op: 'ops/draft_article_op.md', output: 'content.md', badge: 'badge-content', viewer: 'viewer-content', label: 'Draft Article' }
-            ], 'batch-log');
 
-            // Phase 2: All lenses
-            logBatch('═══ Phase 2: Analytical Lenses ═══', 'info', 'batch-log');
-            var lensSteps = lensDefinitions.map(function (lens) {
-                return {
-                    op: lens.op,
-                    output: lens.output,
-                    badge: lens.badge,
-                    viewer: lens.viewer,
-                    label: lens.label
-                };
-            });
-            await runSequential(lensSteps, 'batch-log');
 
-            // Phase 3: Update article
-            logBatch('═══ Phase 3: Synthesis ═══', 'info', 'batch-log');
-            await runSequential([
-                { op: 'ops/update_article_op.md', output: 'content.md', badge: 'badge-update', viewer: 'viewer-update', label: 'Update Article (Synthesize All Lenses)' }
-            ], 'batch-log');
 
-            logBatch('🎉 Full pipeline complete! Your article has been enhanced with all analytical lenses.', 'success', 'batch-log');
-        } catch (e) {
-            logBatch('Pipeline stopped due to error: ' + e.message, 'error', 'batch-log');
-        } finally {
-            this.disabled = false;
-            document.getElementById('run-core-pipeline').disabled = false;
-        }
-    });
 
     // ========================================================================
     // Run Selected Lenses
@@ -913,7 +864,8 @@
             { file: 'gametheory.md', badge: 'badge-gametheory' },
             { file: 'narrative.md', badge: 'badge-narrative' },
             { file: 'comic.md', badge: 'badge-comic' },
-            { file: 'technical_explanation.md', badge: 'badge-technical' }
+            { file: 'technical_explanation.md', badge: 'badge-technical' },
+            { file: 'illustrated_content.md', badge: 'badge-illustration' }
         ];
 
         for (var i = 0; i < fileChecks.length; i++) {
@@ -1301,6 +1253,173 @@
     });
     document.getElementById('close-content-editor-btn').addEventListener('click', function () {
         contentEditorContainer.classList.remove('visible');
+    });
+    // ========================================================================
+    // Pipeline Manual Article Editor
+    // ========================================================================
+    var pipelineEditorEl = document.getElementById('pipeline-content-editor');
+    var pipelineEditorContainer = document.getElementById('pipeline-content-editor-container');
+    var pipelineEditorDirty = false;
+    // Open editor
+    document.getElementById('pipeline-edit-content-btn').addEventListener('click', async function () {
+        if (pipelineEditorContainer.classList.contains('visible')) {
+            // Toggle off
+            if (pipelineEditorDirty && !confirm('You have unsaved changes. Close without saving?')) return;
+            pipelineEditorContainer.classList.remove('visible');
+            pipelineEditorDirty = false;
+            return;
+        }
+        try {
+            var content = await readFile('content.md');
+            pipelineEditorEl.value = content || '';
+        } catch (e) {
+            pipelineEditorEl.value = '';
+        }
+        pipelineEditorContainer.classList.add('visible');
+        pipelineEditorDirty = false;
+        updatePipelineWordCount();
+        pipelineEditorEl.focus();
+    });
+    // Track dirty state
+    pipelineEditorEl.addEventListener('input', function () {
+        pipelineEditorDirty = true;
+        updatePipelineWordCount();
+    });
+    // Word count
+    function updatePipelineWordCount() {
+        var el = document.getElementById('pipeline-editor-wordcount');
+        if (!el) return;
+        var text = pipelineEditorEl.value.trim();
+        if (!text) {
+            el.textContent = '0 words';
+            return;
+        }
+        var words = text.split(/\s+/).length;
+        var chars = text.length;
+        el.textContent = words.toLocaleString() + ' words · ' + chars.toLocaleString() + ' chars';
+    }
+    // Save function (shared)
+    async function savePipelineContent(closeAfter) {
+        var content = pipelineEditorEl.value;
+        try {
+            await writeFile('content.md', content);
+            pipelineEditorDirty = false;
+            setStatus('pipeline-editor-status', '✓ Saved content.md', 'success');
+            setStatus('pipeline-editor-status-bottom', '✓ Saved content.md', 'success');
+            // Update badge
+            if (content.trim().length > 0) {
+                setBadge('badge-content', 'done');
+            }
+            // Sync all viewers that show content.md
+            var viewerIds = ['viewer-content', 'viewer-update', 'viewer-manual-content', 'result-content'];
+            for (var i = 0; i < viewerIds.length; i++) {
+                var vid = viewerIds[i];
+                viewerRawContent[vid] = content;
+                var viewer = document.getElementById(vid);
+                if (viewer && (viewer.classList.contains('visible') || vid === 'result-content')) {
+                    viewerModes[vid] = viewerModes[vid] || 'rendered';
+                    renderViewerContent(vid);
+                }
+            }
+            // Also sync the Results tab editor if it exists
+            if (contentEditorEl) {
+                contentEditorEl.value = content;
+            }
+            if (closeAfter) {
+                pipelineEditorContainer.classList.remove('visible');
+            }
+        } catch (e) {
+            setStatus('pipeline-editor-status', '✗ ' + e.message, 'error');
+            setStatus('pipeline-editor-status-bottom', '✗ ' + e.message, 'error');
+        }
+    }
+    // Save buttons (top and bottom)
+    document.getElementById('pipeline-save-content-btn').addEventListener('click', function () {
+        savePipelineContent(false);
+    });
+    document.getElementById('pipeline-save-content-btn-bottom').addEventListener('click', function () {
+        savePipelineContent(false);
+    });
+    document.getElementById('pipeline-save-close-content-btn').addEventListener('click', function () {
+        savePipelineContent(true);
+    });
+    document.getElementById('pipeline-save-close-content-btn-bottom').addEventListener('click', function () {
+        savePipelineContent(true);
+    });
+    // Close button
+    document.getElementById('pipeline-close-editor-btn').addEventListener('click', function () {
+        if (pipelineEditorDirty && !confirm('You have unsaved changes. Close without saving?')) return;
+        pipelineEditorContainer.classList.remove('visible');
+        pipelineEditorDirty = false;
+    });
+    // Markdown formatting toolbar
+    document.querySelectorAll('.pipeline-editor-tool').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var action = this.dataset.action;
+            var ta = pipelineEditorEl;
+            var start = ta.selectionStart;
+            var end = ta.selectionEnd;
+            var selected = ta.value.substring(start, end);
+            var before = ta.value.substring(0, start);
+            var after = ta.value.substring(end);
+            var insert = '';
+            var cursorOffset = 0;
+            switch (action) {
+                case 'heading':
+                    insert = '\n## ' + (selected || 'Heading') + '\n';
+                    cursorOffset = selected ? insert.length : 4;
+                    break;
+                case 'bold':
+                    insert = '**' + (selected || 'bold text') + '**';
+                    cursorOffset = selected ? insert.length : 2;
+                    break;
+                case 'italic':
+                    insert = '*' + (selected || 'italic text') + '*';
+                    cursorOffset = selected ? insert.length : 1;
+                    break;
+                case 'bullet':
+                    if (selected) {
+                        insert = selected.split('\n').map(function (line) {
+                            return '- ' + line;
+                        }).join('\n');
+                    } else {
+                        insert = '\n- Item 1\n- Item 2\n- Item 3\n';
+                    }
+                    cursorOffset = insert.length;
+                    break;
+                case 'quote':
+                    if (selected) {
+                        insert = selected.split('\n').map(function (line) {
+                            return '> ' + line;
+                        }).join('\n');
+                    } else {
+                        insert = '\n> Quote text here\n';
+                    }
+                    cursorOffset = insert.length;
+                    break;
+                case 'code':
+                    insert = '\n```\n' + (selected || 'code here') + '\n```\n';
+                    cursorOffset = selected ? insert.length : 5;
+                    break;
+                case 'hr':
+                    insert = '\n---\n';
+                    cursorOffset = insert.length;
+                    break;
+            }
+            ta.value = before + insert + after;
+            ta.selectionStart = start + cursorOffset;
+            ta.selectionEnd = start + cursorOffset;
+            ta.focus();
+            pipelineEditorDirty = true;
+            updatePipelineWordCount();
+        });
+    });
+    // Keyboard shortcut: Ctrl+S / Cmd+S to save
+    pipelineEditorEl.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            savePipelineContent(false);
+        }
     });
 
 

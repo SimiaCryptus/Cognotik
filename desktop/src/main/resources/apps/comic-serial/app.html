@@ -69,6 +69,11 @@
                     <div class="stage-icon">♾️</div>
                     <div class="stage-label">…and more</div>
                 </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="htmlbook">
+                    <div class="stage-icon">📕</div>
+                    <div class="stage-label">HTML Book</div>
+                </div>
             </div>
         </div>
 
@@ -155,6 +160,35 @@
                 <div id="batch-log" class="batch-log"></div>
             </div>
         </div>
+        <!-- Step 3: Compile HTML Book -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">3</span>
+                    <span class="step-title">Compile HTML Comicbook</span>
+                    <span id="badge-htmlbook" class="step-badge pending">pending</span>
+                </div>
+                <p class="step-desc">
+                    Compile all generated comic episodes into a single, self-contained HTML comicbook.
+                    Images are referenced inline, captions are displayed below panels, and the page is
+                    styled for a polished reading experience.
+                </p>
+                <div class="button-row">
+                    <button class="btn btn-primary" id="generate-htmlbook">
+                        📕 Generate HTML Book
+                    </button>
+                    <button class="btn btn-secondary btn-view"
+                            data-file="comicbook.html"
+                            data-viewer="viewer-htmlbook">
+                        👁 View
+                    </button>
+                    <button class="btn btn-secondary" id="open-htmlbook-tab">
+                        🔗 Open in New Tab
+                    </button>
+                </div>
+                <div id="viewer-htmlbook" class="viewer"></div>
+            </div>
+        </div>
     </div>
 
     <!-- ===== SERIES SECTION ===== -->
@@ -167,6 +201,8 @@
                 <div class="button-row">
                     <button class="btn btn-secondary" id="refresh-series">🔄 Refresh</button>
                     <button class="btn btn-accent" id="series-add-episode">📖 Generate Next Episode</button>
+                    <button class="btn btn-primary" id="series-compile-book">📕 Compile Book</button>
+                    <button class="btn btn-secondary" id="series-view-book">🔗 View Book</button>
                 </div>
             </div>
         </div>

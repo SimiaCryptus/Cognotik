@@ -1,7 +1,7 @@
 ---
 task_type: AutoFix
-related: ../goal.md
+folder: ../code/
 specifies: ../code/fix_log.md
 ---
 
-Run and fix `../code/script.sh`
+Run and fix `./script.sh`

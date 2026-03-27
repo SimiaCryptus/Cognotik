@@ -17,6 +17,9 @@
 
     const proxyBase = '/proxy/';
     function getProxyUrl(id) { return proxyBase + '#' + id; }
+     // === Available Models ===
+     var availableModels = {};
+
      // === Display Session ID ===
      var sessionDisplay = document.getElementById('session-id-display');
      if (sessionDisplay && sessionId) {
@@ -45,12 +48,20 @@
     }
 
     async function runDocOp(opPath, targetPath) {
-        const url = '/docops?sessionId=' + encodeURIComponent(sessionId) +
+         var params = 'sessionId=' + encodeURIComponent(sessionId) +
             '&doc=' + encodeURIComponent(opPath) +
             '&target=' + encodeURIComponent(targetPath);
-        const resp = await fetch(url, { method: 'POST' });
+
+         // Append model overrides if set
+         var smartModel = getSelectedSmartModel();
+         var fastModel = getSelectedFastModel();
+         if (smartModel) params += '&smartModel=' + encodeURIComponent(smartModel);
+         if (fastModel) params += '&fastModel=' + encodeURIComponent(fastModel);
+
+         var url = '/docops?' + params;
+         var resp = await fetch(url, { method: 'POST' });
         if (!resp.ok) {
-            const errText = await resp.text().catch(function () { return ''; });
+             var errText = await resp.text().catch(function () { return ''; });
             throw new Error('DocOps failed: ' + resp.status + '\n' + errText);
         }
         return await resp.text();
@@ -284,7 +295,315 @@
              }
          });
      });
+     // === Script Editor Mode Toggle ===
+     var scriptEditor = document.getElementById('script-editor');
+     var panelGenerate = document.getElementById('panel-generate');
+     var panelManual = document.getElementById('panel-manual');
+     document.querySelectorAll('.mode-btn').forEach(function (btn) {
+         btn.addEventListener('click', function () {
+             var mode = this.dataset.mode;
+             document.querySelectorAll('.mode-btn').forEach(function (b) { b.classList.remove('active'); });
+             this.classList.add('active');
+             if (mode === 'generate') {
+                 panelGenerate.classList.add('active');
+                 panelManual.classList.remove('active');
+             } else {
+                 panelGenerate.classList.remove('active');
+                 panelManual.classList.add('active');
+                 // Auto-load existing script into editor if available and editor is empty
+                 if (scriptEditor && !scriptEditor.value.trim()) {
+                     readFile('code/script.sh').then(function (content) {
+                         if (content !== null && content.trim().length > 0) {
+                             scriptEditor.value = content;
+                         }
+                     }).catch(function () { /* ignore */ });
+                 }
+             }
+         });
+     });
+     // === Save Script Manually ===
+     document.getElementById('save-script-manual').addEventListener('click', async function () {
+         var content = scriptEditor.value;
+         if (!content.trim()) {
+             setStatus('script-editor-status', '✗ Please enter a script first', 'error');
+             return;
+         }
+         try {
+             this.disabled = true;
+             await writeFile('code/script.sh', content);
+             setStatus('script-editor-status', '✓ Script saved', 'success');
+             setBadge('badge-codegen', 'done');
+             updatePipelineStage('codegen', 'completed');
+             showToast('Script saved — you can now Run & Fix', 'success');
+             // Also show in the viewer
+             var viewer = document.getElementById('viewer-codegen');
+             if (viewer) {
+                 viewer.innerHTML = renderScript(content);
+                 viewer.classList.add('visible');
+             }
+         } catch (e) {
+             setStatus('script-editor-status', '✗ ' + e.message, 'error');
+         } finally {
+             this.disabled = false;
+         }
+     });
+     // === Load Existing Script into Editor ===
+     document.getElementById('load-script-into-editor').addEventListener('click', async function () {
+         try {
+             this.disabled = true;
+             var content = await readFile('code/script.sh');
+             if (content !== null && content.trim().length > 0) {
+                 scriptEditor.value = content;
+                 showToast('Script loaded into editor', 'success');
+             } else {
+                 showToast('No existing script found', 'info');
+             }
+         } catch (e) {
+             showToast('Failed to load script: ' + e.message, 'error');
+         } finally {
+             this.disabled = false;
+         }
+     });
 
+
+     // === Model Management ===
+     function getSelectedSmartModel() {
+         var sel = document.getElementById('setting-smart-model');
+         var val = sel ? sel.value : '';
+         if (val) return val;
+         return localStorage.getItem('wizardSmartModel') || '';
+     }
+
+     function getSelectedFastModel() {
+         var sel = document.getElementById('setting-fast-model');
+         var val = sel ? sel.value : '';
+         if (val) return val;
+         return localStorage.getItem('wizardFastModel') || '';
+     }
+
+     async function loadApiProviders() {
+         try {
+             var resp = await fetch('/apiProviders/?format=json');
+             if (!resp.ok) {
+                 if (resp.status >= 400 && resp.status < 500) {
+                     console.warn('API providers not available (status ' + resp.status + ')');
+                 }
+                 updateModelLoadStatus('error', 'Failed to load models');
+                 return;
+             }
+             var data = await resp.json();
+             var providers = data.configuredProviders || [];
+
+             availableModels = {};
+             providers.forEach(function (provider) {
+                 if (provider.models && provider.models.length > 0) {
+                     availableModels[provider.name] = provider.models.map(function (model) {
+                         return {
+                             id: model.name,
+                             name: model.name,
+                             description: model.maxTokens
+                                 ? 'Max tokens: ' + model.maxTokens
+                                 : 'No token limit specified'
+                         };
+                     });
+                 }
+             });
+
+             populateModelDropdowns();
+             updateModelInfo();
+             updateModelLoadStatus('success', 'Models loaded');
+         } catch (e) {
+             console.error('Failed to load API providers:', e);
+             updateModelLoadStatus('error', 'Error loading models');
+         }
+     }
+
+     function populateModelDropdowns() {
+         var smartSelect = document.getElementById('setting-smart-model');
+         var fastSelect = document.getElementById('setting-fast-model');
+         if (!smartSelect || !fastSelect) return;
+
+         smartSelect.innerHTML = '';
+         fastSelect.innerHTML = '';
+
+         // Add default option
+         var defaultOpt1 = document.createElement('option');
+         defaultOpt1.value = '';
+         defaultOpt1.textContent = '— Server Default —';
+         smartSelect.appendChild(defaultOpt1);
+
+         var defaultOpt2 = document.createElement('option');
+         defaultOpt2.value = '';
+         defaultOpt2.textContent = '— Server Default —';
+         fastSelect.appendChild(defaultOpt2);
+
+         var addedModels = {};
+         var totalCount = 0;
+
+         for (var provider in availableModels) {
+             if (!availableModels.hasOwnProperty(provider)) continue;
+             var models = availableModels[provider];
+
+             // Add optgroup for each provider
+             var group1 = document.createElement('optgroup');
+             group1.label = provider;
+             var group2 = document.createElement('optgroup');
+             group2.label = provider;
+
+             var hasModels = false;
+             models.forEach(function (model) {
+                 if (addedModels[model.id]) return;
+                 addedModels[model.id] = true;
+                 totalCount++;
+                 hasModels = true;
+
+                 var opt1 = document.createElement('option');
+                 opt1.value = model.id;
+                 opt1.textContent = model.name;
+                 if (model.description) opt1.title = model.description;
+                 group1.appendChild(opt1);
+
+                 var opt2 = document.createElement('option');
+                 opt2.value = model.id;
+                 opt2.textContent = model.name;
+                 if (model.description) opt2.title = model.description;
+                 group2.appendChild(opt2);
+             });
+
+             if (hasModels) {
+                 smartSelect.appendChild(group1);
+                 fastSelect.appendChild(group2);
+             }
+         }
+
+         // Restore saved selections
+         var savedSmart = localStorage.getItem('wizardSmartModel');
+         if (savedSmart && optionExists(smartSelect, savedSmart)) {
+             smartSelect.value = savedSmart;
+         }
+
+         var savedFast = localStorage.getItem('wizardFastModel');
+         if (savedFast && optionExists(fastSelect, savedFast)) {
+             fastSelect.value = savedFast;
+         }
+
+         // Update pipeline indicator
+         updatePipelineModelIndicator();
+
+         if (totalCount === 0) {
+             var noOpt1 = document.createElement('option');
+             noOpt1.value = '';
+             noOpt1.textContent = 'No models available — configure API keys';
+             noOpt1.disabled = true;
+             smartSelect.appendChild(noOpt1);
+
+             var noOpt2 = document.createElement('option');
+             noOpt2.value = '';
+             noOpt2.textContent = 'No models available — configure API keys';
+             noOpt2.disabled = true;
+             fastSelect.appendChild(noOpt2);
+         }
+     }
+
+     function optionExists(selectEl, value) {
+         for (var i = 0; i < selectEl.options.length; i++) {
+             if (selectEl.options[i].value === value) return true;
+         }
+         return false;
+     }
+
+     function updateModelInfo() {
+         var providerNames = Object.keys(availableModels);
+         var totalModels = 0;
+         providerNames.forEach(function (p) {
+             totalModels += availableModels[p].length;
+         });
+
+         var infoProviders = document.getElementById('info-providers');
+         var infoTotal = document.getElementById('info-total-models');
+         var infoSmart = document.getElementById('info-smart-model');
+         var infoFast = document.getElementById('info-fast-model');
+
+         if (infoProviders) infoProviders.textContent = providerNames.length > 0 ? providerNames.join(', ') : 'None';
+         if (infoTotal) infoTotal.textContent = totalModels.toString();
+         if (infoSmart) infoSmart.textContent = getSelectedSmartModel() || 'Server Default';
+         if (infoFast) infoFast.textContent = getSelectedFastModel() || 'Server Default';
+     }
+
+     function updateModelLoadStatus(type, message) {
+         var el = document.getElementById('model-load-status');
+         if (!el) return;
+         el.textContent = message;
+         el.className = 'model-status model-status-' + type;
+         if (type === 'success') {
+             setTimeout(function () { el.textContent = ''; el.className = 'model-status'; }, 3000);
+         }
+     }
+
+     function updatePipelineModelIndicator() {
+         var smartEl = document.getElementById('pipeline-smart-model');
+         var fastEl = document.getElementById('pipeline-fast-model');
+         var smart = getSelectedSmartModel();
+         var fast = getSelectedFastModel();
+         if (smartEl) smartEl.textContent = smart ? truncateModelName(smart) : 'Default';
+         if (fastEl) fastEl.textContent = fast ? truncateModelName(fast) : 'Default';
+     }
+
+     function truncateModelName(name) {
+         if (name.length > 20) return name.substring(0, 18) + '…';
+         return name;
+     }
+
+     // Model settings event listeners
+     document.getElementById('save-model-settings').addEventListener('click', function () {
+         var smartSelect = document.getElementById('setting-smart-model');
+         var fastSelect = document.getElementById('setting-fast-model');
+         var smartVal = smartSelect ? smartSelect.value : '';
+         var fastVal = fastSelect ? fastSelect.value : '';
+
+         if (smartVal) localStorage.setItem('wizardSmartModel', smartVal);
+         else localStorage.removeItem('wizardSmartModel');
+
+         if (fastVal) localStorage.setItem('wizardFastModel', fastVal);
+         else localStorage.removeItem('wizardFastModel');
+
+         updateModelInfo();
+         updatePipelineModelIndicator();
+         setStatus('model-settings-status', '✓ Settings saved', 'success');
+         showToast('Model settings saved', 'success');
+     });
+
+     document.getElementById('reload-models').addEventListener('click', function () {
+         this.disabled = true;
+         var self = this;
+         loadApiProviders().finally(function () { self.disabled = false; });
+     });
+
+     // Update indicator when dropdowns change
+     var smartSelect = document.getElementById('setting-smart-model');
+     var fastSelect = document.getElementById('setting-fast-model');
+     if (smartSelect) {
+         smartSelect.addEventListener('change', function () {
+             updatePipelineModelIndicator();
+             updateModelInfo();
+         });
+     }
+     if (fastSelect) {
+         fastSelect.addEventListener('change', function () {
+             updatePipelineModelIndicator();
+             updateModelInfo();
+         });
+     }
+
+     // "Change" link in pipeline section navigates to settings
+     document.getElementById('change-models-link').addEventListener('click', function (e) {
+         e.preventDefault();
+         document.querySelectorAll('.nav-link').forEach(function (l) { l.classList.remove('active'); });
+         document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('active'); });
+         var settingsLink = document.querySelector('[data-section="section-settings"]');
+         if (settingsLink) settingsLink.classList.add('active');
+         document.getElementById('section-settings').classList.add('active');
+     });
 
     // === Navigation ===
     document.querySelectorAll('.nav-link').forEach(function (link) {
@@ -631,30 +950,68 @@
     document.getElementById('run-all').addEventListener('click', async function () {
         // Auto-save goal
          var goalContent = goalEditor.value;
-        if (!goalContent.trim()) {
-             showToast('Please enter a goal first.', 'error');
-            return;
-        }
 
         this.disabled = true;
         startStatusPolling();
         batchLog.innerHTML = '';
 
         try {
-            await writeFile('goal.md', goalContent);
-            logBatch('✓ Goal saved', 'success');
+            if (goalContent.trim()) {
+                await writeFile('goal.md', goalContent);
+                logBatch('✓ Goal saved', 'success');
+            }
              updatePipelineStage('goal', 'completed');
 
-            await runSequential([
-                {
+            // Determine if we should skip code generation
+            var skipGeneration = false;
+            var modeManualBtn = document.getElementById('mode-manual');
+            var isManualMode = modeManualBtn && modeManualBtn.classList.contains('active');
+
+            if (isManualMode) {
+                // In manual mode, check if script editor has content and save it
+                var manualScript = scriptEditor ? scriptEditor.value.trim() : '';
+                if (manualScript) {
+                    await writeFile('code/script.sh', manualScript);
+                    logBatch('✓ Manual script saved (skipping AI generation)', 'success');
+                    setBadge('badge-codegen', 'done');
+                    updatePipelineStage('codegen', 'completed');
+                    skipGeneration = true;
+                }
+            }
+
+            if (!skipGeneration) {
+                // Also check if script already exists and codegen badge is done
+                var codegenBadge = document.getElementById('badge-codegen');
+                var codegenAlreadyDone = codegenBadge && codegenBadge.classList.contains('done');
+                if (codegenAlreadyDone && isManualMode) {
+                    logBatch('✓ Using existing script (skipping AI generation)', 'info');
+                    skipGeneration = true;
+                }
+            }
+
+            if (!skipGeneration && !goalContent.trim()) {
+                showToast('Please enter a goal or paste a script first.', 'error');
+                logBatch('✗ No goal and no script provided', 'error');
+                this.disabled = false;
+                hideProgress();
+                stopStatusPolling();
+                return;
+            }
+
+            var steps = [];
+
+            if (!skipGeneration) {
+                steps.push({
                     op: 'ops/code_op.md',
                     output: 'code/script.sh',
                     badge: 'badge-codegen',
                     viewer: 'viewer-codegen',
                      label: 'Generate Shell Script',
                      stage: 'codegen'
-                },
-                {
+                });
+            }
+
+            steps.push({
                     op: 'ops/run_op.md',
                     output: 'code/fix_log.md',
                     badge: 'badge-run',
@@ -670,11 +1027,16 @@
                                 if (sv && sv.classList.contains('visible')) {
                                     sv.innerHTML = renderScript(scriptContent);
                                 }
+                                // Also update the manual editor if visible
+                                if (scriptEditor && panelManual && panelManual.classList.contains('active')) {
+                                    scriptEditor.value = scriptContent;
+                                }
                             }
                         } catch (e) { /* non-critical */ }
                     }
-                }
-            ]);
+            });
+
+            await runSequential(steps);
             logBatch('🎉 Pipeline complete!', 'success');
              showToast('Pipeline complete!', 'success');
              updateResultsSummary('Generated', 'Success');
@@ -819,10 +1181,20 @@
         } catch (e) {
             console.warn('Could not load goal.md:', e);
         }
+         // Pre-load existing script into the manual editor
+         try {
+             var scriptContent = await readFile('code/script.sh');
+             if (scriptContent !== null && scriptContent.trim().length > 0 && scriptEditor) {
+                 scriptEditor.value = scriptContent;
+             }
+         } catch (e) {
+             // ignore — script may not exist yet
+         }
     }
 
     // === Initialize ===
     loadInitialFiles();
     checkExistingFiles();
+     loadApiProviders();
 
 })();

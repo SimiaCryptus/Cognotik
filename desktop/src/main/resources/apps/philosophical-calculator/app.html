@@ -142,6 +142,11 @@
                     <div class="stage-icon">✨</div>
                     <div class="stage-label">Enhanced</div>
                 </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="illustrate">
+                    <div class="stage-icon">🎨</div>
+                    <div class="stage-label">Illustrated</div>
+                </div>
             </div>
         </div>
 
@@ -213,14 +218,79 @@
                 <div class="viewer" id="viewer-update"></div>
             </div>
         </div>
+        <!-- Step 4: Illustrate Article -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">4</span>
+                    <span class="step-title">Illustrate Article</span>
+                    <span class="step-badge pending" id="badge-illustration">pending</span>
+                </div>
+                <p class="step-desc">Add inline AI-generated illustrations to the article to enhance the narrative and explain complex concepts visually. This modifies <code>content.md</code> in place.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/illustration_op.md"
+                            data-output="content.md"
+                            data-badge="badge-illustration"
+                            data-viewer="viewer-illustration">▶ Run</button>
+                    <button class="btn btn-secondary btn-view"
+                            data-file="content.md"
+                            data-viewer="viewer-illustration">👁 View</button>
+                </div>
+                <div class="viewer" id="viewer-illustration"></div>
+            </div>
+        </div>
+
+        <!-- Manual Article Editor -->
+        <div class="card manual-editor-card">
+            <h3>✏️ Manual Article Editor</h3>
+            <p>Directly create or edit the <code>content.md</code> file. Use this to write your article from scratch, paste in existing content, or make manual edits at any point in the pipeline.</p>
+            <div class="button-row">
+                <button class="btn btn-primary" id="pipeline-edit-content-btn">✏️ Open Editor</button>
+                <button class="btn btn-secondary btn-view" data-file="content.md" data-viewer="viewer-manual-content">👁 Preview Current</button>
+                <span id="pipeline-editor-status" class="status-msg"></span>
+            </div>
+            <div id="pipeline-content-editor-container" class="pipeline-content-editor-container">
+                <div class="pipeline-editor-header">
+                    <div class="pipeline-editor-title-row">
+                        <h4>✏️ Editing content.md</h4>
+                        <span class="pipeline-editor-hint">Changes are saved to the pipeline's content.md file</span>
+                    </div>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-sm" id="pipeline-save-content-btn">💾 Save</button>
+                        <button class="btn btn-secondary btn-sm" id="pipeline-save-close-content-btn">💾 Save & Close</button>
+                        <button class="btn btn-secondary btn-sm" id="pipeline-close-editor-btn">✕ Close</button>
+                    </div>
+                </div>
+                <div class="pipeline-editor-toolbar">
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="heading" title="Insert heading">H2</button>
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="bold" title="Bold">B</button>
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="italic" title="Italic">I</button>
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="bullet" title="Bullet list">• List</button>
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="quote" title="Blockquote">❝ Quote</button>
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="code" title="Code block">⌨ Code</button>
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="hr" title="Horizontal rule">― HR</button>
+                    <span class="pipeline-editor-wordcount" id="pipeline-editor-wordcount"></span>
+                </div>
+                <textarea id="pipeline-content-editor" rows="30" placeholder="Write or paste your article content here in Markdown format..."></textarea>
+                <div class="pipeline-editor-footer">
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-sm" id="pipeline-save-content-btn-bottom">💾 Save</button>
+                        <button class="btn btn-secondary btn-sm" id="pipeline-save-close-content-btn-bottom">💾 Save & Close</button>
+                        <span id="pipeline-editor-status-bottom" class="status-msg"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="viewer" id="viewer-manual-content"></div>
+        </div>
+
 
         <!-- Batch Execution -->
         <div class="card batch-card">
-            <h3>🚀 Batch Execution</h3>
-            <p>Run the core pipeline steps in sequence (Summarize → Draft). Use the Lenses tab to run analytical operations, then come back to run Update.</p>
+            <h3>🚀 Quick Sequence</h3>
+            <p>Run the core pipeline steps in sequence (Summarize → Draft). Use the Lenses tab to run individual analytical operations, then come back to run Update.</p>
             <div class="button-row">
                 <button class="btn btn-accent" id="run-core-pipeline">▶ Run Core Pipeline (Summarize → Draft)</button>
-                <button class="btn btn-accent" id="run-full-pipeline">▶▶ Run Full Pipeline (All Steps + All Lenses)</button>
             </div>
             <div class="batch-log" id="batch-log"></div>
         </div>
@@ -439,6 +509,29 @@
                     <div class="viewer" id="viewer-technical"></div>
                 </div>
             </div>
+            <!-- Illustration -->
+            <div class="card lens-card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">🎨</span>
+                        <span class="step-title">Illustrate Document</span>
+                        <span class="step-badge pending" id="badge-illustration-lens">pending</span>
+                    </div>
+                    <p class="step-desc">Add inline AI-generated illustrations throughout the article to enhance the narrative and visually explain complex concepts.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/illustration_op.md"
+                                data-output="content.md"
+                                data-badge="badge-illustration-lens"
+                                data-viewer="viewer-illustration-lens">▶ Run</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="content.md"
+                                data-viewer="viewer-illustration-lens">👁 View</button>
+                    </div>
+                    <div class="viewer" id="viewer-illustration-lens"></div>
+                </div>
+            </div>
+
 
         </div>
 
@@ -456,6 +549,7 @@
                 <label><input type="checkbox" class="lens-check" value="narrative"> 📖 Narrative</label>
                 <label><input type="checkbox" class="lens-check" value="comic"> 💬 Comic</label>
                 <label><input type="checkbox" class="lens-check" value="technical"> 🔧 Technical</label>
+                <label><input type="checkbox" class="lens-check" value="illustration"> 🎨 Illustrate</label>
             </div>
             <div class="button-row">
                 <button class="btn btn-accent" id="run-selected-lenses">▶ Run Selected Lenses</button>
@@ -482,6 +576,7 @@
             <button class="results-tab" data-tab="tab-narrative">📖 Narrative</button>
             <button class="results-tab" data-tab="tab-comic">💬 Comic</button>
             <button class="results-tab" data-tab="tab-technical">🔧 Technical</button>
+            <button class="results-tab" data-tab="tab-illustration">🎨 Illustrated</button>
         </div>
 
         <div class="results-content">
@@ -605,6 +700,16 @@
                     </div>
                     <div class="result-viewer" id="result-technical">
                         <p class="placeholder">Run the Technical Explanation lens to generate the breakdown.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-illustration">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="content.md" data-viewer="result-illustration">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-illustration">
+                        <p class="placeholder">Run the Illustrate step to add inline illustrations to the article.</p>
                     </div>
                 </div>
             </div>

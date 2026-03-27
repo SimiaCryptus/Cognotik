@@ -138,4 +138,5 @@ object FileRequestHandler {
       resp.writer.write("""{"error": "Error generating directory listing"}""")
     }
   }
+
 }
