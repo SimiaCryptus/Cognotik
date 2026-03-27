@@ -296,40 +296,48 @@ class AwsChatClient(
     }
     log.info("Starting AWS Bedrock chat with model: ${model.modelId}, messages=$messageCount, contentLength=$totalContentLength, temperature=${chatRequest.temperature}")
 
-    return withReliability {
-      withPerformanceLogging {
-        val converseRequest = try {
-          logStreams.debug("Building AWS Converse request for model: ${model.modelId}")
-          toConverseRequest(model, chatRequest, logStreams, awsAuth.flattenChat ?: false)
-        } catch (e: Exception) {
-          log.error("Failed to create AWS request for model: ${model.modelId}", e)
-          logStreams.debug("Error details: ${e.message}")
-          throw RuntimeException("Failed to create AWS request", e)
-        }
-
-        val converseResponse = try {
-          logStreams.debug("Invoking AWS Bedrock converse for model: ${model.modelId}")
-          val startTime = System.currentTimeMillis()
-          val responseFuture = bedrockClient.converse(converseRequest)
-          val response = responseFuture.get(10, TimeUnit.MINUTES)
-          val elapsed = System.currentTimeMillis() - startTime
-          logStreams.debug("AWS Bedrock converse completed in ${elapsed}ms for model: ${model.modelId}, stopReason=${response.stopReason()}")
-          response
-        } catch (e: Exception) {
-          log.error("Failed to invoke AWS Bedrock model: ${model.modelId}", e)
-          throw RuntimeException("Failed to invoke AWS Bedrock model", e.cause ?: e)
-        }
-
-        val response = fromConverseResponse(converseResponse)
-
-        if (response.usage != null) {
-          log.debug("Usage for model ${model.modelId}: prompt_tokens=${response.usage?.prompt_tokens}, completion_tokens=${response.usage?.completion_tokens}, total_tokens=${response.usage?.total_tokens}")
-          onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
-        }
-
-        log.info("AWS Bedrock chat completed successfully for model: ${model.modelId}, choices=${response.choices?.size ?: 0}")
-        response
+    TimeUnit.HOURS.toSeconds(1)
+    return withPerformanceLogging {
+      val converseRequest = try {
+        logStreams.debug("Building AWS Converse request for model: ${model.modelId}")
+        toConverseRequest(
+          model,
+          chatRequest,
+          logStreams,
+          awsAuth.flattenChat ?: false
+        )
+      } catch (e: Exception) {
+        log.error("Failed to create AWS request for model: ${model.modelId}", e)
+        logStreams.debug("Error details: ${e.message}")
+        throw RuntimeException("Failed to create AWS request", e)
       }
+
+      val converseResponse = try {
+        logStreams.debug("Invoking AWS Bedrock converse for model: ${model.modelId}")
+        val startTime = System.currentTimeMillis()
+        val responseFuture = bedrockClient.converse(converseRequest)
+        val response = responseFuture.get(10, TimeUnit.MINUTES)
+        val elapsed = System.currentTimeMillis() - startTime
+        logStreams.debug("AWS Bedrock converse completed in ${elapsed}ms for model: ${model.modelId}, stopReason=${response.stopReason()}")
+        response
+      } catch (e: Exception) {
+        log.error("Failed to invoke AWS Bedrock model: ${model.modelId}", e)
+        throw RuntimeException("Failed to invoke AWS Bedrock model", e.cause ?: e)
+      }
+
+      val response = fromConverseResponse(converseResponse)
+
+      if (response.usage != null) {
+        log.debug("Usage for model ${model.modelId}: prompt_tokens=${response.usage?.prompt_tokens}, completion_tokens=${response.usage?.completion_tokens}, total_tokens=${response.usage?.total_tokens}")
+        onUsage(
+          model,
+          response.usage?.copy(cost = model.pricing(response.usage!!))!!,
+          logStreams = logStreams
+        )
+      }
+
+      log.info("AWS Bedrock chat completed successfully for model: ${model.modelId}, choices=${response.choices?.size ?: 0}")
+      response
     }
   }
 

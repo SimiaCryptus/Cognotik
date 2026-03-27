@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.classic.methods.HttpPost
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
 import org.slf4j.Logger
@@ -51,20 +52,20 @@ open class OpenAIImageClient(
     return post(request)
   }
 
-  protected fun post(request: HttpPost): String = withClient { EntityUtils.toString(it.execute(request).entity) }
+  protected fun post(request: HttpPost): String =
+    EntityUtils.toString(client.execute(request).entity)
 
   @Throws(IOException::class)
-  protected operator fun get(url: String?, apiProvider: APIProvider): String = withClient {
+  protected operator fun get(url: String?, apiProvider: APIProvider): String {
     val request = HttpGet(url)
     request.addHeader("Content-Type", "application/json")
     request.addHeader("Accept", "application/json")
     log.debug("Sending GET request to URL: $url")
     apiProvider.authorize(request, key, apiBase)
-    EntityUtils.toString(it.execute(request).entity)
+    return EntityUtils.toString(client.execute(request).entity)
   }
-
-  override fun createImage(request: ImageGenerationRequest): ImageGenerationResponse = withReliability {
-    withPerformanceLogging {
+  override fun createImage(request: ImageGenerationRequest): ImageGenerationResponse {
+    return withPerformanceLogging {
       val url = "${apiBase}/images/generations"
       val httpRequest = HttpPost(url)
       httpRequest.addHeader("Accept", "application/json")
@@ -75,7 +76,12 @@ open class OpenAIImageClient(
       val response = post(httpRequest)
       checkError(response)
       log.info("Image creation response received")
-      val model = OpenAIImageModels.values.values.find { it.modelId.equals(request.model, true) }
+      val model = OpenAIImageModels.values.values.find {
+        it.modelId.equals(
+          request.model,
+          true
+        )
+      }
       val dims = request.size?.split("x")
       onUsage(
         model, Usage(
@@ -85,7 +91,10 @@ open class OpenAIImageClient(
           )
         )
       )
-      JsonUtil.objectMapper().readValue(response, ImageGenerationResponse::class.java)
+      JsonUtil.objectMapper().readValue(
+        response,
+        ImageGenerationResponse::class.java
+      )
     }
   }
 

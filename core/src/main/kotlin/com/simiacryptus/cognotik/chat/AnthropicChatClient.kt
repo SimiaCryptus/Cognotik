@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.exceptions.ErrorUtil
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
@@ -106,101 +107,116 @@ class AnthropicChatClient(
     logStreams: MutableList<BufferedOutputStream>
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
-    return withReliability {
-      withPerformanceLogging {
-        val anthropicChatRequest = try {
-          val chatMessages = chatRequest.messages
-          require(chatMessages.isNotEmpty()) { "Messages cannot be empty" }
-          require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
-          val max_tokens = chatRequest.max_tokens ?: model.maxOutTokens
-          val model = chatRequest.model ?: model.modelId
-          val temperature = chatRequest.temperature
-          val system = chatMessages
-            .firstOrNull { it.role == ModelSchema.Role.system }
-            ?.content
-            ?.joinToString("\n\n") { it.text.orEmpty() }
-          val messages = chatMessages
-            .filter { it.role != ModelSchema.Role.system }
-            .let {
-              if (it.isEmpty()) emptyList()
-              else {
-                val alternatingMessages = mutableListOf<AnthropicMessage>()
-                val remainingMessages = it.toMutableList()
-                while (remainingMessages.isNotEmpty()) {
-                  val thisRole = remainingMessages.firstOrNull()?.role
-                  val toConsolidate = remainingMessages.takeWhile { it.role == thisRole }
+    return withPerformanceLogging {
+      val anthropicChatRequest = try {
+        val chatMessages = chatRequest.messages
+        require(chatMessages.isNotEmpty()) { "Messages cannot be empty" }
+        require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
+        val max_tokens = chatRequest.max_tokens ?: model.maxOutTokens
+        val model = chatRequest.model ?: model.modelId
+        val temperature = chatRequest.temperature
+        val system = chatMessages
+          .firstOrNull { it.role == ModelSchema.Role.system }
+          ?.content
+          ?.joinToString("\n\n") { it.text.orEmpty() }
+        val messages = chatMessages
+          .filter { it.role != ModelSchema.Role.system }
+          .let {
+            if (it.isEmpty()) emptyList()
+            else {
+              val alternatingMessages = mutableListOf<AnthropicMessage>()
+              val remainingMessages = it.toMutableList()
+              while (remainingMessages.isNotEmpty()) {
+                val thisRole =
+                  remainingMessages.firstOrNull()?.role
+                val toConsolidate =
+                  remainingMessages.takeWhile { it.role == thisRole }
                     .toTypedArray<ModelSchema.ChatMessage>()
-                  remainingMessages.removeAll(toConsolidate)
-                  alternatingMessages += AnthropicMessage(
-                    role = thisRole.toString(),
-                    content = toConsolidate.joinToString("\n\n") {
-                      it.content?.joinToString("\n") { it.text.orEmpty() }.orEmpty()
-                    })
-                }
-                alternatingMessages
+                remainingMessages.removeAll(toConsolidate)
+                alternatingMessages += AnthropicMessage(
+                  role = thisRole.toString(),
+                  content = toConsolidate.joinToString("\n\n") {
+                    it.content?.joinToString("\n") { it.text.orEmpty() }
+                      .orEmpty()
+                  })
               }
+              alternatingMessages
             }
-            .filter { !it.content.isNullOrBlank() }
-          AnthropicChatRequest(
-            model = model,
-            system = system,
-            messages = messages,
-            max_tokens = max_tokens,
-            temperature = temperature,
-          )
-        } catch (e: Exception) {
-          log.error("Failed to map chat request to Anthropic format", e)
-          throw RuntimeException("Failed to map chat request to Anthropic format: ${e.message}", e)
-        }
-        val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
-          .writeValueAsString(anthropicChatRequest)
-        val rawResponse = post("${apiBase}/messages", json, APIProvider.Anthropic)
-        checkError(rawResponse)
-        val responseJson = try {
-          require(rawResponse.isNotBlank()) { "Response cannot be blank" }
-          try {
-            val errorCheck = JsonUtil.objectMapper().readTree(rawResponse)
-            if (errorCheck.has("type") && errorCheck.get("type").asText() == "error") {
-              val errorMessage = if (errorCheck.has("message")) {
-                errorCheck.get("message").asText()
-              } else if (errorCheck.has("error") && errorCheck.get("error").has("message")) {
-                errorCheck.get("error").get("message").asText()
-              } else {
-                "Unknown error: $errorCheck"
-              }
-              throw RuntimeException("Anthropic API error: $errorMessage")
-            }
-            val response = JsonUtil.objectMapper().readValue(rawResponse, AnthropicResponse::class.java)
-            val chatResponse = ModelSchema.ChatResponse(
-              id = response.id, choices = listOf(
-                ModelSchema.ChatChoice(
-                  message = ModelSchema.ChatMessageResponse(
-                    content = response.content?.joinToString("\n") { it.text ?: "" },
-                  ), index = 0
-                )
-              ), usage = ModelSchema.Usage(
-                prompt_tokens = response.usage?.input_tokens?.toLong() ?: 0,
-                completion_tokens = response.usage?.output_tokens?.toLong() ?: 0,
-                total_tokens = (response.usage?.input_tokens?.toLong()
-                  ?: 0) + (response.usage?.output_tokens
-                  ?: 0),
-              )
-            )
-            JsonUtil.toJson(chatResponse)
-          } catch (e: Exception) {
-            log.error("Failed to parse Anthropic response", e)
-            throw RuntimeException("Error parsing Anthropic response", e)
           }
-        } catch (e: Exception) {
-          log.error("Failed to parse Anthropic response: $rawResponse", e)
-          throw RuntimeException("Failed to parse Anthropic response: ${e.message}", e)
-        }
-        val response = JsonUtil.objectMapper().readValue(responseJson, ModelSchema.ChatResponse::class.java)
-        if (response.usage != null) {
-          onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
-        }
-        response
+          .filter { !it.content.isNullOrBlank() }
+        AnthropicChatRequest(
+          model = model,
+          system = system,
+          messages = messages,
+          max_tokens = max_tokens,
+          temperature = temperature,
+        )
+      } catch (e: Exception) {
+        log.error("Failed to map chat request to Anthropic format", e)
+        throw RuntimeException("Failed to map chat request to Anthropic format: ${e.message}", e)
       }
+      val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
+        .writeValueAsString(anthropicChatRequest)
+      val rawResponse =
+        post("${apiBase}/messages", json, APIProvider.Anthropic)
+      checkError(rawResponse)
+      val responseJson = try {
+        require(rawResponse.isNotBlank()) { "Response cannot be blank" }
+        try {
+          val errorCheck = JsonUtil.objectMapper().readTree(rawResponse)
+          if (errorCheck.has("type") && errorCheck.get("type").asText() == "error") {
+            val errorMessage = if (errorCheck.has("message")) {
+              errorCheck.get("message").asText()
+            } else if (errorCheck.has("error") && errorCheck.get("error").has("message")) {
+              errorCheck.get("error").get("message").asText()
+            } else {
+              "Unknown error: $errorCheck"
+            }
+            throw RuntimeException("Anthropic API error: $errorMessage")
+          }
+          val response = JsonUtil.objectMapper()
+            .readValue(
+              rawResponse,
+              AnthropicResponse::class.java
+            )
+          val chatResponse = ModelSchema.ChatResponse(
+            id = response.id, choices = listOf(
+              ModelSchema.ChatChoice(
+                message = ModelSchema.ChatMessageResponse(
+                  content = response.content?.joinToString(
+                    "\n"
+                  ) { it.text ?: "" },
+                ), index = 0
+              )
+            ), usage = ModelSchema.Usage(
+              prompt_tokens = response.usage?.input_tokens?.toLong() ?: 0,
+              completion_tokens = response.usage?.output_tokens?.toLong() ?: 0,
+              total_tokens = (response.usage?.input_tokens?.toLong()
+                ?: 0) + (response.usage?.output_tokens
+                ?: 0),
+            )
+          )
+          JsonUtil.toJson(chatResponse)
+        } catch (e: Exception) {
+          log.error("Failed to parse Anthropic response", e)
+          throw RuntimeException("Error parsing Anthropic response", e)
+        }
+      } catch (e: Exception) {
+        log.error("Failed to parse Anthropic response: $rawResponse", e)
+        throw RuntimeException("Failed to parse Anthropic response: ${e.message}", e)
+      }
+      val response = JsonUtil.objectMapper().readValue(
+        responseJson,
+        ModelSchema.ChatResponse::class.java
+      )
+      if (response.usage != null) {
+        onUsage(
+          model,
+          response.usage?.copy(cost = model.pricing(response.usage!!))!!,
+          logStreams = logStreams
+        )
+      }
+      response
     }
   }
 

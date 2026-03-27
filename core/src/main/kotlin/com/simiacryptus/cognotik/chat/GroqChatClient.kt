@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.chat
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.exceptions.ErrorUtil
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -121,26 +122,30 @@ class GroqChatClient(
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<java.io.BufferedOutputStream>
+    logStreams: MutableList<BufferedOutputStream>
   ): ModelSchema.ChatResponse {
     log.info("Starting Groq chat with model: ${model.modelId}")
+    return withPerformanceLogging {
+      val groqRequest = toGroq(chatRequest)
+      val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
+        .writeValueAsString(groqRequest)
+      val result =
+        post("${apiBase}/openai/chat/completions", json, APIProvider.Groq)
+      checkError(result)
+      val response = JsonUtil.objectMapper().readValue(
+        result,
+        ModelSchema.ChatResponse::class.java
+      )
 
-    return withReliability {
-      withPerformanceLogging {
-        val groqRequest = toGroq(chatRequest)
-        val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
-          .writeValueAsString(groqRequest)
-
-        val result = post("$apiBase/openai/chat/completions", json, APIProvider.Groq)
-        checkError(result)
-        val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
-
-        if (response.usage != null && model is ChatModel) {
-          onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
-        }
-
-        response
+      if (response.usage != null && model is ChatModel) {
+        onUsage(
+          model,
+          response.usage?.copy(cost = model.pricing(response.usage!!))!!,
+          logStreams = logStreams
+        )
       }
+
+      response
     }
   }
 }

@@ -53,57 +53,53 @@ class GeminiImageClient(
     return builder.build()
   }
 
-  override fun createImage(request: ImageGenerationRequest): ImageGenerationResponse {
-    return withReliability {
-      withPerformanceLogging {
-        try {
-          val config = buildGenerateImagesConfig(request)
+  override fun createImage(request: ImageGenerationRequest) = withPerformanceLogging {
+    try {
+      val config = buildGenerateImagesConfig(request)
 
-          log(
-            Level.DEBUG,
-            "Sending image generation request to Gemini SDK for model: ${request.model}",
-            logStreams
+      log(
+        Level.DEBUG,
+        "Sending image generation request to Gemini SDK for model: ${request.model}",
+        logStreams
+      )
+
+      val response: GenerateImagesResponse =
+        client.models.generateImages(request.model, request.prompt, config)
+
+      val imageData = response.generatedImages().orElse(emptyList()).mapNotNull { generatedImage ->
+        generatedImage.image().orElse(null)?.let { image ->
+          // Convert the image to base64 or URL format
+          val imageBytes = image.imageBytes().orElse(null)
+          val imageUrl = image.gcsUri().orElse(null)
+
+          ImageObject(
+            url = imageUrl,
+            b64_json = imageBytes?.let { Base64.getEncoder().encodeToString(it) }
           )
-
-          val response: GenerateImagesResponse =
-            client.models.generateImages(request.model, request.prompt, config)
-
-          val imageData = response.generatedImages().orElse(emptyList()).mapNotNull { generatedImage ->
-            generatedImage.image().orElse(null)?.let { image ->
-              // Convert the image to base64 or URL format
-              val imageBytes = image.imageBytes().orElse(null)
-              val imageUrl = image.gcsUri().orElse(null)
-
-              ImageObject(
-                url = imageUrl,
-                b64_json = imageBytes?.let { Base64.getEncoder().encodeToString(it) }
-              )
-            }
-          }
-
-          val model = GeminiImageModels.values.values.find { it.modelId.equals(request.model, true) }
-          val dims = request.size?.split("x")
-          if (model != null) {
-            onUsage(
-              model, Usage(
-                completion_tokens = imageData.size.toLong(),
-                cost = model.pricing(
-                  width = dims?.get(0)?.toInt() ?: 1024,
-                  height = dims?.get(1)?.toInt() ?: 1024
-                ) * imageData.size
-              )
-            )
-          }
-
-          ImageGenerationResponse(
-            created = System.currentTimeMillis() / 1000,
-            data = imageData
-          )
-        } catch (e: Exception) {
-          log.error("Error during Gemini image generation", e)
-          throw e
         }
       }
+
+      val model = GeminiImageModels.values.values.find { it.modelId.equals(request.model, true) }
+      val dims = request.size?.split("x")
+      if (model != null) {
+        onUsage(
+          model, Usage(
+            completion_tokens = imageData.size.toLong(),
+            cost = model.pricing(
+              width = dims?.get(0)?.toInt() ?: 1024,
+              height = dims?.get(1)?.toInt() ?: 1024
+            ) * imageData.size
+          )
+        )
+      }
+
+      ImageGenerationResponse(
+        created = System.currentTimeMillis() / 1000,
+        data = imageData
+      )
+    } catch (e: Exception) {
+      log.error("Error during Gemini image generation", e)
+      throw e
     }
   }
 

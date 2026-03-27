@@ -53,52 +53,49 @@ class OllamaEmbeddingClient(
     model: EmbeddingModel
   ): ModelSchema.EmbeddingResponse {
     validateEmbeddingRequest(request, model)
-
-    return withReliability {
-      withPerformanceLogging {
-        // Convert OpenAI-style request to Ollama format
-        val ollamaRequest = mapOf(
-          "model" to (request.model ?: model.modelId),
-          "prompt" to when {
-            request.input is String -> request.input
-            else -> request.input.toString()
-          }
-        )
-
-        val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
-          .writeValueAsString(ollamaRequest)
-
-        val rawResponse = post("$apiBase/api/embeddings", json, provider)
-        checkError(rawResponse)
-
-        // Parse Ollama response and convert to OpenAI format
-        val ollamaResponse = JsonUtil.objectMapper().readValue(rawResponse, Map::class.java)
-        val embeddings = ollamaResponse["embedding"] as? List<Double>
-          ?: throw IllegalStateException("No embeddings found in response")
-
-        val response = ModelSchema.EmbeddingResponse(
-          data = listOf(
-            ModelSchema.EmbeddingData(
-              embedding = embeddings.toDoubleArray(),
-              index = 0,
-              `object` = "embedding"
-            )
-          ),
-          model = request.model ?: model.modelId,
-          `object` = "list",
-          usage = ModelSchema.Usage(
-            prompt_tokens = estimateTokens(request.input.toString()).toLong(),
-            total_tokens = estimateTokens(request.input.toString()).toLong(),
-            completion_tokens = 0
-          )
-        )
-
-        if (response.usage != null) {
-          onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
+    return withPerformanceLogging {
+      // Convert OpenAI-style request to Ollama format
+      val ollamaRequest = mapOf(
+        "model" to (request.model ?: model.modelId),
+        "prompt" to when {
+          request.input is String -> request.input
+          else -> request.input.toString()
         }
+      )
 
-        response
+      val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
+        .writeValueAsString(ollamaRequest)
+
+      val rawResponse = post("$apiBase/api/embeddings", json, provider)
+      checkError(rawResponse)
+
+      // Parse Ollama response and convert to OpenAI format
+      val ollamaResponse = JsonUtil.objectMapper().readValue(rawResponse, Map::class.java)
+      val embeddings = ollamaResponse["embedding"] as? List<Double>
+        ?: throw IllegalStateException("No embeddings found in response")
+
+      val response = ModelSchema.EmbeddingResponse(
+        data = listOf(
+          ModelSchema.EmbeddingData(
+            embedding = embeddings.toDoubleArray(),
+            index = 0,
+            `object` = "embedding"
+          )
+        ),
+        model = request.model ?: model.modelId,
+        `object` = "list",
+        usage = ModelSchema.Usage(
+          prompt_tokens = estimateTokens(request.input.toString()).toLong(),
+          total_tokens = estimateTokens(request.input.toString()).toLong(),
+          completion_tokens = 0
+        )
+      )
+
+      if (response.usage != null) {
+        onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
       }
+
+      response
     }
   }
 
