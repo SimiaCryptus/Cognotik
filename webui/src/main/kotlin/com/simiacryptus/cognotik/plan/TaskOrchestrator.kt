@@ -190,8 +190,14 @@ class TaskOrchestrator(
           val impl = orchestrationConfig.getImpl(subTask)
           val messages = listOf(
             userMessage,
-            JsonUtil.toJson(plan),
-            impl.getPriorCode(executionState)
+            //JsonUtil.toJson(plan), // Giving the task the whole plan can distract it from its specific task, but may be useful for some implementations. Consider making this configurable.
+            impl.getPriorCode(executionState),
+            "Goals:\n" + (subTask.let {
+              when {
+                it.files.isNotEmpty() -> it.files.joinToString("\n") { "* Generate `${it}`" }
+                else -> it.task_description
+              }
+            })
           )
           val onComplete = Semaphore(0)
           impl.run(

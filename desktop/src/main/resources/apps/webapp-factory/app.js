@@ -118,12 +118,256 @@
             document.getElementById('nav-launch-app'),
             document.getElementById('btn-launch-app-banner'),
             document.getElementById('btn-open-app-results'),
+            document.getElementById('btn-preview-launch'),
         ];
         links.forEach(el => {
             if (el) el.href = appIndexUrl;
         });
     }
     updateLaunchLinks();
+    // === Console Capture & Live Preview ===
+    const consoleOutput = document.getElementById('console-output');
+    const consoleCounts = document.getElementById('console-counts');
+    const previewIframe = document.getElementById('preview-iframe');
+    const previewPlaceholder = document.getElementById('preview-placeholder');
+    const btnFixErrors = document.getElementById('btn-fix-errors');
+    let capturedLogs = [];
+    let consoleStat = { logs: 0, warnings: 0, errors: 0 };
+    // The script we inject into the iframe to capture console output
+    const CONSOLE_CAPTURE_SCRIPT = `
+<script>
+(function() {
+    var _origConsole = {
+        log: console.log,
+        warn: console.warn,
+        error: console.error,
+        info: console.info,
+        debug: console.debug
+    };
+    function send(level, args) {
+        try {
+            var parts = [];
+            for (var i = 0; i < args.length; i++) {
+                try {
+                    parts.push(typeof args[i] === 'object' ? JSON.stringify(args[i], null, 2) : String(args[i]));
+                } catch(e) {
+                    parts.push(String(args[i]));
+                }
+            }
+            window.parent.postMessage({
+                type: 'console-capture',
+                level: level,
+                message: parts.join(' '),
+                timestamp: Date.now()
+            }, '*');
+        } catch(e) {}
+    }
+    console.log = function() { send('log', arguments); _origConsole.log.apply(console, arguments); };
+    console.warn = function() { send('warn', arguments); _origConsole.warn.apply(console, arguments); };
+    console.error = function() { send('error', arguments); _origConsole.error.apply(console, arguments); };
+    console.info = function() { send('info', arguments); _origConsole.info.apply(console, arguments); };
+    console.debug = function() { send('log', arguments); _origConsole.debug.apply(console, arguments); };
+    window.onerror = function(msg, source, lineno, colno, error) {
+        var detail = msg;
+        if (source) detail += '\\n  at ' + source + ':' + lineno + ':' + colno;
+        if (error && error.stack) detail += '\\n' + error.stack;
+        window.parent.postMessage({
+            type: 'console-capture',
+            level: 'exception',
+            message: detail,
+            source: source,
+            lineno: lineno,
+            colno: colno,
+            timestamp: Date.now()
+        }, '*');
+    };
+    window.addEventListener('unhandledrejection', function(event) {
+        var reason = event.reason;
+        var msg = 'Unhandled Promise Rejection: ';
+        if (reason instanceof Error) {
+            msg += reason.message + (reason.stack ? '\\n' + reason.stack : '');
+        } else {
+            try { msg += JSON.stringify(reason); } catch(e) { msg += String(reason); }
+        }
+        window.parent.postMessage({
+            type: 'console-capture',
+            level: 'exception',
+            message: msg,
+            timestamp: Date.now()
+        }, '*');
+    });
+    window.parent.postMessage({ type: 'console-capture', level: 'info', message: 'App loaded successfully.', timestamp: Date.now() }, '*');
+})();
+</' + 'script>`;
+    function clearConsolePanel() {
+        capturedLogs = [];
+        consoleStat = { logs: 0, warnings: 0, errors: 0 };
+        if (consoleOutput) consoleOutput.innerHTML = '<div class="console-entry console-info">Waiting for app to load…</div>';
+        updateConsoleCounts();
+        if (btnFixErrors) btnFixErrors.style.display = 'none';
+    }
+    function updateConsoleCounts() {
+        if (!consoleCounts) return;
+        let parts = [];
+        if (consoleStat.errors > 0) parts.push(`<span class="console-count-errors">❌ ${consoleStat.errors} error${consoleStat.errors !== 1 ? 's' : ''}</span>`);
+        if (consoleStat.warnings > 0) parts.push(`<span class="console-count-warnings">⚠️ ${consoleStat.warnings} warning${consoleStat.warnings !== 1 ? 's' : ''}</span>`);
+        parts.push(`<span class="console-count-logs">📝 ${consoleStat.logs} log${consoleStat.logs !== 1 ? 's' : ''}</span>`);
+        consoleCounts.innerHTML = parts.join('');
+    }
+    function addConsoleEntry(level, message, source) {
+        const ts = new Date().toLocaleTimeString();
+        const entry = {
+            level: level,
+            message: message,
+            source: source || '',
+            timestamp: ts,
+            raw: message
+        };
+        capturedLogs.push(entry);
+        // Update counts
+        if (level === 'error' || level === 'exception') {
+            consoleStat.errors++;
+            if (btnFixErrors) btnFixErrors.style.display = '';
+        } else if (level === 'warn') {
+            consoleStat.warnings++;
+        } else {
+            consoleStat.logs++;
+        }
+        updateConsoleCounts();
+        // Add to DOM
+        if (!consoleOutput) return;
+        // Remove the "waiting" placeholder if present
+        const placeholder = consoleOutput.querySelector('.console-info');
+        if (placeholder && placeholder.textContent.includes('Waiting for app')) {
+            placeholder.remove();
+        }
+        const cssClass = level === 'exception' ? 'console-exception' :
+                          level === 'error' ? 'console-error' :
+                          level === 'warn' ? 'console-warn' :
+                          level === 'info' ? 'console-info' : 'console-log';
+        const div = document.createElement('div');
+        div.className = 'console-entry ' + cssClass;
+        div.innerHTML = `<span class="console-timestamp">${escapeHtml(ts)}</span>${escapeHtml(message)}`;
+        if (source) {
+            div.innerHTML += `<span class="console-source">${escapeHtml(source)}</span>`;
+        }
+        consoleOutput.appendChild(div);
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+    // Listen for messages from the iframe
+    window.addEventListener('message', function(event) {
+        if (!event.data || event.data.type !== 'console-capture') return;
+        const { level, message, source, lineno, colno } = event.data;
+        let sourceInfo = '';
+        if (source) {
+            sourceInfo = source;
+            if (lineno) sourceInfo += ':' + lineno;
+            if (colno) sourceInfo += ':' + colno;
+        }
+        addConsoleEntry(level || 'log', message || '', sourceInfo);
+    });
+    // Load the app into the iframe with injected console capture
+    async function loadPreviewIframe() {
+        if (!previewIframe) return;
+        const available = await checkAppAvailable();
+        if (!available) {
+            if (previewPlaceholder) previewPlaceholder.style.display = 'flex';
+            previewIframe.style.display = 'none';
+            return;
+        }
+        clearConsolePanel();
+        try {
+            // Fetch the generated index.html
+            const resp = await fetch(appIndexUrl);
+            if (!resp.ok) throw new Error('Could not fetch app');
+            let html = await resp.text();
+            // Inject our console capture script right after <head> or at the start
+            if (html.includes('<head>')) {
+                html = html.replace('<head>', '<head>' + CONSOLE_CAPTURE_SCRIPT);
+            } else if (html.includes('<html>')) {
+                html = html.replace('<html>', '<html><head>' + CONSOLE_CAPTURE_SCRIPT + '</head>');
+            } else {
+                html = CONSOLE_CAPTURE_SCRIPT + html;
+            }
+            // Rewrite relative URLs in the HTML to point to the code/ directory
+            // so that CSS, JS, images etc. load correctly
+            const codeBaseUrl = basePath + '/code/';
+            // Add a <base> tag so relative URLs resolve correctly
+            if (html.includes('<head>')) {
+                html = html.replace('<head>', '<head><base href="' + codeBaseUrl + '">');
+            }
+            // Use srcdoc to load the modified HTML
+            if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+            previewIframe.style.display = 'block';
+            previewIframe.srcdoc = html;
+        } catch (e) {
+            console.warn('Failed to load preview:', e);
+            addConsoleEntry('error', 'Failed to load preview: ' + e.message);
+            // Fallback: just set src directly (no console capture)
+            if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+            previewIframe.style.display = 'block';
+            previewIframe.src = appIndexUrl;
+        }
+    }
+    // Preview controls
+    document.getElementById('btn-preview-refresh')?.addEventListener('click', function() {
+        loadPreviewIframe();
+    });
+    document.getElementById('btn-preview-launch')?.addEventListener('click', function() {
+        this.href = appIndexUrl;
+    });
+    document.getElementById('btn-preview-clear-console')?.addEventListener('click', function() {
+        clearConsolePanel();
+    });
+    // "Fix Errors" button: collect errors and populate update notes
+    document.getElementById('btn-fix-errors')?.addEventListener('click', function() {
+        const errors = capturedLogs.filter(e => e.level === 'error' || e.level === 'exception');
+        if (errors.length === 0) {
+            alert('No errors captured to fix.');
+            return;
+        }
+        let notes = '# 🐛 Auto-detected Errors to Fix\n\n';
+        notes += 'The following JavaScript errors/exceptions were captured from the running app.\n';
+        notes += 'Please fix all of these issues:\n\n';
+        errors.forEach((err, i) => {
+            notes += `## Error ${i + 1}\n`;
+            notes += '```\n' + err.message + '\n```\n';
+            if (err.source) {
+                notes += `Source: \`${err.source}\`\n`;
+            }
+            notes += '\n';
+        });
+        // Also include warnings if any
+        const warnings = capturedLogs.filter(e => e.level === 'warn');
+        if (warnings.length > 0) {
+            notes += '## Warnings (lower priority)\n\n';
+            warnings.forEach((w, i) => {
+                notes += `- ${w.message}\n`;
+            });
+            notes += '\n';
+        }
+        notes += '## Instructions\n';
+        notes += '- Fix all the errors listed above\n';
+        notes += '- Make sure the app loads without any JavaScript exceptions\n';
+        notes += '- Test that all interactive features work correctly\n';
+        // Navigate to Update tab and populate notes
+        const notesEditor = document.getElementById('notes-editor');
+        if (notesEditor) {
+            notesEditor.value = notes;
+        }
+        // Switch to Update section
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        const updateLink = document.querySelector('[data-section="section-update"]');
+        if (updateLink) updateLink.classList.add('active');
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('section-update')?.classList.add('active');
+    });
+    function getErrorsAndWarningsSummary() {
+        const errors = capturedLogs.filter(e => e.level === 'error' || e.level === 'exception');
+        const warnings = capturedLogs.filter(e => e.level === 'warn');
+        return { errors, warnings, hasIssues: errors.length > 0 || warnings.length > 0 };
+    }
+
     // === Show/hide the app preview banner and iframe ===
     async function checkAppAvailable() {
         try {
@@ -140,6 +384,8 @@
         if (available) {
             if (banner) banner.style.display = 'flex';
             if (navLaunch) navLaunch.classList.add('visible');
+            // Auto-load the iframe preview
+            loadPreviewIframe();
         } else {
             if (banner) banner.style.display = 'none';
             if (navLaunch) navLaunch.classList.remove('visible');
@@ -602,6 +848,8 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             }
             // Refresh app preview
             await showAppPreview();
+            // Reload the iframe preview to check for remaining errors
+            await loadPreviewIframe();
             // Auto-refresh the project files list
             document.getElementById('btn-refresh-files-results')?.click();
             // Auto-commit to Git if repo is initialized
@@ -810,6 +1058,8 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             logBatch('🎉 Pipeline complete! Check the Results tab for output.', 'success');
             // Show the app preview
             await showAppPreview();
+            // Switch to preview tab in results if we're on results section
+            logBatch('🖥️ Live preview loaded — check the Results tab to see your app and console output.', 'info');
             // Auto-refresh the project files list
             document.getElementById('btn-refresh-files-results')?.click();
             // Auto-commit to Git if repo is initialized

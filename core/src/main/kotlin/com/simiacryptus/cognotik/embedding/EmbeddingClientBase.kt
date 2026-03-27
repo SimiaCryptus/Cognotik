@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.client5.http.classic.methods.HttpPost
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
@@ -80,28 +81,26 @@ abstract class EmbeddingClientBase(
   abstract fun authorize(request: HttpRequest, apiProvider: APIProvider)
 
   fun post(request: HttpPost, requestID: String = UUID.randomUUID().toString()): String = try {
-    withClient<String> {
-      log(
-        level = Level.DEBUG,
-        msg = String.format(
-          "POST %s\nID:%s\nPrefix:\n\t%s\n```\n%s\n```\n",
-          request.uri,
-          requestID,
-          formatEntityForLogging(request.entity),
-          captureCallerStack().indent("  ")
-        )
+    log(
+      level = Level.DEBUG,
+      msg = String.format(
+        "POST %s\nID:%s\nPrefix:\n\t%s\n```\n%s\n```\n",
+        request.uri,
+        requestID,
+        formatEntityForLogging(request.entity),
+        captureCallerStack().indent("  ")
       )
-      val response = it.execute(request)
-      val entity = response.entity
-      if (entity != null) {
-        val responseBody = EntityUtils.toString(entity)
-        if (responseBody.isBlank()) {
-          throw IOException("Empty response body")
-        }
-        responseBody
-      } else {
-        throw IOException("Empty response entity")
+    )
+    val response = client.execute(request)
+    val entity = response.entity
+    if (entity != null) {
+      val responseBody = EntityUtils.toString(entity)
+      if (responseBody.isBlank()) {
+        throw IOException("Empty response body")
       }
+      responseBody
+    } else {
+      throw IOException("Empty response entity")
     }
   } catch (e: Exception) {
     log.error("Failed to execute POST request to ${request.uri}", e)

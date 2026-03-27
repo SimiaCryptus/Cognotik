@@ -37,19 +37,17 @@ abstract class SingleProviderChatClient(
   logStreams = logStreams,
   scheduledPool = scheduledPool
 ) {
-  protected fun get(url: String) = withClient { client ->
-    client.execute(HttpGet(url).let {
-      provider.authorize(
-        request = it,
-        key = apiKey.decrypt!!,
-        apiBase = apiBase
-      )
-      it
-    }).use { response ->
-      val responseBody = response.entity?.content?.bufferedReader()?.readText() ?: ""
-      log(Level.DEBUG, "GET $url -> ${response.code}: $responseBody", logStreams)
-      responseBody
-    }
+  protected fun get(url: String) = client.execute(HttpGet(url).let {
+    provider.authorize(
+      request = it,
+      key = apiKey.decrypt!!,
+      apiBase = apiBase
+    )
+    it
+  }).use { response ->
+    val responseBody = response.entity?.content?.bufferedReader()?.readText() ?: ""
+    log(Level.DEBUG, "GET $url -> ${response.code}: $responseBody", logStreams)
+    responseBody
   }
 }
 
@@ -96,38 +94,36 @@ abstract class ChatClientBase(
     requestID: String = UUID.randomUUID().toString(),
     logStreams: MutableList<BufferedOutputStream> = this.logStreams
   ): String = try {
-    withClient { client ->
-      log(
-        level = Level.DEBUG,
-        msg = String.format(
-          "<details><summary>POST %s\nID:%s</summary>\nPrefix:\n\n```json\n%s\n```\n\n```\n%s\n```\n</details>",
-          request.uri,
-          requestID,
-          request.entity.formatEntityForLogging(),
-          captureCallerStack().indent("  ")
-        ),
-        logStreams
-      )
-      val response =
-        innerPost(client, request) ?: throw IOException("Empty response from POST request to ${request.uri}")
-      log(
-        level = Level.DEBUG,
-        msg = String.format(
-          "<details><summary>POST %s\nID:%s</summary>\nResponse:\n\n```\n%s\n```\n</details>",
-          request.uri,
-          requestID,
-          response.let {
-            try {
-              fromJson<Map<String, Any>>(it, Map::class.java).toJson()
-            } catch (e: Exception) {
-              it
-            }
-          }.indent("  ")
-        ),
-        logStreams
-      )
-      response
-    }
+    log(
+      level = Level.DEBUG,
+      msg = String.format(
+        "<details><summary>POST %s\nID:%s</summary>\nPrefix:\n\n```json\n%s\n```\n\n```\n%s\n```\n</details>",
+        request.uri,
+        requestID,
+        request.entity.formatEntityForLogging(),
+        captureCallerStack().indent("  ")
+      ),
+      logStreams
+    )
+    val response =
+      innerPost(client, request) ?: throw IOException("Empty response from POST request to ${request.uri}")
+    log(
+      level = Level.DEBUG,
+      msg = String.format(
+        "<details><summary>POST %s\nID:%s</summary>\nResponse:\n\n```\n%s\n```\n</details>",
+        request.uri,
+        requestID,
+        response.let {
+          try {
+            fromJson<Map<String, Any>>(it, Map::class.java).toJson()
+          } catch (e: Exception) {
+            it
+          }
+        }.indent("  ")
+      ),
+      logStreams
+    )
+    response
   } catch (e: Exception) {
     log(
       Level.ERROR,

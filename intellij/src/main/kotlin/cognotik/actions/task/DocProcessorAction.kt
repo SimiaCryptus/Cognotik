@@ -327,7 +327,7 @@ open class DocProcessorAction(
         val config = t.data
         val targetFiles =
           config.relative_files?.map { it.ifBlank { null } }?.filterNotNull()?.joinToString(", ")?.ifBlank { null }
-            ?: config.files?.map { File(it).name }?.joinToString(", ")?.ifBlank { null }
+            ?: config.files?.map { it.name }?.joinToString(", ")?.ifBlank { null }
             ?: "[folder: ${config.root.name}]"
         val relatedFiles = config.relative_related_files?.take(3)?.joinToString(", ") ?: ""
         val description = buildString {

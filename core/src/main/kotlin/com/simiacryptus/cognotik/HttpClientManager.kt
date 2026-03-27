@@ -84,40 +84,6 @@ abstract class HttpClientManager(
 
     val startTime by lazy { System.currentTimeMillis() }
 
-    fun modelMaxException(e: Throwable?): ModelMaxException? = when {
-      e == null -> null
-      e is ModelMaxException -> e
-      e.cause != null && e.cause != e -> modelMaxException(e.cause)
-      else -> null
-    }
-
-    fun rateLimitException(e: Throwable?): RateLimitException? = when {
-      e == null -> null
-      e is RateLimitException -> e
-      e.cause != null && e.cause != e -> rateLimitException(e.cause)
-      else -> null
-    }
-
-    fun quotaLimitException(e: Throwable?): QuotaException? = when {
-      e == null -> null
-      e is QuotaException -> e
-      e.cause != null && e.cause != e -> quotaLimitException(e.cause)
-      else -> null
-    }
-
-    fun invalidModelException(e: Throwable?): InvalidModelException? = when {
-      e == null -> null
-      e is InvalidModelException -> e
-      e.cause != null && e.cause != e -> invalidModelException(e.cause)
-      else -> null
-    }
-
-    fun apiKeyException(e: Throwable?): IOException? = when {
-      e == null -> null
-      e is IOException && true == e.message?.contains("Incorrect API key") -> e
-      e.cause != null && e.cause != e -> apiKeyException(e.cause)
-      else -> null
-    }
 
     fun toString(exception: Throwable): String {
       val writer = StringWriter()
@@ -138,149 +104,6 @@ abstract class HttpClientManager(
 
   val stackCalls: MutableMap<Thread, String> = ConcurrentHashMap()
 
-  private fun <T> withPool(logStreams1: MutableList<BufferedOutputStream> = this.logStreams, fn: () -> T): T {
-    val callerStack = captureCallerStack()
-
-    val future = workPool.submit(Callable {
-      stackCalls[Thread.currentThread()] = callerStack
-      return@Callable fn()
-    })
-
-    fun handleException(
-      future: Future<*>,
-      e: Throwable,
-      callerStack: String,
-      logStreams: MutableList<BufferedOutputStream> = logStreams1
-    ): Nothing {
-      future.cancel(true)
-      when (e) {
-        is InterruptedException -> {
-          log(Level.INFO, "InterruptedException in withPool. Caller stack:\n$callerStack", logStreams)
-          throw e
-        }
-
-        is ExecutionException -> {
-          log(Level.WARN, "ExecutionException in withPool. Caller stack:\n$callerStack", logStreams)
-          handleException(future, e.cause ?: throw e, callerStack, logStreams)
-        }
-
-        is CancellationException -> {
-          log(Level.INFO, "CancellationException in withPool. Caller stack:\n$callerStack", logStreams)
-          throw e
-        }
-
-        is TimeoutException -> {
-          log(Level.WARN, "TimeoutException in withPool. Caller stack:\n$callerStack", logStreams)
-          throw e
-        }
-
-        else -> {
-          log(Level.WARN, "Exception in withPool. Caller stack:\n$callerStack\n${e.message}", logStreams)
-          throw e
-        }
-      }
-    }
-    return try {
-      future.get()
-    } catch (e: Exception) {
-      handleException(future, e, callerStack, logStreams)
-    }
-  }
-
-  private fun <T> withExpBackoffRetry(
-    retryCount: Int,
-    sleepScale: Long = TimeUnit.SECONDS.toMillis(5),
-    logStreams: MutableList<BufferedOutputStream> = this.logStreams,
-    fn: () -> T,
-  ): T {
-    var lastException: Throwable? = null
-    var i = 0
-    while (i++ <= retryCount) {
-      val sleepPeriod = (sleepScale * 2.0.pow(i.toDouble()).toLong()).coerceAtMost(TimeUnit.MINUTES.toMillis(5))
-      try {
-        return fn()
-      } catch (e: Throwable) {
-        val exception = unwrapException(e)
-        throwIfNonrecoverable(exception, sleepPeriod)
-        this.log(
-          Level.DEBUG,
-          "Request failed; retrying ($i/$retryCount) after ${sleepPeriod}ms: ${toString(exception)}",
-          logStreams
-        )
-        if (i <= retryCount) {
-          Thread.sleep(sleepPeriod)
-        }
-        lastException = exception
-      }
-    }
-    throw lastException ?: RuntimeException("Retry failed without exception")
-  }
-
-  open fun throwIfNonrecoverable(
-    exception: Throwable,
-    sleepPeriod: Long,
-    logStreams: MutableList<BufferedOutputStream> = this.logStreams,
-  ) {
-    when (exception) {
-      is RateLimitException -> {
-        val delayMs = TimeUnit.SECONDS.toMillis(exception.delay).coerceAtLeast(sleepPeriod)
-        log(Level.INFO, "Rate limited, waiting ${delayMs}ms before retry", logStreams)
-        Thread.sleep(delayMs)
-      }
-
-      is AIServiceException -> if (exception.isFatal) throw exception
-      is Exception -> return
-      else -> throw exception
-    }
-  }
-
-  protected open fun unwrapException(e: Throwable): Throwable {
-    val modelMaxException = modelMaxException(e)
-    if (null != modelMaxException) return modelMaxException
-    val rateLimitException = rateLimitException(e)
-    if (null != rateLimitException) return rateLimitException
-    val apiKeyException = apiKeyException(e)
-    if (null != apiKeyException) return apiKeyException
-    val quotaException = quotaLimitException(e)
-    if (null != quotaException) return quotaException
-    val invalidModelException = invalidModelException(e)
-    if (null != invalidModelException) return invalidModelException
-    return e
-  }
-
-  private fun <T> withTimeout(
-    duration: Duration,
-    logStreams: MutableList<BufferedOutputStream> = this.logStreams,
-    fn: () -> T
-  ): T {
-    val thread = Thread.currentThread()
-    val start = Date()
-    val cancellationFuture = scheduledPool.schedule({
-      log(
-        Level.WARN,
-        "Request timed out after $duration at ${Date()} (started $start); closing client for thread $thread",
-        logStreams
-      )
-      thread.interrupt()
-    }, duration.toMillis(), TimeUnit.MILLISECONDS)
-    try {
-      return withPool { fn() }
-    } finally {
-      cancellationFuture.cancel(false)
-    }
-  }
-
-  fun <T> withReliability(
-    requestTimeoutSeconds: Long = TimeUnit.HOURS.toSeconds(1),
-    retryCount: Int = 0,
-    logStreams: MutableList<BufferedOutputStream> = this.logStreams,
-    fn: () -> T,
-  ): T =
-    withExpBackoffRetry(
-      retryCount,
-      logStreams = logStreams
-    ) { withTimeout(Duration.ofSeconds(requestTimeoutSeconds), logStreams = logStreams, fn) }
-
   fun <T> withPerformanceLogging(logStreams: MutableList<BufferedOutputStream> = this.logStreams, fn: () -> T): T {
     val start = Date()
     try {
@@ -289,8 +112,6 @@ abstract class HttpClientManager(
       log(Level.DEBUG, "Request completed in ${Date().time - start.time}ms", logStreams)
     }
   }
-
-  fun <T> withClient(fn: Function<CloseableHttpClient, T>): T = fn.apply(client)
 
   protected open fun log(
     level: Level,

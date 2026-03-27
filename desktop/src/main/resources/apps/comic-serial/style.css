@@ -302,6 +302,10 @@ textarea::placeholder {
     color: var(--color-text-dim);
     font-weight: 300;
 }
+/* ===== Pipeline Diagram: HTML Book stage ===== */
+.pipeline-stage[data-stage="htmlbook"] {
+    border-color: var(--color-accent);
+}
 
 /* ===== Steps ===== */
 .step {}

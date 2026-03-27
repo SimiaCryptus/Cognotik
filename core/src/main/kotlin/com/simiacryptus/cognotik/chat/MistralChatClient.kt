@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.chat
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.exceptions.ErrorUtil
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -62,23 +63,28 @@ class MistralChatClient(
     logStreams: MutableList<java.io.BufferedOutputStream>
   ): ModelSchema.ChatResponse {
     log.info("Starting Mistral chat with model: ${model.modelId}")
+    return withPerformanceLogging {
+      val mistralRequest = toMistral(chatRequest)
+      val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
+        .writeValueAsString(mistralRequest)
 
-    return withReliability {
-      withPerformanceLogging {
-        val mistralRequest = toMistral(chatRequest)
-        val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
-          .writeValueAsString(mistralRequest)
+      val result =
+        post("${apiBase}/chat/completions", json, APIProvider.Mistral)
+      checkError(result)
+      val response = JsonUtil.objectMapper().readValue(
+        result,
+        ModelSchema.ChatResponse::class.java
+      )
 
-        val result = post("$apiBase/chat/completions", json, APIProvider.Mistral)
-        checkError(result)
-        val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
-
-        if (response.usage != null && model is ChatModel) {
-          onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
-        }
-
-        response
+      if (response.usage != null && model is ChatModel) {
+        onUsage(
+          model,
+          response.usage?.copy(cost = model.pricing(response.usage!!))!!,
+          logStreams = logStreams
+        )
       }
+
+      response
     }
   }
 

@@ -1,24 +1,14 @@
 [
   {
-    "id": "app-basic-chat",
-    "name": "Basic Chat",
-    "icon": "💬",
-    "description": "Interactive conversation with AI. Ask questions, brainstorm ideas, or get help with any topic.",
-    "badge": "Quick Start",
-    "badgeClass": "",
-    "type": "chat",
-    "path": "/chat"
-  },
-  {
-    "id": "app-health-improvement",
-    "name": "Health Improvement",
-    "icon": "🏥",
-    "description": "Multi-round health analysis from symptom intake through differential diagnosis to action plans.",
+    "id": "app-philosophical-calculator",
+    "name": "Philosophical Calculator",
+    "icon": "🧮",
+    "description": "Multi-perspective analysis through philosophical, rhetorical, and creative lenses.",
     "badge": null,
     "badgeClass": "",
     "type": "docops",
-    "path": "/health-improvement",
-    "appId": "health-improvement"
+    "path": "/philosophical-calculator",
+    "appId": "philosophical-calculator"
   },
   {
     "id": "app-webapp-factory",
@@ -54,39 +44,6 @@
     "appId": "comic-serial"
   },
   {
-    "id": "app-philosophical-calculator",
-    "name": "Philosophical Calculator",
-    "icon": "🧮",
-    "description": "Multi-perspective analysis through philosophical, rhetorical, and creative lenses.",
-    "badge": null,
-    "badgeClass": "",
-    "type": "docops",
-    "path": "/philosophical-calculator",
-    "appId": "philosophical-calculator"
-  },
-  {
-    "id": "app-puppy-finder",
-    "name": "Puppy Finder",
-    "icon": "🐶",
-    "description": "Find your perfect puppy match with AI-powered breed recommendations and search.",
-    "badge": null,
-    "badgeClass": "",
-    "type": "docops",
-    "path": "/puppy-finder",
-    "appId": "puppy-finder"
-  },
-  {
-    "id": "app-vacation-planner",
-    "name": "Vacation Planner",
-    "icon": "🌴",
-    "description": "AI-powered brainstorming, planning, and organizing for the perfect weekend vacation with detailed itineraries.",
-    "badge": null,
-    "badgeClass": "",
-    "type": "docops",
-    "path": "/vacation-planner",
-    "appId": "vacation-planner"
-  },
-  {
     "id": "app-omega",
     "name": "Omega App Factory",
     "icon": "🔮",
@@ -96,6 +53,16 @@
     "type": "docops",
     "path": "/omega",
     "appId": "omega"
+  },
+  {
+    "id": "app-basic-chat",
+    "name": "Basic Chat",
+    "icon": "💬",
+    "description": "Interactive conversation with AI. Ask questions, brainstorm ideas, or get help with any topic.",
+    "badge": "Quick Start",
+    "badgeClass": "",
+    "type": "chat",
+    "path": "/chat"
   },
   {
     "id": "app-custom-pipeline",

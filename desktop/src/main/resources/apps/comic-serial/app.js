@@ -244,7 +244,25 @@
             });
             throw new Error('DocOps failed: ' + resp.status + '\n' + errText);
         }
-        return await resp.text();
+     var responseText = await resp.text();
+     // The response may be JSON with session info, or a plain session ID
+     try {
+         var jsonResp = JSON.parse(responseText);
+         // Extract session ID from JSON response if available
+         if (jsonResp.sessionId) return jsonResp.sessionId;
+         if (jsonResp.sessions && typeof jsonResp.sessions === 'object') {
+             // If sessions is an array or has entries, try to get the first one
+             var sessionKeys = Object.keys(jsonResp.sessions);
+             if (sessionKeys.length > 0) return sessionKeys[0];
+         }
+         // If JSON has a taskId field
+         if (jsonResp.taskId) return jsonResp.taskId;
+         // Could not find a session ID in the JSON
+         return '';
+     } catch (e) {
+         // Not JSON — treat as plain text (possibly a session ID)
+         return responseText;
+     }
     }
 
     // ========================================
@@ -265,7 +283,21 @@
         var pollInterval = 2000;
         var startTime = Date.now();
 
+
         while (Date.now() - startTime < maxWait) {
+            // Check status endpoint first
+            var statusData = await fetchDocopsStatus();
+            if (statusData && statusData.tasks && statusData.tasks[targetPath]) {
+                var taskInfo = statusData.tasks[targetPath];
+                updateSessionLinks(targetPath, taskInfo);
+                if (taskInfo.status === 'COMPLETED') {
+                    return { status: 'COMPLETED', detectedByStatus: true };
+                }
+                if (taskInfo.status === 'ERROR' || taskInfo.status === 'FAILED') {
+                    throw new Error('Task ' + targetPath + ' failed');
+                }
+            }
+            // Also check file existence as fallback
             var outExists = await fileExists(targetPath);
             if (outExists) {
                 return { status: 'COMPLETED', detectedByFile: true };
@@ -287,6 +319,7 @@
 
     var statusPollTimer = null;
     var STATUS_POLL_INTERVAL = 3000;
+    var activeTasks = {};
 
     function startStatusPolling() {
         if (statusPollTimer) return;
@@ -302,11 +335,22 @@
             statusPollTimer = null;
         }
     }
+    function registerActiveTask(targetPath) {
+        activeTasks[targetPath] = true;
+        startStatusPolling();
+    }
+    function unregisterActiveTask(targetPath) {
+        delete activeTasks[targetPath];
+        // Stop polling if no active tasks remain
+        if (Object.keys(activeTasks).length === 0) {
+            stopStatusPolling();
+        }
+    }
+
 
     async function pollStatus() {
         var statusData = await fetchDocopsStatus();
 
-        // Status file is only used for session detail links, not for state
 
         if (statusData && statusData.tasks) {
             for (var target in statusData.tasks) {
@@ -314,9 +358,16 @@
                 var taskInfo = statusData.tasks[target];
 
 
-                // Update session links
                 updateSessionLinks(target, taskInfo);
+                // Auto-unregister completed/failed tasks
+                if (activeTasks[target] && (taskInfo.status === 'COMPLETED' || taskInfo.status === 'ERROR' || taskInfo.status === 'FAILED')) {
+                    unregisterActiveTask(target);
+                }
             }
+        }
+        // If no active tasks remain, stop polling
+        if (Object.keys(activeTasks).length === 0) {
+            stopStatusPolling();
         }
     }
 
@@ -553,9 +604,19 @@
             container = document.createElement('div');
             container.id = linkContainerId;
             container.className = 'session-link-container';
-            // Try to insert near a relevant viewer
-            var viewerId = 'viewer-comic-' + (target.match(/comic_(\d+)/) || [0, ''])[1];
-            var viewer = document.getElementById(viewerId) || document.getElementById('viewer-sequel');
+            // Try to insert near a relevant viewer based on the target
+            var viewer = null;
+            if (target === 'comicbook.html') {
+                viewer = document.getElementById('viewer-htmlbook');
+            } else {
+                var episodeMatch = target.match(/comic_(\d+)/);
+                if (episodeMatch) {
+                    var epNum = episodeMatch[1];
+                    viewer = document.getElementById('viewer-comic-' + epNum) || document.getElementById('viewer-sequel');
+                } else {
+                    viewer = document.getElementById('viewer-sequel');
+                }
+            }
             if (viewer && viewer.parentElement) {
                 viewer.parentElement.insertBefore(container, viewer);
             }
@@ -707,21 +768,27 @@
         var viewer = document.getElementById(viewerId);
         if (!viewer) return;
 
-        if (viewer.classList.contains('visible')) {
+        if (viewer.classList.contains('visible') && viewer.innerHTML.trim()) {
             viewer.classList.remove('visible');
+            viewer.innerHTML = '';
             return;
         }
 
         try {
             var htmlPath = filePath.replace(/\.md$/, '.html');
-            var exists = await fileExists(htmlPath);
+            var isHtml = filePath.endsWith('.html');
+            var exists = isHtml ? await fileExists(filePath) : await fileExists(htmlPath);
             if (exists) {
-                viewer.innerHTML = renderHtmlFile(htmlPath);
+                viewer.innerHTML = renderHtmlFile(isHtml ? filePath : htmlPath);
             } else {
-                // Fallback: try the .md file directly
-                var mdContent = await readFile(filePath);
-                if (mdContent !== null) {
-                    viewer.innerHTML = renderMarkdown(mdContent);
+                if (!isHtml) {
+                    // Fallback: try the .md file directly
+                    var mdContent = await readFile(filePath);
+                    if (mdContent !== null) {
+                        viewer.innerHTML = renderMarkdown(mdContent);
+                    } else {
+                        viewer.innerHTML = '<p class="placeholder">File not found. Run the operation first.</p>';
+                    }
                 } else {
                     viewer.innerHTML = '<p class="placeholder">File not found. Run the operation first.</p>';
                 }
@@ -759,12 +826,12 @@
 
             setBadge(badgeId, 'running');
             this.disabled = true;
-            startStatusPolling();
+            registerActiveTask(outputPath);
 
             try {
                 var taskId = await runDocOp(opPath, outputPath);
                 var cleanTaskId = taskId ? taskId.trim() : '';
-                if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+             if (cleanTaskId && cleanTaskId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
                     updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
                 }
 
@@ -787,6 +854,7 @@
                 await updateEpisodeCount();
             } catch (e) {
                 setBadge(badgeId, 'error');
+                unregisterActiveTask(outputPath);
                 alert('Operation failed: ' + e.message);
             } finally {
                 this.disabled = false;
@@ -810,12 +878,12 @@
         var outputPath = 'comic_' + nextNum + '.md';
 
         setBadge('badge-sequel', 'running');
-        startStatusPolling();
+        registerActiveTask(outputPath);
 
         try {
             var taskId = await runDocOp('ops/sequel_op.md', outputPath);
             var cleanTaskId = taskId ? taskId.trim() : '';
-            if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+         if (cleanTaskId && cleanTaskId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
                 updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
             }
 
@@ -844,6 +912,7 @@
             return nextNum;
         } catch (e) {
             setBadge('badge-sequel', 'error');
+            unregisterActiveTask(outputPath);
             throw e;
         }
     }
@@ -869,6 +938,69 @@
     });
 
     // ========================================
+    // Generate HTML Book
+    // ========================================
+    async function generateHtmlBook() {
+        var count = await countEpisodes();
+        if (count === 0) {
+            alert('No episodes exist yet. Please generate at least one comic first!');
+            return false;
+        }
+        setBadge('badge-htmlbook', 'running');
+        registerActiveTask('comicbook.html');
+        try {
+            var taskId = await runDocOp('ops/html_book_op.md', 'comicbook.html');
+            var cleanTaskId = taskId ? taskId.trim() : '';
+         if (cleanTaskId && cleanTaskId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                updateSessionLinks('comicbook.html', { status: 'RUNNING', sessionId: cleanTaskId });
+            }
+            await waitForTask('comicbook.html', 600000);
+            setBadge('badge-htmlbook', 'done');
+            unregisterActiveTask('comicbook.html');
+            if (cleanTaskId) {
+                updateSessionLinks('comicbook.html', { status: 'COMPLETED', sessionId: cleanTaskId });
+            }
+            // Auto-show result
+            var viewer = document.getElementById('viewer-htmlbook');
+            if (viewer) {
+                var exists = await fileExists('comicbook.html');
+                if (exists) {
+                    viewer.innerHTML = renderHtmlFile('comicbook.html');
+                    viewer.classList.add('visible');
+                }
+            }
+            return true;
+        } catch (e) {
+            setBadge('badge-htmlbook', 'error');
+            throw e;
+        }
+    }
+    document.getElementById('generate-htmlbook').addEventListener('click', async function() {
+        this.disabled = true;
+        try {
+            await generateHtmlBook();
+        } catch (e) {
+            alert('Failed to generate HTML book: ' + e.message);
+        } finally {
+            this.disabled = false;
+        }
+    });
+    document.getElementById('open-htmlbook-tab').addEventListener('click', async function() {
+        try {
+            var exists = await fileExists('comicbook.html');
+            if (exists) {
+                var url = basePath + '/comicbook.html?t=' + Date.now();
+                window.open(url, '_blank');
+            } else {
+                alert('HTML book has not been generated yet. Click "Generate HTML Book" first.');
+            }
+        } catch (e) {
+            // Fallback: just try to open it directly
+            var url = basePath + '/comicbook.html?t=' + Date.now();
+            window.open(url, '_blank');
+        }
+    });
+    // ========================================
     // Batch Generation
     // ========================================
     document.getElementById('run-batch').addEventListener('click', async function() {
@@ -889,7 +1021,6 @@
 
         this.disabled = true;
         batchLog.innerHTML = '';
-        startStatusPolling();
 
         try {
             var currentCount = await countEpisodes();
@@ -900,16 +1031,18 @@
             if (currentCount === 0) {
                 logBatch('Generating Comic #1 from idea...', 'info');
                 setBadge('badge-comic-1', 'running');
+                registerActiveTask('comic_1.md');
 
                 var taskId = await runDocOp('ops/comic_op.md', 'comic_1.md');
                 var cleanTaskId = taskId ? taskId.trim() : '';
-                if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+             if (cleanTaskId && cleanTaskId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
                     logBatchHtml('Session: <a href="' + getProxyUrl(cleanTaskId) + '" target="_blank" class="monitor-link">📡 Monitor (' + cleanTaskId + ')</a>', 'info');
                     updateSessionLinks('comic_1.md', { status: 'RUNNING', sessionId: cleanTaskId });
                 }
 
                 await waitForTask('comic_1.md');
                 setBadge('badge-comic-1', 'done');
+                unregisterActiveTask('comic_1.md');
                 logBatch('✓ Comic #1 generated', 'success');
                 currentCount = 1;
                 totalEpisodes--; // One less sequel needed
@@ -924,22 +1057,44 @@
 
                 logBatch('Generating Comic #' + nextNum + '...', 'info');
                 setBadge('badge-sequel', 'running');
+                registerActiveTask(outputPath);
 
                 var seqTaskId = await runDocOp('ops/sequel_op.md', outputPath);
                 var cleanSeqId = seqTaskId ? seqTaskId.trim() : '';
-                if (cleanSeqId && /^[a-zA-Z0-9-]+$/.test(cleanSeqId)) {
+             if (cleanSeqId && cleanSeqId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanSeqId)) {
                     logBatchHtml('Session: <a href="' + getProxyUrl(cleanSeqId) + '" target="_blank" class="monitor-link">📡 Monitor (' + cleanSeqId + ')</a>', 'info');
                     updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanSeqId });
                 }
 
                 await waitForTask(outputPath);
                 setBadge('badge-sequel', 'done');
+                unregisterActiveTask(outputPath);
                 logBatch('✓ Comic #' + nextNum + ' generated', 'success');
 
                 await updateEpisodeCount();
             }
 
             logBatch('🎉 Series generation complete!', 'success');
+            // Offer to compile the book
+            logBatch('Compiling HTML comicbook...', 'info');
+            try {
+                setBadge('badge-htmlbook', 'running');
+                registerActiveTask('comicbook.html');
+                var bookTaskId = await runDocOp('ops/html_book_op.md', 'comicbook.html');
+                var cleanBookId = bookTaskId ? bookTaskId.trim() : '';
+             if (cleanBookId && cleanBookId.length < 200 && /^[a-zA-Z0-9-]+$/.test(cleanBookId)) {
+                    logBatchHtml('Session: <a href="' + getProxyUrl(cleanBookId) + '" target="_blank" class="monitor-link">📡 Monitor (' + cleanBookId + ')</a>', 'info');
+                    updateSessionLinks('comicbook.html', { status: 'RUNNING', sessionId: cleanBookId });
+                }
+                await waitForTask('comicbook.html', 600000);
+                setBadge('badge-htmlbook', 'done');
+                unregisterActiveTask('comicbook.html');
+                logBatch('✓ HTML comicbook compiled', 'success');
+            } catch (bookErr) {
+                setBadge('badge-htmlbook', 'error');
+                unregisterActiveTask('comicbook.html');
+                logBatch('⚠ Could not compile HTML book: ' + bookErr.message, 'warn');
+            }
         } catch (e) {
             logBatch('✗ Error: ' + e.message, 'error');
         } finally {
@@ -1044,6 +1199,32 @@
             this.disabled = false;
         }
     });
+    document.getElementById('series-compile-book').addEventListener('click', async function() {
+        this.disabled = true;
+        try {
+            await generateHtmlBook();
+            setStatus('idea-status', '✓ Book compiled', 'success');
+        } catch (e) {
+            alert('Failed to compile book: ' + e.message);
+        } finally {
+            this.disabled = false;
+        }
+    });
+    document.getElementById('series-view-book').addEventListener('click', async function() {
+        try {
+            var exists = await fileExists('comicbook.html');
+            if (exists) {
+                var url = basePath + '/comicbook.html?t=' + Date.now();
+                window.open(url, '_blank');
+            } else {
+                alert('HTML book has not been generated yet. Click "Compile Book" first.');
+            }
+        } catch (e) {
+            var url = basePath + '/comicbook.html?t=' + Date.now();
+            window.open(url, '_blank');
+        }
+    });
+
 
     // ========================================
     // Initialization
@@ -1073,29 +1254,34 @@
         if (episodeCount > 1) {
             setBadge('badge-sequel', 'done');
         }
+        try {
+            var bookExists = await fileExists('comicbook.html');
+            if (bookExists) {
+                setBadge('badge-htmlbook', 'done');
+            }
+        } catch (e) { /* leave as pending */ }
+
 
         var statusData = await fetchDocopsStatus();
-        var anyRunning = false;
 
         if (statusData && statusData.tasks) {
             for (var target in statusData.tasks) {
                 if (!statusData.tasks.hasOwnProperty(target)) continue;
                 var taskInfo = statusData.tasks[target];
-                if (taskInfo.status === 'RUNNING') anyRunning = true;
-                // Status file is only used for session detail links
+                if (taskInfo.status === 'RUNNING') {
+                    registerActiveTask(target);
+                }
                 updateSessionLinks(target, taskInfo);
             }
         }
 
 
 
-        if (anyRunning) startStatusPolling();
     }
 
     // Run initialization
     loadInitialFiles();
     checkExistingFiles();
-    startStatusPolling();
      loadApiProviders();
 
 })();

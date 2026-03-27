@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.webui.servlet.render.MarkdownRenderer
 import com.simiacryptus.cognotik.webui.servlet.render.git.GitHtml
 import com.simiacryptus.cognotik.webui.servlet.render.git.GitScripts
 import com.simiacryptus.cognotik.webui.servlet.render.git.GitStyles
+import com.simiacryptus.cognotik.webui.servlet.util.MimeTypeResolver
 import com.simiacryptus.cognotik.webui.servlet.util.PathUtils
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServlet
@@ -65,6 +66,79 @@ abstract class FileServlet : HttpServlet() {
       resp.writer.write("Internal server error: ${e.message}")
     }
   }
+   override fun doHead(req: HttpServletRequest, resp: HttpServletResponse) {
+     log.debug("Received HEAD request for path: ${req.pathInfo ?: req.servletPath}")
+     try {
+       val pathSegments = PathUtils.parsePath(req.pathInfo ?: req.servletPath ?: "/")
+       val dir = getDir(req)
+       val file = dir?.let { File(it, pathSegments.drop(1).joinToString("/")) }
+       when {
+         file != null && file.name == "_files.json" && !file.exists() -> {
+           val parentDir = file.parentFile
+           if (parentDir != null && parentDir.exists() && parentDir.isDirectory) {
+             resp.contentType = "application/json"
+             resp.characterEncoding = "UTF-8"
+             resp.status = HttpServletResponse.SC_OK
+           } else {
+             resp.status = HttpServletResponse.SC_NOT_FOUND
+           }
+         }
+         file != null && !file.exists() -> {
+           val fileName = file.name
+           val extension = fileName.split(".").lastOrNull()
+           when {
+             setOf("html", "pdf", "txt").contains(extension) -> {
+               val mdFile = File(file.parentFile, fileName.substringBeforeLast(".") + ".md")
+               if (mdFile.exists() && mdFile.isFile) {
+                 when (extension) {
+                   "txt" -> {
+                     resp.contentType = "text/plain"
+                     resp.characterEncoding = "UTF-8"
+                     resp.status = HttpServletResponse.SC_OK
+                   }
+                   "pdf" -> {
+                     resp.contentType = "application/pdf"
+                     resp.status = HttpServletResponse.SC_OK
+                   }
+                   else -> {
+                     resp.contentType = "text/html"
+                     resp.characterEncoding = "UTF-8"
+                     resp.status = HttpServletResponse.SC_OK
+                   }
+                 }
+               } else {
+                 resp.status = HttpServletResponse.SC_NOT_FOUND
+               }
+             }
+             else -> {
+               resp.status = HttpServletResponse.SC_NOT_FOUND
+             }
+           }
+         }
+         file != null && file.isFile -> {
+           resp.contentType = MimeTypeResolver.getMimeType(file.name)
+           resp.setContentLengthLong(file.length())
+           resp.status = HttpServletResponse.SC_OK
+         }
+         req.pathInfo?.endsWith("/") == false -> {
+           resp.setHeader("Location", req.requestURI + "/")
+           resp.status = HttpServletResponse.SC_MOVED_PERMANENTLY
+         }
+         else -> {
+           resp.contentType = "text/html"
+           resp.characterEncoding = "UTF-8"
+           resp.status = HttpServletResponse.SC_OK
+         }
+       }
+     } catch (e: IllegalArgumentException) {
+       log.warn("Invalid path in HEAD request: ${e.message}")
+       resp.status = HttpServletResponse.SC_BAD_REQUEST
+     } catch (e: Exception) {
+       log.error("Error handling HEAD request", e)
+       resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+     }
+   }
+
 
   override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
     log.debug("Received POST request for path: ${req.pathInfo ?: req.servletPath}")

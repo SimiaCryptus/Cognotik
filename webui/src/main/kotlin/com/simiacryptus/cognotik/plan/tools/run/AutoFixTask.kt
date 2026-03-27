@@ -91,7 +91,7 @@ class AutoFixTask(
     @Description("The relative path of the working directory for this command, relative to the project root. Null means the project root.")
     var working_dir: String? = null
   ) : ValidatedObject {
-    override fun validate(): String? {
+    override fun validate(): String ? {
       if (command.isEmpty()) {
         return "command must not be empty"
       }
@@ -132,7 +132,7 @@ class AutoFixTask(
             transcript?.write("## Self-Healing Task Execution\n\n".toByteArray())
             transcript?.write("### Commands\n".toByteArray())
             executionConfig?.commands?.forEachIndexed { index, cmd ->
-              transcript?.write("${index + 1}. `${cmd.command.joinToString(" ")}` in `${cmd.working_dir ?: "."}`\n".toByteArray())
+              transcript?.write("${index + 1}. `${cmd.command.joinToString(" ")}` in `${cmd.working_dir ?: orchestrationConfig.workingDir ?: agent.root}`\n".toByteArray())
             }
             transcript?.write("\n".toByteArray())
             CmdPatchApp(
@@ -161,8 +161,7 @@ class AutoFixTask(
                       else -> null
                     } ?: throw IllegalArgumentException("Command not found: $alias"),
                     arguments = commandWithDir.command.drop(1).joinToString(" "),
-                    workingDirectory = (commandWithDir.working_dir?.let { agent.root.toFile().resolve(it) }
-                      ?: agent.root.toFile()).apply { mkdirs() },
+                    workingDirectory = ((commandWithDir.working_dir ?: orchestrationConfig.workingDir)?.let { agent.root.toFile().resolve(it) } ?: agent.root.toFile()).apply { mkdirs() },
                     additionalInstructions = ""
                   )
                 } ?: emptyList(),

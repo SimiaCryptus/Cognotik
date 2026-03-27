@@ -471,6 +471,29 @@ open class ConversationalMode(
       val describer = TaskContextYamlDescriber(orchestrationConfig)
       Tasks.initDescriber(orchestrationConfig, describer)
       log.debug("Initialized describer and Tasks schema")
+      val parserPromptA = buildString {
+        append(prompt)
+        append("Available task types:\n")
+        append(orchestrationConfig.taskSettings.values.joinToString("\n\n") { config ->
+          val taskType = TaskType.valueOf(config.task_type ?: return@joinToString "")
+          val configName = config.name?.let { " ($it)" } ?: ""
+          "* ${taskType.name}$configName:\n  ${
+            orchestrationConfig.getImpl(taskType).promptSegment().trim().trimIndent()
+              .indent("  ")
+          }" + (orchestrationConfig.workingDir?.let { root ->
+            "\nAvailable files:\n\n" + getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
+          } ?: "")
+        })
+        append("\nChoose the most suitable task type and provide details of how it should be executed.")
+        if (orchestrationConfig.taskSettings.values.any { it.name != null }) {
+          append("\nNote: Some task types have multiple configurations available. You can specify which configuration to use by setting the task_config_name field.")
+        }
+      }
+      val parserPromptB = "Task Subtype Schema:\n" + taskTypes.joinToString("\n\n") { taskType ->
+        "${taskType.name}:\n  ${
+          describer.describe(taskType.executionConfigClass).trim().trimIndent().indent("  ")
+        }".trim()
+      }
       val parsedActor = ParsedAgent(
         name = "TaskChooser",
         resultClass = Tasks::class.java,
@@ -479,33 +502,12 @@ open class ConversationalMode(
             orchestrationConfig.getImpl(it).executionConfig
           }).toMutableList()
         ),
-        prompt = buildString {
-          append(prompt)
-          append("Available task types:\n")
-          append(orchestrationConfig.taskSettings.values.joinToString("\n\n") { config ->
-            val taskType = TaskType.valueOf(config.task_type ?: return@joinToString "")
-            val configName = config.name?.let { " ($it)" } ?: ""
-            "* ${taskType.name}$configName:\n  ${
-              orchestrationConfig.getImpl(taskType).promptSegment().trim().trimIndent()
-                .indent("  ")
-            }" + (orchestrationConfig.workingDir?.let { root ->
-              "\nAvailable files:\n\n" + getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
-            } ?: "")
-          })
-          append("\nChoose the most suitable task type and provide details of how it should be executed.")
-          if (orchestrationConfig.taskSettings.values.any { it.name != null }) {
-            append("\nNote: Some task types have multiple configurations available. You can specify which configuration to use by setting the task_config_name field.")
-          }
-        }.also { log.debug("Constructed prompt for ParsedAgent (length: ${it.length}):\n${it.take(500)}...") },
+        prompt = parserPromptA.also { log.debug("Constructed prompt for ParsedAgent (length: ${it.length}):\n${it.take(500)}...") },
         model = defaultModel,
         parsingChatter = fastModel,
         temperature = orchestrationConfig.temperature,
         describer = describer,
-        parserPrompt = ("Task Subtype Schema:\n" + taskTypes.joinToString("\n\n") { taskType ->
-          "${taskType.name}:\n  ${
-            describer.describe(taskType.executionConfigClass).trim().trimIndent().indent("  ")
-          }".trim()
-        }),
+        parserPrompt = parserPromptB,
         singleStage = singleStage
       )
       log.debug("ParsedAgent created, sending request with ${history.size} history messages")

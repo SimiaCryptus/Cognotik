@@ -40,24 +40,28 @@ class OpenAIChatClient(
     logStreams: MutableList<java.io.BufferedOutputStream>
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
+    return withPerformanceLogging {
 
-    return withReliability {
-      withPerformanceLogging {
+      val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
+        .writeValueAsString(chatRequest)
 
-        val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
-          .writeValueAsString(chatRequest)
+      val rawResponse =
+        post("${apiBase}/chat/completions", json, APIProvider.OpenAI)
+      checkError(rawResponse)
+      val response = JsonUtil.objectMapper().readValue(
+        rawResponse,
+        ModelSchema.ChatResponse::class.java
+      )
 
-        val rawResponse = post("${apiBase}/chat/completions", json, APIProvider.OpenAI)
-        checkError(rawResponse)
-
-        val response = JsonUtil.objectMapper().readValue(rawResponse, ModelSchema.ChatResponse::class.java)
-
-        if (response.usage != null && model is ChatModel) {
-          onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
-        }
-
-        response
+      if (response.usage != null && model is ChatModel) {
+        onUsage(
+          model,
+          response.usage?.copy(cost = model.pricing(response.usage!!))!!,
+          logStreams = logStreams
+        )
       }
+
+      response
     }
   }
 

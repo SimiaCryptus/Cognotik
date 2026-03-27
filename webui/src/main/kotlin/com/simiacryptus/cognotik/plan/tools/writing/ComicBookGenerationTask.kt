@@ -408,10 +408,10 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
               val result = charAgent.answer(inputs)
               val image = result.image
               lastImage = image
-              val relativePath = "char_${char.name.replace(Regex("[^a-zA-Z0-9]"), "_")}.png"
+              val relativePath = "$dataDir/char_${char.name.replace(Regex("[^a-zA-Z0-9]"), "_")}.png"
               val baos = ByteArrayOutputStream()
               ImageIO.write(image, "png", baos)
-              val link = task.saveFile("$dataDir/$relativePath", baos.toByteArray())
+              val link = task.saveFile(relativePath, baos.toByteArray())
               characterImages[char.name] = relativePath
 
               charRefTask.header(char.name, 2)
@@ -489,7 +489,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
                     val path = characterImages[char.name]
                     if (path != null) {
                       try {
-                        val img = ImageIO.read(task.resolveUserFile("$dataDir/$path"))
+                        val img = ImageIO.read(task.resolveUserFile(path))
                         if (img != null) {
                           imageInputs.add(
                             ImageAndText(
@@ -515,10 +515,10 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
                 val result = imageAgent.answer(imageInputs)
                 val image = result.image
                 lastImage = image
-                val relativePath = "page_${page.page_number}_row_${row.row_number}.png"
+                val relativePath = "$dataDir/page_${page.page_number}_row_${row.row_number}.png"
                 val baos = ByteArrayOutputStream()
                 ImageIO.write(image, "png", baos)
-                val link = task.saveFile("$dataDir/$relativePath", baos.toByteArray())
+                val link = task.saveFile(relativePath, baos.toByteArray())
                 rowImages["${page.page_number}_${row.row_number}"] = relativePath
 
                 val rowHtml = buildString {

@@ -249,12 +249,38 @@ A simple, elegant task management web application for small teams.
     <section class="section" id="section-results">
         <h2>📊 Results</h2>
         <div class="results-tabs">
-            <button class="results-tab active" data-tab="tab-files">📁 Project Files</button>
+            <button class="results-tab active" data-tab="tab-preview">🖥️ Live Preview</button>
+            <button class="results-tab" data-tab="tab-files">📁 Project Files</button>
             <button class="results-tab" data-tab="tab-readme">📄 README</button>
             <button class="results-tab" data-tab="tab-download">📦 Download</button>
         </div>
         <div class="results-content">
-            <div class="tab-panel active" id="tab-files">
+            <div class="tab-panel active" id="tab-preview">
+                <div class="card">
+                    <div class="button-row" style="margin-top:0;">
+                        <button class="btn btn-primary" id="btn-preview-refresh">🔄 Reload Preview</button>
+                        <a class="btn btn-launch" id="btn-preview-launch" href="#" target="_blank">🚀 Open in New Tab</a>
+                        <button class="btn btn-secondary" id="btn-preview-clear-console">🧹 Clear Console</button>
+                        <button class="btn btn-accent" id="btn-fix-errors" style="display:none;">🔧 Fix Errors with AI</button>
+                    </div>
+                    <div id="preview-iframe-container" class="preview-iframe-container">
+                        <div class="preview-placeholder" id="preview-placeholder">
+                            <p class="placeholder">Run the pipeline to generate your webapp, then it will appear here.</p>
+                        </div>
+                        <iframe id="preview-iframe" class="preview-iframe" sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups" style="display:none;"></iframe>
+                    </div>
+                    <div class="console-panel" id="console-panel">
+                        <div class="console-header">
+                            <span class="console-title">🖥️ Console Output</span>
+                            <span class="console-counts" id="console-counts"></span>
+                        </div>
+                        <div class="console-output" id="console-output">
+                            <div class="console-entry console-info">Waiting for app to load…</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-files">
                 <div class="card">
                     <div class="button-row">
                         <button class="btn btn-secondary" id="btn-refresh-files-results">🔄 Refresh File List</button>

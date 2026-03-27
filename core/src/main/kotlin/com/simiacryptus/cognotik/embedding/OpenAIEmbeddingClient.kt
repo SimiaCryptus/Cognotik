@@ -53,42 +53,40 @@ class OpenAIEmbeddingClient(
     model: EmbeddingModel
   ): ModelSchema.EmbeddingResponse {
     validateEmbeddingRequest(request, model)
+    return withPerformanceLogging {
+      // OpenAI embedding request format
+      val openAIRequest = mapOf(
+        "model" to (request.model ?: model.modelId),
+        "input" to when {
+          request.input is String -> request.input
+          request.input is List<*> -> request.input
+          else -> listOf(request.input.toString())
+        },
+        "encoding_format" to "float"
+      )
 
-    return withReliability {
-      withPerformanceLogging {
-        // OpenAI embedding request format
-        val openAIRequest = mapOf(
-          "model" to (request.model ?: model.modelId),
-          "input" to when {
-            request.input is String -> request.input
-            request.input is List<*> -> request.input
-            else -> listOf(request.input.toString())
-          },
-          "encoding_format" to "float"
-        )
+      val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
+        .writeValueAsString(openAIRequest)
 
-        val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
-          .writeValueAsString(openAIRequest)
+      val rawResponse = post("$apiBase/embeddings", json, provider)
+      checkError(rawResponse)
 
-        val rawResponse = post("$apiBase/embeddings", json, provider)
-        checkError(rawResponse)
+      // Parse OpenAI response
+      val response = JsonUtil.objectMapper().readValue(rawResponse, ModelSchema.EmbeddingResponse::class.java)
 
-        // Parse OpenAI response
-        val response = JsonUtil.objectMapper().readValue(rawResponse, ModelSchema.EmbeddingResponse::class.java)
-
-        // Validate response
-        if (response.data.isEmpty()) {
-          throw IllegalStateException("No embeddings found in response")
-        }
-
-        // Update usage with cost calculation
-        if (response.usage != null) {
-          onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
-        }
-
-        response
+      // Validate response
+      if (response.data.isEmpty()) {
+        throw IllegalStateException("No embeddings found in response")
       }
+
+      // Update usage with cost calculation
+      if (response.usage != null) {
+        onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
+      }
+
+      response
     }
+
   }
 
   private fun validateEmbeddingRequest(request: ModelSchema.EmbeddingRequest, model: EmbeddingModel) {

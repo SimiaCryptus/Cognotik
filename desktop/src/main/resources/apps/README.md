@@ -1,4 +1,4 @@
-# SimSage App Suite
+# Cognotic App Suite
 
 A collection of AI-powered web applications built on a shared document-operations ("doc ops") platform. Each app
 transforms user input through one or more AI pipeline stages to produce rich, structured outputs — all from the browser

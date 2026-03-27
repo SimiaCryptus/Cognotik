@@ -112,7 +112,7 @@ class DocProcessorServlet(
         allTasks.filter { task ->
           task.data.files?.any { filePath ->
             try {
-              File(filePath).canonicalFile == targetFile
+              filePath.canonicalFile == targetFile
             } catch (e: Exception) {
               false
             }
