@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>npm Project Builder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+    <!-- Header -->
+    <header class="app-header">
+        <h1>📦 npm Project Builder</h1>
+        <p class="subtitle">AI-powered pipeline for building client-side web applications from an idea to a working project</p>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-nav">
+        <a href="#" class="nav-link active" data-section="section-input">💡 Idea &amp; Notes</a>
+        <a href="#" class="nav-link" data-section="section-pipeline">⚙️ Pipeline</a>
+        <a href="#" class="nav-link" data-section="section-results">📊 Results</a>
+        <a href="#" class="nav-link" data-section="section-settings">🔧 Settings</a>
+    </nav>
+
+    <!-- ==================== INPUT SECTION ==================== -->
+    <section id="section-input" class="section active">
+        <h2>💡 Idea &amp; Notes</h2>
+
+        <div class="card">
+            <h3>🎯 Application Idea</h3>
+            <p class="card-description">Describe the web application you want to build. Be as specific as possible about features, target audience, and desired behavior.</p>
+            <textarea id="idea-editor" rows="14" placeholder="Example: I want to build a Pomodoro timer web app with customizable work/break intervals, session tracking, ambient sounds, and a clean minimal UI. It should work entirely in the browser with no backend..."></textarea>
+            <div class="button-row">
+                <button class="btn btn-primary" id="save-idea">💾 Save Idea</button>
+                <span class="status-msg" id="idea-status"></span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📝 Update Notes</h3>
+            <p class="card-description">After the initial build, add feedback, bug reports, feature requests, or design changes here. Used by the Update stage.</p>
+            <textarea id="notes-editor" rows="10" placeholder="Example: The timer should pause when the browser tab is not visible. Also add a dark mode toggle..."></textarea>
+            <div class="button-row">
+                <button class="btn btn-primary" id="save-notes">💾 Save Notes</button>
+                <span class="status-msg" id="notes-status"></span>
+            </div>
+        </div>
+    </section>
+    <!-- ==================== SETTINGS SECTION ==================== -->
+    <section id="section-settings" class="section">
+        <h2>🔧 Settings</h2>
+        <!-- Model Selection -->
+        <div class="card">
+            <h3>🤖 Model Selection</h3>
+            <p class="card-description">Choose the AI model to use for pipeline operations. Different models offer different trade-offs between speed, quality, and cost.</p>
+            <div class="model-selector" style="margin-bottom: 12px;">
+                <label for="model-smart" class="model-label">Smart Model (main generation):</label>
+                <select id="model-smart" class="model-dropdown">
+                    <option value="">Loading models...</option>
+                </select>
+            </div>
+            <div class="model-selector" style="margin-bottom: 12px;">
+                <label for="model-fast" class="model-label">Fast Model (quick tasks):</label>
+                <select id="model-fast" class="model-dropdown">
+                    <option value="">Loading models...</option>
+                </select>
+            </div>
+            <div class="model-selector" style="margin-bottom: 12px;">
+                <label for="model-image" class="model-label">Image Model (vision tasks):</label>
+                <select id="model-image" class="model-dropdown">
+                    <option value="">Loading models...</option>
+                </select>
+            </div>
+            <div class="button-row">
+                <button class="btn btn-primary" id="save-model">💾 Save Model Selection</button>
+                <button class="btn btn-secondary" id="refresh-models">🔄 Refresh</button>
+                <button class="btn btn-secondary" id="clear-model-settings">🗑️ Reset to Defaults</button>
+                <span class="status-msg" id="model-status"></span>
+            </div>
+            <div class="model-info" id="model-info"></div>
+        </div>
+        <!-- Git Operations -->
+        <div class="card">
+            <h3>📂 Git Version Control</h3>
+            <p class="card-description">Track changes to your project with Git. Initialize a repository, commit snapshots, and manage branches.</p>
+            <div class="git-status-bar" id="git-status-bar">
+                <span class="git-status-indicator" id="git-status-indicator">⏳</span>
+                <span id="git-status-text">Checking repository status...</span>
+            </div>
+            <div class="button-row">
+                <button class="btn btn-primary" id="git-init">🔧 Initialize Repo</button>
+                <button class="btn btn-secondary" id="git-refresh-status">🔄 Refresh Status</button>
+            </div>
+            <!-- Commit -->
+            <div class="git-section" id="git-commit-section" style="display:none;">
+                <h4>💾 Commit Changes</h4>
+                <div class="git-changes" id="git-changes-list"></div>
+                <input type="text" id="git-commit-message" class="git-input" placeholder="Commit message (e.g., 'Initial scaffold complete')">
+                <div class="button-row">
+                    <button class="btn btn-primary" id="git-commit">💾 Commit All Changes</button>
+                    <span class="status-msg" id="git-commit-status"></span>
+                </div>
+            </div>
+            <!-- Branches -->
+            <div class="git-section" id="git-branch-section" style="display:none;">
+                <h4>🌿 Branches</h4>
+                <div class="git-branches" id="git-branches-list"></div>
+                <div class="git-branch-controls">
+                    <input type="text" id="git-new-branch" class="git-input" placeholder="New branch name">
+                    <button class="btn btn-secondary" id="git-create-branch">➕ Create &amp; Switch</button>
+                </div>
+            </div>
+            <!-- Commit Log -->
+            <div class="git-section" id="git-log-section" style="display:none;">
+                <h4>📜 Commit History</h4>
+                <div class="git-log" id="git-log-list"></div>
+                <div class="button-row">
+                    <button class="btn btn-secondary" id="git-load-log">📜 Load History</button>
+                </div>
+            </div>
+        </div>
+        <!-- ZIP Download -->
+        <div class="card">
+            <h3>📦 Export Project</h3>
+            <p class="card-description">Download your project files as a ZIP archive for local development or deployment.</p>
+            <div class="button-row">
+                <button class="btn btn-accent" id="zip-download-all">📦 Download Entire Session (.zip)</button>
+                <button class="btn btn-primary" id="zip-download-code">💾 Download Code Only (.zip)</button>
+            </div>
+            <p class="card-description" style="margin-top:12px; margin-bottom:0;">
+                <strong>Tip:</strong> "Code Only" downloads just the <code>code/</code> directory — ready to <code>npm install &amp;&amp; npm start</code> locally.
+            </p>
+        </div>
+    </section>
+
+
+    <!-- ==================== PIPELINE SECTION ==================== -->
+    <section id="section-pipeline" class="section">
+        <h2>⚙️ Pipeline</h2>
+
+        <!-- Pipeline Diagram -->
+        <div class="card pipeline-overview-card">
+            <h3>Pipeline Overview</h3>
+            <div class="pipeline-diagram">
+                <div class="pipeline-stage" data-stage="design">
+                    <div class="stage-icon">📐</div>
+                    <div class="stage-label">Design</div>
+                    <div class="stage-status" id="diagram-design">Pending</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="scaffold">
+                    <div class="stage-icon">🏗️</div>
+                    <div class="stage-label">Scaffold</div>
+                    <div class="stage-status" id="diagram-scaffold">Pending</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="install">
+                    <div class="stage-icon">📥</div>
+                    <div class="stage-label">Install</div>
+                    <div class="stage-status" id="diagram-install">Pending</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="implement">
+                    <div class="stage-icon">💻</div>
+                    <div class="stage-label">Implement</div>
+                    <div class="stage-status" id="diagram-implement">Pending</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="test-write">
+                    <div class="stage-icon">🧪</div>
+                    <div class="stage-label">Tests</div>
+                    <div class="stage-status" id="diagram-test-write">Pending</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="build">
+                    <div class="stage-icon">🔨</div>
+                    <div class="stage-label">Build</div>
+                    <div class="stage-status" id="diagram-build">Pending</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="test-run">
+                    <div class="stage-icon">✅</div>
+                    <div class="stage-label">Test Run</div>
+                    <div class="stage-status" id="diagram-test-run">Pending</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Batch Execution Controls -->
+        <div class="card batch-card">
+            <h3>🚀 Batch Execution</h3>
+            <p class="card-description">Run the full pipeline from design to tested build, or run individual stages below.</p>
+            <div class="button-row">
+                <button class="btn btn-accent" id="run-all">▶ Run Full Pipeline (Design → Test)</button>
+                <button class="btn btn-secondary" id="run-build-cycle">🔄 Build &amp; Test Only</button>
+                <button class="btn btn-secondary" id="run-update">🔧 Apply Updates</button>
+            </div>
+        </div>
+
+        <!-- Step 1: Design -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">1</span>
+                    <span class="step-title">📐 Design</span>
+                    <span class="step-badge pending" id="badge-design">pending</span>
+                </div>
+                <p class="step-desc">Analyze the idea and produce a comprehensive design document capturing technology choices, architecture decisions, and project structure.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/design_op.md"
+                            data-output="code/design.md"
+                            data-badge="badge-design"
+                            data-viewer="viewer-design">▶ Run</button>
+                    <button class="btn btn-secondary btn-view"
+                            data-file="code/design.md"
+                            data-viewer="viewer-design">👁 View Design</button>
+                </div>
+                <div class="viewer" id="viewer-design"></div>
+            </div>
+        </div>
+
+        <!-- Step 2: Scaffold -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">2</span>
+                    <span class="step-title">🏗️ Scaffold</span>
+                    <span class="step-badge pending" id="badge-scaffold">pending</span>
+                </div>
+                <p class="step-desc">Generate the project skeleton: package.json, config files, directory structure, and minimal entry points based on the design.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/scaffold_op.md"
+                            data-output="code"
+                            data-badge="badge-scaffold"
+                            data-viewer="viewer-scaffold">▶ Run</button>
+                    <button class="btn btn-secondary btn-view"
+                            data-file="code/package.json"
+                            data-viewer="viewer-scaffold">👁 View package.json</button>
+                    <button class="btn btn-secondary" id="btn-browse-code">📁 Browse Code</button>
+                </div>
+                <div class="viewer" id="viewer-scaffold"></div>
+            </div>
+        </div>
+
+        <!-- Step 3: Install -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">3</span>
+                    <span class="step-title">📥 Install Dependencies</span>
+                    <span class="step-badge pending" id="badge-install">pending</span>
+                </div>
+                <p class="step-desc">Run <code>npm install</code> to fetch and resolve all project dependencies. Auto-fixes version conflicts and peer dependency issues.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/install_op.md"
+                            data-output="code/install_log.md"
+                            data-badge="badge-install"
+                            data-viewer="viewer-install">▶ Run</button>
+                    <button class="btn btn-secondary btn-view"
+                            data-file="code/install_log.md"
+                            data-viewer="viewer-install">👁 View Log</button>
+                </div>
+                <div class="viewer" id="viewer-install"></div>
+            </div>
+        </div>
+
+        <!-- Step 4: Implement -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">4</span>
+                    <span class="step-title">💻 Implement</span>
+                    <span class="step-badge pending" id="badge-implement">pending</span>
+                </div>
+                <p class="step-desc">Write the full application source code — components, styles, assets, and entry points — according to the design and idea documents.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/implement_op.md"
+                            data-output="code"
+                            data-badge="badge-implement"
+                            data-viewer="viewer-implement">▶ Run</button>
+                    <button class="btn btn-secondary" id="btn-browse-src">📁 Browse src/</button>
+                </div>
+                <div class="viewer" id="viewer-implement"></div>
+            </div>
+        </div>
+
+        <!-- Step 5: Write Tests -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">5</span>
+                    <span class="step-title">🧪 Write Tests</span>
+                    <span class="step-badge pending" id="badge-test-write">pending</span>
+                </div>
+                <p class="step-desc">Generate comprehensive test files — unit tests, component tests, and integration tests — for the implemented source code.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/test_write_op.md"
+                            data-output="code"
+                            data-badge="badge-test-write"
+                            data-viewer="viewer-test-write">▶ Run</button>
+                    <button class="btn btn-secondary btn-view"
+                            data-file="code"
+                            data-viewer="viewer-test-write">👁 View</button>
+                </div>
+                <div class="viewer" id="viewer-test-write"></div>
+            </div>
+        </div>
+
+        <!-- Step 6: Build -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">6</span>
+                    <span class="step-title">🔨 Build</span>
+                    <span class="step-badge pending" id="badge-build">pending</span>
+                </div>
+                <p class="step-desc">Run <code>npm run build</code> and auto-fix any errors — TypeScript issues, import errors, missing dependencies, bundler config problems.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/build_op.md"
+                            data-output="code/build_log.md"
+                            data-badge="badge-build"
+                            data-viewer="viewer-build">▶ Run</button>
+                    <button class="btn btn-secondary btn-view"
+                            data-file="code/build_log.md"
+                            data-viewer="viewer-build">👁 View Build Log</button>
+                </div>
+                <div class="viewer" id="viewer-build"></div>
+            </div>
+        </div>
+
+        <!-- Step 7: Run Tests -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">7</span>
+                    <span class="step-title">✅ Run Tests</span>
+                    <span class="step-badge pending" id="badge-test-run">pending</span>
+                </div>
+                <p class="step-desc">Run <code>npm test</code> and auto-fix any failures — assertion errors, import issues, configuration problems, missing mocks.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/test_run_op.md"
+                            data-output="code/test_log.md"
+                            data-badge="badge-test-run"
+                            data-viewer="viewer-test-run">▶ Run</button>
+                    <button class="btn btn-secondary btn-view"
+                            data-file="code/test_log.md"
+                            data-viewer="viewer-test-run">👁 View Test Log</button>
+                </div>
+                <div class="viewer" id="viewer-test-run"></div>
+            </div>
+        </div>
+
+        <!-- Step 8: Update (standalone) -->
+        <div class="card card-update">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">8</span>
+                    <span class="step-title">🔧 Update</span>
+                    <span class="step-badge pending" id="badge-update">pending</span>
+                </div>
+                <p class="step-desc">Apply iterative changes from the Notes tab — bug fixes, feature additions, design changes. Then re-build and re-test.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/update_op.md"
+                            data-output="code"
+                            data-badge="badge-update"
+                            data-viewer="viewer-update">▶ Run Update</button>
+                </div>
+                <div class="viewer" id="viewer-update"></div>
+            </div>
+        </div>
+
+        <!-- Batch Execution Log -->
+        <div class="card">
+            <h3>📋 Execution Log</h3>
+            <div class="batch-log" id="batch-log"></div>
+        </div>
+    </section>
+
+    <!-- ==================== RESULTS SECTION ==================== -->
+    <section id="section-results" class="section">
+        <h2>📊 Results</h2>
+
+        <div class="results-tabs">
+            <button class="results-tab active" data-tab="tab-design">📐 Design</button>
+            <button class="results-tab" data-tab="tab-build-log">🔨 Build Log</button>
+            <button class="results-tab" data-tab="tab-test-log">✅ Test Log</button>
+            <button class="results-tab" data-tab="tab-install-log">📥 Install Log</button>
+            <button class="results-tab" data-tab="tab-files">📁 Project Files</button>
+        </div>
+
+        <div class="results-content">
+            <!-- Design Tab -->
+            <div class="tab-panel active" id="tab-design">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="code/design.md" data-viewer="result-design">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-design">
+                        <p class="placeholder">Run the Design stage to generate the design document.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Build Log Tab -->
+            <div class="tab-panel" id="tab-build-log">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="code/build_log.md" data-viewer="result-build-log">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-build-log">
+                        <p class="placeholder">Run the Build stage to see the build log.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Log Tab -->
+            <div class="tab-panel" id="tab-test-log">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="code/test_log.md" data-viewer="result-test-log">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-test-log">
+                        <p class="placeholder">Run the Test Run stage to see test results.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Install Log Tab -->
+            <div class="tab-panel" id="tab-install-log">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="code/install_log.md" data-viewer="result-install-log">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-install-log">
+                        <p class="placeholder">Run the Install stage to see the install log.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Files Tab -->
+            <div class="tab-panel" id="tab-files">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary" id="btn-refresh-files">🔄 Refresh File List</button>
+                    </div>
+                    <div class="file-browser" id="file-browser">
+                        <p class="placeholder">Click refresh to browse project files.</p>
+                    </div>
+                    <div class="result-viewer" id="result-file-content"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="hidden">
+    <div class="loading-spinner"></div>
+    <div id="loading-text">Processing...</div>
+</div>
+
+<script src="marked.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -11,7 +11,7 @@
     }
   },
   "purpose": "",
-  "summaryPrompt": "Create a comprehensive summary of the sub-planning results below.\n\nOriginal Goal: {goal}\n\nThe summary should:\n- Highlight key findings and accomplishments\n- Identify any issues or blockers encountered\n- Provide actionable next steps if applicable\n- Be concise but complete\n\nUse markdown formatting with headers and bullet points.",
+  "summaryPrompt": "Summarize the project scaffolding results.\n\nOriginal Goal: {goal}\n\nList all files created, the technology stack chosen, and confirm the scaffold is ready for dependency installation.",
   "name": "SubPlan",
   "task_type": "SubPlan",
   "verbose": false,

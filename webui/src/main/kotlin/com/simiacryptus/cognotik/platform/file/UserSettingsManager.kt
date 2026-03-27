@@ -11,7 +11,7 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
 
   init {
     require(root.exists() || root.mkdirs()) { "Failed to create root directory: $root" }
-    log.info("Initializing UserSettingsManager with root directory: ${root}", RuntimeException())
+    log.info("Initializing UserSettingsManager with root directory: ${root}")
   }
 
   private val userSettings = HashMap<User, UserSettings>()
