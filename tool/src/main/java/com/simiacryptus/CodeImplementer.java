@@ -1,7 +1,6 @@
 package com.simiacryptus;
 
 import com.simiacryptus.cognotik.chat.model.ChatModel;
-import com.simiacryptus.cognotik.chat.model.GeminiModels;
 import com.simiacryptus.cognotik.plan.OrchestrationConfig;
 import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode.WaterfallModeConfig;
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig;
@@ -40,6 +39,7 @@ public record CodeImplementer(String prompt, int port, boolean headless, int tim
         String workspaceRoot = getArg(args, 2, DEFAULT_WORKSPACE);
         int timeout = Integer.parseInt(getArg(args, 3, String.valueOf(DEFAULT_TIMEOUT)));
         boolean headless = Boolean.parseBoolean(getArg(args, 4, String.valueOf(DEFAULT_HEADLESS)));
+        PlanHarness.initDynamicEnums();
         configureEnvironmentalKeys();
         UnifiedHarness.configurePlatform(defaultUser);
         new CodeImplementer(prompt, port, headless, timeout, workspaceRoot).run();
@@ -52,7 +52,8 @@ public record CodeImplementer(String prompt, int port, boolean headless, int tim
     public void run() {
         log.info("Starting CodeImplementer with prompt: {}", this.prompt());
         try {
-            ChatModel chatModel = GeminiModels.getGeminiFlash_30_Preview();
+            ChatModel chatModel = null;
+            if(chatModel == null) throw new IllegalStateException("ChatModel not configured");
             Map<String, TaskTypeConfig> tasks = new HashMap<>();
 
             var fileModification = FileModificationTask.getFileModification();

@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
+import com.simiacryptus.cognotik.plan.tools.CoreTasks
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -140,7 +141,7 @@ open class UnifiedPlanAction(
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Cognotik",
             inputCnt = when (orchestrationConfig.cognitiveSettings?.type) {
-                CognitiveModeType.Chat -> 0
+                CoreTasks.Chat -> 0
                 else -> 4
             },
             stickyInput = app.stickyInput,

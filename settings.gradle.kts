@@ -20,9 +20,12 @@ plugins {
 
 include(":antlr")
 include(":core")
+include(":providers")
 include(":groovy")
 include(":kotlin")
 include(":webui")
+include(":tasklib")
+include(":stdtools")
 include(":desktop")
 include(":tool")
 

@@ -13,6 +13,9 @@ dependencies {
 
     implementation project(':core')
     implementation project(':webui')
+    implementation project(':stdtools')
+    implementation project(':providers')
+    implementation project(":tasklib")
 
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.23'
     implementation 'com.google.guava:guava:33.1.0-jre'

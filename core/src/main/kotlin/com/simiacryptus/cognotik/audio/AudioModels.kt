@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicReference
 class AudioModels(
   override val modelId: String,
   val type: AudioModelType = AudioModelType.Transcription,
-  override val provider: APIProvider = APIProvider.OpenAI,
+  override val provider: APIProvider,
 ) : AIModel {
 
   private val _api = AtomicReference<AIModel?>(null)

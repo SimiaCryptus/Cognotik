@@ -19,6 +19,7 @@ import com.simiacryptus.cognotik.webui.chat.DocOpsApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.simiacryptus.cognotik.plan.tools.CoreTasks
 import org.eclipse.jetty.webapp.WebAppContext
 import java.awt.Desktop
 import java.awt.SystemTray
@@ -54,6 +55,9 @@ open class CognotikApps(
         @JvmStatic
         fun main(args: Array<String>) {
             try {
+                CoreProviders.init()
+                CoreTasks.init()
+                ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
                 initDynamicEnums()
                 if (args.isEmpty()) {
                     log.info("No arguments provided - defaulting to server mode with default options")

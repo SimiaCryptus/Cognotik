@@ -96,17 +96,16 @@ object CognotikUtils {
 
   @JvmStatic
   fun configureEnvironmentalKeys() {
-    PlanHarness.initDynamicEnums()
     check(!APIProvider.values().isEmpty()) { "No API providers configured" }
     val userSettingsManager =
       ApplicationServices.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot).userSettingsManager
     val user = user()
     val userSettings = userSettingsManager.getUserSettings(user)
     var anythingChanged = false
-    anythingChanged = anythingChanged or setProvider(userSettings, "GOOGLE_API_KEY", APIProvider.Gemini)
-    anythingChanged = anythingChanged or setProvider(userSettings, "OPENAI_API_KEY", APIProvider.OpenAI)
-    anythingChanged = anythingChanged or setProvider(userSettings, "ANTHROPIC_API_KEY", APIProvider.Anthropic)
-    anythingChanged = anythingChanged or setProvider(userSettings, "GROQ_API_KEY", APIProvider.Groq)
+//    anythingChanged = anythingChanged or setProvider(userSettings, "GOOGLE_API_KEY", APIProvider.Gemini)
+//    anythingChanged = anythingChanged or setProvider(userSettings, "OPENAI_API_KEY", APIProvider.OpenAI)
+//    anythingChanged = anythingChanged or setProvider(userSettings, "ANTHROPIC_API_KEY", APIProvider.Anthropic)
+//    anythingChanged = anythingChanged or setProvider(userSettings, "GROQ_API_KEY", APIProvider.Groq)
     if (anythingChanged) {
       log.info("Updating user settings with new API keys.")
       userSettingsManager.updateUserSettings(user, userSettings)

@@ -11,13 +11,10 @@ import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.tools.*
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
-import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
-import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
-import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask.AutoFixTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.FileSelectionUtils.getAvailableFiles
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -132,18 +129,6 @@ class OrchestrationConfig(
   companion object {
     var exampleInstance = TaskBreakdownResult(
       tasksByID = mapOf(
-        "1" to AutoFixTaskExecutionConfigData(
-          task_description = "Task 1", task_dependencies = listOf(), commands = mutableListOf(
-            AutoFixTask.CommandWithWorkingDir(
-              command = mutableListOf("echo", "Hello, World!"), working_dir = "."
-            )
-          )
-        ), "2" to FileModificationTaskExecutionConfigData(
-          task_description = "Task 2",
-          task_dependencies = listOf("1"),
-          related_files = listOf("input2.txt"),
-          files = listOf("output2.txt"),
-        )
       ),
     )
 

@@ -73,8 +73,9 @@ open class EmbeddingModel(
       values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
 
     private val values: MutableMap<String, EmbeddingModel?> by lazy {
-      (OpenAIEmbeddingModels.values +
-          OllamaEmbeddingModels.values).toMutableMap()
+      APIProvider.values().flatMap { it.getEmbeddingModels().map {
+        it.modelId to it
+      } }.toMap().toMutableMap()
     }
 
     init {

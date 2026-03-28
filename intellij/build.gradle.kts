@@ -49,6 +49,34 @@ dependencies {
         exclude(group = "com.google.oauth-client")
     }
 
+    implementation(project(":providers")) {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains.kotlinx")
+        exclude(group = "org.slf4j")
+        exclude(group = "org.seleniumhq.selenium")
+        exclude(group = "io.github.bonigarcia")
+        exclude(group = "com.google.api-client")
+        exclude(group = "com.google.oauth-client")
+    }
+    implementation(project(":tasklib")) {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains.kotlinx")
+        exclude(group = "org.slf4j")
+        exclude(group = "org.seleniumhq.selenium")
+        exclude(group = "io.github.bonigarcia")
+        exclude(group = "com.google.api-client")
+        exclude(group = "com.google.oauth-client")
+    }
+    implementation(project(":stdtools")) {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains.kotlinx")
+        exclude(group = "org.slf4j")
+        exclude(group = "org.seleniumhq.selenium")
+        exclude(group = "io.github.bonigarcia")
+        exclude(group = "com.google.api-client")
+        exclude(group = "com.google.oauth-client")
+    }
+
 
 
     implementation(libs.aws.bedrockruntime)

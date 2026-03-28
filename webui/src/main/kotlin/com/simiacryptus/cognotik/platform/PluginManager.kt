@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.platform.CognotikPlugin
+import com.simiacryptus.cognotik.CognotikPlugin
 import com.simiacryptus.cognotik.platform.model.PluginManagerInterface
 import org.slf4j.LoggerFactory
 import java.io.File

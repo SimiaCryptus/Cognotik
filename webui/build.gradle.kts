@@ -22,6 +22,7 @@ repositories {
 dependencies {
     implementation(project(":core"))
     compileOnly(project(":kotlin"))
+    testImplementation(project(":providers"))
     testImplementation(project(":kotlin"))
     compileOnly(project(":groovy"))
     implementation(project(":groovy"))

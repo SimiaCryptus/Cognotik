@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.model
 
-import com.simiacryptus.cognotik.platform.CognotikPlugin
+import com.simiacryptus.cognotik.CognotikPlugin
 import java.io.File
 
 interface PluginManagerInterface {

@@ -7,8 +7,6 @@ import com.simiacryptus.cognotik.plan.ExecutionState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
-import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -22,7 +20,7 @@ import kotlin.io.path.exists
 
 abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
   val orchestrationConfig: OrchestrationConfig,
-  val executionConfig: T?
+  open val executionConfig: T?
 ) {
 
   var state: TaskState? = TaskState.Pending
@@ -155,8 +153,8 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
   fun getOutputFile(extension: String): String? = executionConfig?.files?.let {
     when {
-      executionConfig is RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig -> null
-      executionConfig is AbstractFileTask.FileTaskExecutionConfig -> null
+//      executionConfig is RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig -> null
+//      executionConfig is AbstractFileTask.FileTaskExecutionConfig -> null
       it.filter { it.endsWith(extension) }.size == 1 -> it.first { it.endsWith(extension) }
       else -> null
     }

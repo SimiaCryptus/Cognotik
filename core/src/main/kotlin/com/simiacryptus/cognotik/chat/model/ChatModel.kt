@@ -80,15 +80,9 @@ open class ChatModel(
 
     fun values(): Map<String, ChatModel> = values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
     private val values: MutableMap<String, ChatModel?> by lazy {
-      (OpenAIModels.values +
-          PerplexityModels.values +
-          MistralModels.values +
-          GroqModels.values +
-          ModelsLabModels.values +
-          AWSModels.values +
-          AnthropicModels.values +
-          DeepSeekModels.values +
-          GeminiModels.values).toMutableMap()
+      APIProvider.values().flatMap { it.getChatModels().map {
+        it.modelId to it
+      } }.toMap().toMutableMap()
     }
 
   }

@@ -116,17 +116,7 @@ class ApiKeyServlet : HttpServlet() {
       } else if (record == null) {
         response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid API Key or User not found")
       } else {
-        fileApplicationServices().userSettingsManager.updateUserSettings(
-          user, UserSettings(
-            toApiList(
-              apiKeys = mapOf(APIProvider.OpenAI to apiKey),
-              apiBase = mapOf(APIProvider.OpenAI to "https://apps.simiacrypt.us/proxy"),
-            ),
-            mutableListOf()
-          )
-        )
         response.sendRedirect("/")
-
       }
     } else if (record != null && budget != null && user == null) {
 

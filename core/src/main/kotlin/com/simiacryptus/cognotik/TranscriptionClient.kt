@@ -27,7 +27,7 @@ open class TranscriptionClient(
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
   workPool: ExecutorService,
   scheduledPool: ListeningScheduledExecutorService,
-  val provider: APIProvider = APIProvider.Companion.OpenAI,
+  val provider: APIProvider,
 ) : HttpClientManager(
   logLevel = logLevel,
   logStreams = logStreams,
