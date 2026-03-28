@@ -53,8 +53,10 @@
      function populateModelDropdowns() {
          const smartSelect = document.getElementById('model-smart');
          const fastSelect = document.getElementById('model-fast');
+         const imageSelect = document.getElementById('model-image');
          if (!smartSelect || !fastSelect) return;
          [smartSelect, fastSelect].forEach(sel => { sel.innerHTML = ''; });
+         if (imageSelect) imageSelect.innerHTML = '';
          const addedModels = new Set();
          let totalModels = 0;
          for (const [provider, models] of Object.entries(availableModels)) {
@@ -68,13 +70,21 @@
                              : `${model.name} (${provider})`;
                          sel.appendChild(option);
                      });
+                     if (imageSelect) {
+                         const option = document.createElement('option');
+                         option.value = model.id;
+                         option.textContent = model.description
+                             ? `${model.name} (${provider}) — ${model.description}`
+                             : `${model.name} (${provider})`;
+                         imageSelect.appendChild(option);
+                     }
                      addedModels.add(model.id);
                      totalModels++;
                  }
              });
          }
          if (totalModels === 0) {
-             [smartSelect, fastSelect].forEach(sel => {
+             [smartSelect, fastSelect, imageSelect].filter(Boolean).forEach(sel => {
                  const option = document.createElement('option');
                  option.value = '';
                  option.textContent = 'No models available — configure API keys first';
@@ -85,17 +95,22 @@
          // Restore saved selections
          const savedSmart = localStorage.getItem('webappFactory_smartModel');
          const savedFast = localStorage.getItem('webappFactory_fastModel');
+         const savedImage = localStorage.getItem('webappFactory_imageModel');
          if (savedSmart && Array.from(smartSelect.options).some(o => o.value === savedSmart)) {
              smartSelect.value = savedSmart;
          }
          if (savedFast && Array.from(fastSelect.options).some(o => o.value === savedFast)) {
              fastSelect.value = savedFast;
          }
+         if (savedImage && imageSelect && Array.from(imageSelect.options).some(o => o.value === savedImage)) {
+             imageSelect.value = savedImage;
+         }
      }
      function setModelDropdownsError(message) {
          const smartSelect = document.getElementById('model-smart');
          const fastSelect = document.getElementById('model-fast');
-         [smartSelect, fastSelect].forEach(sel => {
+         const imageSelect = document.getElementById('model-image');
+         [smartSelect, fastSelect, imageSelect].filter(Boolean).forEach(sel => {
              if (!sel) return;
              sel.innerHTML = '';
              const option = document.createElement('option');
@@ -107,9 +122,11 @@
      function getSelectedModels() {
          const smartSelect = document.getElementById('model-smart');
          const fastSelect = document.getElementById('model-fast');
+         const imageSelect = document.getElementById('model-image');
          return {
              smartModel: smartSelect ? smartSelect.value : '',
              fastModel: fastSelect ? fastSelect.value : '',
+             imageModel: imageSelect ? imageSelect.value : '',
          };
      }
 
@@ -453,6 +470,7 @@
          const models = getSelectedModels();
          if (models.smartModel) params.set('smartModel', models.smartModel);
          if (models.fastModel) params.set('fastModel', models.fastModel);
+         if (models.imageModel) params.set('imageModel', models.imageModel);
          const url = `/docops?${params.toString()}`;
         const resp = await fetch(url, { method: 'POST' });
         if (!resp.ok) {
@@ -866,6 +884,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
          const models = getSelectedModels();
          if (models.smartModel) localStorage.setItem('webappFactory_smartModel', models.smartModel);
          if (models.fastModel) localStorage.setItem('webappFactory_fastModel', models.fastModel);
+         if (models.imageModel) localStorage.setItem('webappFactory_imageModel', models.imageModel);
          setStatus('model-status', '✓ Model settings saved', 'success');
      });
      // === Refresh models ===

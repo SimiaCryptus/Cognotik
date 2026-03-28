@@ -227,6 +227,8 @@ ${if (!outputPath.isNullOrBlank()) "\n**Output saved to:** `$outputPath`" else "
     }
   }
 
+  override fun getOutputFile(extension: String) = null
+
   companion object {
     private val log = LoggerFactory.getLogger(RenderErbTemplateTask::class.java)
 

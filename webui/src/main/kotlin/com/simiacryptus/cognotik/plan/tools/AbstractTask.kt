@@ -151,10 +151,8 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
   fun transcriptFile(): String = getOutputFile(".md") ?: transcriptFile(taskType)
 
-  fun getOutputFile(extension: String): String? = executionConfig?.files?.let {
+  open fun getOutputFile(extension: String): String? = executionConfig?.files?.let {
     when {
-//      executionConfig is RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig -> null
-//      executionConfig is AbstractFileTask.FileTaskExecutionConfig -> null
       it.filter { it.endsWith(extension) }.size == 1 -> it.first { it.endsWith(extension) }
       else -> null
     }

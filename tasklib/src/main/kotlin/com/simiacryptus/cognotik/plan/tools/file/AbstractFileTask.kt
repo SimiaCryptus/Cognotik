@@ -146,6 +146,7 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     return textExtensions.contains(file.extension.lowercase())
   }
 
+  override fun getOutputFile(extension: String) : String? = null
 
   companion object {
     private val log = LoggerFactory.getLogger(AbstractFileTask::class.java)

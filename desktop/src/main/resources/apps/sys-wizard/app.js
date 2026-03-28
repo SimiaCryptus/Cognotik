@@ -55,8 +55,8 @@
          // Append model overrides if set
          var smartModel = getSelectedSmartModel();
          var fastModel = getSelectedFastModel();
-         if (smartModel) params += '&smartModel=' + encodeURIComponent(smartModel);
-         if (fastModel) params += '&fastModel=' + encodeURIComponent(fastModel);
+          if (smartModel && smartModel.trim().length > 0) params += '&smartModel=' + encodeURIComponent(smartModel.trim());
+          if (fastModel && fastModel.trim().length > 0) params += '&fastModel=' + encodeURIComponent(fastModel.trim());
 
          var url = '/docops?' + params;
          var resp = await fetch(url, { method: 'POST' });
@@ -370,15 +370,17 @@
      function getSelectedSmartModel() {
          var sel = document.getElementById('setting-smart-model');
          var val = sel ? sel.value : '';
-         if (val) return val;
-         return localStorage.getItem('wizardSmartModel') || '';
+         if (val && val.trim().length > 0) return val.trim();
+         var stored = localStorage.getItem('wizardSmartModel');
+         return (stored && stored.trim().length > 0) ? stored.trim() : '';
      }
 
      function getSelectedFastModel() {
          var sel = document.getElementById('setting-fast-model');
          var val = sel ? sel.value : '';
-         if (val) return val;
-         return localStorage.getItem('wizardFastModel') || '';
+         if (val && val.trim().length > 0) return val.trim();
+         var stored = localStorage.getItem('wizardFastModel');
+         return (stored && stored.trim().length > 0) ? stored.trim() : '';
      }
 
      async function loadApiProviders() {
@@ -558,8 +560,8 @@
      document.getElementById('save-model-settings').addEventListener('click', function () {
          var smartSelect = document.getElementById('setting-smart-model');
          var fastSelect = document.getElementById('setting-fast-model');
-         var smartVal = smartSelect ? smartSelect.value : '';
-         var fastVal = fastSelect ? fastSelect.value : '';
+         var smartVal = smartSelect ? smartSelect.value.trim() : '';
+         var fastVal = fastSelect ? fastSelect.value.trim() : '';
 
          if (smartVal) localStorage.setItem('wizardSmartModel', smartVal);
          else localStorage.removeItem('wizardSmartModel');
