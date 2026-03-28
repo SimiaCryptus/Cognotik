@@ -18,7 +18,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.chat.DocOpsApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
-import com.simiacryptus.cognotik.plan.tools.CoreTasks
 import com.simiacryptus.cognotik.webui.application.AppEntry
 import org.eclipse.jetty.webapp.WebAppContext
 import java.awt.Desktop

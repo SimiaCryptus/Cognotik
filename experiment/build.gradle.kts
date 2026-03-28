@@ -33,12 +33,8 @@ java {
 
 dependencies {
     implementation(project(":core"))
-    implementation(project(":groovy"))
-    implementation(project(":kotlin"))
     implementation(project(":webui"))
-    implementation(project(":providers"))
     implementation(project(":tasklib"))
-    implementation(project(":stdtools"))
 
     implementation(libs.batik.transcoder)
     implementation(libs.batik.codec)

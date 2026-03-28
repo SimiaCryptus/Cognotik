@@ -4,9 +4,8 @@ import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningConfig
 import com.simiacryptus.cognotik.plan.cognitive.CodingMode.CodingModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode.WaterfallModeConfig
-import com.simiacryptus.cognotik.plan.tools.CoreTasks
+import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.reasoning.BrainstormingTask

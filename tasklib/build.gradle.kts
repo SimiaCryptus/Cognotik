@@ -21,14 +21,9 @@ repositories {
 
 dependencies {
     implementation(project(":core"))
-    compileOnly(project(":kotlin"))
-    testImplementation(project(":providers"))
-    testImplementation(project(":kotlin"))
-    compileOnly(project(":groovy"))
-    implementation(project(":groovy"))
     compileOnly(project(":webui"))
     implementation(project(":webui"))
-//    testImplementation(project(":scala"))
+
     implementation(libs.pty4j)
     implementation(libs.webdrivermanager)
     implementation(libs.pdfbox)
