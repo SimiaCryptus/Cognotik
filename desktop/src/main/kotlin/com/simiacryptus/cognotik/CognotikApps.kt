@@ -56,7 +56,8 @@ open class CognotikApps(
             try {
                 CoreProviders.init()
                 CoreTasks.init()
-                DefaultApps.init()
+                ResourceApps("/apps/apps.json").init()
+                //ResourceApps("/apps/disabled_apps.json").init()
                 ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
                 initDynamicEnums()
                 if (args.isEmpty()) {

@@ -5,9 +5,9 @@ import com.google.gson.reflect.TypeToken
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.AppEntry
 
-object DefaultApps : CognotikPlugin {
+open class ResourceApps(val resourcePath: String) : CognotikPlugin {
 
-    private val log = LoggerFactory.getLogger(DefaultApps::class.java)
+    private val log = LoggerFactory.getLogger(ResourceApps::class.java)
 
     private data class AppJsonEntry(
         val id: String,
@@ -24,26 +24,26 @@ object DefaultApps : CognotikPlugin {
 
     override fun init() {
         try {
-            val json = DefaultApps::class.java.getResourceAsStream("/apps/apps.json")
+            val json = ResourceApps::class.java.getResourceAsStream(resourcePath)
                 ?.bufferedReader()?.readText()
                 ?: throw IllegalStateException("apps.json not found on classpath")
             val type = object : TypeToken<List<AppJsonEntry>>() {}.type
             val entries: List<AppJsonEntry> = Gson().fromJson(json, type)
             for (entry in entries) {
-                AppEntry.register(
-                    AppEntry(
-                        name = entry.id,
-                        id = entry.id,
-                        displayName = entry.name,
-                        icon = entry.icon,
-                        description = entry.description,
-                        badge = entry.badge,
-                        badgeClass = entry.badgeClass ?: "",
-                        type = entry.type,
-                        path = entry.path,
-                        appId = entry.appId,
-                        cardClass = entry.cardClass
-                    )
+                AppEntry.Companion.register(
+                  AppEntry(
+                    name = entry.id,
+                    id = entry.id,
+                    displayName = entry.name,
+                    icon = entry.icon,
+                    description = entry.description,
+                    badge = entry.badge,
+                    badgeClass = entry.badgeClass ?: "",
+                    type = entry.type,
+                    path = entry.path,
+                    appId = entry.appId,
+                    cardClass = entry.cardClass
+                  )
                 )
             }
             log.info("Registered ${entries.size} app entries from apps.json")

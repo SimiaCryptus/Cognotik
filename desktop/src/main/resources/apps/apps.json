@@ -54,17 +54,6 @@
     "path": "/omega",
     "appId": "omega"
   },
-{
-   "id": "app-npm-project",
-   "name": "npm Project Factory",
-   "icon": "📦",
-   "description": "Design, scaffold, build, and test client-side web applications managed with npm — from architecture to passing tests.",
-   "badge": null,
-   "badgeClass": "",
-   "type": "docops",
-   "path": "/npm-project",
-   "appId": "npm-project"
-},
   {
     "id": "app-basic-chat",
     "name": "Basic Chat",
