@@ -35,6 +35,8 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":webui"))
     implementation(project(":tasklib"))
+    testImplementation(project(":providers"))
+    testImplementation(project(":stdtools"))
 
     implementation(libs.batik.transcoder)
     implementation(libs.batik.codec)

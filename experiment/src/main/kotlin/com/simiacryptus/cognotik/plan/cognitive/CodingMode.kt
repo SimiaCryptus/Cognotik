@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.CoreTasks
+import com.simiacryptus.cognotik.ExperimentalStuff
 import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.MethodTypeDescriber
@@ -35,7 +36,7 @@ open class CodingMode(
 
   class CodingModeConfig(
     var codeRuntime: CodeRuntimes = CodeRuntimes.GroovyRuntime
-  ) : CognitiveModeConfig(type = CoreTasks.Coding)
+  ) : CognitiveModeConfig(type = ExperimentalStuff.Coding)
 
   protected val history = mutableListOf<Pair<String, ModelSchema.Role>>()
 

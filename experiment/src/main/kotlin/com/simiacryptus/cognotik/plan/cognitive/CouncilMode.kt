@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.CoreTasks
+import com.simiacryptus.cognotik.ExperimentalStuff
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
@@ -31,7 +32,7 @@ class CouncilModeConfig(
   var maxTaskHistoryChars: Int = 20000,
   var maxTasksPerIteration: Int = 3,
   var maxIterations: Int = 10
-) : CognitiveModeConfig(type = CoreTasks.Council)
+) : CognitiveModeConfig(type = ExperimentalStuff.Council)
 
 
 open class CouncilMode(

@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.CoreTasks
+import com.simiacryptus.cognotik.ExperimentalStuff
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
@@ -23,7 +24,7 @@ import kotlin.io.path.isDirectory
 class ParallelModeConfig(
   var defaultConcurrency: Int = 4,
   var defaultMode: CombinationMode = CombinationMode.CrossJoin
-) : CognitiveModeConfig(type = CoreTasks.Parallel) {
+) : CognitiveModeConfig(type = ExperimentalStuff.Parallel) {
   enum class CombinationMode {
     CrossJoin,
     Zip
