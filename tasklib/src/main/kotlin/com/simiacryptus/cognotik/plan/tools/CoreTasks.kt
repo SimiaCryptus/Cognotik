@@ -98,8 +98,6 @@ import kotlin.jvm.java
 
 object CoreTasks : CognotikPlugin {
 
-
-
   @JvmStatic
   val Chat = CognitiveModeType("Chat", ConversationalModeConfig::class.java, inputCnt = ConversationalMode.inputCnt)
 
@@ -130,14 +128,6 @@ object CoreTasks : CognotikPlugin {
 
   @JvmStatic
   val Coding = CognitiveModeType("Coding", CodingMode.CodingModeConfig::class.java)
-
-//  val FrontmatterOrchestration = CognitiveModeType(
-//    "FrontmatterOrchestration",
-//    FrontmatterOrchestrationConfig::class.java,
-//    inputCnt = FrontmatterOrchestrationMode.inputCnt
-//  )
-
-
 
   override fun init() {
     registerTaskType(AbductiveReasoningTask.AbductiveReasoning)

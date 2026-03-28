@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.ApiKeyServlet
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet
+import com.simiacryptus.cognotik.webui.servlet.AppDirectoryServlet
 import com.simiacryptus.cognotik.webui.servlet.CognitiveConfigServlet
 import com.simiacryptus.cognotik.webui.servlet.CorsFilter
 import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
@@ -88,6 +89,8 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized TaskConfigServlet") }
   open val simpleLoginServlet: HttpServlet = SimpleLoginServlet()
     .also { log.debug("Initialized SimpleLoginServlet") }
+  open val appDirectoryServlet: HttpServlet = AppDirectoryServlet()
+    .also { log.debug("Initialized AppDirectoryServlet") }
 
 
   protected open val docopsServlet by lazy { DocProcessorServlet() }
@@ -166,6 +169,10 @@ abstract class ApplicationDirectory(
     newWebAppContext("/cognitiveConfig", cognitiveConfigServlet).let {
       log.debug("Configuring cognitiveConfig context with authentication")
       authenticatedWebsite()?.configure(it, true) ?: it
+    },
+    newWebAppContext("/appDirectory", appDirectoryServlet).let {
+      log.debug("Configuring appDirectory context")
+      authenticatedWebsite()?.configure(it, false) ?: it
     },
    newWebAppContext("/login", simpleLoginServlet).also {
      log.debug("Configuring login context")

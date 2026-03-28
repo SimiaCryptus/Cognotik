@@ -17,9 +17,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.chat.DocOpsApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.simiacryptus.cognotik.plan.tools.CoreTasks
+import com.simiacryptus.cognotik.webui.application.AppEntry
 import org.eclipse.jetty.webapp.WebAppContext
 import java.awt.Desktop
 import java.awt.SystemTray
@@ -57,6 +56,7 @@ open class CognotikApps(
             try {
                 CoreProviders.init()
                 CoreTasks.init()
+                DefaultApps.init()
                 ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
                 initDynamicEnums()
                 if (args.isEmpty()) {
@@ -251,36 +251,12 @@ open class CognotikApps(
         }
     }
 
-     data class AppDirectoryEntry(
-         val id: String,
-         val name: String,
-         val icon: String,
-         val description: String,
-         val badge: String?,
-         val badgeClass: String?,
-         val type: String,
-         val path: String,
-         val appId: String? = null,
-         val cardClass: String? = null
-     )
 
-     private fun loadAppDirectory(): List<AppDirectoryEntry> {
-         return try {
-             val json = CognotikApps::class.java.getResourceAsStream("/welcome/apps.json")
-                 ?.bufferedReader()?.readText()
-                 ?: throw IllegalStateException("apps.json not found on classpath")
-             val type = object : TypeToken<List<AppDirectoryEntry>>() {}.type
-             Gson().fromJson(json, type)
-         } catch (e: Exception) {
-             log.error("Failed to load app directory: ${e.message}", e)
-             emptyList()
-         }
-     }
 
     override val childWebApps by lazy {
         OrchestrationConfig.instanceFn =
             { m,u -> m.instance(user=u) ?: throw IllegalStateException("Model or provider not set") }
-         val apps = loadAppDirectory()
+         val apps = AppEntry.values()
          val docopsApps = apps.filter { it.type == "docops" }.map { entry ->
              ChildWebApp(entry.path, DocOpsApp(File("."), model, model, appId = entry.appId ?: entry.id))
          }

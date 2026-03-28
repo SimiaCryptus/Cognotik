@@ -88,7 +88,7 @@ loadApiProviders().then(() => {
 async function loadAppDirectory() {
      console.log('[loadAppDirectory] Loading app directory...');
      try {
-         const response = await fetch('apps.json');
+         const response = await fetch('/appDirectory');
          if (response.ok) {
              appDirectory = await response.json();
              console.log('[loadAppDirectory] Loaded', appDirectory.length, 'apps');
