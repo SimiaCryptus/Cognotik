@@ -1,3 +1,4 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
@@ -19,7 +20,6 @@ repositories {
         }
     }
 }
-
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -94,3 +94,15 @@ tasks {
     }
 }
 
+
+tasks.withType<ShadowJar> {
+    archiveClassifier.set("all")
+    mergeServiceFiles()
+    isZip64 = true
+    exclude("org/slf4j/impl/**")
+    manifest {
+        attributes(
+            "Main-Class" to "com.simiacryptus.cognotik.DaemonClient"
+        )
+    }
+}
