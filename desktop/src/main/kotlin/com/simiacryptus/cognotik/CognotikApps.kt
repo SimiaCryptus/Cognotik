@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik
 
 import com.simiacryptus.cognotik.UpdateManager.checkUpdate
+import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
@@ -54,26 +55,15 @@ open class CognotikApps(
         @JvmStatic
         fun main(args: Array<String>) {
             try {
-                CoreProviders.init()
-                CoreTasks.init()
-                ResourceApps("/apps/apps.json").init()
-                //ResourceApps("/apps/disabled_apps.json").init()
-                ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
-                initDynamicEnums()
                 if (args.isEmpty()) {
                     log.info("No arguments provided - defaulting to server mode with default options")
                     handleServer()
-                    return
-                }
-                when (args[0].lowercase()) {
-                    "server" -> handleServer(*args.sliceArray(1 until args.size))
-                    "help", "-h", "--help" -> printUsage()
-                    "daemon" -> {
-                        handleServer(*args.sliceArray(1 until args.size))
-                    }
-
-                    else -> {
-                        handleServer()
+                } else {
+                    when (args[0].lowercase()) {
+                        "server" -> handleServer(*args.sliceArray(1 until args.size))
+                        "help", "-h", "--help" -> printUsage()
+                        "daemon" -> handleServer(*args.sliceArray(1 until args.size))
+                        else -> handleServer()
                     }
                 }
             } catch (e: Exception) {
@@ -89,11 +79,15 @@ open class CognotikApps(
 
         private var server: CognotikApps? = null
 
-        init {
-            require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
-        }
 
         private fun handleServer(vararg args: String) {
+            require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
+            CoreProviders.init()
+            CoreTasks.init()
+            ResourceApps("/apps/apps.json").init()
+            //ResourceApps("/apps/disabled_apps.json").init()
+            ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+            initDynamicEnums()
             log.info("Parsing server options...")
             val options = parseServerOptions(*args)
             log.info("Configuring server with options: port=${options.port}, host=${options.host}, publicName=${options.publicName}")
