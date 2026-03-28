@@ -61,8 +61,6 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized LogoutServlet") }
   open val usageServlet: HttpServlet = UsageServlet()
     .also { log.debug("Initialized UsageServlet") }
-  open val proxyHttpServlet: HttpServlet = ProxyHttpServlet()
-    .also { log.debug("Initialized ProxyHttpServlet") }
   open val welcomeServlet: HttpServlet = WelcomeServlet(this)
     .also { log.debug("Initialized WelcomeServlet") }
   open val apiKeyServlet: HttpServlet = ApiKeyServlet()

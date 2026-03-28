@@ -1056,13 +1056,6 @@ class DocProcessor(
     onNewSession: (Session) -> Unit,
     sessions: MutableList<Session>
   ) {
-
-
-    // The task's data.root is already set to the effective root (which may be a target folder)
-    // by buildModificationTask -> resolveEffectiveRoot. If the effective root differs from
-    // this.root (the global root), we need to rebase the task so that relative paths
-    // are computed against the target folder.
-    // Compute the target key BEFORE rebasing, so it's relative to the global root
     val targetKey = mod.data.files?.firstOrNull()?.let { filePath ->
       try {
         filePath.canonicalFile.relativeTo(root.canonicalFile).toString()

@@ -24,6 +24,9 @@ import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 abstract class PatchApp(
   override val root: File,
@@ -45,7 +48,6 @@ abstract class PatchApp(
   companion object {
     private val log = LoggerFactory.getLogger(PatchApp::class.java)
     const val tripleTilde = "`" + "``"
-
   }
 
   /**
@@ -147,81 +149,356 @@ abstract class PatchApp(
   abstract fun searchFiles(searchStrings: List<String>): Set<Path>
   override val inputCnt = 1
   override val stickyInput = false
-  override fun newSession(user: User, session: Session): SocketManager {
-    val ui = super.newSession(user, session)!!
-    log.info("Creating new session for user: ${user?.id ?: "anonymous"}")
-    var retries: Int = -1
-    val task = ui.newTask()
-    var retryOnOffButton: StringBuilder? = null
-    val disableButton = task.hrefLink("Disable Auto-Retry") {
-      log.info("Auto-retry disabled by user")
-      retries = 0
-      retryOnOffButton?.clear()
-      task.update()
+
+  abstract fun projectSummary(): String
+
+  private enum class RunState {
+    IDLE, RUNNING_COMMAND, RUNNING_FIX, SUCCESS, FAILED_RETRYING, FAILED_DONE
+  }
+
+  private data class IterationRecord(
+    val iteration: Int,
+    val exitCode: Int,
+    val errorCount: Int,
+    val timestamp: Long = System.currentTimeMillis(),
+    val errorSummaries: List<String> = emptyList(),
+    val fixApplied: Boolean = false
+  )
+
+  private inner class SessionController(
+    private val task: SessionTask,
+  ) {
+    private val retriesRemaining = AtomicInteger(if (settings.autoFix) settings.maxRetries else 0)
+    private val autoRetryEnabled = AtomicBoolean(settings.autoFix)
+    private val currentIteration = AtomicInteger(0)
+    private val state = AtomicReference(RunState.IDLE)
+    private val isRunning = AtomicBoolean(false)
+    private val iterationHistory = mutableListOf<IterationRecord>()
+
+    // UI structure: control panel at top, summary area, then iteration details area below
+    private val controlPanelBuffer: StringBuilder = task.add("")!!
+    private val summaryBuffer: StringBuilder = task.add("")!!
+    private val iterationAreaBuffer: StringBuilder = task.add("")!!
+
+    // Detached tasks for each iteration's details, keyed by iteration number
+    private val iterationTasks = mutableMapOf<Int, SessionTask>()
+
+    fun start() {
+      updateStatus = { message: String ->
+        log.info("Status update: $message")
+        renderControlPanel(statusOverride = message)
+      }
+      runIteration()
     }
-    if (settings.autoFix && settings.maxRetries > 0) {
-      log.info("Auto-fix enabled with max retries: ${settings.maxRetries}")
-      retryOnOffButton = task.add(disableButton)
-    }
-    val currentStatus = task.add("Status: Initializing...")!!
-    updateStatus = { message: String ->
-      log.info("Status update: $message")
-      currentStatus.set("Status: $message")
+
+    private fun renderControlPanel(statusOverride: String? = null) {
+      val currentState = state.get()
+      val iteration = currentIteration.get()
+      val remaining = retriesRemaining.get()
+      val autoRetry = autoRetryEnabled.get()
+      val running = isRunning.get()
+
+      // --- Status Badge ---
+      val (statusIcon, statusText, statusColor) = when {
+        statusOverride != null -> Triple("🔧", statusOverride, "#6c757d")
+        currentState == RunState.IDLE -> Triple("⏳", "Initializing...", "#6c757d")
+        currentState == RunState.RUNNING_COMMAND -> Triple("⚙️", "Running command (Iteration $iteration)...", "#0d6efd")
+        currentState == RunState.RUNNING_FIX -> Triple("🔧", "Applying fixes (Iteration $iteration)...", "#0d6efd")
+        currentState == RunState.SUCCESS -> Triple("✅", "Build succeeded! No errors found.", "#198754")
+        currentState == RunState.FAILED_RETRYING -> Triple(
+          "🔄",
+          "Failed — auto-retrying ($remaining left)...",
+          "#fd7e14"
+        )
+
+        currentState == RunState.FAILED_DONE -> Triple("❌", "Failed — manual retry available.", "#dc3545")
+        else -> Triple("❓", "Unknown state", "#6c757d")
+      }
+
+      // --- Iteration History Timeline ---
+      val timeline = if (iterationHistory.isNotEmpty()) {
+        val items = iterationHistory.joinToString("") { record ->
+          val icon = if (record.exitCode == 0) "✅" else "❌"
+          val errInfo =
+            if (record.errorCount > 0) "${record.errorCount} error${if (record.errorCount > 1) "s" else ""}" else "clean"
+          val time = SimpleDateFormat("HH:mm:ss").format(record.timestamp)
+          val tooltip = record.errorSummaries.joinToString("; ") { it.take(60) }
+          """<span class="iteration-badge" style="display:inline-flex;align-items:center;gap:2px;padding:2px 8px;margin:2px;border-radius:12px;background:${if (record.exitCode == 0) "#d1e7dd" else "#f8d7da"};font-size:0.82em;cursor:default;" title="$tooltip">$icon #${record.iteration}: $errInfo <span style="color:#888;font-size:0.85em;">($time)</span></span>"""
+        }
+        """<div style="margin:6px 0;display:flex;flex-wrap:wrap;align-items:center;gap:2px;">
+          <span style="font-size:0.8em;color:#666;margin-right:4px;">History:</span>$items
+        </div>"""
+      } else ""
+
+      // --- Error Trend Summary ---
+      val errorTrend = if (iterationHistory.size >= 2) {
+        val recent = iterationHistory.takeLast(2)
+        val prev = recent[0].errorCount
+        val curr = recent[1].errorCount
+        when {
+          curr == 0 -> """<span style="color:#198754;font-size:0.85em;">All errors resolved! 🎉</span>"""
+          curr < prev -> """<span style="color:#fd7e14;font-size:0.85em;">Errors reduced: $prev → $curr (↓${prev - curr})</span>"""
+          curr == prev -> """<span style="color:#dc3545;font-size:0.85em;">Error count unchanged: $curr</span>"""
+          else -> """<span style="color:#dc3545;font-size:0.85em;">Errors increased: $prev → $curr (↑${curr - prev})</span>"""
+        }
+      } else ""
+
+      // --- Persistent Error Warnings ---
+      val persistentErrors = if (iterationHistory.size >= 2) {
+        val allErrors = iterationHistory.flatMap { it.errorSummaries }
+        val counts = allErrors.groupingBy { it }.eachCount()
+        val persistent = counts.filter { it.value >= 2 }.entries.sortedByDescending { it.value }
+        if (persistent.isNotEmpty()) {
+          val items = persistent.take(3).joinToString("") { (msg, count) ->
+            """<div style="padding:2px 0;font-size:0.82em;">⚠️ <b>${msg.take(80)}</b> — persisted across $count iterations</div>"""
+          }
+          """<div style="margin:4px 0;padding:6px 10px;background:#fff3cd;border-radius:6px;border-left:3px solid #ffc107;">
+            <div style="font-size:0.8em;font-weight:600;color:#856404;margin-bottom:2px;">Persistent Errors</div>
+            $items
+          </div>"""
+        } else ""
+      } else ""
+
+      // --- Action Buttons ---
+      val buttons = buildString {
+        if (!running) {
+          val runLabel = when (currentState) {
+            RunState.SUCCESS -> "▶ Run Again"
+            RunState.FAILED_DONE, RunState.FAILED_RETRYING -> "🔄 Retry"
+            else -> "▶ Run"
+          }
+          append("""<span style="display:inline-block;">""")
+          append(task.hrefLink(runLabel, classname = "href-link play-button") {
+            if (!isRunning.compareAndSet(false, true)) return@hrefLink
+            if (autoRetryEnabled.get()) {
+              retriesRemaining.set(settings.maxRetries)
+            } else {
+              retriesRemaining.set(0)
+            }
+            runIteration()
+          })
+          append("</span>&nbsp;&nbsp;")
+        }
+
+        // Auto-retry toggle
+        append("""<span style="display:inline-block;">""")
+        if (autoRetry) {
+          append(task.hrefLink("⏸ Disable Auto-Retry", classname = "href-link") {
+            log.info("Auto-retry disabled by user")
+            autoRetryEnabled.set(false)
+            retriesRemaining.set(0)
+            renderControlPanel()
+          })
+        } else {
+          append(task.hrefLink("▶ Enable Auto-Retry (${settings.maxRetries} max)", classname = "href-link") {
+            log.info("Auto-retry enabled by user")
+            autoRetryEnabled.set(true)
+            val currentState = state.get()
+            if ((currentState == RunState.FAILED_DONE || currentState == RunState.SUCCESS) && !isRunning.get()) {
+              retriesRemaining.set(settings.maxRetries)
+            }
+            renderControlPanel()
+          })
+        }
+        append("</span>")
+
+        // Stop button
+        if (running && autoRetry && remaining > 0) {
+          append("&nbsp;&nbsp;")
+          append("""<span style="display:inline-block;">""")
+          append(task.hrefLink("⏹ Stop After Current", classname = "href-link") {
+            log.info("User requested stop after current iteration")
+            retriesRemaining.set(0)
+            autoRetryEnabled.set(false)
+            renderControlPanel(statusOverride = "Stopping after current iteration completes...")
+          })
+          append("</span>")
+        }
+      }
+
+      // --- Iteration Counter ---
+      val iterationInfo = if (iteration > 0) {
+        val total = settings.maxRetries + 1
+        """<span style="font-size:0.85em;color:#666;">Iteration $iteration""" +
+            (if (autoRetry) " / $total max" else "") +
+            "</span>"
+      } else ""
+
+      // --- Assemble Control Panel ---
+      val html = """
+        <div class="patch-control-panel" style="border:1px solid #ccc;border-radius:8px;padding:14px 18px;margin:8px 0;background:#f8f9fa;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <div style="font-weight:600;font-size:1.1em;color:$statusColor;">$statusIcon $statusText</div>
+            <div>$iterationInfo</div>
+          </div>
+          $timeline
+          ${if (errorTrend.isNotBlank()) """<div style="margin:4px 0;">$errorTrend</div>""" else ""}
+          $persistentErrors
+          <div style="margin-top:10px;padding-top:8px;border-top:1px solid #e9ecef;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">$buttons</div>
+        </div>
+      """.trimIndent()
+      controlPanelBuffer.clear()
+      controlPanelBuffer.append(html)
       task.update()
     }
 
-    fun runIteration() {
-      if (retries < 0) {
-        retries = when {
-          settings.autoFix -> settings.maxRetries
-          else -> 0
+    private fun renderSummary() {
+      val currentState = state.get()
+      val html = when (currentState) {
+        RunState.SUCCESS -> {
+          val totalIterations = iterationHistory.size
+          val totalErrors = iterationHistory.sumOf { it.errorCount }
+          val fixedErrors = if (totalIterations > 1) iterationHistory.first().errorCount else 0
+          """<div style="border:1px solid #198754;border-radius:8px;padding:14px 18px;margin:8px 0;background:#d1e7dd;">
+           <div style="font-weight:600;font-size:1.05em;color:#0f5132;">✅ Build Successful</div>
+           <div style="font-size:0.9em;color:#0f5132;margin-top:4px;">
+             Completed in $totalIterations iteration${if (totalIterations > 1) "s" else ""}.
+             ${if (fixedErrors > 0) "Fixed $fixedErrors error${if (fixedErrors > 1) "s" else ""} along the way." else ""}
+           </div>
+         </div>"""
         }
-        log.debug("Initialized retries to $retries")
+
+        RunState.FAILED_DONE -> {
+          val lastRecord = iterationHistory.lastOrNull()
+          val errorCount = lastRecord?.errorCount ?: 0
+          """<div style="border:1px solid #dc3545;border-radius:8px;padding:14px 18px;margin:8px 0;background:#f8d7da;">
+           <div style="font-weight:600;font-size:1.05em;color:#842029;">❌ Build Failed</div>
+           <div style="font-size:0.9em;color:#842029;margin-top:4px;">
+             $errorCount error${if (errorCount != 1) "s" else ""} remaining after ${iterationHistory.size} iteration${if (iterationHistory.size > 1) "s" else ""}.
+             Use the Retry button above to try again, or review the iteration details below to apply fixes manually.
+           </div>
+         </div>"""
+        }
+
+        else -> ""
       }
-      val currentIteration = settings.maxRetries - retries + 1
-      val newTask =
-        task.linkedTask("Run Command${if (retries < settings.maxRetries) " (Retry ${settings.maxRetries - retries}/$settings.maxRetries)" else ""}")
+      summaryBuffer.clear()
+      summaryBuffer.append(html)
+      task.update()
+    }
+
+
+    private fun renderIterationArea() {
+      // Render expandable sections for each iteration's details
+      val sections = iterationTasks.entries.sortedByDescending { it.key }.joinToString("\n") { (iter, iterTask) ->
+        val record = iterationHistory.find { it.iteration == iter }
+        val icon = if (record?.exitCode == 0) "✅" else "❌"
+        val label = "$icon Iteration $iter" + (record?.let { r ->
+          val errInfo =
+            if (r.errorCount > 0) " — ${r.errorCount} error${if (r.errorCount > 1) "s" else ""}" else " — success"
+          errInfo
+        } ?: "")
+        val isLatest = iter == currentIteration.get()
+        val isRunning = this.isRunning.get() && isLatest
+        """<details${if (isLatest) " open" else ""}>
+          <summary style="cursor:pointer;font-weight:500;padding:6px 0;font-size:0.95em;">$label</summary>
+          <div style="padding:4px 0 12px 12px;border-left:2px solid #dee2e6;margin-left:8px;">
+            ${iterTask.placeholder}
+          </div>
+        </details>"""
+      }
+      iterationAreaBuffer.clear()
+      iterationAreaBuffer.append(
+        if (sections.isNotBlank()) """
+          <div style="margin-top:8px;">
+            <div style="font-weight:600;font-size:0.9em;color:#495057;margin-bottom:4px;">Iteration Details</div>
+            $sections
+          </div>
+        """.trimIndent() else ""
+      )
+      task.update()
+    }
+
+    private fun runIteration() {
+      val iteration = currentIteration.incrementAndGet()
+      state.set(RunState.RUNNING_COMMAND)
+      isRunning.set(true)
+      renderControlPanel()
+      renderSummary()
+
+      // Create a detached task for this iteration's output
+      val iterTask = task.ui.newTask(false)
+      iterationTasks[iteration] = iterTask
+      renderIterationArea()
+
       Thread {
-        log.info("Starting run thread")
-        updateStatus("Running command (Iteration $currentIteration)...")
-        val model = model.getChildClient(task)
-        val result = run(newTask, model, currentIteration)
-        log.info("Run completed with exit code: ${result.exitCode}")
-        if (result.exitCode != 0) {
-          if (retries > 0) {
-            val errorStats = previousParsedErrorsRecords
-              .flatMap { record ->
-                record.errors?.errors?.map { it.message to record.iteration } ?: emptyList()
-              }
-              .groupBy({ it.first }, { it.second })
-              .map { (msg, iters) -> "'${msg?.take(20)}...' (${iters.distinct().size} iters)" }
-              .joinToString(", ")
-            log.info("Triggering retry (${retries} remaining). Active errors: $errorStats")
-            updateStatus("Command failed. Retrying (${retries} remaining)... Active Errors: $errorStats")
-            retries -= 1
-            runIteration()
-          } else {
-            updateStatus("Command failed. No retries remaining.")
+        try {
+          log.info("Starting run thread, iteration $iteration")
+          val childModel = model.getChildClient(task)
+          // Wire up status updates to transition state for fix phase
+          val originalUpdateStatus = updateStatus
+          updateStatus = { message: String ->
+            if (message.contains("fix", ignoreCase = true) || message.contains("Applying", ignoreCase = true)) {
+              state.set(RunState.RUNNING_FIX)
+            }
+            log.info("Status update: $message")
+            renderControlPanel(statusOverride = message)
           }
-        } else {
-          updateStatus("Command successful.")
+          val result = executeIteration(iterTask, childModel, iteration)
+          updateStatus = originalUpdateStatus
+          log.info("Iteration completed with exit code: ${result.exitCode}")
+
+          val errorCount = result.errors?.errors?.size
+            ?: lastParsedErrors?.errors?.size
+            ?: 0
+          val errorSummaries = (result.errors?.errors ?: lastParsedErrors?.errors ?: emptyList())
+            .mapNotNull { it.message }
+
+          iterationHistory.add(
+            IterationRecord(
+              iteration = iteration,
+              exitCode = result.exitCode,
+              errorCount = errorCount,
+              errorSummaries = errorSummaries,
+              fixApplied = result.exitCode != 0
+            )
+          )
+
+          if (result.exitCode == 0) {
+            state.set(RunState.SUCCESS)
+            isRunning.set(false)
+            renderControlPanel()
+            renderSummary()
+            renderIterationArea()
+          } else {
+            val remaining = retriesRemaining.get()
+            if (remaining > 0 && autoRetryEnabled.get()) {
+              retriesRemaining.decrementAndGet()
+              state.set(RunState.FAILED_RETRYING)
+              log.info("Triggering retry ($remaining remaining)")
+              renderControlPanel()
+              renderSummary()
+              renderIterationArea()
+              runIteration()
+            } else {
+              state.set(RunState.FAILED_DONE)
+              isRunning.set(false)
+              renderControlPanel()
+              renderSummary()
+              renderIterationArea()
+            }
+          }
+        } catch (e: Exception) {
+          log.error("Error during run iteration", e)
+          iterationHistory.add(
+            IterationRecord(
+              iteration = iteration,
+              exitCode = -1,
+              errorCount = 0,
+              errorSummaries = listOf("Internal error: ${e.message}")
+            )
+          )
+          state.set(RunState.FAILED_DONE)
+          isRunning.set(false)
+          iterTask.error(e)
+          renderControlPanel()
+          renderSummary()
+          renderIterationArea()
         }
       }.start()
     }
-
-    task.add(task.hrefLink("Run Again", classname = "href-link play-button") {
-      if (retries <= 0 && settings.autoFix) {
-        retries = settings.maxRetries
-      }
-      runIteration()
-    })
-
-    runIteration()
-    log.info("Session setup complete")
-    return ui
   }
 
-  abstract fun projectSummary(): String
 
   private fun prunePaths(paths: List<Path>, maxSize: Int): List<Path> {
     log.debug("Pruning ${paths.size} paths to fit within $maxSize bytes")
@@ -300,24 +577,52 @@ abstract class PatchApp(
     var additionalInstructions: String = "",
   )
 
+  /**
+   * Top-level entry point: creates the SessionController which manages the full lifecycle.
+   * Called once per user session to set up the control panel and kick off the first iteration.
+   */
   fun run(
     task: SessionTask,
     model: ChatInterface,
     iteration: Int = 0
   ): OutputResult {
     log.info("Starting run with settings: ${JsonUtil.toJson(settings)}")
+    val controller = SessionController(task)
+    controller.start()
+    log.info("Session setup complete")
+    // The controller manages the full lifecycle asynchronously.
+    // Return a placeholder result; the controller handles retries internally.
+    return OutputResult(exitCode = -1, output = "Session started — see UI for progress.")
+  }
 
-    val tabs = TabbedDisplay(task)
-
-    val outputResult = output(task, settings, tabs)
+  /**
+   * Executes a single iteration: runs the command, parses errors, and applies fixes.
+   * Called by SessionController for each iteration.
+   */
+  internal fun executeIteration(
+    task: SessionTask,
+    model: ChatInterface,
+    iteration: Int = 0
+  ): OutputResult {
+    log.info("Starting iteration $iteration with settings: ${JsonUtil.toJson(settings)}")
+    // Phase 1: Run the command
+    val commandTask = task.ui.newTask(false)
+    task.add("<div style='font-weight:600;font-size:0.9em;color:#495057;margin:8px 0 4px;'>Command Output</div>")
+    task.add(commandTask.placeholder)
+    val outputResult = output(commandTask, settings)
     log.info("Command execution completed with exit code: ${outputResult.exitCode}")
+    commandTask.complete()
     if (outputResult.exitCode == 0) {
       log.info("Command executed successfully, no fixes needed")
-      task.complete("<div>\n<div><b>Command executed successfully</b></div>\n</div>")
+      task.add("""<div style="padding:8px 12px;background:#d1e7dd;border-radius:6px;margin:8px 0;color:#0f5132;font-weight:500;">✅ Command executed successfully</div>""")
+      task.complete()
       return outputResult
     }
-
-    val fixTask = task.ui.newTask(false).apply { tabs["Fix"] = placeholder }
+    // Phase 2: Parse errors
+    updateStatus("Parsing errors (Iteration $iteration)...")
+    val fixTask = task.ui.newTask(false)
+    task.add("<div style='font-weight:600;font-size:0.9em;color:#495057;margin:8px 0 4px;'>Fix Details</div>")
+    task.add(fixTask.placeholder)
     try {
       log.info("Creating child API client for fix task")
       val plan = if (outputResult.errors == null) {
@@ -332,23 +637,28 @@ abstract class PatchApp(
           override val obj: ParsedErrors = outputResult.errors
         }
       }
-
       val parsedErrors: ParsedErrors = plan.obj
       log.info("Parsed ${parsedErrors.errors?.size ?: 0} errors from output")
       lastParsedErrors = parsedErrors
-      val progressHeader = fixTask.header("Processing tasks...", 3)
-      val map = mapOf(
-        "Text" to plan.text.renderMarkdown(true),
-        "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(parsedErrors)}\n$tripleTilde".renderMarkdown(true),
-        "Process Details" to "Exit Code: ${outputResult.exitCode}\nCommand Output:\n$tripleTilde\n${outputResult.output}\n$tripleTilde".renderMarkdown(
-          true
-        )
-      ).filter { it.value.isNotBlank() }
-      fixTask.add(
-        TabbedDisplay.displayMapInTabs(map)
-      )
+      val progressHeader = fixTask.header("Processing ${parsedErrors.errors?.size ?: 0} error(s)...", 3)
+      // Show error analysis in expandable section
+      val analysisHtml = buildString {
+        append("<details><summary style='cursor:pointer;font-size:0.9em;color:#666;'>Error Analysis Details</summary>")
+        append("<div style='padding:8px;'>")
+        val map = mapOf(
+          "Text" to plan.text.renderMarkdown(true),
+          "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(parsedErrors)}\n$tripleTilde".renderMarkdown(true),
+          "Process Details" to "Exit Code: ${outputResult.exitCode}\nCommand Output:\n$tripleTilde\n${outputResult.output}\n$tripleTilde".renderMarkdown(
+            true
+          )
+        ).filter { it.value.isNotBlank() }
+        append(TabbedDisplay.displayMapInTabs(map))
+        append("</div></details>")
+      }
+      fixTask.add(analysisHtml)
       previousParsedErrorsRecords.add(ParsedErrorRecord(parsedErrors, iteration = iteration))
       log.info("Starting to fix all errors")
+      updateStatus("Applying fixes (Iteration $iteration)...")
       fixAllErrors(
         task = fixTask,
         plan = plan,
@@ -357,10 +667,12 @@ abstract class PatchApp(
         model = model,
         iteration = iteration
       )
+      fixTask.complete()
     } catch (e: Exception) {
       log.error("Error during fix process", e)
       fixTask.error(e)
     }
+    task.complete()
     return outputResult
   }
 
@@ -392,6 +704,8 @@ abstract class PatchApp(
       }
     }
     log.info("After filtering: ${filteredErrors.size} errors to fix")
+    val completedCount = AtomicInteger(0)
+    val totalErrors = filteredErrors.groupBy { it.message }.size
     filteredErrors.groupBy { it.message }
       .map { (msg, errors) ->
         log.info("Processing error group: $msg with ${errors.size} instances")
@@ -429,7 +743,7 @@ abstract class PatchApp(
                 it.isFile &&
                     it.length() < (1 * 1024 * 1024) &&
                     query.pattern?.isBlank() == false &&
-                    it.readText().contains(query.pattern ?: "", ignoreCase = true)
+                    it.readText().contains(query.pattern, ignoreCase = true)
               }.map { it.toPath() }.toList()
             }?.toSet() ?: emptySet()
             log.info("Search found ${searchResults.size} relevant files")
@@ -452,13 +766,15 @@ abstract class PatchApp(
               model,
               iteration
             )
-            statusBuffer.set("Status: Complete")
+            val completed = completedCount.incrementAndGet()
+            statusBuffer.set("Status: Complete ✅")
             subSession.update()
+            updateStatus("Fixing errors ($completed/$totalErrors complete)...")
           }
         }
       }.toTypedArray().onEach { it.get() }
     log.info("All error fixes have been submitted")
-    progressHeader?.set("Finished processing tasks")
+    progressHeader?.set("✅ Finished processing $totalErrors error group${if (totalErrors > 1) "s" else ""}")
     task.append("", false)
   }
 

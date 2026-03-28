@@ -40,6 +40,10 @@ class SessionProxyServer(appname: String = "Cognotik", path: String = "/") : App
     ?: throw IllegalStateException("No agent found for session $session")
 
   companion object {
+    fun setParentSession(child: Session, parent: Session) {
+      ApplicationServices.fileApplicationServices().usageManager.setParentSession(child, parent)
+    }
+
     val metadataStorage by lazy { ApplicationServices.fileApplicationServices().metadataStorageFactory }
     val agents = mutableMapOf<Session, SocketManager>()
     val chats = mutableMapOf<Session, ChatServer>()

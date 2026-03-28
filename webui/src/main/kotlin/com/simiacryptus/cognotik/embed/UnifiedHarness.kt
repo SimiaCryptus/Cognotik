@@ -226,6 +226,7 @@ open class UnifiedHarness(
     timeoutMinutes: Long = 30,
     message: String = "Execute task",
     executionConfig: TaskExecutionConfig,
+    parentSession: Session? = null,
     initSettings: (Session) -> OrchestrationConfig
   ): Session {
     val completionLatch = CountDownLatch(1)
@@ -274,28 +275,13 @@ open class UnifiedHarness(
           )
           return socketManager
         } else {
-          return super.newSession(user, session).apply {
-/*
-                        newTask(cancelable = false, root = true).expandable(
-                            "Session Info", """
-Session ID: `${session}`
-
-Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
-
-Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
-
-Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
-
-Task Type: `${taskType.name}`
-              """.renderMarkdown()
-                        )
-*/
-          }
+          return super.newSession(user, session)
         }
       }
     }
 
     if (!serverless) {
+      parentSession?.apply { SessionProxyServer.setParentSession(child = session, parent = this) }
       SessionProxyServer.chats[session] = singleTaskApp
       ApplicationServer.appInfoMap[session] = AppInfoData(
         applicationName = name,
@@ -332,27 +318,6 @@ Task Type: `${taskType.name}`
     }
 
     return session
-  }
-
-  private fun <T : TaskExecutionConfig, U : TaskTypeConfig> initFn(
-    typeConfig: U,
-    executionConfig: T,
-    workspace: File?,
-    autoFix: Boolean,
-    taskType: TaskType<T, U>
-  ): (Session) -> OrchestrationConfig = { session ->
-    SessionProxyServer.agents[session]?.resolveUserFile("task_${now()}.json")?.writeText(
-      mapOf(
-        "typeConfig" to typeConfig,
-        "exeConfig" to executionConfig
-      ).toJson()
-    )
-    createSettings(
-      session,
-      autoFix,
-      typeConfig,
-      this@UnifiedHarness.getRoot(workspace, session, taskType.name).absolutePath
-    )
   }
 
   open fun createSettings(
