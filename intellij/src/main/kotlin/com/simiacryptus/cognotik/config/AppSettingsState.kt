@@ -16,6 +16,7 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
+import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.log
 import com.simiacryptus.cognotik.diff.PatchProcessor
@@ -23,6 +24,7 @@ import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.plan.tools.CoreTasks
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -32,6 +34,7 @@ import com.simiacryptus.cognotik.util.BrowseUtil.BROWSER_INTELLIJ_BUILTIN
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import java.io.File
 import kotlin.random.Random
 
@@ -65,6 +68,8 @@ data class AppSettingsState(
     var imageModel: ApiImageModel? = null,
     /* Embedding Model Settings */
     var embeddingModel: EmbeddingModel? = null,
+
+    @JsonIgnore
     var processor: PatchProcessor = PatchProcessors.Fuzzy,
 
     /* AWS Settings */
@@ -280,6 +285,10 @@ data class AppSettingsState(
 
         @JvmStatic
         val instance: AppSettingsState by lazy {
+            CoreProviders.init()
+            CoreTasks.init()
+            ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+            initDynamicEnums()
             require(APIProvider.values().isNotEmpty()) { "No API providers registered" }
             ApplicationManager.getApplication()?.getService(AppSettingsState::class.java) ?: AppSettingsState()
         }

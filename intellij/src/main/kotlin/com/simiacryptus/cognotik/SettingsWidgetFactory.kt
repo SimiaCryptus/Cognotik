@@ -398,8 +398,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         init {
-            require(TaskType.values().isNotEmpty())
-            require(ToolProvider.values().isNotEmpty())
+//            require(TaskType.values().isNotEmpty())
+//            require(ToolProvider.values().isNotEmpty())
             AppSettingsState.onSettingsLoadedListeners.add {
                 Thread {
                     statusBar?.updateWidget(ID())
