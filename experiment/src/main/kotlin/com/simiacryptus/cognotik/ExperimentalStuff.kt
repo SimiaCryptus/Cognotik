@@ -4,6 +4,18 @@ import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.tools.TaskType
+import com.simiacryptus.cognotik.plan.tools.images.GenerateQRImageTask
+import com.simiacryptus.cognotik.plan.tools.images.GenerateSpriteSheetTask
+import com.simiacryptus.cognotik.plan.tools.images.ImageDecompositionTask
+import com.simiacryptus.cognotik.plan.tools.images.ImageTableTask
+import com.simiacryptus.cognotik.plan.tools.images.ImageVariationTask
+import com.simiacryptus.cognotik.plan.tools.images.SegmentedImageGenerationTask
+import com.simiacryptus.cognotik.plan.tools.images.TiledImageGenerationTask
+import com.simiacryptus.cognotik.plan.tools.office.BusinessProposalTask
+import com.simiacryptus.cognotik.plan.tools.office.PdfFormTask
+import com.simiacryptus.cognotik.plan.tools.office.GeneratePresentationTask
+import com.simiacryptus.cognotik.plan.tools.office.OCRTask
+import com.simiacryptus.cognotik.plan.tools.office.ReadDocumentsTask
 
 @Suppress("unused") class ExperimentalStuff : CognotikPlugin {
 
@@ -12,20 +24,20 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
         require(com.simiacryptus.cognotik.plan.cognitive.CognitiveSchemaStrategy.values().isNotEmpty())
 
         // --- Data & File Task Types ---
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.DataIngestTask.DataIngest)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.writing.DataTableCompilationTask.DataTableCompilation)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.reasoning.DecisionTreeTask.DecisionTree)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.FileAppendTask.FileAppend)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.FileSearch)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.session.JdbcSessionTask.JdbcSession)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.reasoning.EntropyReductionTreeTask.EntropyReductionTree)
+        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.DataIngest)
+        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.FileAppendTask.FileAppend)
+        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.FileSearchTask.FileSearch)
+        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.DecisionTreeTask.DecisionTree)
+        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.EntropyReductionTreeTask.EntropyReductionTree)
+        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.JdbcSessionTask.JdbcSession)
+        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.DataTableCompilationTask.DataTableCompilation)
 
         // --- Office & Document Task Types ---
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.writing.BusinessProposalTask.BusinessProposal)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.OCRTask.OCR)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.PdfFormTask.PdfForm)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.GeneratePresentationTask.GeneratePresentation)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.ReadDocuments)
+        TaskType.registerTaskType(BusinessProposalTask.BusinessProposal)
+        TaskType.registerTaskType(OCRTask.OCR)
+        TaskType.registerTaskType(PdfFormTask.PdfForm)
+        TaskType.registerTaskType(GeneratePresentationTask.GeneratePresentation)
+        TaskType.registerTaskType(ReadDocumentsTask.ReadDocuments)
 
         // --- Reasoning Task Types ---
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.reasoning.AbductiveReasoningTask.AbductiveReasoning)
@@ -65,13 +77,13 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.writing.TechnicalExplanationTask.TechnicalExplanation)
 
         // --- Image & Media Task Types ---
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.GenerateQRImageTask.GenerateQRImage)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.GenerateSpriteSheetTask.GenerateSpriteSheet)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.ImageDecompositionTask.ImageDecomposition)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.TiledImageGenerationTask.TiledImageGeneration)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.ImageTableTask.ImageTable)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.ImageVariationTask.ImageVariation)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.file.SegmentedImageGenerationTask.SegmentedImageGeneration)
+        TaskType.registerTaskType(GenerateQRImageTask.GenerateQRImage)
+        TaskType.registerTaskType(GenerateSpriteSheetTask.GenerateSpriteSheet)
+        TaskType.registerTaskType(ImageDecompositionTask.ImageDecomposition)
+        TaskType.registerTaskType(TiledImageGenerationTask.TiledImageGeneration)
+        TaskType.registerTaskType(ImageTableTask.ImageTable)
+        TaskType.registerTaskType(ImageVariationTask.ImageVariation)
+        TaskType.registerTaskType(SegmentedImageGenerationTask.SegmentedImageGeneration)
 
         // --- Game Design Task Types ---
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask.GameEconomy)

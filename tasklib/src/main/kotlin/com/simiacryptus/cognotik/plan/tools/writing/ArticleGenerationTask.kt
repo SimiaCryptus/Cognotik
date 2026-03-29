@@ -3,11 +3,12 @@ package com.simiacryptus.cognotik.plan.tools.writing
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
+import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.extractDocumentContent
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.FileSelectionUtils
@@ -20,6 +21,7 @@ import java.io.File
 import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.use
 
 class ArticleGenerationTask(
   orchestrationConfig: OrchestrationConfig,
@@ -803,5 +805,21 @@ Make each snippet:
                         </ul>
                       """,
     )
+    fun extractDocumentContent(file: File) = try {
+      file.getDocumentReader().use { reader ->
+        when (reader) {
+          is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+          else -> reader.getText()
+        }
+      }
+    } catch (e: Exception) {
+      log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+      try {
+        file.readText()
+      } catch (e2: Exception) {
+        "Error reading file: ${e2.message}"
+      }
+    }
+
   }
 }

@@ -17,7 +17,6 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.tools.newSettings
-import com.simiacryptus.cognotik.plan.tools.file.PdfFormTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
@@ -557,19 +556,6 @@ class TaskConfigDialog(
                 }
             }
         }
-        // Validate PdfFormTask fields
-        if (config is PdfFormTask.PdfFormTypeConfig) {
-            val templateFile = (configFields["template_file"] as? JBTextField)?.text?.trim()
-            if (templateFile.isNullOrEmpty()) {
-                Messages.showWarningDialog(
-                    "Template file path cannot be empty",
-                    "Invalid Value"
-                )
-                configFields["template_file"]?.requestFocusInWindow()
-                return false
-            }
-        }
-
 
         // Validate numeric fields
         configFields.forEach { (key, component) ->
