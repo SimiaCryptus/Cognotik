@@ -766,6 +766,24 @@ footer {
 
 /* ===== Dark Mode ===== */
 @media (prefers-color-scheme: dark) {
+     #plugin-manager-modal .modal-content {
+         background-color: #1e222e;
+         color: #e0e0e0;
+     }
+     #plugin-manager-modal table thead tr {
+         background: #262a36 !important;
+     }
+     #plugin-manager-modal table th {
+         border-bottom-color: #444 !important;
+         color: #ccc;
+     }
+     #plugin-manager-modal table tr {
+         border-bottom-color: #333 !important;
+     }
+     #plugin-manager-modal table tr:hover td {
+         background: #262a36;
+     }
+
     body {
         background-color: #121620;
         color: #e0e0e0;

@@ -20,6 +20,7 @@ import com.simiacryptus.cognotik.webui.servlet.UsageServlet
 import com.simiacryptus.cognotik.webui.servlet.UserInfoServlet
 import com.simiacryptus.cognotik.webui.servlet.UserSettingsServlet
 import com.simiacryptus.cognotik.webui.servlet.WelcomeServlet
+import com.simiacryptus.cognotik.webui.servlet.PluginManagerServlet
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.Servlet
@@ -91,6 +92,8 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized SimpleLoginServlet") }
   open val appDirectoryServlet: HttpServlet = AppDirectoryServlet()
     .also { log.debug("Initialized AppDirectoryServlet") }
+  open val pluginManagerServlet: HttpServlet = PluginManagerServlet()
+    .also { log.debug("Initialized PluginManagerServlet") }
 
 
   protected open val docopsServlet by lazy { DocProcessorServlet() }
@@ -174,6 +177,10 @@ abstract class ApplicationDirectory(
       log.debug("Configuring appDirectory context")
       authenticatedWebsite()?.configure(it, false) ?: it
     },
+     newWebAppContext("/pluginManager", pluginManagerServlet).let {
+       log.debug("Configuring pluginManager context with admin authentication")
+       authenticatedWebsite()?.configure(it, true) ?: it
+     },
    newWebAppContext("/login", simpleLoginServlet).also {
      log.debug("Configuring login context")
    },

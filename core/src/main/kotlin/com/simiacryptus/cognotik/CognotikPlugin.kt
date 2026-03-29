@@ -15,6 +15,5 @@ interface CognotikPlugin {
     /**
      * A human-readable name for this plugin.
      */
-    val pluginName: String
-        get() = javaClass.simpleName
+    val pluginName: String get() = javaClass.simpleName
 }
