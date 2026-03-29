@@ -108,6 +108,12 @@ jobs:
           echo "Starting plugin build..."
           ./gradlew :intellij:buildPlugin
           echo "Plugin build completed"
+      - name: Build experiment JAR
+        run: |
+          echo "Starting experiment JAR build..."
+          ./gradlew :experiment:jar
+          echo "Experiment JAR build completed"
+
 
       - name: Prepare Plugin Artifact
         id: artifact
@@ -119,6 +125,17 @@ jobs:
           echo "Found artifact: $FILENAME"
           echo "filename=${FILENAME:0:-4}" >> $GITHUB_OUTPUT
           echo "Artifact preparation completed"
+      - name: Prepare Experiment Artifact
+        id: experiment-artifact
+        shell: bash
+        run: |
+          echo "Preparing experiment artifact..."
+          cd ${{ github.workspace }}/experiment/build/libs
+          FILENAME=`ls *.jar | head -1`
+          echo "Found experiment artifact: $FILENAME"
+          echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
+          echo "Experiment artifact preparation completed"
+
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -126,11 +143,20 @@ jobs:
           name: ${{ steps.artifact.outputs.filename }}
           path: intellij/build/distributions/*
           retention-days: 30
+      - name: Upload experiment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: experiment-jar
+          path: experiment/build/libs/*.jar
+          retention-days: 30
+
 
       - name: List uploaded artifacts
         run: |
           echo "Uploaded artifacts in distributions directory:"
           ls -la intellij/build/distributions/
+          echo "Uploaded experiment artifacts:"
+          ls -la experiment/build/libs/
 
   build-windows-installer:
     name: Build Windows Installer
@@ -559,6 +585,12 @@ jobs:
         with:
           name: skyenet-mac-installer
           path: ./mac-installer
+      - name: Download Experiment JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: experiment-jar
+          path: ./experiment-jar
+
 
       - name: Upload Plugin Release Asset
         env:
@@ -612,3 +644,17 @@ jobs:
           echo "Found DMG file: $DMG_FILE"
           gh release upload "v${{ needs.build.outputs.version }}" \
             "$DMG_FILE"
+      - name: Upload Experiment JAR Asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Uploading experiment JAR asset..."
+          JAR_FILE=$(find ./experiment-jar -name "*.jar" -type f | head -1)
+          if [ -z "$JAR_FILE" ]; then
+            echo "Error: No JAR file found in experiment-jar directory"
+            ls -la ./experiment-jar
+            exit 1
+          fi
+          echo "Found JAR file: $JAR_FILE"
+          gh release upload "v${{ needs.build.outputs.version }}" \
+            "$JAR_FILE"
