@@ -32,6 +32,7 @@ class DocOpsApp(
     ),
     val appId: String,
     applicationName: String = appId,
+    val classLoader: ClassLoader = this.javaClass.classLoader,
 ) : ApplicationServer(
     applicationName = applicationName,
     path = "/$appId",
@@ -59,8 +60,8 @@ class DocOpsApp(
         val newSession = super.newSession(user, session)!!
         val sessionRoot = newSession.resolveUserFile(".")!!
 
-        val resourcePath = "/apps/$appId"
-        val resourceUrl = this.javaClass.getResource(resourcePath)
+        val resourcePath = "apps/$appId/"
+        val resourceUrl = classLoader.getResource(resourcePath)
             ?: throw IllegalStateException("Resource not found: $resourcePath")
         if (resourceUrl.protocol == "jar") {
             // Running from a JAR, need to use JarFile to read entries
@@ -68,24 +69,29 @@ class DocOpsApp(
             val entries = jarFile.entries()
             while (entries.hasMoreElements()) {
                 val entry = entries.nextElement()
+                val name = entry.name
                 try {
-                    if (entry.name.startsWith(resourcePath.substring(1))) {
-                        val entryPath = entry.name.substring(resourcePath.length)
-                        if (entry.isDirectory) {
-                            sessionRoot.resolve(entryPath).mkdirs()
-                        } else {
-                            val targetFile = sessionRoot.resolve(entryPath)
-                            targetFile.parentFile?.mkdirs()
-                            jarFile.getInputStream(entry).readAllBytes().let { input ->
-                                targetFile.outputStream().use { output ->
-                                    output.write(input)
-                                }
-                            }
+                  when {
+                    name.endsWith(".class") -> // Skip class files
+                      continue
+                    name.startsWith(resourcePath) -> {
+                      val entryPath = name.substring(resourcePath.length)
+                      if (entry.isDirectory) {
+                        sessionRoot.resolve(entryPath).mkdirs()
+                      } else {
+                        val targetFile = sessionRoot.resolve(entryPath)
+                        targetFile.parentFile?.mkdirs()
+                        jarFile.getInputStream(entry).readAllBytes().let { input ->
+                          targetFile.outputStream().use { output ->
+                            output.write(input)
+                          }
                         }
+                      }
                     }
+                  }
                 } catch (e: Exception) {
                     org.slf4j.LoggerFactory.getLogger(DocOpsApp::class.java)
-                        .warn("Failed to extract resource entry: ${entry.name}: ${e.message}", e)
+                        .warn("Failed to extract resource entry: $name: ${e.message}", e)
                 }
             }
         } else {

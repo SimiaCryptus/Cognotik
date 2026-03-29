@@ -1,9 +1,7 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     `java-library`
-    alias(libs.plugins.shadow)
     application
 }
 
@@ -27,9 +25,12 @@ java {
 }
 
 dependencies {
-    implementation(project(":core"))
-    implementation(project(":webui"))
-    implementation(project(":tasklib"))
+    compileOnly(project(":core"))
+    compileOnly(project(":webui"))
+    compileOnly(project(":tasklib"))
+    testImplementation(project(":core"))
+    testImplementation(project(":webui"))
+    testImplementation(project(":tasklib"))
     testImplementation(project(":providers"))
     testImplementation(project(":stdtools"))
 
@@ -95,14 +96,3 @@ tasks {
 }
 
 
-tasks.withType<ShadowJar> {
-    archiveClassifier.set("all")
-    mergeServiceFiles()
-    isZip64 = true
-    exclude("org/slf4j/impl/**")
-    manifest {
-        attributes(
-            "Main-Class" to "com.simiacryptus.cognotik.DaemonClient"
-        )
-    }
-}

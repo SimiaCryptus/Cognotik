@@ -21,13 +21,25 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class PluginManager : PluginManagerInterface {
 
-    private val log = LoggerFactory.getLogger(PluginManager::class.java)
+    init {
+        log.info("PluginManager initialized", RuntimeException("PluginManager init stack trace"))
+    }
 
-    /** Map from JAR file path to the classloader used to load it */
+  /** Map from JAR file path to the classloader used to load it */
     private val loadedJars = ConcurrentHashMap<String, URLClassLoader>()
 
     /** Map from JAR file path to the list of initialized plugins */
     private val loadedPlugins = ConcurrentHashMap<String, List<CognotikPlugin>>()
+
+    private val changeSubscribers = mutableListOf<() -> Unit>()
+
+    override fun subscribeToChanges(subscriber: () -> Unit) {
+        changeSubscribers.add(subscriber)
+    }
+
+    fun triggerChange() {
+        changeSubscribers.forEach { it.invoke() }
+    }
 
     /**
      * Load a plugin JAR and initialize all [CognotikPlugin] implementations
@@ -47,6 +59,7 @@ class PluginManager : PluginManagerInterface {
         log.info("Loading plugin JAR: {}", canonicalPath)
 
         val classLoader = URLClassLoader(
+            "Plugin: "+jarFile.name,
             arrayOf(jarFile.toURI().toURL()),
             this.javaClass.classLoader
         )
@@ -71,9 +84,11 @@ class PluginManager : PluginManagerInterface {
 
         if (plugins.isEmpty()) {
             log.warn("No CognotikPlugin implementations found in JAR: {}", canonicalPath)
+        } else {
+            loadedPlugins[canonicalPath] = plugins
+            triggerChange()
         }
 
-        loadedPlugins[canonicalPath] = plugins
         return plugins
     }
 
@@ -109,6 +124,7 @@ class PluginManager : PluginManagerInterface {
 
         val existing = loadedPlugins.getOrDefault(canonicalPath, emptyList())
         loadedPlugins[canonicalPath] = existing + plugin
+        triggerChange()
 
         log.info("Successfully initialized plugin: {}", plugin.pluginName)
         return plugin
@@ -140,6 +156,7 @@ class PluginManager : PluginManagerInterface {
             }
         }
 
+        triggerChange()
         return results
     }
 
@@ -155,12 +172,22 @@ class PluginManager : PluginManagerInterface {
         val classLoader = loadedJars.remove(canonicalPath)
         if (classLoader != null) {
             log.info("Unloading plugin JAR: {}", canonicalPath)
-            loadedPlugins.remove(canonicalPath)
+            val plugins = loadedPlugins.remove(canonicalPath)
+            plugins?.forEach { plugin ->
+                try {
+                    log.info("Unloading plugin: {}", plugin.pluginName)
+                    plugin.unload()
+                    log.info("Successfully unloaded plugin: {}", plugin.pluginName)
+                } catch (e: Exception) {
+                    log.error("Error unloading plugin: {} from {}", plugin.pluginName, canonicalPath, e)
+                }
+            }
             try {
                 classLoader.close()
             } catch (e: Exception) {
                 log.warn("Error closing classloader for JAR: {}", canonicalPath, e)
             }
+            triggerChange()
         } else {
             log.warn("Plugin JAR not loaded, cannot unload: {}", canonicalPath)
         }
@@ -175,4 +202,8 @@ class PluginManager : PluginManagerInterface {
      * Check if a JAR file has been loaded.
      */
     override fun isLoaded(jarFile: File): Boolean = loadedJars.containsKey(jarFile.canonicalPath)
+
+  companion object {
+    private val log = LoggerFactory.getLogger(PluginManager::class.java)
+  }
 }

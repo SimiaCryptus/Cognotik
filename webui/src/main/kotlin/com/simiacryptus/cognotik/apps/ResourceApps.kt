@@ -6,7 +6,10 @@ import com.simiacryptus.cognotik.CognotikPlugin
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.AppEntry
 
-open class ResourceApps(val resourcePath: String) : CognotikPlugin {
+open class ResourceApps(
+  val resourcePath: String,
+  val classLoader: ClassLoader = ResourceApps::class.java.classLoader
+) : CognotikPlugin {
 
     private val log = LoggerFactory.getLogger(ResourceApps::class.java)
 
@@ -25,13 +28,13 @@ open class ResourceApps(val resourcePath: String) : CognotikPlugin {
 
     override fun init() {
         try {
-            val json = ResourceApps::class.java.getResourceAsStream(resourcePath)
+            val json = classLoader.getResourceAsStream(resourcePath)
                 ?.bufferedReader()?.readText()
-                ?: throw IllegalStateException("apps.json not found on classpath")
+                ?: throw IllegalStateException("$resourcePath not found on classpath")
             val type = object : TypeToken<List<AppJsonEntry>>() {}.type
             val entries: List<AppJsonEntry> = Gson().fromJson(json, type)
             for (entry in entries) {
-                AppEntry.Companion.register(
+                AppEntry.register(
                   AppEntry(
                     name = entry.id,
                     id = entry.id,
@@ -43,7 +46,8 @@ open class ResourceApps(val resourcePath: String) : CognotikPlugin {
                     type = entry.type,
                     path = entry.path,
                     appId = entry.appId,
-                    cardClass = entry.cardClass
+                    cardClass = entry.cardClass,
+                    classLoader = classLoader
                   )
                 )
             }

@@ -1,32 +1,11 @@
 package com.simiacryptus.cognotik
 
+import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.tools.TaskType
 
-@Suppress("unused") object ExperimentalStuff : CognotikPlugin {
-
-
-    @JvmStatic
-    val Hierarchical = CognitiveModeType(
-         "Hierarchical", CognitiveModeConfig::class.java, inputCnt = com.simiacryptus.cognotik.plan.cognitive.HierarchicalPlanningMode.inputCnt
-    )
-
-    @JvmStatic
-     val Parallel = CognitiveModeType("Parallel", com.simiacryptus.cognotik.plan.cognitive.ParallelModeConfig::class.java, inputCnt = com.simiacryptus.cognotik.plan.cognitive.ParallelMode.inputCnt)
-
-    @JvmStatic
-     val Protocol = CognitiveModeType("Protocol", com.simiacryptus.cognotik.plan.cognitive.ProtocolModeConfig::class.java, inputCnt = com.simiacryptus.cognotik.plan.cognitive.ProtocolMode.inputCnt)
-
-    @JvmStatic
-     val Council = CognitiveModeType("Council", com.simiacryptus.cognotik.plan.cognitive.CouncilModeConfig::class.java, inputCnt = com.simiacryptus.cognotik.plan.cognitive.CouncilMode.inputCnt)
-
-    @JvmStatic
-     val PersonaChat = CognitiveModeType("PersonaChat", com.simiacryptus.cognotik.plan.cognitive.PersonaChatConfig::class.java, inputCnt = com.simiacryptus.cognotik.plan.cognitive.PersonaChatMode.inputCnt)
-
-    @JvmStatic
-     val Coding = CognitiveModeType("Coding", com.simiacryptus.cognotik.plan.cognitive.CodingMode.CodingModeConfig::class.java)
-
+@Suppress("unused") class ExperimentalStuff : CognotikPlugin {
 
     override fun init() {
 
@@ -126,6 +105,30 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
         CognitiveModeType.registerCognitiveMode(PersonaChat) { config, session, user -> com.simiacryptus.cognotik.plan.cognitive.PersonaChatMode(config, session, user) }
         CognitiveModeType.registerCognitiveMode(Coding) { config, session, user -> com.simiacryptus.cognotik.plan.cognitive.CodingMode(config, session, user) }
 
-        com.simiacryptus.cognotik.apps.ResourceApps("/apps/apps.json").init()
+        ResourceApps("apps/experimental_apps.json", ExperimentalStuff::class.java.classLoader).init()
+    }
+
+    companion object {
+
+        @JvmStatic
+        val Hierarchical = CognitiveModeType(
+            "Hierarchical", CognitiveModeConfig::class.java, inputCnt = com.simiacryptus.cognotik.plan.cognitive.HierarchicalPlanningMode.inputCnt
+        )
+
+        @JvmStatic
+        val Parallel = CognitiveModeType("Parallel", com.simiacryptus.cognotik.plan.cognitive.ParallelModeConfig::class.java, inputCnt = com.simiacryptus.cognotik.plan.cognitive.ParallelMode.inputCnt)
+
+        @JvmStatic
+        val Protocol = CognitiveModeType("Protocol", com.simiacryptus.cognotik.plan.cognitive.ProtocolModeConfig::class.java, inputCnt = com.simiacryptus.cognotik.plan.cognitive.ProtocolMode.inputCnt)
+
+        @JvmStatic
+        val Council = CognitiveModeType("Council", com.simiacryptus.cognotik.plan.cognitive.CouncilModeConfig::class.java, inputCnt = com.simiacryptus.cognotik.plan.cognitive.CouncilMode.inputCnt)
+
+        @JvmStatic
+        val PersonaChat = CognitiveModeType("PersonaChat", com.simiacryptus.cognotik.plan.cognitive.PersonaChatConfig::class.java, inputCnt = com.simiacryptus.cognotik.plan.cognitive.PersonaChatMode.inputCnt)
+
+        @JvmStatic
+        val Coding = CognitiveModeType("Coding", com.simiacryptus.cognotik.plan.cognitive.CodingMode.CodingModeConfig::class.java)
+
     }
 }
