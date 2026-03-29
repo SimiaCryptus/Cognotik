@@ -85,16 +85,6 @@ dependencies {
     implementation(libs.logback.classic)
     implementation(libs.logback.core)
 
-    // TODO: Re-enable for desktop packaging only (not cross-module importing)
-//    implementation(libs.openjfx.swing)
-//    implementation(libs.openjfx.graphics)
-//    implementation(libs.openjfx.base)
-//    implementation(libs.selenium.java)
-//    implementation(libs.webdrivermanager)
-//    implementation(platform("software.amazon.awssdk:bom:2.27.23"))
-//    implementation(libs.aws.sdk)
-//    implementation(libs.aws.sso)
-
     implementation(kotlin("stdlib"))
     implementation(kotlin("scripting-jsr223"))
     implementation(kotlin("scripting-jvm"))
@@ -127,7 +117,6 @@ tasks {
             "--add-opens",
             "java.base/sun.nio.ch=ALL-UNNAMED"
         )
-
         systemProperty("junit.jupiter.execution.parallel.enabled", "false")
     }
 }
@@ -154,55 +143,6 @@ tasks.withType<ShadowJar> {
         attributes(
             "Main-Class" to "com.simiacryptus.cognotik.DaemonClient"
         )
-    }
-}
-
-fun installContextMenuAction(os: String) {
-    val appName = "Cognotik"
-    val appDisplayName = "Cognotik"
-    val scriptPath = layout.buildDirectory.dir("jpackage/scripts").get().asFile
-    scriptPath.mkdirs()
-    when {
-        os.contains("windows") -> {
-            val regFile = scriptPath.resolve("add_skyenetapps_context_menu.reg")
-            val templateFile = layout.projectDirectory.file("src/packaging/windows/context_menu.reg.template").asFile
-            val templateContent = templateFile.readText()
-            val regContent = templateContent
-                .replace("{{appDisplayName}}", appDisplayName)
-                .replace("{{appName}}", appName)
-            regFile.writeText(regContent)
-            println("Wrote context menu .reg file to: $regFile")
-
-            val batchFile = scriptPath.resolve("install_context_menu.bat")
-            batchFile.writeText(
-                """
-                @echo off
-                echo Installing context menu entries...
-                regedit /s "%~dp0add_skyenetapps_context_menu.reg"
-                echo Context menu entries installed.
-                exit /b 0
-            """.trimIndent()
-            )
-            println("Wrote batch file to apply registry entries: $batchFile")
-        }
-
-        os.contains("mac") -> {
-
-            val plistFile = scriptPath.resolve("Cognotik.workflow/Contents/info.plist")
-            plistFile.parentFile.mkdirs()
-            val plistTemplateFile = layout.projectDirectory.file("src/packaging/macos/info.plist.template").asFile
-            val plistContent = plistTemplateFile.readText()
-                .replace("{{appDisplayName}}", appDisplayName)
-            plistFile.writeText(plistContent)
-
-            val script = scriptPath.resolve("Cognotik.workflow/Contents/document.wflow")
-            val wflowTemplateFile = layout.projectDirectory.file("src/packaging/macos/document.wflow.template").asFile
-            val wflowContent = wflowTemplateFile.readText()
-                .replace("{{appName}}", appName)
-            script.writeText(wflowContent)
-
-            println("Wrote context menu Quick Action to: ${script.parentFile}")
-        }
     }
 }
 
@@ -290,7 +230,7 @@ tasks.register("packageDmg", JPackageTask::class) {
                 "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
                 "--name", "Cognotik",
                 "--app-version", "${project.version}",
-                "--copyright", "Copyright © 2024 SimiaCryptus",
+                "--copyright", "Copyright © 2026 SimiaCryptus",
                 "--description", "Cognotik Agentic Toolkit",
                 "--resource-dir", resourceDir.path,
                 "--mac-package-name", "Cognotik",
@@ -298,7 +238,6 @@ tasks.register("packageDmg", JPackageTask::class) {
                 "--file-associations", layout.projectDirectory.file("src/packaging/macos/file-associations.properties").asFile.path
             )
         }
-        installContextMenuAction("mac")
     }
 }
 
@@ -331,90 +270,39 @@ tasks.register("packageMsi", JPackageTask::class) {
             into(resourceDir)
         }
 
-        installContextMenuAction("windows")
-
-        copy {
-            from(layout.buildDirectory.dir("jpackage/scripts").get().asFile) {
-                include("add_skyenetapps_context_menu.reg")
-                include("install_context_menu.bat")
-            }
-            into(resourceDir)
-        }
-
-        val userInstallerScript = File(resourceDir, "Setup_Context_Menu.bat")
-        userInstallerScript.writeText(layout.projectDirectory.file("src/packaging/windows/Setup_Context_Menu.bat.template").asFile.readText())
-        val uninstallerScript = File(resourceDir, "Uninstall_Context_Menu.bat")
-        uninstallerScript.writeText(layout.projectDirectory.file("src/packaging/windows/Uninstall_Context_Menu.bat.template").asFile.readText())
-        val removeRegFile = File(resourceDir, "remove_context_menu.reg")
-        val removeRegTemplateFile =
-            layout.projectDirectory.file("src/packaging/windows/remove_context_menu.reg.template").asFile
-        val removeRegContent = removeRegTemplateFile.readText().replace("{{appDisplayName}}", "Cognotik")
-        removeRegFile.writeText(removeRegContent)
-
         // Create a directory for additional resources that need to be included in the app directory
         val appResourcesDir = layout.buildDirectory.dir("jpackage/app-resources").get().asFile
         if (!appResourcesDir.exists()) {
             appResourcesDir.mkdirs()
         }
-        // Copy the registry file and batch script to the app resources directory
-        copy {
-            from(resourceDir) {
-                include("add_skyenetapps_context_menu.reg")
-                include("Setup_Context_Menu.bat")
-                include("remove_context_menu.reg")
-                include("Uninstall_Context_Menu.bat")
-            }
-            into(appResourcesDir)
-        }
-
 
         execOperations.exec {
             commandLine(
                 "jpackage",
-                "--type",
-                "msi",
-                "--input",
-                inputDir.path,
-                "--main-jar",
-                shadowJarName,
-                "--main-class",
-                "com.simiacryptus.cognotik.DaemonClient",
-                "--dest",
-                layout.buildDirectory.dir("jpackage").get().asFile.path,
-                "--name",
-                "Cognotik",
-                "--app-version",
-                project.version.toString().replace("-", "."),
-                "--copyright",
-                "Copyright © 2025 SimiaCryptus",
-                "--description",
-                "Cognotik Agentic Toolkit",
+                "--type", "msi",
+                "--input", inputDir.path,
+                "--main-jar", shadowJarName,
+                "--main-class", "com.simiacryptus.cognotik.DaemonClient",
+                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
+                "--name", "Cognotik",
+                "--app-version", project.version.toString().replace("-", "."),
+                "--copyright", "Copyright © 2026 SimiaCryptus",
+                "--description", "Cognotik Agentic Toolkit",
                 "--win-dir-chooser",
                 "--win-menu",
                 "--win-shortcut",
-                "--icon",
-                File(resourceDir, "toolbarIcon_128x128.ico").path,
-                "--resource-dir",
-                resourceDir.path,
-                "--temp",
-                layout.buildDirectory.dir("jpackage/temp").get().asFile.path,
-                "--app-content",
-                appResourcesDir.path,
+                "--icon", File(resourceDir, "toolbarIcon_128x128.ico").path,
+                "--resource-dir", resourceDir.path,
+                "--temp", layout.buildDirectory.dir("jpackage/temp").get().asFile.path,
+                "--app-content", appResourcesDir.path,
                 "--win-shortcut-prompt",
-                "--win-help-url",
-                "https://github.com/SimiaCryptus/Cognotik",
-                "--win-update-url",
-                "https://github.com/SimiaCryptus/Cognotik/releases",
-                "--file-associations",
-                layout.projectDirectory.file("src/packaging/windows/file-associations.properties").asFile.path,
-                "--install-dir",
-                "Cognotik",
-                "--vendor",
-                "SimiaCryptus",
+                "--win-help-url", "https://github.com/SimiaCryptus/Cognotik",
+                "--win-update-url", "https://github.com/SimiaCryptus/Cognotik/releases",
+                "--install-dir", "Cognotik",
+                "--vendor", "SimiaCryptus",
                 "--win-shortcut",
                 "--win-menu",
-                "--win-menu-group",
-                "Cognotik",
+                "--win-menu-group", "Cognotik",
                 "--win-shortcut-prompt",
             )
         }
@@ -529,13 +417,6 @@ tasks.register("buildDebManually", JPackageTask::class) {
         copy {
             from(appImageDir)
             into(appInstallDir)
-            // Ensure executables keep their permissions
-//            eachFile(Action<FileCopyDetails> {
-//                if (Files.isExecutable(file.toPath())) {
-//                    mode = mode or 0b001_001_001 // Add execute permissions ugo+x
-//                }
-//            })
-            // Remove the auto-generated .desktop file to avoid duplication
             exclude("lib/Cognotik.desktop")
         }
 
@@ -579,17 +460,16 @@ tasks.register("buildDebManually", JPackageTask::class) {
             .sum() / 1024
 
         controlFile.writeText(
-            """
-            Package: $packageName
-            Version: $version
-            Architecture: $arch
-            Maintainer: support@simiacryptus.com
-            Installed-Size: $installedSizeKb
-            Section: utils
-            Priority: optional
-            Description: Cognotik Agentic Toolkit
-             AI-powered application suite for various tasks.
-            """.trimIndent() + "\n"
+"""
+Package: $packageName
+Version: $version
+Architecture: $arch
+Maintainer: support@simiacryptus.com
+Installed-Size: $installedSizeKb
+Section: utils
+Priority: optional
+Description: Cognotik Agentic Toolkit
+""".trimIndent() + "\n"
         )
 
         // --- 7. Build the .deb package ---
@@ -659,6 +539,7 @@ tasks.register("verifyRuntimeEnvironment", JPackageTask::class) { // Inherit fro
         }
     }
 }
+
 tasks.register("debugPackagingEnvironment", JPackageTask::class) {
     group = "verification"
     description = "Prints debug information about the packaging environment"
@@ -682,6 +563,7 @@ tasks.register("debugPackagingEnvironment", JPackageTask::class) {
         }
     }
 }
+
 // Make packaging tasks depend on the debug task
 tasks.named("packageDmg").configure {
     dependsOn("debugPackagingEnvironment")

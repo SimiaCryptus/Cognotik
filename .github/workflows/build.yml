@@ -108,12 +108,12 @@ jobs:
           echo "Starting plugin build..."
           ./gradlew :intellij:buildPlugin
           echo "Plugin build completed"
+
       - name: Build experiment JAR
         run: |
           echo "Starting experiment JAR build..."
           ./gradlew :experiment:jar
           echo "Experiment JAR build completed"
-
 
       - name: Prepare Plugin Artifact
         id: artifact
@@ -125,6 +125,7 @@ jobs:
           echo "Found artifact: $FILENAME"
           echo "filename=${FILENAME:0:-4}" >> $GITHUB_OUTPUT
           echo "Artifact preparation completed"
+
       - name: Prepare Experiment Artifact
         id: experiment-artifact
         shell: bash
@@ -136,20 +137,19 @@ jobs:
           echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
           echo "Experiment artifact preparation completed"
 
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.artifact.outputs.filename }}
           path: intellij/build/distributions/*
           retention-days: 30
+
       - name: Upload experiment artifact
         uses: actions/upload-artifact@v4
         with:
           name: experiment-jar
           path: experiment/build/libs/*.jar
           retention-days: 30
-
 
       - name: List uploaded artifacts
         run: |
