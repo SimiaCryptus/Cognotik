@@ -1329,7 +1329,7 @@
     // defined once below. The duplicate block has been removed.
     async function fetchUsageForSession(sid) {
         try {
-            var resp = await fetch('/proxy/usage?sessionId=' + encodeURIComponent(sid) + '&format=json');
+            var resp = await fetch(basePath + '/usage.json');
             if (!resp.ok) return null;
             return await resp.json();
         } catch (e) {
@@ -1439,7 +1439,6 @@
             html += '</div>';
             html += '<div class="task-session-links">';
             html += '<a href="' + escapeHtml(proxyUrl) + '" target="_blank" class="btn btn-secondary btn-sm" title="View session log">📋 Log</a>';
-            html += '<a href="' + escapeHtml(usageUrl) + '" target="_blank" class="btn btn-secondary btn-sm" title="View usage details">💰 Usage</a>';
             html += '</div>';
             html += '</div>';
         });
@@ -1450,54 +1449,27 @@
         setStatus('usage-status', 'Loading…', '');
         var allModels = {};
         var taskUsageMap = {};
-        var sessionIds = [];
-        // Collect unique child task session IDs only.
-        // We intentionally exclude the parent sessionId to avoid double-counting,
-        // since the parent session's usage typically includes all child session usage.
-        var seenSessions = new Set();
-        for (var target in taskSessionMap) {
-            if (!taskSessionMap.hasOwnProperty(target)) continue;
-            var sid = taskSessionMap[target];
-            if (!seenSessions.has(sid)) {
-                seenSessions.add(sid);
-                sessionIds.push(sid);
-            }
-        }
-        // Only fall back to the parent session if we have no child task sessions at all.
-        // This avoids double-counting since parent usage includes child usage.
-        if (sessionIds.length === 0 && sessionId) {
-             seenSessions.add(sessionId);
-             sessionIds.push(sessionId);
-        }
-        if (sessionIds.length === 0) {
+        // Load usage data from the local usage.json file (archived run)
+        var usageData = await fetchUsageForSession(null);
+        if (!usageData) {
             renderUsageSummary(null);
             renderUsageTable([]);
             renderUsageJson(null);
             renderTaskSessions({});
-            setStatus('usage-status', 'No sessions to query', '');
+            setStatus('usage-status', 'No usage.json found', '');
             return;
         }
-        var fetchPromises = sessionIds.map(function(sid) {
-            return fetchUsageForSession(sid).then(function(data) {
-                return { sid: sid, data: data };
+        if (usageData.models) {
+            usageData.models.forEach(function(m) {
+                var key = m.model || 'unknown';
+                if (!allModels[key]) {
+                    allModels[key] = { model: key, prompt_tokens: 0, completion_tokens: 0, cost: 0 };
+                }
+                allModels[key].prompt_tokens += (m.prompt_tokens || 0);
+                allModels[key].completion_tokens += (m.completion_tokens || 0);
+                allModels[key].cost += (m.cost || 0);
             });
-        });
-        var results = await Promise.all(fetchPromises);
-        results.forEach(function(result) {
-            if (!result.data) return;
-            taskUsageMap[result.sid] = result.data;
-            if (result.data.models) {
-                result.data.models.forEach(function(m) {
-                    var key = m.model || 'unknown';
-                    if (!allModels[key]) {
-                        allModels[key] = { model: key, prompt_tokens: 0, completion_tokens: 0, cost: 0 };
-                    }
-                    allModels[key].prompt_tokens += (m.prompt_tokens || 0);
-                    allModels[key].completion_tokens += (m.completion_tokens || 0);
-                    allModels[key].cost += (m.cost || 0);
-                });
-            }
-        });
+        }
         var modelList = Object.values(allModels);
         modelList.sort(function(a, b) { return b.cost - a.cost; });
         var totalPrompt = 0, totalCompletion = 0, totalCost = 0;
@@ -1518,10 +1490,9 @@
         renderUsageSummary(aggregated.totals);
         renderUsageTable(aggregated.models);
         renderUsageJson(aggregated);
-        renderTaskSessions(taskUsageMap);
-        var sessionCount = sessionIds.length;
+        renderTaskSessions({});
         var modelCount = modelList.length;
-        setStatus('usage-status', '✓ Loaded from ' + sessionCount + ' session(s), ' + modelCount + ' model(s)', 'success');
+        setStatus('usage-status', '✓ Loaded from usage.json — ' + modelCount + ' model(s)', 'success');
     }
     var refreshUsageBtn = document.getElementById('refresh-usage');
     if (refreshUsageBtn) {

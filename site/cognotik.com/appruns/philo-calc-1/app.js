@@ -6,13 +6,16 @@
      var availableModels = {};
      async function loadApiProviders() {
          try {
-             var response = await fetch('/apiProviders/?format=json');
-             if (response.status >= 400) {
-                 console.warn('Could not load API providers:', response.status);
-                 return;
-             }
-             var providersResponse = await response.json();
-             var providers = providersResponse.configuredProviders || [];
+            var response = await fetch('usage.json');
+            if (response.status >= 400) {
+                console.warn('Could not load usage.json:', response.status);
+                return;
+            }
+            var usageData = await response.json();
+            // Support both direct array and wrapped { configuredProviders: [...] } formats
+            var providers = Array.isArray(usageData)
+                ? usageData
+                : (usageData.configuredProviders || []);
              availableModels = {};
              providers.forEach(function (provider) {
                  if (provider.models && provider.models.length > 0) {

@@ -1794,7 +1794,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
 
     async function fetchUsageData(taskSessionId) {
         try {
-            const url = `/proxy/usage?sessionId=${encodeURIComponent(taskSessionId)}&format=json`;
+            const url = basePath + '/usage.json';
             const resp = await fetch(url);
             if (!resp.ok) {
                 if (resp.status === 404) return null;
@@ -1802,7 +1802,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             }
             return await resp.json();
         } catch (e) {
-            console.warn('Could not fetch usage for session ' + taskSessionId + ':', e);
+            console.warn('Could not fetch usage.json:', e);
             return null;
         }
     }
@@ -1889,71 +1889,32 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
     async function refreshAllUsage() {
         setStatus('usage-status', 'Loading usage data…', '');
 
-        // Collect all known task session IDs
-        const statusData = await fetchDocopsStatus();
-        if (statusData && statusData.tasks) {
-            for (const [target, taskInfo] of Object.entries(statusData.tasks)) {
-                if (taskInfo.sessionId) {
-                    knownTaskSessionIds.add(taskInfo.sessionId);
-                }
-            }
-        }
 
-        if (knownTaskSessionIds.size === 0) {
-            setStatus('usage-status', 'No task sessions found yet.', '');
+
+
+
+
+        // Load usage from static usage.json (archived run)
+        const usage = await fetchUsageData(null);
+        if (!usage) {
+            setStatus('usage-status', 'No usage data available (usage.json not found).', '');
             return;
         }
 
-        // Aggregate usage across all task sessions
-        const allModels = {};
-        const taskUsageList = [];
-        let totalPrompt = 0;
-        let totalCompletion = 0;
-        let totalCost = 0;
-
-        for (const taskId of knownTaskSessionIds) {
-            const usage = await fetchUsageData(taskId);
-            if (usage && usage.models) {
-                taskUsageList.push({ sessionId: taskId, usage: usage });
-                usage.models.forEach(m => {
-                    if (!allModels[m.model]) {
-                        allModels[m.model] = { model: m.model, prompt_tokens: 0, completion_tokens: 0, cost: 0 };
-                    }
-                    allModels[m.model].prompt_tokens += (m.prompt_tokens || 0);
-                    allModels[m.model].completion_tokens += (m.completion_tokens || 0);
-                    allModels[m.model].cost += (m.cost || 0);
-                });
-            }
-            if (usage && usage.totals) {
-                totalPrompt += (usage.totals.prompt_tokens || 0);
-                totalCompletion += (usage.totals.completion_tokens || 0);
-                totalCost += (usage.totals.cost || 0);
-            }
-        }
-
-        const aggregated = {
-            models: Object.values(allModels),
-            totals: {
-                prompt_tokens: totalPrompt,
-                completion_tokens: totalCompletion,
-                cost: totalCost
-            }
-        };
-
-        lastUsageData = aggregated;
+        lastUsageData = usage;
 
         // Render the main usage table
-        renderUsageTable(aggregated, 'usage-table-container');
-        updateUsageSummaryBanner(aggregated);
+        renderUsageTable(usage, 'usage-table-container');
+        updateUsageSummaryBanner(usage);
 
         // Render the tab version too
-        renderUsageTable(aggregated, 'usage-tab-container');
+        renderUsageTable(usage, 'usage-tab-container');
 
-        // Render per-task usage
-        renderTaskUsageList(taskUsageList);
+        // No per-task breakdown for archived runs
+        renderTaskUsageList([]);
 
-        if (aggregated.models.length > 0) {
-            setStatus('usage-status', `✓ Loaded usage from ${knownTaskSessionIds.size} session(s)`, 'success');
+        if (usage.models && usage.models.length > 0) {
+            setStatus('usage-status', '✓ Loaded usage from usage.json', 'success');
         } else {
             setStatus('usage-status', 'No usage data recorded yet.', '');
         }

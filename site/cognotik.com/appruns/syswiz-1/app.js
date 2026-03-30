@@ -1294,13 +1294,9 @@ var proxyBase = '/proxy/';
     }
     async function fetchUsageJson(sid) {
         try {
-            var url = '/proxy/usage?sessionId=' + encodeURIComponent(sid) + '&format=json';
-            var resp = await fetch(url);
-            if (!resp.ok) {
-                if (resp.status === 404) return null;
-                return null;
-            }
-            return await resp.json();
+            var content = await readFile('usage.json');
+            if (content === null) return null;
+            return JSON.parse(content);
         } catch (e) {
             console.warn('Failed to fetch usage for session ' + sid + ':', e);
             return null;
@@ -1380,52 +1376,26 @@ var proxyBase = '/proxy/';
     async function loadUsageData() {
         // Collect child session IDs first
         collectChildSessionIds();
-        // Aggregate usage: main session + child sessions
+        // Load usage from local usage.json file
+        var usageData = await fetchUsageJson(sessionId);
         var allModels = {};
         var aggregatedTotals = { prompt_tokens: 0, completion_tokens: 0, cost: 0 };
         var childUsageResults = [];
-        // Fetch main session usage
-        if (sessionId) {
-            var mainUsage = await fetchUsageJson(sessionId);
-            if (mainUsage && mainUsage.models) {
-                mainUsage.models.forEach(function (m) {
-                    var key = m.model || 'unknown';
-                    if (!allModels[key]) {
-                        allModels[key] = { model: key, prompt_tokens: 0, completion_tokens: 0, cost: 0 };
-                    }
-                    allModels[key].prompt_tokens += (m.prompt_tokens || 0);
-                    allModels[key].completion_tokens += (m.completion_tokens || 0);
-                    allModels[key].cost += (m.cost || 0);
-                });
-            }
-            if (mainUsage && mainUsage.totals) {
-                aggregatedTotals.prompt_tokens += (mainUsage.totals.prompt_tokens || 0);
-                aggregatedTotals.completion_tokens += (mainUsage.totals.completion_tokens || 0);
-                aggregatedTotals.cost += (mainUsage.totals.cost || 0);
-            }
-        }
-        // Fetch child session usage
-        var childIds = Array.from(childSessionIds);
-        for (var i = 0; i < childIds.length; i++) {
-            var cid = childIds[i];
-            var childUsage = await fetchUsageJson(cid);
-            if (childUsage && childUsage.models && childUsage.models.length > 0) {
-                childUsageResults.push({ sessionId: cid, usage: childUsage });
-                childUsage.models.forEach(function (m) {
-                    var key = m.model || 'unknown';
-                    if (!allModels[key]) {
-                        allModels[key] = { model: key, prompt_tokens: 0, completion_tokens: 0, cost: 0 };
-                    }
-                    allModels[key].prompt_tokens += (m.prompt_tokens || 0);
-                    allModels[key].completion_tokens += (m.completion_tokens || 0);
-                    allModels[key].cost += (m.cost || 0);
-                });
-                if (childUsage.totals) {
-                    aggregatedTotals.prompt_tokens += (childUsage.totals.prompt_tokens || 0);
-                    aggregatedTotals.completion_tokens += (childUsage.totals.completion_tokens || 0);
-                    aggregatedTotals.cost += (childUsage.totals.cost || 0);
+        if (usageData && usageData.models) {
+            usageData.models.forEach(function (m) {
+                var key = m.model || 'unknown';
+                if (!allModels[key]) {
+                    allModels[key] = { model: key, prompt_tokens: 0, completion_tokens: 0, cost: 0 };
                 }
-            }
+                allModels[key].prompt_tokens += (m.prompt_tokens || 0);
+                allModels[key].completion_tokens += (m.completion_tokens || 0);
+                allModels[key].cost += (m.cost || 0);
+            });
+        }
+        if (usageData && usageData.totals) {
+            aggregatedTotals.prompt_tokens += (usageData.totals.prompt_tokens || 0);
+            aggregatedTotals.completion_tokens += (usageData.totals.completion_tokens || 0);
+            aggregatedTotals.cost += (usageData.totals.cost || 0);
         }
         // Update totals display
         updateUsageTotals(aggregatedTotals);

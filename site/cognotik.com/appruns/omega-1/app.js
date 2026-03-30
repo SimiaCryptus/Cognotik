@@ -1445,13 +1445,8 @@
     // === Usage Section ===
     var usageAutoRefreshTimer = null;
     async function fetchUsageData() {
-        if (!sessionId) {
-            throw new Error('No session ID available');
-        }
-        var url = '/proxy/usage?sessionId=' + encodeURIComponent(sessionId) + '&format=json';
-        var resp = await fetch(url, {
-            headers: { 'Accept': 'application/json' }
-        });
+        var url = basePath + '/usage.json';
+        var resp = await fetch(url);
         if (!resp.ok) {
             throw new Error('Failed to fetch usage data: ' + resp.status);
         }
