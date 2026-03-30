@@ -194,18 +194,6 @@ class OrchestrationConfig(
     return taskSettings.filter { it.value.task_type == taskType.name }.values.toList()
   }
 
-  /**
-   * Get a specific task configuration by task type and name
-   */
-  fun getTaskConfig(taskType: TaskType<*, *>, configName: String?): TaskTypeConfig? {
-    val configs = getTaskConfigs(taskType)
-    return if (configName != null) {
-      configs.firstOrNull { it.name == configName }
-    } else {
-      configs.firstOrNull()
-    }
-  }
-
 }
 
 fun String.instance(user: User): ApiChatModel? {

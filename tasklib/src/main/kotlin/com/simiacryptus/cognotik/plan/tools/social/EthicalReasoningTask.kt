@@ -52,7 +52,7 @@ class EthicalReasoningTask(
     @Description("A clear description of the ethical problem or decision to be made.")
     var ethical_dilemma: String? = null,
     @Description("Optional input files (supports glob patterns) to provide context for the ethical analysis")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     @Description("A list of individuals, groups, or entities affected by the decision.")
     var stakeholders: List<String>? = null,
     @Description("The ethical frameworks to apply. Options: utilitarianism, deontology, virtue_ethics, care_ethics, rights_based.")
@@ -172,7 +172,7 @@ class EthicalReasoningTask(
         )
 
         val priorContext = getPriorCode(agent.executionState)
-        val fileContext = executionConfig?.input_files?.let {
+        val fileContext = executionConfig?.related_files?.let {
           getInputFileContent(it, root)
         } ?: ""
 

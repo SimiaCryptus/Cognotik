@@ -26,9 +26,10 @@ object FileModificationTaskTest {
         task_type = FileModificationTask.FileModification.name
       ),
       executionConfig = FileModificationTaskExecutionConfigData(
-        files = listOf("Calculator.kt"),
         task_description = "Add a subtract function to the Calculator class",
-      ),
+      ).apply {
+        main_file = "Calculator.kt"
+      },
       timeoutMinutes = 10,
       user = com.simiacryptus.cognotik.platform.model.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,

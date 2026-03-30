@@ -29,8 +29,6 @@ class TiledImageGenerationTask(
 ) {
 
   class TiledImageGenerationConfig(
-    @Description("The output file path for the final high-res image")
-    var output_file: String? = "",
     @Description("List of prompts, one for each level of detail. The first is for the base image.")
     var prompts: List<String>? = null,
     @Description("Optional input file path to use as the base image instead of generating one.")
@@ -60,7 +58,7 @@ class TiledImageGenerationTask(
     state = state
   ) {
     override fun validate(): String? {
-      if (output_file.isNullOrBlank()) return "Output file must be specified"
+      if (main_file.isNullOrBlank()) return "Output file must be specified"
       if (prompts.isNullOrEmpty()) return "Prompts must be specified"
       return ValidatedObject.validateFields(this)
     }
@@ -101,7 +99,7 @@ class TiledImageGenerationTask(
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val outputFile = executionConfig?.output_file ?: "output.${executionConfig?.extension ?: "jpg"}"
+    val outputFile = executionConfig?.main_file ?: "output.${executionConfig?.extension ?: "jpg"}"
     val prompts = executionConfig?.prompts ?: return resultFn("No prompts specified")
     val inputFile = executionConfig?.input_file
     val maxDepth = prompts.size - 1

@@ -70,7 +70,7 @@ class InteractiveStoryTask(
     @Description("Point of view for the narrative. One of: 'second_person', 'first_person', 'third_person'.")
     var point_of_view: String = "second_person",
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the story. Null means no file context.")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
 
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -95,10 +95,10 @@ class InteractiveStoryTask(
       if (point_of_view.isBlank()) {
         return "point_of_view must not be blank"
       }
-      if (!input_files.isNullOrEmpty()) {
-        input_files?.forEach { pattern ->
+      if (!related_files.isNullOrEmpty()) {
+        related_files?.forEach { pattern ->
           if (pattern.isBlank()) {
-            return "input_files patterns must not be blank"
+            return "related_files patterns must not be blank"
           }
         }
       }
@@ -1225,7 +1225,7 @@ class InteractiveStoryTask(
     }
   }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       FileSelectionUtils.filteredWalk(root.toFile()) {

@@ -98,8 +98,8 @@ The UI has model selection in three different contexts:
 | Context              | Dropdown IDs                                                       | Purpose                 |
 |----------------------|--------------------------------------------------------------------|-------------------------|
 | **Quick Settings**   | `default-smart-model`, `default-fast-model`, `default-image-model` | Global defaults         |
-| **Basic Chat Modal** | `basic-chat-model`, `basic-chat-parsing-model`                     | Per-chat-session models |
-| **Pipeline Wizard**  | `model-selection`, `parsing-model`, `image-model`                  | Per-pipeline models     |
+| **Basic Chat Modal** | `basic-chat-model`                                                 | Per-chat-session models |
+| **Pipeline Wizard**  | `model-selection`, `fast-model`, `image-model`                     | Per-pipeline models     |
 
 ### Populating Dropdowns
 
@@ -166,7 +166,7 @@ const modelManager = new ModelManager({
 modelManager.populateModelSelections();
 ```
 
-`ModelManager.populateModelSelections()` targets `#model-selection`, `#parsing-model`, and `#image-model` in the
+`ModelManager.populateModelSelections()` targets `#model-selection`, `#fast-model`, and `#image-model` in the
 pipeline wizard.
 
 ### Persisting Model Choices
@@ -175,11 +175,9 @@ Model selections are saved to `localStorage` under these keys:
 
 | localStorage Key        | Purpose                              |
 |-------------------------|--------------------------------------|
-| `smartModel`     | Primary/smart model for all contexts |
-| `fastModel`      | Fast/parsing model                   |
+| `smartModel`     | Smart model for all contexts         |
+| `fastModel`      | Fast model                   |
 | `imageModel`     | Image generation model               |
-| `basicChatModel`        | Chat-specific smart model override   |
-| `basicChatParsingModel` | Chat-specific parsing model override |
 
 When saving quick settings:
 
@@ -222,6 +220,15 @@ config = {
 
 The `DocProcessorServlet` parses a markdown file containing frontmatter specifications and executes documentation
 processing tasks. It can generate, transform, or update files based on the instructions in the markdown.
+### ⚠️ Model Parameters Are Required
+**You MUST provide model parameters when calling the DocProcessor servlet.** The servlet does not automatically inherit
+any globally configured defaults — if you omit the `smartModel`, `fastModel`, and `imageModel` parameters, the server
+will fall back to hardcoded defaults that may not match the user's configured API keys or preferred models. This will
+result in failed requests or unexpected behavior.
+**Every call to `/docops` should include `smartModel` and `fastModel` at minimum.** These values should come from
+the user's selection (either from `localStorage` or directly from the model dropdown elements). Never call the
+DocProcessor without resolving and attaching model parameters.
+
 
 ### Endpoint
 
@@ -231,20 +238,20 @@ GET or POST /docops
 
 ### Required Parameters
 
-| Parameter   | Type   | Required | Description                                                                  |
-|-------------|--------|----------|------------------------------------------------------------------------------|
-| `sessionId` | string | **Yes**  | Session ID (e.g., `U-20250310-i2oc2f`) that identifies the working directory |
-| `doc`       | string | **Yes**  | Path to the markdown file, relative to the session root                      |
+| Parameter    | Type   | Required | Description                                                                  |
+|--------------|--------|----------|------------------------------------------------------------------------------|
+| `sessionId`  | string | **Yes**  | Session ID (e.g., `U-20250310-i2oc2f`) that identifies the working directory |
+| `doc`        | string | **Yes**  | Path to the markdown file, relative to the session root                      |
+| `smartModel` | string | **Yes**  | Model ID for the primary/smart model (from user's model selection)           |
+| `fastModel`  | string | **Yes**  | Model ID for the fast/secondary model (from user's model selection)          |
 
-### Optional Parameters
+### Optional Parameters  
 
 | Parameter    | Type   | Default         | Description                                                                                                          |
 |--------------|--------|-----------------|----------------------------------------------------------------------------------------------------------------------|
 | `target`     | string | *(all tasks)*   | Specific output file path to process (relative to session root). If omitted, all tasks in the document are executed. |
 | `mode`       | string | `PatchExisting` | Update mode. Must match a value from `UpdateModes`.                                                                  |
-| `smartModel` | string | `Claude45Haiku` | Model ID for the primary/smart model                                                                                 |
-| `fastModel`  | string | `Claude45Haiku` | Model ID for the fast/secondary model                                                                                |
-| `imageModel` | string | `Claude45Haiku` | Model ID for image processing                                                                                        |
+| `imageModel` | string | *(none)*        | Model ID for image processing (required if pipeline includes image tasks)                                            |
 
 ### Model Resolution on the Server
 
@@ -423,4 +430,3 @@ Server: resolveModel(model.id) → ChatModel instance
 The `model.id` string is the single consistent identifier used across the entire stack — from server registration,
 through the API response, into dropdown `option.value`, into `localStorage`, and back to the server as a query
 parameter.
-

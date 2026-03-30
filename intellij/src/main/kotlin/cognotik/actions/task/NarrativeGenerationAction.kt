@@ -380,7 +380,7 @@ class NarrativeGenerationAction : BaseAction() {
 
             return NarrativeGenerationTask.NarrativeGenerationTaskExecutionConfigData(
                 subject = subjectField.text,
-                input_files = inputFiles,
+                related_files = inputFiles,
                 narrative_elements = narrativeElements,
                 target_word_count = targetWordCountSpinner.value as Int,
                 number_of_acts = numberOfActsSpinner.value as Int,

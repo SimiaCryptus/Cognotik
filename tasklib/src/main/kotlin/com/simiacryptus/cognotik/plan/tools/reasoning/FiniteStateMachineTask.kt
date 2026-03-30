@@ -46,7 +46,7 @@ class FiniteStateMachineTask(
     @Description("Domain or context for the FSM (e.g., 'authentication system', 'order processing')")
     var domain_context: String? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -695,7 +695,7 @@ Format as a clear table or structured list.
     """.trimIndent()
   }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {

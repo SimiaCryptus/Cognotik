@@ -40,8 +40,6 @@ class DataTableCompilationTask(
   class DataTableCompilationTaskExecutionConfigData(
     @Description("List of file glob patterns to include in the data compilation")
     var file_patterns: List<String> = listOf(),
-    @Description("REQUIRED: Output file path where the compiled data table will be saved (CSV or JSON)")
-    var output_file: String = "compiled_data.json",
     @Description("Instructions for identifying rows in the data")
     var row_identification_instructions: String = "",
     @Description("Instructions for identifying columns in the data")
@@ -85,12 +83,12 @@ class DataTableCompilationTask(
   ) {
     val transcript = task.newUserFileStream(transcriptFile())
     try {
-      log.info("Starting DataTableCompilationTask. Output: ${executionConfig?.output_file}")
+      log.info("Starting DataTableCompilationTask. Output: ${executionConfig?.main_file}")
       renderTaskHeader(task)
       transcript?.write("# Data Table Compilation Task\n\n".toByteArray())
       transcript?.write("## Configuration\n\n".toByteArray())
       transcript?.write("- File Patterns: ${executionConfig?.file_patterns?.joinToString(", ")}\n".toByteArray())
-      transcript?.write("- Output File: ${executionConfig?.output_file}\n\n".toByteArray())
+      transcript?.write("- Output File: ${executionConfig?.main_file}\n\n".toByteArray())
 
       task.header("Step 1: Collecting Files", level = 3)
       val result = mutableListOf<Path>()
@@ -297,7 +295,7 @@ class DataTableCompilationTask(
 
       task.header("Step 5: Finalizing Table", level = 3)
 
-      val outputPath = executionConfig?.output_file ?: "compiled_data.json"
+      val outputPath = executionConfig?.main_file ?: "compiled_data.json"
 
 
       val markdownTable = StringWriter().use {

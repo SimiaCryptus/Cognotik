@@ -34,7 +34,7 @@ class TemporalReasoningTask(
     @Description("Granularity of analysis: daily, weekly, monthly, quarterly, yearly")
     var granularity: String = "weekly",
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     @Description("Whether to identify temporal patterns and cycles")
     var identify_patterns: Boolean = true,
     @Description("Whether to predict future states")
@@ -43,8 +43,6 @@ class TemporalReasoningTask(
     var prediction_horizon: String? = "3 months",
     @Description("Critical events to highlight in the timeline")
     var critical_events: List<String>? = null,
-    @Description("Related files containing temporal data (logs, metrics, etc.)")
-    var related_files: List<String>? = null,
     @Description("Whether to analyze rate of change and acceleration")
     var analyze_rate_of_change: Boolean = true,
     @Description("Whether to identify critical transition points")
@@ -614,7 +612,7 @@ Generate the Mermaid timeline diagram now:
   }
 
   private fun gatherTemporalData(): String {
-    val inputFiles = (executionConfig?.input_files ?: emptyList()) +
+    val inputFiles = (executionConfig?.related_files ?: emptyList()) +
         (executionConfig?.related_files ?: emptyList())
 
     if (inputFiles.isEmpty()) {

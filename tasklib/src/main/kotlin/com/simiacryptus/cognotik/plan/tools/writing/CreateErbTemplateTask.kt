@@ -32,7 +32,7 @@ class CreateErbTemplateTask(
     @Description("Description of the template to generate, including its purpose and expected data structure")
     var template_description: String? = null,
     @Description("The output file path for the generated template (relative to working directory)")
-    var output_file: String? = null,
+    override var main_file: String = "",
     @Description("The target format for the template output (e.g., 'latex', 'html', 'markdown', 'text')")
     var output_format: String = "latex",
     @Description("Example data structure in JSON format to help define the schema")
@@ -54,7 +54,7 @@ class CreateErbTemplateTask(
       if (template_description.isNullOrBlank()) {
         return "Template description is required"
       }
-      if (output_file.isNullOrBlank()) {
+      if (main_file.isNullOrBlank()) {
         return "Output file path is required"
       }
       return ValidatedObject.validateFields(this)
@@ -245,7 +245,7 @@ $templateResult
       val extractedTemplate = extractTemplate(templateResult)
 
       val autoFix = orchestrationConfig.autoFix
-      val outputFile = executionConfig?.output_file ?: "template.erb"
+      val outputFile = executionConfig?.main_file ?: "template.erb"
       val outputPath = agent.root.resolve(outputFile)
 
       if (autoFix) {

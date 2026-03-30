@@ -882,6 +882,135 @@
             font-size: 0.8rem;
             color: var(--text-muted);
         }
+        /* === Usage Section === */
+        .usage-summary-cards {
+            margin-bottom: 1.25rem;
+        }
+        .usage-totals-row {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .usage-total-item {
+            flex: 1;
+            min-width: 140px;
+            text-align: center;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-primary);
+        }
+        .usage-total-label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.35rem;
+            font-weight: 600;
+        }
+        .usage-total-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+        .usage-total-cost {
+            border-color: var(--color-success);
+            background: var(--color-success-bg);
+        }
+        .usage-total-cost .usage-total-value {
+            color: var(--color-success);
+        }
+        .usage-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.75rem;
+        }
+        .usage-table th,
+        .usage-table td {
+            border: 1px solid var(--border-primary);
+            padding: 0.6rem 0.85rem;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        .usage-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            letter-spacing: 0.04em;
+        }
+        .usage-table tr:hover td {
+            background: var(--bg-tertiary);
+        }
+        .usage-table .usage-row-total {
+            font-weight: 700;
+            border-top: 2px solid var(--border-primary);
+        }
+        .usage-table .usage-row-total td {
+            background: var(--bg-secondary);
+        }
+        .usage-table td.usage-cell-model {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--color-purple);
+        }
+        .usage-table td.usage-cell-number {
+            font-family: var(--font-mono);
+            text-align: right;
+            color: var(--text-primary);
+        }
+        .usage-table td.usage-cell-cost {
+            font-family: var(--font-mono);
+            text-align: right;
+            color: var(--color-success);
+            font-weight: 600;
+        }
+        .usage-empty {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        .usage-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .usage-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .usage-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        .usage-bar-fill.bar-prompt {
+            background: var(--color-accent);
+        }
+        .usage-bar-fill.bar-completion {
+            background: var(--color-purple);
+        }
+        .usage-bar-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            min-width: 3rem;
+            text-align: right;
+            font-family: var(--font-mono);
+        }
+        .usage-last-updated {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            text-align: right;
+        }
+
 
 
         /* === Responsive === */
@@ -893,4 +1022,6 @@
             .pipeline-flow { justify-content: flex-start; }
             .git-commit-row, .git-branch-row { flex-direction: column; align-items: stretch; }
             .git-commit-row .btn, .git-branch-row .btn { width: 100%; justify-content: center; }
+            .usage-totals-row { flex-direction: column; }
+            .usage-total-item { min-width: unset; }
         }

@@ -57,12 +57,8 @@ open class FrontmatterOrchestrationMode(
     var autoExecute: Boolean = true,
     /** Default overwrite mode for generated specifications */
     var defaultOverwriteMode: UpdateModes = UpdateModes.PatchToUpdate,
-    /** File extension for specification documents */
-    var specFileExtension: String = ".spec.md",
     /** Whether to keep specification files after execution */
     var preserveSpecs: Boolean = true,
-    /** Maximum number of specifications to generate in a single plan */
-    var maxSpecsPerPlan: Int = 20
   ) : CognitiveModeConfig(type = FrontmatterOrchestration)
 
   /**

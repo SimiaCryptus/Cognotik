@@ -29,8 +29,6 @@ class RenderErbTemplateTask(
     var data: Map<String, Any?>? = null,
     @Description("Optional: Override the template file path from type config")
     var template_file: String? = null,
-    @Description("List of output file paths to write the rendered content to (only one supported)")
-    override var files: List<String> = emptyList(),
     task_description: String? = null,
     task_dependencies: MutableList<String>? = null,
     state: TaskState? = null
@@ -43,9 +41,6 @@ class RenderErbTemplateTask(
     override fun validate(): String? {
       if (data == null || data!!.isEmpty()) {
         return "template_data must be provided and non-empty"
-      }
-      if (files.size != 1) {
-        return "Only one output file path is supported"
       }
       return ValidatedObject.validateFields(this)
     }
@@ -176,7 +171,7 @@ $renderedContent
       )
 
       // 5. Optionally write to file
-      val outputPath = executionConfig?.files?.first()
+      val outputPath = executionConfig?.let { listOf(it.main_file) }?.first()
       if (!outputPath.isNullOrBlank()) {
         val outputFile = agent.root.resolve(outputPath).toFile()
         outputFile.parentFile?.mkdirs()

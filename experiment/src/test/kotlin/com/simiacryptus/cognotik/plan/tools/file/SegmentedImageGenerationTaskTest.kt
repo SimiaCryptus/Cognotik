@@ -35,8 +35,9 @@ class SegmentedImageGenerationTaskTest {
         ),
         min_region_size = 50,
         upscale_factor = 3.0,
-        output_file = output_file
-      ),
+      ).apply {
+        this.main_file = output_file
+      },
       temperature = 0.7,
       timeoutMinutes = 30,
       typeConfig = TaskTypeConfig(SegmentedImageGenerationTask.SegmentedImageGeneration.name),

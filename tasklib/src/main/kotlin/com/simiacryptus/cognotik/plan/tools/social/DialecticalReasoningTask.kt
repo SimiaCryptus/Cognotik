@@ -54,8 +54,6 @@ class DialecticalReasoningTask(
     @Description("Whether to preserve strengths from both sides in synthesis")
     var preserve_strengths: Boolean = true,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
-    @Description("Additional files for context")
     var related_files: List<String>? = null,
     @Description("List of task IDs this task depends on")
     task_dependencies: List<String>? = null,
@@ -85,7 +83,7 @@ class DialecticalReasoningTask(
     appendLine("  ** Provide context to ground the dialectical analysis")
     appendLine("  ** Configure synthesis_levels (1-5) to iterate toward higher understanding")
     appendLine("  ** Set preserve_strengths=true to maintain valuable aspects of both sides")
-    appendLine("  ** input_files and related_files can provide additional context")
+    appendLine("  ** related_files can provide additional context")
     appendLine("  ** Explores contradictions and tensions between positions")
     appendLine("  ** Generates synthesis that transcends opposition")
     appendLine("  ** Iterates to progressively higher levels of understanding")
@@ -598,7 +596,7 @@ class DialecticalReasoningTask(
   }
 
   private fun getInputFileCode(): String {
-    val inputFiles = executionConfig?.input_files ?: return ""
+    val inputFiles = executionConfig?.related_files ?: return ""
     return inputFiles.flatMap { pattern ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       FileSelectionUtils.filteredWalk(root.toFile()) {

@@ -26,12 +26,13 @@ object IllustrateDocumentTaskTest {
         task_type = IllustrateDocumentTask.IllustrateDocument.name
       ),
       executionConfig = IllustrateDocumentTaskExecutionConfigData(
-        files = listOf("test_document.md"),
         max_images = 1,
         auto_insert = true,
         composer_directive = "Create a simple technical diagram style illustration",
         integrator_directive = "Insert the image after the first paragraph"
-      ),
+      ).apply {
+        main_file = "test_document.md"
+      },
       timeoutMinutes = 10,
       user = com.simiacryptus.cognotik.platform.model.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,

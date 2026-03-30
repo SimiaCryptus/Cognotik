@@ -33,7 +33,6 @@ class IterativeFileModificationTask(
 ) {
 
   class IterativeFileModificationTaskExecutionConfigData(
-    files: List<String> = emptyList(),
     related_files: List<String>? = null,
     @Description("Maximum number of change items to generate in the planning phase")
     val max_changes: Int = 10,
@@ -47,11 +46,10 @@ class IterativeFileModificationTask(
     task_description = task_description,
     task_dependencies = task_dependencies,
     related_files = related_files,
-    files = files,
     state = state
   ), ValidatedObject {
     override fun validate(): String? {
-      if (files.isNullOrEmpty() && related_files.isNullOrEmpty()) {
+      if (listOf<String>(main_file).isEmpty() && related_files.isNullOrEmpty()) {
         return "At least one file must be specified in either 'files' or 'related_files'"
       }
       if (max_changes < 1 || max_changes > 50) {
@@ -297,7 +295,7 @@ ${planResult.text}
       parsedChanges.mapIndexed { idx, change ->
         change.copy(
           index = idx + 1,
-          targetFiles = change.targetFiles.ifEmpty { executionConfig?.files ?: emptyList() }
+          targetFiles = change.targetFiles.ifEmpty { executionConfig?.let { listOf(it.main_file) } ?: emptyList() }
         )
       }.take(executionConfig?.max_changes ?: 10)
     } else {
@@ -439,15 +437,17 @@ $implementationResponse
       // Try to extract target files from description
       val filePattern = Regex("""(?:file[s]?|target[s]?):\s*([^\n]+)""", RegexOption.IGNORE_CASE)
       val fileMatch = filePattern.find(description)
-      val targetFiles = fileMatch?.groupValues?.get(1)?.split(",")?.map { it.trim() }
-        ?: executionConfig?.files ?: listOf()
 
       changes.add(
         PlannedChange(
           index = currentIndex,
           title = title,
           description = description,
-          targetFiles = targetFiles,
+          targetFiles = fileMatch?.groupValues?.get(1)?.split(",")?.map { it.trim() } ?: executionConfig?.let {
+            listOf(
+              it.main_file
+            )
+          } ?: listOf(),
           rationale = "Part of: ${executionConfig?.task_description}"
         )
       )
@@ -462,7 +462,7 @@ $implementationResponse
           index = 1,
           title = "Implement Modification",
           description = response,
-          targetFiles = executionConfig?.files ?: listOf(),
+          targetFiles = executionConfig?.let { listOf(it.main_file) } ?: listOf(),
           rationale = executionConfig?.task_description ?: ""
         )
       )

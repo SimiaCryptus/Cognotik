@@ -255,7 +255,7 @@ Provide this in a clear, structured format.
     @Description("Additional context or constraints")
     var additional_context: String? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -797,7 +797,7 @@ GameTheory - Analyze strategic interactions using game theory
     appendLine("**Analysis completed in ${(System.currentTimeMillis() - startTime) / 1000}s**")
   }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (FileSelectionUtils.filteredWalk(root.toFile()) {

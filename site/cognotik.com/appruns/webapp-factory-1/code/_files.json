@@ -1,0 +1,15 @@
+{
+  "path": "code",
+  "totalFiles": 5,
+  "totalFolders": 3,
+  "entries": [
+    {"name": "GAME_DESIGN.md", "type": "file", "size": 2112, "lastModified": 1774822400253, "mimeType": "application/octet-stream"},
+    {"name": "README.md", "type": "file", "size": 11132, "lastModified": 1774821851342, "mimeType": "application/octet-stream"},
+    {"name": "SPECIFICATION.md", "type": "file", "size": 3489, "lastModified": 1774822400254, "mimeType": "application/octet-stream"},
+    {"name": "css", "type": "directory", "lastModified": 1774821576882},
+    {"name": "dir.info", "type": "file", "size": 22, "lastModified": 1774821250309, "mimeType": "application/octet-stream"},
+    {"name": "docs", "type": "directory", "lastModified": 1774822460133},
+    {"name": "index.html", "type": "file", "size": 931, "lastModified": 1774822400260, "mimeType": "text/html"},
+    {"name": "js", "type": "directory", "lastModified": 1774823185877}
+  ]
+}

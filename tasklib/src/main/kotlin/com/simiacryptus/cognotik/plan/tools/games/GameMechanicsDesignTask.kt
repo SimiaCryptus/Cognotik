@@ -46,7 +46,7 @@ class GameMechanicsDesignTask(
     @Description("Whether to generate detailed tuning guide")
     var generate_tuning_guide: Boolean = true,
     @Description("Optional input files for context (e.g., design docs, reference games)")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -411,7 +411,7 @@ class GameMechanicsDesignTask(
         // Gather context
         log.debug("Gathering context from prior tasks and input files")
         val priorContext = getPriorCode(agent.executionState)
-        val inputFileContext = getInputFileContent(executionConfig?.input_files, root)
+        val inputFileContext = getInputFileContent(executionConfig?.related_files, root)
 
         if (priorContext.isNotBlank() || inputFileContext.isNotBlank()) {
           transcript?.write(

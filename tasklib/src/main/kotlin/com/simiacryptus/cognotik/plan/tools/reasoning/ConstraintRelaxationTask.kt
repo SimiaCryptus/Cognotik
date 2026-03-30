@@ -36,8 +36,6 @@ class ConstraintRelaxationTask(
     @Description("Maximum number of relaxation/reintroduction iterations")
     val max_iterations: Int = 5,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    val input_files: List<String>? = null,
-    @Description("Additional files for context")
     val related_files: List<String>? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -773,7 +771,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     return agent.answer(listOf(""))
   }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (FileSelectionUtils.filteredWalk(root.toFile()) {

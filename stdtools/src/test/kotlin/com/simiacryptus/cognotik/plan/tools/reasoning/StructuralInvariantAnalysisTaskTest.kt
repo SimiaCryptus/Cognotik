@@ -29,7 +29,7 @@ object StructuralInvariantAnalysisTaskTest {
         subject_object = "A Binary Search Tree",
         transformation_types = listOf("scaling", "node_deletion", "context_inversion"),
         output_format = "fingerprint",
-        input_files = emptyList()
+        related_files = emptyList()
       ),
       timeoutMinutes = 10,
       user = com.simiacryptus.cognotik.platform.model.defaultUser,

@@ -419,7 +419,7 @@ class GameEconomyTask(
     @Description("Additional context or design constraints")
     var additional_context: String? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -1082,7 +1082,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
     }
   }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (FileSelectionUtils.filteredWalk(root.toFile()) {

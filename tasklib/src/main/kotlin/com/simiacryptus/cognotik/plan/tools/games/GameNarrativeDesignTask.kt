@@ -67,13 +67,13 @@ class GameNarrativeDesignTask(
 
     @Description("Whether to generate scene concept art") var generate_scene_art: Boolean = false,
 
-    @Description("Input files for context (e.g., world lore, character bios)") input_files: List<String>? = null,
+    @Description("Input files for context (e.g., world lore, character bios)") related_files: List<String>? = null,
 
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : NarrativeGenerationTaskExecutionConfigData(
     subject = game_title,
-    input_files = input_files,
+    related_files = related_files,
     narrative_elements = buildNarrativeElements(
       genre, narrative_style, player_agency_level, num_main_characters, tone, player_role, setting, themes
     ),

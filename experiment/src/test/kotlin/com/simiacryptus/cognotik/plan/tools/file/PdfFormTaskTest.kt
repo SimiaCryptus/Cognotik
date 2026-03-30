@@ -33,11 +33,12 @@ object PdfFormTaskTest {
         template_file = "template.pdf"
       ),
       executionConfig = PdfFormExecutionConfig(
-        output_file = "output.pdf",
         fields = mapOf("name" to "John Doe"),
         task_description = "Fill the name field in the PDF form",
         flatten = false
-      ),
+      ).apply {
+        main_file = "output.pdf"
+      },
       timeoutMinutes = 10,
       user = com.simiacryptus.cognotik.platform.model.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,

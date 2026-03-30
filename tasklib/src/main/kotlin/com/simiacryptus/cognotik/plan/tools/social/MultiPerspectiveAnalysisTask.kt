@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
-import java.nio.charset.StandardCharsets
 
 class MultiPerspectiveAnalysisTask(
   orchestrationConfig: OrchestrationConfig,
@@ -29,13 +28,11 @@ class MultiPerspectiveAnalysisTask(
     @Description("List of perspectives to consider (e.g., technical, business, ethical, user)")
     var perspectives: List<String>? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the analysis")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     @Description("Whether to synthesize perspectives into unified conclusion")
     var synthesize: Boolean = true,
     @Description("Minimum confidence threshold for perspective agreement (0.0-1.0)")
     var consensus_threshold: Double = 0.7,
-    @Description("Additional files for context")
-    var related_files: List<String>? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : TaskExecutionConfig(
@@ -54,8 +51,8 @@ class MultiPerspectiveAnalysisTask(
       if (consensus_threshold < 0.0 || consensus_threshold > 1.0) {
         return "consensus_threshold must be between 0.0 and 1.0, got: $consensus_threshold"
       }
-      if (!input_files.isNullOrEmpty() && input_files!!.any { it.isBlank() }) {
-        return "input_files cannot contain blank entries"
+      if (!related_files.isNullOrEmpty() && related_files!!.any { it.isBlank() }) {
+        return "related_files cannot contain blank entries"
       }
       // Call parent validation for nested ValidatedObject fields
       return ValidatedObject.validateFields(this)
@@ -70,7 +67,7 @@ class MultiPerspectiveAnalysisTask(
   ** Optionally, list input files (supports glob patterns) to provide context for the analysis
   ** Set synthesize=true to generate a unified conclusion from all perspectives
   ** Configure consensus_threshold (0.0-1.0) to determine minimum agreement level
-  ** Additional context files can be specified via input_files
+  ** Additional context files can be specified via related_files
   ** Each perspective will be analyzed independently, then synthesized
   ** Useful for:
      - Architectural decision making
@@ -129,7 +126,7 @@ class MultiPerspectiveAnalysisTask(
           }
 
           val contextFiles =
-            getInputFileContent((config.input_files ?: emptyList()) + (config.related_files ?: emptyList()), root)
+            getInputFileContent((config.related_files ?: emptyList()) + (config.related_files ?: emptyList()), root)
           val priorCode = getPriorCode(agent.executionState)
 
           val perspectiveResults = mutableMapOf<String, String>()
@@ -237,10 +234,6 @@ class MultiPerspectiveAnalysisTask(
     }
 
 
-  }
-
-  private fun writeToTranscript(stream: java.io.OutputStream, text: String) {
-    stream.write(text.toByteArray(StandardCharsets.UTF_8))
   }
 
 

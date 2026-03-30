@@ -22,7 +22,6 @@ import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.util.DynamicEnum
 import java.awt.Component
 import java.awt.Dimension

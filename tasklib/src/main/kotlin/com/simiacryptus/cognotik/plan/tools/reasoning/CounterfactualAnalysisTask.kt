@@ -34,10 +34,8 @@ class CounterfactualAnalysisTask(
     var compare_outcomes: Boolean = true,
     @Description("Factors to hold constant across scenarios")
     var control_factors: List<String>? = null,
-    @Description("Additional files for context (e.g., historical data, related analyses)")
-    var related_files: List<String>? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     @Description("Detailed description of the analysis objectives")
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -381,37 +379,6 @@ class CounterfactualAnalysisTask(
       }
     }
   }
-
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
-    .flatMap { pattern: String ->
-      val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
-      (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
-        when {
-          com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-          matcher.matches(root.relativize(it.toPath())) -> true
-          it.isDirectory -> true
-          else -> false
-        }
-      })
-    }.filter { file ->
-      file.isFile && file.exists()
-    }
-    .distinct()
-    .sortedBy { it }
-    .joinToString("\n\n") { relativePath ->
-      val file = root.toFile().resolve(relativePath)
-      try {
-        val content = if (!isTextFile(file)) {
-          extractDocumentContent(file)
-        } else {
-          codeFiles[file.toPath()] ?: file.readText()
-        }
-        "# $relativePath\n\n```\n$content\n```"
-      } catch (e: Throwable) {
-        log.warn("Error reading file: $relativePath", e)
-        ""
-      }
-    }
 
   private fun isTextFile(file: java.io.File): Boolean {
     val textExtensions = setOf(

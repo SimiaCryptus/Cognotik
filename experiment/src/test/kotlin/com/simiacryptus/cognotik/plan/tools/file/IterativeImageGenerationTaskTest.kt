@@ -27,7 +27,6 @@ class IterativeImageGenerationTaskTest {
     val harness = TaskHarness(
       taskType = TiledImageGenerationTask.TiledImageGeneration,
       executionConfig = TiledImageGenerationTask.TiledImageGenerationConfig(
-        output_file = output_file,
         prompts = listOf(
           "Generate a detailed cartoon of woodland critters.",
           "Upscale and re-render as a photograph.",
@@ -35,7 +34,9 @@ class IterativeImageGenerationTaskTest {
         ),
         upscale_factor = 4.0,
         min_region_size = 50,
-      ),
+      ).apply {
+        this.main_file = output_file
+      },
       temperature = 0.7,
       timeoutMinutes = 30,
       typeConfig = TaskTypeConfig(TiledImageGenerationTask.TiledImageGeneration.name),

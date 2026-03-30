@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.nio.charset.StandardCharsets
-import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -189,16 +188,13 @@ class TechnicalExplanationTask(
     var include_comparisons: Boolean = true,
 
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
 
     @Description("Programming language for code examples (if applicable)")
     var code_language: String? = null,
 
     @Description("Number of revision passes for clarity improvement. Must be between 0 and 5.")
     var revision_passes: Int = 1,
-
-    @Description("Related files or documentation to reference")
-    var related_files: List<String>? = null,
 
     task_description: String? = null,
     task_dependencies: MutableList<String>? = null,
@@ -230,8 +226,8 @@ class TechnicalExplanationTask(
         explanation_format = "markdown"
       }
       revision_passes = revision_passes.coerceIn(0, 5)
-      if (!input_files.isNullOrEmpty()) {
-        input_files = input_files?.filter { it.isNotBlank() }
+      if (!related_files.isNullOrEmpty()) {
+        related_files = related_files?.filter { it.isNotBlank() }
       }
       return ValidatedObject.validateFields(this)
     }
@@ -1068,30 +1064,6 @@ class TechnicalExplanationTask(
       }
     }
   }
-
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf()).flatMap { pattern: String ->
-    val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-    (FileSelectionUtils.filteredWalk(root.toFile()) {
-      when {
-        FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-        matcher.matches(root.relativize(it.toPath())) -> true
-        it.isDirectory -> true
-        else -> false
-      }
-    })
-  }.filter { file ->
-    file.isFile && file.exists()
-  }.distinct().sortedBy { it }.joinToString("\n\n") { relativePath ->
-    val file = root.toFile().resolve(relativePath)
-    try {
-      val content = file.readText()
-      "# $relativePath\n\n```\n$content\n```"
-    } catch (e: Throwable) {
-      log.warn("Error reading file: $relativePath", e)
-      ""
-    }
-  }
-
 
   private fun getContextFiles(): String {
     val relatedFiles = executionConfig?.related_files ?: return ""

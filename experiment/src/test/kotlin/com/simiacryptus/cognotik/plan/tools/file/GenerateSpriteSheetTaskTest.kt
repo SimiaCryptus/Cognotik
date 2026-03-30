@@ -27,12 +27,13 @@ object GenerateSpriteSheetTaskTest {
         task_type = GenerateSpriteSheetTask.GenerateSpriteSheet.name
       ),
       executionConfig = GenerateSpriteSheetTaskExecutionConfigData(
-        files = listOf("test_sprites.png"),
         metadata_file = "test_sprites.json",
         task_description =
           //"A pixel art character walk cycle animation sheet. 6 frames of a knight walking side view. Uniform size and spacing.",
           "Various superhero cats; photorealistic style; transparent background; arranged in a grid format.",
-      ),
+      ).apply {
+        main_file = "test_sprites.png"
+      },
       timeoutMinutes = 15,
       user = com.simiacryptus.cognotik.platform.model.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,

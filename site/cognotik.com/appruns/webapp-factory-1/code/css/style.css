@@ -1,0 +1,1156 @@
+/* ============================================================
+   Super Mario Bros Clone - Main Stylesheet
+   ============================================================
+   Handles:
+   - Full-viewport canvas centering
+   - Game container styling
+   - HUD overlay styles
+   - Menu screen styles
+   - Pixel-font imports
+   - Responsive layout
+   - Color theme
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Google Fonts - Press Start 2P (pixel font)
+   ------------------------------------------------------------ */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* ------------------------------------------------------------
+   CSS Custom Properties (Color Theme & Sizing)
+   ------------------------------------------------------------ */
+:root {
+  /* Mario palette */
+  --color-sky:          #5c94fc;   /* classic NES sky blue          */
+  --color-sky-dark:     #3060c0;   /* darker sky for gradients      */
+  --color-ground:       #c84c0c;   /* brick / ground brown-red      */
+  --color-ground-dark:  #8c2800;   /* shadow on ground              */
+  --color-grass:        #00a800;   /* grass green                   */
+  --color-grass-light:  #00d800;   /* highlight grass               */
+  --color-coin:         #fcd000;   /* coin / star yellow            */
+  --color-coin-dark:    #c89800;   /* coin shadow                   */
+  --color-mario-red:    #e40058;   /* Mario's hat / shirt           */
+  --color-mario-skin:   #fca044;   /* Mario's skin                  */
+  --color-mario-blue:   #0058f8;   /* Mario's overalls              */
+  --color-enemy-red:    #d82800;   /* Goomba / enemy accent         */
+  --color-white:        #fcfcfc;
+  --color-black:        #000000;
+  --color-dark-bg:      #080808;   /* near-black for overlays       */
+  --color-overlay:      rgba(0, 0, 0, 0.72);
+  --color-overlay-light:rgba(0, 0, 0, 0.45);
+  --color-hud-bg:       rgba(0, 0, 0, 0.55);
+  --color-hud-border:   rgba(252, 208, 0, 0.6);
+
+  /* UI accent colours */
+  --color-accent-yellow: #fcd000;
+  --color-accent-green:  #00a800;
+  --color-accent-red:    #e40058;
+  --color-accent-blue:   #0058f8;
+
+  /* Typography */
+  --font-pixel: 'Press Start 2P', 'Courier New', Courier, monospace;
+  --font-size-xs:   8px;
+  --font-size-sm:  10px;
+  --font-size-md:  14px;
+  --font-size-lg:  20px;
+  --font-size-xl:  28px;
+  --font-size-xxl: 40px;
+
+  /* Layout */
+  --canvas-width:  800px;
+  --canvas-height: 480px;
+  --hud-height:    48px;
+  --border-radius: 4px;
+
+  /* Transitions */
+  --transition-fast:   0.12s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow:   0.5s  ease;
+
+  /* Z-index layers */
+  --z-canvas:    1;
+  --z-hud:      10;
+  --z-overlay:  20;
+  --z-menu:     30;
+  --z-modal:    40;
+  --z-toast:    50;
+}
+
+/* ------------------------------------------------------------
+   Reset & Base
+   ------------------------------------------------------------ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-dark-bg);
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(0, 88, 248, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(228, 0, 88, 0.06) 0%, transparent 50%);
+  font-family: var(--font-pixel);
+  color: var(--color-white);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Prevent default touch behaviours that interfere with game input */
+body {
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ------------------------------------------------------------
+   Game Wrapper  (outermost positioning context)
+   ------------------------------------------------------------ */
+#game-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* ------------------------------------------------------------
+   Game Container  (holds canvas + all overlaid UI)
+   ------------------------------------------------------------ */
+#game-container {
+  position: relative;
+  width: var(--canvas-width);
+  height: var(--canvas-height);
+  background-color: var(--color-sky);
+  border: 3px solid var(--color-coin);
+  border-radius: var(--border-radius);
+  box-shadow:
+    0 0 0 3px var(--color-coin-dark),
+    0 0 32px rgba(252, 208, 0, 0.25),
+    0 8px 48px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  /* GPU-compositing hint */
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Scanline overlay for retro CRT feel */
+#game-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.04) 3px,
+    rgba(0, 0, 0, 0.04) 4px
+  );
+  pointer-events: none;
+  z-index: var(--z-toast);
+}
+
+/* ------------------------------------------------------------
+   Main Canvas
+   ------------------------------------------------------------ */
+#game-canvas {
+  display: block;
+  width: var(--canvas-width);
+  height: var(--canvas-height);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  z-index: var(--z-canvas);
+  cursor: default;
+}
+
+/* ------------------------------------------------------------
+   HUD  (Heads-Up Display — score, lives, coins, timer)
+   ------------------------------------------------------------ */
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--hud-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--color-hud-bg);
+  border-bottom: 2px solid var(--color-hud-border);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: var(--z-hud);
+  pointer-events: none;
+}
+
+.hud-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 80px;
+}
+
+.hud-label {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xs);
+  color: var(--color-white);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.75;
+  line-height: 1;
+}
+
+.hud-value {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-sm);
+  color: var(--color-white);
+  line-height: 1;
+  min-width: 6ch;
+  text-align: center;
+  transition: color var(--transition-fast);
+}
+
+/* Coin counter gets yellow tint */
+#hud-coins .hud-value {
+  color: var(--color-coin);
+}
+
+/* Timer turns red when low */
+#hud-timer .hud-value.warning {
+  color: var(--color-accent-red);
+  animation: pulse-warning 0.5s ease infinite alternate;
+}
+
+/* Lives counter */
+#hud-lives .hud-value {
+  color: var(--color-mario-skin);
+}
+
+/* Score flashes on increment */
+.hud-value.score-bump {
+  animation: score-bump 0.3s ease;
+}
+
+/* World / level indicator */
+#hud-world .hud-value {
+  color: var(--color-accent-yellow);
+}
+
+/* ------------------------------------------------------------
+   HUD Coin Icon (CSS-drawn coin)
+   ------------------------------------------------------------ */
+.coin-icon {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--color-coin);
+  border-radius: 50%;
+  box-shadow: 0 0 4px var(--color-coin);
+  vertical-align: middle;
+  margin-right: 3px;
+}
+
+/* ------------------------------------------------------------
+   Screen Overlays  (shared base for all full-screen panels)
+   ------------------------------------------------------------ */
+.screen-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-overlay);
+  z-index: var(--z-overlay);
+  opacity: 1;
+  transition: opacity var(--transition-normal);
+}
+
+.screen-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.screen-overlay.fade-in {
+  animation: fade-in var(--transition-normal) ease forwards;
+}
+
+.screen-overlay.fade-out {
+  animation: fade-out var(--transition-normal) ease forwards;
+}
+
+/* ------------------------------------------------------------
+   Menu Screen  (#menu-screen)
+   ------------------------------------------------------------ */
+#menu-screen {
+  background:
+    linear-gradient(
+      180deg,
+      var(--color-sky-dark) 0%,
+      var(--color-sky) 55%,
+      var(--color-grass) 55%,
+      var(--color-ground) 70%,
+      var(--color-ground-dark) 100%
+    );
+  z-index: var(--z-menu);
+}
+
+.menu-title-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.menu-title {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xl);
+  color: var(--color-coin);
+  text-shadow:
+    3px 3px 0 var(--color-coin-dark),
+    6px 6px 0 rgba(0,0,0,0.4);
+  letter-spacing: 2px;
+  text-align: center;
+  line-height: 1.3;
+  animation: title-float 2.5s ease-in-out infinite;
+}
+
+.menu-subtitle {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-sm);
+  color: var(--color-white);
+  margin-top: 10px;
+  letter-spacing: 3px;
+  opacity: 0.85;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+}
+
+.menu-copyright {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xs);
+  color: var(--color-white);
+  opacity: 0.5;
+  margin-top: 6px;
+  letter-spacing: 1px;
+}
+
+/* Menu navigation list */
+.menu-nav {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.menu-nav-item {
+  position: relative;
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-md);
+  color: var(--color-white);
+  cursor: pointer;
+  padding: 8px 24px;
+  letter-spacing: 2px;
+  transition: color var(--transition-fast), transform var(--transition-fast);
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+}
+
+.menu-nav-item:hover,
+.menu-nav-item.selected {
+  color: var(--color-coin);
+  transform: scale(1.08);
+}
+
+/* Blinking cursor arrow */
+.menu-nav-item.selected::before {
+  content: '►';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-coin);
+  animation: blink-cursor 0.7s step-end infinite;
+}
+
+/* High-score display on menu */
+.menu-highscore {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xs);
+  color: var(--color-coin);
+  letter-spacing: 2px;
+  margin-top: 8px;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+}
+
+/* "Press Enter" blinking prompt */
+.menu-press-start {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-sm);
+  color: var(--color-white);
+  letter-spacing: 3px;
+  animation: blink-cursor 1s step-end infinite;
+  margin-top: 20px;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+}
+
+/* ------------------------------------------------------------
+   Pause Screen  (#pause-screen)
+   ------------------------------------------------------------ */
+#pause-screen {
+  background: var(--color-overlay);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.pause-title {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xl);
+  color: var(--color-white);
+  letter-spacing: 4px;
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.6);
+  margin-bottom: 32px;
+  animation: title-float 2s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------
+   Game Over Screen  (#gameover-screen)
+   ------------------------------------------------------------ */
+#gameover-screen {
+  background: radial-gradient(ellipse at center, #1a0000 0%, var(--color-dark-bg) 100%);
+}
+
+.gameover-title {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xxl);
+  color: var(--color-accent-red);
+  text-shadow:
+    4px 4px 0 #800000,
+    8px 8px 0 rgba(0,0,0,0.5);
+  letter-spacing: 3px;
+  margin-bottom: 24px;
+  animation: shake 0.4s ease 0.2s, fade-in 0.5s ease forwards;
+}
+
+.gameover-score {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-md);
+  color: var(--color-coin);
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.gameover-highscore {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-sm);
+  color: var(--color-white);
+  opacity: 0.7;
+  letter-spacing: 2px;
+  margin-bottom: 32px;
+}
+
+/* New high-score badge */
+.new-highscore-badge {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-sm);
+  color: var(--color-coin);
+  background: var(--color-mario-red);
+  padding: 6px 14px;
+  border: 2px solid var(--color-coin);
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  animation: blink-cursor 0.6s step-end infinite;
+  display: none;
+}
+
+.new-highscore-badge.visible {
+  display: block;
+}
+
+/* ------------------------------------------------------------
+   Level Complete Screen  (#level-complete-screen)
+   ------------------------------------------------------------ */
+#level-complete-screen {
+  background: radial-gradient(ellipse at center, #001a00 0%, var(--color-dark-bg) 100%);
+}
+
+.level-complete-title {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xl);
+  color: var(--color-accent-green);
+  text-shadow:
+    3px 3px 0 #004400,
+    6px 6px 0 rgba(0,0,0,0.4);
+  letter-spacing: 2px;
+  margin-bottom: 28px;
+  animation: bounce-in 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+}
+
+.level-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.level-stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 32px;
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-sm);
+  color: var(--color-white);
+  letter-spacing: 1px;
+  min-width: 260px;
+}
+
+.level-stat-row .stat-label {
+  color: var(--color-white);
+  opacity: 0.75;
+}
+
+.level-stat-row .stat-value {
+  color: var(--color-coin);
+}
+
+/* Time bonus counter animation */
+.time-bonus-counting {
+  animation: count-up 0.05s linear infinite;
+}
+
+/* ------------------------------------------------------------
+   Generic Buttons  (menu / overlay actions)
+   ------------------------------------------------------------ */
+.btn {
+  display: inline-block;
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-sm);
+  color: var(--color-white);
+  background: transparent;
+  border: 2px solid var(--color-white);
+  border-radius: var(--border-radius);
+  padding: 10px 24px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+  outline: none;
+  text-shadow: none;
+}
+
+.btn:hover,
+.btn:focus {
+  color: var(--color-dark-bg);
+  background: var(--color-white);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255,255,255,0.2);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn-primary {
+  color: var(--color-dark-bg);
+  background: var(--color-coin);
+  border-color: var(--color-coin-dark);
+  text-shadow: none;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--color-white);
+  border-color: var(--color-white);
+  color: var(--color-dark-bg);
+}
+
+.btn-danger {
+  border-color: var(--color-accent-red);
+  color: var(--color-accent-red);
+}
+
+.btn-danger:hover,
+.btn-danger:focus {
+  background: var(--color-accent-red);
+  color: var(--color-white);
+}
+
+.btn-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ------------------------------------------------------------
+   Toast / Floating Score Popups
+   ------------------------------------------------------------ */
+.toast {
+  position: absolute;
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-sm);
+  color: var(--color-white);
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.7);
+  pointer-events: none;
+  z-index: var(--z-toast);
+  animation: toast-rise 0.9s ease forwards;
+  white-space: nowrap;
+}
+
+.toast-score   { color: var(--color-white);        }
+.toast-coin    { color: var(--color-coin);          }
+.toast-1up     { color: var(--color-accent-green);  font-size: var(--font-size-md); }
+.toast-powerup { color: var(--color-mario-skin);    }
+
+/* ------------------------------------------------------------
+   Power-Up Banner  (e.g. "SUPER MARIO!")
+   ------------------------------------------------------------ */
+#powerup-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-lg);
+  color: var(--color-coin);
+  text-shadow:
+    3px 3px 0 var(--color-coin-dark),
+    6px 6px 0 rgba(0,0,0,0.4);
+  letter-spacing: 3px;
+  pointer-events: none;
+  z-index: var(--z-modal);
+  opacity: 0;
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-normal);
+}
+
+#powerup-banner.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  animation: banner-show 2s ease forwards;
+}
+
+/* ------------------------------------------------------------
+   Mobile On-Screen Controls
+   ------------------------------------------------------------ */
+#mobile-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  display: none;          /* shown via JS on touch devices */
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 16px 12px;
+  z-index: var(--z-hud);
+  pointer-events: none;
+}
+
+#mobile-controls.visible {
+  display: flex;
+}
+
+.mobile-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-template-rows: repeat(2, 40px);
+  gap: 4px;
+  pointer-events: all;
+}
+
+.mobile-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: var(--border-radius);
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  color: var(--color-white);
+  cursor: pointer;
+  pointer-events: all;
+  transition: background var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.mobile-btn:active,
+.mobile-btn.pressed {
+  background: rgba(255,255,255,0.35);
+  border-color: var(--color-coin);
+}
+
+/* D-pad layout */
+.mobile-btn-left  { grid-column: 1; grid-row: 1 / span 2; }
+.mobile-btn-right { grid-column: 3; grid-row: 1 / span 2; }
+.mobile-btn-up    { grid-column: 2; grid-row: 1; }
+.mobile-btn-down  { grid-column: 2; grid-row: 2; }
+
+/* Action buttons (A = jump, B = run) */
+.mobile-actions {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  pointer-events: all;
+}
+
+.mobile-btn-action {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  font-size: var(--font-size-sm);
+  letter-spacing: 0;
+}
+
+.mobile-btn-jump {
+  background: rgba(228, 0, 88, 0.4);
+  border-color: var(--color-mario-red);
+}
+
+.mobile-btn-run {
+  background: rgba(0, 88, 248, 0.4);
+  border-color: var(--color-accent-blue);
+}
+
+/* ------------------------------------------------------------
+   Loading Screen
+   ------------------------------------------------------------ */
+#loading-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-dark-bg);
+  z-index: var(--z-modal);
+}
+
+.loading-title {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-lg);
+  color: var(--color-coin);
+  letter-spacing: 3px;
+  margin-bottom: 32px;
+  text-shadow: 3px 3px 0 var(--color-coin-dark);
+}
+
+.loading-bar-track {
+  width: 280px;
+  height: 16px;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.loading-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--color-accent-green), var(--color-coin));
+  border-radius: 6px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 8px var(--color-coin);
+}
+
+.loading-text {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xs);
+  color: var(--color-white);
+  opacity: 0.6;
+  letter-spacing: 2px;
+  animation: blink-cursor 1s step-end infinite;
+}
+
+/* ------------------------------------------------------------
+   Settings / Controls Panel
+   ------------------------------------------------------------ */
+#settings-screen {
+  background: var(--color-overlay);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.settings-panel {
+  background: rgba(8, 8, 8, 0.9);
+  border: 2px solid var(--color-coin);
+  border-radius: var(--border-radius);
+  padding: 28px 36px;
+  min-width: 340px;
+  max-width: 480px;
+  width: 90%;
+}
+
+.settings-title {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-md);
+  color: var(--color-coin);
+  letter-spacing: 3px;
+  text-align: center;
+  margin-bottom: 24px;
+  text-shadow: 2px 2px 0 var(--color-coin-dark);
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  gap: 16px;
+}
+
+.settings-row:last-of-type {
+  border-bottom: none;
+}
+
+.settings-label {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xs);
+  color: var(--color-white);
+  letter-spacing: 1px;
+  opacity: 0.85;
+}
+
+.settings-key {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xs);
+  color: var(--color-coin);
+  background: rgba(252, 208, 0, 0.1);
+  border: 1px solid var(--color-coin-dark);
+  border-radius: 3px;
+  padding: 3px 8px;
+  letter-spacing: 1px;
+  min-width: 48px;
+  text-align: center;
+}
+
+/* Toggle switch */
+.toggle {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 20px;
+  transition: background var(--transition-fast);
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 2px;
+  top: 2px;
+  background: var(--color-white);
+  border-radius: 50%;
+  transition: transform var(--transition-fast);
+}
+
+.toggle input:checked + .toggle-slider {
+  background: var(--color-accent-green);
+  border-color: var(--color-grass);
+}
+
+.toggle input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+/* ------------------------------------------------------------
+   Scrollable Leaderboard / High Scores
+   ------------------------------------------------------------ */
+.leaderboard {
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-coin) transparent;
+}
+
+.leaderboard::-webkit-scrollbar {
+  width: 4px;
+}
+
+.leaderboard::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.leaderboard::-webkit-scrollbar-thumb {
+  background: var(--color-coin);
+  border-radius: 2px;
+}
+
+.leaderboard-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xs);
+  color: var(--color-white);
+  letter-spacing: 1px;
+}
+
+.leaderboard-row:first-child .leaderboard-rank { color: var(--color-coin); }
+.leaderboard-row:nth-child(2) .leaderboard-rank { color: rgba(192,192,192,1); }
+.leaderboard-row:nth-child(3) .leaderboard-rank { color: #cd7f32; }
+
+.leaderboard-rank  { min-width: 28px; }
+.leaderboard-score { color: var(--color-coin); }
+
+/* ------------------------------------------------------------
+   Responsive Scaling
+   ------------------------------------------------------------ */
+
+/* Scale down for smaller viewports while keeping aspect ratio */
+@media (max-width: 860px) {
+  :root {
+    --canvas-width:  640px;
+    --canvas-height: 384px;
+  }
+}
+
+@media (max-width: 680px) {
+  :root {
+    --canvas-width:  480px;
+    --canvas-height: 288px;
+    --hud-height:    40px;
+    --font-size-xl:  20px;
+    --font-size-xxl: 28px;
+  }
+
+  .menu-title {
+    font-size: var(--font-size-lg);
+  }
+
+  .settings-panel {
+    padding: 20px 20px;
+    min-width: unset;
+  }
+}
+
+@media (max-width: 500px) {
+  :root {
+    --canvas-width:  100vw;
+    --canvas-height: calc(100vw * 0.6);
+    --hud-height:    36px;
+  }
+
+  #game-container {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  #mobile-controls.visible {
+    display: flex;
+  }
+}
+
+/* Landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root {
+    --canvas-height: 100vh;
+    --canvas-width:  calc(100vh * (5/3));
+  }
+
+  #mobile-controls {
+    height: 90px;
+  }
+}
+
+/* High-DPI / Retina — keep pixels sharp */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  #game-canvas {
+    image-rendering: pixelated;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------
+   Keyframe Animations
+   ------------------------------------------------------------ */
+
+/* Blinking cursor / text */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* Floating title bob */
+@keyframes title-float {
+  0%, 100% { transform: translateY(0);    }
+  50%       { transform: translateY(-6px); }
+}
+
+/* Score bump flash */
+@keyframes score-bump {
+  0%   { transform: scale(1);    color: var(--color-white); }
+  40%  { transform: scale(1.25); color: var(--color-coin);  }
+  100% { transform: scale(1);    color: var(--color-white); }
+}
+
+/* Timer warning pulse */
+@keyframes pulse-warning {
+  from { opacity: 1;   }
+  to   { opacity: 0.4; }
+}
+
+/* Fade in */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Fade out */
+@keyframes fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* Shake (game over) */
+@keyframes shake {
+  0%, 100% { transform: translateX(0);   }
+  20%       { transform: translateX(-8px); }
+  40%       { transform: translateX(8px);  }
+  60%       { transform: translateX(-5px); }
+  80%       { transform: translateX(5px);  }
+}
+
+/* Bounce in (level complete) */
+@keyframes bounce-in {
+  0%   { transform: scale(0.3); opacity: 0; }
+  50%  { transform: scale(1.1); opacity: 1; }
+  70%  { transform: scale(0.9);             }
+  100% { transform: scale(1);               }
+}
+
+/* Toast rising score popup */
+@keyframes toast-rise {
+  0%   { transform: translateY(0);    opacity: 1; }
+  70%  { transform: translateY(-40px); opacity: 1; }
+  100% { transform: translateY(-60px); opacity: 0; }
+}
+
+/* Power-up banner */
+@keyframes banner-show {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  25%  { transform: translate(-50%, -50%) scale(1);               }
+  75%  { opacity: 1; transform: translate(-50%, -50%) scale(1);   }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+/* Count-up number animation */
+@keyframes count-up {
+  from { opacity: 0.6; }
+  to   { opacity: 1;   }
+}
+
+/* Coin spin (for HUD icon) */
+@keyframes coin-spin {
+  0%   { transform: scaleX(1);    }
+  25%  { transform: scaleX(0.1);  }
+  50%  { transform: scaleX(1);    }
+  75%  { transform: scaleX(0.1);  }
+  100% { transform: scaleX(1);    }
+}
+
+/* Star power rainbow flash */
+@keyframes rainbow-flash {
+  0%   { filter: hue-rotate(0deg);   }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* Invincibility flicker */
+@keyframes invincible-flicker {
+  0%, 100% { opacity: 1;   }
+  50%       { opacity: 0.3; }
+}
+
+/* ------------------------------------------------------------
+   Utility Classes
+   ------------------------------------------------------------ */
+.hidden        { display: none !important;    }
+.invisible     { visibility: hidden;          }
+.no-pointer    { pointer-events: none;        }
+.text-center   { text-align: center;          }
+.text-pixel    { font-family: var(--font-pixel); }
+.text-coin     { color: var(--color-coin);    }
+.text-red      { color: var(--color-accent-red); }
+.text-green    { color: var(--color-accent-green); }
+.text-white    { color: var(--color-white);   }
+.mt-sm         { margin-top: 8px;             }
+.mt-md         { margin-top: 16px;            }
+.mt-lg         { margin-top: 28px;            }
+.mb-sm         { margin-bottom: 8px;          }
+.mb-md         { margin-bottom: 16px;         }
+.mb-lg         { margin-bottom: 28px;         }
+.flex-col      { display: flex; flex-direction: column; }
+.flex-center   { display: flex; align-items: center; justify-content: center; }
+.gap-sm        { gap: 8px;  }
+.gap-md        { gap: 16px; }
+.gap-lg        { gap: 24px; }
+
+/* Star-power active state on game container */
+#game-container.star-power {
+  animation: rainbow-flash 0.4s linear infinite;
+}
+
+/* Invincibility flicker on player element (if DOM-based) */
+.player-invincible {
+  animation: invincible-flicker 0.15s step-end infinite;
+}

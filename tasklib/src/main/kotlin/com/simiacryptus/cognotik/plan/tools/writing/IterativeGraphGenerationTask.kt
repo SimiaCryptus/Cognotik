@@ -37,7 +37,7 @@ open class IterativeGraphGenerationTask<T : IterativeGraphGenerationTask.Iterati
     var context_data: String? = null,
 
     @Description("Input files to analyze")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
 
     @Description("Optional JSON file to initialize graph from")
     var initial_graph_file: String? = null,
@@ -144,7 +144,7 @@ open class IterativeGraphGenerationTask<T : IterativeGraphGenerationTask.Iterati
 IterativeGraphGeneration - Build knowledge graphs incrementally
   * goal_prompt: The goal or question the graph should answer/represent.
   * context_data: Input text to analyze.
-  * input_files: Input files to analyze.
+  * related_files: Input files to analyze.
   * node_types/edge_types: Allowed labels for nodes and edges.
   * Use this to extract entities and relationships for complex knowledge management and visualization.
         """.trimIndent()
@@ -186,7 +186,7 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
 
         // Load context
         val fileContext = try {
-          super.getInputFileContent(config.input_files, root, treatDocumentsAsText = true)
+          super.getInputFileContent(config.related_files, root, treatDocumentsAsText = true)
         } catch (e: Exception) {
           log.warn("Failed to load input files: ${e.message}")
           ""

@@ -71,10 +71,8 @@ class AdversarialReasoningTask(
     val generate_exploits: Boolean = false,
     @Description("Whether to suggest mitigation strategies")
     val suggest_mitigations: Boolean = true,
-    @Description("Related files or code to analyze (glob patterns)")
-    val related_files: List<String>? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    val input_files: List<String>? = null,
+    val related_files: List<String>? = null,
     @Description("Specific assumptions to challenge")
     val challenge_assumptions: List<String>? = null,
     @Description("Maximum number of vulnerabilities to identify per vector")
@@ -640,7 +638,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     }
   }
 
-  private fun getInputFileCode(): String = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode(): String = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {

@@ -26,7 +26,7 @@ class SocraticDialogueTask(
     @Description("The initial question or hypothesis to explore")
     val initial_question: String? = null,
     @Description("Optional input files (supports glob patterns) to provide context for the dialogue")
-    val input_files: List<String>? = null,
+    val related_files: List<String>? = null,
     @Description("Maximum dialogue depth (number of question-answer exchanges)")
     val max_depth: Int = 5,
     @Description("Whether to challenge assumptions at each level")
@@ -73,7 +73,7 @@ class SocraticDialogueTask(
         """.trimIndent()
   }
 
-  private fun getInputFileContext(): String = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileContext(): String = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (FileSelectionUtils.filteredWalk(root.toFile()) {

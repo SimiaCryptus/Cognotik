@@ -37,7 +37,7 @@ object CausalInferenceTaskTest {
         build_causal_graph = true,
         identify_confounders = true,
         evidence_sources = listOf("logs/app.log", "metrics/cpu.csv"),
-        input_files = listOf("src/main/kotlin/com/simiacryptus/cognotik/util/*.kt"),
+        related_files = listOf("src/main/kotlin/com/simiacryptus/cognotik/util/*.kt"),
         task_description = "Investigate the root cause of periodic latency spikes in the system.",
       ),
       timeoutMinutes = 10,

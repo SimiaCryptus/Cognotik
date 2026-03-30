@@ -12,13 +12,9 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.User
-import java.awt.*
-import java.awt.image.BufferedImage
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.concurrent.CountDownLatch
 import kotlin.random.Random
 
 open class PlanHarness(
@@ -142,46 +138,6 @@ open class PlanHarness(
       require(ToolProvider.values().isNotEmpty())
       require(CognitiveModeType.values().isNotEmpty())
       require(CodeRuntimes.values().isNotEmpty())
-    }
-
-    fun trayIcon(): Pair<CountDownLatch, TrayIcon?> {
-      val shutdownLatch = CountDownLatch(1)
-      var trayIcon: TrayIcon? = null
-      if (SystemTray.isSupported()) {
-        val tray = SystemTray.getSystemTray()
-        val image = BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB)
-        val g = image.createGraphics()
-        g.color = Color.GREEN
-        g.fillRect(0, 0, 16, 16)
-        g.dispose()
-
-        val popup = PopupMenu()
-        val exitItem = MenuItem("Exit")
-        exitItem.addActionListener { shutdownLatch.countDown() }
-        popup.add(exitItem)
-
-        trayIcon = TrayIcon(image, "Plan Test Harness", popup)
-        trayIcon.isImageAutoSize = true
-        try {
-          tray.add(trayIcon)
-        } catch (e: AWTException) {
-          log.warn("TrayIcon could not be added.")
-        }
-      }
-
-      val inputThread = Thread {
-        try {
-          log.info("Press Enter to shut down...")
-          System.`in`.read()
-        } catch (e: Exception) {
-          // ignore
-        } finally {
-          shutdownLatch.countDown()
-        }
-      }
-      inputThread.isDaemon = true
-      inputThread.start()
-      return Pair(shutdownLatch, trayIcon)
     }
 
     private val log = LoggerFactory.getLogger(PlanHarness::class.java)

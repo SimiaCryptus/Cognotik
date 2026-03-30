@@ -80,5 +80,30 @@ The `ops/*.md` files show you the actual pipeline that was generated — read th
 | `{basePath}/{dir}/_files.json` | `GET` | List directory contents |
 | `/docops` | `POST` | Execute op (body: `{"path": "{basePath}/ops/{name}.md"}`) |
 | `{basePath}/docops.status.json` | `GET` | Poll task status |
+| `/apiProviders/?format=json` | `GET` | Fetch available AI models and providers |
+## ⚠️ CRITICAL: Model Selection Is Required for DocOps
+**Every call to `/docops` MUST include `smartModel` and `fastModel` query parameters.** These are not optional — the DocProcessor servlet requires them to know which AI models to use for processing.
+The generated UI **must**:
+1. **Fetch available models** on page load from `/apiProviders/?format=json` (see `MODELS.md` for the exact data flow)
+2. **Provide model selection dropdowns** in the UI (at minimum: Smart Model and Fast Model)
+3. **Persist selections** to `localStorage` under keys `smartModel`, `fastModel`, and optionally `imageModel`
+4. **Include model parameters** in every `/docops` POST request as query parameters: `/docops?smartModel=X&fastModel=Y`
+5. **Validate before execution** — if no models are selected, show an error message and prevent the pipeline from running
+6. **Block the "Run" and "Run All" buttons** until models have been selected
+Example of correct DocOps invocation with models:
+```js
+const smartModel = localStorage.getItem('smartModel');
+const fastModel = localStorage.getItem('fastModel');
+if (!smartModel || !fastModel) {
+     showError('Please select AI models before running the pipeline.');
+     return;
+}
+const response = await fetch(`/docops?smartModel=${encodeURIComponent(smartModel)}&fastModel=${encodeURIComponent(fastModel)}`, {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify({ path: `${basePath}/ops/${opName}.md` })
+});
+```
+Refer to `MODELS.md` for the complete model listing, selection, and parameter passing guide.
 
 Produce a complete, working HTML file with all CSS and JavaScript inline. It must work correctly when served at a DocOps session URL.

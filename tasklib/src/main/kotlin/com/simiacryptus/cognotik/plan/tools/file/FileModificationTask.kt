@@ -32,7 +32,6 @@ class FileModificationTask(
 ) : AbstractFileTask<FileModificationTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
   class FileModificationTaskExecutionConfigData(
-    files: List<String> = emptyList(),
     related_files: List<String>? = null,
     @Description("Specific modifications to be made to the files")
     val modifications: Any? = null,
@@ -46,11 +45,10 @@ class FileModificationTask(
     task_description = task_description,
     task_dependencies = task_dependencies,
     related_files = related_files,
-    files = files,
     state = state
   ), ValidatedObject {
     override fun validate(): String? {
-      if (files.orEmpty().none { it.isNotBlank() } && related_files.orEmpty().none { it.isNotBlank() }) {
+      if (listOf<String>(main_file).orEmpty().none { it.isNotBlank() } && related_files.orEmpty().none { it.isNotBlank() }) {
         return "At least one file must be specified in either 'files' or 'related_files'"
       }
       return ValidatedObject.validateFields(this)
@@ -96,7 +94,7 @@ FileModification - Modify existing files or create new files
         val dependencyContext = agent.executionState?.tasksByDescription?.filter {
           executionConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskExecutionConfigData
         }?.entries?.joinToString("\n\n") {
-          (it.value as FileModificationTaskExecutionConfigData).files?.filter { it.isNotBlank() }?.joinToString("\n") { path ->
+          listOf((it.value as FileModificationTaskExecutionConfigData).main_file).filter { it.isNotBlank() }.joinToString("\n") { path ->
             val file = root.resolve(path).toFile()
             if (file.exists()) {
               val relativePath = root.relativize(file.toPath())
@@ -254,14 +252,20 @@ $codeResult
   }
 
   fun getDefaultFile() =
-    if (((executionConfig?.related_files ?: listOf()).filter { it.isNotBlank() } + (executionConfig?.files ?: listOf()).filter { it.isNotBlank() }).isEmpty()) {
+    if (((executionConfig?.related_files ?: listOf()).filter { it.isNotBlank() } + (executionConfig?.let { listOf(it.main_file) }
+        ?: listOf()).filter { it.isNotBlank() }).isEmpty()) {
       null
-    } else if (((executionConfig?.related_files ?: listOf()).filter { it.isNotBlank() } + (executionConfig?.files
+    } else if (((executionConfig?.related_files ?: listOf()).filter { it.isNotBlank() } + (executionConfig?.let {
+        listOf(
+          it.main_file
+        )
+      }
         ?: listOf()).filter { it.isNotBlank() }).distinct().size == 1
     ) {
-      ((executionConfig?.related_files ?: listOf()).filter { it.isNotBlank() } + (executionConfig?.files ?: listOf()).filter { it.isNotBlank() }).last()
-    } else if ((executionConfig?.files ?: listOf()).filter { it.isNotBlank() }.distinct().size == 1) {
-      (executionConfig?.files ?: listOf()).filter { it.isNotBlank() }.firstOrNull()
+      ((executionConfig?.related_files ?: listOf()).filter { it.isNotBlank() } + (executionConfig?.let { listOf(it.main_file) }
+        ?: listOf()).filter { it.isNotBlank() }).last()
+    } else if ((executionConfig?.let { listOf(it.main_file) } ?: listOf()).filter { it.isNotBlank() }.distinct().size == 1) {
+      (executionConfig?.let { listOf(it.main_file) } ?: listOf()).filter { it.isNotBlank() }.firstOrNull()
     } else {
       null
     }

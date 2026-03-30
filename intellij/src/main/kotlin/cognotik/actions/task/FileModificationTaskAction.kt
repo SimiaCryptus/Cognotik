@@ -252,11 +252,12 @@ class FileModificationTaskAction : BaseAction() {
 
             return FileModificationTask.FileModificationTaskExecutionConfigData(
                 task_description = taskDescriptionArea.text,
-                files = files,
                 related_files = relatedFiles,
                 includeGitDiff = includeGitDiffCheckbox.isSelected,
                 state = TaskState.Pending
-            )
+            ).apply {
+                main_file = files.first()
+            }
         }
 
         fun getOrchestrationConfig(): OrchestrationConfig {

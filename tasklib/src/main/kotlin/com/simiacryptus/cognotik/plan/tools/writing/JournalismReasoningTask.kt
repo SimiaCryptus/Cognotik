@@ -56,7 +56,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     var story_topic: String? = null,
 
     @Description("Input files or documents to inform the investigation (glob patterns)")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
 
     @Description("Journalism elements to consider (who, what, when, where, why, how)")
     var journalism_elements: Map<String, Any>? = null,
@@ -350,7 +350,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
       }.toByteArray())
 
       // Include file content if requested
-      val fileContent = super.getInputFileContent(config.input_files, root, treatDocumentsAsText = true)
+      val fileContent = super.getInputFileContent(config.related_files, root, treatDocumentsAsText = true)
       if (fileContent.isNotBlank()) {
         transcript?.write(buildString {
           appendLine("<details>")

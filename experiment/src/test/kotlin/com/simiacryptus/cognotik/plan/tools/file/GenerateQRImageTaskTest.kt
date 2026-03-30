@@ -27,13 +27,14 @@ object GenerateQRImageTaskTest {
         task_type = GenerateQRImageTask.GenerateQRImage.name
       ),
       executionConfig = GenerateQRImageTaskExecutionConfigData(
-        files = listOf("artistic_qr.png"),
         qr_content = "https://github.com/SimiaCryptus",
         style_directive = "A lush jungle theme with exotic flowers and vines weaving through the QR pattern, vibrant greens and floral colors",
         qr_size = 512,
         max_retries = 3,
         task_description = "Generate an artistic QR code for the project repository"
-      ),
+      ).apply {
+        main_file = "artistic_qr.png"
+      },
       timeoutMinutes = 10,
       user = com.simiacryptus.cognotik.platform.model.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,

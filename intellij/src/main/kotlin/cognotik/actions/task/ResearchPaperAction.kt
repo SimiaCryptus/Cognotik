@@ -375,7 +375,7 @@ class ResearchPaperAction : BaseAction() {
                 number_of_sections = numberOfSectionsSpinner.value as Int,
                 revision_passes = revisionPassesSpinner.value as Int,
                 research_files = researchFiles,
-                input_files = inputFiles,
+                related_files = inputFiles,
                 state = TaskState.Pending
             )
         }

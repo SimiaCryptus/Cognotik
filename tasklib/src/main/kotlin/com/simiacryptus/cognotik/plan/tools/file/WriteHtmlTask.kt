@@ -28,8 +28,6 @@ class WriteHtmlTask(
 ) : AbstractFileTask<WriteHtmlTask.WriteHtmlTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
   class WriteHtmlTaskExecutionConfigData(
-    @Description("The HTML file to be created (relative path, must end with .html)")
-    files: List<String> = emptyList(),
     @Description("Additional files for context (e.g., existing HTML templates, related files)")
     related_files: List<String>? = null,
     @Description("Detailed description of the HTML page to create, including layout, styling, and functionality requirements")
@@ -43,19 +41,18 @@ class WriteHtmlTask(
   ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = WriteHtml.name,
     task_description = task_description,
-    files = files,
     related_files = related_files,
     task_dependencies = task_dependencies,
     state = state
   ) {
     override fun validate(): String? {
       // Validate that files list is not empty
-      if (files.isNullOrEmpty()) {
+      if (listOf<String>(main_file).isEmpty()) {
         return "WriteHtmlTaskExecutionConfigData: files list cannot be null or empty"
       }
 
       // Validate that the file has .html extension
-      val htmlFile = files!!.first()
+      val htmlFile = listOf(main_file).firstOrNull() ?: return "WriteHtmlTaskExecutionConfigData: no file specified in files list"
       if (!htmlFile.endsWith(".html", ignoreCase = true)) {
         return "WriteHtmlTaskExecutionConfigData: file must have .html extension, got: $htmlFile"
       }
@@ -106,13 +103,12 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
       return
     }
 
-    val htmlFiles = executionConfig?.files ?: emptyList()
-    if (htmlFiles.isEmpty()) {
+    val htmlFile = (executionConfig?.let { listOf(it.main_file) } ?: emptyList()).firstOrNull()
+    if (htmlFile == null) {
       resultFn("CONFIGURATION ERROR: No HTML file specified")
       return
     }
 
-    val htmlFile = htmlFiles.first()
     if (!htmlFile.endsWith(".html", ignoreCase = true)) {
       resultFn("CONFIGURATION ERROR: File must have .html extension: $htmlFile")
       return

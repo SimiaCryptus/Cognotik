@@ -24,7 +24,6 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
   abstract class FileTaskExecutionConfig(
     task_type: String? = null,
     task_description: String? = null,
-    @Description("REQUIRED: The files to be generated as output for the task (relative paths)") override var files: List<String> = emptyList(),
     @Description("Additional files used to inform the change, including relevant files created by previous tasks") var related_files: List<String>? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -41,7 +40,8 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
   }
 
   protected fun getInputFiles(): List<File> {
-    val strings = (executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())
+    val strings = (executionConfig?.related_files ?: listOf()) + (executionConfig?.let { listOf(it.main_file) }
+      ?: listOf())
     val flatMap = strings
       .flatMap { pattern: String ->
         val resolved = root.toFile().resolve(pattern).canonicalFile

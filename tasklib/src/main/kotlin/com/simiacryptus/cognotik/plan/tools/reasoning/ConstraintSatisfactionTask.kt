@@ -29,7 +29,7 @@ class ConstraintSatisfactionTask(
     @Description("The problem requiring constraint satisfaction. Be specific about the goals and constraints.")
     var problem_description: String? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task.")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     @Description("Hard constraints that must be satisfied (cannot be violated).")
     var hard_constraints: List<String>? = emptyList(),
     @Description("Soft constraints to optimize with their relative weights (0.0-1.0).")
@@ -38,8 +38,6 @@ class ConstraintSatisfactionTask(
     var search_strategy: String = "backtracking",
     @Description("Maximum search iterations before returning best solution found.")
     var max_iterations: Int = 100,
-    @Description("Additional files for context.")
-    var related_files: List<String>? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : TaskExecutionConfig(
@@ -73,9 +71,9 @@ class ConstraintSatisfactionTask(
         }
       }
       // Validate input files if provided
-      input_files?.forEach { pattern ->
+      related_files?.forEach { pattern ->
         if (pattern.isBlank()) {
-          return "input_files patterns cannot be blank"
+          return "related_files patterns cannot be blank"
         }
       }
 
@@ -162,7 +160,7 @@ class ConstraintSatisfactionTask(
 
           val priorCode = getPriorCode(agent.executionState)
           val inputFileContent =
-            super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
+            super.getInputFileContent(executionConfig?.related_files, root, treatDocumentsAsText = true)
 
           val prompt = buildPrompt(
             problemDescription, hardConstraints, softConstraints,
@@ -194,7 +192,7 @@ class ConstraintSatisfactionTask(
           val solutionGenerationTask = tabbedDisplay.newTask("Solution Generation")
           solutionGenerationTask.add("### Generating solution...".renderMarkdown())
 
-          val api = defaultSmart ?: throw IllegalStateException("No smart model configured")
+          val api = defaultSmart
           val chatAgent = ChatAgent(prompt = prompt, model = api)
           val answer = chatAgent.answer(listOf(""))
 

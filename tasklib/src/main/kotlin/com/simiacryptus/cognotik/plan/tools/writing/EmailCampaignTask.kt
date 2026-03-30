@@ -75,12 +75,7 @@ class EmailCampaignTask(
     @Description("Number of revision passes for quality improvement")
     var revision_passes: Int = 1,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as brand context for the task")
-    var input_files: List<String>? = null,
-
-
-    @Description("Related files or brand guidelines to incorporate")
     var related_files: List<String>? = null,
-
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,

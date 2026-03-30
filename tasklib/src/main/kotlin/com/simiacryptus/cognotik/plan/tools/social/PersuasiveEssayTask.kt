@@ -43,7 +43,7 @@ class PersuasiveEssayTask(
 
   class PersuasiveEssayTaskExecutionConfigData(
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
 
     @Description("The thesis statement or position to argue for")
     var thesis: String? = null,
@@ -77,9 +77,6 @@ class PersuasiveEssayTask(
 
     @Description("Number of revision passes for quality improvement")
     var revision_passes: Int = 1,
-
-    @Description("Related files or research to incorporate")
-    var related_files: List<String>? = null,
 
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -293,7 +290,7 @@ class PersuasiveEssayTask(
           // Gather context
           val priorContext = getPriorCode(agent.executionState)
           val inputFileContent =
-            super.getInputFileContent(executionConfig.input_files, root, treatDocumentsAsText = true)
+            super.getInputFileContent(executionConfig.related_files, root, treatDocumentsAsText = true)
           val contextFiles = getContextFiles()
 
           if (priorContext.isNotBlank() || inputFileContent.isNotBlank() || contextFiles.isNotBlank()) {

@@ -69,8 +69,9 @@ object CoreTasks : CognotikPlugin {
           task_description = "Task 2",
           task_dependencies = listOf("1"),
           related_files = listOf("input2.txt"),
-          files = listOf("output2.txt"),
-        )
+        ).apply {
+          main_file = "output2.txt"
+        }
       ),
     )
 

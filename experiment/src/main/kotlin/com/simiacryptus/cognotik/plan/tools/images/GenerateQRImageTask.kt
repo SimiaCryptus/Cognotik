@@ -35,8 +35,6 @@ class GenerateQRImageTask(
 ) : AbstractFileTask<GenerateQRImageTask.GenerateQRImageTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
   class GenerateQRImageTaskExecutionConfigData(
-    @Description("The output image file to be created (relative path, must end with .png, .jpg, or .jpeg)")
-    files: List<String> = emptyList(),
     @Description("Additional files for context (e.g., reference images, style guides)")
     related_files: List<String>? = null,
     @Description("The data/text content to encode in the QR code")
@@ -53,16 +51,15 @@ class GenerateQRImageTask(
   ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = GenerateQRImage.name,
     task_description = task_description,
-    files = files,
     related_files = related_files,
     task_dependencies = task_dependencies,
     state = state
   ) {
     override fun validate(): String? {
-      if (files.isNullOrEmpty()) {
+      if (listOf<String>(main_file).isEmpty()) {
         return "GenerateQRImageTask requires at least one output file to be specified"
       }
-      val imageFile = files!!.first()
+      val imageFile = listOf(main_file).first()
       if (!imageFile.matches(Regex(".*\\.(png|jpg|jpeg)$", RegexOption.IGNORE_CASE))) {
         return "GenerateQRImageTask file must have .png, .jpg, or .jpeg extension: $imageFile"
       }
@@ -102,8 +99,8 @@ GenerateQRImage - Generate artistic QR codes using AI image processing
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val imageFiles = executionConfig?.files ?: emptyList()
-    if (imageFiles.isEmpty()) {
+    val imageFile = executionConfig?.let { listOf(it.main_file) }?.firstOrNull()
+    if (imageFile == null) {
       resultFn("CONFIGURATION ERROR: No output file specified")
       return
     }
@@ -122,16 +119,15 @@ GenerateQRImage - Generate artistic QR codes using AI image processing
 
     val qrSize = executionConfig?.qr_size ?: 500
     val maxRetries = executionConfig?.max_retries ?: 3
-    val imageOutputFile = imageFiles.first()
 
-    if (!imageOutputFile.matches(Regex(".*\\.(png|jpg|jpeg)$", RegexOption.IGNORE_CASE))) {
-      resultFn("CONFIGURATION ERROR: File must have .png, .jpg, or .jpeg extension: $imageOutputFile")
+    if (!imageFile.matches(Regex(".*\\.(png|jpg|jpeg)$", RegexOption.IGNORE_CASE))) {
+      resultFn("CONFIGURATION ERROR: File must have .png, .jpg, or .jpeg extension: $imageFile")
       return
     }
 
     val tabs = TabbedDisplay(task)
     val overviewTab = tabs.newTask("Overview")
-    overviewTab.header("Generating Artistic QR Code: `$imageOutputFile`", level = 2)
+    overviewTab.header("Generating Artistic QR Code: `$imageFile`", level = 2)
     overviewTab.add(MarkdownUtil.renderMarkdown("### QR Content\n```\n$qrContent\n```", ui = task.ui))
     overviewTab.add(MarkdownUtil.renderMarkdown("### Style Directive\n$styleDirective", ui = task.ui))
 
@@ -241,13 +237,13 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
       }
 
       // Save the final image
-      val outputPath = root.resolve(imageOutputFile)
+      val outputPath = root.resolve(imageFile)
       outputPath.toFile().parentFile?.mkdirs()
 
       val format = when {
-        imageOutputFile.endsWith(".png", ignoreCase = true) -> "png"
-        imageOutputFile.endsWith(".jpg", ignoreCase = true) -> "jpg"
-        imageOutputFile.endsWith(".jpeg", ignoreCase = true) -> "jpeg"
+        imageFile.endsWith(".png", ignoreCase = true) -> "png"
+        imageFile.endsWith(".jpg", ignoreCase = true) -> "jpg"
+        imageFile.endsWith(".jpeg", ignoreCase = true) -> "jpeg"
         else -> "png"
       }
 
@@ -256,7 +252,7 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
       val verificationStatus =
         if (verifiedContent == qrContent) "verified and scannable" else "may not be scannable"
       val summary =
-        "Generated artistic QR code ($verificationStatus) saved to <a href=\"${task.linkTo(imageOutputFile)}\">$imageOutputFile</a>."
+        "Generated artistic QR code ($verificationStatus) saved to <a href=\"${task.linkTo(imageFile)}\">$imageFile</a>."
 
       val finalTab = tabs.newTask("Final Result")
       finalTab.header("Final Artistic QR Code", level = 3)

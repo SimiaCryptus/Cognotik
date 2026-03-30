@@ -47,20 +47,17 @@ class ImageDecompositionTask(
     var max_depth: Int = 2,
     @Description("Minimum width/height (in pixels) of a region to trigger recursive analysis.")
     var min_region_size: Int = 100,
-    @Description("The output JSON file to save the analysis tree to.")
-    var output_file: String? = "analysis_result.json",
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = ImageDecomposition.name,
     task_description = segmentation_query,
-    files = files,
     task_dependencies = task_dependencies,
     state = state
   ) {
     override fun validate(): String? {
-      if (files.isNullOrEmpty()) return "Input image file must be specified"
-      if (output_file.isNullOrBlank()) return "Output JSON file must be specified"
+      if (listOf<String>(main_file).isEmpty()) return "Input image file must be specified"
+      if (main_file.isNullOrBlank()) return "Output JSON file must be specified"
       if (max_depth < 1) return "Max depth must be at least 1"
       return ValidatedObject.Companion.validateFields(this)
     }
@@ -153,12 +150,12 @@ class ImageDecompositionTask(
     orchestrationConfig: OrchestrationConfig
   ) {
     val executionConfig = executionConfig ?: return resultFn("Execution config is missing")
-    val imagePath = executionConfig.files?.firstOrNull() ?: return resultFn("No image file specified")
+    val imagePath = listOf(executionConfig.main_file).firstOrNull() ?: return resultFn("No image file specified")
     val segmentation_query = executionConfig.segmentation_query ?: "Analyze image"
     val analysis_query = executionConfig.analysis_query ?: "Describe the contents of this image in detail"
     val maxDepth = executionConfig.max_depth
     val minSize = executionConfig.min_region_size
-    val outputFile = executionConfig.output_file ?: "analysis.json"
+    val outputFile = executionConfig.main_file ?: "analysis.json"
 
     val transcript = task.newUserFileStream(transcriptFile())
     val tabs = TabbedDisplay(task)

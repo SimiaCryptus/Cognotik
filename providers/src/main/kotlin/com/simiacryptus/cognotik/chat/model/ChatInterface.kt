@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.chat.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
@@ -49,20 +48,6 @@ class ChatInterface(
     ),
     model = modelType,
     logStreams = logStreams
-  )
-
-  @JsonIgnore
-  fun getChildClient(): ChatInterface = ChatInterface(
-    logStreams = this.logStreams.toTypedArray().toMutableList(),
-    key = this.key,
-    base = this.base,
-    logLevel = this.logLevel,
-    temperature = this.temperature,
-    provider = this.provider,
-    modelType = this.modelType,
-    workPool = this.workPool,
-    scheduledPool = this.scheduledPool,
-    onUsage = this.onUsage,
   )
 
 }

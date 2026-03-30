@@ -28,11 +28,4 @@ interface ChatClientInterface {
     logStreams: MutableList<BufferedOutputStream> = this.logStreams
   ): ModelSchema.ChatResponse
 
-  /**
-   * Moderates the given text for policy violations
-   * @param text The text to moderate
-   * @throws ModerationException if the text violates policies
-   */
-  fun moderate(text: String) {}
-
 }

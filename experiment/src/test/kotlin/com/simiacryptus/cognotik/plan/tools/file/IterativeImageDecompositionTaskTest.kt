@@ -40,8 +40,9 @@ class IterativeImageDecompositionTaskTest {
         segmentation_query = "Decompose, analyze, and translate into english.",
         max_depth = 2,
         min_region_size = 50,
-        output_file = outputJson
-      ),
+      ).apply {
+        main_file = outputJson
+      },
       timeoutMinutes = 10,
       typeConfig = TaskTypeConfig(ImageDecompositionTask.ImageDecomposition.name),
       user = com.simiacryptus.cognotik.platform.model.defaultUser,

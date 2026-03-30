@@ -37,8 +37,6 @@ class ImageVariationTask(
   }
 
   class ImageVariationConfig(
-    @Description("The input image file")
-    override var files: List<String> = emptyList(),
     @Description("Number of distinct regions to modify")
     var num_subimages: Int = 7,
     @Description("Number of alternate versions per region - at least 2")
@@ -55,12 +53,12 @@ class ImageVariationTask(
     state: TaskState? = TaskState.Pending,
   ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = ImageVariation.name,
-    task_description = "Generate ${num_variations} variations with ${num_subimages}x${num_subimage_alternates} potential changes from $files",
+    task_description = "Generate ${num_variations} variations with ${num_subimages}x${num_subimage_alternates} potential changes",
     task_dependencies = task_dependencies,
     state = state
   ) {
     override fun validate(): String? {
-      if (files.isEmpty()) return "Must specify an input image file"
+      if (listOf<String>(main_file).isEmpty()) return "Must specify an input image file"
       if (num_subimages < 1) return "Must identify at least 1 region"
       if (num_subimage_alternates <= 1) return "Must generate at more than 1 alternate per region"
       if (num_variations < 1) return "Must generate at least 1 variation"
@@ -377,7 +375,7 @@ ImageVariation - Creates 'Find the Differences' style image sets.
   }
 
   private fun primaryImageFile(): String? {
-    return executionConfig?.files?.filter { it.endsWith(".png") }?.let {
+    return executionConfig?.let { listOf(it.main_file) }?.filter { it.endsWith(".png") }?.let {
       if (it.isEmpty()) null else it[0]
     } ?: executionConfig?.related_files?.filter { it.endsWith(".png") }?.let {
       if (it.isEmpty()) null else it[0]

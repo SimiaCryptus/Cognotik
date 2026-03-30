@@ -1,0 +1,21 @@
+{
+  "models": [
+    {
+      "model": "claude-haiku-4-5-20251001",
+      "prompt_tokens": 2137,
+      "completion_tokens": 102,
+      "cost": 0.002647
+    },
+    {
+      "model": "claude-sonnet-4-6",
+      "prompt_tokens": 692,
+      "completion_tokens": 3975,
+      "cost": 0.061701
+    }
+  ],
+  "totals": {
+    "prompt_tokens": 2829,
+    "completion_tokens": 4077,
+    "cost": 0.064348
+  }
+}

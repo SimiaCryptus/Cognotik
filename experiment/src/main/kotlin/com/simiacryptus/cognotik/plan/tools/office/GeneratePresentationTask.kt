@@ -30,8 +30,6 @@ class GeneratePresentationTask(
 ) {
 
   class GeneratePresentationTaskExecutionConfigData(
-    @Description("The HTML presentation file to be created (relative path, must end with .html)")
-    files: List<String> = emptyList(),
     @Description("Additional files for context (e.g., existing presentations, reference materials)")
     related_files: List<String>? = null,
     @Description("Detailed description of the presentation including topic, key points, target audience, and desired style")
@@ -49,19 +47,18 @@ class GeneratePresentationTask(
   ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = GeneratePresentation.name,
     task_description = task_description,
-    files = files,
     related_files = related_files,
     task_dependencies = task_dependencies,
     state = state
   ) {
     override fun validate(): String? {
       // Validate that at least one file is specified
-      if (files.isNullOrEmpty()) {
+      if (listOf<String>(main_file).isEmpty()) {
         return "GeneratePresentationTask requires at least one file to be specified"
       }
 
       // Validate that the file has .html extension
-      val htmlFile = files!!.first()
+      val htmlFile = listOf(main_file)!!.first()
       if (!htmlFile.endsWith(".html", ignoreCase = true)) {
         return "GeneratePresentationTask file must have .html extension: $htmlFile"
       }
@@ -156,13 +153,12 @@ class GeneratePresentationTask(
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val htmlFiles = executionConfig?.files ?: emptyList()
-    if (htmlFiles.isEmpty()) {
+    val htmlFile = executionConfig?.let { listOf(it.main_file) }?.firstOrNull()
+    if (htmlFile == null) {
       resultFn("CONFIGURATION ERROR: No presentation file specified")
       return
     }
 
-    val htmlFile = htmlFiles.first()
     if (!htmlFile.endsWith(".html", ignoreCase = true)) {
       resultFn("CONFIGURATION ERROR: File must have .html extension: $htmlFile")
       return
@@ -403,7 +399,7 @@ $TT
 
       filesToWrite.forEach { (filename, content) ->
         val path = when (filename) {
-          executionConfig?.files?.firstOrNull() -> outputPath
+          executionConfig?.let { listOf(it.main_file) }?.firstOrNull() -> outputPath
           else -> outputPath.resolveSibling(filename)
         }
         path.toFile().parentFile?.mkdirs()

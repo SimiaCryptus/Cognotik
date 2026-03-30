@@ -37,8 +37,6 @@ class AnalogicalReasoningTask(
     var validate_mappings: Boolean = true,
     @Description("Additional context files to inform the reasoning process")
     var related_files: List<String>? = null,
-    @Description("Input files to provide context for analogical reasoning (supports glob patterns)")
-    var input_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -213,7 +211,7 @@ class AnalogicalReasoningTask(
       val priorContext = getPriorCode(agent.executionState)
       val contextFiles = getContextFiles()
       val inputFileContent =
-        super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
+        super.getInputFileContent(executionConfig?.related_files, root, treatDocumentsAsText = true)
       log.debug("Context gathered: priorContext length=${priorContext.length}, contextFiles length=${contextFiles.length}")
       // Update overview with context info
       overviewTask.add(buildString {

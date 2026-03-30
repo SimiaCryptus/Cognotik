@@ -118,9 +118,6 @@ data class AppSettingsState(
         get() = imageModel?.instance()
 
 
-    @get:JsonIgnore
-    val embeddingClient: com.simiacryptus.cognotik.embedding.Embedder? get() = embeddingModel?.instance()
-
     @JsonIgnore
     override fun getState() = SimpleEnvelope(toJson(this))
 
@@ -281,7 +278,6 @@ data class AppSettingsState(
         var auxiliaryLog: File? = null
 
         val localUser: User = com.simiacryptus.cognotik.platform.model.defaultUser
-        const val WELCOME_VERSION: String = "2.0.8"
 
         @JvmStatic
         val instance: AppSettingsState by lazy {

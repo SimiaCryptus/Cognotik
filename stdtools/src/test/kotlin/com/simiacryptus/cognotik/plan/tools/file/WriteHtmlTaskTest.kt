@@ -26,10 +26,11 @@ object WriteHtmlTaskTest {
         task_type = WriteHtmlTask.WriteHtml.name
       ),
       executionConfig = WriteHtmlTaskExecutionConfigData(
-        files = listOf("index.html"),
         task_description = "Create a simple landing page for a coffee shop with a menu and contact section.",
         generate_images = false
-      ),
+      ).apply {
+        main_file = "index.html"
+      },
       timeoutMinutes = 10,
       user = com.simiacryptus.cognotik.platform.model.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
@@ -48,11 +49,12 @@ object WriteHtmlTaskTest {
         task_type = WriteHtmlTask.WriteHtml.name
       ),
       executionConfig = WriteHtmlTaskExecutionConfigData(
-        files = listOf("gallery.html"),
         task_description = "Create a photo gallery page for a travel blog with at least one image placeholder.",
         generate_images = true,
         image_count = 1
-      ),
+      ).apply {
+        main_file = "gallery.html"
+      },
       timeoutMinutes = 15,
       user = com.simiacryptus.cognotik.platform.model.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,

@@ -33,7 +33,6 @@ class OCRTask(
 ) : AbstractFileTask<OCRTask.OCRTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
   class OCRTaskExecutionConfigData(
-    @Description("The files to process (PDF or images)") files: List<String> = emptyList(),
     @Description("DPI for rendering pages (default: 150)") val dpi: Float = 150f,
     @Description("Extract figures as images") val extract_figures: Boolean = false,
     @Description("Extract form fields and metadata") val extract_metadata: Boolean = false,
@@ -44,12 +43,11 @@ class OCRTask(
   ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = OCR.name,
     task_description = task_description,
-    files = files,
     task_dependencies = task_dependencies,
     state = state
   ) {
     override fun validate(): String? {
-      if (files.isNullOrEmpty()) return "OCRTask requires at least one file"
+      if (listOf<String>(main_file).isEmpty()) return "OCRTask requires at least one file"
       return ValidatedObject.validateFields(this)
     }
   }
@@ -85,7 +83,7 @@ OCR - Convert documents (PDF, Images) to Markdown text.
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val files = executionConfig?.files ?: emptyList()
+    val files = executionConfig?.let { listOf(it.main_file) } ?: emptyList()
 
     if (files.isEmpty()) {
       val msg = "No files specified"

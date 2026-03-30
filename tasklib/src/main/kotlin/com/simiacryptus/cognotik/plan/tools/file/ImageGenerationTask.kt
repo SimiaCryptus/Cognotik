@@ -23,8 +23,6 @@ class ImageGenerationTask(
 ) : AbstractFileTask<ImageGenerationTask.GenerateImageTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
   class GenerateImageTaskExecutionConfigData(
-    @Description("The image file to be created (relative path, must end with .png, .jpg, or .jpeg)")
-    files: List<String> = emptyList(),
     @Description("Additional files for context (e.g., reference images, style guides)")
     related_files: List<String>? = null,
     @Description("Detailed description of the image to generate including subject, style, composition, colors, mood, and any specific requirements")
@@ -34,23 +32,18 @@ class ImageGenerationTask(
   ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = GenerateImage.name,
     task_description = task_description,
-    files = files,
     related_files = related_files,
     task_dependencies = task_dependencies,
     state = state
   ) {
     override fun validate(): String? {
       // Validate that at least one file is specified
-      val files = files
-      if (files.isNullOrEmpty()) {
+      val imageFile = listOf(main_file).firstOrNull()
+      if (imageFile.isNullOrEmpty()) {
         return "GenerateImageTask requires at least one file to be specified"
-      }
-      if (files.size > 1) {
-        return "GenerateImageTask currently supports generating only one image at a time"
       }
 
       // Validate that the file has a valid image extension
-      val imageFile = files.first()
       if (!imageFile.matches(Regex(".*\\.(png|jpg|jpeg)$", RegexOption.IGNORE_CASE))) {
         return "GenerateImageTask file must have .png, .jpg, or .jpeg extension: $imageFile"
       }
@@ -87,15 +80,14 @@ class ImageGenerationTask(
       transcript?.write("# Generate Image Task\n\n".toByteArray())
       val tabs = TabbedDisplay(task)
 
-      val imageFiles = executionConfig?.files ?: emptyList()
-      if (imageFiles.isEmpty()) {
+      val imageOutputFile = (executionConfig?.let { listOf(it.main_file) } ?: emptyList()).firstOrNull()
+      if (imageOutputFile == null) {
         val err = "CONFIGURATION ERROR: No image file specified"
         task.add(err.renderMarkdown())
         resultFn(err)
         return
       }
 
-      val imageOutputFile = imageFiles.first()
       val previewTask = tabs.newTask("Preview")
       val promptTask = tabs.newTask("Prompt")
 

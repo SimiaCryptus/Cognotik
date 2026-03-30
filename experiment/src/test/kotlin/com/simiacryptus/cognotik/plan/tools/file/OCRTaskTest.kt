@@ -33,12 +33,13 @@ object OCRTaskTest {
     val harness = TaskHarness(
       taskType = OCRTask.OCR,
       executionConfig = OCRTaskExecutionConfigData(
-        files = listOf("test_document.pdf"),
         task_description = "Convert the PDF to markdown",
         extract_figures = true,
         extract_metadata = true,
         extract_text = true,
-      ),
+      ).apply {
+        main_file = "test_document.pdf"
+      },
       timeoutMinutes = 10,
       typeConfig = TaskTypeConfig(OCRTask.OCR.name),
       user = com.simiacryptus.cognotik.platform.model.defaultUser,
@@ -108,9 +109,10 @@ object OCRTaskTest {
     TaskHarness(
       taskType = OCRTask.OCR,
       executionConfig = OCRTaskExecutionConfigData(
-        files = listOf(fileSelectionPrompt()),
         task_description = "Convert the PDF to markdown"
-      ),
+      ).apply {
+        main_file =fileSelectionPrompt()
+      },
       timeoutMinutes = 10,
       typeConfig = TaskTypeConfig(OCRTask.OCR.name),
       user = com.simiacryptus.cognotik.platform.model.defaultUser,

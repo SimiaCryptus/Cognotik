@@ -90,7 +90,8 @@ class DocProcessor(
   val openBrowser: Boolean = false,
   val urlCacheDir: File = File(root, ".doc-processor-cache/url-cache"),
   val autoFix: Boolean,
-  val user: User
+  val user: User,
+  val parentSession: Session? = null,
 ) {
   private val statusFile = File(root, "docops.status.json")
   private val statusLock = Any()
@@ -1087,7 +1088,8 @@ class DocProcessor(
         taskType = mod.taskType,
         timeoutMinutes = 30,
         message = mod.message(),
-        executionConfig = executionConfig(mod, harness)
+        executionConfig = executionConfig(mod, harness),
+        parentSession = parentSession
       ) { session ->
         if (cancelFlag.get()) {
           log.info("Cancellation requested, skipping execution of remaining tasks")

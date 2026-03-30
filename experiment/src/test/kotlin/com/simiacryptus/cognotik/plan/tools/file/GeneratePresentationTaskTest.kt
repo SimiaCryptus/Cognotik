@@ -27,7 +27,6 @@ object GeneratePresentationTaskTest {
         task_type = GeneratePresentationTask.GeneratePresentation.name
       ),
       executionConfig = GeneratePresentationTaskExecutionConfigData(
-        files = listOf("kotlin_presentation.html"),
         task_description = """
                     Create a professional presentation about the benefits of Kotlin for backend development.
                     Key points to cover:
@@ -38,7 +37,9 @@ object GeneratePresentationTaskTest {
                     Target audience: Java developers considering switching to Kotlin.
                 """.trimIndent(),
         generate_images = false, // Set to false for faster/more reliable CI testing
-      ),
+      ).apply {
+        main_file = "kotlin_presentation.html"
+      },
       timeoutMinutes = 10,
       user = com.simiacryptus.cognotik.platform.model.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
@@ -57,11 +58,12 @@ object GeneratePresentationTaskTest {
         task_type = GeneratePresentationTask.GeneratePresentation.name
       ),
       executionConfig = GeneratePresentationTaskExecutionConfigData(
-        files = listOf("ai_future_presentation.html"),
         task_description = "A futuristic presentation about the impact of AI on software engineering.",
         generate_images = true,
         max_images = 2
-      ),
+      ).apply {
+        main_file = "ai_future_presentation.html"
+      },
       timeoutMinutes = 15,
       user = com.simiacryptus.cognotik.platform.model.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,

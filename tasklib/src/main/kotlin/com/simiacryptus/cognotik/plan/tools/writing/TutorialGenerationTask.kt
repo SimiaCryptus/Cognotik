@@ -62,10 +62,8 @@ class TutorialGenerationTask(
     @Description("Number of main steps to break the tutorial into")
     var target_step_count: Int = 7,
 
-    @Description("Related files or documentation to reference")
-    var related_files: List<String>? = null,
     @Description("Optional input files to use as context (supports glob patterns, e.g. **/*.kt)")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
 
 
     task_description: String? = null,
@@ -336,7 +334,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
           // Gather context
           val priorContext = getPriorCode(agent.executionState)
           val contextFiles = getInputFileContent(executionConfig.related_files, root)
-          val inputFileContent = getInputFileContent(executionConfig.input_files, root)
+          val inputFileContent = getInputFileContent(executionConfig.related_files, root)
           // Combine all context
           buildString {
             if (contextFiles.isNotBlank()) appendLine(contextFiles)

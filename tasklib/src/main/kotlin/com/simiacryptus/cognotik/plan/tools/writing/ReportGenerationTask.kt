@@ -72,10 +72,8 @@ class ReportGenerationTask(
     @Description("Number of revision passes for quality improvement")
     var revision_passes: Int = 1,
 
-    @Description("Related files or data sources to incorporate")
-    var related_files: List<String>? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
 
 
     task_description: String? = null,
@@ -1198,7 +1196,7 @@ Provide the complete revised report.
     }
   }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (FileSelectionUtils.filteredWalk(root.toFile()) {

@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 open class UnifiedHarness(
-  val port: Int = Random.Default.nextInt(1024, 65535),
+  val port: Int = Random.nextInt(1024, 65535),
   val serverless: Boolean = true,
   val openBrowser: Boolean = false,
   val captureMessages: Boolean = serverless,
@@ -104,11 +104,11 @@ open class UnifiedHarness(
     }
   }
 
-  var session = Session.Companion.newGlobalID()
+  var session = Session.newGlobalID()
     private set
 
   fun resetSession() {
-    session = Session.Companion.newGlobalID()
+    session = Session.newGlobalID()
   }
 
   open fun runPlan(
@@ -188,7 +188,7 @@ open class UnifiedHarness(
 
     if (!serverless) {
       SessionProxyServer.chats[session] = planApp
-      ApplicationServer.Companion.appInfoMap[session] = AppInfoData(
+      ApplicationServer.appInfoMap[session] = AppInfoData(
         applicationName = name,
         inputCnt = 0,
         stickyInput = false,
@@ -284,7 +284,7 @@ open class UnifiedHarness(
     if (!serverless) {
       parentSession?.apply { SessionProxyServer.setParentSession(child = session, parent = this) }
       SessionProxyServer.chats[session] = singleTaskApp
-      ApplicationServer.Companion.appInfoMap[session] = AppInfoData(
+      ApplicationServer.appInfoMap[session] = AppInfoData(
         applicationName = name,
         inputCnt = 0,
         stickyInput = false,
@@ -366,8 +366,8 @@ open class UnifiedHarness(
   ): File {
     val tempDirectory = createTempDirectory(name)
     log.info("Running task in workspace: ${tempDirectory.absolutePath}")
-    DataStorage.Companion.sessionPaths[session] = tempDirectory
-    if (redirectData) DataStorage.Companion.dataPaths[session] = tempDirectory
+    DataStorage.sessionPaths[session] = tempDirectory
+    if (redirectData) DataStorage.dataPaths[session] = tempDirectory
     return workspace ?: tempDirectory
   }
 
@@ -398,7 +398,7 @@ open class UnifiedHarness(
 
     @JvmStatic
     fun configurePlatform(user: User) {
-      PlanHarness.Companion.initDynamicEnums()
+      PlanHarness.initDynamicEnums()
       ApplicationServices.authenticationManager = object : AuthenticationInterface {
         override fun getUser(accessToken: String?) = user
         override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()

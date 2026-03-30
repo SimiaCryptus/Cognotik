@@ -38,7 +38,6 @@ object PlanUtil {
     return taskIds
   }
 
-  val isWindows = System.getProperty("os.name").lowercase(Locale.getDefault()).contains("windows")
   private fun sanitizeForMermaid(input: String) = input
     .replace(" ", "_")
     .replace("\"", "\\\"")
@@ -123,30 +122,7 @@ object PlanUtil {
       tasksByID
     }
   }
-
-  fun getAllDependencies(
-    subPlanTask: TaskExecutionConfig,
-    subTasks: Map<String, TaskExecutionConfig>,
-    visited: MutableSet<String>
-  ): List<String> {
-    val dependencies = subPlanTask.task_dependencies?.toMutableList() ?: mutableListOf()
-    subPlanTask.task_dependencies?.forEach { dep ->
-      if (dep in visited) return@forEach
-      val subTask = subTasks[dep]
-      if (subTask != null) {
-        visited.add(dep)
-        dependencies.addAll(
-          getAllDependencies(
-            subTask,
-            subTasks,
-            visited
-          )
-        )
-      }
-    }
-    return dependencies
-  }
-
+  
   val log = LoggerFactory.getLogger(PlanUtil::class.java)
 
 }

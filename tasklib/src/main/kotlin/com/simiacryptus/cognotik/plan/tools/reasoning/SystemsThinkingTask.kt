@@ -30,7 +30,7 @@ class SystemsThinkingTask(
     @Description("Whether to identify feedback loops (reinforcing and balancing)")
     var identify_feedback_loops: Boolean = true,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     @Description("Whether to map delays and accumulations in the system")
     var map_delays: Boolean = true,
     @Description("Whether to find leverage points for intervention")
@@ -43,8 +43,6 @@ class SystemsThinkingTask(
     var identify_archetypes: Boolean = true,
     @Description("Whether to analyze emergent behavior")
     var analyze_emergent_behavior: Boolean = true,
-    @Description("Additional files for context")
-    var related_files: List<String>? = null,
     @Description("Focus areas or subsystems to prioritize in the analysis")
     var focus_areas: List<String>? = null,
     @Description("Specific questions to answer about the system")
@@ -708,7 +706,7 @@ Provide clear, actionable insights grounded in systems thinking principles.
     }.joinToString("\n\n")
   }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (FileSelectionUtils.filteredWalk(root.toFile()) {

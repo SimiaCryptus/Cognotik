@@ -22,7 +22,7 @@ class MetaCognitiveReflectionTask(
     @Description("The ID of the task whose reasoning process should be reflected upon")
     val subject_task_id: String? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as context for reflection")
-    val input_files: List<String>? = null,
+    val related_files: List<String>? = null,
     @Description("Additional context or questions to guide the reflection")
     val reflection_questions: List<String>? = null,
     @Description("Whether to include file context in the reflection analysis")
@@ -176,7 +176,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     }
     // Gather file context if enabled
     val fileContext = if (executionConfig?.include_file_context == true) {
-      getInputFileContext(executionConfig?.input_files ?: listOf())
+      getInputFileContext(executionConfig?.related_files ?: listOf())
     } else {
       ""
     }
@@ -223,7 +223,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
          |
          |**Include File Context**: ${executionConfig?.include_file_context ?: true}
          |
-         |**Input Files**: ${executionConfig?.input_files?.joinToString(", ") ?: "None"}
+         |**Input Files**: ${executionConfig?.related_files?.joinToString(", ") ?: "None"}
          |
          |**Reflection Questions**: ${executionConfig?.reflection_questions?.size ?: 0} questions
                 |
@@ -241,7 +241,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
       stream.write("- **Subject Task**: `$subjectTaskId`\n".toByteArray())
       stream.write("- **Reflection Aspects**: $aspectsText\n".toByteArray())
       stream.write("- **Include File Context**: ${executionConfig?.include_file_context ?: true}\n".toByteArray())
-      stream.write("- **Input Files**: ${executionConfig?.input_files?.joinToString(", ") ?: "None"}\n".toByteArray())
+      stream.write("- **Input Files**: ${executionConfig?.related_files?.joinToString(", ") ?: "None"}\n".toByteArray())
       stream.write("- **Reflection Questions**: ${executionConfig?.reflection_questions?.size ?: 0}\n".toByteArray())
       stream.write("- **Suggest Improvements**: ${executionConfig?.suggest_improvements ?: true}\n".toByteArray())
       stream.write("- **Identify Gaps**: ${executionConfig?.identify_gaps ?: true}\n".toByteArray())

@@ -31,8 +31,6 @@ class StructuralInvariantAnalysisTask(
     @Description("Output format: 'fingerprint' (list of invariants) or 'signature' (hashable summary)")
     val output_format: String = "fingerprint",
     @Description("The specific files (or file patterns) to be used as input")
-    val input_files: List<String>? = null,
-    @Description("Additional files for context")
     val related_files: List<String>? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -105,13 +103,13 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
         add("<b>Subject:</b> $subject")
         add("<b>Transformations:</b> ${transformations.joinToString(", ")}")
         add("<b>Output Format:</b> $format")
-        if (!executionConfig?.input_files.isNullOrEmpty()) {
-          add("<b>Input Files:</b> ${executionConfig?.input_files?.joinToString(", ")}")
+        if (!executionConfig?.related_files.isNullOrEmpty()) {
+          add("<b>Input Files:</b> ${executionConfig?.related_files?.joinToString(", ")}")
         }
       }
 
       val inputFileContent =
-        super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
+        super.getInputFileContent(executionConfig?.related_files, root, treatDocumentsAsText = true)
       val priorCode = getPriorCode(agent.executionState)
 
       val prompt = buildPrompt(subject, transformations, format, inputFileContent, priorCode)

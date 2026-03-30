@@ -95,6 +95,7 @@ class DocProcessorServlet(
         imageModel = effectiveImageModel,
         autoFix = true,
         user = user,
+        parentSession = Session(sessionId),
       )
       val docSpec = docProcessor.parseMarkdownWithFrontmatter(docFile)
       if (docSpec == null) {
@@ -198,8 +199,5 @@ class DocProcessorServlet(
       }
     }
 
-    fun getCookie(req: HttpServletRequest): String? {
-      return req.cookies?.find { it.name == "sessionId" }?.value
-    }
   }
 }

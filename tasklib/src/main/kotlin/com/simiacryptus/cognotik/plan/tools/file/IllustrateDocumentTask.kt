@@ -64,8 +64,6 @@ class IllustrateDocumentTask(
   }
 
   class IllustrateDocumentTaskExecutionConfigData(
-    @Description("The document file to illustrate (must be .md or .html). Exactly one file must be specified.")
-    files: List<String> = emptyList(),
     @Description("Maximum number of images to generate, between 1 and 20 (default: 5)")
     var max_images: Int = 5,
     @Description("Image format to use: 'png' or 'jpg' (default: 'png')")
@@ -84,18 +82,17 @@ class IllustrateDocumentTask(
   ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = IllustrateDocument.name,
     task_description = task_description,
-    files = files,
     task_dependencies = task_dependencies,
     state = state
   ) {
     override fun validate(): String? {
-      if (files.isNullOrEmpty()) {
+      if (listOf<String>(main_file).isEmpty()) {
         return "IllustrateDocumentTask requires exactly one file to be specified"
       }
-      if (files!!.size > 1) {
+      if (listOf<String>(main_file).size > 1) {
         return "IllustrateDocumentTask can only process one file at a time"
       }
-      val file = files!!.first()
+      val file = listOf(main_file).first()
       if (!file.matches(Regex(".*\\.(md|html)$", RegexOption.IGNORE_CASE))) {
         return "IllustrateDocumentTask file must have .md or .html extension: $file"
       }
@@ -132,7 +129,7 @@ class IllustrateDocumentTask(
     task.ui.pool.submit {
       val executionConfig = this.executionConfig ?: return@submit
       val startTime = System.currentTimeMillis()
-      val documentFile = executionConfig?.files?.firstOrNull()
+      val documentFile = listOf(executionConfig.main_file)?.firstOrNull()
       val transcript = task.newUserFileStream(transcriptFile())
 
       try {

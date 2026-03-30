@@ -37,7 +37,7 @@ class ProbabilisticReasoningTask(
     @Description("Risk tolerance level (low/medium/high)")
     var risk_tolerance: String = "medium",
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     @Description("Decision context or problem statement")
     var decision_context: String? = null,
     task_description: String? = null,
@@ -592,35 +592,6 @@ Consider both the strength of evidence and its reliability.
         resultFn(errorOutput)
       }
     }
-  }
-
-  private fun getInputFileCode(agent: TaskOrchestrator): String {
-    return (executionConfig?.input_files ?: listOf())
-      .flatMap { pattern: String ->
-        val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
-        (FileSelectionUtils.filteredWalk(agent.root.toFile()) {
-          when {
-            FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-            matcher.matches(agent.root.relativize(it.toPath())) -> true
-            it.isDirectory -> true
-            else -> false
-          }
-        })
-      }.filter { file ->
-        file.isFile && file.exists()
-      }
-      .distinct()
-      .sortedBy { it }
-      .joinToString("\n\n") { relativePath ->
-        val file = agent.root.toFile().resolve(relativePath)
-        try {
-          val content = file.readText()
-          "# $relativePath\n\n```\n$content\n```"
-        } catch (e: Throwable) {
-          log.warn("Error reading file: $relativePath", e)
-          ""
-        }
-      }
   }
 
   private fun buildBayesianUpdatePrompt(

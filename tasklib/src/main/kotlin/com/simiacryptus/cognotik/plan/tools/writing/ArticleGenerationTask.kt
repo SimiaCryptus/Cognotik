@@ -35,7 +35,7 @@ class ArticleGenerationTask(
     @Description("The story topic or event to write about")
     story_topic: String? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    input_files: List<String>? = null,
+    related_files: List<String>? = null,
 
     @Description("Journalism elements to consider (who, what, when, where, why, how)")
     journalism_elements: Map<String, Any>? = null,
@@ -84,7 +84,7 @@ class ArticleGenerationTask(
     assess_newsworthiness = true,
     task_dependencies = task_dependencies,
     state = state,
-    input_files = input_files
+    related_files = related_files
   ) {
     override val task_type: String = ArticleGeneration.name
     override var task_description: String? = "Generate $article_format article about '$story_topic'"
@@ -716,7 +716,7 @@ Make each snippet:
     }
   }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (FileSelectionUtils.filteredWalk(root.toFile()) {

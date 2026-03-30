@@ -46,7 +46,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
     var subject: String? = null,
 
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the narrative")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
 
     @Description("Narrative elements to consider (characters, setting, conflict, timeline, etc.)")
     var narrative_elements: Map<String, Any>? = null,
@@ -62,9 +62,6 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
 
     @Description("Writing style (e.g., 'literary', 'thriller', 'technical', 'conversational')")
     var writing_style: String = "literary",
-    @Description("Additional style details or guidelines for the narrative voice")
-    var style_details: String = "",
-
 
     @Description("Point of view (e.g., 'first person', 'third person limited', 'third person omniscient')")
     var point_of_view: String = "third person limited",
@@ -89,11 +86,6 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
 
     @Description("Whether to generate a cover image for the narrative")
     var generate_cover_image: Boolean = true,
-    @Description("Optional character references with images and detailed descriptions for visual and narrative consistency")
-    var character_references: List<NarrativeCharacterReference> = emptyList(),
-    @Description("Optional plot continuity details to guide narrative structure and consistency")
-    var plot_continuity: NarrativePlotContinuityDetails? = null,
-
 
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -341,8 +333,8 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
       // Get input file context
       val executionConfig = executionConfig ?: throw RuntimeException("Execution config is null")
       val inputFileContext = try {
-        log.debug("Loading input files: ${executionConfig.input_files?.joinToString(", ") ?: "none"}")
-        super.getInputFileContent(executionConfig.input_files, root, treatDocumentsAsText = true)
+        log.debug("Loading input files: ${executionConfig.related_files?.joinToString(", ") ?: "none"}")
+        super.getInputFileContent(executionConfig.related_files, root, treatDocumentsAsText = true)
       } catch (e: Exception) {
         log.error("Failed to load input files", e)
         transcript?.write("WARNING: Failed to load input files: ${e.message}\n\n")

@@ -40,8 +40,6 @@ class CausalInferenceTask(
     @Description("Data sources for evidence (file patterns or paths)")
     var evidence_sources: List<String>? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
-    @Description("Additional files for context")
     var related_files: List<String>? = null,
     @Description("A description of the task's purpose")
     task_description: String? = null,
@@ -472,7 +470,7 @@ class CausalInferenceTask(
     }
   }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (FileSelectionUtils.filteredWalk(root.toFile()) {

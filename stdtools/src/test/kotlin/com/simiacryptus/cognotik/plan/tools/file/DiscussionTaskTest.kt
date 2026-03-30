@@ -31,7 +31,7 @@ object DiscussionTaskTest {
           "Are there any potential edge cases in the current implementation?"
         ),
         inquiry_goal = "Gain a deep understanding of the Calculator implementation and identify potential improvements.",
-        input_files = listOf("Calculator.kt"),
+        related_files = listOf("Calculator.kt"),
         task_description = "Perform a technical analysis of the Calculator class.",
       ),
       timeoutMinutes = 10,

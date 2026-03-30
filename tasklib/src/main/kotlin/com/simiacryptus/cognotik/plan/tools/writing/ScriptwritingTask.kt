@@ -52,11 +52,9 @@ class ScriptwritingTask(
 
     @Description("Whether to include a call-to-action") var include_cta: Boolean = true,
 
-    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task") var input_files: List<String>? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task") var related_files: List<String>? = null,
 
     @Description("Number of revision passes") var revision_passes: Int = 1,
-
-    @Description("Related files or research to incorporate") var related_files: List<String>? = null,
 
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -1154,7 +1152,7 @@ class ScriptwritingTask(
   }
 
   private fun getInputFileContent(): String {
-    val inputFiles = executionConfig?.input_files ?: return ""
+    val inputFiles = executionConfig?.related_files ?: return ""
     if (inputFiles.isEmpty()) return ""
     return buildString {
       appendLine("## Input Files")

@@ -64,7 +64,7 @@ class GameLevelDesignTask(
     var include_visual_layout: Boolean = true,
 
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
 
     task_description: String? = null,
     task_dependencies: MutableList<String>? = null,
@@ -437,7 +437,7 @@ class GameLevelDesignTask(
     try {
       // Gather context
       val priorContext = getPriorCode(agent.executionState)
-      val inputContext = getInputFileContent(executionConfig?.input_files, root)
+      val inputContext = getInputFileContent(executionConfig?.related_files, root)
       val combinedContext = (if (inputContext.isNotBlank()) inputContext else "") +
           (if (priorContext.isNotBlank()) "\n\n## Prior Context\n\n$priorContext" else "")
 

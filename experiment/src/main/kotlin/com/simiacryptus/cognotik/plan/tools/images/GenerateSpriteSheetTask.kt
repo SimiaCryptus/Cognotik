@@ -33,8 +33,6 @@ class GenerateSpriteSheetTask(
 ) {
 
   class GenerateSpriteSheetTaskExecutionConfigData(
-    @Description("The sprite sheet image file to be created (relative path, must end with .png)")
-    files: List<String> = emptyList(),
     @Description("The JSON metadata file to be created (relative path, must end with .json)")
     var metadata_file: String? = null,
     @Description("Detailed description of the sprites to generate (e.g., 'A pixel art warrior walking animation, 4 frames, side view')")
@@ -44,14 +42,13 @@ class GenerateSpriteSheetTask(
   ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = GenerateSpriteSheet.name,
     task_description = task_description,
-    files = files,
     task_dependencies = task_dependencies,
     state = state
   ) {
     override fun validate(): String? {
-      if (files.isNullOrEmpty()) return "Sprite sheet image file must be specified"
+      if (listOf<String>(main_file).isEmpty()) return "Sprite sheet image file must be specified"
       if (metadata_file.isNullOrBlank()) return "Metadata JSON file must be specified"
-      if (!files!!.first().endsWith(".png", ignoreCase = true)) return "Image file must be .png"
+      if (!listOf<String>(main_file).first().endsWith(".png", ignoreCase = true)) return "Image file must be .png"
       if (!metadata_file!!.endsWith(".json", ignoreCase = true)) return "Metadata file must be .json"
       return ValidatedObject.validateFields(this)
     }
@@ -93,7 +90,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val imageFile = executionConfig?.files?.firstOrNull() ?: return resultFn("No image file specified")
+    val imageFile = executionConfig?.let { listOf(it.main_file) }?.firstOrNull() ?: return resultFn("No image file specified")
     val metadataFile = executionConfig?.metadata_file ?: return resultFn("No metadata file specified")
     val description = executionConfig?.task_description ?: "Generate a sprite sheet"
 

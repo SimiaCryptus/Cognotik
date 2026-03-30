@@ -53,7 +53,7 @@ class DecompositionSynthesisTask(
 
   class DecompositionSynthesisTaskExecutionConfigData(
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     @Description("Whether to include file context in the analysis")
     var include_file_context: Boolean = true,
     @Description("The complex problem to decompose")
@@ -66,8 +66,6 @@ class DecompositionSynthesisTask(
     var synthesize_solution: Boolean = true,
     @Description("Whether to validate synthesis coherence")
     var validate_coherence: Boolean = true,
-    @Description("Additional files for context")
-    var related_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -717,7 +715,7 @@ class DecompositionSynthesisTask(
     return "\n## Context\n\n### Related Files\n$relatedFiles\n\n### Input Files\n$fileContext\n\n### Previous Task Results\n$priorCode\n        "
   }
 
-  private fun getInputFileCode(root: Path): String = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode(root: Path): String = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (FileSelectionUtils.filteredWalk(root.toFile()) {

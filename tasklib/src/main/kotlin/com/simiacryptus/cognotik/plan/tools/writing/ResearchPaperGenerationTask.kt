@@ -201,7 +201,7 @@ class ResearchPaperGenerationTask(
     var research_files: List<String>? = null,
 
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
 
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -346,7 +346,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
   ** number_of_sections: Number of main sections
   ** revision_passes: Number of revision passes
   ** research_files: Research source files or data to incorporate
-  ** input_files: Specific files or patterns to use as input
+  ** related_files: Specific files or patterns to use as input
         """.trimIndent()
   }
 
@@ -1159,7 +1159,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
     }
   }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (FileSelectionUtils.filteredWalk(root.toFile()) {

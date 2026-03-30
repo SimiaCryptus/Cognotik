@@ -53,7 +53,8 @@ public record DocumentationUpdater(
                 false,
                 new File(rootDir, ".doc-processor-cache/url-cache"),
                 true,
-                defaultUser
+                defaultUser,
+                null
         ).run();
     }
 }

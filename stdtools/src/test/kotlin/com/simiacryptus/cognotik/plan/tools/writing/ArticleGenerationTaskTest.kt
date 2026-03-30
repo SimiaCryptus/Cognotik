@@ -28,7 +28,7 @@ object ArticleGenerationTaskTest {
       ),
       executionConfig = ArticleGenerationTaskExecutionConfigData(
         story_topic = "The impact of AI on modern software engineering practices",
-        input_files = listOf("context.md"),
+        related_files = listOf("context.md"),
         target_word_count = 500,
         article_format = "feature",
         writing_style = "analytical",

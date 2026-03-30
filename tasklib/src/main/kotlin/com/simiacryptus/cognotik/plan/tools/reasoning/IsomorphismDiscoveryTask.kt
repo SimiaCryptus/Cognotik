@@ -33,8 +33,6 @@ class IsomorphismDiscoveryTask(
     @Description("Whether to verify that operations are preserved across the map")
     var verify_operations: Boolean = true,
     @Description("Input files to provide context")
-    var input_files: List<String>? = null,
-    @Description("Additional context files")
     var related_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -162,7 +160,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
           // Context
           val priorContext = getPriorCode(agent.executionState)
           val inputFileContent =
-            super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
+            super.getInputFileContent(executionConfig?.related_files, root, treatDocumentsAsText = true)
           val relatedFileContent = getRelatedFilesContent()
 
 

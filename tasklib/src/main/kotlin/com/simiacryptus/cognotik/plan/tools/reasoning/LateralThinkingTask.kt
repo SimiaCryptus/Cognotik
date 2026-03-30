@@ -74,7 +74,7 @@ class LateralThinkingTask(
     @Description("Additional constraints or requirements to consider")
     var constraints: List<String>? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -326,7 +326,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
         log.debug("Gathering prior context")
         val priorContext = getPriorCode(agent.executionState)
-        val fileContext = getInputFileContent(executionConfig.input_files, agent.root)
+        val fileContext = getInputFileContent(executionConfig.related_files, agent.root)
         val combinedContext = priorContext + "\n\n" + fileContext
         log.debug("Context gathered: priorContext length=${priorContext.length}, fileContext length=${fileContext.length}")
         transcript?.write("## Context\n<details>\n<summary>Input Context</summary>\n\n$combinedContext\n</details>\n".toByteArray())

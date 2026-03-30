@@ -99,7 +99,7 @@ class BrainstormingTask(
     @Description("The problem or question to brainstorm solutions for")
     var problem_statement: String? = null,
     @Description("A list of specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    var input_files: List<String>? = null,
+    var related_files: List<String>? = null,
     @Description("Number of options to generate (default: 5-10)")
     var target_option_count: Int = 7,
     @Description("A list of categories or domains to consider (optional)")
@@ -179,14 +179,14 @@ class BrainstormingTask(
     val analysisDepth = executionConfig.analysis_depth
 
     log.info("Configuration: targetCount=$targetCount, categories=$categories, includeCreative=$includeCreative, analysisDepth=$analysisDepth")
-    log.info("Input files: ${executionConfig?.input_files?.joinToString(", ") ?: "none"}")
+    log.info("Input files: ${executionConfig?.related_files?.joinToString(", ") ?: "none"}")
 
     val ui = task.ui
     val transcriptStream = task.newUserFileStream(transcriptFile())
     try {
       // Initialize transcript
       transcriptStream?.write("# Brainstorming Session Transcript\n\n".toByteArray())
-      transcriptStream?.write("**Input Files:** ${executionConfig.input_files?.joinToString(", ") ?: "none"}\n\n".toByteArray())
+      transcriptStream?.write("**Input Files:** ${executionConfig.related_files?.joinToString(", ") ?: "none"}\n\n".toByteArray())
       transcriptStream?.write("**Problem Statement:** $problemStatement\n\n".toByteArray())
       transcriptStream?.write(
         "**Started:** ${
@@ -224,10 +224,10 @@ class BrainstormingTask(
             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
           }"
         )
-        if (!executionConfig?.input_files.isNullOrEmpty()) {
+        if (!executionConfig?.related_files.isNullOrEmpty()) {
           appendLine()
           appendLine("**Input Files:**")
-          executionConfig?.input_files?.forEach { appendLine("- $it") }
+          executionConfig?.related_files?.forEach { appendLine("- $it") }
         }
         appendLine()
         appendLine("---")
@@ -855,7 +855,7 @@ class BrainstormingTask(
     appendLine()
   }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       (FileSelectionUtils.filteredWalk(root.toFile()) {

@@ -18,6 +18,7 @@
     <a href="#" class="nav-link" data-section="section-pipeline">⚙️ Pipeline</a>
     <a href="#" class="nav-link" data-section="section-lenses">🔬 Lenses</a>
     <a href="#" class="nav-link" data-section="section-results">📊 Results</a>
+    <a href="#" class="nav-link" data-section="section-usage">💰 Usage</a>
 </nav>
 
 <main>
@@ -712,6 +713,49 @@
                         <p class="placeholder">Run the Illustrate step to add inline illustrations to the article.</p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+    <!-- ==================== USAGE SECTION ==================== -->
+    <section id="section-usage" class="section">
+        <h2>💰 Usage & Costs</h2>
+        <p class="section-intro">Track token usage and estimated costs for AI operations in this session.</p>
+        <div class="card">
+            <div class="button-row" style="margin-top:0; margin-bottom:1rem;">
+                <button class="btn btn-primary" id="refresh-usage">🔄 Refresh Usage</button>
+                <label class="usage-auto-refresh-label">
+                    <input type="checkbox" id="usage-auto-refresh" checked>
+                    Auto-refresh (every 10s)
+                </label>
+                <span id="usage-status" class="status-msg"></span>
+            </div>
+            <div id="usage-summary" class="usage-summary">
+                <div class="usage-summary-card usage-summary-prompt">
+                    <div class="usage-summary-label">Prompt Tokens</div>
+                    <div class="usage-summary-value" id="usage-total-prompt">—</div>
+                </div>
+                <div class="usage-summary-card usage-summary-completion">
+                    <div class="usage-summary-label">Completion Tokens</div>
+                    <div class="usage-summary-value" id="usage-total-completion">—</div>
+                </div>
+                <div class="usage-summary-card usage-summary-cost">
+                    <div class="usage-summary-label">Estimated Cost</div>
+                    <div class="usage-summary-value" id="usage-total-cost">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <h3>📊 Usage by Model</h3>
+            <div id="usage-table-container">
+                <p class="placeholder">Click "Refresh Usage" or wait for auto-refresh to load usage data.</p>
+            </div>
+        </div>
+        <div class="card">
+            <h3>🔗 Full Usage Report</h3>
+            <p>Open the detailed usage report in a new tab for the current session.</p>
+            <div class="button-row" style="margin-top:0;">
+                <a class="btn btn-secondary" id="usage-html-link" href="#" target="_blank" rel="noopener">📄 HTML Report</a>
+                <a class="btn btn-secondary" id="usage-json-link" href="#" target="_blank" rel="noopener">📋 JSON Data</a>
             </div>
         </div>
     </section>

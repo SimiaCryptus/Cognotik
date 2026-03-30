@@ -43,8 +43,6 @@ class PdfFormTask(
   )
 
   class PdfFormExecutionConfig(
-    @Description("The output filename for the filled PDF")
-    var output_file: String? = null,
     @Description("Map of field names (as defined in the template schema) to the values to fill")
     var fields: Map<String, String>? = null,
     @Description("Whether to flatten the form fields after filling (making them read-only)")
@@ -125,7 +123,7 @@ ${fieldList.lines().take(10).joinToString("\n")}${if (fieldList.lines().size > 1
         val templateFile = root.resolve(templatePath).toFile()
         if (!templateFile.exists()) throw IllegalStateException("Template file not found: $templatePath")
 
-        val outputPath = executionConfig?.output_file ?: "filled_form.pdf"
+        val outputPath = executionConfig?.main_file ?: "filled_form.pdf"
         val outputFile = root.resolve(outputPath).toFile()
 
         val availableFields = PDDocument.load(templateFile).use { doc ->

@@ -24,7 +24,6 @@ class AbstractionLadderTask(
     @Description("Direction to traverse: 'up' for abstraction (generalizations), 'down' for concretization (specific implementations), 'both' for bidirectional analysis") val direction: String = "both",
     @Description("Number of abstraction levels to traverse in each direction (1-5 recommended)") val levels: Int = 3,
     @Description("Whether to identify design patterns, anti-patterns, and refactoring opportunities at each level") val identify_patterns: Boolean = true,
-    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task") val input_files: List<String>? = null,
     @Description("Additional files for context (e.g., existing code, related implementations)") val related_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -152,7 +151,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
       )
     }
     val inputFileContent =
-      super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
+      super.getInputFileContent(executionConfig?.related_files, root, treatDocumentsAsText = true)
 
 
     val contextFiles = getContextFiles()

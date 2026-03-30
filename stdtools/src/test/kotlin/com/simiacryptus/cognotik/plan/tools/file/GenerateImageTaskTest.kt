@@ -26,9 +26,10 @@ object GenerateImageTaskTest {
         task_type = ImageGenerationTask.GenerateImage.name
       ),
       executionConfig = GenerateImageTaskExecutionConfigData(
-        files = listOf("test_output_image.png"),
         task_description = "A high-quality digital art piece of a serene mountain landscape at sunset, with a clear lake in the foreground reflecting the orange and purple sky, cinematic lighting, 8k resolution. The image should be photorealistic.",
-      ),
+      ).apply {
+        main_file = "test_output_image.png"
+      },
       timeoutMinutes = 10,
       user = com.simiacryptus.cognotik.platform.model.defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,

@@ -39,14 +39,15 @@ object ModeProductPageGenerator {
           taskType = FileModification,
           typeConfig = TaskTypeConfig(task_type = FileModification.name),
           executionConfig = FileModificationTaskExecutionConfigData(
-            files = listOf(htmlFile.toString()),
             related_files = listOf(
               "docs/cognitive_mode_product_page.md",
               "site/cognotik.com/task_product_page_template.html",
               codeFile.toString()
             ),
             task_description = "Update the product page HTML file ($htmlFile) to reflect the latest implementation in ${codeFile.name}",
-          ),
+          ).apply {
+            main_file = htmlFile.toString()
+          },
           timeoutMinutes = 5,
           workspace = root.absoluteFile,
           fastModel = GeminiModels.GeminiFlash_30_Preview,
