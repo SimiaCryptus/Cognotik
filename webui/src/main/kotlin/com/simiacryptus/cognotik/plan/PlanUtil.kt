@@ -38,7 +38,8 @@ object PlanUtil {
     return taskIds
   }
 
-  val isWindows = System.getProperty("os.name").lowercase(Locale.getDefault()).contains("windows")
+  val isWindows: Boolean get() = System.getProperty("os.name").lowercase(Locale.getDefault()).contains("windows")
+
   private fun sanitizeForMermaid(input: String) = input
     .replace(" ", "_")
     .replace("\"", "\\\"")
