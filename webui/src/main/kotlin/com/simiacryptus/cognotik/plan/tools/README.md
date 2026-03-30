@@ -45,7 +45,7 @@ Defines the instance-specific configuration for a task, including:
 Provides global settings for a specific task type, such as the default `ApiChatModel` to be used by all instances of
 that task type.
 
-### [TaskUtils](./TaskUtils.kt)
+### [TaskUtils](../TaskUtils.kt)
 
 Contains utility extensions for robust task execution:
 

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Super Mario Bros</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="game-wrapper">
+    <div id="game-container">
+      <canvas id="game-canvas" width="768" height="576"></canvas>
+      <div id="touch-controls">
+        <div id="dpad">
+          <button class="touch-btn" id="btn-left">◀</button>
+          <button class="touch-btn" id="btn-right">▶</button>
+        </div>
+        <div id="action-buttons">
+          <button class="touch-btn action" id="btn-b">B</button>
+          <button class="touch-btn action" id="btn-a">A</button>
+        </div>
+        <button class="touch-btn start-btn" id="btn-start">START</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

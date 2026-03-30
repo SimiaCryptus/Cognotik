@@ -15,10 +15,12 @@
         basePath = window.location.pathname.replace(/\/[^/]*$/, '');
     }
 
-    const proxyBase = '/proxy/';
+var proxyBase = '/proxy/';
     function getProxyUrl(id) { return proxyBase + '#' + id; }
      // === Available Models ===
      var availableModels = {};
+     // === Child Session IDs (for usage tracking) ===
+     var childSessionIds = new Set();
 
      // === Display Session ID ===
      var sessionDisplay = document.getElementById('session-id-display');
@@ -52,17 +54,29 @@
             '&doc=' + encodeURIComponent(opPath) +
             '&target=' + encodeURIComponent(targetPath);
 
-         // Append model overrides if set
          var smartModel = getSelectedSmartModel();
          var fastModel = getSelectedFastModel();
-         if (smartModel) params += '&smartModel=' + encodeURIComponent(smartModel);
-         if (fastModel) params += '&fastModel=' + encodeURIComponent(fastModel);
+          var imageModel = getSelectedImageModel();
+
+          // All three model parameters are required by the server
+          if (!smartModel || !fastModel) {
+              throw new Error('Model settings are required. Please select both Smart and Fast models in Settings.');
+          }
+
+          // Use smart model as fallback for image model
+          if (!imageModel) {
+              imageModel = smartModel;
+          }
+
+         params += '&smartModel=' + encodeURIComponent(smartModel);
+          params += '&fastModel=' + encodeURIComponent(fastModel);
+          params += '&imageModel=' + encodeURIComponent(imageModel);
 
          var url = '/docops?' + params;
          var resp = await fetch(url, { method: 'POST' });
         if (!resp.ok) {
              var errText = await resp.text().catch(function () { return ''; });
-            throw new Error('DocOps failed: ' + resp.status + '\n' + errText);
+             throw new Error('DocOps failed: ' + resp.status + '\n' + errText);
         }
         return await resp.text();
     }
@@ -126,6 +140,10 @@
         for (var target in statusData.tasks) {
             if (!statusData.tasks.hasOwnProperty(target)) continue;
             var taskInfo = statusData.tasks[target];
+            // Capture child session IDs for usage tracking
+            if (taskInfo.sessionId) {
+                childSessionIds.add(taskInfo.sessionId);
+            }
             var badgeId = badgeMap[target];
             var stageId = stageMap[target];
             if (badgeId) {
@@ -370,15 +388,48 @@
      function getSelectedSmartModel() {
          var sel = document.getElementById('setting-smart-model');
          var val = sel ? sel.value : '';
-         if (val) return val;
-         return localStorage.getItem('wizardSmartModel') || '';
+         if (val && val.trim().length > 0) return val.trim();
+         var stored = localStorage.getItem('wizardSmartModel');
+         return (stored && stored.trim().length > 0) ? stored.trim() : '';
      }
 
      function getSelectedFastModel() {
          var sel = document.getElementById('setting-fast-model');
          var val = sel ? sel.value : '';
-         if (val) return val;
-         return localStorage.getItem('wizardFastModel') || '';
+         if (val && val.trim().length > 0) return val.trim();
+         var stored = localStorage.getItem('wizardFastModel');
+         return (stored && stored.trim().length > 0) ? stored.trim() : '';
+     }
+     function getSelectedImageModel() {
+         // For now, image model reuses the smart model selection
+         // Could add a separate selector in the future
+         return getSelectedSmartModel();
+     }
+     function validateModelSettings() {
+         var smart = getSelectedSmartModel();
+         var fast = getSelectedFastModel();
+         if (!smart || !fast) {
+             return false;
+         }
+         return true;
+     }
+     function promptForModelSettings() {
+         showToast('⚠️ Please select both Smart and Fast models in Settings before running the pipeline.', 'error');
+         // Navigate to settings tab
+         document.querySelectorAll('.nav-link').forEach(function (l) { l.classList.remove('active'); });
+         document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('active'); });
+         var settingsLink = document.querySelector('[data-section="section-settings"]');
+         if (settingsLink) settingsLink.classList.add('active');
+         document.getElementById('section-settings').classList.add('active');
+         // Highlight the model fields
+         var smartSelect = document.getElementById('setting-smart-model');
+         var fastSelect = document.getElementById('setting-fast-model');
+         if (smartSelect && !smartSelect.value) smartSelect.classList.add('model-select-required');
+         if (fastSelect && !fastSelect.value) fastSelect.classList.add('model-select-required');
+         setTimeout(function () {
+             if (smartSelect) smartSelect.classList.remove('model-select-required');
+             if (fastSelect) fastSelect.classList.remove('model-select-required');
+         }, 3000);
      }
 
      async function loadApiProviders() {
@@ -426,15 +477,18 @@
          smartSelect.innerHTML = '';
          fastSelect.innerHTML = '';
 
-         // Add default option
          var defaultOpt1 = document.createElement('option');
          defaultOpt1.value = '';
-         defaultOpt1.textContent = '— Server Default —';
+         defaultOpt1.textContent = '— Select a model (required) —';
+         defaultOpt1.disabled = true;
+         defaultOpt1.selected = true;
          smartSelect.appendChild(defaultOpt1);
 
          var defaultOpt2 = document.createElement('option');
          defaultOpt2.value = '';
-         defaultOpt2.textContent = '— Server Default —';
+         defaultOpt2.textContent = '— Select a model (required) —';
+         defaultOpt2.disabled = true;
+         defaultOpt2.selected = true;
          fastSelect.appendChild(defaultOpt2);
 
          var addedModels = {};
@@ -493,13 +547,13 @@
          if (totalCount === 0) {
              var noOpt1 = document.createElement('option');
              noOpt1.value = '';
-             noOpt1.textContent = 'No models available — configure API keys';
+              noOpt1.textContent = '⚠️ No models available — configure API keys';
              noOpt1.disabled = true;
              smartSelect.appendChild(noOpt1);
 
              var noOpt2 = document.createElement('option');
              noOpt2.value = '';
-             noOpt2.textContent = 'No models available — configure API keys';
+              noOpt2.textContent = '⚠️ No models available — configure API keys';
              noOpt2.disabled = true;
              fastSelect.appendChild(noOpt2);
          }
@@ -526,8 +580,8 @@
 
          if (infoProviders) infoProviders.textContent = providerNames.length > 0 ? providerNames.join(', ') : 'None';
          if (infoTotal) infoTotal.textContent = totalModels.toString();
-         if (infoSmart) infoSmart.textContent = getSelectedSmartModel() || 'Server Default';
-         if (infoFast) infoFast.textContent = getSelectedFastModel() || 'Server Default';
+         if (infoSmart) infoSmart.textContent = getSelectedSmartModel() || '⚠️ Not configured (required)';
+         if (infoFast) infoFast.textContent = getSelectedFastModel() || '⚠️ Not configured (required)';
      }
 
      function updateModelLoadStatus(type, message) {
@@ -545,8 +599,14 @@
          var fastEl = document.getElementById('pipeline-fast-model');
          var smart = getSelectedSmartModel();
          var fast = getSelectedFastModel();
-         if (smartEl) smartEl.textContent = smart ? truncateModelName(smart) : 'Default';
-         if (fastEl) fastEl.textContent = fast ? truncateModelName(fast) : 'Default';
+          if (smartEl) {
+              smartEl.textContent = smart ? truncateModelName(smart) : '⚠️ Not set';
+              smartEl.className = 'model-indicator-value' + (smart ? '' : ' model-not-set');
+          }
+          if (fastEl) {
+              fastEl.textContent = fast ? truncateModelName(fast) : '⚠️ Not set';
+              fastEl.className = 'model-indicator-value' + (fast ? '' : ' model-not-set');
+          }
      }
 
      function truncateModelName(name) {
@@ -558,14 +618,23 @@
      document.getElementById('save-model-settings').addEventListener('click', function () {
          var smartSelect = document.getElementById('setting-smart-model');
          var fastSelect = document.getElementById('setting-fast-model');
-         var smartVal = smartSelect ? smartSelect.value : '';
-         var fastVal = fastSelect ? fastSelect.value : '';
+         var smartVal = smartSelect ? smartSelect.value.trim() : '';
+         var fastVal = fastSelect ? fastSelect.value.trim() : '';
 
-         if (smartVal) localStorage.setItem('wizardSmartModel', smartVal);
-         else localStorage.removeItem('wizardSmartModel');
 
-         if (fastVal) localStorage.setItem('wizardFastModel', fastVal);
-         else localStorage.removeItem('wizardFastModel');
+          if (!smartVal || !fastVal) {
+              setStatus('model-settings-status', '✗ Both Smart and Fast models are required', 'error');
+              if (smartSelect && !smartVal) smartSelect.classList.add('model-select-required');
+              if (fastSelect && !fastVal) fastSelect.classList.add('model-select-required');
+              setTimeout(function () {
+                  if (smartSelect) smartSelect.classList.remove('model-select-required');
+                  if (fastSelect) fastSelect.classList.remove('model-select-required');
+              }, 3000);
+              return;
+          }
+
+          localStorage.setItem('wizardSmartModel', smartVal);
+          localStorage.setItem('wizardFastModel', fastVal);
 
          updateModelInfo();
          updatePipelineModelIndicator();
@@ -857,6 +926,12 @@
             var badgeId = this.dataset.badge;
             var outputPath = this.dataset.output;
             var viewerId = this.dataset.viewer;
+             // Validate model settings
+             if (!validateModelSettings()) {
+                 promptForModelSettings();
+                 return;
+             }
+
 
             // Auto-save goal before running
              var goalContent = goalEditor.value;
@@ -950,6 +1025,12 @@
     document.getElementById('run-all').addEventListener('click', async function () {
         // Auto-save goal
          var goalContent = goalEditor.value;
+         // Validate model settings before starting pipeline
+         if (!validateModelSettings()) {
+             promptForModelSettings();
+             return;
+         }
+
 
         this.disabled = true;
         startStatusPolling();
@@ -1040,6 +1121,10 @@
             logBatch('🎉 Pipeline complete!', 'success');
              showToast('Pipeline complete!', 'success');
              updateResultsSummary('Generated', 'Success');
+            // Refresh usage data in background
+            collectChildSessionIds();
+            loadUsageData().catch(function () { /* non-critical */ });
+
 
             // Auto-switch to results tab
             document.querySelectorAll('.nav-link').forEach(function (l) { l.classList.remove('active'); });
@@ -1170,6 +1255,7 @@
 
     // === Load Initial Files ===
     async function loadInitialFiles() {
+        // (existing code follows)
         try {
             var content = await readFile('goal.md');
             if (content !== null) {
@@ -1191,10 +1277,234 @@
              // ignore — script may not exist yet
          }
     }
+    // === Usage Tracking ===
+    var usageCache = null;
+    function formatTokenCount(num) {
+        if (num === null || num === undefined || isNaN(num)) return '—';
+        if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+        return num.toLocaleString();
+    }
+    function formatCost(cost) {
+        if (cost === null || cost === undefined || isNaN(cost)) return '—';
+        if (cost === 0) return '$0.00';
+        if (cost < 0.001) return '< $0.001';
+        if (cost < 0.01) return '$' + cost.toFixed(4);
+        return '$' + cost.toFixed(4);
+    }
+    async function fetchUsageJson(sid) {
+        try {
+            var url = '/proxy/usage?sessionId=' + encodeURIComponent(sid) + '&format=json';
+            var resp = await fetch(url);
+            if (!resp.ok) {
+                if (resp.status === 404) return null;
+                return null;
+            }
+            return await resp.json();
+        } catch (e) {
+            console.warn('Failed to fetch usage for session ' + sid + ':', e);
+            return null;
+        }
+    }
+    function collectChildSessionIds() {
+        // Gather session IDs from docops status tasks
+        fetchDocopsStatus().then(function (statusData) {
+            if (!statusData || !statusData.tasks) return;
+            for (var target in statusData.tasks) {
+                if (!statusData.tasks.hasOwnProperty(target)) continue;
+                var taskInfo = statusData.tasks[target];
+                if (taskInfo.sessionId) {
+                    childSessionIds.add(taskInfo.sessionId);
+                }
+            }
+        }).catch(function () { /* ignore */ });
+    }
+    function renderUsageTable(models, containerId) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        if (!models || models.length === 0) {
+            return; // leave empty state
+        }
+        var table = document.createElement('table');
+        table.className = 'usage-table';
+        // Header
+        var thead = document.createElement('thead');
+        var headerRow = document.createElement('tr');
+        ['Model', 'Prompt Tokens', 'Completion Tokens', 'Total Tokens', 'Est. Cost'].forEach(function (text) {
+            var th = document.createElement('th');
+            th.textContent = text;
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+        // Body
+        var tbody = document.createElement('tbody');
+        models.forEach(function (model) {
+            var row = document.createElement('tr');
+            var cellModel = document.createElement('td');
+            cellModel.className = 'usage-model-cell';
+            cellModel.textContent = model.model || 'Unknown';
+            row.appendChild(cellModel);
+            var cellPrompt = document.createElement('td');
+            cellPrompt.className = 'usage-number-cell';
+            cellPrompt.textContent = formatTokenCount(model.prompt_tokens);
+            row.appendChild(cellPrompt);
+            var cellCompletion = document.createElement('td');
+            cellCompletion.className = 'usage-number-cell';
+            cellCompletion.textContent = formatTokenCount(model.completion_tokens);
+            row.appendChild(cellCompletion);
+            var cellTotal = document.createElement('td');
+            cellTotal.className = 'usage-number-cell';
+            cellTotal.textContent = formatTokenCount((model.prompt_tokens || 0) + (model.completion_tokens || 0));
+            row.appendChild(cellTotal);
+            var cellCost = document.createElement('td');
+            cellCost.className = 'usage-cost-cell';
+            cellCost.textContent = formatCost(model.cost);
+            row.appendChild(cellCost);
+            tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+        container.innerHTML = '';
+        container.appendChild(table);
+    }
+    function updateUsageTotals(totals) {
+        var promptEl = document.getElementById('usage-total-prompt');
+        var completionEl = document.getElementById('usage-total-completion');
+        var tokensEl = document.getElementById('usage-total-tokens');
+        var costEl = document.getElementById('usage-total-cost');
+        if (promptEl) promptEl.textContent = formatTokenCount(totals.prompt_tokens);
+        if (completionEl) completionEl.textContent = formatTokenCount(totals.completion_tokens);
+        if (tokensEl) tokensEl.textContent = formatTokenCount((totals.prompt_tokens || 0) + (totals.completion_tokens || 0));
+        if (costEl) costEl.textContent = formatCost(totals.cost);
+    }
+    async function loadUsageData() {
+        // Collect child session IDs first
+        collectChildSessionIds();
+        // Aggregate usage: main session + child sessions
+        var allModels = {};
+        var aggregatedTotals = { prompt_tokens: 0, completion_tokens: 0, cost: 0 };
+        var childUsageResults = [];
+        // Fetch main session usage
+        if (sessionId) {
+            var mainUsage = await fetchUsageJson(sessionId);
+            if (mainUsage && mainUsage.models) {
+                mainUsage.models.forEach(function (m) {
+                    var key = m.model || 'unknown';
+                    if (!allModels[key]) {
+                        allModels[key] = { model: key, prompt_tokens: 0, completion_tokens: 0, cost: 0 };
+                    }
+                    allModels[key].prompt_tokens += (m.prompt_tokens || 0);
+                    allModels[key].completion_tokens += (m.completion_tokens || 0);
+                    allModels[key].cost += (m.cost || 0);
+                });
+            }
+            if (mainUsage && mainUsage.totals) {
+                aggregatedTotals.prompt_tokens += (mainUsage.totals.prompt_tokens || 0);
+                aggregatedTotals.completion_tokens += (mainUsage.totals.completion_tokens || 0);
+                aggregatedTotals.cost += (mainUsage.totals.cost || 0);
+            }
+        }
+        // Fetch child session usage
+        var childIds = Array.from(childSessionIds);
+        for (var i = 0; i < childIds.length; i++) {
+            var cid = childIds[i];
+            var childUsage = await fetchUsageJson(cid);
+            if (childUsage && childUsage.models && childUsage.models.length > 0) {
+                childUsageResults.push({ sessionId: cid, usage: childUsage });
+                childUsage.models.forEach(function (m) {
+                    var key = m.model || 'unknown';
+                    if (!allModels[key]) {
+                        allModels[key] = { model: key, prompt_tokens: 0, completion_tokens: 0, cost: 0 };
+                    }
+                    allModels[key].prompt_tokens += (m.prompt_tokens || 0);
+                    allModels[key].completion_tokens += (m.completion_tokens || 0);
+                    allModels[key].cost += (m.cost || 0);
+                });
+                if (childUsage.totals) {
+                    aggregatedTotals.prompt_tokens += (childUsage.totals.prompt_tokens || 0);
+                    aggregatedTotals.completion_tokens += (childUsage.totals.completion_tokens || 0);
+                    aggregatedTotals.cost += (childUsage.totals.cost || 0);
+                }
+            }
+        }
+        // Update totals display
+        updateUsageTotals(aggregatedTotals);
+        // Render aggregated model table
+        var modelList = Object.keys(allModels).map(function (k) { return allModels[k]; });
+        modelList.sort(function (a, b) { return (b.cost || 0) - (a.cost || 0); });
+        if (modelList.length > 0) {
+            renderUsageTable(modelList, 'usage-table-container');
+        }
+        // Render child session details
+        renderChildSessionUsage(childUsageResults);
+        usageCache = { models: modelList, totals: aggregatedTotals, children: childUsageResults };
+    }
+    function renderChildSessionUsage(childResults) {
+        var container = document.getElementById('usage-children-container');
+        if (!container) return;
+        if (!childResults || childResults.length === 0) {
+            return; // leave empty state
+        }
+        container.innerHTML = '';
+        childResults.forEach(function (child) {
+            var wrapper = document.createElement('div');
+            wrapper.className = 'usage-child-session';
+            var header = document.createElement('div');
+            header.className = 'usage-child-header';
+            var label = document.createElement('span');
+            label.className = 'usage-child-label';
+            label.textContent = 'Session: ' + child.sessionId.substring(0, 16) + '…';
+            var costBadge = document.createElement('span');
+            costBadge.className = 'usage-child-cost';
+            costBadge.textContent = formatCost(child.usage.totals ? child.usage.totals.cost : 0);
+            var link = document.createElement('a');
+            link.href = getProxyUrl(child.sessionId);
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.className = 'usage-child-link';
+            link.textContent = '📡 View Session';
+            header.appendChild(label);
+            header.appendChild(costBadge);
+            header.appendChild(link);
+            wrapper.appendChild(header);
+            // Mini table for this child
+            if (child.usage.models && child.usage.models.length > 0) {
+                var tableId = 'usage-child-table-' + child.sessionId.replace(/[^a-zA-Z0-9]/g, '-');
+                var tableDiv = document.createElement('div');
+                tableDiv.id = tableId;
+                wrapper.appendChild(tableDiv);
+                container.appendChild(wrapper);
+                renderUsageTable(child.usage.models, tableId);
+            } else {
+                container.appendChild(wrapper);
+            }
+        });
+    }
+    // Refresh usage button
+    document.getElementById('refresh-usage').addEventListener('click', function () {
+        var self = this;
+        self.disabled = true;
+        loadUsageData().then(function () {
+            showToast('Usage data refreshed', 'success');
+        }).catch(function (e) {
+            showToast('Failed to refresh usage: ' + e.message, 'error');
+        }).finally(function () {
+            self.disabled = false;
+        });
+    });
+
 
     // === Initialize ===
     loadInitialFiles();
     checkExistingFiles();
      loadApiProviders();
+     // Load usage when navigating to usage tab
+     document.querySelectorAll('.nav-link').forEach(function (link) {
+         link.addEventListener('click', function () {
+             if (this.dataset.section === 'section-usage') {
+                 loadUsageData();
+             }
+         });
+     });
 
 })();

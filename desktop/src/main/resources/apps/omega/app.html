@@ -23,6 +23,8 @@
         <a href="#" class="nav-link" data-section="section-iterate">🔄 Iterate</a>
         <a href="#" class="nav-link" data-section="section-results">📁 Results</a>
         <a href="#" class="nav-link" data-section="section-git">🔀 Git</a>
+        <a href="#" class="nav-link" data-section="section-usage">💰 Usage</a>
+         <a href="#" class="nav-link nav-link-open-app" id="nav-open-app" title="Open generated app in new tab" style="display:none;">🚀 Open App</a>
     </nav>
 
     <!-- ==================== IDEA SECTION ==================== -->
@@ -272,6 +274,7 @@ Special Requirements: Use CrawlerAgent for web research"></textarea>
                     <button class="btn btn-view"
                             data-file="generated_app/index.html"
                             data-viewer="viewer-ui">👁 View Source</button>
+                     <button class="btn btn-success" id="open-app-generate" style="display:none;">🚀 Open App in New Tab</button>
                 </div>
                 <div class="viewer" id="viewer-ui"></div>
             </div>
@@ -432,6 +435,60 @@ Special Requirements: Use CrawlerAgent for web research"></textarea>
             </div>
         </div>
     </section>
+    <!-- ==================== USAGE SECTION ==================== -->
+    <section class="section" id="section-usage">
+        <div class="card card-accent">
+            <h3>💰 Token Usage & Cost</h3>
+            <p>Track AI model usage, token consumption, and estimated costs for this session.</p>
+            <div class="button-row">
+                <button class="btn btn-primary" id="usage-refresh">🔄 Refresh Usage</button>
+                <label class="git-checkbox-label">
+                    <input type="checkbox" id="usage-auto-refresh" /> Auto-refresh (30s)
+                </label>
+                <span class="status-msg" id="usage-status"></span>
+            </div>
+        </div>
+        <!-- Usage Summary Cards -->
+        <div id="usage-summary-cards" class="usage-summary-cards" style="display:none;">
+            <div class="card">
+                <div class="usage-totals-row">
+                    <div class="usage-total-item">
+                        <div class="usage-total-label">Total Prompt Tokens</div>
+                        <div class="usage-total-value" id="usage-total-prompt">0</div>
+                    </div>
+                    <div class="usage-total-item">
+                        <div class="usage-total-label">Total Completion Tokens</div>
+                        <div class="usage-total-value" id="usage-total-completion">0</div>
+                    </div>
+                    <div class="usage-total-item">
+                        <div class="usage-total-label">Total Tokens</div>
+                        <div class="usage-total-value" id="usage-total-tokens">0</div>
+                    </div>
+                    <div class="usage-total-item usage-total-cost">
+                        <div class="usage-total-label">Estimated Cost</div>
+                        <div class="usage-total-value" id="usage-total-cost">$0.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Usage Table -->
+        <div class="card" id="usage-table-card">
+            <h3>📊 Usage by Model</h3>
+            <div id="usage-table-container">
+                <p class="placeholder">Click "Refresh Usage" to load usage data.</p>
+            </div>
+        </div>
+        <!-- Usage Details -->
+        <div class="card" id="usage-details-card" style="display:none;">
+            <div class="collapsible-header" id="usage-raw-toggle">
+                <h3>🔍 Raw JSON Response</h3>
+                <span class="toggle-icon">▶</span>
+            </div>
+            <div class="collapsible-body" id="usage-raw-body">
+                <pre><code id="usage-raw-json"></code></pre>
+            </div>
+        </div>
+    </section>
 
 
     <!-- ==================== RESULTS SECTION ==================== -->
@@ -452,6 +509,15 @@ Special Requirements: Use CrawlerAgent for web research"></textarea>
             <button class="results-tab" data-tab="tab-ui-preview">🎨 UI Source</button>
             <button class="results-tab" data-tab="tab-files">📂 All Files</button>
         </div>
+     <!-- Open Generated App -->
+     <div class="card card-purple" id="open-app-card" style="display:none;">
+         <h3>🚀 Open Generated Application</h3>
+         <p>Your generated app is ready! Open it in a new browser tab to test it out.</p>
+         <div class="button-row">
+             <button class="btn btn-purple" id="open-app-results">🚀 Open App in New Tab</button>
+             <button class="btn" id="open-app-index-html">🌐 Open index.html</button>
+         </div>
+     </div>
 
         <!-- README Tab -->
         <div class="tab-panel active" id="tab-readme">

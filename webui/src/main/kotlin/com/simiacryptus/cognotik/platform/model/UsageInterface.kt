@@ -53,6 +53,7 @@ interface UsageInterface {
    * Use with caution, typically only for testing or system reset scenarios.
    */
   fun clear()
+  fun setParentSession(child: Session, parent: Session)
 
   /**
    * Represents a unique key for identifying usage records.

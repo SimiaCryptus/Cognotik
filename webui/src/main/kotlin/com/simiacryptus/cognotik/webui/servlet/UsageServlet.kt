@@ -4,30 +4,72 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.authenticate
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 
 class UsageServlet : HttpServlet() {
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
-    response.contentType = "text/html"
     response.status = HttpServletResponse.SC_OK
+     val useJson = request.getParameter("format")?.equals("json", ignoreCase = true) == true ||
+         request.getHeader("Accept")?.contains("application/json", ignoreCase = true) == true
+
 
     val usageManager = ApplicationServices.fileApplicationServices().usageManager
     if (request.parameterMap.containsKey("sessionId")) {
       val session = Session(request.getParameter("sessionId"))
-      serve(response, usageManager.getSessionUsageSummary(session))
+       serve(response, usageManager.getSessionUsageSummary(session), useJson)
     } else {
       val userinfo = authenticate(request, response) ?: return
       val usage = usageManager.getUserUsageSummary(userinfo)
-      serve(response, usage)
+       serve(response, usage, useJson)
     }
   }
 
   private fun serve(
     resp: HttpServletResponse,
-    usage: Map<String, ModelSchema.Usage>
+     usage: Map<String, ModelSchema.Usage>,
+     useJson: Boolean = false
   ) {
+     if (useJson) {
+       serveJson(resp, usage)
+     } else {
+       serveHtml(resp, usage)
+     }
+   }
+   private fun serveJson(
+     resp: HttpServletResponse,
+     usage: Map<String, ModelSchema.Usage>
+   ) {
+     resp.contentType = "application/json"
+     val totalPromptTokens = usage.values.sumOf { it.prompt_tokens }
+     val totalCompletionTokens = usage.values.sumOf { it.completion_tokens }
+     val totalCost = usage.entries.sumOf { (_, count) -> count.cost ?: 0.0 }
+     val result = mapOf(
+       "models" to usage.entries.map { (model, count) ->
+         mapOf(
+           "model" to model,
+           "prompt_tokens" to count.prompt_tokens,
+           "completion_tokens" to count.completion_tokens,
+           "cost" to (count.cost ?: 0.0)
+         )
+       },
+       "totals" to mapOf(
+         "prompt_tokens" to totalPromptTokens,
+         "completion_tokens" to totalCompletionTokens,
+         "cost" to totalCost
+       )
+     )
+     val gson: Gson = GsonBuilder().setPrettyPrinting().create()
+     resp.writer.write(gson.toJson(result))
+   }
+   private fun serveHtml(
+     resp: HttpServletResponse,
+     usage: Map<String, ModelSchema.Usage>
+   ) {
+     resp.contentType = "text/html"
     val totalPromptTokens = usage.values.sumOf { it.prompt_tokens }
     val totalCompletionTokens = usage.values.sumOf { it.completion_tokens }
     val totalCost = usage.entries.sumOf { (_, count) -> count.cost ?: 0.0 }
@@ -79,4 +121,3 @@ class UsageServlet : HttpServlet() {
 
   companion object
 }
-

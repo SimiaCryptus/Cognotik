@@ -5,6 +5,105 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>🏗️ Webapp Builder</title>
     <link href="style.css" rel="stylesheet">
+    <style>
+        /* Usage tracking styles */
+        .usage-summary-banner {
+            display: flex;
+            gap: 1.5rem;
+            padding: 1rem 1.25rem;
+            background: var(--color-surface, #1e1e2e);
+            border: 1px solid var(--color-border, #333);
+            border-radius: 8px;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+        .usage-summary-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            min-width: 140px;
+        }
+        .usage-summary-label {
+            font-size: 0.78rem;
+            color: var(--color-text-muted, #888);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .usage-summary-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--color-text, #eee);
+        }
+        .usage-summary-value.usage-cost {
+            color: var(--color-accent, #f5a623);
+        }
+        .usage-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        .usage-table th {
+            text-align: left;
+            padding: 0.6rem 0.75rem;
+            border-bottom: 2px solid var(--color-border, #333);
+            color: var(--color-text-muted, #888);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .usage-table td {
+            padding: 0.55rem 0.75rem;
+            border-bottom: 1px solid var(--color-border, #222);
+        }
+        .usage-table code {
+            font-size: 0.85rem;
+            background: var(--color-bg, #111);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+        }
+        .usage-table .usage-totals-row {
+            border-top: 2px solid var(--color-border, #444);
+            background: var(--color-surface, rgba(255,255,255,0.03));
+        }
+        .usage-cost-cell {
+            color: var(--color-accent, #f5a623);
+            font-weight: 600;
+        }
+        .task-usage-entry {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--color-border, #333);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            background: var(--color-surface, rgba(255,255,255,0.02));
+        }
+        .task-usage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.4rem;
+        }
+        .task-usage-cost {
+            font-weight: 700;
+            color: var(--color-accent, #f5a623);
+            font-size: 1.05rem;
+        }
+        .task-usage-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        .task-usage-model {
+            font-size: 0.82rem;
+            color: var(--color-text-muted, #888);
+        }
+        .task-usage-model code {
+            font-size: 0.8rem;
+            background: var(--color-bg, #111);
+            padding: 0.1rem 0.35rem;
+            border-radius: 3px;
+        }
+    </style>
 </head>
 <body>
 <div id="app">
@@ -26,6 +125,7 @@
             <li><a class="nav-link" data-section="section-update" href="#section-update">✏️ Update</a></li>
             <li><a class="nav-link" data-section="section-results" href="#section-results">📊 Results</a></li>
             <li><a class="nav-link" data-section="section-git" href="#section-git">🔀 Git</a></li>
+            <li><a class="nav-link" data-section="section-usage" href="#section-usage">💰 Usage</a></li>
             <li><a class="nav-link-launch" id="nav-launch-app" href="#" target="_blank" title="Open your built webapp in a new tab">🚀 Launch App</a></li>
         </ul>
     </nav>
@@ -82,6 +182,13 @@ A simple, elegant task management web application for small teams.
                         <option value="">Loading models…</option>
                     </select>
                 </div>
+                 <div class="model-setting">
+                     <label for="model-image">Image Model</label>
+                     <p class="model-setting-desc">Model used for image generation or vision tasks (required by the pipeline).</p>
+                     <select id="model-image" class="model-select">
+                         <option value="">Loading models…</option>
+                     </select>
+                 </div>
             </div>
             <div class="button-row">
                 <button class="btn btn-secondary" id="save-models">💾 Save Model Settings</button>
@@ -253,6 +360,7 @@ A simple, elegant task management web application for small teams.
             <button class="results-tab" data-tab="tab-files">📁 Project Files</button>
             <button class="results-tab" data-tab="tab-readme">📄 README</button>
             <button class="results-tab" data-tab="tab-download">📦 Download</button>
+            <button class="results-tab" data-tab="tab-usage">💰 Usage</button>
         </div>
         <div class="results-content">
             <div class="tab-panel active" id="tab-preview">
@@ -416,6 +524,80 @@ A simple, elegant task management web application for small teams.
                 </div>
             </div>
             <span class="status-msg" id="git-quick-status"></span>
+        </div>
+    </section>
+    <!-- Section: Usage Tracking -->
+    <section class="section" id="section-usage">
+        <h2>💰 Usage Tracking</h2>
+        <div class="card">
+            <h3>📊 Session Usage Summary</h3>
+            <p class="help-text">View token usage and estimated costs for all AI model calls made during this session.
+                Usage is tracked per model and includes prompt tokens, completion tokens, and cost estimates.</p>
+            <div class="button-row">
+                <button class="btn btn-primary" id="btn-refresh-usage">🔄 Refresh Usage</button>
+                <button class="btn btn-secondary" id="btn-usage-json">📋 View Raw JSON</button>
+                <span class="status-msg" id="usage-status"></span>
+            </div>
+            <div id="usage-summary-banner" class="usage-summary-banner" style="display:none;">
+                <div class="usage-summary-item">
+                    <span class="usage-summary-label">Total Prompt Tokens</span>
+                    <span class="usage-summary-value" id="usage-total-prompt">0</span>
+                </div>
+                <div class="usage-summary-item">
+                    <span class="usage-summary-label">Total Completion Tokens</span>
+                    <span class="usage-summary-value" id="usage-total-completion">0</span>
+                </div>
+                <div class="usage-summary-item">
+                    <span class="usage-summary-label">Total Cost</span>
+                    <span class="usage-summary-value usage-cost" id="usage-total-cost">$0.00</span>
+                </div>
+            </div>
+            <div id="usage-table-container">
+                <p class="placeholder">No usage data yet. Run a pipeline operation to generate usage data.</p>
+            </div>
+        </div>
+        <div class="card">
+            <h3>📈 Per-Task Usage</h3>
+            <p class="help-text">Usage breakdown for individual task sessions. Each pipeline run or update creates a separate task session with its own usage tracking.</p>
+            <div class="button-row">
+                <button class="btn btn-primary" id="btn-refresh-task-usage">🔄 Refresh Task Usage</button>
+            </div>
+            <div id="task-usage-container">
+                <p class="placeholder">Task-level usage will appear here after pipeline runs.</p>
+            </div>
+        </div>
+        <div class="card">
+            <h3>💡 About Usage Tracking</h3>
+            <div class="tips-grid">
+                <div class="tip-item">
+                    <span class="tip-icon">🔢</span>
+                    <div>
+                        <strong>Token Counting</strong>
+                        <p class="tip-text">Prompt tokens are the input sent to the AI model. Completion tokens are the output generated. Both contribute to cost.</p>
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-icon">💵</span>
+                    <div>
+                        <strong>Cost Estimates</strong>
+                        <p class="tip-text">Costs are estimated based on the model's pricing. Actual billing may vary slightly depending on your API provider.</p>
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-icon">🔄</span>
+                    <div>
+                        <strong>Session Scope</strong>
+                        <p class="tip-text">Usage is tracked per session. Each browser session gets its own usage counter that resets when a new session starts.</p>
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-icon">📡</span>
+                    <div>
+                        <strong>Live Monitoring</strong>
+                        <p class="tip-text">Click on any task session link to view detailed usage for that specific AI operation in real time.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 </div>

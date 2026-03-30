@@ -20,10 +20,14 @@ plugins {
 
 include(":antlr")
 include(":core")
+include(":providers")
 include(":groovy")
 include(":kotlin")
 include(":webui")
+include(":tasklib")
+include(":stdtools")
 include(":desktop")
+include(":experiment")
 include(":tool")
 
 if (System.getenv("CI") == null || System.getenv("ANDROID_HOME") != null) {

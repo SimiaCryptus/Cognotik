@@ -20,7 +20,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
-import com.simiacryptus.cognotik.plan.tools.toApiChatModel
+import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -380,7 +380,7 @@ class NarrativeGenerationAction : BaseAction() {
 
             return NarrativeGenerationTask.NarrativeGenerationTaskExecutionConfigData(
                 subject = subjectField.text,
-                input_files = inputFiles,
+                related_files = inputFiles,
                 narrative_elements = narrativeElements,
                 target_word_count = targetWordCountSpinner.value as Int,
                 number_of_acts = numberOfActsSpinner.value as Int,

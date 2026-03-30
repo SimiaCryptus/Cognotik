@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Philosophical Calculator</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="../../assets/scripts/components/CognotikHeader.js" type="module"></script>
+</head>
+<body>
+<cognotik-header current-page="tasks"></cognotik-header>
+
+<header class="app-header">
+    <h1>🧮 Philosophical Calculator</h1>
+    <p class="subtitle">Multi-perspective analytical toolkit — transform content through philosophical, rhetorical, and creative lenses</p>
+</header>
+
+<nav class="tab-nav">
+    <a href="#" class="nav-link active" data-section="section-input">📝 Input</a>
+     <a href="#" class="nav-link" data-section="section-settings">🤖 Models</a>
+    <a href="#" class="nav-link" data-section="section-pipeline">⚙️ Pipeline</a>
+    <a href="#" class="nav-link" data-section="section-lenses">🔬 Lenses</a>
+    <a href="#" class="nav-link" data-section="section-results">📊 Results</a>
+</nav>
+
+<main>
+    <!-- ==================== INPUT SECTION ==================== -->
+    <section id="section-input" class="section active">
+        <h2>📝 Input</h2>
+
+        <div class="card">
+            <h3>📋 Notes</h3>
+            <p>Paste your raw notes, transcripts, or source material. This is the canonical, authoritative source for all operations.</p>
+            <div class="upload-zone" id="upload-zone">
+                <div class="upload-zone-content">
+                    <span class="upload-icon">📁</span>
+                    <p class="upload-text">Drag & drop files here, or <label for="file-input" class="upload-browse-link">browse</label></p>
+                    <p class="upload-hint">Supports text, markdown, docx, pdf, and other document formats</p>
+                    <input type="file" id="file-input" multiple class="upload-file-input">
+                </div>
+            </div>
+            <div class="uploaded-files-list" id="uploaded-files-list"></div>
+
+            <textarea id="notes-editor" rows="18" placeholder="Paste your raw notes, transcripts, ideas, or source material here..."></textarea>
+            <div class="button-row">
+                <button class="btn btn-primary" id="save-notes">💾 Save Notes</button>
+                <button class="btn btn-secondary" id="refresh-file-list">🔄 Refresh File List</button>
+                <span id="notes-status" class="status-msg"></span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📐 Instructions <span class="optional-tag">optional</span></h3>
+            <p>Provide structural and thematic directives for article generation. If left empty, the draft will be based solely on the notes and summary.</p>
+            <textarea id="instruct-editor" rows="10" placeholder="e.g., Write a 2000-word essay focusing on the ethical implications. Use an academic tone. Structure: Introduction → 3 main arguments → Counterarguments → Conclusion."></textarea>
+            <div class="button-row">
+                <button class="btn btn-primary" id="save-instruct">💾 Save Instructions</button>
+                <span id="instruct-status" class="status-msg"></span>
+            </div>
+        </div>
+    </section>
+<!-- ==================== SETTINGS SECTION ==================== -->
+<section id="section-settings" class="section">
+     <h2>🤖 Model Selection</h2>
+     <div class="card">
+         <h3>🧠 AI Models</h3>
+         <p>Select which AI models to use for processing. Models are loaded from your configured API providers.</p>
+         <div class="model-selection-grid">
+             <div class="model-field">
+                 <label for="smart-model-select">
+                     <span class="model-label-icon">⚡</span>
+                     Smart Model
+                     <span class="model-label-hint">Primary model for complex reasoning tasks</span>
+                 </label>
+                 <select id="smart-model-select" class="model-select">
+                     <option value="">Loading models…</option>
+                 </select>
+             </div>
+             <div class="model-field">
+                 <label for="fast-model-select">
+                     <span class="model-label-icon">🚀</span>
+                     Fast Model
+                     <span class="model-label-hint">Secondary model for parsing and lighter tasks</span>
+                 </label>
+                 <select id="fast-model-select" class="model-select">
+                     <option value="">Loading models…</option>
+                 </select>
+             </div>
+             <div class="model-field">
+                 <label for="image-model-select">
+                     <span class="model-label-icon">🖼️</span>
+                     Image Model
+                     <span class="model-label-hint">Model for image generation (narrative, comic lenses)</span>
+                 </label>
+                 <select id="image-model-select" class="model-select">
+                     <option value="">Loading models…</option>
+                 </select>
+             </div>
+         </div>
+         <div class="button-row">
+             <button class="btn btn-primary" id="save-model-settings">💾 Save Model Settings</button>
+             <button class="btn btn-secondary" id="reload-models">🔄 Reload Models</button>
+             <span id="model-status" class="status-msg"></span>
+         </div>
+     </div>
+     <div class="card">
+         <h3>📋 Available Providers</h3>
+         <p>Models are grouped by API provider. Only providers with configured API keys are shown.</p>
+         <div id="provider-info" class="provider-info">
+             <p class="placeholder">Loading provider information…</p>
+         </div>
+     </div>
+</section>
+
+
+    <!-- ==================== PIPELINE SECTION ==================== -->
+    <section id="section-pipeline" class="section">
+        <h2>⚙️ Core Pipeline</h2>
+
+        <!-- Pipeline Diagram -->
+        <div class="card pipeline-overview-card">
+            <h3>Pipeline Overview</h3>
+            <div class="pipeline-diagram">
+                <div class="pipeline-stage" data-stage="notes">
+                    <div class="stage-icon">📋</div>
+                    <div class="stage-label">Notes</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="summary">
+                    <div class="stage-icon">📝</div>
+                    <div class="stage-label">Summary</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="draft">
+                    <div class="stage-icon">📄</div>
+                    <div class="stage-label">Draft</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="lenses">
+                    <div class="stage-icon">🔬</div>
+                    <div class="stage-label">Lenses</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="update">
+                    <div class="stage-icon">✨</div>
+                    <div class="stage-label">Enhanced</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-stage" data-stage="illustrate">
+                    <div class="stage-icon">🎨</div>
+                    <div class="stage-label">Illustrated</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Summarize -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">1</span>
+                    <span class="step-title">Summarize Notes</span>
+                    <span class="step-badge pending" id="badge-summary">pending</span>
+                </div>
+                <p class="step-desc">Distill your raw notes into a thematic, conceptual summary organized by key ideas — not a chronological recap.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/summarize_op.md"
+                            data-output="summary.md"
+                            data-badge="badge-summary"
+                            data-viewer="viewer-summary">▶ Run</button>
+                    <button class="btn btn-secondary btn-view"
+                            data-file="summary.md"
+                            data-viewer="viewer-summary">👁 View</button>
+                </div>
+                <div class="viewer" id="viewer-summary"></div>
+            </div>
+        </div>
+
+        <!-- Step 2: Draft Article -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">2</span>
+                    <span class="step-title">Draft Article</span>
+                    <span class="step-badge pending" id="badge-content">pending</span>
+                </div>
+                <p class="step-desc">Generate a polished, coherent article or essay based on the summary, notes, and any instructions provided.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/draft_article_op.md"
+                            data-output="content.md"
+                            data-badge="badge-content"
+                            data-viewer="viewer-content">▶ Run</button>
+                    <button class="btn btn-secondary btn-view"
+                            data-file="content.md"
+                            data-viewer="viewer-content">👁 View</button>
+                </div>
+                <div class="viewer" id="viewer-content"></div>
+            </div>
+        </div>
+
+        <!-- Step 3: Update Article (synthesis) -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">3</span>
+                    <span class="step-title">Update Article (Synthesize Lenses)</span>
+                    <span class="step-badge pending" id="badge-update">pending</span>
+                </div>
+                <p class="step-desc">Weave insights from all analytical lenses back into the main article. Run this after completing one or more lenses below.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/update_article_op.md"
+                            data-output="content.md"
+                            data-badge="badge-update"
+                            data-viewer="viewer-update">▶ Run</button>
+                    <button class="btn btn-secondary btn-view"
+                            data-file="content.md"
+                            data-viewer="viewer-update">👁 View</button>
+                </div>
+                <div class="viewer" id="viewer-update"></div>
+            </div>
+        </div>
+        <!-- Step 4: Illustrate Article -->
+        <div class="card">
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">4</span>
+                    <span class="step-title">Illustrate Article</span>
+                    <span class="step-badge pending" id="badge-illustration">pending</span>
+                </div>
+                <p class="step-desc">Add inline AI-generated illustrations to the article to enhance the narrative and explain complex concepts visually. This modifies <code>content.md</code> in place.</p>
+                <div class="button-row">
+                    <button class="btn btn-primary btn-run"
+                            data-op="ops/illustration_op.md"
+                            data-output="content.md"
+                            data-badge="badge-illustration"
+                            data-viewer="viewer-illustration">▶ Run</button>
+                    <button class="btn btn-secondary btn-view"
+                            data-file="content.md"
+                            data-viewer="viewer-illustration">👁 View</button>
+                </div>
+                <div class="viewer" id="viewer-illustration"></div>
+            </div>
+        </div>
+
+        <!-- Manual Article Editor -->
+        <div class="card manual-editor-card">
+            <h3>✏️ Manual Article Editor</h3>
+            <p>Directly create or edit the <code>content.md</code> file. Use this to write your article from scratch, paste in existing content, or make manual edits at any point in the pipeline.</p>
+            <div class="button-row">
+                <button class="btn btn-primary" id="pipeline-edit-content-btn">✏️ Open Editor</button>
+                <button class="btn btn-secondary btn-view" data-file="content.md" data-viewer="viewer-manual-content">👁 Preview Current</button>
+                <span id="pipeline-editor-status" class="status-msg"></span>
+            </div>
+            <div id="pipeline-content-editor-container" class="pipeline-content-editor-container">
+                <div class="pipeline-editor-header">
+                    <div class="pipeline-editor-title-row">
+                        <h4>✏️ Editing content.md</h4>
+                        <span class="pipeline-editor-hint">Changes are saved to the pipeline's content.md file</span>
+                    </div>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-sm" id="pipeline-save-content-btn">💾 Save</button>
+                        <button class="btn btn-secondary btn-sm" id="pipeline-save-close-content-btn">💾 Save & Close</button>
+                        <button class="btn btn-secondary btn-sm" id="pipeline-close-editor-btn">✕ Close</button>
+                    </div>
+                </div>
+                <div class="pipeline-editor-toolbar">
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="heading" title="Insert heading">H2</button>
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="bold" title="Bold">B</button>
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="italic" title="Italic">I</button>
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="bullet" title="Bullet list">• List</button>
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="quote" title="Blockquote">❝ Quote</button>
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="code" title="Code block">⌨ Code</button>
+                    <button class="btn btn-sm btn-toolbar pipeline-editor-tool" data-action="hr" title="Horizontal rule">― HR</button>
+                    <span class="pipeline-editor-wordcount" id="pipeline-editor-wordcount"></span>
+                </div>
+                <textarea id="pipeline-content-editor" rows="30" placeholder="Write or paste your article content here in Markdown format..."></textarea>
+                <div class="pipeline-editor-footer">
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-sm" id="pipeline-save-content-btn-bottom">💾 Save</button>
+                        <button class="btn btn-secondary btn-sm" id="pipeline-save-close-content-btn-bottom">💾 Save & Close</button>
+                        <span id="pipeline-editor-status-bottom" class="status-msg"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="viewer" id="viewer-manual-content"></div>
+        </div>
+
+
+        <!-- Batch Execution -->
+        <div class="card batch-card">
+            <h3>🚀 Quick Sequence</h3>
+            <p>Run the core pipeline steps in sequence (Summarize → Draft). Use the Lenses tab to run individual analytical operations, then come back to run Update.</p>
+            <div class="button-row">
+                <button class="btn btn-accent" id="run-core-pipeline">▶ Run Core Pipeline (Summarize → Draft)</button>
+            </div>
+            <div class="batch-log" id="batch-log"></div>
+        </div>
+    </section>
+
+    <!-- ==================== LENSES SECTION ==================== -->
+    <section id="section-lenses" class="section">
+        <h2>🔬 Analytical Lenses</h2>
+        <p class="section-intro">Apply different analytical lenses to your content. Each lens produces an independent analysis that can be synthesized back into the main article via the <strong>Update Article</strong> step.</p>
+
+        <div class="lenses-grid">
+
+            <!-- Brainstorm -->
+            <div class="card lens-card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">💡</span>
+                        <span class="step-title">Brainstorm</span>
+                        <span class="step-badge pending" id="badge-brainstorm">pending</span>
+                    </div>
+                    <p class="step-desc">Generate a broad, divergent set of ideas, extensions, and applications. Prioritizes quantity and novelty.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/brainstorm_op.md"
+                                data-output="brainstorm.md"
+                                data-badge="badge-brainstorm"
+                                data-viewer="viewer-brainstorm">▶ Run</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="brainstorm.md"
+                                data-viewer="viewer-brainstorm">👁 View</button>
+                    </div>
+                    <div class="viewer" id="viewer-brainstorm"></div>
+                </div>
+            </div>
+
+            <!-- Dialectical -->
+            <div class="card lens-card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">⚖️</span>
+                        <span class="step-title">Dialectical</span>
+                        <span class="step-badge pending" id="badge-dialectical">pending</span>
+                    </div>
+                    <p class="step-desc">Thesis, antithesis, synthesis — explore contradictions and resolve them into higher-level understanding.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/dialectical_op.md"
+                                data-output="dialectical.md"
+                                data-badge="badge-dialectical"
+                                data-viewer="viewer-dialectical">▶ Run</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="dialectical.md"
+                                data-viewer="viewer-dialectical">👁 View</button>
+                    </div>
+                    <div class="viewer" id="viewer-dialectical"></div>
+                </div>
+            </div>
+
+            <!-- Socratic -->
+            <div class="card lens-card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">🏛️</span>
+                        <span class="step-title">Socratic Dialogue</span>
+                        <span class="step-badge pending" id="badge-socratic">pending</span>
+                    </div>
+                    <p class="step-desc">Transform content into a rigorous Socratic dialogue that exposes assumptions and strengthens arguments.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/socratic_op.md"
+                                data-output="socratic.md"
+                                data-badge="badge-socratic"
+                                data-viewer="viewer-socratic">▶ Run</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="socratic.md"
+                                data-viewer="viewer-socratic">👁 View</button>
+                    </div>
+                    <div class="viewer" id="viewer-socratic"></div>
+                </div>
+            </div>
+
+            <!-- Perspectives -->
+            <div class="card lens-card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">👥</span>
+                        <span class="step-title">Perspectives</span>
+                        <span class="step-badge pending" id="badge-perspectives">pending</span>
+                    </div>
+                    <p class="step-desc">Analyze from multiple stakeholder viewpoints — highlight differing priorities, concerns, and insights.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/perspectives_op.md"
+                                data-output="perspectives.md"
+                                data-badge="badge-perspectives"
+                                data-viewer="viewer-perspectives">▶ Run</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="perspectives.md"
+                                data-viewer="viewer-perspectives">👁 View</button>
+                    </div>
+                    <div class="viewer" id="viewer-perspectives"></div>
+                </div>
+            </div>
+
+            <!-- Persuasive -->
+            <div class="card lens-card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">🎯</span>
+                        <span class="step-title">Persuasive Essay</span>
+                        <span class="step-badge pending" id="badge-persuasive">pending</span>
+                    </div>
+                    <p class="step-desc">Reframe as a compelling persuasive essay using rhetorical techniques to build a strong argument.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/persuasive_op.md"
+                                data-output="persuasive.md"
+                                data-badge="badge-persuasive"
+                                data-viewer="viewer-persuasive">▶ Run</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="persuasive.md"
+                                data-viewer="viewer-persuasive">👁 View</button>
+                    </div>
+                    <div class="viewer" id="viewer-persuasive"></div>
+                </div>
+            </div>
+
+            <!-- Game Theory -->
+            <div class="card lens-card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">🎲</span>
+                        <span class="step-title">Game Theory</span>
+                        <span class="step-badge pending" id="badge-gametheory">pending</span>
+                    </div>
+                    <p class="step-desc">Identify players, strategies, payoffs, and equilibria. Includes payoff matrices and Nash equilibrium analysis.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/gametheory_op.md"
+                                data-output="gametheory.md"
+                                data-badge="badge-gametheory"
+                                data-viewer="viewer-gametheory">▶ Run</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="gametheory.md"
+                                data-viewer="viewer-gametheory">👁 View</button>
+                    </div>
+                    <div class="viewer" id="viewer-gametheory"></div>
+                </div>
+            </div>
+
+            <!-- Narrative -->
+            <div class="card lens-card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">📖</span>
+                        <span class="step-title">Narrative</span>
+                        <span class="step-badge pending" id="badge-narrative">pending</span>
+                    </div>
+                    <p class="step-desc">Dramatize the content into a compelling narrative with illustrations.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/narrative_op.md"
+                                data-output="narrative.md"
+                                data-badge="badge-narrative"
+                                data-viewer="viewer-narrative">▶ Run</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="narrative.md"
+                                data-viewer="viewer-narrative">👁 View</button>
+                    </div>
+                    <div class="viewer" id="viewer-narrative"></div>
+                </div>
+            </div>
+
+            <!-- Comic -->
+            <div class="card lens-card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">💬</span>
+                        <span class="step-title">Comic Book</span>
+                        <span class="step-badge pending" id="badge-comic">pending</span>
+                    </div>
+                    <p class="step-desc">Generate a comic book representation of the content.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/comic_op.md"
+                                data-output="comic.md"
+                                data-badge="badge-comic"
+                                data-viewer="viewer-comic">▶ Run</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="comic.md"
+                                data-viewer="viewer-comic">👁 View</button>
+                    </div>
+                    <div class="viewer" id="viewer-comic"></div>
+                </div>
+            </div>
+
+            <!-- Technical Explanation -->
+            <div class="card lens-card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">🔧</span>
+                        <span class="step-title">Technical Explanation</span>
+                        <span class="step-badge pending" id="badge-technical">pending</span>
+                    </div>
+                    <p class="step-desc">Precise, in-depth technical breakdown with definitions, step-by-step mechanisms, code snippets, and worked examples.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/technical_explanation_op.md"
+                                data-output="technical_explanation.md"
+                                data-badge="badge-technical"
+                                data-viewer="viewer-technical">▶ Run</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="technical_explanation.md"
+                                data-viewer="viewer-technical">👁 View</button>
+                    </div>
+                    <div class="viewer" id="viewer-technical"></div>
+                </div>
+            </div>
+            <!-- Illustration -->
+            <div class="card lens-card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="lens-icon">🎨</span>
+                        <span class="step-title">Illustrate Document</span>
+                        <span class="step-badge pending" id="badge-illustration-lens">pending</span>
+                    </div>
+                    <p class="step-desc">Add inline AI-generated illustrations throughout the article to enhance the narrative and visually explain complex concepts.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/illustration_op.md"
+                                data-output="content.md"
+                                data-badge="badge-illustration-lens"
+                                data-viewer="viewer-illustration-lens">▶ Run</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="content.md"
+                                data-viewer="viewer-illustration-lens">👁 View</button>
+                    </div>
+                    <div class="viewer" id="viewer-illustration-lens"></div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!-- Batch Lenses -->
+        <div class="card batch-card">
+            <h3>🔬 Batch Lenses</h3>
+            <p>Select which lenses to run, then execute them all sequentially.</p>
+            <div class="lens-checkboxes">
+                <label><input type="checkbox" class="lens-check" value="brainstorm" checked> 💡 Brainstorm</label>
+                <label><input type="checkbox" class="lens-check" value="dialectical" checked> ⚖️ Dialectical</label>
+                <label><input type="checkbox" class="lens-check" value="socratic" checked> 🏛️ Socratic</label>
+                <label><input type="checkbox" class="lens-check" value="perspectives" checked> 👥 Perspectives</label>
+                <label><input type="checkbox" class="lens-check" value="persuasive" checked> 🎯 Persuasive</label>
+                <label><input type="checkbox" class="lens-check" value="gametheory"> 🎲 Game Theory</label>
+                <label><input type="checkbox" class="lens-check" value="narrative"> 📖 Narrative</label>
+                <label><input type="checkbox" class="lens-check" value="comic"> 💬 Comic</label>
+                <label><input type="checkbox" class="lens-check" value="technical"> 🔧 Technical</label>
+                <label><input type="checkbox" class="lens-check" value="illustration"> 🎨 Illustrate</label>
+            </div>
+            <div class="button-row">
+                <button class="btn btn-accent" id="run-selected-lenses">▶ Run Selected Lenses</button>
+                <button class="btn btn-secondary" id="select-all-lenses">Select All</button>
+                <button class="btn btn-secondary" id="deselect-all-lenses">Deselect All</button>
+            </div>
+            <div class="batch-log" id="lens-batch-log"></div>
+        </div>
+    </section>
+
+    <!-- ==================== RESULTS SECTION ==================== -->
+    <section id="section-results" class="section">
+        <h2>📊 Results</h2>
+
+        <div class="results-tabs">
+            <button class="results-tab active" data-tab="tab-content">📄 Article</button>
+            <button class="results-tab" data-tab="tab-summary">📝 Summary</button>
+            <button class="results-tab" data-tab="tab-brainstorm">💡 Brainstorm</button>
+            <button class="results-tab" data-tab="tab-dialectical">⚖️ Dialectical</button>
+            <button class="results-tab" data-tab="tab-socratic">🏛️ Socratic</button>
+            <button class="results-tab" data-tab="tab-perspectives">👥 Perspectives</button>
+            <button class="results-tab" data-tab="tab-persuasive">🎯 Persuasive</button>
+            <button class="results-tab" data-tab="tab-gametheory">🎲 Game Theory</button>
+            <button class="results-tab" data-tab="tab-narrative">📖 Narrative</button>
+            <button class="results-tab" data-tab="tab-comic">💬 Comic</button>
+            <button class="results-tab" data-tab="tab-technical">🔧 Technical</button>
+            <button class="results-tab" data-tab="tab-illustration">🎨 Illustrated</button>
+        </div>
+
+        <div class="results-content">
+            <div class="tab-panel active" id="tab-content">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="content.md" data-viewer="result-content">🔄 Refresh</button>
+                        <button class="btn btn-primary" id="edit-content-btn">✏️ Edit Article</button>
+                    </div>
+                    <!-- Content Editor (hidden by default) -->
+                    <div id="content-editor-container" class="content-editor-container">
+                        <div class="content-editor-header">
+                            <h4>✏️ Edit content.md</h4>
+                            <div class="button-row">
+                                <button class="btn btn-primary btn-sm" id="save-content-btn">💾 Save</button>
+                                <button class="btn btn-secondary btn-sm" id="close-content-editor-btn">✕ Close</button>
+                                <span id="content-editor-status" class="status-msg"></span>
+                            </div>
+                        </div>
+                        <textarea id="content-editor" rows="25" placeholder="Edit the article content here..."></textarea>
+                    </div>
+                    <div class="result-viewer" id="result-content">
+                        <p class="placeholder">Run the pipeline to generate the article.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-summary">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="summary.md" data-viewer="result-summary">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-summary">
+                        <p class="placeholder">Run the Summarize step to generate the summary.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-brainstorm">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="brainstorm.md" data-viewer="result-brainstorm">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-brainstorm">
+                        <p class="placeholder">Run the Brainstorm lens to generate ideas.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-dialectical">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="dialectical.md" data-viewer="result-dialectical">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-dialectical">
+                        <p class="placeholder">Run the Dialectical lens to generate analysis.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-socratic">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="socratic.md" data-viewer="result-socratic">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-socratic">
+                        <p class="placeholder">Run the Socratic lens to generate the dialogue.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-perspectives">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="perspectives.md" data-viewer="result-perspectives">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-perspectives">
+                        <p class="placeholder">Run the Perspectives lens to generate multi-stakeholder analysis.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-persuasive">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="persuasive.md" data-viewer="result-persuasive">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-persuasive">
+                        <p class="placeholder">Run the Persuasive lens to generate the essay.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-gametheory">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="gametheory.md" data-viewer="result-gametheory">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-gametheory">
+                        <p class="placeholder">Run the Game Theory lens to generate analysis.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-narrative">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="narrative.md" data-viewer="result-narrative">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-narrative">
+                        <p class="placeholder">Run the Narrative lens to generate the dramatization.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-comic">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="comic.md" data-viewer="result-comic">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-comic">
+                        <p class="placeholder">Run the Comic lens to generate the comic.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-technical">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="technical_explanation.md" data-viewer="result-technical">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-technical">
+                        <p class="placeholder">Run the Technical Explanation lens to generate the breakdown.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="tab-illustration">
+                <div class="card">
+                    <div class="button-row">
+                        <button class="btn btn-secondary btn-refresh" data-file="content.md" data-viewer="result-illustration">🔄 Refresh</button>
+                    </div>
+                    <div class="result-viewer" id="result-illustration">
+                        <p class="placeholder">Run the Illustrate step to add inline illustrations to the article.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script src="marked.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

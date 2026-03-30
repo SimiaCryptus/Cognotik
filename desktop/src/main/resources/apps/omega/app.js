@@ -629,6 +629,11 @@
                 setBadge(badgeId, 'done');
 
                 // Auto-show result
+             // Update "Open App" buttons if this was a UI generation step
+             if (outputPath.indexOf('generated_app') >= 0) {
+                 updateOpenAppVisibility();
+             }
+
                 if (viewerId) {
                     var viewer = document.getElementById(viewerId);
                     if (viewer) {
@@ -800,6 +805,7 @@
                 }
             ]);
             logBatch('batch-log-generate', '🎉 App generation complete!', 'success');
+             await updateOpenAppVisibility();
         } catch (e) {
             logBatch('batch-log-generate', 'Pipeline stopped due to error.', 'error');
         } finally {
@@ -850,6 +856,7 @@
         try {
             await runSequential('batch-log-update', steps);
             logBatch('batch-log-update', '🎉 Updates complete!', 'success');
+             await updateOpenAppVisibility();
         } catch (e) {
             logBatch('batch-log-update', 'Update stopped due to error.', 'error');
         } finally {
@@ -1124,6 +1131,8 @@
         }
 
         if (anyRunning) startStatusPolling();
+         // Update "Open App" button visibility
+         updateOpenAppVisibility();
     }
     // Helper: find badge ID for a target that may not exactly match our map keys
     function findBadgeForTarget(target) {
@@ -1156,6 +1165,61 @@
     checkExistingFiles();
     startStatusPolling();
     loadApiProviders();
+     // === Open Generated App ===
+     function getGeneratedAppUrl(filename) {
+         // basePath points to the session file index root, e.g. /myapp/fileIndex/SESSION_ID
+         // The generated app files live under generated_app/
+         var file = filename || 'app.html';
+         return basePath + '/generated_app/' + file;
+     }
+     function openGeneratedApp(filename) {
+         var url = getGeneratedAppUrl(filename);
+         window.open(url, '_blank', 'noopener');
+     }
+     // Show/hide "Open App" buttons based on whether the generated app exists
+     async function updateOpenAppVisibility() {
+         var appExists = await fileExists('generated_app/app.html');
+         var indexExists = !appExists ? await fileExists('generated_app/index.html') : false;
+         var hasApp = appExists || indexExists;
+         var navBtn = document.getElementById('nav-open-app');
+         var generateBtn = document.getElementById('open-app-generate');
+         var resultsCard = document.getElementById('open-app-card');
+         var indexHtmlBtn = document.getElementById('open-app-index-html');
+         if (navBtn) navBtn.style.display = hasApp ? '' : 'none';
+         if (generateBtn) generateBtn.style.display = hasApp ? '' : 'none';
+         if (resultsCard) resultsCard.style.display = hasApp ? '' : 'none';
+         // Store which file to open
+         if (navBtn) navBtn.dataset.appFile = appExists ? 'app.html' : 'index.html';
+         if (generateBtn) generateBtn.dataset.appFile = appExists ? 'app.html' : 'index.html';
+         // Show the index.html button only if app.html also exists (so user can choose)
+         if (indexHtmlBtn) {
+             if (appExists) {
+                 var alsoHasIndex = await fileExists('generated_app/index.html');
+                 indexHtmlBtn.style.display = alsoHasIndex ? '' : 'none';
+             } else {
+                 indexHtmlBtn.style.display = 'none';
+             }
+         }
+     }
+     // Attach click handlers for all "Open App" buttons
+     document.getElementById('nav-open-app').addEventListener('click', function(e) {
+         e.preventDefault();
+         openGeneratedApp(this.dataset.appFile || 'app.html');
+     });
+     document.getElementById('open-app-generate').addEventListener('click', function() {
+         openGeneratedApp(this.dataset.appFile || 'app.html');
+     });
+     document.getElementById('open-app-results').addEventListener('click', function() {
+         // Prefer app.html, fall back to index.html
+         var navBtn = document.getElementById('nav-open-app');
+         openGeneratedApp((navBtn && navBtn.dataset.appFile) || 'app.html');
+     });
+     document.getElementById('open-app-index-html').addEventListener('click', function() {
+         openGeneratedApp('index.html');
+     });
+     // Check on initial load
+     updateOpenAppVisibility();
+
     // === Git API Functions ===
     var gitApiBase = basePath + '/.git/api';
     async function gitApiCall(endpoint, options) {
@@ -1377,6 +1441,166 @@
         }
         var url = appRoot + '/fileZip?session=' + encodeURIComponent(sessionId) + '&path=' + encodeURIComponent('/generated_app');
         window.location.href = url;
+    });
+    // === Usage Section ===
+    var usageAutoRefreshTimer = null;
+    async function fetchUsageData() {
+        if (!sessionId) {
+            throw new Error('No session ID available');
+        }
+        var url = '/proxy/usage?sessionId=' + encodeURIComponent(sessionId) + '&format=json';
+        var resp = await fetch(url, {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!resp.ok) {
+            throw new Error('Failed to fetch usage data: ' + resp.status);
+        }
+        return await resp.json();
+    }
+    function formatNumber(num) {
+        if (num === null || num === undefined) return '0';
+        return num.toLocaleString();
+    }
+    function formatCost(cost) {
+        if (cost === null || cost === undefined || cost === 0) return '$0.00';
+        if (cost < 0.01) return '$' + cost.toFixed(4);
+        return '$' + cost.toFixed(4);
+    }
+    function renderUsageData(data) {
+        var summaryCards = document.getElementById('usage-summary-cards');
+        var tableContainer = document.getElementById('usage-table-container');
+        var detailsCard = document.getElementById('usage-details-card');
+        var rawJson = document.getElementById('usage-raw-json');
+        if (!data || !data.models || data.models.length === 0) {
+            summaryCards.style.display = 'none';
+            tableContainer.innerHTML = '<div class="usage-empty">No usage data recorded yet. Run some operations to see token usage here.</div>';
+            detailsCard.style.display = 'none';
+            return;
+        }
+        // Update totals
+        var totals = data.totals || {};
+        var totalPrompt = totals.prompt_tokens || 0;
+        var totalCompletion = totals.completion_tokens || 0;
+        var totalTokens = totalPrompt + totalCompletion;
+        var totalCost = totals.cost || 0;
+        document.getElementById('usage-total-prompt').textContent = formatNumber(totalPrompt);
+        document.getElementById('usage-total-completion').textContent = formatNumber(totalCompletion);
+        document.getElementById('usage-total-tokens').textContent = formatNumber(totalTokens);
+        document.getElementById('usage-total-cost').textContent = formatCost(totalCost);
+        summaryCards.style.display = 'block';
+        // Find max tokens for bar chart scaling
+        var maxTokens = 0;
+        data.models.forEach(function(m) {
+            var modelTotal = (m.prompt_tokens || 0) + (m.completion_tokens || 0);
+            if (modelTotal > maxTokens) maxTokens = modelTotal;
+        });
+        // Build table
+        var html = '<table class="usage-table">';
+        html += '<thead><tr>';
+        html += '<th>Model</th>';
+        html += '<th style="text-align:right;">Prompt Tokens</th>';
+        html += '<th style="text-align:right;">Completion Tokens</th>';
+        html += '<th>Token Distribution</th>';
+        html += '<th style="text-align:right;">Cost</th>';
+        html += '</tr></thead>';
+        html += '<tbody>';
+        // Sort models by cost descending
+        var sortedModels = data.models.slice().sort(function(a, b) {
+            return (b.cost || 0) - (a.cost || 0);
+        });
+        sortedModels.forEach(function(model) {
+            var prompt = model.prompt_tokens || 0;
+            var completion = model.completion_tokens || 0;
+            var modelTotal = prompt + completion;
+            var promptPct = maxTokens > 0 ? (prompt / maxTokens * 100) : 0;
+            var completionPct = maxTokens > 0 ? (completion / maxTokens * 100) : 0;
+            html += '<tr>';
+            html += '<td class="usage-cell-model">' + escapeHtml(model.model || 'unknown') + '</td>';
+            html += '<td class="usage-cell-number">' + formatNumber(prompt) + '</td>';
+            html += '<td class="usage-cell-number">' + formatNumber(completion) + '</td>';
+            html += '<td>';
+            html += '<div class="usage-bar-container">';
+            html += '<div class="usage-bar" title="Prompt: ' + formatNumber(prompt) + ' / Completion: ' + formatNumber(completion) + '">';
+            html += '<div class="usage-bar-fill bar-prompt" style="width:' + promptPct.toFixed(1) + '%; display:inline-block;"></div>';
+            html += '<div class="usage-bar-fill bar-completion" style="width:' + completionPct.toFixed(1) + '%; display:inline-block;"></div>';
+            html += '</div>';
+            html += '<span class="usage-bar-label">' + formatNumber(modelTotal) + '</span>';
+            html += '</div>';
+            html += '</td>';
+            html += '<td class="usage-cell-cost">' + formatCost(model.cost) + '</td>';
+            html += '</tr>';
+        });
+        // Totals row
+        html += '<tr class="usage-row-total">';
+        html += '<td class="usage-cell-model" style="color:var(--text-primary);">Total</td>';
+        html += '<td class="usage-cell-number">' + formatNumber(totalPrompt) + '</td>';
+        html += '<td class="usage-cell-number">' + formatNumber(totalCompletion) + '</td>';
+        html += '<td>';
+        html += '<div class="usage-bar-container">';
+        var totalPromptPct = totalTokens > 0 ? (totalPrompt / totalTokens * 100) : 0;
+        var totalCompletionPct = totalTokens > 0 ? (totalCompletion / totalTokens * 100) : 0;
+        html += '<div class="usage-bar">';
+        html += '<div class="usage-bar-fill bar-prompt" style="width:' + totalPromptPct.toFixed(1) + '%; display:inline-block;"></div>';
+        html += '<div class="usage-bar-fill bar-completion" style="width:' + totalCompletionPct.toFixed(1) + '%; display:inline-block;"></div>';
+        html += '</div>';
+        html += '<span class="usage-bar-label">' + formatNumber(totalTokens) + '</span>';
+        html += '</div>';
+        html += '</td>';
+        html += '<td class="usage-cell-cost">' + formatCost(totalCost) + '</td>';
+        html += '</tr>';
+        html += '</tbody></table>';
+        // Legend
+        html += '<div style="display:flex; gap:1.5rem; margin-top:0.75rem; font-size:0.8rem; color:var(--text-muted);">';
+        html += '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--color-accent);margin-right:0.3rem;vertical-align:middle;"></span>Prompt tokens</span>';
+        html += '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--color-purple);margin-right:0.3rem;vertical-align:middle;"></span>Completion tokens</span>';
+        html += '</div>';
+        // Last updated
+        html += '<div class="usage-last-updated">Last updated: ' + new Date().toLocaleTimeString() + '</div>';
+        tableContainer.innerHTML = html;
+        // Show raw JSON
+        rawJson.textContent = JSON.stringify(data, null, 2);
+        detailsCard.style.display = 'block';
+    }
+    // Refresh usage button
+    document.getElementById('usage-refresh').addEventListener('click', async function() {
+        this.disabled = true;
+        setStatus('usage-status', 'Loading usage data…', 'info');
+        try {
+            var data = await fetchUsageData();
+            renderUsageData(data);
+            setStatus('usage-status', '✓ Usage data loaded', 'success');
+        } catch (e) {
+            setStatus('usage-status', '✗ ' + e.message, 'error');
+            document.getElementById('usage-table-container').innerHTML =
+                '<div class="usage-empty" style="color:var(--color-danger);">Failed to load usage data: ' + escapeHtml(e.message) + '</div>';
+        } finally {
+            this.disabled = false;
+        }
+    });
+    // Auto-refresh toggle
+    document.getElementById('usage-auto-refresh').addEventListener('change', function() {
+        if (this.checked) {
+            // Immediately refresh, then set interval
+            document.getElementById('usage-refresh').click();
+            usageAutoRefreshTimer = setInterval(async function() {
+                try {
+                    var data = await fetchUsageData();
+                    renderUsageData(data);
+                } catch (e) {
+                    // Silently fail on auto-refresh
+                }
+            }, 30000);
+        } else {
+            if (usageAutoRefreshTimer) {
+                clearInterval(usageAutoRefreshTimer);
+                usageAutoRefreshTimer = null;
+            }
+        }
+    });
+    // Raw JSON collapsible toggle
+    document.getElementById('usage-raw-toggle').addEventListener('click', function() {
+        this.classList.toggle('open');
+        document.getElementById('usage-raw-body').classList.toggle('open');
     });
 
 

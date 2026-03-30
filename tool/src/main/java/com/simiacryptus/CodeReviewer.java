@@ -1,6 +1,8 @@
 package com.simiacryptus;
 
+import com.simiacryptus.cognotik.chat.model.ChatModel;
 import com.simiacryptus.cognotik.util.FileGenerator;
+import com.simiacryptus.cognotik.util.PlanHarness;
 import com.simiacryptus.cognotik.util.UnifiedHarness;
 import com.simiacryptus.cognotik.util.UpdateModes;
 
@@ -28,6 +30,7 @@ public record CodeReviewer(
     public static final String DEFAULT_OVERWRITE_MODE = "PatchExisting";
 
     public static void main(String[] args) {
+        PlanHarness.initDynamicEnums();
         configureEnvironmentalKeys();
         UnifiedHarness.configurePlatform(defaultUser);
         new CodeReviewer(
@@ -45,10 +48,15 @@ public record CodeReviewer(
     }
 
     public void run() {
+        ChatModel chatModel = null;
+        if(chatModel == null) throw new IllegalStateException("ChatModel not configured");
         new FileGenerator() {
         }.run(
                 new File(rootDir),
                 new File(srcDir),
+                chatModel,
+                chatModel,
+                chatModel,
                 (root, folder) -> Arrays.stream(Objects.requireNonNull(folder.listFiles())).map(file -> relativize(root, file)).toList(),
                 (source) -> source,
                 UpdateModes.valueOf(overwriteMode),

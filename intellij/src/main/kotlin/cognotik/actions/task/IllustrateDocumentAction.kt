@@ -20,7 +20,7 @@ import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.tools.file.IllustrateDocumentTask
-import com.simiacryptus.cognotik.plan.tools.toApiChatModel
+import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -328,7 +328,6 @@ class IllustrateDocumentAction : BaseAction() {
 
         fun getTaskConfig(): IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData {
             return IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData(
-                files = listOf(documentFile.relativeTo(root).path),
                 max_images = maxImagesSpinner.value as Int,
                 image_format = imageFormatCombo.selectedItem as String,
                 auto_insert = autoInsertCheckbox.isSelected,
@@ -337,7 +336,9 @@ class IllustrateDocumentAction : BaseAction() {
                 integrator_directive = integratorDirectiveField.text.takeIf { it.isNotBlank() },
                 task_description = taskDescriptionField.text,
                 state = TaskState.Pending
-            )
+            ).apply {
+                main_file = documentFile.relativeTo(root).path
+            }
         }
 
         fun getOrchestrationConfig(): OrchestrationConfig {

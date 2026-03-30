@@ -48,6 +48,15 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
              )
           """
     )
+     connection.createStatement().executeUpdate(
+       """
+          CREATE TABLE IF NOT EXISTS session_parents (
+              child_session_id VARCHAR(255),
+              parent_session_id VARCHAR(255),
+              PRIMARY KEY (child_session_id, parent_session_id)
+              )
+           """
+     )
   }
 
   override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ModelSchema.Usage) {
@@ -81,15 +90,20 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
 
   override fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage> {
     log.info("Getting session usage summary for session: ${session}")
+     val allSessionIds = collectSessionIds(session.sessionId)
+     log.debug("Collected session IDs for summary (including children): {}", allSessionIds)
+     val placeholders = allSessionIds.joinToString(",") { "?" }
     val statement = connection.prepareStatement(
       """
             SELECT model, SUM(prompt_tokens), SUM(completion_tokens), SUM(cost)
             FROM usage
-            WHERE session_id = ?
+             WHERE session_id IN ($placeholders)
             GROUP BY model
             """
     )
-    statement.setString(1, session.sessionId)
+     allSessionIds.forEachIndexed { index, sessionId ->
+       statement.setString(index + 1, sessionId)
+     }
     val resultSet = statement.executeQuery()
     return generateUsageSummary(resultSet)
   }
@@ -97,7 +111,49 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
   override fun clear() {
     log.debug("Executing SQL statement to clear all usage data")
     connection.createStatement().executeUpdate("DELETE FROM usage")
+     connection.createStatement().executeUpdate("DELETE FROM session_parents")
   }
+   override fun setParentSession(child: Session, parent: Session) {
+     log.info("Setting parent session: child={}, parent={}", child.sessionId, parent.sessionId)
+     val statement = connection.prepareStatement(
+       """
+          MERGE INTO session_parents
+          USING (VALUES(CAST(? AS VARCHAR(255)), CAST(? AS VARCHAR(255)))) AS vals(c, p)
+          ON session_parents.child_session_id = vals.c AND session_parents.parent_session_id = vals.p
+          WHEN NOT MATCHED THEN INSERT (child_session_id, parent_session_id) VALUES (vals.c, vals.p)
+          """
+     )
+     statement.setString(1, child.sessionId)
+     statement.setString(2, parent.sessionId)
+     statement.executeUpdate()
+   }
+   /**
+    * Collects all descendant session IDs for a given session (including itself),
+    * by traversing the parent->child relationship in reverse (i.e. finding all children).
+    */
+   private fun collectSessionIds(sessionId: String): Set<String> {
+     val visited = mutableSetOf<String>()
+     val queue = ArrayDeque<String>()
+     queue.add(sessionId)
+     while (queue.isNotEmpty()) {
+       val current = queue.removeFirst()
+       if (visited.add(current)) {
+         val childStatement = connection.prepareStatement(
+           "SELECT child_session_id FROM session_parents WHERE parent_session_id = ?"
+         )
+         childStatement.setString(1, current)
+         val rs = childStatement.executeQuery()
+         while (rs.next()) {
+           val childId = rs.getString(1)
+           if (childId !in visited) {
+             queue.add(childId)
+           }
+         }
+       }
+     }
+     return visited
+   }
+
 
   private fun saveUsageValues(usageKey: UsageInterface.UsageKey, usageValues: UsageInterface.UsageValues) {
     log.debug(

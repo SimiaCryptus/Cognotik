@@ -7,29 +7,25 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
-import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.tools.*
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
-import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
-import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
-import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask.AutoFixTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.FileSelectionUtils.getAvailableFiles
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.util.Locale.getDefault
 import kotlin.io.path.Path
-
 
 class OrchestrationConfig(
   var sessionId: String = "default",
   var smartModel: String? = null,
   var fastModel: String? = null,
   var imageModel: String? = null,
-  val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
+  val shellCmd: List<String> = listOf(if (System.getProperty("os.name").lowercase(getDefault()).contains("windows")) "powershell" else "bash"),
   var temperature: Double = 0.2,
   val budget: Double = 2.0,
   val taskSettings: MutableMap<String, TaskTypeConfig> = TaskType.values().filter {
@@ -132,18 +128,6 @@ class OrchestrationConfig(
   companion object {
     var exampleInstance = TaskBreakdownResult(
       tasksByID = mapOf(
-        "1" to AutoFixTaskExecutionConfigData(
-          task_description = "Task 1", task_dependencies = listOf(), commands = mutableListOf(
-            AutoFixTask.CommandWithWorkingDir(
-              command = mutableListOf("echo", "Hello, World!"), working_dir = "."
-            )
-          )
-        ), "2" to FileModificationTaskExecutionConfigData(
-          task_description = "Task 2",
-          task_dependencies = listOf("1"),
-          related_files = listOf("input2.txt"),
-          files = listOf("output2.txt"),
-        )
       ),
     )
 
@@ -207,18 +191,6 @@ class OrchestrationConfig(
    */
   fun getTaskConfigs(taskType: TaskType<*, *>): List<TaskTypeConfig> {
     return taskSettings.filter { it.value.task_type == taskType.name }.values.toList()
-  }
-
-  /**
-   * Get a specific task configuration by task type and name
-   */
-  fun getTaskConfig(taskType: TaskType<*, *>, configName: String?): TaskTypeConfig? {
-    val configs = getTaskConfigs(taskType)
-    return if (configName != null) {
-      configs.firstOrNull { it.name == configName }
-    } else {
-      configs.firstOrNull()
-    }
   }
 
 }

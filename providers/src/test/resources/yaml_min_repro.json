@@ -1,0 +1,8 @@
+{
+  "filename": "_config.yml",
+  "originalCode": "lang: en\nmarkdown: kramdown\ntheme: minima\nhighlighter: rouge",
+  "diff": "lang: en\n markdown: kramdown\n theme: minima\n+mathjax: true\n highlighter: rouge",
+  "newCode": "lang: en\nmarkdown: kramdown\ntheme: minima\nmathjax: true\nhighlighter: rouge",
+  "isValid": true,
+  "errors": ""
+}

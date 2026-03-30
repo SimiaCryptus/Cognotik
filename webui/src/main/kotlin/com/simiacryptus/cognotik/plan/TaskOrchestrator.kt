@@ -194,7 +194,7 @@ class TaskOrchestrator(
             impl.getPriorCode(executionState),
             "Goals:\n" + (subTask.let {
               when {
-                it.files.isNotEmpty() -> it.files.joinToString("\n") { "* Generate `${it}`" }
+                listOf(it.main_file).isNotEmpty() -> listOf(it.main_file).joinToString("\n") { "* Generate `${it}`" }
                 else -> it.task_description
               }
             })

@@ -3,21 +3,6 @@ package com.simiacryptus.cognotik.plan.tools
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask
-import com.simiacryptus.cognotik.plan.tools.file.*
-import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
-import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
-import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
-import com.simiacryptus.cognotik.plan.tools.games.GameNarrativeDesignTask
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
-import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
-import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
-import com.simiacryptus.cognotik.plan.tools.reasoning.*
-import com.simiacryptus.cognotik.plan.tools.run.*
-import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
-import com.simiacryptus.cognotik.plan.tools.session.JdbcSessionTask
-import com.simiacryptus.cognotik.plan.tools.social.*
-import com.simiacryptus.cognotik.plan.tools.writing.*
 import com.simiacryptus.cognotik.util.*
 
 @JsonDeserialize(using = TaskTypeDeserializer::class)
@@ -33,10 +18,10 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 ) : DynamicEnum<TaskType<*, *>>(name) {
   companion object {
 
-    private val _taskConstructors: MutableMap<TaskType<*, *>, (OrchestrationConfig, TaskExecutionConfig?) -> AbstractTask<out TaskExecutionConfig, TaskTypeConfig>> =
+    val _taskConstructors: MutableMap<TaskType<*, *>, (OrchestrationConfig, TaskExecutionConfig?) -> AbstractTask<out TaskExecutionConfig, TaskTypeConfig>> =
       mutableMapOf()
 
-    private inline fun <reified T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(
+    inline fun <reified T : TaskExecutionConfig, U : TaskTypeConfig> registerTaskType(
       taskType: TaskType<T, U>
     ) {
       try {
@@ -61,97 +46,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 
     }
 
-    val taskConstructors by lazy {
-      registerConstructor(AbductiveReasoningTask.AbductiveReasoning)
-      registerConstructor(AbstractionLadderTask.AbstractionLadder)
-      registerConstructor(AdversarialReasoningTask.AdversarialReasoning)
-      registerConstructor(AnalogicalReasoningTask.AnalogicalReasoning)
-      registerConstructor(ArticleGenerationTask.ArticleGeneration)
-      registerConstructor(AutoFixTask.AutoFix)
-      registerConstructor(BrainstormingTask.Brainstorming)
-      registerConstructor(BusinessProposalTask.BusinessProposal)
-      registerConstructor(CausalInferenceTask.CausalInference)
-      registerConstructor(ChainOfThoughtTask.ChainOfThought)
-      registerConstructor(ComicBookGenerationTask.ComicBookGeneration)
-      registerConstructor(CommandSessionTask.CommandSession)
-      registerConstructor(ConstraintRelaxationTask.ConstraintRelaxation)
-      registerConstructor(ConstraintSatisfactionTask.ConstraintSatisfaction)
-      registerConstructor(CounterfactualAnalysisTask.CounterfactualAnalysis)
-      registerConstructor(CreateErbTemplateTask.CreateErbTemplate)
-      registerConstructor(CrawlerAgentTask.CrawlerAgent)
-      registerConstructor(DataIngestTask.DataIngest)
-      registerConstructor(DataTableCompilationTask.DataTableCompilation)
-      registerConstructor(DecisionTreeTask.DecisionTree)
-      registerConstructor(DecompositionSynthesisTask.DecompositionSynthesis)
-      registerConstructor(DialecticalReasoningTask.DialecticalReasoning)
-      registerConstructor(DiscussionTask.Discussion)
-      registerConstructor(EntropyReductionTreeTask.EntropyReductionTree)
-      registerConstructor(EmailCampaignTask.EmailCampaign)
-      registerConstructor(EthicalReasoningTask.EthicalReasoning)
-      registerConstructor(FileAppendTask.FileAppend)
-      registerConstructor(FileModificationTask.FileModification)
-      registerConstructor(FileSearchTask.FileSearch)
-      registerConstructor(FiniteStateMachineTask.FiniteStateMachine)
-      registerConstructor(FunctorialMappingTask.FunctorialMapping)
-      registerConstructor(GameEconomyTask.GameEconomy)
-      registerConstructor(GameLevelDesignTask.GameLevelDesign)
-      registerConstructor(GameMechanicsDesignTask.GameMechanicsDesign)
-      registerConstructor(GameNarrativeDesignTask.GameNarrativeDesign)
-      registerConstructor(GameTheoryTask.GameTheory)
-      registerConstructor(GeneratePresentationTask.GeneratePresentation)
-      registerConstructor(GenerateQRImageTask.GenerateQRImage)
-      registerConstructor(GenerateSpriteSheetTask.GenerateSpriteSheet)
-      registerConstructor(GeneticOptimizationTask.GeneticOptimization)
-      registerConstructor(GitHubSearchTask.GitHubSearch)
-      registerConstructor(IllustrateDocumentTask.IllustrateDocument)
-      registerConstructor(ImageDecompositionTask.ImageDecomposition)
-      registerConstructor(ImageGenerationTask.GenerateImage)
-      registerConstructor(IterativeFileModificationTask.IterativeFileModification)
-      registerConstructor(TiledImageGenerationTask.TiledImageGeneration)
-      registerConstructor(ImageTableTask.ImageTable)
-      registerConstructor(ImageVariationTask.ImageVariation)
-      registerConstructor(InteractiveStoryTask.InteractiveStory)
-      registerConstructor(IsomorphismDiscoveryTask.IsomorphismDiscovery)
-      registerConstructor(IterativeGraphGenerationTask.IterativeGraphGeneration)
-      registerConstructor(JdbcSessionTask.JdbcSession)
-      registerConstructor(JournalismReasoningTask.JournalismReasoning)
-      registerConstructor(LanguageServerTask.LanguageServer)
-      registerConstructor(LateralThinkingTask.LateralThinking)
-      registerConstructor(LLMExperimentTask.LLMExperiment)
-      registerConstructor(LLMPollSimulationTask.LLMPollSimulation)
-      registerConstructor(MathematicalReasoningTask.MathematicalReasoning)
-      registerConstructor(MCPToolTask.MCPTool)
-      registerConstructor(MetaCognitiveReflectionTask.MetaCognitiveReflection)
-      registerConstructor(MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysis)
-      registerConstructor(NarrativeGenerationTask.NarrativeGeneration)
-      registerConstructor(NeuralNetworkLayerTask.NeuralNetworkLayer)
-      registerConstructor(OCRTask.OCR)
-      registerConstructor(PdfFormTask.PdfForm)
-      registerConstructor(PersuasiveEssayTask.PersuasiveEssay)
-      registerConstructor(PoliticalOptimizationTask.PoliticalOptimization)
-      registerConstructor(ProbabilisticReasoningTask.ProbabilisticReasoning)
-      registerConstructor(ReadDocumentsTask.ReadDocuments)
-      registerConstructor(RenderErbTemplateTask.RenderErbTemplate)
-      registerConstructor(ReportGenerationTask.ReportGeneration)
-      registerConstructor(ResearchPaperGenerationTask.ResearchPaperGeneration)
-      registerConstructor(RunCodeTask.RunCode)
-      registerConstructor(RunToolTask.RunTool)
-      registerConstructor(ScriptwritingTask.Scriptwriting)
-      registerConstructor(SegmentedImageGenerationTask.SegmentedImageGeneration)
-      registerConstructor(SingleFixTask.SingleFix)
-      registerConstructor(SocraticDialogueTask.SocraticDialogue)
-      registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument)
-      registerConstructor(StructuralInvariantAnalysisTask.StructuralInvariantAnalysis)
-      registerConstructor(SubPlanTask.SubPlan)
-      registerConstructor(SymbolsDbCodeTask.SymbolsDbCode)
-      registerConstructor(SystemsThinkingTask.SystemsThinking)
-      registerConstructor(TableCompilationTask.TableCompilation)
-      registerConstructor(TechnicalExplanationTask.TechnicalExplanation)
-      registerConstructor(TemporalReasoningTask.TemporalReasoning)
-      registerConstructor(TutorialGenerationTask.TutorialGeneration)
-      registerConstructor(WriteHtmlTask.WriteHtml)
-      _taskConstructors.toMap()
-    }
+    val taskConstructors get() = _taskConstructors.toMap()
 
     fun values(): List<TaskType<*, *>> {
       @Suppress("SENSELESS_COMPARISON") require(taskConstructors != null) { "Task constructors not initialized" } // Trigger lazy initialization

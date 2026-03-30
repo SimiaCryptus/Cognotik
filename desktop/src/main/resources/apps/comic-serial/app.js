@@ -593,9 +593,41 @@
     // ========================================
     // Session Monitor Links
     // ========================================
+    var taskSessionMap = {};
+    try {
+        var savedTaskSessions = sessionStorage.getItem('comicTaskSessions');
+        if (savedTaskSessions) {
+            taskSessionMap = JSON.parse(savedTaskSessions);
+        }
+    } catch (e) { /* ignore */ }
+    var taskSessionMap = {}; // target -> sessionId (for usage tracking)
+    // Load persisted task sessions
+    try {
+        var savedTaskSessions = sessionStorage.getItem('comicTaskSessions');
+        if (savedTaskSessions) {
+            taskSessionMap = JSON.parse(savedTaskSessions);
+        }
+    } catch (e) { /* ignore */ }
+
+
     function updateSessionLinks(target, taskInfo) {
         var status = taskInfo.status;
         var taskSessionId = taskInfo.sessionId;
+        // Record session for usage tracking
+        if (taskSessionId) {
+            taskSessionMap[target] = taskSessionId;
+            try {
+                sessionStorage.setItem('comicTaskSessions', JSON.stringify(taskSessionMap));
+            } catch (e) { /* ignore */ }
+        }
+        // Record session for usage tracking
+        if (taskSessionId) {
+            try {
+                sessionStorage.setItem('comicTaskSessions', JSON.stringify(taskSessionMap));
+            } catch (e) { /* ignore */ }
+        }
+
+
         var safeTarget = target.replace(/[^a-zA-Z0-9]/g, '-');
         var linkContainerId = 'session-link-' + safeTarget;
         var container = document.getElementById(linkContainerId);
@@ -737,6 +769,10 @@
             // Refresh count when switching to pipeline
             if (sectionId === 'section-pipeline') {
                 updateEpisodeCount();
+            }
+            // Refresh usage when switching to usage tab
+            if (sectionId === 'section-usage') {
+                refreshUsage();
             }
         });
     });
@@ -1283,5 +1319,236 @@
     loadInitialFiles();
     checkExistingFiles();
      loadApiProviders();
+    // ========================================
+    // Usage Tracking
+    // ========================================
+    var usageJsonMode = false;
+    var lastUsageData = null;
+    // Note: fetchUsageForSession, formatTokenCount, formatCost, renderUsageSummary,
+    // renderUsageTable, renderUsageJson, renderTaskSessions, and refreshUsage are
+    // defined once below. The duplicate block has been removed.
+    async function fetchUsageForSession(sid) {
+        try {
+            var resp = await fetch('/proxy/usage?sessionId=' + encodeURIComponent(sid) + '&format=json');
+            if (!resp.ok) return null;
+            return await resp.json();
+        } catch (e) {
+            console.warn('Failed to fetch usage for session ' + sid + ':', e);
+            return null;
+        }
+    }
+    function formatTokenCount(n) {
+        if (n === null || n === undefined || isNaN(n)) return '—';
+        if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
+        if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+        return n.toLocaleString();
+    }
+    function formatCost(c) {
+        if (c === null || c === undefined || isNaN(c)) return '—';
+        if (c === 0) return '$0.00';
+        if (c < 0.01) return '$' + c.toFixed(4);
+        return '$' + c.toFixed(4);
+    }
+    function renderUsageSummary(totals) {
+        var promptEl = document.getElementById('usage-total-prompt');
+        var completionEl = document.getElementById('usage-total-completion');
+        var totalTokensEl = document.getElementById('usage-total-tokens');
+        var costEl = document.getElementById('usage-total-cost');
+        if (totals) {
+            var prompt = totals.prompt_tokens || 0;
+            var completion = totals.completion_tokens || 0;
+            if (promptEl) promptEl.textContent = formatTokenCount(prompt);
+            if (completionEl) completionEl.textContent = formatTokenCount(completion);
+            if (totalTokensEl) totalTokensEl.textContent = formatTokenCount(prompt + completion);
+            if (costEl) costEl.textContent = formatCost(totals.cost);
+        } else {
+            if (promptEl) promptEl.textContent = '—';
+            if (completionEl) completionEl.textContent = '—';
+            if (totalTokensEl) totalTokensEl.textContent = '—';
+            if (costEl) costEl.textContent = '—';
+        }
+    }
+    function renderUsageTable(models) {
+        var container = document.getElementById('usage-table-container');
+        if (!container) return;
+        if (!models || models.length === 0) {
+            container.innerHTML = '<p class="placeholder">No model usage data available.</p>';
+            return;
+        }
+        var html = '<table class="usage-table">';
+        html += '<thead><tr>';
+        html += '<th>Model</th>';
+        html += '<th class="num-col">Prompt Tokens</th>';
+        html += '<th class="num-col">Completion Tokens</th>';
+        html += '<th class="num-col">Total Tokens</th>';
+        html += '<th class="num-col">Cost</th>';
+        html += '</tr></thead><tbody>';
+        models.forEach(function(m) {
+            var prompt = m.prompt_tokens || 0;
+            var completion = m.completion_tokens || 0;
+            html += '<tr>';
+            html += '<td class="model-name-cell">' + escapeHtml(m.model || 'Unknown') + '</td>';
+            html += '<td class="num-col">' + formatTokenCount(prompt) + '</td>';
+            html += '<td class="num-col">' + formatTokenCount(completion) + '</td>';
+            html += '<td class="num-col">' + formatTokenCount(prompt + completion) + '</td>';
+            html += '<td class="num-col cost-cell">' + formatCost(m.cost) + '</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+    function renderUsageJson(data) {
+        var jsonEl = document.getElementById('usage-json-output');
+        if (!jsonEl) return;
+        if (data) {
+            jsonEl.textContent = JSON.stringify(data, null, 2);
+        } else {
+            jsonEl.textContent = '// No usage data available';
+        }
+    }
+    function renderTaskSessions(taskUsageMap) {
+        var container = document.getElementById('task-sessions-container');
+        if (!container) return;
+        var entries = Object.keys(taskSessionMap);
+        if (entries.length === 0) {
+            container.innerHTML = '<p class="placeholder">No task sessions recorded yet.</p>';
+            return;
+        }
+        var html = '<div class="task-sessions-list">';
+        entries.forEach(function(target) {
+            var sid = taskSessionMap[target];
+            var usage = taskUsageMap[sid];
+            var proxyUrl = getProxyUrl(sid);
+            var usageUrl = '/proxy/usage?sessionId=' + encodeURIComponent(sid);
+            html += '<div class="task-session-row">';
+            html += '<div class="task-session-info">';
+            html += '<span class="task-session-target">' + escapeHtml(target) + '</span>';
+            html += '<span class="task-session-id">' + escapeHtml(sid) + '</span>';
+            html += '</div>';
+            html += '<div class="task-session-usage">';
+            if (usage && usage.totals) {
+                var t = usage.totals;
+                var prompt = t.prompt_tokens || 0;
+                var completion = t.completion_tokens || 0;
+                html += '<span class="task-token-badge" title="Prompt tokens">📤 ' + formatTokenCount(prompt) + '</span>';
+                html += '<span class="task-token-badge" title="Completion tokens">📥 ' + formatTokenCount(completion) + '</span>';
+                html += '<span class="task-cost-badge" title="Estimated cost">' + formatCost(t.cost) + '</span>';
+            } else {
+                html += '<span class="task-token-badge dim">No data</span>';
+            }
+            html += '</div>';
+            html += '<div class="task-session-links">';
+            html += '<a href="' + escapeHtml(proxyUrl) + '" target="_blank" class="btn btn-secondary btn-sm" title="View session log">📋 Log</a>';
+            html += '<a href="' + escapeHtml(usageUrl) + '" target="_blank" class="btn btn-secondary btn-sm" title="View usage details">💰 Usage</a>';
+            html += '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+    async function refreshUsage() {
+        setStatus('usage-status', 'Loading…', '');
+        var allModels = {};
+        var taskUsageMap = {};
+        var sessionIds = [];
+        // Collect unique child task session IDs only.
+        // We intentionally exclude the parent sessionId to avoid double-counting,
+        // since the parent session's usage typically includes all child session usage.
+        var seenSessions = new Set();
+        for (var target in taskSessionMap) {
+            if (!taskSessionMap.hasOwnProperty(target)) continue;
+            var sid = taskSessionMap[target];
+            if (!seenSessions.has(sid)) {
+                seenSessions.add(sid);
+                sessionIds.push(sid);
+            }
+        }
+        // Only fall back to the parent session if we have no child task sessions at all.
+        // This avoids double-counting since parent usage includes child usage.
+        if (sessionIds.length === 0 && sessionId) {
+             seenSessions.add(sessionId);
+             sessionIds.push(sessionId);
+        }
+        if (sessionIds.length === 0) {
+            renderUsageSummary(null);
+            renderUsageTable([]);
+            renderUsageJson(null);
+            renderTaskSessions({});
+            setStatus('usage-status', 'No sessions to query', '');
+            return;
+        }
+        var fetchPromises = sessionIds.map(function(sid) {
+            return fetchUsageForSession(sid).then(function(data) {
+                return { sid: sid, data: data };
+            });
+        });
+        var results = await Promise.all(fetchPromises);
+        results.forEach(function(result) {
+            if (!result.data) return;
+            taskUsageMap[result.sid] = result.data;
+            if (result.data.models) {
+                result.data.models.forEach(function(m) {
+                    var key = m.model || 'unknown';
+                    if (!allModels[key]) {
+                        allModels[key] = { model: key, prompt_tokens: 0, completion_tokens: 0, cost: 0 };
+                    }
+                    allModels[key].prompt_tokens += (m.prompt_tokens || 0);
+                    allModels[key].completion_tokens += (m.completion_tokens || 0);
+                    allModels[key].cost += (m.cost || 0);
+                });
+            }
+        });
+        var modelList = Object.values(allModels);
+        modelList.sort(function(a, b) { return b.cost - a.cost; });
+        var totalPrompt = 0, totalCompletion = 0, totalCost = 0;
+        modelList.forEach(function(m) {
+            totalPrompt += m.prompt_tokens;
+            totalCompletion += m.completion_tokens;
+            totalCost += m.cost;
+        });
+        var aggregated = {
+            models: modelList,
+            totals: {
+                prompt_tokens: totalPrompt,
+                completion_tokens: totalCompletion,
+                cost: totalCost
+            }
+        };
+        lastUsageData = aggregated;
+        renderUsageSummary(aggregated.totals);
+        renderUsageTable(aggregated.models);
+        renderUsageJson(aggregated);
+        renderTaskSessions(taskUsageMap);
+        var sessionCount = sessionIds.length;
+        var modelCount = modelList.length;
+        setStatus('usage-status', '✓ Loaded from ' + sessionCount + ' session(s), ' + modelCount + ' model(s)', 'success');
+    }
+    var refreshUsageBtn = document.getElementById('refresh-usage');
+    if (refreshUsageBtn) {
+        refreshUsageBtn.addEventListener('click', function() {
+            this.disabled = true;
+            var self = this;
+            refreshUsage().finally(function() {
+                self.disabled = false;
+            });
+        });
+    }
+    var toggleJsonBtn = document.getElementById('toggle-usage-format');
+    if (toggleJsonBtn) {
+        toggleJsonBtn.addEventListener('click', function() {
+            usageJsonMode = !usageJsonMode;
+            var tableCard = document.getElementById('usage-table-card');
+            var jsonCard = document.getElementById('usage-json-card');
+            if (usageJsonMode) {
+                if (tableCard) tableCard.style.display = 'none';
+                if (jsonCard) jsonCard.style.display = 'block';
+                this.textContent = '📊 Table View';
+            } else {
+                if (tableCard) tableCard.style.display = 'block';
+                if (jsonCard) jsonCard.style.display = 'none';
+                this.textContent = '{ } JSON View';
+            }
+        });
+    }
 
 })();

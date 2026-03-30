@@ -1,0 +1,21 @@
+{
+  "models": [
+    {
+      "model": "claude-haiku-4-5-20251001",
+      "prompt_tokens": 16085,
+      "completion_tokens": 25765,
+      "cost": 0.14490999999999998
+    },
+    {
+      "model": "gemini-3.1-flash-image-preview",
+      "prompt_tokens": 16065,
+      "completion_tokens": 17122,
+      "cost": 1.0353525
+    }
+  ],
+  "totals": {
+    "prompt_tokens": 32150,
+    "completion_tokens": 42887,
+    "cost": 1.1802625
+  }
+}

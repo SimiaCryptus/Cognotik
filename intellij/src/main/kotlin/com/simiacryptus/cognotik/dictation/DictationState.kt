@@ -75,11 +75,7 @@ open class DictationState {
         channels = AppSettingsState.instance.channels
         selectedMicLine = AppSettingsState.instance.selectedMicLine
         talkTime = AppSettingsState.instance.talkTime
-        transcriptionModel = findAudioModel(AppSettingsState.instance.transcriptionModel) ?: AudioModels(
-            "whisper-1",
-            AudioModels.AudioModelType.Transcription,
-            APIProvider.Groq
-        )
+        transcriptionModel = findAudioModel(AppSettingsState.instance.transcriptionModel) ?: throw IllegalStateException("Transcription model not found: ${AppSettingsState.instance.transcriptionModel}")
     }
 
     val onPacket: (AudioPacket) -> Unit = {

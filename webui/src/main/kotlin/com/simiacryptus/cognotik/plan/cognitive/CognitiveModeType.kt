@@ -3,8 +3,6 @@ package com.simiacryptus.cognotik.plan.cognitive
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.cognitive.CodingMode.CodingModeConfig
-import com.simiacryptus.cognotik.plan.cognitive.FrontmatterOrchestrationMode.FrontmatterOrchestrationConfig
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.DynamicEnum
@@ -21,66 +19,30 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
     @JvmStatic
     val entries: List<CognitiveModeType<*>> get() = values()
 
-    @JvmStatic
-    val Chat = CognitiveModeType("Chat", ConversationalModeConfig::class.java, inputCnt = ConversationalMode.inputCnt)
+    val _constructors =
+      mutableMapOf<CognitiveModeType<*>, (OrchestrationConfig, Session, User) -> CognitiveMode<*>>()
 
-    @JvmStatic
-    val Adaptive =
-      CognitiveModeType("Adaptive", AdaptivePlanningConfig::class.java, inputCnt = AdaptivePlanningMode.inputCnt)
-
-    @JvmStatic
-    val Waterfall =
-      CognitiveModeType("Waterfall", WaterfallMode.WaterfallModeConfig::class.java, inputCnt = WaterfallMode.inputCnt)
-
-    @JvmStatic
-    val Hierarchical =
-      CognitiveModeType("Hierarchical", CognitiveModeConfig::class.java, inputCnt = HierarchicalPlanningMode.inputCnt)
-
-    @JvmStatic
-    val Parallel = CognitiveModeType("Parallel", ParallelModeConfig::class.java, inputCnt = ParallelMode.inputCnt)
-
-    @JvmStatic
-    val Protocol = CognitiveModeType("Protocol", ProtocolModeConfig::class.java, inputCnt = ProtocolMode.inputCnt)
-
-    @JvmStatic
-    val Council = CognitiveModeType("Council", CouncilModeConfig::class.java, inputCnt = CouncilMode.inputCnt)
-
-    @JvmStatic
-    val PersonaChat =
-      CognitiveModeType("PersonaChat", PersonaChatConfig::class.java, inputCnt = PersonaChatMode.inputCnt)
-
-    @JvmStatic
-    val Coding = CognitiveModeType("Coding", CodingModeConfig::class.java)
-    val FrontmatterOrchestration = CognitiveModeType(
-      "FrontmatterOrchestration",
-      FrontmatterOrchestrationConfig::class.java,
-      inputCnt = FrontmatterOrchestrationMode.inputCnt
-    )
-
-    private val constructors by lazy {
-      val map =
-        mutableMapOf<CognitiveModeType<*>, (OrchestrationConfig, Session, User) -> CognitiveMode<*>>()
-
-      fun <U : CognitiveModeConfig> register(
-        type: CognitiveModeType<U>,
-        constructor: (OrchestrationConfig, Session, User) -> CognitiveMode<U>
-      ) {
-        map[type] = { config, session, user ->
-          constructor(config, session, user)
-        }
-        register(CognitiveModeType::class.java, type)
+    fun <U : CognitiveModeConfig> registerCognitiveMode(
+      type: CognitiveModeType<U>,
+      constructor: (OrchestrationConfig, Session, User) -> CognitiveMode<U>
+    ) {
+      _constructors[type] = { config, session, user ->
+        constructor(config, session, user)
       }
-
-      register(Chat) { config, session, user -> ConversationalMode(config, session, user) }
-      register(Adaptive) { config, session, user -> AdaptivePlanningMode(config, session, user) }
-      register(Waterfall) { config, session, user -> WaterfallMode(config, session, user) }
-      register(Hierarchical) { config, session, user -> HierarchicalPlanningMode(config, session, user) }
-      register(Parallel) { config, session, user -> ParallelMode(config, session, user) }
-      register(Protocol) { config, session, user -> ProtocolMode(config, session, user) }
-      register(Council) { config, session, user -> CouncilMode(config, session, user) }
-      register(PersonaChat) { config, session, user -> PersonaChatMode(config, session, user) }
-      register(Coding) { config, session, user -> CodingMode(config, session, user) }
-      map
+      register(CognitiveModeType::class.java, type)
+    }
+    private val constructors by lazy {
+//
+//      registerCognitiveMode(Chat) { config, session, user -> ConversationalMode(config, session, user) }
+//      registerCognitiveMode(Adaptive) { config, session, user -> AdaptivePlanningMode(config, session, user) }
+//      registerCognitiveMode(Waterfall) { config, session, user -> WaterfallMode(config, session, user) }
+//      registerCognitiveMode(Hierarchical) { config, session, user -> HierarchicalPlanningMode(config, session, user) }
+//      registerCognitiveMode(Parallel) { config, session, user -> ParallelMode(config, session, user) }
+//      registerCognitiveMode(Protocol) { config, session, user -> ProtocolMode(config, session, user) }
+//      registerCognitiveMode(Council) { config, session, user -> CouncilMode(config, session, user) }
+//      registerCognitiveMode(PersonaChat) { config, session, user -> PersonaChatMode(config, session, user) }
+//      registerCognitiveMode(Coding) { config, session, user -> CodingMode(config, session, user) }
+      _constructors
     }
 
     fun values(): List<CognitiveModeType<*>> {

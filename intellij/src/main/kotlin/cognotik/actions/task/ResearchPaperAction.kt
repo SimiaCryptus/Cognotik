@@ -20,7 +20,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
-import com.simiacryptus.cognotik.plan.tools.toApiChatModel
+import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.plan.tools.writing.ResearchPaperGenerationTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -375,7 +375,7 @@ class ResearchPaperAction : BaseAction() {
                 number_of_sections = numberOfSectionsSpinner.value as Int,
                 revision_passes = revisionPassesSpinner.value as Int,
                 research_files = researchFiles,
-                input_files = inputFiles,
+                related_files = inputFiles,
                 state = TaskState.Pending
             )
         }

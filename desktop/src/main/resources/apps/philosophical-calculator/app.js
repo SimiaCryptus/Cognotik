@@ -1421,6 +1421,188 @@
             savePipelineContent(false);
         }
     });
+    // ========================================================================
+    // Usage Tracking
+    // ========================================================================
+    var usagePollTimer = null;
+    var USAGE_POLL_INTERVAL = 10000;
+    function getUsageUrls() {
+        if (!sessionId) return { html: null, json: null };
+        return {
+            html: '/proxy/usage?sessionId=' + encodeURIComponent(sessionId),
+            json: '/proxy/usage?sessionId=' + encodeURIComponent(sessionId) + '&format=json'
+        };
+    }
+    function updateUsageLinks() {
+        var urls = getUsageUrls();
+        var htmlLink = document.getElementById('usage-html-link');
+        var jsonLink = document.getElementById('usage-json-link');
+        if (htmlLink) {
+            if (urls.html) {
+                htmlLink.href = urls.html;
+                htmlLink.classList.remove('btn-disabled');
+            } else {
+                htmlLink.href = '#';
+                htmlLink.classList.add('btn-disabled');
+            }
+        }
+        if (jsonLink) {
+            if (urls.json) {
+                jsonLink.href = urls.json;
+                jsonLink.classList.remove('btn-disabled');
+            } else {
+                jsonLink.href = '#';
+                jsonLink.classList.add('btn-disabled');
+            }
+        }
+    }
+    async function fetchUsageData() {
+        var urls = getUsageUrls();
+        if (!urls.json) {
+            setStatus('usage-status', 'No session ID available', 'error');
+            return null;
+        }
+        try {
+            var resp = await fetch(urls.json, {
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!resp.ok) {
+                if (resp.status === 404) return null;
+                throw new Error('HTTP ' + resp.status);
+            }
+            return await resp.json();
+        } catch (e) {
+            console.warn('Failed to fetch usage data:', e);
+            return null;
+        }
+    }
+    function formatTokenCount(n) {
+        if (n === undefined || n === null) return '—';
+        return Number(n).toLocaleString();
+    }
+    function formatCost(n) {
+        if (n === undefined || n === null) return '—';
+        if (n === 0) return '$0.00';
+        if (n < 0.01) return '$' + n.toFixed(4);
+        return '$' + n.toFixed(4);
+    }
+    function renderUsageData(data) {
+        var promptEl = document.getElementById('usage-total-prompt');
+        var completionEl = document.getElementById('usage-total-completion');
+        var costEl = document.getElementById('usage-total-cost');
+        var tableContainer = document.getElementById('usage-table-container');
+        if (!data) {
+            if (promptEl) promptEl.textContent = '—';
+            if (completionEl) completionEl.textContent = '—';
+            if (costEl) costEl.textContent = '—';
+            if (tableContainer) tableContainer.innerHTML = '<p class="placeholder">No usage data available yet. Run some operations first.</p>';
+            return;
+        }
+        // Update summary cards
+        var totals = data.totals || {};
+        if (promptEl) promptEl.textContent = formatTokenCount(totals.prompt_tokens);
+        if (completionEl) completionEl.textContent = formatTokenCount(totals.completion_tokens);
+        if (costEl) costEl.textContent = formatCost(totals.cost);
+        // Update table
+        var models = data.models || [];
+        if (models.length === 0) {
+            if (tableContainer) tableContainer.innerHTML = '<p class="placeholder">No model usage recorded yet.</p>';
+            return;
+        }
+        var html = '<table class="usage-table">';
+        html += '<thead><tr>';
+        html += '<th>Model</th>';
+        html += '<th>Prompt Tokens</th>';
+        html += '<th>Completion Tokens</th>';
+        html += '<th>Total Tokens</th>';
+        html += '<th>Cost</th>';
+        html += '</tr></thead>';
+        html += '<tbody>';
+        for (var i = 0; i < models.length; i++) {
+            var m = models[i];
+            var totalTokens = (m.prompt_tokens || 0) + (m.completion_tokens || 0);
+            html += '<tr>';
+            html += '<td class="usage-model-cell">' + escapeHtml(m.model || 'Unknown') + '</td>';
+            html += '<td class="usage-number-cell">' + formatTokenCount(m.prompt_tokens) + '</td>';
+            html += '<td class="usage-number-cell">' + formatTokenCount(m.completion_tokens) + '</td>';
+            html += '<td class="usage-number-cell">' + formatTokenCount(totalTokens) + '</td>';
+            html += '<td class="usage-cost-cell">' + formatCost(m.cost) + '</td>';
+            html += '</tr>';
+        }
+        // Totals row
+        var totalAllTokens = (totals.prompt_tokens || 0) + (totals.completion_tokens || 0);
+        html += '<tr class="usage-totals-row">';
+        html += '<td class="usage-model-cell"><strong>Total</strong></td>';
+        html += '<td class="usage-number-cell"><strong>' + formatTokenCount(totals.prompt_tokens) + '</strong></td>';
+        html += '<td class="usage-number-cell"><strong>' + formatTokenCount(totals.completion_tokens) + '</strong></td>';
+        html += '<td class="usage-number-cell"><strong>' + formatTokenCount(totalAllTokens) + '</strong></td>';
+        html += '<td class="usage-cost-cell"><strong>' + formatCost(totals.cost) + '</strong></td>';
+        html += '</tr>';
+        html += '</tbody></table>';
+        // Add last-updated timestamp
+        html += '<div class="usage-last-updated">Last updated: ' + new Date().toLocaleTimeString() + '</div>';
+        if (tableContainer) tableContainer.innerHTML = html;
+    }
+    async function refreshUsage() {
+        setStatus('usage-status', 'Loading…', '');
+        try {
+            var data = await fetchUsageData();
+            renderUsageData(data);
+            if (data) {
+                setStatus('usage-status', '✓ Updated', 'success');
+            } else {
+                setStatus('usage-status', 'No data yet', '');
+            }
+        } catch (e) {
+            setStatus('usage-status', '✗ ' + e.message, 'error');
+        }
+    }
+    function startUsagePolling() {
+        if (usagePollTimer) return;
+        var autoRefresh = document.getElementById('usage-auto-refresh');
+        if (autoRefresh && !autoRefresh.checked) return;
+        usagePollTimer = setInterval(function () {
+            var autoRefresh = document.getElementById('usage-auto-refresh');
+            if (autoRefresh && !autoRefresh.checked) {
+                stopUsagePolling();
+                return;
+            }
+            // Only refresh if the usage section is visible
+            var section = document.getElementById('section-usage');
+            if (section && section.classList.contains('active')) {
+                refreshUsage();
+            }
+        }, USAGE_POLL_INTERVAL);
+    }
+    function stopUsagePolling() {
+        if (usagePollTimer) {
+            clearInterval(usagePollTimer);
+            usagePollTimer = null;
+        }
+    }
+    // Refresh button
+    document.getElementById('refresh-usage').addEventListener('click', function () {
+        refreshUsage();
+    });
+    // Auto-refresh checkbox
+    document.getElementById('usage-auto-refresh').addEventListener('change', function () {
+        if (this.checked) {
+            startUsagePolling();
+        } else {
+            stopUsagePolling();
+        }
+    });
+    // Load usage when switching to Usage tab
+    document.querySelectorAll('.nav-link').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (this.dataset.section === 'section-usage') {
+                refreshUsage();
+                startUsagePolling();
+            }
+        });
+    });
+    // Initialize usage links
+    updateUsageLinks();
 
 
 })();

@@ -1,8 +1,8 @@
 package com.simiacryptus;
 
-import com.simiacryptus.cognotik.chat.model.AnthropicModels;
 import com.simiacryptus.cognotik.chat.model.ChatModel;
 import com.simiacryptus.cognotik.util.DocProcessor;
+import com.simiacryptus.cognotik.util.PlanHarness;
 import com.simiacryptus.cognotik.util.UnifiedHarness;
 import com.simiacryptus.cognotik.util.UpdateModes;
 
@@ -22,6 +22,7 @@ public record DocumentationUpdater(
     public static final String DEFAULT_OVERWRITE_MODE = UpdateModes.PatchToUpdate.name();
 
     public static void main(String[] args) {
+        PlanHarness.initDynamicEnums();
         configureEnvironmentalKeys();
         UnifiedHarness.configurePlatform(defaultUser);
         new DocumentationUpdater(
@@ -38,7 +39,8 @@ public record DocumentationUpdater(
     public void run() {
         UpdateModes mode = UpdateModes.valueOf(overwriteMode);
         //ChatModel chatModel = GeminiModels.getGeminiFlash_30_Preview();
-        ChatModel chatModel = AnthropicModels.getClaude45Haiku();
+        ChatModel chatModel = null;
+        if(chatModel == null) throw new IllegalStateException("ChatModel not configured");
         new DocProcessor(
                 new File(rootDir),
                 new File(rootDir),
@@ -51,7 +53,8 @@ public record DocumentationUpdater(
                 false,
                 new File(rootDir, ".doc-processor-cache/url-cache"),
                 true,
-                defaultUser
+                defaultUser,
+                null
         ).run();
     }
 }

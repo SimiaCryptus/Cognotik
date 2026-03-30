@@ -21,12 +21,12 @@
                 implementation="com.simiacryptus.cognotik.SettingsWidgetFactory"
                 id="cognotik.ui.SettingsWidgetFactory"
                 order="first"/>
-        <statusBarWidgetFactory
-                implementation="com.simiacryptus.cognotik.dictation.DictationWidgetFactory"
-                id="Cognotik.SpeechToTextWidget"
-                order="first"/>
-        <toolWindow id="Cognotik Dictator" anchor="right" icon="MyIcons.micInactive"
-                    factoryClass="com.simiacryptus.cognotik.dictation.DictationToolWindowFactory"/>
+<!--        <statusBarWidgetFactory-->
+<!--                implementation="com.simiacryptus.cognotik.dictation.DictationWidgetFactory"-->
+<!--                id="Cognotik.SpeechToTextWidget"-->
+<!--                order="first"/>-->
+<!--        <toolWindow id="Cognotik Dictator" anchor="right" icon="MyIcons.micInactive"-->
+<!--                    factoryClass="com.simiacryptus.cognotik.dictation.DictationToolWindowFactory"/>-->
     </extensions>
 
     <actions>
@@ -149,10 +149,6 @@
                 <action class="cognotik.actions.task.WriteHtmlAction"
                         text="🌐 Generate HTML Page"
                         description="Create a complete HTML page with embedded CSS and JavaScript, optionally with AI-generated images">
-                </action>
-                <action class="cognotik.actions.task.DataIngestAction"
-                        text="📥 Data Ingestion"
-                        description="Parse unstructured logs or text files into structured data using AI-discovered regex patterns">
                 </action>
                 <action class="cognotik.actions.task.GeneratePresentationAction"
                         text="📊 Generate Presentation"

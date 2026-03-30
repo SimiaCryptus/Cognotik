@@ -1,7 +1,0 @@
-Windows Registry Editor Version 5.00
-[HKEY_CLASSES_ROOT\Directory\shell\{{appDisplayName}}]
-@="{{appDisplayName}}"
-"Icon"="C:\\Program Files\\{{appName}}\\{{appName}}.exe"
-
-[HKEY_CLASSES_ROOT\Directory\shell\{{appDisplayName}}\command]
-@="\"C:\\Program Files\\{{appName}}\\{{appName}}.exe\" \"%1\""

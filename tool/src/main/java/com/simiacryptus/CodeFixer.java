@@ -1,9 +1,9 @@
 package com.simiacryptus;
 
 import com.simiacryptus.cognotik.chat.model.ChatModel;
-import com.simiacryptus.cognotik.chat.model.GeminiModels;
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig;
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask;
+import com.simiacryptus.cognotik.util.PlanHarness;
 import com.simiacryptus.cognotik.util.TaskHarness;
 import com.simiacryptus.cognotik.util.UnifiedHarness;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +17,7 @@ import static com.simiacryptus.cognotik.platform.model.UserKt.defaultUser;
 import static com.simiacryptus.cognotik.util.CognotikUtils.*;
 
 @SuppressWarnings("unused")
-public record CodeFixer(String taskDescription, List<String> relatedFiles) {
+public record CodeFixer(String taskDescription, List<String> relatedFiles, ChatModel chatModel) {
     public static final String PROMPT = "Fix the build errors reported in build.log";
     public static final int PORT = 8030;
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(CodeFixer.class);
@@ -27,13 +27,16 @@ public record CodeFixer(String taskDescription, List<String> relatedFiles) {
         List<String> relatedFiles = List.of(
                 args.length > 1 ? args[1] : "build.log"
         );
+
+        PlanHarness.initDynamicEnums();
         configureEnvironmentalKeys();
         UnifiedHarness.configurePlatform(defaultUser);
-        new CodeFixer(taskDescription, relatedFiles).run();
+        ChatModel chatModel = null;
+        if(chatModel == null) throw new IllegalStateException("ChatModel not configured");
+        new CodeFixer(taskDescription, relatedFiles, chatModel).run();
     }
 
     public void run() {
-        ChatModel chatModel = GeminiModels.getGeminiFlash_30_Preview();
 
         var fileModification = FileModificationTask.getFileModification();
         FileModificationTask.FileModificationTaskExecutionConfigData config = new FileModificationTask.FileModificationTaskExecutionConfigData();

@@ -32,6 +32,14 @@ open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
     fun <T : DynamicEnum<T>> register(clazz: Class<T>, enumConstant: T) {
       getRegistry(clazz).add(enumConstant.name to enumConstant)
     }
+     /**
+      * Unregister a dynamic enum constant by name.
+      * Returns true if the constant was found and removed.
+      */
+     @JvmStatic
+     fun <T : DynamicEnum<T>> unregister(clazz: Class<T>, name: String): Boolean {
+       return getRegistry(clazz).removeAll { it.first == name }
+     }
   }
 
   override fun toString() = name
@@ -56,7 +64,6 @@ abstract class DynamicEnumDeserializer<T : DynamicEnum<T>>(
 ) : JsonDeserializer<T>() {
   private val log = LoggerFactory.getLogger(DynamicEnumDeserializer::class.java)
   override fun deserialize(p: JsonParser, ctxt: DeserializationContext): T {
-    //log.debug("Deserializing JSON for class: {}", clazz.name)
     val values = DynamicEnum.getRegistry(clazz).toMap()
     return when (val node = p.codec.readTree<JsonNode>(p)) {
       is TextNode -> values[node.asText()]
@@ -72,6 +79,6 @@ abstract class DynamicEnumDeserializer<T : DynamicEnum<T>>(
         }
 
       else -> throw JsonMappingException(p, "Unexpected JSON value type: ${node.nodeType}")
-    } as T
+    }
   }
 }

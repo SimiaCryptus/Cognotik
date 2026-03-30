@@ -23,7 +23,7 @@ import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
-import com.simiacryptus.cognotik.plan.tools.toApiChatModel
+import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -252,11 +252,12 @@ class FileModificationTaskAction : BaseAction() {
 
             return FileModificationTask.FileModificationTaskExecutionConfigData(
                 task_description = taskDescriptionArea.text,
-                files = files,
                 related_files = relatedFiles,
                 includeGitDiff = includeGitDiffCheckbox.isSelected,
                 state = TaskState.Pending
-            )
+            ).apply {
+                main_file = files.first()
+            }
         }
 
         fun getOrchestrationConfig(): OrchestrationConfig {

@@ -29,6 +29,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
+        CoreProviders.init()
+        CoreTasks.init()
+        ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
         initDynamicEnums()
         log.info("Starting Cognotik plugin initialization for project: ${project.name}")
         setLogInfo("org.apache.hc.client5.http")

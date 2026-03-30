@@ -38,7 +38,7 @@ class PercentileTool(
     }
   }
 
-  internal var memory = ArrayList<Double>()
+  var memory = ArrayList<Double>()
     private set
 
   /**

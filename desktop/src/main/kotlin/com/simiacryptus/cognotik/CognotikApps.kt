@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik
 
 import com.simiacryptus.cognotik.UpdateManager.checkUpdate
+import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
@@ -17,8 +18,9 @@ import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.chat.DocOpsApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.simiacryptus.cognotik.webui.application.AppEntry
+import jakarta.servlet.DispatcherType
+import org.eclipse.jetty.server.handler.ContextHandlerCollection
 import org.eclipse.jetty.webapp.WebAppContext
 import java.awt.Desktop
 import java.awt.SystemTray
@@ -28,10 +30,12 @@ import java.io.IOException
 import java.net.ServerSocket
 import java.net.URI
 import java.net.URLEncoder
+import java.util.EnumSet
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.exitProcess
 
 val globalID = Session.newGlobalID()
@@ -45,6 +49,7 @@ open class CognotikApps(
     private var systemTrayManager: SystemTrayManager? = null
     private var socketServer: ServerSocket? = null
     private var socketThread: Thread? = null
+     private val runningServer = AtomicReference<org.eclipse.jetty.server.Server?>(null)
 
     companion object {
         private val log = LoggerFactory.getLogger(CognotikApps::class.java.name)
@@ -54,21 +59,15 @@ open class CognotikApps(
         @JvmStatic
         fun main(args: Array<String>) {
             try {
-                initDynamicEnums()
                 if (args.isEmpty()) {
                     log.info("No arguments provided - defaulting to server mode with default options")
                     handleServer()
-                    return
-                }
-                when (args[0].lowercase()) {
-                    "server" -> handleServer(*args.sliceArray(1 until args.size))
-                    "help", "-h", "--help" -> printUsage()
-                    "daemon" -> {
-                        handleServer(*args.sliceArray(1 until args.size))
-                    }
-
-                    else -> {
-                        handleServer()
+                } else {
+                    when (args[0].lowercase()) {
+                        "server" -> handleServer(*args.sliceArray(1 until args.size))
+                        "help", "-h", "--help" -> printUsage()
+                        "daemon" -> handleServer(*args.sliceArray(1 until args.size))
+                        else -> handleServer()
                     }
                 }
             } catch (e: Exception) {
@@ -84,11 +83,25 @@ open class CognotikApps(
 
         private var server: CognotikApps? = null
 
-        init {
-            require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
-        }
 
         private fun handleServer(vararg args: String) {
+            require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
+            CoreProviders.init()
+            CoreTasks.init()
+            ResourceApps("apps/apps.json").init()
+            //ResourceApps("/apps/disabled_apps.json").init()
+            ApplicationServices.pluginManager.apply {
+                getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+                subscribeToChanges {
+                    log.info("Plugin change detected, reinitializing apps...")
+                     try {
+                         server?.reloadApps()
+                     } catch (e: Exception) {
+                         log.error("Failed to reload apps after plugin change: ${e.message}", e)
+                     }
+                }
+            }
+            initDynamicEnums()
             log.info("Parsing server options...")
             val options = parseServerOptions(*args)
             log.info("Configuring server with options: port=${options.port}, host=${options.host}, publicName=${options.publicName}")
@@ -225,7 +238,24 @@ open class CognotikApps(
     fun stopServer() {
         systemTrayManager?.remove()
         stopSocketServer()
+         runningServer.get()?.let { srv ->
+             try {
+                 srv.stop()
+             } catch (e: Exception) {
+                 log.warn("Error stopping Jetty server: ${e.message}")
+             }
+         }
     }
+
+     override fun start(
+         port: Int,
+         host: String,
+         vararg webAppContexts: WebAppContext
+     ): org.eclipse.jetty.server.Server {
+         val srv = super.start(port, host, *webAppContexts)
+         runningServer.set(srv)
+         return srv
+     }
 
     override fun authenticatedWebsite() = object : OAuthBase("") {
         override fun configure(context: WebAppContext, addFilter: Boolean) = context
@@ -247,46 +277,125 @@ open class CognotikApps(
         }
     }
 
-     data class AppDirectoryEntry(
-         val id: String,
-         val name: String,
-         val icon: String,
-         val description: String,
-         val badge: String?,
-         val badgeClass: String?,
-         val type: String,
-         val path: String,
-         val appId: String? = null,
-         val cardClass: String? = null
-     )
 
-     private fun loadAppDirectory(): List<AppDirectoryEntry> {
-         return try {
-             val json = CognotikApps::class.java.getResourceAsStream("/welcome/apps.json")
-                 ?.bufferedReader()?.readText()
-                 ?: throw IllegalStateException("apps.json not found on classpath")
-             val type = object : TypeToken<List<AppDirectoryEntry>>() {}.type
-             Gson().fromJson(json, type)
-         } catch (e: Exception) {
-             log.error("Failed to load app directory: ${e.message}", e)
-             emptyList()
+
+     @Volatile
+     private var _childWebApps: List<ChildWebApp>? = null
+
+     override val childWebApps: List<ChildWebApp>
+         get() {
+             if (_childWebApps == null) {
+                 _childWebApps = buildChildWebApps()
+             }
+             return _childWebApps!!
          }
-     }
 
-    override val childWebApps by lazy {
+     private fun buildChildWebApps(): List<ChildWebApp> {
         OrchestrationConfig.instanceFn =
             { m,u -> m.instance(user=u) ?: throw IllegalStateException("Model or provider not set") }
-         val apps = loadAppDirectory()
+         val apps = AppEntry.values()
          val docopsApps = apps.filter { it.type == "docops" }.map { entry ->
-             ChildWebApp(entry.path, DocOpsApp(File("."), model, model, appId = entry.appId ?: entry.id))
+             ChildWebApp(entry.path, DocOpsApp(
+               root = File("."),
+               model = model,
+               fastModel = model,
+               appId = entry.appId ?: entry.id,
+               classLoader = entry.classLoader
+             ))
          }
          val staticApps = listOf(
              ChildWebApp("/proxy", SessionProxyServer("Proxy Server", "/proxy")),
              ChildWebApp("/chat", BasicChatApp(File("."))),
              ChildWebApp("/taskChat", SinglePlanApp("/taskChat", "Task-Runner")),
          )
-         docopsApps + staticApps
+         return docopsApps + staticApps
     }
+     /**
+      * Reload apps by re-reading plugin-provided app entries and updating the running server's contexts.
+      * This is called when plugins are loaded/unloaded at runtime.
+      */
+     fun reloadApps() {
+         log.info("Reloading apps due to plugin change...")
+         val jettyServer = runningServer.get()
+         if (jettyServer == null) {
+             log.warn("No running server found, skipping app reload")
+             return
+         }
+         try {
+             // Re-initialize dynamic enums to pick up new task types, providers, etc.
+             initDynamicEnums()
+             // Clear cached child web apps so they are rebuilt
+             val oldApps = _childWebApps
+             _childWebApps = null
+             val newApps = childWebApps
+             log.info("Previous app count: ${oldApps?.size ?: 0}, New app count: ${newApps.size}")
+             // Rebuild all web app contexts and update the server handler
+             //val allContexts = webAppContexts()
+             val contextCollection = jettyServer.handler as? ContextHandlerCollection
+             if (contextCollection == null) {
+                 log.error("Server handler is not a ContextHandlerCollection, cannot reload apps dynamically")
+                 return
+             }
+             // Stop old child app handlers that are no longer present
+             val oldPaths = oldApps?.map { it.path }?.toSet() ?: emptySet()
+             val newPaths = newApps.map { it.path }.toSet()
+             val removedPaths = oldPaths - newPaths
+             if (removedPaths.isNotEmpty()) {
+                 log.info("Removing app contexts for paths: $removedPaths")
+             }
+             // Build new handler list: keep non-child-app contexts, add new child app contexts
+             val existingHandlers = contextCollection.handlers
+                 ?.filterIsInstance<WebAppContext>()
+                 ?.filter { ctx -> ctx.contextPath !in oldPaths }
+                 ?: emptyList()
+             val newChildContexts = newApps.map { app ->
+                 log.info("Creating new context for child app: ${app.path}")
+                 val ctx = newWebAppContext(app.path, app.server)
+                 // These are programmatic servlet contexts, not WAR deployments.
+                 // Disable default Jetty configurations (WebInfConfiguration, etc.)
+                 // which are unavailable in shadow jar environments.
+                 ctx.setConfigurationClasses(emptyArray())
+                 ctx.addFilter(
+                     org.eclipse.jetty.servlet.FilterHolder(
+                         com.simiacryptus.cognotik.webui.servlet.CorsFilter()
+                     ),
+                     "/*",
+                     EnumSet.of(DispatcherType.REQUEST)
+                 )
+                 ctx
+             }
+             // Combine existing non-child handlers with new child handlers
+             val updatedHandlers = existingHandlers + newChildContexts
+             // Start any new contexts that aren't already started
+             for (ctx in newChildContexts) {
+                 if (!ctx.isStarted) {
+                     try {
+                         ctx.server = jettyServer
+                         ctx.start()
+                         log.info("Started new app context: ${ctx.contextPath}")
+                     } catch (e: Exception) {
+                         log.error("Failed to start app context ${ctx.contextPath}: ${e.message}", e)
+                     }
+                 }
+             }
+             // Stop removed contexts
+             for (handler in contextCollection.handlers?.filterIsInstance<WebAppContext>() ?: emptyList()) {
+                 if (handler.contextPath in removedPaths) {
+                     try {
+                         handler.stop()
+                         log.info("Stopped removed app context: ${handler.contextPath}")
+                     } catch (e: Exception) {
+                         log.warn("Error stopping removed context ${handler.contextPath}: ${e.message}")
+                     }
+                 }
+             }
+             contextCollection.handlers = updatedHandlers.toTypedArray()
+             log.info("App reload completed successfully. Total contexts: ${updatedHandlers.size}")
+         } catch (e: Exception) {
+             log.error("Error during app reload: ${e.message}", e)
+             throw e
+         }
+     }
 
     protected open fun onMessage(line: String?): String {
         log.info("Received command from DaemonClient: $line")

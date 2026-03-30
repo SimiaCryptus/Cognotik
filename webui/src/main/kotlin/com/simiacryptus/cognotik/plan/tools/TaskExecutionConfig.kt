@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.DatabindContext
 import com.fasterxml.jackson.databind.JavaType
@@ -19,8 +20,9 @@ open class TaskExecutionConfig(
   @Description("Ignore.")
   var state: AbstractTask.TaskState? = null
 ) {
-  @Description("The files to be generated as output for the task (relative paths)")
-  open var files: List<String> = emptyList()
+
+  @Description("The file to be generated as output for the task (relative paths)")
+  open var main_file: String = ""
 
   class PlanTaskTypeIdResolver : TypeIdResolverBase() {
     override fun idFromValue(value: Any) = when (value) {

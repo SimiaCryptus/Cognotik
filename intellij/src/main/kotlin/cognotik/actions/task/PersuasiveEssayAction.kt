@@ -21,7 +21,7 @@ import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask
-import com.simiacryptus.cognotik.plan.tools.toApiChatModel
+import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -361,8 +361,7 @@ class PersuasiveEssayAction : BaseAction() {
                 use_analogies = useAnalogiesCheckbox.isSelected,
                 call_to_action = callToActionCombo.selectedItem.toString(),
                 revision_passes = revisionPassesSpinner.value as Int,
-                input_files = inputFiles,
-                related_files = relatedFiles,
+                related_files = (inputFiles ?: emptyList()) + (relatedFiles ?: emptyList()),
                 state = TaskState.Pending
             )
         }

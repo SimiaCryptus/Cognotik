@@ -28,6 +28,9 @@
     <button class="top-bar-btn" id="user-settings-btn">
         <span class="btn-icon">⚙️</span> Settings
     </button>
+<button class="top-bar-btn" id="plugin-manager-btn">
+     <span class="btn-icon">🔌</span> Plugins
+</button>
 </div>
 
 <!-- Hero Section -->
@@ -124,6 +127,75 @@
     </div>
 </div>
 
+<!-- Plugin Manager Modal -->
+<div class="modal" id="plugin-manager-modal">
+     <div class="modal-content modal-content-wide">
+         <span class="close" id="close-plugin-manager-modal">&times;</span>
+         <h3>🔌 Plugin Manager</h3>
+         <div id="plugin-manager-message" style="display:none;"></div>
+         <div class="settings-tabs">
+             <button class="tab-button active" data-plugin-tab="loaded-plugins">Loaded Plugins</button>
+             <button class="tab-button" data-plugin-tab="available-jars">Available JARs</button>
+             <button class="tab-button" data-plugin-tab="upload-plugin">Upload Plugin</button>
+             <button class="tab-button" data-plugin-tab="load-by-path">Load by Path</button>
+         </div>
+         <!-- Loaded Plugins Tab -->
+         <div class="tab-content active" id="loaded-plugins-tab">
+             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                 <p style="margin:0; color:#666;">Currently active plugins loaded into the runtime.</p>
+                 <button class="button secondary" id="refresh-loaded-plugins">↻ Refresh</button>
+             </div>
+             <div id="loaded-plugins-content"><em>Loading…</em></div>
+         </div>
+         <!-- Available JARs Tab -->
+         <div class="tab-content" id="available-jars-tab">
+             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                 <p style="margin:0; color:#666;">JAR files found in the server's plugin directory.</p>
+                 <div style="display:flex; gap:8px;">
+                     <button class="button secondary" id="scan-plugin-directory">↻ Scan Directory</button>
+                     <button class="button" id="load-all-plugins">Load All</button>
+                 </div>
+             </div>
+             <div id="available-jars-content"><em>Click "Scan Directory" to list available JARs…</em></div>
+         </div>
+         <!-- Upload Plugin Tab -->
+         <div class="tab-content" id="upload-plugin-tab">
+             <p style="color:#666;">Upload a JAR file to the server's plugin directory.</p>
+             <div class="form-group">
+                 <label for="plugin-jar-file">Select JAR file:</label>
+                 <input type="file" id="plugin-jar-file" accept=".jar" style="width:100%;">
+             </div>
+             <div class="form-group">
+                 <label style="display:flex; align-items:center; gap:8px; font-weight:normal;">
+                     <input type="checkbox" id="plugin-auto-load">
+                     Auto-load after upload
+                 </label>
+             </div>
+             <div class="button-group" style="justify-content:flex-end;">
+                 <button class="button" id="upload-plugin-btn">Upload Plugin</button>
+             </div>
+             <div id="upload-progress" style="display:none; margin-top:12px;">
+                 <div class="spinner" style="width:24px;height:24px;border-width:3px;display:inline-block;vertical-align:middle;"></div>
+                 <span style="margin-left:8px;">Uploading…</span>
+             </div>
+         </div>
+         <!-- Load by Path Tab -->
+         <div class="tab-content" id="load-by-path-tab">
+             <p style="color:#666;">Load a plugin JAR by specifying its path on the server.</p>
+             <div class="form-group">
+                 <label for="plugin-jar-path">JAR path (relative to plugin directory or absolute):</label>
+                 <input type="text" id="plugin-jar-path" placeholder="myplugin.jar">
+             </div>
+             <div class="form-group">
+                 <label for="plugin-entry-point">Entry point class (optional):</label>
+                 <input type="text" id="plugin-entry-point" placeholder="com.example.MyPlugin">
+             </div>
+             <div class="button-group" style="justify-content:flex-end;">
+                 <button class="button" id="load-plugin-by-path-btn">Load Plugin</button>
+             </div>
+         </div>
+     </div>
+</div>
 <!-- User Settings Modal -->
 <div class="modal" id="user-settings-modal">
     <div class="modal-content">

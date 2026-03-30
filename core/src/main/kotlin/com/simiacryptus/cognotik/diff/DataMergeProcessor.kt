@@ -251,22 +251,7 @@ Here is the updated configuration:
     );
 
     companion object {
-      fun fromExtension(ext: String): DataFormat {
-        val lower = ext.lowercase().removePrefix(".")
-        return entries.find { it.extensions.contains(lower) } ?: JSON
-      }
 
-      fun fromFormatName(name: String): DataFormat {
-        val lower = name.lowercase()
-        return when (lower) {
-          "json" -> JSON
-          "yaml", "yml" -> YAML
-          "xml" -> XML
-          "toml" -> TOML
-          "properties" -> PROPERTIES
-          else -> JSON
-        }
-      }
     }
   }
 

@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧙 System Wizard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="../../assets/scripts/components/CognotikHeader.js" type="module"></script>
+</head>
+<body>
+<cognotik-header current-page="tasks"></cognotik-header>
+<div id="app">
+    <!-- Header -->
+    <header class="app-header">
+        <h1>🧙 System Wizard</h1>
+        <p class="subtitle">Describe your goal — the wizard writes and runs a shell script for you</p>
+        <div class="header-meta">
+            <span class="session-id-display" id="session-id-display" title="Session ID"></span>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-nav" role="tablist" aria-label="Main navigation">
+        <a href="#" class="nav-link active" data-section="section-goal" role="tab" aria-selected="true" aria-controls="section-goal">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Goal</span>
+        </a>
+        <a href="#" class="nav-link" data-section="section-pipeline" role="tab" aria-selected="false" aria-controls="section-pipeline">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Pipeline</span>
+        </a>
+        <a href="#" class="nav-link" data-section="section-results" role="tab" aria-selected="false" aria-controls="section-results">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Results</span>
+        </a>
+        <a href="#" class="nav-link" data-section="section-usage" role="tab" aria-selected="false" aria-controls="section-usage">
+            <span class="nav-icon">💰</span>
+            <span class="nav-label">Usage</span>
+        </a>
+         <a href="#" class="nav-link" data-section="section-settings" role="tab" aria-selected="false" aria-controls="section-settings">
+             <span class="nav-icon">🔧</span>
+             <span class="nav-label">Settings</span>
+         </a>
+    </nav>
+
+    <!-- Progress Bar -->
+    <div class="global-progress" id="global-progress">
+        <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <span class="progress-label" id="progress-label"></span>
+    </div>
+
+    <main>
+        <!-- ==================== GOAL SECTION ==================== -->
+        <section id="section-goal" class="section active" role="tabpanel" aria-labelledby="tab-goal">
+            <div class="section-header">
+                <h2>📋 Define Your Goal</h2>
+                <p class="section-subtitle">Tell the wizard what you want to accomplish on your system</p>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>What do you want to accomplish?</h3>
+                    <div class="char-count" id="char-count">0 characters</div>
+                </div>
+                <p class="hint">Be specific about file paths, services, and expected outcomes. The more detail you provide, the better the script will be.</p>
+
+                <!-- Example prompts -->
+                <div class="example-prompts" id="example-prompts">
+                    <span class="example-label">Try an example:</span>
+                    <button class="btn btn-example" data-example="docker">🐳 Docker cleanup</button>
+                    <button class="btn btn-example" data-example="logs">📄 Log analysis</button>
+                    <button class="btn btn-example" data-example="backup">💾 Backup files</button>
+                    <button class="btn btn-example" data-example="sysinfo">🖥️ System info</button>
+                </div>
+
+                <textarea id="goal-editor" rows="14"
+                    placeholder="Example: List all running Docker containers, find any using more than 1GB of memory, and write a summary report to /tmp/docker-report.txt"
+                    aria-label="Goal description"
+                    spellcheck="true"></textarea>
+
+                <div class="button-row">
+                    <button class="btn btn-primary" id="save-goal">
+                        <span class="btn-icon">💾</span> Save Goal
+                    </button>
+                    <button class="btn btn-accent" id="save-and-run">
+                        <span class="btn-icon">🚀</span> Save &amp; Run Pipeline
+                    </button>
+                    <span class="status-msg" id="goal-status"></span>
+                </div>
+            </div>
+
+            <!-- Quick tips -->
+            <div class="card card-tips">
+                <h3>💡 Tips for Better Results</h3>
+                <ul class="tips-list">
+                    <li><strong>Be specific:</strong> Include file paths, service names, and exact commands when possible</li>
+                    <li><strong>State the output:</strong> Describe where results should be saved or displayed</li>
+                    <li><strong>Mention constraints:</strong> Note any safety requirements (e.g., "don't delete anything", "dry-run first")</li>
+                    <li><strong>One goal at a time:</strong> Complex multi-step tasks work best as a single coherent goal</li>
+                     <li><strong>Have a script already?</strong> Switch to <em>Paste / Edit</em> mode in the Pipeline tab to use your own script</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ==================== PIPELINE SECTION ==================== -->
+        <section id="section-pipeline" class="section" role="tabpanel" aria-labelledby="tab-pipeline">
+            <div class="section-header">
+                <h2>⚙️ Pipeline</h2>
+                <p class="section-subtitle">Generate, review, and execute your shell script</p>
+            </div>
+
+            <!-- Pipeline Diagram -->
+            <div class="card card-pipeline-overview">
+                <div class="pipeline-diagram">
+                    <div class="pipeline-stage" data-stage="goal" id="pipeline-stage-goal">
+                        <div class="stage-icon-wrap">
+                            <div class="stage-icon">📋</div>
+                            <div class="stage-check" id="stage-goal-check">✓</div>
+                        </div>
+                        <div class="stage-label">Goal</div>
+                        <div class="stage-status" id="stage-goal-status">Ready</div>
+                    </div>
+                    <div class="pipeline-connector">
+                        <div class="connector-line" id="connector-1"></div>
+                        <div class="connector-arrow">›</div>
+                    </div>
+                    <div class="pipeline-stage" data-stage="codegen" id="pipeline-stage-codegen">
+                        <div class="stage-icon-wrap">
+                            <div class="stage-icon">🔧</div>
+                            <div class="stage-check" id="stage-codegen-check">✓</div>
+                        </div>
+                        <div class="stage-label">Generate</div>
+                        <div class="stage-status" id="stage-codegen-status">Pending</div>
+                    </div>
+                    <div class="pipeline-connector">
+                        <div class="connector-line" id="connector-2"></div>
+                        <div class="connector-arrow">›</div>
+                    </div>
+                    <div class="pipeline-stage" data-stage="run" id="pipeline-stage-run">
+                        <div class="stage-icon-wrap">
+                            <div class="stage-icon">▶️</div>
+                            <div class="stage-check" id="stage-run-check">✓</div>
+                        </div>
+                        <div class="stage-label">Run &amp; Fix</div>
+                        <div class="stage-status" id="stage-run-status">Pending</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Generate Script -->
+            <div class="card" id="card-step-1">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <span class="step-title">Generate Shell Script</span>
+                        <span class="step-badge pending" id="badge-codegen">pending</span>
+                    </div>
+                    <p class="step-desc">
+                        The AI reads your goal and writes a shell script (<code>code/script.sh</code>) to accomplish it.
+                        Or, you can <strong>paste/edit your own script</strong> below and skip generation.
+                    </p>
+                    <!-- Mode toggle -->
+                    <div class="script-mode-toggle">
+                        <button class="mode-btn active" id="mode-generate" data-mode="generate">
+                            <span class="mode-icon">🤖</span> AI Generate
+                        </button>
+                        <button class="mode-btn" id="mode-manual" data-mode="manual">
+                            <span class="mode-icon">✏️</span> Paste / Edit
+                        </button>
+                    </div>
+                    <!-- Generate mode controls -->
+                    <div class="script-mode-panel active" id="panel-generate">
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/code_op.md"
+                                data-output="code/script.sh"
+                                data-badge="badge-codegen"
+                                data-viewer="viewer-codegen">
+                            <span class="btn-icon">▶</span> Generate
+                        </button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="code/script.sh"
+                                data-viewer="viewer-codegen">
+                            <span class="btn-icon">👁</span> View Script
+                        </button>
+                    </div>
+                    </div>
+                    <!-- Manual edit mode controls -->
+                    <div class="script-mode-panel" id="panel-manual">
+                        <p class="hint">Paste or write your shell script below. Click <strong>Save Script</strong> to save it and proceed to Run &amp; Fix.</p>
+                        <textarea id="script-editor" rows="16"
+                            placeholder="#!/bin/bash&#10;&#10;# Paste or write your shell script here…&#10;&#10;echo &quot;Hello, World!&quot;"
+                            aria-label="Shell script editor"
+                            spellcheck="false"
+                            class="script-editor-textarea"></textarea>
+                        <div class="button-row">
+                            <button class="btn btn-primary" id="save-script-manual">
+                                <span class="btn-icon">💾</span> Save Script
+                            </button>
+                            <button class="btn btn-secondary" id="load-script-into-editor">
+                                <span class="btn-icon">📂</span> Load Existing
+                            </button>
+                            <span class="status-msg" id="script-editor-status"></span>
+                        </div>
+                    </div>
+
+                    <div class="viewer" id="viewer-codegen"></div>
+                </div>
+            </div>
+
+            <!-- Step 2: Run & Fix -->
+            <div class="card" id="card-step-2">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <span class="step-title">Run &amp; Auto-Fix</span>
+                        <span class="step-badge pending" id="badge-run">pending</span>
+                    </div>
+                    <p class="step-desc">
+                        Executes the generated script and automatically fixes any errors until it succeeds.
+                        Results are logged to <code>code/fix_log.md</code>.
+                    </p>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/run_op.md"
+                                data-output="code/fix_log.md"
+                                data-badge="badge-run"
+                                data-viewer="viewer-run">
+                            <span class="btn-icon">▶</span> Run &amp; Fix
+                        </button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="code/fix_log.md"
+                                data-viewer="viewer-run">
+                            <span class="btn-icon">📋</span> View Log
+                        </button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="code/script.sh"
+                                data-viewer="viewer-run-script">
+                            <span class="btn-icon">📜</span> Final Script
+                        </button>
+                    </div>
+                    <div class="viewer" id="viewer-run"></div>
+                    <div class="viewer" id="viewer-run-script"></div>
+                </div>
+            </div>
+
+            <!-- Batch Execution -->
+            <div class="card card-batch">
+                <div class="card-header">
+                    <h3>🚀 Run Entire Pipeline</h3>
+                </div>
+                <p class="hint">Saves your goal, generates the script, then runs and fixes it — all in one click.</p>
+             <div class="model-indicator" id="pipeline-model-indicator">
+                 <span class="model-indicator-label">Models:</span>
+                 <span class="model-indicator-value" id="pipeline-smart-model">Default</span>
+                 <span class="model-indicator-sep">|</span>
+                 <span class="model-indicator-value" id="pipeline-fast-model">Default</span>
+                 <a href="#" class="model-indicator-link" id="change-models-link">Change</a>
+             </div>
+                <div class="button-row">
+                    <button class="btn btn-accent btn-lg" id="run-all">
+                        <span class="btn-icon">▶</span> Run Entire Pipeline
+                    </button>
+                </div>
+                <div class="batch-log" id="batch-log"></div>
+            </div>
+        </section>
+
+        <!-- ==================== RESULTS SECTION ==================== -->
+        <section id="section-results" class="section" role="tabpanel" aria-labelledby="tab-results">
+            <div class="section-header">
+                <h2>📊 Results</h2>
+                <p class="section-subtitle">Review the generated script and execution output</p>
+            </div>
+
+            <!-- Results summary card -->
+            <div class="card card-results-summary" id="results-summary" style="display:none;">
+                <div class="results-summary-grid">
+                    <div class="summary-stat" id="summary-script-status">
+                        <div class="stat-icon">📜</div>
+                        <div class="stat-label">Script</div>
+                        <div class="stat-value">—</div>
+                    </div>
+                    <div class="summary-stat" id="summary-execution-status">
+                        <div class="stat-icon">▶️</div>
+                        <div class="stat-label">Execution</div>
+                        <div class="stat-value">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-tabs">
+                <button class="results-tab active" data-tab="tab-script" aria-selected="true">📜 Script</button>
+                <button class="results-tab" data-tab="tab-log" aria-selected="false">📋 Execution Log</button>
+                <button class="results-tab" data-tab="tab-goal" aria-selected="false">📋 Goal</button>
+            </div>
+
+            <div class="results-content">
+                <!-- Script Tab -->
+                <div class="tab-panel active" id="tab-script" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Generated Shell Script</h3>
+                            <div class="button-row button-row-compact">
+                                <button class="btn btn-secondary btn-sm btn-refresh"
+                                        data-file="code/script.sh"
+                                        data-viewer="result-script">
+                                    <span class="btn-icon">🔄</span> Refresh
+                                </button>
+                                <button class="btn btn-secondary btn-sm" id="copy-script">
+                                    <span class="btn-icon">📋</span> Copy
+                                </button>
+                                <button class="btn btn-secondary btn-sm" id="download-script">
+                                    <span class="btn-icon">⬇️</span> Download
+                                </button>
+                            </div>
+                        </div>
+                        <div class="result-viewer" id="result-script">
+                            <div class="empty-state">
+                                <div class="empty-icon">📜</div>
+                                <p class="empty-title">No script generated yet</p>
+                                <p class="empty-desc">Go to the <strong>Pipeline</strong> tab and run the pipeline to generate a shell script.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Execution Log Tab -->
+                <div class="tab-panel" id="tab-log" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Execution &amp; Fix Log</h3>
+                            <div class="button-row button-row-compact">
+                                <button class="btn btn-secondary btn-sm btn-refresh"
+                                        data-file="code/fix_log.md"
+                                        data-viewer="result-log">
+                                    <span class="btn-icon">🔄</span> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="result-viewer" id="result-log">
+                            <div class="empty-state">
+                                <div class="empty-icon">📋</div>
+                                <p class="empty-title">No execution log yet</p>
+                                <p class="empty-desc">Run the pipeline to see execution results and any auto-fix attempts.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Goal Tab -->
+                <div class="tab-panel" id="tab-goal" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Original Goal</h3>
+                            <div class="button-row button-row-compact">
+                                <button class="btn btn-secondary btn-sm btn-refresh"
+                                        data-file="goal.md"
+                                        data-viewer="result-goal">
+                                    <span class="btn-icon">🔄</span> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="result-viewer" id="result-goal">
+                            <div class="empty-state">
+                                <div class="empty-icon">📋</div>
+                                <p class="empty-title">No goal saved yet</p>
+                                <p class="empty-desc">Go to the <strong>Goal</strong> tab and describe what you want to accomplish.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- ==================== USAGE SECTION ==================== -->
+        <section id="section-usage" class="section" role="tabpanel" aria-labelledby="tab-usage">
+            <div class="section-header">
+                <h2>💰 Usage</h2>
+                <p class="section-subtitle">Track API token usage and estimated costs for this session</p>
+            </div>
+            <!-- Usage Summary Cards -->
+            <div class="card" id="usage-summary-card">
+                <div class="card-header">
+                    <h3>📊 Session Totals</h3>
+                    <div class="button-row button-row-compact">
+                        <button class="btn btn-secondary btn-sm" id="refresh-usage">
+                            <span class="btn-icon">🔄</span> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="usage-totals-grid" id="usage-totals-grid">
+                    <div class="usage-total-card">
+                        <div class="usage-total-icon">📤</div>
+                        <div class="usage-total-label">Prompt Tokens</div>
+                        <div class="usage-total-value" id="usage-total-prompt">—</div>
+                    </div>
+                    <div class="usage-total-card">
+                        <div class="usage-total-icon">📥</div>
+                        <div class="usage-total-label">Completion Tokens</div>
+                        <div class="usage-total-value" id="usage-total-completion">—</div>
+                    </div>
+                    <div class="usage-total-card">
+                        <div class="usage-total-icon">🔢</div>
+                        <div class="usage-total-label">Total Tokens</div>
+                        <div class="usage-total-value" id="usage-total-tokens">—</div>
+                    </div>
+                    <div class="usage-total-card usage-total-cost">
+                        <div class="usage-total-icon">💵</div>
+                        <div class="usage-total-label">Estimated Cost</div>
+                        <div class="usage-total-value" id="usage-total-cost">—</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Per-Model Breakdown -->
+            <div class="card" id="usage-breakdown-card">
+                <div class="card-header">
+                    <h3>🤖 Per-Model Breakdown</h3>
+                </div>
+                <div id="usage-table-container">
+                    <div class="empty-state" id="usage-empty-state">
+                        <div class="empty-icon">💰</div>
+                        <p class="empty-title">No usage data yet</p>
+                        <p class="empty-desc">Run the pipeline to see token usage and cost estimates here.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Child Session Usage -->
+            <div class="card" id="usage-children-card">
+                <div class="card-header">
+                    <h3>🔗 Task Session Usage</h3>
+                    <p class="hint" style="margin:0">Usage from individual pipeline task sessions</p>
+                </div>
+                <div id="usage-children-container">
+                    <div class="empty-state" id="usage-children-empty">
+                        <div class="empty-icon">🔗</div>
+                        <p class="empty-title">No task sessions yet</p>
+                        <p class="empty-desc">Task session usage will appear here after running pipeline steps.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card card-tips">
+                <h3>💡 Usage Tips</h3>
+                <ul class="tips-list">
+                    <li><strong>Costs are estimates:</strong> Based on published model pricing; actual billing may vary</li>
+                    <li><strong>Prompt tokens:</strong> Tokens sent to the model (your goal, context, instructions)</li>
+                    <li><strong>Completion tokens:</strong> Tokens generated by the model (scripts, fixes, responses)</li>
+                    <li><strong>Reduce costs:</strong> Use a fast/cheap model for the "Fast Model" setting and reserve expensive models for script generation</li>
+                </ul>
+            </div>
+        </section>
+
+         <!-- ==================== SETTINGS SECTION ==================== -->
+         <section id="section-settings" class="section" role="tabpanel" aria-labelledby="tab-settings">
+             <div class="section-header">
+                 <h2>🔧 Settings</h2>
+                 <p class="section-subtitle">Configure AI models used for script generation and execution</p>
+             </div>
+             <div class="card">
+                 <div class="card-header">
+                     <h3>🤖 Model Selection</h3>
+                     <span class="model-status" id="model-load-status"></span>
+                 </div>
+                 <p class="hint">Choose which AI models to use for generating and fixing scripts. <strong>Both models are required</strong> — the server does not provide defaults. Models are loaded from your configured API providers.</p>
+                 <div class="model-selection-grid">
+                     <div class="model-field">
+                         <label for="setting-smart-model" class="model-label">
+                             <span class="model-label-icon">🧠</span>
+                             <span>
+                                 <span class="model-label-text">Smart Model <span class="required-badge">Required</span></span>
+                                 <span class="model-label-hint">Primary model for script generation (also used as image model)</span>
+                             </span>
+                         </label>
+                         <select id="setting-smart-model" class="model-select">
+                             <option value="">Loading models…</option>
+                         </select>
+                     </div>
+                     <div class="model-field">
+                         <label for="setting-fast-model" class="model-label">
+                             <span class="model-label-icon">⚡</span>
+                             <span>
+                                 <span class="model-label-text">Fast Model <span class="required-badge">Required</span></span>
+                                 <span class="model-label-hint">Secondary model for parsing and quick tasks</span>
+                             </span>
+                         </label>
+                         <select id="setting-fast-model" class="model-select">
+                             <option value="">Loading models…</option>
+                         </select>
+                     </div>
+                 </div>
+                 <div class="button-row" style="margin-top: 18px;">
+                     <button class="btn btn-primary" id="save-model-settings">
+                         <span class="btn-icon">💾</span> Save Settings
+                     </button>
+                     <button class="btn btn-secondary" id="reload-models">
+                         <span class="btn-icon">🔄</span> Reload Models
+                     </button>
+                     <span class="status-msg" id="model-settings-status"></span>
+                 </div>
+             </div>
+             <!-- Current model info -->
+             <div class="card" id="card-model-info">
+                 <div class="card-header">
+                     <h3>📋 Current Configuration</h3>
+                 </div>
+                 <div class="model-info-grid" id="model-info-grid">
+                     <div class="model-info-item">
+                         <span class="model-info-label">Smart Model</span>
+                         <span class="model-info-value" id="info-smart-model">Not set</span>
+                     </div>
+                     <div class="model-info-item">
+                         <span class="model-info-label">Fast Model</span>
+                         <span class="model-info-value" id="info-fast-model">Not set</span>
+                     </div>
+                     <div class="model-info-item">
+                         <span class="model-info-label">Providers</span>
+                         <span class="model-info-value" id="info-providers">—</span>
+                     </div>
+                     <div class="model-info-item">
+                         <span class="model-info-label">Total Models</span>
+                         <span class="model-info-value" id="info-total-models">—</span>
+                     </div>
+                 </div>
+             </div>
+             <div class="card card-tips">
+                 <h3>💡 Model Tips</h3>
+                 <ul class="tips-list">
+                     <li><strong>Smart Model:</strong> Used for the main script generation step — pick a capable model like GPT-4o or Claude Sonnet</li>
+                     <li><strong>Fast Model:</strong> Used for parsing and auto-fix iterations — a smaller, faster model works well here</li>
+                     <li><strong>Both models are required:</strong> The server does not provide defaults — you must select models before running the pipeline</li>
+                     <li><strong>Image Model:</strong> Automatically set to the same as the Smart Model</li>
+                     <li><strong>No models showing?</strong> Make sure you have at least one API provider configured with a valid API key</li>
+                     <li><strong>Settings persist:</strong> Your model choices are saved in your browser and reused across sessions</li>
+                 </ul>
+             </div>
+         </section>
+
+    </main>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toast-container"></div>
+</div>
+
+<script src="marked.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

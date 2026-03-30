@@ -18,7 +18,8 @@
     <a href="#" class="nav-link active" data-section="section-input">💡 Idea</a>
     <a href="#" class="nav-link" data-section="section-pipeline">⚙️ Pipeline</a>
     <a href="#" class="nav-link" data-section="section-series">📖 Series</a>
-     <a href="#" class="nav-link" data-section="section-settings">🤖 Models</a>
+    <a href="#" class="nav-link" data-section="section-usage">💰 Usage</a>
+    <a href="#" class="nav-link" data-section="section-settings">🤖 Models</a>
 </nav>
 
 <!-- Main Content -->
@@ -213,6 +214,77 @@
             </div>
         </div>
     </div>
+    <!-- ===== USAGE SECTION ===== -->
+    <div id="section-usage" class="section">
+        <h2>💰 Usage & Costs</h2>
+        <div class="card">
+            <h3>Session Usage</h3>
+            <p class="help-text">
+                Track token usage and estimated costs for AI operations in this session.
+                Usage is broken down by model, showing prompt tokens, completion tokens, and cost.
+            </p>
+            <div class="button-row">
+                <button class="btn btn-primary" id="refresh-usage">🔄 Refresh Usage</button>
+                <button class="btn btn-secondary" id="toggle-usage-format">{ } JSON View</button>
+                <span id="usage-status" class="status-msg"></span>
+            </div>
+        </div>
+        <!-- Usage Summary Cards -->
+        <div id="usage-summary" class="usage-summary">
+            <div class="usage-summary-card">
+                <div class="usage-summary-icon">📤</div>
+                <div class="usage-summary-detail">
+                    <span class="usage-summary-value" id="usage-total-prompt">—</span>
+                    <span class="usage-summary-label">Prompt Tokens</span>
+                </div>
+            </div>
+            <div class="usage-summary-card">
+                <div class="usage-summary-icon">📥</div>
+                <div class="usage-summary-detail">
+                    <span class="usage-summary-value" id="usage-total-completion">—</span>
+                    <span class="usage-summary-label">Completion Tokens</span>
+                </div>
+            </div>
+            <div class="usage-summary-card">
+                <div class="usage-summary-icon">🪙</div>
+                <div class="usage-summary-detail">
+                    <span class="usage-summary-value" id="usage-total-tokens">—</span>
+                    <span class="usage-summary-label">Total Tokens</span>
+                </div>
+            </div>
+            <div class="usage-summary-card usage-summary-cost">
+                <div class="usage-summary-icon">💵</div>
+                <div class="usage-summary-detail">
+                    <span class="usage-summary-value" id="usage-total-cost">—</span>
+                    <span class="usage-summary-label">Estimated Cost</span>
+                </div>
+            </div>
+        </div>
+        <!-- Usage Table -->
+        <div class="card" id="usage-table-card">
+            <h3>Breakdown by Model</h3>
+            <div id="usage-table-container">
+                <p class="placeholder">No usage data yet. Run some operations first, then click "Refresh Usage".</p>
+            </div>
+        </div>
+        <!-- JSON View (hidden by default) -->
+        <div class="card" id="usage-json-card" style="display: none;">
+            <h3>Raw JSON</h3>
+            <pre id="usage-json-output" class="usage-json-output"></pre>
+        </div>
+        <!-- Per-Task Usage -->
+        <div class="card">
+            <h3>Task Sessions</h3>
+            <p class="help-text">
+                View usage for individual task sessions. Each comic generation or compilation
+                runs in its own session with separate usage tracking.
+            </p>
+            <div id="task-sessions-container">
+                <p class="placeholder">No task sessions recorded yet.</p>
+            </div>
+        </div>
+    </div>
+
 
 </main>
      <!-- ===== SETTINGS SECTION ===== -->

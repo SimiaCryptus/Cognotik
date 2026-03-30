@@ -7,6 +7,11 @@
       "src": "host.json"
     },
     {
+      "label": "Apps",
+      "type": "dropdown",
+      "src": "apps.json"
+    },
+    {
       "label": "Plan",
       "type": "dropdown",
       "url": "TaskPlanning.html",

@@ -1470,6 +1470,137 @@ textarea::placeholder {
     background: var(--color-danger-bg);
     border-color: var(--color-danger);
 }
+/* ===== Usage Section ===== */
+.usage-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.usage-summary-card {
+    background: var(--color-lcd);
+    border: 2px solid var(--color-lcd-border);
+    border-radius: var(--radius);
+    padding: 1.2rem 1rem;
+    text-align: center;
+    box-shadow: var(--shadow-inset);
+    transition: border-color var(--transition);
+}
+.usage-summary-card:hover {
+    border-color: var(--color-lcd-text-dim);
+}
+.usage-summary-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--color-lcd-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: var(--font-lcd);
+    margin-bottom: 0.5rem;
+}
+.usage-summary-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--color-lcd-text);
+    font-family: var(--font-lcd);
+    letter-spacing: 0.02em;
+}
+.usage-summary-prompt .usage-summary-value {
+    color: var(--color-info);
+}
+.usage-summary-completion .usage-summary-value {
+    color: var(--color-lcd-text);
+}
+.usage-summary-cost .usage-summary-value {
+    color: var(--color-primary);
+}
+.usage-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-lcd);
+    font-size: 0.84rem;
+}
+.usage-table thead th {
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--color-lcd-text);
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--color-lcd-border);
+    text-align: left;
+}
+.usage-table tbody td {
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--color-lcd-border);
+    color: var(--color-text);
+}
+.usage-table tbody tr {
+    transition: background var(--transition);
+}
+.usage-table tbody tr:hover {
+    background: rgba(122, 223, 122, 0.05);
+}
+.usage-model-cell {
+    color: var(--color-lcd-text) !important;
+    font-weight: 600;
+}
+.usage-number-cell {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+}
+.usage-cost-cell {
+    text-align: right !important;
+    color: var(--color-primary) !important;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+.usage-totals-row {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-top: 2px solid var(--color-lcd-text-dim);
+}
+.usage-totals-row td {
+    color: var(--color-lcd-text) !important;
+}
+.usage-totals-row .usage-cost-cell {
+    color: var(--color-primary) !important;
+}
+.usage-last-updated {
+    text-align: right;
+    font-size: 0.7rem;
+    color: var(--color-text-dim);
+    font-family: var(--font-lcd);
+    margin-top: 0.6rem;
+    letter-spacing: 0.03em;
+}
+.usage-auto-refresh-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+    border-radius: var(--radius-btn);
+    border: 1px solid transparent;
+    transition: all var(--transition);
+}
+.usage-auto-refresh-label:hover {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+    border-color: var(--color-border);
+}
+.usage-auto-refresh-label input[type="checkbox"] {
+    accent-color: var(--color-primary);
+    width: 14px;
+    height: 14px;
+}
+.btn-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: not-allowed;
+}
 
 
 /* ===== Scrollbar ===== */

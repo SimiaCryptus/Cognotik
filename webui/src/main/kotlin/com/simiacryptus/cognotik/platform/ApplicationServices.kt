@@ -9,11 +9,19 @@ import com.simiacryptus.cognotik.platform.hsql.HSQLMetadataStorage
 import com.simiacryptus.cognotik.platform.hsql.HSQLUsageManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
+import com.simiacryptus.cognotik.util.PluginManager
 import java.io.File
 
 object ApplicationServices {
 
   @JvmStatic
+   var pluginManager: PluginManagerInterface = PluginManager()
+     set(value) {
+       require(!isLocked) { "ApplicationServices is locked" }
+       field = value
+     }
+
+   @JvmStatic
   var authorizationManager: AuthorizationInterface = AuthorizationManager()
     set(value) {
       require(!isLocked) { "ApplicationServices is locked" }

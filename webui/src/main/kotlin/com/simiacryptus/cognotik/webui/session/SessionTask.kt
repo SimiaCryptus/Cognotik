@@ -302,6 +302,7 @@ Stack Trace:
   ) = add("""<img src="${saveFile("images/${Session.long64()}.png", image.toPng())}" />""")
 
   fun newSession(session: Session = Session.newGlobalID(), appname: String = session.toString()): SocketManager {
+    SessionProxyServer.setParentSession(session, ui.sessionId)
     val linkedManager = ui.createLinkedManager(session)
     SessionProxyServer.agents[session] = linkedManager
     ApplicationServer.appInfoMap[session] = AppInfoData(

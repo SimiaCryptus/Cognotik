@@ -148,6 +148,8 @@ open class DocProcessorAction(
           ?: throw IllegalStateException("Fast model not configured"),
         smartModel = AppSettingsState.instance.smartModel?.model
           ?: throw IllegalStateException("Smart model not configured"),
+        imageModel = AppSettingsState.instance.imageChatModel?.model
+            ?: throw IllegalStateException("Image model not configured"),
         autoFix = true,
         user = localUser,
       )
@@ -232,6 +234,7 @@ open class DocProcessorAction(
               openBrowser = docProcessor.openBrowser,
               fastModel = docProcessor.fastModel,
               smartModel = docProcessor.smartModel,
+              imageModel = docProcessor.imageModel,
               showMenubar = false,
               user = localUser,
             ) {

@@ -1,0 +1,2157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌟 Astrological Meal Planner</title>
+    <style>
+        /* ===== CSS Custom Properties ===== */
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --bg-card-hover: #1e2a4a;
+            --accent-primary: #7c3aed;
+            --accent-secondary: #a855f7;
+            --accent-gold: #f59e0b;
+            --accent-teal: #06b6d4;
+            --accent-rose: #f43f5e;
+            --accent-green: #10b981;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d3748;
+            --border-accent: #4c1d95;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #06b6d4;
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: 0.2s ease;
+        }
+
+        /* ===== Reset & Base ===== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: 16px; scroll-behavior: smooth; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        a { color: var(--accent-secondary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* ===== Layout ===== */
+        #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* ===== Header ===== */
+        .app-header {
+            background: linear-gradient(135deg, #1a0533 0%, #0f0f1a 50%, #001a2e 100%);
+            border-bottom: 1px solid var(--border-accent);
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+        .header-title { display: flex; align-items: center; gap: 0.75rem; }
+        .header-title h1 { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-gold), var(--accent-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .header-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.1rem; }
+
+        /* ===== Model Selector Bar ===== */
+        .model-bar {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .model-bar label { font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; }
+        .model-bar select {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 0.35rem 0.75rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            min-width: 180px;
+        }
+        .model-bar select:focus { outline: none; border-color: var(--accent-primary); }
+        .model-status {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .model-status.ok { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+        .model-status.warn { background: rgba(239,68,68,0.15); color: var(--error); border: 1px solid rgba(239,68,68,0.3); }
+        .model-bar-spacer { flex: 1; }
+
+        /* ===== Navigation ===== */
+        .tab-nav {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem;
+            display: flex;
+            gap: 0;
+            overflow-x: auto;
+        }
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.85rem 1.25rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: var(--transition);
+            white-space: nowrap;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .nav-link:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); text-decoration: none; }
+        .nav-link.active { color: var(--accent-secondary); border-bottom-color: var(--accent-secondary); }
+
+        /* ===== Main Content ===== */
+        main { flex: 1; padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* ===== Cards ===== */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+        .card h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-primary); }
+        .card p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem; }
+
+        /* ===== Form Elements ===== */
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem; font-weight: 500; }
+        textarea, input[type="text"], input[type="date"], input[type="time"], select.form-control {
+            width: 100%;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 0.6rem 0.9rem;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color var(--transition);
+            resize: vertical;
+        }
+        textarea:focus, input:focus, select.form-control:focus { outline: none; border-color: var(--accent-primary); }
+        textarea { min-height: 120px; }
+        textarea.code-editor { font-family: 'Courier New', monospace; font-size: 0.85rem; min-height: 200px; }
+
+        /* ===== Buttons ===== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.55rem 1.1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: var(--accent-primary); color: #fff; }
+        .btn-primary:hover:not(:disabled) { background: #6d28d9; }
+        .btn-secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover:not(:disabled) { background: var(--bg-card-hover); }
+        .btn-accent { background: linear-gradient(135deg, var(--accent-primary), var(--accent-teal)); color: #fff; }
+        .btn-accent:hover:not(:disabled) { opacity: 0.9; }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-danger { background: var(--error); color: #fff; }
+        .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+        .button-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
+        /* ===== Status Messages ===== */
+        .status-msg { font-size: 0.85rem; padding: 0.25rem 0.5rem; border-radius: 4px; }
+        .status-msg.success { color: var(--success); }
+        .status-msg.error { color: var(--error); }
+        .status-msg.info { color: var(--info); }
+
+        /* ===== Step Badges ===== */
+        .step-badge {
+            display: inline-block;
+            padding: 0.2rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .step-badge.pending { background: rgba(100,116,139,0.2); color: var(--text-muted); border: 1px solid var(--text-muted); }
+        .step-badge.running { background: rgba(6,182,212,0.15); color: var(--info); border: 1px solid var(--info); animation: pulse 1.5s infinite; }
+        .step-badge.done { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid var(--success); }
+        .step-badge.error { background: rgba(239,68,68,0.15); color: var(--error); border: 1px solid var(--error); }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        /* ===== Pipeline Steps ===== */
+        .step { }
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        .step-number {
+            width: 28px; height: 28px;
+            background: var(--accent-primary);
+            color: #fff;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .step-title { font-weight: 600; font-size: 1rem; flex: 1; }
+        .step-desc { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.75rem; }
+        .step-io { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+        .step-io span { background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3); border-radius: 4px; padding: 0.1rem 0.4rem; margin: 0.1rem; display: inline-block; }
+
+        /* ===== Viewer ===== */
+        .viewer {
+            display: none;
+            margin-top: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .viewer.visible { display: block; }
+        .viewer .placeholder { color: var(--text-muted); font-style: italic; text-align: center; padding: 2rem; }
+
+        /* ===== Markdown Rendered Content ===== */
+        .md-content h1, .md-content h2, .md-content h3, .md-content h4 { margin: 1rem 0 0.5rem; color: var(--accent-secondary); }
+        .md-content p { margin-bottom: 0.75rem; }
+        .md-content ul, .md-content ol { margin: 0.5rem 0 0.75rem 1.5rem; }
+        .md-content li { margin-bottom: 0.25rem; }
+        .md-content code { background: rgba(124,58,237,0.15); padding: 0.1rem 0.35rem; border-radius: 4px; font-family: monospace; font-size: 0.85em; }
+        .md-content pre { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; overflow-x: auto; margin: 0.75rem 0; }
+        .md-content pre code { background: none; padding: 0; }
+        .md-content blockquote { border-left: 3px solid var(--accent-primary); padding-left: 1rem; color: var(--text-secondary); margin: 0.75rem 0; }
+        .md-content table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; }
+        .md-content th, .md-content td { border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; text-align: left; }
+        .md-content th { background: var(--bg-card); font-weight: 600; }
+        .md-content hr { border: none; border-top: 1px solid var(--border-color); margin: 1rem 0; }
+
+        /* ===== Session Monitor Links ===== */
+        .session-link-container { margin: 0.5rem 0; }
+        .session-monitor-link, .session-completed-link, .session-error-link {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 0.82rem; padding: 0.4rem 0.75rem;
+            border-radius: var(--radius-sm);
+        }
+        .session-monitor-link { background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.3); color: var(--info); }
+        .session-completed-link { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--success); }
+        .session-error-link { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--error); }
+        .monitor-pulse { animation: pulse 1s infinite; }
+        .monitor-link { color: inherit; font-weight: 600; }
+
+        /* ===== Batch Log ===== */
+        .batch-log {
+            display: none;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            margin-top: 1rem;
+        }
+        .batch-log.visible { display: block; }
+        .log-entry { padding: 0.15rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .log-info { color: var(--text-secondary); }
+        .log-success { color: var(--success); }
+        .log-error { color: var(--error); }
+        .log-warn { color: var(--warning); }
+
+        /* ===== Results Tabs ===== */
+        .results-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .results-tab {
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        .results-tab:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .results-tab.active { background: var(--accent-primary); color: #fff; border-color: var(--accent-primary); }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ===== Result Viewer ===== */
+        .result-viewer {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 1.25rem;
+            min-height: 200px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .result-viewer .placeholder { color: var(--text-muted); font-style: italic; text-align: center; padding: 3rem; }
+
+        /* ===== Pipeline Diagram ===== */
+        .pipeline-diagram {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding: 1rem 0;
+            flex-wrap: nowrap;
+        }
+        .pipeline-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            min-width: 80px;
+            text-align: center;
+        }
+        .stage-icon { font-size: 1.5rem; }
+        .stage-label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); }
+        .stage-status { font-size: 0.65rem; color: var(--text-muted); }
+        .pipeline-arrow { color: var(--text-muted); font-size: 1.2rem; flex-shrink: 0; }
+
+        /* ===== Loading Overlay ===== */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        #loading-overlay.visible { display: flex; }
+        .spinner {
+            width: 48px; height: 48px;
+            border: 4px solid rgba(124,58,237,0.3);
+            border-top-color: var(--accent-secondary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading-text { color: var(--text-primary); font-size: 1rem; }
+
+        /* ===== Notification Toast ===== */
+        #toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            max-width: 360px;
+            box-shadow: var(--shadow);
+            animation: slideIn 0.3s ease;
+        }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--error); }
+        .toast.info { border-left: 4px solid var(--info); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* ===== Section Headers ===== */
+        .section-header { margin-bottom: 1.5rem; }
+        .section-header h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .section-header p { color: var(--text-secondary); font-size: 0.9rem; }
+
+        /* ===== Grid Layouts ===== */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } main { padding: 1rem; } .model-bar { padding: 0.75rem 1rem; } }
+
+        /* ===== Divider ===== */
+        .divider { border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0; }
+
+        /* ===== Info Box ===== */
+        .info-box {
+            background: rgba(6,182,212,0.08);
+            border: 1px solid rgba(6,182,212,0.25);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        .info-box strong { color: var(--info); }
+
+        /* ===== Warning Box ===== */
+        .warn-box {
+            background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.25);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            color: var(--warning);
+            margin-bottom: 1rem;
+        }
+
+        /* ===== Scrollbar ===== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    </style>
+    <script src="../../../assets/scripts/components/CognotikHeader.js" type="module"></script>
+</head>
+<body>
+<cognotik-header current-page="tasks"></cognotik-header>
+<div id="app">
+
+    <!-- ===== Header ===== -->
+    <header class="app-header">
+        <div class="header-title">
+            <span style="font-size:2rem;">🌟</span>
+            <div>
+                <h1>Astrological Meal Planner</h1>
+                <div class="header-subtitle">AI-powered, cosmically aligned meal planning</div>
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;font-size:0.8rem;color:var(--text-muted);">
+            <span id="session-display"></span>
+        </div>
+    </header>
+
+    <!-- ===== Model Selection Bar ===== -->
+    <div class="model-bar">
+        <label for="smart-model-select">🧠 Smart Model:</label>
+        <select id="smart-model-select">
+            <option value="">Loading models…</option>
+        </select>
+        <label for="fast-model-select">⚡ Fast Model:</label>
+        <select id="fast-model-select">
+            <option value="">Loading models…</option>
+        </select>
+        <div class="model-bar-spacer"></div>
+        <span id="model-status" class="model-status warn">⚠ Select models to enable pipeline</span>
+    </div>
+
+    <!-- ===== Navigation ===== -->
+    <nav class="tab-nav">
+        <a href="#" class="nav-link active" data-section="section-input">📝 Input</a>
+        <a href="#" class="nav-link" data-section="section-pipeline">⚙️ Pipeline</a>
+        <a href="#" class="nav-link" data-section="section-results">📊 Results</a>
+    </nav>
+
+    <!-- ===== Main Content ===== -->
+    <main>
+
+        <!-- ==================== INPUT SECTION ==================== -->
+        <div id="section-input" class="section active">
+            <div class="section-header">
+                <h2>📝 Input Data</h2>
+                <p>Provide your astrological profile and dietary preferences. All fields are saved to the session filesystem.</p>
+            </div>
+
+            <div class="info-box">
+                <strong>ℹ️ Getting Started:</strong> Fill in all four input forms below, then click <strong>Save</strong> on each. Once saved, head to the <strong>Pipeline</strong> tab to run the AI stages.
+            </div>
+
+            <!-- User Profile -->
+            <div class="card">
+                <h3>♈ User Profile <code>inputs/user_profile.json</code></h3>
+                <p>Your astrological birth data and dietary information. This is the core profile used throughout the pipeline.</p>
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="profile-name" placeholder="e.g. Alex">
+                        </div>
+                        <div class="form-group">
+                            <label>Birth Date</label>
+                            <input type="date" id="profile-birth-date">
+                        </div>
+                        <div class="form-group">
+                            <label>Birth Time (optional)</label>
+                            <input type="time" id="profile-birth-time">
+                        </div>
+                        <div class="form-group">
+                            <label>Birth Location</label>
+                            <input type="text" id="profile-birth-location" placeholder="e.g. New York, NY">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Sun Sign</label>
+                            <select class="form-control" id="profile-sun-sign">
+                                <option value="">Select…</option>
+                                <option>Aries</option><option>Taurus</option><option>Gemini</option>
+                                <option>Cancer</option><option>Leo</option><option>Virgo</option>
+                                <option>Libra</option><option>Scorpio</option><option>Sagittarius</option>
+                                <option>Capricorn</option><option>Aquarius</option><option>Pisces</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Moon Sign</label>
+                            <select class="form-control" id="profile-moon-sign">
+                                <option value="">Select…</option>
+                                <option>Aries</option><option>Taurus</option><option>Gemini</option>
+                                <option>Cancer</option><option>Leo</option><option>Virgo</option>
+                                <option>Libra</option><option>Scorpio</option><option>Sagittarius</option>
+                                <option>Capricorn</option><option>Aquarius</option><option>Pisces</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Rising Sign</label>
+                            <select class="form-control" id="profile-rising-sign">
+                                <option value="">Select…</option>
+                                <option>Aries</option><option>Taurus</option><option>Gemini</option>
+                                <option>Cancer</option><option>Leo</option><option>Virgo</option>
+                                <option>Libra</option><option>Scorpio</option><option>Sagittarius</option>
+                                <option>Capricorn</option><option>Aquarius</option><option>Pisces</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Dietary Restrictions (comma-separated)</label>
+                    <input type="text" id="profile-restrictions" placeholder="e.g. vegetarian, gluten-free">
+                </div>
+                <div class="form-group">
+                    <label>Allergies (comma-separated)</label>
+                    <input type="text" id="profile-allergies" placeholder="e.g. nuts, shellfish">
+                </div>
+                <div class="form-group">
+                    <label>Health Goals (comma-separated)</label>
+                    <input type="text" id="profile-goals" placeholder="e.g. weight_loss, energy, muscle_gain">
+                </div>
+                <div class="form-group">
+                    <label>Cuisine Preferences (comma-separated)</label>
+                    <input type="text" id="profile-cuisines" placeholder="e.g. Mediterranean, Asian, Mexican">
+                </div>
+                <div class="button-row">
+                    <button class="btn btn-primary" id="save-profile">💾 Save Profile</button>
+                    <span class="status-msg" id="profile-status"></span>
+                </div>
+            </div>
+
+            <!-- Dietary Preferences -->
+            <div class="card">
+                <h3>🥗 Dietary Preferences <code>inputs/dietary_preferences.md</code></h3>
+                <p>Detailed dietary notes, budget, and meal preferences in Markdown format.</p>
+                <div class="form-group">
+                    <label>Dietary Preferences (Markdown)</label>
+                    <textarea class="code-editor" id="dietary-editor" rows="12" placeholder="# Dietary Preferences
+
+## Restrictions
+- Vegetarian
+- Gluten-free
+
+## Preferences
+- Prefers warm foods
+- Likes spicy flavors
+- Budget: $50/week
+
+## Meal Frequency
+- 3 meals per day
+- Occasional snacks"></textarea>
+                </div>
+                <div class="button-row">
+                    <button class="btn btn-primary" id="save-dietary">💾 Save Dietary Preferences</button>
+                    <span class="status-msg" id="dietary-status"></span>
+                </div>
+            </div>
+
+            <!-- Astrological Context -->
+            <div class="card">
+                <h3>🪐 Astrological Context <code>inputs/astrological_context.md</code></h3>
+                <p>Current planetary transits, moon phase, and astrological timing for your meal plan period.</p>
+                <div class="form-group">
+                    <label>Astrological Context (Markdown)</label>
+                    <textarea class="code-editor" id="astro-context-editor" rows="12" placeholder="# Current Astrological Context
+
+## Week of: [Date Range]
+- Mercury in [Sign] ([theme])
+- Venus in [Sign] ([theme])
+- Mars in [Sign] ([theme])
+- Moon phases: [Current Phase]
+- Retrogrades: [None / List planets]
+
+## Key Themes This Week
+- [Theme 1]
+- [Theme 2]
+
+## Seasonal Alignment
+- Season: [Spring/Summer/Fall/Winter]
+- Solar position: [Sign]"></textarea>
+                </div>
+                <div class="button-row">
+                    <button class="btn btn-primary" id="save-astro-context">💾 Save Astrological Context</button>
+                    <span class="status-msg" id="astro-context-status"></span>
+                </div>
+            </div>
+
+            <!-- Meal Plan Request -->
+            <div class="card">
+                <h3>📋 Meal Plan Request <code>inputs/meal_plan_request.md</code></h3>
+                <p>Specify the duration, frequency, and any special requirements for your meal plan.</p>
+                <div class="form-group">
+                    <label>Meal Plan Request (Markdown)</label>
+                    <textarea class="code-editor" id="meal-request-editor" rows="12" placeholder="# Meal Plan Request
+
+## Duration: 7 days
+## Meals per day: 3
+## Special occasions: [e.g., Birthday dinner on day 3]
+## Focus: [e.g., Grounding, nourishing foods]
+
+## Additional Notes
+- [Any specific requests]
+- [Preferred meal times]
+- [Cooking skill level: beginner/intermediate/advanced]"></textarea>
+                </div>
+                <div class="button-row">
+                    <button class="btn btn-primary" id="save-meal-request">💾 Save Meal Plan Request</button>
+                    <span class="status-msg" id="meal-request-status"></span>
+                </div>
+            </div>
+
+            <div class="button-row" style="justify-content:center;margin-top:1rem;">
+                <button class="btn btn-accent" id="save-all-inputs">💾 Save All Inputs</button>
+                <button class="btn btn-secondary" id="go-to-pipeline">⚙️ Go to Pipeline →</button>
+            </div>
+        </div>
+
+        <!-- ==================== PIPELINE SECTION ==================== -->
+        <div id="section-pipeline" class="section">
+            <div class="section-header">
+                <h2>⚙️ Pipeline</h2>
+                <p>Execute the 8-stage AI pipeline to generate your personalized astrological meal plan.</p>
+            </div>
+
+            <div id="model-warning" class="warn-box" style="display:none;">
+                ⚠️ <strong>Models not selected.</strong> Please select Smart Model and Fast Model in the bar above before running the pipeline.
+            </div>
+
+            <!-- Pipeline Overview Diagram -->
+            <div class="card">
+                <h3>🗺️ Pipeline Overview</h3>
+                <div class="pipeline-diagram" id="pipeline-diagram">
+                    <div class="pipeline-stage">
+                        <div class="stage-icon">📋</div>
+                        <div class="stage-label">Inputs</div>
+                        <div class="stage-status">Ready</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-stage" data-stage="stage1">
+                        <div class="stage-icon">🔍</div>
+                        <div class="stage-label">Profile</div>
+                        <div class="stage-status" id="diag-stage1">pending</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-stage" data-stage="stage2">
+                        <div class="stage-icon">⭐</div>
+                        <div class="stage-label">Astro</div>
+                        <div class="stage-status" id="diag-stage2">pending</div>
+                    </div>
+                    <div class="pipeline-arrow">+</div>
+                    <div class="pipeline-stage" data-stage="stage3">
+                        <div class="stage-icon">🥦</div>
+                        <div class="stage-label">Nutrition</div>
+                        <div class="stage-status" id="diag-stage3">pending</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-stage" data-stage="stage4">
+                        <div class="stage-icon">🍽️</div>
+                        <div class="stage-label">Meal Plan</div>
+                        <div class="stage-status" id="diag-stage4">pending</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-stage" data-stage="stage5">
+                        <div class="stage-icon">👨‍🍳</div>
+                        <div class="stage-label">Recipes</div>
+                        <div class="stage-status" id="diag-stage5">pending</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-stage" data-stage="stage6">
+                        <div class="stage-icon">🛒</div>
+                        <div class="stage-label">Shopping</div>
+                        <div class="stage-status" id="diag-stage6">pending</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-stage" data-stage="stage7">
+                        <div class="stage-icon">✅</div>
+                        <div class="stage-label">Review</div>
+                        <div class="stage-status" id="diag-stage7">pending</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-stage" data-stage="stage8">
+                        <div class="stage-icon">📊</div>
+                        <div class="stage-label">Summary</div>
+                        <div class="stage-status" id="diag-stage8">pending</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch Execution -->
+            <div class="card">
+                <h3>🚀 Batch Execution</h3>
+                <p>Run the entire pipeline sequentially with one click. All stages will execute in order.</p>
+                <div class="button-row">
+                    <button class="btn btn-accent" id="run-all">▶ Run Entire Pipeline</button>
+                    <button class="btn btn-secondary" id="clear-log">🗑 Clear Log</button>
+                </div>
+                <div class="batch-log" id="batch-log"></div>
+            </div>
+
+            <!-- Stage 1: Profile Analysis -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <span class="step-title">Profile Analysis & Enrichment</span>
+                        <span class="step-badge pending" id="badge-stage1">pending</span>
+                    </div>
+                    <p class="step-desc">Parse and validate user astrological data. Enrich the profile with calculated elements, modalities, and symbolic associations.</p>
+                    <div class="step-io">
+                        <strong>Reads:</strong>
+                        <span>inputs/user_profile.json</span>
+                        <span>inputs/dietary_preferences.md</span>
+                        → <strong>Produces:</strong>
+                        <span>processing/processed_profile.json</span>
+                    </div>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/01_profile_analysis_op.md"
+                                data-output="processing/processed_profile.json"
+                                data-badge="badge-stage1"
+                                data-viewer="viewer-stage1"
+                                data-diag="diag-stage1">▶ Run Stage 1</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="processing/processed_profile.json"
+                                data-viewer="viewer-stage1">👁 View Output</button>
+                    </div>
+                    <div class="session-link-container" id="session-link-stage1"></div>
+                    <div class="viewer md-content" id="viewer-stage1"></div>
+                </div>
+            </div>
+
+            <!-- Stage 2: Astrological Interpretation -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <span class="step-title">Astrological Interpretation</span>
+                        <span class="step-badge pending" id="badge-stage2">pending</span>
+                    </div>
+                    <p class="step-desc">Multi-perspective birth chart analysis (Western, Vedic, Psychological). Generate food-element associations and meal timing recommendations.</p>
+                    <div class="step-io">
+                        <strong>Reads:</strong>
+                        <span>processing/processed_profile.json</span>
+                        <span>inputs/astrological_context.md</span>
+                        → <strong>Produces:</strong>
+                        <span>processing/astrological_insights.md</span>
+                    </div>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/02_astrological_interpretation_op.md"
+                                data-output="processing/astrological_insights.md"
+                                data-badge="badge-stage2"
+                                data-viewer="viewer-stage2"
+                                data-diag="diag-stage2">▶ Run Stage 2</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="processing/astrological_insights.md"
+                                data-viewer="viewer-stage2">👁 View Output</button>
+                    </div>
+                    <div class="session-link-container" id="session-link-stage2"></div>
+                    <div class="viewer md-content" id="viewer-stage2"></div>
+                </div>
+            </div>
+
+            <!-- Stage 3: Nutritional Planning -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <span class="step-title">Dietary & Nutritional Planning</span>
+                        <span class="step-badge pending" id="badge-stage3">pending</span>
+                    </div>
+                    <p class="step-desc">Create a nutritional framework based on health goals and restrictions. Calculate macro/micronutrient targets and elemental food mappings.</p>
+                    <div class="step-io">
+                        <strong>Reads:</strong>
+                        <span>inputs/dietary_preferences.md</span>
+                        <span>processing/processed_profile.json</span>
+                        → <strong>Produces:</strong>
+                        <span>processing/nutritional_framework.json</span>
+                    </div>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/03_nutritional_planning_op.md"
+                                data-output="processing/nutritional_framework.json"
+                                data-badge="badge-stage3"
+                                data-viewer="viewer-stage3"
+                                data-diag="diag-stage3">▶ Run Stage 3</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="processing/nutritional_framework.json"
+                                data-viewer="viewer-stage3">👁 View Output</button>
+                    </div>
+                    <div class="session-link-container" id="session-link-stage3"></div>
+                    <div class="viewer md-content" id="viewer-stage3"></div>
+                </div>
+            </div>
+
+            <!-- Stage 4: Meal Plan Generation -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">4</span>
+                        <span class="step-title">Meal Plan Generation</span>
+                        <span class="step-badge pending" id="badge-stage4">pending</span>
+                    </div>
+                    <p class="step-desc">Generate creative meal suggestions balancing astrological themes with nutritional requirements. Produce a structured 7-day meal plan draft.</p>
+                    <div class="step-io">
+                        <strong>Reads:</strong>
+                        <span>inputs/meal_plan_request.md</span>
+                        <span>processing/astrological_insights.md</span>
+                        <span>processing/nutritional_framework.json</span>
+                        → <strong>Produces:</strong>
+                        <span>processing/meal_plan_draft.md</span>
+                    </div>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/04_meal_plan_generation_op.md"
+                                data-output="processing/meal_plan_draft.md"
+                                data-badge="badge-stage4"
+                                data-viewer="viewer-stage4"
+                                data-diag="diag-stage4">▶ Run Stage 4</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="processing/meal_plan_draft.md"
+                                data-viewer="viewer-stage4">👁 View Output</button>
+                    </div>
+                    <div class="session-link-container" id="session-link-stage4"></div>
+                    <div class="viewer md-content" id="viewer-stage4"></div>
+                </div>
+            </div>
+
+            <!-- Stage 5: Recipe Development -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">5</span>
+                        <span class="step-title">Recipe Development</span>
+                        <span class="step-badge pending" id="badge-stage5">pending</span>
+                    </div>
+                    <p class="step-desc">Expand each meal into full recipes with ingredients, instructions, nutritional info, and astrological symbolism notes.</p>
+                    <div class="step-io">
+                        <strong>Reads:</strong>
+                        <span>processing/meal_plan_draft.md</span>
+                        <span>processing/processed_profile.json</span>
+                        <span>inputs/dietary_preferences.md</span>
+                        → <strong>Produces:</strong>
+                        <span>processing/recipes_detailed.md</span>
+                    </div>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/05_recipe_development_op.md"
+                                data-output="processing/recipes_detailed.md"
+                                data-badge="badge-stage5"
+                                data-viewer="viewer-stage5"
+                                data-diag="diag-stage5">▶ Run Stage 5</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="processing/recipes_detailed.md"
+                                data-viewer="viewer-stage5">👁 View Output</button>
+                    </div>
+                    <div class="session-link-container" id="session-link-stage5"></div>
+                    <div class="viewer md-content" id="viewer-stage5"></div>
+                </div>
+            </div>
+
+            <!-- Stage 6: Shopping & Logistics -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">6</span>
+                        <span class="step-title">Shopping List & Logistics</span>
+                        <span class="step-badge pending" id="badge-stage6">pending</span>
+                    </div>
+                    <p class="step-desc">Consolidate ingredients into an organized shopping list and create a meal prep timeline with astrological timing recommendations.</p>
+                    <div class="step-io">
+                        <strong>Reads:</strong>
+                        <span>processing/recipes_detailed.md</span>
+                        <span>inputs/dietary_preferences.md</span>
+                        → <strong>Produces:</strong>
+                        <span>outputs/shopping_list.md</span>
+                        <span>outputs/meal_prep_schedule.json</span>
+                    </div>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/06_shopping_logistics_op.md"
+                                data-output="outputs/shopping_list.md"
+                                data-badge="badge-stage6"
+                                data-viewer="viewer-stage6"
+                                data-diag="diag-stage6">▶ Run Stage 6</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="outputs/shopping_list.md"
+                                data-viewer="viewer-stage6">👁 View Shopping List</button>
+                    </div>
+                    <div class="session-link-container" id="session-link-stage6"></div>
+                    <div class="viewer md-content" id="viewer-stage6"></div>
+                </div>
+            </div>
+
+            <!-- Stage 7: Final Review -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">7</span>
+                        <span class="step-title">Final Review & Optimization</span>
+                        <span class="step-badge pending" id="badge-stage7">pending</span>
+                    </div>
+                    <p class="step-desc">Validate the complete meal plan for nutritional adequacy, dietary compliance, and astrological coherence. Generate polished final outputs.</p>
+                    <div class="step-io">
+                        <strong>Reads:</strong>
+                        <span>processing/meal_plan_draft.md</span>
+                        <span>processing/recipes_detailed.md</span>
+                        <span>outputs/shopping_list.md</span>
+                        <span>processing/astrological_insights.md</span>
+                        → <strong>Produces:</strong>
+                        <span>outputs/final_meal_plan.md</span>
+                        <span>outputs/meal_plan_summary.json</span>
+                    </div>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/07_final_review_op.md"
+                                data-output="outputs/final_meal_plan.md"
+                                data-badge="badge-stage7"
+                                data-viewer="viewer-stage7"
+                                data-diag="diag-stage7">▶ Run Stage 7</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="outputs/final_meal_plan.md"
+                                data-viewer="viewer-stage7">👁 View Final Plan</button>
+                    </div>
+                    <div class="session-link-container" id="session-link-stage7"></div>
+                    <div class="viewer md-content" id="viewer-stage7"></div>
+                </div>
+            </div>
+
+            <!-- Stage 8: Summary Generation -->
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">8</span>
+                        <span class="step-title">Summary Generation</span>
+                        <span class="step-badge pending" id="badge-stage8">pending</span>
+                    </div>
+                    <p class="step-desc">Extract and structure key data from the final meal plan into a machine-readable JSON summary with statistics and quality metrics.</p>
+                    <div class="step-io">
+                        <strong>Reads:</strong>
+                        <span>outputs/final_meal_plan.md</span>
+                        <span>outputs/shopping_list.md</span>
+                        <span>outputs/meal_prep_schedule.json</span>
+                        → <strong>Produces:</strong>
+                        <span>outputs/meal_plan_summary.json</span>
+                    </div>
+                    <div class="button-row">
+                        <button class="btn btn-primary btn-run"
+                                data-op="ops/08_summary_generation_op.md"
+                                data-output="outputs/meal_plan_summary.json"
+                                data-badge="badge-stage8"
+                                data-viewer="viewer-stage8"
+                                data-diag="diag-stage8">▶ Run Stage 8</button>
+                        <button class="btn btn-secondary btn-view"
+                                data-file="outputs/meal_plan_summary.json"
+                                data-viewer="viewer-stage8">👁 View Summary</button>
+                    </div>
+                    <div class="session-link-container" id="session-link-stage8"></div>
+                    <div class="viewer md-content" id="viewer-stage8"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== RESULTS SECTION ==================== -->
+        <div id="section-results" class="section">
+            <div class="section-header">
+                <h2>📊 Results</h2>
+                <p>View and explore all generated outputs from the pipeline.</p>
+            </div>
+
+            <div class="results-tabs">
+                <button class="results-tab active" data-tab="tab-final-plan">🍽️ Final Meal Plan</button>
+                <button class="results-tab" data-tab="tab-recipes">👨‍🍳 Recipes</button>
+                <button class="results-tab" data-tab="tab-shopping">🛒 Shopping List</button>
+                <button class="results-tab" data-tab="tab-astro">⭐ Astrological Insights</button>
+                <button class="results-tab" data-tab="tab-summary">📊 Summary</button>
+                <button class="results-tab" data-tab="tab-prep">📅 Prep Schedule</button>
+            </div>
+
+            <!-- Final Meal Plan -->
+            <div class="tab-panel active" id="tab-final-plan">
+                <div class="card">
+                    <div class="button-row" style="margin-bottom:1rem;">
+                        <button class="btn btn-secondary result-refresh" data-file="outputs/final_meal_plan.md" data-viewer="result-final-plan">🔄 Refresh</button>
+                        <span style="color:var(--text-muted);font-size:0.8rem;">outputs/final_meal_plan.md</span>
+                    </div>
+                    <div class="result-viewer md-content" id="result-final-plan">
+                        <p class="placeholder">Run the pipeline to generate your personalized meal plan. Start with Stage 1 in the Pipeline tab.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recipes -->
+            <div class="tab-panel" id="tab-recipes">
+                <div class="card">
+                    <div class="button-row" style="margin-bottom:1rem;">
+                        <button class="btn btn-secondary result-refresh" data-file="processing/recipes_detailed.md" data-viewer="result-recipes">🔄 Refresh</button>
+                        <span style="color:var(--text-muted);font-size:0.8rem;">processing/recipes_detailed.md</span>
+                    </div>
+                    <div class="result-viewer md-content" id="result-recipes">
+                        <p class="placeholder">Recipes will appear here after Stage 5 completes.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shopping List -->
+            <div class="tab-panel" id="tab-shopping">
+                <div class="card">
+                    <div class="button-row" style="margin-bottom:1rem;">
+                        <button class="btn btn-secondary result-refresh" data-file="outputs/shopping_list.md" data-viewer="result-shopping">🔄 Refresh</button>
+                        <button class="btn btn-secondary" id="print-shopping">🖨️ Print</button>
+                        <span style="color:var(--text-muted);font-size:0.8rem;">outputs/shopping_list.md</span>
+                    </div>
+                    <div class="result-viewer md-content" id="result-shopping">
+                        <p class="placeholder">Shopping list will appear here after Stage 6 completes.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Astrological Insights -->
+            <div class="tab-panel" id="tab-astro">
+                <div class="card">
+                    <div class="button-row" style="margin-bottom:1rem;">
+                        <button class="btn btn-secondary result-refresh" data-file="processing/astrological_insights.md" data-viewer="result-astro">🔄 Refresh</button>
+                        <span style="color:var(--text-muted);font-size:0.8rem;">processing/astrological_insights.md</span>
+                    </div>
+                    <div class="result-viewer md-content" id="result-astro">
+                        <p class="placeholder">Astrological insights will appear here after Stage 2 completes.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary JSON -->
+            <div class="tab-panel" id="tab-summary">
+                <div class="card">
+                    <div class="button-row" style="margin-bottom:1rem;">
+                        <button class="btn btn-secondary result-refresh" data-file="outputs/meal_plan_summary.json" data-viewer="result-summary">🔄 Refresh</button>
+                        <span style="color:var(--text-muted);font-size:0.8rem;">outputs/meal_plan_summary.json</span>
+                    </div>
+                    <div class="result-viewer" id="result-summary">
+                        <p class="placeholder">Summary statistics will appear here after Stage 8 completes.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prep Schedule -->
+            <div class="tab-panel" id="tab-prep">
+                <div class="card">
+                    <div class="button-row" style="margin-bottom:1rem;">
+                        <button class="btn btn-secondary result-refresh" data-file="outputs/meal_prep_schedule.json" data-viewer="result-prep">🔄 Refresh</button>
+                        <span style="color:var(--text-muted);font-size:0.8rem;">outputs/meal_prep_schedule.json</span>
+                    </div>
+                    <div class="result-viewer" id="result-prep">
+                        <p class="placeholder">Meal prep schedule will appear here after Stage 6 completes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ===== Loading Overlay ===== -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loading-text">Processing…</div>
+</div>
+
+<!-- ===== Toast Container ===== -->
+<div id="toast-container"></div>
+
+<!-- ===== marked.js from CDN ===== -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+(function () {
+    'use strict';
+
+    // =========================================================
+    // URL PARSING & SESSION SETUP
+    // =========================================================
+    const pathParts = window.location.pathname.split('/');
+    const fileIndexIdx = pathParts.indexOf('fileIndex');
+    let basePath = '';
+    let sessionId = '';
+
+    if (fileIndexIdx >= 0 && fileIndexIdx + 1 < pathParts.length) {
+        sessionId = pathParts[fileIndexIdx + 1];
+        basePath = pathParts.slice(0, fileIndexIdx + 2).join('/');
+    } else {
+        console.warn('Could not determine session from URL path.');
+        basePath = window.location.pathname.replace(/\/[^/]*$/, '');
+    }
+    let rawBase = basePath;
+    //basePath = basePath + '/generated_app';
+
+    const proxyBase = '/proxy/';
+    function getProxyUrl(id) { return proxyBase + '#' + id; }
+
+    // Display session ID
+    const sessionDisplay = document.getElementById('session-display');
+    if (sessionDisplay && sessionId) {
+        sessionDisplay.textContent = '📁 Session: ' + sessionId;
+    }
+
+    // =========================================================
+    // MODEL MANAGEMENT
+    // =========================================================
+    let availableModels = {};
+
+    async function loadApiProviders() {
+        try {
+            const response = await fetch('/apiProviders/?format=json');
+            if (response.status >= 400) {
+                console.warn('Could not load API providers (status ' + response.status + ')');
+                return;
+            }
+            const providersResponse = await response.json();
+            const providers = providersResponse.configuredProviders || [];
+
+            availableModels = {};
+            providers.forEach(function (provider) {
+                if (provider.models && provider.models.length > 0) {
+                    availableModels[provider.name] = provider.models.map(function (model) {
+                        return {
+                            id: model.name,
+                            name: model.name,
+                            description: model.maxTokens ? 'Max tokens: ' + model.maxTokens : 'No token limit specified'
+                        };
+                    });
+                }
+            });
+
+            populateModelDropdowns();
+        } catch (e) {
+            console.warn('Failed to load API providers:', e);
+        }
+    }
+
+    function populateModelDropdowns() {
+        const smartSelect = document.getElementById('smart-model-select');
+        const fastSelect = document.getElementById('fast-model-select');
+
+        smartSelect.innerHTML = '<option value="">— Select Smart Model —</option>';
+        fastSelect.innerHTML = '<option value="">— Select Fast Model —</option>';
+
+        const addedModels = new Set();
+
+        // Try to use configured API keys from appState if available, otherwise show all
+        const apiKeys = (window.appState && window.appState.apiSettings && window.appState.apiSettings.apiKeys)
+            ? window.appState.apiSettings.apiKeys
+            : null;
+
+        for (const [provider, models] of Object.entries(availableModels)) {
+            // If we have API key info, filter; otherwise show all
+            const hasKey = !apiKeys || (apiKeys[provider] && apiKeys[provider].length > 0);
+            if (!hasKey) continue;
+
+            models.forEach(function (model) {
+                if (!addedModels.has(model.id)) {
+                    const optSmart = document.createElement('option');
+                    optSmart.value = model.id;
+                    optSmart.textContent = model.name + ' (' + provider + ')';
+                    smartSelect.appendChild(optSmart);
+
+                    const optFast = document.createElement('option');
+                    optFast.value = model.id;
+                    optFast.textContent = model.name + ' (' + provider + ')';
+                    fastSelect.appendChild(optFast);
+
+                    addedModels.add(model.id);
+                }
+            });
+        }
+
+        // Restore saved selections
+        const savedSmart = localStorage.getItem('smartModel');
+        const savedFast = localStorage.getItem('fastModel');
+
+        if (savedSmart && Array.from(smartSelect.options).some(function (o) { return o.value === savedSmart; })) {
+            smartSelect.value = savedSmart;
+        }
+        if (savedFast && Array.from(fastSelect.options).some(function (o) { return o.value === savedFast; })) {
+            fastSelect.value = savedFast;
+        }
+
+        updateModelStatus();
+    }
+
+    function updateModelStatus() {
+        const smartModel = document.getElementById('smart-model-select').value;
+        const fastModel = document.getElementById('fast-model-select').value;
+        const statusEl = document.getElementById('model-status');
+        const warnEl = document.getElementById('model-warning');
+
+        if (smartModel && fastModel) {
+            statusEl.textContent = '✓ Models ready';
+            statusEl.className = 'model-status ok';
+            if (warnEl) warnEl.style.display = 'none';
+        } else {
+            statusEl.textContent = '⚠ Select models to enable pipeline';
+            statusEl.className = 'model-status warn';
+            if (warnEl) warnEl.style.display = 'block';
+        }
+    }
+
+    function getSmartModel() { return document.getElementById('smart-model-select').value; }
+    function getFastModel() { return document.getElementById('fast-model-select').value; }
+
+    function validateModels() {
+        const smart = getSmartModel();
+        const fast = getFastModel();
+        if (!smart || !fast) {
+            showToast('Please select Smart Model and Fast Model before running the pipeline.', 'error');
+            // Switch to show the model bar
+            document.getElementById('model-warning').style.display = 'block';
+            return false;
+        }
+        return true;
+    }
+
+    // Save model selections
+    document.getElementById('smart-model-select').addEventListener('change', function () {
+        if (this.value) localStorage.setItem('smartModel', this.value);
+        updateModelStatus();
+    });
+    document.getElementById('fast-model-select').addEventListener('change', function () {
+        if (this.value) localStorage.setItem('fastModel', this.value);
+        updateModelStatus();
+    });
+
+    // =========================================================
+    // FILE I/O
+    // =========================================================
+    async function readFile(filePath) {
+        const resp = await fetch(basePath + '/' + filePath);
+        if (!resp.ok) {
+            if (resp.status === 404) return null;
+            throw new Error('Failed to read ' + filePath + ': ' + resp.status);
+        }
+        return await resp.text();
+    }
+
+    async function writeFile(filePath, content) {
+        const resp = await fetch(basePath + '/' + filePath, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+            body: content
+        });
+        if (!resp.ok) throw new Error('Failed to write ' + filePath + ': ' + resp.status);
+        return true;
+    }
+
+    async function fileExists(filePath) {
+        const resp = await fetch(basePath + '/' + filePath, { method: 'HEAD' });
+        return resp.ok;
+    }
+
+    // =========================================================
+    // DOCOPS EXECUTION
+    // =========================================================
+    async function runDocOp(opPath, targetPath) {
+        const smartModel = getSmartModel();
+        const fastModel = getFastModel();
+
+        const params = new URLSearchParams({
+            sessionId: sessionId,
+            doc: "generated_app/" + opPath,
+            target: "generated_app/" + targetPath,
+            smartModel: smartModel,
+            fastModel: fastModel
+        });
+
+        const imageModel = localStorage.getItem('imageModel');
+        if (imageModel) params.set('imageModel', imageModel);
+
+        const resp = await fetch('/docops?' + params.toString(), { method: 'POST' });
+        if (!resp.ok) {
+            const errText = await resp.text().catch(function () { return ''; });
+            throw new Error('DocOps failed: ' + resp.status + '\n' + errText);
+        }
+        return await resp.text();
+    }
+
+    // =========================================================
+    // STATUS POLLING
+    // =========================================================
+    async function fetchDocopsStatus() {
+        try {
+            const resp = await fetch(rawBase + '/docops.status.json');
+            if (!resp.ok) return null;
+            return await resp.json();
+        } catch (e) { return null; }
+    }
+
+    async function waitForTask(targetPath, maxWaitMs) {
+        const maxWait = maxWaitMs || 600000;
+        const pollInterval = 2000;
+        const startTime = Date.now();
+
+        while (Date.now() - startTime < maxWait) {
+            const statusData = await fetchDocopsStatus();
+            if (statusData && statusData.tasks) {
+                const task = getTaskStatus(statusData, targetPath);
+                if (task) {
+                    if (task.status === 'COMPLETED') return task;
+                    if (task.status === 'ERROR' || task.status === 'FAILED') {
+                        throw new Error('Task ' + targetPath + ' failed');
+                    }
+                }
+            }
+            await sleep(pollInterval);
+        }
+        throw new Error('Task ' + targetPath + ' timed out after ' + (maxWait / 60000) + ' minutes');
+    }
+
+    function getTaskStatus(statusData, targetPath) {
+        if (!statusData || !statusData.tasks) return null;
+        if (statusData.tasks[targetPath]) return statusData.tasks[targetPath];
+        const filename = targetPath.split('/').pop();
+        if (statusData.tasks[filename]) return statusData.tasks[filename];
+        for (const [key, task] of Object.entries(statusData.tasks)) {
+            if (task.target === targetPath || task.target === filename) return task;
+        }
+        return null;
+    }
+
+    let statusPollTimer = null;
+
+    function startStatusPolling() {
+        if (statusPollTimer) return;
+        statusPollTimer = setInterval(pollStatus, 3000);
+        pollStatus();
+    }
+
+    function stopStatusPolling() {
+        if (statusPollTimer) {
+            clearInterval(statusPollTimer);
+            statusPollTimer = null;
+        }
+    }
+
+    // Map output files to badge/diag IDs
+    const outputToBadge = {
+        'processing/processed_profile.json': { badge: 'badge-stage1', diag: 'diag-stage1', link: 'session-link-stage1' },
+        'processing/astrological_insights.md': { badge: 'badge-stage2', diag: 'diag-stage2', link: 'session-link-stage2' },
+        'processing/nutritional_framework.json': { badge: 'badge-stage3', diag: 'diag-stage3', link: 'session-link-stage3' },
+        'processing/meal_plan_draft.md': { badge: 'badge-stage4', diag: 'diag-stage4', link: 'session-link-stage4' },
+        'processing/recipes_detailed.md': { badge: 'badge-stage5', diag: 'diag-stage5', link: 'session-link-stage5' },
+        'outputs/shopping_list.md': { badge: 'badge-stage6', diag: 'diag-stage6', link: 'session-link-stage6' },
+        'outputs/final_meal_plan.md': { badge: 'badge-stage7', diag: 'diag-stage7', link: 'session-link-stage7' },
+        'outputs/meal_plan_summary.json': { badge: 'badge-stage8', diag: 'diag-stage8', link: 'session-link-stage8' }
+    };
+
+    async function pollStatus() {
+        const statusData = await fetchDocopsStatus();
+        if (!statusData || !statusData.tasks) return;
+
+        for (const [target, taskInfo] of Object.entries(statusData.tasks)) {
+            // Find matching badge
+            for (const [outputPath, ids] of Object.entries(outputToBadge)) {
+                const filename = outputPath.split('/').pop();
+                if (target === outputPath || target === filename || target.endsWith('/' + filename)) {
+                    if (taskInfo.status === 'RUNNING') {
+                        setBadge(ids.badge, 'running');
+                        setDiagStatus(ids.diag, 'running');
+                    } else if (taskInfo.status === 'COMPLETED') {
+                        setBadge(ids.badge, 'done');
+                        setDiagStatus(ids.diag, 'done');
+                    } else if (taskInfo.status === 'ERROR' || taskInfo.status === 'FAILED') {
+                        setBadge(ids.badge, 'error');
+                        setDiagStatus(ids.diag, 'error');
+                    }
+                    updateSessionLink(ids.link, taskInfo);
+                }
+            }
+        }
+    }
+
+    // =========================================================
+    // UI HELPERS
+    // =========================================================
+    function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+    function renderMarkdown(md) {
+        if (typeof marked !== 'undefined') {
+            try {
+                return typeof marked.parse === 'function' ? marked.parse(md) : marked(md);
+            } catch (e) { /* fall through */ }
+        }
+        return '<pre>' + escapeHtml(md) + '</pre>';
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function setStatus(elemId, message, type) {
+        const el = document.getElementById(elemId);
+        if (!el) return;
+        el.textContent = message;
+        el.className = 'status-msg' + (type ? ' ' + type : '');
+        if (type === 'success' || type === 'error') {
+            setTimeout(function () { el.textContent = ''; el.className = 'status-msg'; }, 5000);
+        }
+    }
+
+    function setBadge(badgeId, state) {
+        const el = document.getElementById(badgeId);
+        if (!el) return;
+        el.className = 'step-badge ' + state;
+        const labels = { pending: 'pending', running: 'running…', done: 'done', error: 'error' };
+        el.textContent = labels[state] || state;
+    }
+
+    function setDiagStatus(diagId, state) {
+        const el = document.getElementById(diagId);
+        if (!el) return;
+        const labels = { pending: 'pending', running: '⟳ running', done: '✓ done', error: '✗ error' };
+        el.textContent = labels[state] || state;
+        el.style.color = state === 'done' ? 'var(--success)' : state === 'error' ? 'var(--error)' : state === 'running' ? 'var(--info)' : 'var(--text-muted)';
+    }
+
+    function showToast(message, type) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + (type || 'info');
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(function () {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s';
+            setTimeout(function () { container.removeChild(toast); }, 300);
+        }, 4000);
+    }
+
+    function showLoading(text) {
+        document.getElementById('loading-text').textContent = text || 'Processing…';
+        document.getElementById('loading-overlay').classList.add('visible');
+    }
+
+    function hideLoading() {
+        document.getElementById('loading-overlay').classList.remove('visible');
+    }
+
+    // =========================================================
+    // SESSION MONITORING LINKS
+    // =========================================================
+    function updateSessionLink(containerId, taskInfo) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const status = taskInfo.status;
+        const taskSessionId = taskInfo.sessionId;
+
+        if (status === 'RUNNING' && taskSessionId) {
+            const proxyUrl = getProxyUrl(taskSessionId);
+            container.innerHTML =
+                '<div class="session-monitor-link">' +
+                '<span class="monitor-pulse">●</span>' +
+                '<span>Processing… </span>' +
+                '<a href="' + escapeHtml(proxyUrl) + '" target="_blank" rel="noopener" class="monitor-link">' +
+                '📡 Monitor Live Session (' + escapeHtml(taskSessionId) + ')' +
+                '</a></div>';
+        } else if (status === 'COMPLETED' && taskSessionId) {
+            const proxyUrl = getProxyUrl(taskSessionId);
+            container.innerHTML =
+                '<div class="session-completed-link">' +
+                '<span>✅ Completed — </span>' +
+                '<a href="' + escapeHtml(proxyUrl) + '" target="_blank" rel="noopener" class="monitor-link">' +
+                '📋 View Session Log (' + escapeHtml(taskSessionId) + ')' +
+                '</a></div>';
+        } else if ((status === 'ERROR' || status === 'FAILED') && taskSessionId) {
+            const proxyUrl = getProxyUrl(taskSessionId);
+            container.innerHTML =
+                '<div class="session-error-link">' +
+                '<span>❌ Failed — </span>' +
+                '<a href="' + escapeHtml(proxyUrl) + '" target="_blank" class="monitor-link">' +
+                '🔍 View Error Log (' + escapeHtml(taskSessionId) + ')' +
+                '</a></div>';
+        } else {
+            container.innerHTML = '';
+        }
+    }
+
+    // =========================================================
+    // BATCH LOG
+    // =========================================================
+    const batchLog = document.getElementById('batch-log');
+
+    function logBatch(message, type) {
+        batchLog.classList.add('visible');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry log-' + (type || 'info');
+        const ts = new Date().toLocaleTimeString();
+        entry.textContent = '[' + ts + '] ' + message;
+        batchLog.appendChild(entry);
+        batchLog.scrollTop = batchLog.scrollHeight;
+    }
+
+    function logBatchHtml(html, type) {
+        batchLog.classList.add('visible');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry log-' + (type || 'info');
+        const ts = new Date().toLocaleTimeString();
+        entry.innerHTML = '[' + ts + '] ' + html;
+        batchLog.appendChild(entry);
+        batchLog.scrollTop = batchLog.scrollHeight;
+    }
+
+    document.getElementById('clear-log').addEventListener('click', function () {
+        batchLog.innerHTML = '';
+        batchLog.classList.remove('visible');
+    });
+
+    // =========================================================
+    // NAVIGATION
+    // =========================================================
+    document.querySelectorAll('.nav-link').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            const sectionId = this.dataset.section;
+            document.querySelectorAll('.nav-link').forEach(function (l) { l.classList.remove('active'); });
+            document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('active'); });
+            this.classList.add('active');
+            const section = document.getElementById(sectionId);
+            if (section) section.classList.add('active');
+        });
+    });
+
+    document.getElementById('go-to-pipeline').addEventListener('click', function () {
+        document.querySelectorAll('.nav-link').forEach(function (l) { l.classList.remove('active'); });
+        document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('active'); });
+        document.querySelector('[data-section="section-pipeline"]').classList.add('active');
+        document.getElementById('section-pipeline').classList.add('active');
+    });
+
+    // Results tabs
+    document.querySelectorAll('.results-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            document.querySelectorAll('.results-tab').forEach(function (t) { t.classList.remove('active'); });
+            document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
+            this.classList.add('active');
+            const panel = document.getElementById(this.dataset.tab);
+            if (panel) panel.classList.add('active');
+        });
+    });
+
+    // =========================================================
+    // INPUT SAVING
+    // =========================================================
+
+    // Build user_profile.json from form fields
+    function buildUserProfileJson() {
+        const name = document.getElementById('profile-name').value.trim();
+        const birthDate = document.getElementById('profile-birth-date').value;
+        const birthTime = document.getElementById('profile-birth-time').value;
+        const birthLocation = document.getElementById('profile-birth-location').value.trim();
+        const sunSign = document.getElementById('profile-sun-sign').value;
+        const moonSign = document.getElementById('profile-moon-sign').value;
+        const risingSign = document.getElementById('profile-rising-sign').value;
+
+        const restrictionsRaw = document.getElementById('profile-restrictions').value;
+        const allergiesRaw = document.getElementById('profile-allergies').value;
+        const goalsRaw = document.getElementById('profile-goals').value;
+        const cuisinesRaw = document.getElementById('profile-cuisines').value;
+
+        function splitCsv(s) {
+            return s.split(',').map(function (x) { return x.trim(); }).filter(function (x) { return x.length > 0; });
+        }
+
+        const profile = {
+            name: name || 'User',
+            birth_date: birthDate || '',
+            birth_time: birthTime || '',
+            birth_location: birthLocation || '',
+            sun_sign: sunSign || '',
+            moon_sign: moonSign || '',
+            rising_sign: risingSign || '',
+            dietary_restrictions: splitCsv(restrictionsRaw),
+            allergies: splitCsv(allergiesRaw),
+            health_goals: splitCsv(goalsRaw),
+            cuisine_preferences: splitCsv(cuisinesRaw)
+        };
+
+        return JSON.stringify(profile, null, 2);
+    }
+
+    function loadUserProfileFromJson(json) {
+        try {
+            const p = JSON.parse(json);
+            if (p.name) document.getElementById('profile-name').value = p.name;
+            if (p.birth_date) document.getElementById('profile-birth-date').value = p.birth_date;
+            if (p.birth_time) document.getElementById('profile-birth-time').value = p.birth_time;
+            if (p.birth_location) document.getElementById('profile-birth-location').value = p.birth_location;
+            if (p.sun_sign) document.getElementById('profile-sun-sign').value = p.sun_sign;
+            if (p.moon_sign) document.getElementById('profile-moon-sign').value = p.moon_sign;
+            if (p.rising_sign) document.getElementById('profile-rising-sign').value = p.rising_sign;
+            if (p.dietary_restrictions) document.getElementById('profile-restrictions').value = p.dietary_restrictions.join(', ');
+            if (p.allergies) document.getElementById('profile-allergies').value = p.allergies.join(', ');
+            if (p.health_goals) document.getElementById('profile-goals').value = p.health_goals.join(', ');
+            if (p.cuisine_preferences) document.getElementById('profile-cuisines').value = p.cuisine_preferences.join(', ');
+        } catch (e) {
+            console.warn('Could not parse user_profile.json:', e);
+        }
+    }
+
+    document.getElementById('save-profile').addEventListener('click', async function () {
+        try {
+            this.disabled = true;
+            const json = buildUserProfileJson();
+            await writeFile('inputs/user_profile.json', json);
+            setStatus('profile-status', '✓ Saved', 'success');
+            showToast('User profile saved!', 'success');
+        } catch (e) {
+            setStatus('profile-status', '✗ ' + e.message, 'error');
+            showToast('Failed to save profile: ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+
+    document.getElementById('save-dietary').addEventListener('click', async function () {
+        try {
+            this.disabled = true;
+            const content = document.getElementById('dietary-editor').value;
+            await writeFile('inputs/dietary_preferences.md', content);
+            setStatus('dietary-status', '✓ Saved', 'success');
+            showToast('Dietary preferences saved!', 'success');
+        } catch (e) {
+            setStatus('dietary-status', '✗ ' + e.message, 'error');
+            showToast('Failed to save dietary preferences: ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+
+    document.getElementById('save-astro-context').addEventListener('click', async function () {
+        try {
+            this.disabled = true;
+            const content = document.getElementById('astro-context-editor').value;
+            await writeFile('inputs/astrological_context.md', content);
+            setStatus('astro-context-status', '✓ Saved', 'success');
+            showToast('Astrological context saved!', 'success');
+        } catch (e) {
+            setStatus('astro-context-status', '✗ ' + e.message, 'error');
+            showToast('Failed to save astrological context: ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+
+    document.getElementById('save-meal-request').addEventListener('click', async function () {
+        try {
+            this.disabled = true;
+            const content = document.getElementById('meal-request-editor').value;
+            await writeFile('inputs/meal_plan_request.md', content);
+            setStatus('meal-request-status', '✓ Saved', 'success');
+            showToast('Meal plan request saved!', 'success');
+        } catch (e) {
+            setStatus('meal-request-status', '✗ ' + e.message, 'error');
+            showToast('Failed to save meal plan request: ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+
+    document.getElementById('save-all-inputs').addEventListener('click', async function () {
+        this.disabled = true;
+        showLoading('Saving all inputs…');
+        let errors = 0;
+        try {
+            await writeFile('inputs/user_profile.json', buildUserProfileJson());
+        } catch (e) { errors++; console.error('Profile save failed:', e); }
+        try {
+            await writeFile('inputs/dietary_preferences.md', document.getElementById('dietary-editor').value);
+        } catch (e) { errors++; console.error('Dietary save failed:', e); }
+        try {
+            await writeFile('inputs/astrological_context.md', document.getElementById('astro-context-editor').value);
+        } catch (e) { errors++; console.error('Astro context save failed:', e); }
+        try {
+            await writeFile('inputs/meal_plan_request.md', document.getElementById('meal-request-editor').value);
+        } catch (e) { errors++; console.error('Meal request save failed:', e); }
+
+        hideLoading();
+        this.disabled = false;
+
+        if (errors === 0) {
+            showToast('All inputs saved successfully!', 'success');
+        } else {
+            showToast(errors + ' file(s) failed to save. Check console for details.', 'error');
+        }
+    });
+
+    // =========================================================
+    // VIEW FILE BUTTONS
+    // =========================================================
+    async function viewFile(filePath, viewerId) {
+        const viewer = document.getElementById(viewerId);
+        if (!viewer) return;
+
+        if (viewer.classList.contains('visible')) {
+            viewer.classList.remove('visible');
+            return;
+        }
+
+        try {
+            const content = await readFile(filePath);
+            if (content === null) {
+                viewer.innerHTML = '<p class="placeholder">File not found. Run the operation first.</p>';
+            } else if (filePath.endsWith('.json')) {
+                viewer.innerHTML = '<pre style="white-space:pre-wrap;word-break:break-all;">' + escapeHtml(content) + '</pre>';
+            } else {
+                viewer.innerHTML = renderMarkdown(content);
+            }
+            viewer.classList.add('visible');
+        } catch (e) {
+            viewer.innerHTML = '<p class="placeholder" style="color:var(--error);">Error: ' + escapeHtml(e.message) + '</p>';
+            viewer.classList.add('visible');
+        }
+    }
+
+    document.querySelectorAll('.btn-view').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            viewFile(this.dataset.file, this.dataset.viewer);
+        });
+    });
+
+    // Result refresh buttons
+    document.querySelectorAll('.result-refresh').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+            const viewer = document.getElementById(this.dataset.viewer);
+            if (!viewer) return;
+            try {
+                const content = await readFile(this.dataset.file);
+                if (content === null) {
+                    viewer.innerHTML = '<p class="placeholder">File not found. Run the pipeline first.</p>';
+                } else if (this.dataset.file.endsWith('.json')) {
+                    viewer.innerHTML = '<pre style="white-space:pre-wrap;word-break:break-all;">' + escapeHtml(content) + '</pre>';
+                } else {
+                    viewer.innerHTML = renderMarkdown(content);
+                }
+            } catch (e) {
+                viewer.innerHTML = '<p class="placeholder" style="color:var(--error);">Error: ' + escapeHtml(e.message) + '</p>';
+            }
+        });
+    });
+
+    // Print shopping list
+    document.getElementById('print-shopping').addEventListener('click', async function () {
+        try {
+            const content = await readFile('outputs/shopping_list.md');
+            if (!content) { showToast('Shopping list not generated yet.', 'error'); return; }
+            const win = window.open('', '_blank');
+            win.document.write('<html><head><title>Shopping List</title><style>body{font-family:sans-serif;padding:2rem;max-width:800px;margin:0 auto;}h1,h2,h3{color:#333;}ul{list-style:none;padding:0;}li{padding:0.25rem 0;border-bottom:1px solid #eee;}li::before{content:"☐ ";}</style></head><body>');
+            win.document.write('<div>' + renderMarkdown(content) + '</div>');
+            win.document.write('</body></html>');
+            win.document.close();
+            win.print();
+        } catch (e) {
+            showToast('Failed to print: ' + e.message, 'error');
+        }
+    });
+
+    // =========================================================
+    // RUN OPERATION BUTTONS
+    // =========================================================
+    document.querySelectorAll('.btn-run').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+            if (!validateModels()) return;
+
+            const opPath = this.dataset.op;
+            const badgeId = this.dataset.badge;
+            const outputPath = this.dataset.output;
+            const viewerId = this.dataset.viewer;
+            const diagId = this.dataset.diag;
+
+            setBadge(badgeId, 'running');
+            setDiagStatus(diagId, 'running');
+            this.disabled = true;
+            startStatusPolling();
+
+            // Auto-save inputs before running
+            try {
+                await autoSaveInputs();
+            } catch (e) {
+                console.warn('Auto-save failed:', e);
+            }
+
+            try {
+                const taskId = await runDocOp(opPath, outputPath);
+                const cleanTaskId = taskId ? taskId.trim() : '';
+
+                // Find the session link container for this stage
+                const stageInfo = outputToBadge[outputPath];
+                if (stageInfo && cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                    updateSessionLink(stageInfo.link, { status: 'RUNNING', sessionId: cleanTaskId });
+                }
+
+                await waitForTask(outputPath);
+                setBadge(badgeId, 'done');
+                setDiagStatus(diagId, 'done');
+
+                if (stageInfo && cleanTaskId) {
+                    updateSessionLink(stageInfo.link, { status: 'COMPLETED', sessionId: cleanTaskId });
+                }
+
+                // Auto-show result
+                if (viewerId) {
+                    const viewer = document.getElementById(viewerId);
+                    if (viewer) {
+                        const content = await readFile(outputPath);
+                        if (content) {
+                            if (outputPath.endsWith('.json')) {
+                                viewer.innerHTML = '<pre style="white-space:pre-wrap;word-break:break-all;">' + escapeHtml(content) + '</pre>';
+                            } else {
+                                viewer.innerHTML = renderMarkdown(content);
+                            }
+                            viewer.classList.add('visible');
+                        }
+                    }
+                }
+
+                showToast('Stage completed successfully!', 'success');
+            } catch (e) {
+                setBadge(badgeId, 'error');
+                setDiagStatus(diagId, 'error');
+                showToast('Operation failed: ' + e.message, 'error');
+                console.error('DocOp failed:', e);
+            } finally {
+                this.disabled = false;
+            }
+        });
+    });
+
+    // =========================================================
+    // AUTO-SAVE INPUTS
+    // =========================================================
+    async function autoSaveInputs() {
+        // Only save if there's content to save
+        const profileJson = buildUserProfileJson();
+        const dietaryContent = document.getElementById('dietary-editor').value;
+        const astroContent = document.getElementById('astro-context-editor').value;
+        const mealRequestContent = document.getElementById('meal-request-editor').value;
+
+        const saves = [];
+        if (profileJson) saves.push(writeFile('inputs/user_profile.json', profileJson));
+        if (dietaryContent.trim()) saves.push(writeFile('inputs/dietary_preferences.md', dietaryContent));
+        if (astroContent.trim()) saves.push(writeFile('inputs/astrological_context.md', astroContent));
+        if (mealRequestContent.trim()) saves.push(writeFile('inputs/meal_plan_request.md', mealRequestContent));
+
+        await Promise.allSettled(saves);
+    }
+
+    // =========================================================
+    // SEQUENTIAL BATCH EXECUTION
+    // =========================================================
+    const PIPELINE_STEPS = [
+        {
+            op: 'ops/01_profile_analysis_op.md',
+            output: 'processing/processed_profile.json',
+            badge: 'badge-stage1',
+            diag: 'diag-stage1',
+            link: 'session-link-stage1',
+            viewer: 'viewer-stage1',
+            label: 'Stage 1: Profile Analysis'
+        },
+        {
+            op: 'ops/02_astrological_interpretation_op.md',
+            output: 'processing/astrological_insights.md',
+            badge: 'badge-stage2',
+            diag: 'diag-stage2',
+            link: 'session-link-stage2',
+            viewer: 'viewer-stage2',
+            label: 'Stage 2: Astrological Interpretation'
+        },
+        {
+            op: 'ops/03_nutritional_planning_op.md',
+            output: 'processing/nutritional_framework.json',
+            badge: 'badge-stage3',
+            diag: 'diag-stage3',
+            link: 'session-link-stage3',
+            viewer: 'viewer-stage3',
+            label: 'Stage 3: Nutritional Planning'
+        },
+        {
+            op: 'ops/04_meal_plan_generation_op.md',
+            output: 'processing/meal_plan_draft.md',
+            badge: 'badge-stage4',
+            diag: 'diag-stage4',
+            link: 'session-link-stage4',
+            viewer: 'viewer-stage4',
+            label: 'Stage 4: Meal Plan Generation'
+        },
+        {
+            op: 'ops/05_recipe_development_op.md',
+            output: 'processing/recipes_detailed.md',
+            badge: 'badge-stage5',
+            diag: 'diag-stage5',
+            link: 'session-link-stage5',
+            viewer: 'viewer-stage5',
+            label: 'Stage 5: Recipe Development'
+        },
+        {
+            op: 'ops/06_shopping_logistics_op.md',
+            output: 'outputs/shopping_list.md',
+            badge: 'badge-stage6',
+            diag: 'diag-stage6',
+            link: 'session-link-stage6',
+            viewer: 'viewer-stage6',
+            label: 'Stage 6: Shopping & Logistics'
+        },
+        {
+            op: 'ops/07_final_review_op.md',
+            output: 'outputs/final_meal_plan.md',
+            badge: 'badge-stage7',
+            diag: 'diag-stage7',
+            link: 'session-link-stage7',
+            viewer: 'viewer-stage7',
+            label: 'Stage 7: Final Review'
+        },
+        {
+            op: 'ops/08_summary_generation_op.md',
+            output: 'outputs/meal_plan_summary.json',
+            badge: 'badge-stage8',
+            diag: 'diag-stage8',
+            link: 'session-link-stage8',
+            viewer: 'viewer-stage8',
+            label: 'Stage 8: Summary Generation'
+        }
+    ];
+
+    async function runSequential(steps) {
+        for (const step of steps) {
+            logBatch('Starting: ' + step.label, 'info');
+            setBadge(step.badge, 'running');
+            setDiagStatus(step.diag, 'running');
+
+            try {
+                const taskId = await runDocOp(step.op, step.output);
+                const cleanTaskId = taskId ? taskId.trim() : '';
+
+                if (cleanTaskId && /^[a-zA-Z0-9-]+$/.test(cleanTaskId)) {
+                    const proxyUrl = getProxyUrl(cleanTaskId);
+                    logBatchHtml(
+                        'Session: <a href="' + escapeHtml(proxyUrl) + '" target="_blank" class="monitor-link">📡 Monitor (' + escapeHtml(cleanTaskId) + ')</a>',
+                        'info'
+                    );
+                    updateSessionLink(step.link, { status: 'RUNNING', sessionId: cleanTaskId });
+                }
+
+                await waitForTask(step.output);
+                setBadge(step.badge, 'done');
+                setDiagStatus(step.diag, 'done');
+
+                if (cleanTaskId) {
+                    updateSessionLink(step.link, { status: 'COMPLETED', sessionId: cleanTaskId });
+                }
+
+                logBatch('✓ Completed: ' + step.label, 'success');
+
+                // Auto-show result in viewer
+                if (step.viewer) {
+                    try {
+                        const content = await readFile(step.output);
+                        if (content) {
+                            const viewer = document.getElementById(step.viewer);
+                            if (viewer) {
+                                if (step.output.endsWith('.json')) {
+                                    viewer.innerHTML = '<pre style="white-space:pre-wrap;word-break:break-all;">' + escapeHtml(content) + '</pre>';
+                                } else {
+                                    viewer.innerHTML = renderMarkdown(content);
+                                }
+                                viewer.classList.add('visible');
+                            }
+                        }
+                    } catch (e) { /* non-critical */ }
+                }
+            } catch (e) {
+                setBadge(step.badge, 'error');
+                setDiagStatus(step.diag, 'error');
+                logBatch('✗ Failed: ' + step.label + ' — ' + e.message, 'error');
+                throw e;
+            }
+        }
+    }
+
+    document.getElementById('run-all').addEventListener('click', async function () {
+        if (!validateModels()) return;
+
+        this.disabled = true;
+        batchLog.innerHTML = '';
+        batchLog.classList.add('visible');
+        startStatusPolling();
+
+        // Auto-save all inputs first
+        logBatch('Auto-saving inputs…', 'info');
+        try {
+            await autoSaveInputs();
+            logBatch('✓ Inputs saved', 'success');
+        } catch (e) {
+            logBatch('⚠ Input save warning: ' + e.message, 'warn');
+        }
+
+        try {
+            await runSequential(PIPELINE_STEPS);
+            logBatch('🎉 Pipeline complete! Check the Results tab for your meal plan.', 'success');
+            showToast('Pipeline complete! 🎉', 'success');
+
+            // Auto-load final results
+            try {
+                const finalPlan = await readFile('outputs/final_meal_plan.md');
+                if (finalPlan) {
+                    document.getElementById('result-final-plan').innerHTML = renderMarkdown(finalPlan);
+                }
+            } catch (e) { /* non-critical */ }
+        } catch (e) {
+            logBatch('Pipeline stopped due to error: ' + e.message, 'error');
+            showToast('Pipeline stopped: ' + e.message, 'error');
+        } finally {
+            this.disabled = false;
+        }
+    });
+
+    // =========================================================
+    // INITIAL STATE CHECK
+    // =========================================================
+    async function checkExistingFiles() {
+        const statusData = await fetchDocopsStatus();
+        let anyRunning = false;
+
+        if (statusData && statusData.tasks) {
+            for (const [target, taskInfo] of Object.entries(statusData.tasks)) {
+                for (const [outputPath, ids] of Object.entries(outputToBadge)) {
+                    const filename = outputPath.split('/').pop();
+                    if (target === outputPath || target === filename || target.endsWith('/' + filename)) {
+                        if (taskInfo.status === 'RUNNING') {
+                            setBadge(ids.badge, 'running');
+                            setDiagStatus(ids.diag, 'running');
+                            anyRunning = true;
+                        } else if (taskInfo.status === 'COMPLETED') {
+                            setBadge(ids.badge, 'done');
+                            setDiagStatus(ids.diag, 'done');
+                        } else if (taskInfo.status === 'ERROR' || taskInfo.status === 'FAILED') {
+                            setBadge(ids.badge, 'error');
+                            setDiagStatus(ids.diag, 'error');
+                        }
+                        updateSessionLink(ids.link, taskInfo);
+                    }
+                }
+            }
+        }
+
+        // Fall back to file existence checks
+        const fileChecks = Object.entries(outputToBadge);
+        for (const [outputPath, ids] of fileChecks) {
+            const badge = document.getElementById(ids.badge);
+            if (badge && (badge.classList.contains('running') || badge.textContent === 'done')) continue;
+            try {
+                const exists = await fileExists(outputPath);
+                if (exists) {
+                    setBadge(ids.badge, 'done');
+                    setDiagStatus(ids.diag, 'done');
+                }
+            } catch (e) { /* leave as pending */ }
+        }
+
+        if (anyRunning) startStatusPolling();
+    }
+
+    async function loadInitialInputs() {
+        // Load user profile
+        try {
+            const profileJson = await readFile('inputs/user_profile.json');
+            if (profileJson) loadUserProfileFromJson(profileJson);
+        } catch (e) { console.warn('Could not load user_profile.json:', e); }
+
+        // Load dietary preferences
+        try {
+            const dietary = await readFile('inputs/dietary_preferences.md');
+            if (dietary) document.getElementById('dietary-editor').value = dietary;
+        } catch (e) { console.warn('Could not load dietary_preferences.md:', e); }
+
+        // Load astrological context
+        try {
+            const astro = await readFile('inputs/astrological_context.md');
+            if (astro) document.getElementById('astro-context-editor').value = astro;
+        } catch (e) { console.warn('Could not load astrological_context.md:', e); }
+
+        // Load meal plan request
+        try {
+            const mealReq = await readFile('inputs/meal_plan_request.md');
+            if (mealReq) document.getElementById('meal-request-editor').value = mealReq;
+        } catch (e) { console.warn('Could not load meal_plan_request.md:', e); }
+
+        // Load final results if they exist
+        try {
+            const finalPlan = await readFile('outputs/final_meal_plan.md');
+            if (finalPlan) {
+                document.getElementById('result-final-plan').innerHTML = renderMarkdown(finalPlan);
+            }
+        } catch (e) { /* non-critical */ }
+    }
+
+    // =========================================================
+    // INITIALIZE
+    // =========================================================
+    loadApiProviders();
+    loadInitialInputs();
+    checkExistingFiles();
+    startStatusPolling();
+
+})();
+</script>
+</body>
+</html>

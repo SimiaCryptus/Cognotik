@@ -507,9 +507,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.imageModel = imageModel?.let { ApiImageModel(it, imageApiData) }
             settings.devActions = component.devActions.isSelected
             settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
-            settings.preferredBrowser = (component.preferredBrowser.selectedItem as? String)?.let {
-                if (it == BrowseUtil.BROWSER_SYSTEM_DEFAULT) null else it
-            } ?: BROWSER_INTELLIJ_BUILTIN
+            settings.preferredBrowser = component.preferredBrowser.selectedItem?.toString() ?: BROWSER_INTELLIJ_BUILTIN
             settings.temperature = component.temperature.text.safeDouble()
             settings.embeddingModel = component.embeddingModel.selectedItem?.let {
                 when (it) {

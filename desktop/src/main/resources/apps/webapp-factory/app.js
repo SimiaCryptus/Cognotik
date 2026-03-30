@@ -19,6 +19,9 @@
      let availableModels = {};
     // === Compute app base path (e.g. /webapp-factory) for ZIP/Git endpoints ===
     const appBase = fileIndexIdx >= 2 ? pathParts.slice(0, fileIndexIdx).join('/') : '';
+    // === Usage tracking state ===
+    let knownTaskSessionIds = new Set();
+    let lastUsageData = null;
 
     // === Compute the URL for the generated app's index.html ===
     const appIndexUrl = basePath + '/code/index.html';
@@ -53,8 +56,10 @@
      function populateModelDropdowns() {
          const smartSelect = document.getElementById('model-smart');
          const fastSelect = document.getElementById('model-fast');
+         const imageSelect = document.getElementById('model-image');
          if (!smartSelect || !fastSelect) return;
          [smartSelect, fastSelect].forEach(sel => { sel.innerHTML = ''; });
+         if (imageSelect) imageSelect.innerHTML = '';
          const addedModels = new Set();
          let totalModels = 0;
          for (const [provider, models] of Object.entries(availableModels)) {
@@ -68,13 +73,21 @@
                              : `${model.name} (${provider})`;
                          sel.appendChild(option);
                      });
+                     if (imageSelect) {
+                         const option = document.createElement('option');
+                         option.value = model.id;
+                         option.textContent = model.description
+                             ? `${model.name} (${provider}) — ${model.description}`
+                             : `${model.name} (${provider})`;
+                         imageSelect.appendChild(option);
+                     }
                      addedModels.add(model.id);
                      totalModels++;
                  }
              });
          }
          if (totalModels === 0) {
-             [smartSelect, fastSelect].forEach(sel => {
+             [smartSelect, fastSelect, imageSelect].filter(Boolean).forEach(sel => {
                  const option = document.createElement('option');
                  option.value = '';
                  option.textContent = 'No models available — configure API keys first';
@@ -85,17 +98,22 @@
          // Restore saved selections
          const savedSmart = localStorage.getItem('webappFactory_smartModel');
          const savedFast = localStorage.getItem('webappFactory_fastModel');
+         const savedImage = localStorage.getItem('webappFactory_imageModel');
          if (savedSmart && Array.from(smartSelect.options).some(o => o.value === savedSmart)) {
              smartSelect.value = savedSmart;
          }
          if (savedFast && Array.from(fastSelect.options).some(o => o.value === savedFast)) {
              fastSelect.value = savedFast;
          }
+         if (savedImage && imageSelect && Array.from(imageSelect.options).some(o => o.value === savedImage)) {
+             imageSelect.value = savedImage;
+         }
      }
      function setModelDropdownsError(message) {
          const smartSelect = document.getElementById('model-smart');
          const fastSelect = document.getElementById('model-fast');
-         [smartSelect, fastSelect].forEach(sel => {
+         const imageSelect = document.getElementById('model-image');
+         [smartSelect, fastSelect, imageSelect].filter(Boolean).forEach(sel => {
              if (!sel) return;
              sel.innerHTML = '';
              const option = document.createElement('option');
@@ -107,9 +125,11 @@
      function getSelectedModels() {
          const smartSelect = document.getElementById('model-smart');
          const fastSelect = document.getElementById('model-fast');
+         const imageSelect = document.getElementById('model-image');
          return {
              smartModel: smartSelect ? smartSelect.value : '',
              fastModel: fastSelect ? fastSelect.value : '',
+             imageModel: imageSelect ? imageSelect.value : '',
          };
      }
 
@@ -453,6 +473,7 @@
          const models = getSelectedModels();
          if (models.smartModel) params.set('smartModel', models.smartModel);
          if (models.fastModel) params.set('fastModel', models.fastModel);
+         if (models.imageModel) params.set('imageModel', models.imageModel);
          const url = `/docops?${params.toString()}`;
         const resp = await fetch(url, { method: 'POST' });
         if (!resp.ok) {
@@ -461,6 +482,25 @@
         }
         return await resp.text();
     }
+     // === Normalize target path to match server status keys ===
+     // The server may strip trailing slashes from target keys
+     function normalizeTarget(target) {
+         // Remove trailing slash for comparison, but keep at least the base name
+         return target.replace(/\/+$/, '') || target;
+     }
+     function findTaskByTarget(tasks, target) {
+         if (!tasks) return null;
+         // Try exact match first
+         if (tasks[target]) return { key: target, task: tasks[target] };
+         // Try without trailing slash
+         const normalized = normalizeTarget(target);
+         if (tasks[normalized]) return { key: normalized, task: tasks[normalized] };
+         // Try with trailing slash
+         const withSlash = target.endsWith('/') ? target : target + '/';
+         if (tasks[withSlash]) return { key: withSlash, task: tasks[withSlash] };
+         return null;
+     }
+
     // === Status polling ===
     async function fetchDocopsStatus() {
         try {
@@ -594,12 +634,17 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         if (!statusData || !statusData.tasks) return;
         let anyRunning = false;
         for (const [target, taskInfo] of Object.entries(statusData.tasks)) {
-            updateTaskStatusUI(target, taskInfo);
+            if (taskInfo.sessionId) {
+                trackTaskSession(taskInfo.sessionId);
+            }
+             // Normalize: check if this target matches 'code/' or 'code'
+             const effectiveTarget = (target === 'code' || target === 'code/') ? 'code/' : target;
+             updateTaskStatusUI(effectiveTarget, taskInfo);
             if (taskInfo.status === 'RUNNING') {
                 anyRunning = true;
             }
             // Keep results section session link updated
-            if (target === 'code/' && taskInfo.sessionId &&
+             if ((target === 'code/' || target === 'code') && taskInfo.sessionId &&
                 (!activeCodeTaskSessionId || taskInfo.sessionId === activeCodeTaskSessionId)) {
                 updateResultsSessionLink(taskInfo);
             }
@@ -622,8 +667,9 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             let anyTarget = false;
             let activeTaskId = null;
             for (const t of info.targets) {
-                const task = tasks[t];
-                if (!task) { allDone = false; continue; }
+                 const found = findTaskByTarget(tasks, t);
+                 if (!found) { allDone = false; continue; }
+                 const task = found.task;
                 // Skip stale sessions
                 if (t === 'code/' && activeCodeTaskSessionId && task.sessionId !== activeCodeTaskSessionId) {
                     allDone = false;
@@ -832,6 +878,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 activeCodeTaskSessionId = cleanTaskId;
                 updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
                 logBatchHtml(`Update session started: <a href="${getProxyUrl(cleanTaskId)}" target="_blank" class="monitor-link">📡 Monitor Live Session (${escapeHtml(cleanTaskId)})</a>`, 'info');
+                trackTaskSession(cleanTaskId);
             }
             await waitForTask(outputPath);
             setBadge(badgeId, 'done');
@@ -853,7 +900,10 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             // Auto-refresh the project files list
             document.getElementById('btn-refresh-files-results')?.click();
             // Auto-commit to Git if repo is initialized
-            await autoGitCommitAfterBuild('Update: ' + (notesContent.substring(0, 60).split('\n')[0] || 'Applied updates'));
+            const updateTime = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+            await autoGitCommitAfterBuild('update at ' + updateTime);
+            // Refresh usage data
+            await refreshAllUsage();
         } catch (e) {
             setBadge(badgeId, 'error');
             alert('Update failed: ' + e.message);
@@ -866,6 +916,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
          const models = getSelectedModels();
          if (models.smartModel) localStorage.setItem('webappFactory_smartModel', models.smartModel);
          if (models.fastModel) localStorage.setItem('webappFactory_fastModel', models.fastModel);
+         if (models.imageModel) localStorage.setItem('webappFactory_imageModel', models.imageModel);
          setStatus('model-status', '✓ Model settings saved', 'success');
      });
      // === Refresh models ===
@@ -929,8 +980,13 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         const startTime = Date.now();
         while (Date.now() - startTime < maxWait) {
             const statusData = await fetchDocopsStatus();
-            if (statusData && statusData.tasks && statusData.tasks[targetPath]) {
-                const task = statusData.tasks[targetPath];
+             if (statusData && statusData.tasks) {
+                 const found = findTaskByTarget(statusData.tasks, targetPath);
+                 if (!found) {
+                     await new Promise(resolve => setTimeout(resolve, pollInterval));
+                     continue;
+                 }
+                 const task = found.task;
                 if (task.status === 'COMPLETED') {
                     return task;
                 } else if (task.status === 'ERROR' || task.status === 'FAILED') {
@@ -976,6 +1032,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                     if (outputPath === 'code/') activeCodeTaskSessionId = cleanTaskId;
                     updateSessionLinks(outputPath, { status: 'RUNNING', sessionId: cleanTaskId });
                     logBatchHtml(`Session started: <a href="${getProxyUrl(cleanTaskId)}" target="_blank" class="monitor-link">📡 Monitor Live Session (${escapeHtml(cleanTaskId)})</a>`, 'info');
+                    trackTaskSession(cleanTaskId);
                 }
                 await waitForTask(outputPath);
                 setBadge(badgeId, 'done');
@@ -1032,12 +1089,14 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                 const proxyUrl = getProxyUrl(cleanTaskId);
                 logBatchHtml(`Session started: <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">📡 Monitor Live Session (${escapeHtml(cleanTaskId)})</a>`, 'info');
                 updateSessionLinks('code/', { status: 'RUNNING', sessionId: cleanTaskId });
+                trackTaskSession(cleanTaskId);
             }
             await waitForTask('code/');
             setBadge('badge-render', 'done');
             // Fetch final status to get session ID for completed link
             const finalStatus = await fetchDocopsStatus();
-            const completedTask = finalStatus?.tasks?.['code/'];
+             const completedTaskFound = finalStatus?.tasks ? findTaskByTarget(finalStatus.tasks, 'code/') : null;
+             const completedTask = completedTaskFound?.task;
             if (completedTask && completedTask.sessionId) {
                 const proxyUrl = getProxyUrl(completedTask.sessionId);
                 logBatchHtml(`✓ Completed: Build Project — <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">📋 View Session Log (${escapeHtml(completedTask.sessionId)})</a>`, 'success');
@@ -1063,7 +1122,10 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             // Auto-refresh the project files list
             document.getElementById('btn-refresh-files-results')?.click();
             // Auto-commit to Git if repo is initialized
-            await autoGitCommitAfterBuild('Build: ' + (ideaContent.substring(0, 60).split('\n')[0] || 'Pipeline run'));
+            const buildTime = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+            await autoGitCommitAfterBuild('initial build at ' + buildTime);
+            // Refresh usage data
+            await refreshAllUsage();
             // Auto-load the README in results
             try {
                 const readmeContent = await readFile('code/README.md');
@@ -1078,7 +1140,8 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
             setBadge('badge-render', 'error');
             // Try to get session link for the failed task
             const failStatus = await fetchDocopsStatus().catch(() => null);
-            const failedTask = failStatus?.tasks?.['code/'];
+             const failedTaskFound = failStatus?.tasks ? findTaskByTarget(failStatus.tasks, 'code/') : null;
+             const failedTask = failedTaskFound?.task;
             if (failedTask && failedTask.sessionId) {
                 const proxyUrl = getProxyUrl(failedTask.sessionId);
                 logBatchHtml(`Pipeline failed: ${escapeHtml(e.message)} — <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">🔍 View Error Log (${escapeHtml(failedTask.sessionId)})</a>`, 'error');
@@ -1181,7 +1244,7 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         let anyRunning = false;
         if (statusData && statusData.tasks) {
             for (const [target, taskInfo] of Object.entries(statusData.tasks)) {
-                if (target === 'code/') {
+                 if (target === 'code/' || target === 'code') {
                     // On page load, accept whatever status is there
                     // since we don't know if it was render or update
                     const status = taskInfo.status;
@@ -1195,12 +1258,13 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
                     } else if (status === 'ERROR' || status === 'FAILED') {
                         setBadge('badge-render', 'error');
                     }
-                    updateSessionLinks(target, taskInfo);
+                     updateSessionLinks('code/', taskInfo);
                     if (taskInfo.sessionId) {
                         updateResultsSessionLink(taskInfo);
                     }
                 } else {
-                    updateTaskStatusUI(target, taskInfo);
+                     const effectiveTarget = target;
+                     updateTaskStatusUI(effectiveTarget, taskInfo);
                     if (taskInfo.status === 'RUNNING') {
                         anyRunning = true;
                     }
@@ -1705,13 +1769,19 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
     async function autoGitCommitAfterBuild(message) {
         try {
             const status = await gitApiCall('status');
-            if (status.initialized && !status.clean) {
+            if (!status.initialized) {
+                await gitApiCall('init', { method: 'POST' });
+                logBatch('📌 Auto-initialized Git repository', 'info');
+            }
+            // Re-check status after potential init
+            const currentStatus = status.initialized ? status : await gitApiCall('status');
+            if (currentStatus.initialized && !currentStatus.clean) {
                 await gitApiCall('commit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: message || 'Auto-commit after build' })
                 });
-                logBatch('📌 Auto-committed changes to Git', 'success');
+                logBatch('📌 Auto-committed changes to Git: ' + message, 'success');
             }
         } catch (e) {
             // Non-critical, just log
@@ -1719,10 +1789,244 @@ ${taskSessionId ? `<a href="${escapeHtml(proxyUrl)}" target="_blank" rel="noopen
         }
     }
 
+    // === Usage Tracking ===
+    // =========================================================
+
+    async function fetchUsageData(taskSessionId) {
+        try {
+            const url = `/proxy/usage?sessionId=${encodeURIComponent(taskSessionId)}&format=json`;
+            const resp = await fetch(url);
+            if (!resp.ok) {
+                if (resp.status === 404) return null;
+                return null;
+            }
+            return await resp.json();
+        } catch (e) {
+            console.warn('Could not fetch usage for session ' + taskSessionId + ':', e);
+            return null;
+        }
+    }
+
+    function formatCost(cost) {
+        if (cost === null || cost === undefined) return '$0.00';
+        if (cost < 0.01) return '$' + cost.toFixed(4);
+        return '$' + cost.toFixed(4);
+    }
+
+    function formatTokens(tokens) {
+        if (!tokens) return '0';
+        if (tokens >= 1000000) return (tokens / 1000000).toFixed(1) + 'M';
+        if (tokens >= 1000) return (tokens / 1000).toFixed(1) + 'K';
+        return tokens.toLocaleString();
+    }
+
+    function renderUsageTable(usageData, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        if (!usageData || !usageData.models || usageData.models.length === 0) {
+            container.innerHTML = '<p class="placeholder">No usage data available.</p>';
+            return;
+        }
+
+        let html = `<table class="usage-table">
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Prompt Tokens</th>
+                    <th>Completion Tokens</th>
+                    <th>Total Tokens</th>
+                    <th>Cost</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        usageData.models.forEach(model => {
+            const totalTokens = (model.prompt_tokens || 0) + (model.completion_tokens || 0);
+            html += `<tr>
+                <td><code>${escapeHtml(model.model)}</code></td>
+                <td>${formatTokens(model.prompt_tokens)}</td>
+                <td>${formatTokens(model.completion_tokens)}</td>
+                <td>${formatTokens(totalTokens)}</td>
+                <td class="usage-cost-cell">${formatCost(model.cost)}</td>
+            </tr>`;
+        });
+
+        if (usageData.totals) {
+            const totalTokens = (usageData.totals.prompt_tokens || 0) + (usageData.totals.completion_tokens || 0);
+            html += `<tr class="usage-totals-row">
+                <td><strong>Total</strong></td>
+                <td><strong>${formatTokens(usageData.totals.prompt_tokens)}</strong></td>
+                <td><strong>${formatTokens(usageData.totals.completion_tokens)}</strong></td>
+                <td><strong>${formatTokens(totalTokens)}</strong></td>
+                <td class="usage-cost-cell"><strong>${formatCost(usageData.totals.cost)}</strong></td>
+            </tr>`;
+        }
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function updateUsageSummaryBanner(usageData) {
+        const banner = document.getElementById('usage-summary-banner');
+        if (!banner) return;
+
+        if (!usageData || !usageData.totals) {
+            banner.style.display = 'none';
+            return;
+        }
+
+        banner.style.display = 'flex';
+        const promptEl = document.getElementById('usage-total-prompt');
+        const completionEl = document.getElementById('usage-total-completion');
+        const costEl = document.getElementById('usage-total-cost');
+
+        if (promptEl) promptEl.textContent = formatTokens(usageData.totals.prompt_tokens);
+        if (completionEl) completionEl.textContent = formatTokens(usageData.totals.completion_tokens);
+        if (costEl) costEl.textContent = formatCost(usageData.totals.cost);
+    }
+
+    async function refreshAllUsage() {
+        setStatus('usage-status', 'Loading usage data…', '');
+
+        // Collect all known task session IDs
+        const statusData = await fetchDocopsStatus();
+        if (statusData && statusData.tasks) {
+            for (const [target, taskInfo] of Object.entries(statusData.tasks)) {
+                if (taskInfo.sessionId) {
+                    knownTaskSessionIds.add(taskInfo.sessionId);
+                }
+            }
+        }
+
+        if (knownTaskSessionIds.size === 0) {
+            setStatus('usage-status', 'No task sessions found yet.', '');
+            return;
+        }
+
+        // Aggregate usage across all task sessions
+        const allModels = {};
+        const taskUsageList = [];
+        let totalPrompt = 0;
+        let totalCompletion = 0;
+        let totalCost = 0;
+
+        for (const taskId of knownTaskSessionIds) {
+            const usage = await fetchUsageData(taskId);
+            if (usage && usage.models) {
+                taskUsageList.push({ sessionId: taskId, usage: usage });
+                usage.models.forEach(m => {
+                    if (!allModels[m.model]) {
+                        allModels[m.model] = { model: m.model, prompt_tokens: 0, completion_tokens: 0, cost: 0 };
+                    }
+                    allModels[m.model].prompt_tokens += (m.prompt_tokens || 0);
+                    allModels[m.model].completion_tokens += (m.completion_tokens || 0);
+                    allModels[m.model].cost += (m.cost || 0);
+                });
+            }
+            if (usage && usage.totals) {
+                totalPrompt += (usage.totals.prompt_tokens || 0);
+                totalCompletion += (usage.totals.completion_tokens || 0);
+                totalCost += (usage.totals.cost || 0);
+            }
+        }
+
+        const aggregated = {
+            models: Object.values(allModels),
+            totals: {
+                prompt_tokens: totalPrompt,
+                completion_tokens: totalCompletion,
+                cost: totalCost
+            }
+        };
+
+        lastUsageData = aggregated;
+
+        // Render the main usage table
+        renderUsageTable(aggregated, 'usage-table-container');
+        updateUsageSummaryBanner(aggregated);
+
+        // Render the tab version too
+        renderUsageTable(aggregated, 'usage-tab-container');
+
+        // Render per-task usage
+        renderTaskUsageList(taskUsageList);
+
+        if (aggregated.models.length > 0) {
+            setStatus('usage-status', `✓ Loaded usage from ${knownTaskSessionIds.size} session(s)`, 'success');
+        } else {
+            setStatus('usage-status', 'No usage data recorded yet.', '');
+        }
+    }
+
+    function renderTaskUsageList(taskUsageList) {
+        const container = document.getElementById('task-usage-container');
+        if (!container) return;
+
+        if (taskUsageList.length === 0) {
+            container.innerHTML = '<p class="placeholder">No task usage data available.</p>';
+            return;
+        }
+
+        let html = '';
+        taskUsageList.forEach(item => {
+            const proxyUrl = getProxyUrl(item.sessionId);
+            const totals = item.usage.totals || {};
+            const totalTokens = (totals.prompt_tokens || 0) + (totals.completion_tokens || 0);
+            html += `<div class="task-usage-entry">
+                <div class="task-usage-header">
+                    <a href="${escapeHtml(proxyUrl)}" target="_blank" class="monitor-link">📡 ${escapeHtml(item.sessionId)}</a>
+                    <span class="task-usage-cost">${formatCost(totals.cost)}</span>
+                </div>
+                <div class="task-usage-details">`;
+
+            if (item.usage.models) {
+                item.usage.models.forEach(m => {
+                    html += `<span class="task-usage-model">
+                        <code>${escapeHtml(m.model)}</code>:
+                        ${formatTokens((m.prompt_tokens || 0) + (m.completion_tokens || 0))} tokens,
+                        ${formatCost(m.cost)}
+                    </span>`;
+                });
+            }
+
+            html += `</div></div>`;
+        });
+
+        container.innerHTML = html;
+    }
+
+    // Track task session IDs as they appear
+    function trackTaskSession(taskSessionId) {
+        if (taskSessionId && /^[a-zA-Z0-9-]+$/.test(taskSessionId)) {
+            knownTaskSessionIds.add(taskSessionId);
+        }
+    }
+
+    // Usage button handlers
+    document.getElementById('btn-refresh-usage')?.addEventListener('click', refreshAllUsage);
+    document.getElementById('btn-refresh-task-usage')?.addEventListener('click', refreshAllUsage);
+    document.getElementById('btn-refresh-usage-tab')?.addEventListener('click', refreshAllUsage);
+
+    document.getElementById('btn-usage-json')?.addEventListener('click', async function() {
+        if (lastUsageData) {
+            const jsonStr = JSON.stringify(lastUsageData, null, 2);
+            const win = window.open('', '_blank');
+            if (win) {
+                win.document.write('<pre>' + escapeHtml(jsonStr) + '</pre>');
+                win.document.title = 'Usage Data (JSON)';
+            }
+        } else {
+            alert('No usage data loaded yet. Click "Refresh Usage" first.');
+        }
+    });
+
     // === Initialize ===
     loadInitialFiles();
     checkExistingFiles();
     showAppPreview();
     startStatusPolling();
      loadApiProviders();
+    // Delay usage refresh slightly to allow status polling to discover task sessions first
+    setTimeout(refreshAllUsage, 2000);
 })();
