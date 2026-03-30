@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools
+package com.simiacryptus.cognotik.plan
 
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices

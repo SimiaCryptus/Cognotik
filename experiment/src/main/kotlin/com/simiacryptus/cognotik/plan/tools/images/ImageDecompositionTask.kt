@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
-import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.plan.safeComplete
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager

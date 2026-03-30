@@ -1112,7 +1112,8 @@ class DocProcessor(
     } catch (e: CancellationException) {
       updateTaskStatus(targetKey, TaskStatus.CANCELLED, error = e.message)
       throw e
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
+      log.warn("Error executing task for target '$targetKey'", e)
       updateTaskStatus(targetKey, TaskStatus.FAILED, error = e.message ?: e.javaClass.simpleName)
       throw e
     }

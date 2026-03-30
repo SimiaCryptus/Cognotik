@@ -20,7 +20,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.file.WriteHtmlTask
-import com.simiacryptus.cognotik.plan.tools.toApiChatModel
+import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage

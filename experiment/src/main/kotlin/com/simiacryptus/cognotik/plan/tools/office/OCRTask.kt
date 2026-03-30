@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
-import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.plan.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject

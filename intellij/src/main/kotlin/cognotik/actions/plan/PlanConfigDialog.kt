@@ -19,7 +19,7 @@ import com.simiacryptus.cognotik.plan.instance
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.newSettings
-import com.simiacryptus.cognotik.plan.tools.toApiChatModel
+import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson

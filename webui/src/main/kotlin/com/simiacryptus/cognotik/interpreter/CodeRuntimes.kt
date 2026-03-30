@@ -6,14 +6,13 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.groovy.GroovyCodeRuntime
 import com.simiacryptus.cognotik.kotlin.KotlinCodeRuntime
-import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 import java.io.File
+import java.util.Locale.getDefault
 
 @JsonDeserialize(using = CodeRuntimesDeserializer::class)
 @JsonSerialize(using = CodeRuntimesSerializer::class)
@@ -99,7 +98,7 @@ class CodeRuntimes(
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "powershell",
           commandResolver = {
-            if (isWindows) {
+            if (System.getProperty("os.name").lowercase(getDefault()).contains("windows")) {
               listOf("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "-")
             } else {
               listOf("pwsh", "-NoProfile", "-Command", "-")
@@ -125,7 +124,7 @@ class CodeRuntimes(
           commandResolver = {
             listOf(
               when {
-                isWindows -> "python"
+                System.getProperty("os.name").lowercase(getDefault()).contains("windows") -> "python"
                 else -> "python3"
               }.resolveTool(it)
             )

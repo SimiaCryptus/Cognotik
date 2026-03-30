@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
-import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.tools.*
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
@@ -18,15 +17,15 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.getAvailableFiles
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.util.Locale.getDefault
 import kotlin.io.path.Path
-
 
 class OrchestrationConfig(
   var sessionId: String = "default",
   var smartModel: String? = null,
   var fastModel: String? = null,
   var imageModel: String? = null,
-  val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
+  val shellCmd: List<String> = listOf(if (System.getProperty("os.name").lowercase(getDefault()).contains("windows")) "powershell" else "bash"),
   var temperature: Double = 0.2,
   val budget: Double = 2.0,
   val taskSettings: MutableMap<String, TaskTypeConfig> = TaskType.values().filter {

@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ImageAndText
-import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
+import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.util.toJson
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

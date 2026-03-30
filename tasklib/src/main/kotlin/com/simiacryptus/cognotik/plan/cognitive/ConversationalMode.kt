@@ -7,6 +7,8 @@ import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.instance

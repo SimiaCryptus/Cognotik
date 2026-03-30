@@ -8,6 +8,8 @@ import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.safeComplete
+import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
