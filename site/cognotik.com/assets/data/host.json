@@ -19,26 +19,5 @@
     "type": "link",
     "code": "https://github.com/SimiaCryptus/Cognotik/blob/main/docs/embedding.md",
     "description": "Integrate 'Headless' AI agents directly into your software lifecycle. Automate refactoring, documentation, and testing within Gradle builds."
-  },
-  {
-    "label": "Build Tools",
-    "url": "build-tools.html",
-    "type": "link",
-    "code": "https://github.com/SimiaCryptus/CognotikDemo",
-    "description": "AI-powered CI/CD automation. Automatically fix failing builds, review code, and resolve GitHub issues with intelligent agents."
-  },
-  {
-    "label": "Android",
-    "url": "android.html",
-    "type": "link",
-    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/android",
-    "description": "Run Cognotik on your Android device. Local AI agents with mobile-optimized interface. Coming Soon."
-  },
-  {
-    "label": "Cloud",
-    "url": "cloud.html",
-    "type": "link",
-    "code": "https://github.com/SimiaCryptus/Cognotik",
-    "description": "Fully managed Cognotik in the cloud. No setup required, instant access to AI agents. Coming Soon."
   }
 ]

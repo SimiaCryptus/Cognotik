@@ -17,7 +17,10 @@ class CognotikHeader extends HTMLElement {
             // ../../data/tasks.json assumes: assets/scripts/components/ -> assets/data/
             const baseUrl = new URL('../../data/', import.meta.url);
             const dataUrl = new URL('tasks.json', baseUrl).href;
+            // Compute the site root URL (two levels up from assets/data/)
+            this.siteRoot = new URL('../../', baseUrl).href;
             
+
             const response = await fetch(dataUrl);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -50,6 +53,19 @@ class CognotikHeader extends HTMLElement {
             }
         }
     }
+    /**
+     * Resolve a potentially relative URL against the site root so that
+     * links work correctly regardless of the current page's depth.
+     */
+    resolveUrl(url) {
+        if (!url || url === '#') return url;
+        // Already absolute
+        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) {
+            return url;
+        }
+        // Resolve relative URL against the site root
+        return new URL(url, this.siteRoot).href;
+    }
 
 
     render() {
@@ -57,11 +73,14 @@ class CognotikHeader extends HTMLElement {
 
         // User current browser location
         const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        // Also compute a site-root-relative path for the current page for matching
+        const currentHref = window.location.href;
         const { siteName, navigation } = this.data;
         // Find current item to check for code link
         const findPath = (items, id) => {
             for (const item of items) {
-                if (item.url === id) return [item];
+                if (item.url && this.resolveUrl(item.url) === currentHref) return [item];
+                if (item.url === id) return [item]; // fallback: filename match
                 if (item.items) {
                     const subPath = findPath(item.items, id);
                     if (subPath) return [item, ...subPath];
@@ -390,7 +409,7 @@ class CognotikHeader extends HTMLElement {
                     const isActive = currentPath.includes(item);
                     return `
                         <li class="nav-item">
-                            <a href="${item.url}" class="nav-link ${isActive ? 'active' : ''}">${item.label}</a>
+                            <a href="${this.resolveUrl(item.url)}" class="nav-link ${isActive ? 'active' : ''}">${item.label}</a>
                         </li>
                     `;
                 } else if (item.type === 'submenu') {
@@ -415,7 +434,7 @@ class CognotikHeader extends HTMLElement {
                         const isSubActive = currentPath.includes(sub);
                         const iconHtml = sub.image ? `<img src="${sub.image}" class="dropdown-icon" alt="" loading="lazy" />` : '';
                         return `
-                            <a href="${sub.url}" class="dropdown-item ${isSubActive ? 'active' : ''}">
+                            <a href="${this.resolveUrl(sub.url)}" class="dropdown-item ${isSubActive ? 'active' : ''}">
                                 ${iconHtml}
                                 <div class="dropdown-content">
                                     <div style="font-weight:500">${sub.label}</div>
@@ -454,7 +473,7 @@ class CognotikHeader extends HTMLElement {
         this.shadowRoot.innerHTML = `
             ${styles}
             <header class="header-container">
-                <a href="/index.html" class="brand">${siteName}</a>
+                <a href="${this.resolveUrl('index.html')}" class="brand">${siteName}</a>
                 <div class="nav-section">
                     <ul class="nav-menu">
                         ${buildNavItems(navigation)}
@@ -494,7 +513,7 @@ class CognotikHeader extends HTMLElement {
                 );
                 if (matches.length > 0) {
                     searchResults.innerHTML = matches.map(item => `
-                        <a href="${item.url}" class="search-result-item">
+                        <a href="${this.resolveUrl(item.url)}" class="search-result-item">
                             ${item.image ? `<img src="${item.image}" class="search-result-icon" alt="">` : ''}
                             <div>
                                 <div style="font-weight:600">${item.label}</div>
