@@ -174,6 +174,7 @@ class BrainstormingTask(
       resultFn(errorMsg)
       return
     }
+
     val targetCount = executionConfig.target_option_count.coerceIn(3, 20)
     val categories = executionConfig.categories?.joinToString(", ") ?: "any relevant domain"
     val constraints = executionConfig.constraints ?: emptyList()
@@ -181,7 +182,7 @@ class BrainstormingTask(
     val analysisDepth = executionConfig.analysis_depth
 
     log.info("Configuration: targetCount=$targetCount, categories=$categories, includeCreative=$includeCreative, analysisDepth=$analysisDepth")
-    log.info("Input files: ${executionConfig?.related_files?.joinToString(", ") ?: "none"}")
+    log.info("Input files: ${executionConfig.related_files?.joinToString(", ") ?: "none"}")
 
     val ui = task.ui
     val transcriptStream = task.newUserFileStream(transcriptFile())

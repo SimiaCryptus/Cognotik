@@ -1076,6 +1076,8 @@ class DocProcessor(
     } else {
       mod
     }
+    val newRoot = mod.data.files?.firstOrNull()?.parentFile ?: root
+
     harness.resetSession()
     if (cancelFlag.get()) {
       log.info("Cancellation requested, skipping execution of remaining tasks")
@@ -1103,7 +1105,7 @@ class DocProcessor(
           session = session,
           autoFix = autoFix,
           typeConfig = mod.typeConfig,
-          workingDir = mod.data.root.toString()
+          workingDir = newRoot.toString()
         ).apply {
           processor = mod.patchProcessor ?: processor
         }
@@ -1153,7 +1155,7 @@ class DocProcessor(
           harness.processor = this
         }
         val newRoot = data.files?.firstOrNull()?.parentFile ?: root
-        val data1 = data.copy(root = newRoot)
+        val data = data.copy(root = newRoot)
         val orchestrationConfig = harness.createSettings(
           session = Session.newGlobalID(),
           autoFix = true,
@@ -1162,9 +1164,9 @@ class DocProcessor(
         )
         val contextMessages = buildList {
           add("Task type: ${mod.taskType.name}")
-          add("Task description: ${data1.task_description}")
-          data1.relative_files?.forEach { text -> add("Target file: $text") }
-          data1.relative_related_files?.forEach { relatedFile ->
+          add("Task description: ${data.task_description}")
+          data.relative_files?.forEach { text -> add("Target file: $text") }
+          data.relative_related_files?.forEach { relatedFile ->
             val resolvedFile =
               if (File(relatedFile).isAbsolute) File(relatedFile) else newRoot.resolve(relatedFile)
             if (resolvedFile.exists()) {
@@ -1177,7 +1179,7 @@ class DocProcessor(
         val (_, taskConfig) = ConversationalMode.requestToTask(
           defaultModel = model,
           fastModel = model,
-          userMessage = data1.task_description,
+          userMessage = data.task_description,
           orchestrationConfig = orchestrationConfig,
           prompt = "Execute the following task based on the provided context. Task type: ${mod.taskType.name}",
           history = contextMessages,

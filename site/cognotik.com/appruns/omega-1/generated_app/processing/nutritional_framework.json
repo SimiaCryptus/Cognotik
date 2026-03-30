@@ -1,0 +1,1366 @@
+{
+  "framework_metadata": {
+    "user_name": "Maya Chen",
+    "birth_date": "1991-11-08",
+    "framework_version": "1.0",
+    "generated_date": "2024",
+    "last_updated": "2024",
+    "validation_status": "complete"
+  },
+  "daily_nutritional_targets": {
+    "caloric_intake": {
+      "daily_target": 2000,
+      "notes": "Based on moderate activity level (illustration work, some movement); adjusted for sustained energy and afternoon crash prevention",
+      "meal_distribution": {
+        "breakfast": {
+          "calories": 350,
+          "percentage": 17.5,
+          "notes": "Light to moderate; energizing without heaviness"
+        },
+        "lunch": {
+          "calories": 650,
+          "percentage": 32.5,
+          "notes": "Main productive meal; largest caloric intake"
+        },
+        "snack": {
+          "calories": 200,
+          "percentage": 10,
+          "notes": "Addresses 3:30 PM energy dip"
+        },
+        "dinner": {
+          "calories": 800,
+          "percentage": 40,
+          "notes": "Moderate to hearty; wind-down ritual"
+        }
+      }
+    },
+    "macronutrient_targets": {
+      "protein": {
+        "percentage": 25,
+        "grams_per_day": 125,
+        "rationale": "Higher protein for pescatarian diet; supports sustained energy and mental clarity; important for hormone balance"
+      },
+      "carbohydrates": {
+        "percentage": 50,
+        "grams_per_day": 250,
+        "rationale": "Balanced carbs for stable blood sugar; prevents 2 PM crash; supports illustration work focus"
+      },
+      "fat": {
+        "percentage": 25,
+        "grams_per_day": 56,
+        "rationale": "Emphasis on omega-3 rich fats; supports hormone balance and mental clarity"
+      }
+    },
+    "micronutrient_focus_areas": [
+      {
+        "nutrient": "Iron",
+        "daily_target": "18 mg",
+        "priority": 1,
+        "rationale": "Pescatarian; tends toward low iron; critical for energy and mental clarity",
+        "sources": ["lentils", "dark leafy greens", "pumpkin seeds", "fish", "eggs", "fortified grains"]
+      },
+      {
+        "nutrient": "Omega-3 (EPA/DHA)",
+        "daily_target": "250-500 mg",
+        "priority": 1,
+        "rationale": "Mental clarity, hormone balance, anti-inflammatory; supports detailed illustration work",
+        "sources": ["salmon", "sardines", "mackerel", "chia seeds", "flaxseed"]
+      },
+      {
+        "nutrient": "B12",
+        "daily_target": "2.4 mcg",
+        "priority": 1,
+        "rationale": "Pescatarian; essential for energy and mental clarity",
+        "sources": ["eggs", "fish", "nutritional yeast", "fortified plant milks"]
+      },
+      {
+        "nutrient": "Magnesium",
+        "daily_target": "310-320 mg",
+        "priority": 2,
+        "rationale": "Supports energy, hormone balance, and stress management",
+        "sources": ["dark chocolate", "leafy greens", "pumpkin seeds", "sesame seeds", "legumes"]
+      },
+      {
+        "nutrient": "Phytoestrogens",
+        "daily_target": "Variable",
+        "priority": 2,
+        "rationale": "Hormone balance; addresses irregular cycles through seed cycling",
+        "sources": ["flaxseed", "edamame", "tempeh", "lentils", "chickpeas"]
+      },
+      {
+        "nutrient": "Fiber",
+        "daily_target": "25-30 g",
+        "priority": 2,
+        "rationale": "Digestive health; sensitive gut; stable blood sugar",
+        "sources": ["legumes", "whole grains", "vegetables", "seeds", "fruits"]
+      },
+      {
+        "nutrient": "Calcium",
+        "daily_target": "1000 mg",
+        "priority": 3,
+        "rationale": "Bone health; hormone balance",
+        "sources": ["fish with bones (sardines, canned salmon)", "leafy greens", "sesame seeds", "fortified plant milks"]
+      },
+      {
+        "nutrient": "Zinc",
+        "daily_target": "8 mg",
+        "priority": 3,
+        "rationale": "Immune function; hormone balance",
+        "sources": ["pumpkin seeds", "sesame seeds", "legumes", "fish", "eggs"]
+      }
+    ]
+  },
+  "dietary_restrictions_and_allowances": {
+    "restrictions": [
+      {
+        "restriction_type": "pescatarian",
+        "severity": "primary",
+        "description": "No meat (beef, pork, poultry). Fish and seafood are welcome and preferred.",
+        "allowed_proteins": [
+          "fish (salmon, sardines, mackerel, cod, halibut, sea bass, snapper)",
+          "shellfish (shrimp, mussels, clams, scallops, crab, lobster)",
+          "eggs",
+          "legumes (lentils, chickpeas, black beans, pinto beans, split peas)",
+          "tofu and tempeh",
+          "dairy (yogurt, cheese, milk) - if tolerated"
+        ],
+        "forbidden_proteins": [
+          "beef",
+          "pork",
+          "poultry (chicken, turkey, duck)",
+          "game meats"
+        ]
+      },
+      {
+        "restriction_type": "tree_nut_allergy",
+        "severity": "moderate",
+        "description": "Avoid almonds, cashews, walnuts in all forms",
+        "forbidden_items": [
+          "almonds",
+          "almond butter",
+          "almond milk",
+          "cashews",
+          "cashew butter",
+          "walnuts",
+          "walnut oil",
+          "mixed nuts containing these"
+        ],
+        "safe_alternatives": [
+          "pine nuts",
+          "pumpkin seeds (pepitas)",
+          "sunflower seeds",
+          "sesame seeds",
+          "coconut",
+          "coconut milk",
+          "tahini (sesame paste)",
+          "sunflower seed butter"
+        ]
+      },
+      {
+        "restriction_type": "raw_onion_intolerance",
+        "severity": "mild",
+        "description": "Raw onion causes digestive distress; cooked onion is fine",
+        "forbidden_items": [
+          "raw onion in salads",
+          "raw onion in salsas",
+          "raw onion in ceviche (unless very finely minced and brief contact)"
+        ],
+        "allowed_preparations": [
+          "caramelized onions",
+          "sautéed onions",
+          "roasted onions",
+          "onions in soups and stews",
+          "pickled onions (fermented, cooked)"
+        ]
+      }
+    ],
+    "allergen_summary": {
+      "high_risk_allergens": ["tree nuts (almonds, cashews, walnuts)"],
+      "moderate_risk_allergens": ["raw onion"],
+      "safe_allergens": ["sesame", "coconut", "pumpkin seeds", "sunflower seeds", "pine nuts", "fish", "shellfish", "eggs"]
+    }
+  },
+  "allowed_food_categories": {
+    "proteins": {
+      "fish_and_seafood": {
+        "category": "primary_protein",
+        "preferred": true,
+        "items": [
+          {
+            "name": "salmon",
+            "omega3_content": "high",
+            "preparation_methods": ["seared", "roasted", "raw (sashimi)", "poached"],
+            "cost_per_serving": "$4-6",
+            "notes": "Excellent omega-3 source; supports mental clarity and hormone balance"
+          },
+          {
+            "name": "sardines",
+            "omega3_content": "very high",
+            "preparation_methods": ["canned", "fresh grilled", "roasted"],
+            "cost_per_serving": "$2-3",
+            "notes": "Budget-friendly; includes edible bones for calcium"
+          },
+          {
+            "name": "mackerel",
+            "omega3_content": "very high",
+            "preparation_methods": ["seared", "roasted", "grilled"],
+            "cost_per_serving": "$3-4",
+            "notes": "Rich, umami flavor; excellent for sustained energy"
+          },
+          {
+            "name": "cod",
+            "omega3_content": "moderate",
+            "preparation_methods": ["pan-fried", "roasted", "steamed"],
+            "cost_per_serving": "$3-5",
+            "notes": "Mild flavor; versatile"
+          },
+          {
+            "name": "halibut",
+            "omega3_content": "moderate",
+            "preparation_methods": ["seared", "roasted", "poached"],
+            "cost_per_serving": "$5-7",
+            "notes": "Delicate texture; pairs well with citrus"
+          },
+          {
+            "name": "sea bass",
+            "omega3_content": "moderate",
+            "preparation_methods": ["whole roasted", "pan-seared", "steamed"],
+            "cost_per_serving": "$4-6",
+            "notes": "Crispy skin when seared; excellent texture contrast"
+          },
+          {
+            "name": "shrimp",
+            "omega3_content": "low",
+            "preparation_methods": ["seared", "steamed", "raw (ceviche)"],
+            "cost_per_serving": "$3-5",
+            "notes": "Quick cooking; good for weeknight meals"
+          },
+          {
+            "name": "mussels",
+            "omega3_content": "moderate",
+            "preparation_methods": ["steamed", "simmered in broth"],
+            "cost_per_serving": "$2-3",
+            "notes": "Budget-friendly; excellent in soups and stews"
+          },
+          {
+            "name": "clams",
+            "omega3_content": "moderate",
+            "preparation_methods": ["steamed", "simmered", "raw"],
+            "cost_per_serving": "$3-4",
+            "notes": "Umami-rich; excellent in broths"
+          }
+        ]
+      },
+      "eggs": {
+        "category": "secondary_protein",
+        "items": [
+          {
+            "name": "eggs",
+            "b12_content": "high",
+            "iron_content": "moderate",
+            "preparation_methods": ["soft-boiled", "poached", "scrambled", "baked"],
+            "cost_per_serving": "$0.50-1",
+            "notes": "Versatile; excellent for breakfast; supports hormone balance"
+          }
+        ]
+      },
+      "legumes": {
+        "category": "plant_protein",
+        "items": [
+          {
+            "name": "lentils (green, red, black)",
+            "iron_content": "high",
+            "fiber_content": "high",
+            "phytoestrogen_content": "moderate",
+            "preparation_methods": ["simmered", "roasted", "in soups", "as salad base"],
+            "cost_per_serving": "$0.75-1.50",
+            "notes": "Excellent iron source; supports sustained energy; versatile"
+          },
+          {
+            "name": "chickpeas",
+            "iron_content": "high",
+            "fiber_content": "high",
+            "phytoestrogen_content": "moderate",
+            "preparation_methods": ["roasted", "in curries", "hummus", "salads"],
+            "cost_per_serving": "$1-1.50",
+            "notes": "Satisfying texture; good for hormone balance"
+          },
+          {
+            "name": "black beans",
+            "iron_content": "high",
+            "fiber_content": "high",
+            "preparation_methods": ["simmered", "in soups", "in rice bowls"],
+            "cost_per_serving": "$0.75-1",
+            "notes": "Deep, earthy flavor; pairs well with citrus"
+          },
+          {
+            "name": "split peas",
+            "iron_content": "moderate",
+            "fiber_content": "high",
+            "preparation_methods": ["in soups", "simmered"],
+            "cost_per_serving": "$0.50-1",
+            "notes": "Budget-friendly; excellent for slow-simmered soups"
+          }
+        ]
+      },
+      "soy_products": {
+        "category": "plant_protein",
+        "items": [
+          {
+            "name": "tofu",
+            "iron_content": "high",
+            "phytoestrogen_content": "high",
+            "preparation_methods": ["pan-fried", "baked", "in soups", "raw in salads"],
+            "cost_per_serving": "$1-2",
+            "notes": "Versatile; absorbs flavors; excellent for hormone balance"
+          },
+          {
+            "name": "tempeh",
+            "iron_content": "high",
+            "phytoestrogen_content": "high",
+            "preparation_methods": ["pan-fried", "steamed", "marinated"],
+            "cost_per_serving": "$1.50-2.50",
+            "notes": "Nutty flavor; firmer texture than tofu; fermented benefits"
+          },
+          {
+            "name": "edamame",
+            "iron_content": "moderate",
+            "phytoestrogen_content": "high",
+            "preparation_methods": ["steamed", "roasted", "in salads"],
+            "cost_per_serving": "$1-1.50",
+            "notes": "Excellent snack; supports hormone balance"
+          }
+        ]
+      }
+    },
+    "grains_and_carbohydrates": {
+      "whole_grains": [
+        {
+          "name": "brown rice",
+          "fiber_content": "moderate",
+          "preparation_methods": ["steamed", "in rice cooker", "in bowls"],
+          "cost_per_serving": "$0.50-0.75",
+          "notes": "Staple; pairs well with fish and vegetables"
+        },
+        {
+          "name": "quinoa",
+          "protein_content": "high",
+          "fiber_content": "moderate",
+          "preparation_methods": ["steamed", "in salads", "in bowls"],
+          "cost_per_serving": "$1-1.50",
+          "notes": "Complete protein; light and fluffy"
+        },
+        {
+          "name": "farro",
+          "fiber_content": "high",
+          "preparation_methods": ["simmered", "in salads", "in soups"],
+          "cost_per_serving": "$0.75-1",
+          "notes": "Chewy texture; nutty flavor; al dente preferred"
+        },
+        {
+          "name": "barley",
+          "fiber_content": "high",
+          "preparation_methods": ["in soups", "simmered", "in stews"],
+          "cost_per_serving": "$0.50-0.75",
+          "notes": "Budget-friendly; excellent in slow-simmered dishes"
+        },
+        {
+          "name": "millet",
+          "fiber_content": "moderate",
+          "preparation_methods": ["steamed", "in porridge"],
+          "cost_per_serving": "$0.75-1",
+          "notes": "Light, fluffy; good for digestive health"
+        },
+        {
+          "name": "oats",
+          "fiber_content": "high",
+          "preparation_methods": ["as porridge", "overnight oats", "in baking"],
+          "cost_per_serving": "$0.50-0.75",
+          "notes": "Excellent for breakfast; supports sustained energy"
+        }
+      ],
+      "bread_and_pasta": [
+        {
+          "name": "whole grain bread",
+          "fiber_content": "high",
+          "notes": "Occasional treat; quality over quantity; pairs with soups and stews"
+        },
+        {
+          "name": "whole wheat pasta",
+          "fiber_content": "moderate",
+          "preparation_methods": ["al dente", "in soups"],
+          "notes": "Avoid overcooked; texture preference is al dente"
+        }
+      ]
+    },
+    "vegetables": {
+      "dark_leafy_greens": [
+        {
+          "name": "spinach",
+          "iron_content": "high",
+          "magnesium_content": "high",
+          "preparation_methods": ["sautéed", "in soups", "raw in salads", "steamed"],
+          "cost_per_serving": "$0.75-1.50",
+          "element": "Water",
+          "notes": "Versatile; excellent iron source"
+        },
+        {
+          "name": "kale",
+          "iron_content": "high",
+          "magnesium_content": "high",
+          "preparation_methods": ["roasted", "sautéed", "in soups", "massaged in salads"],
+          "cost_per_serving": "$1-1.50",
+          "element": "Water",
+          "notes": "Hearty; excellent roasted for crispy texture"
+        },
+        {
+          "name": "arugula",
+          "flavor_profile": "peppery, bitter",
+          "preparation_methods": ["raw in salads", "sautéed", "in soups"],
+          "cost_per_serving": "$1-1.50",
+          "element": "Fire",
+          "notes": "Favorite bitter green; pairs well with citrus and umami"
+        },
+        {
+          "name": "radicchio",
+          "flavor_profile": "bitter, slightly sweet",
+          "preparation_methods": ["roasted", "grilled", "raw in salads"],
+          "cost_per_serving": "$1-1.50",
+          "element": "Fire",
+          "notes": "Favorite bitter green; excellent roasted for caramelization"
+        },
+        {
+          "name": "bok choy",
+          "iron_content": "moderate",
+          "preparation_methods": ["steamed", "sautéed", "in soups"],
+          "cost_per_serving": "$0.75-1",
+          "element": "Water",
+          "notes": "Tender; quick cooking; pairs well with Asian flavors"
+        },
+        {
+          "name": "collard greens",
+          "iron_content": "high",
+          "fiber_content": "high",
+          "preparation_methods": ["sautéed", "in soups", "slow-simmered"],
+          "cost_per_serving": "$0.75-1",
+          "element": "Water",
+          "notes": "Hearty; excellent in slow-simmered dishes"
+        }
+      ],
+      "cruciferous_vegetables": [
+        {
+          "name": "broccoli",
+          "iron_content": "moderate",
+          "preparation_methods": ["roasted", "steamed", "sautéed"],
+          "cost_per_serving": "$0.75-1",
+          "element": "Water",
+          "notes": "Excellent roasted for crispy texture; supports hormone balance"
+        },
+        {
+          "name": "cauliflower",
+          "preparation_methods": ["roasted", "steamed", "in curries"],
+          "cost_per_serving": "$0.75-1",
+          "element": "Water",
+          "notes": "Versatile; excellent roasted for caramelization"
+        },
+        {
+          "name": "cabbage",
+          "fiber_content": "high",
+          "preparation_methods": ["sautéed", "roasted", "fermented (kimchi)", "in soups"],
+          "cost_per_serving": "$0.50-0.75",
+          "element": "Water",
+          "notes": "Budget-friendly; excellent fermented for digestive health"
+        }
+      ],
+      "root_vegetables": [
+        {
+          "name": "beets",
+          "iron_content": "moderate",
+          "preparation_methods": ["roasted", "steamed", "raw in salads"],
+          "cost_per_serving": "$0.75-1",
+          "element": "Earth",
+          "notes": "Earthy, sweet; excellent roasted; supports iron intake"
+        },
+        {
+          "name": "carrots",
+          "preparation_methods": ["roasted", "steamed", "raw", "in soups"],
+          "cost_per_serving": "$0.50-0.75",
+          "element": "Fire",
+          "notes": "Budget-friendly; excellent roasted for caramelization"
+        },
+        {
+          "name": "sweet potato",
+          "fiber_content": "high",
+          "preparation_methods": ["roasted", "steamed", "in soups"],
+          "cost_per_serving": "$0.75-1",
+          "element": "Fire",
+          "notes": "Satisfying; supports sustained energy"
+        },
+        {
+          "name": "parsnips",
+          "preparation_methods": ["roasted", "steamed"],
+          "cost_per_serving": "$1-1.50",
+          "element": "Earth",
+          "notes": "Earthy, sweet; excellent roasted"
+        }
+      ],
+      "other_vegetables": [
+        {
+          "name": "mushrooms",
+          "umami_content": "high",
+          "preparation_methods": ["sautéed", "roasted", "in soups", "grilled"],
+          "cost_per_serving": "$1-2",
+          "element": "Water",
+          "notes": "Deep umami flavor; excellent seared for crispy texture"
+        },
+        {
+          "name": "bell peppers",
+          "preparation_methods": ["roasted", "sautéed", "raw", "in soups"],
+          "cost_per_serving": "$0.75-1.50",
+          "element": "Fire",
+          "notes": "Versatile; excellent roasted for sweetness"
+        },
+        {
+          "name": "zucchini",
+          "preparation_methods": ["roasted", "sautéed", "grilled", "raw"],
+          "cost_per_serving": "$0.75-1",
+          "element": "Water",
+          "notes": "Light; avoid mushy texture; roast for caramelization"
+        },
+        {
+          "name": "tomatoes",
+          "umami_content": "high",
+          "preparation_methods": ["roasted", "in soups", "raw", "slow-simmered"],
+          "cost_per_serving": "$1-2",
+          "element": "Fire",
+          "notes": "Umami-rich; excellent slow-simmered; seasonal preference"
+        },
+        {
+          "name": "eggplant",
+          "preparation_methods": ["roasted", "sautéed", "grilled"],
+          "cost_per_serving": "$1-1.50",
+          "element": "Water",
+          "notes": "Meaty texture; excellent roasted; avoid mushy"
+        }
+      ]
+    },
+    "fruits": {
+      "citrus": [
+        {
+          "name": "lemon",
+          "flavor_profile": "bright, acidic",
+          "preparation_methods": ["juice", "zest", "in dressings", "with fish"],
+          "cost_per_serving": "$0.25-0.50",
+          "element": "Fire",
+          "notes": "Favorite flavor profile; pairs well with fish and umami"
+        },
+        {
+          "name": "lime",
+          "flavor_profile": "bright, acidic",
+          "preparation_methods": ["juice", "zest", "in ceviche", "in dressings"],
+          "cost_per_serving": "$0.25-0.50",
+          "element": "Fire",
+          "notes": "Essential for ceviche; pairs well with seafood"
+        },
+        {
+          "name": "orange",
+          "flavor_profile": "sweet, bright",
+          "preparation_methods": ["juice", "segments", "zest"],
+          "cost_per_serving": "$0.50-1",
+          "element": "Fire",
+          "notes": "Seasonal; pairs well with bitter greens"
+        }
+      ],
+      "berries": [
+        {
+          "name": "blueberries",
+          "antioxidant_content": "high",
+          "preparation_methods": ["fresh", "in smoothies", "in oatmeal"],
+          "cost_per_serving": "$1.50-2.50",
+          "element": "Water",
+          "notes": "Supports mental clarity; seasonal preference"
+        },
+        {
+          "name": "raspberries",
+          "fiber_content": "high",
+          "preparation_methods": ["fresh", "in salads"],
+          "cost_per_serving": "$1.50-2.50",
+          "element": "Fire",
+          "notes": "Seasonal; supports digestive health"
+        }
+      ],
+      "other_fruits": [
+        {
+          "name": "mango",
+          "flavor_profile": "sweet, tropical",
+          "preparation_methods": ["fresh", "in salsa", "in curries"],
+          "cost_per_serving": "$1-2",
+          "element": "Fire",
+          "notes": "Tolerated sweetness in context; pairs well with spicy and savory"
+        },
+        {
+          "name": "avocado",
+          "fat_content": "high (healthy)",
+          "preparation_methods": ["raw", "in salads", "in bowls"],
+          "cost_per_serving": "$1-2",
+          "element": "Water",
+          "notes": "Creamy texture; supports hormone balance"
+        }
+      ]
+    },
+    "fats_and_oils": {
+      "oils": [
+        {
+          "name": "extra virgin olive oil",
+          "omega3_content": "moderate",
+          "preparation_methods": ["drizzling", "low-heat cooking", "dressings"],
+          "cost_per_serving": "$0.50-1",
+          "notes": "Mediterranean staple; use for finishing dishes"
+        },
+        {
+          "name": "sesame oil",
+          "flavor_profile": "nutty, toasted",
+          "preparation_methods": ["drizzling", "in dressings", "finishing"],
+          "cost_per_serving": "$0.50-1",
+          "notes": "Favorite flavor; use sparingly for maximum impact"
+        },
+        {
+          "name": "coconut oil",
+          "preparation_methods": ["cooking", "baking"],
+          "cost_per_serving": "$0.50-1",
+          "notes": "Safe alternative to tree nut oils"
+        }
+      ],
+      "seeds_and_seed_butters": [
+        {
+          "name": "pumpkin seeds (pepitas)",
+          "iron_content": "high",
+          "magnesium_content": "high",
+          "zinc_content": "high",
+          "preparation_methods": ["roasted", "as topping", "in salads", "in soups"],
+          "cost_per_serving": "$0.75-1.50",
+          "notes": "Nutrient-dense; excellent for sustained energy and hormone balance"
+        },
+        {
+          "name": "sunflower seeds",
+          "magnesium_content": "high",
+          "preparation_methods": ["roasted", "as topping", "in salads"],
+          "cost_per_serving": "$0.50-1",
+          "notes": "Budget-friendly; excellent texture contrast"
+        },
+        {
+          "name": "sesame seeds",
+          "calcium_content": "high",
+          "zinc_content": "high",
+          "preparation_methods": ["toasted", "as topping", "in tahini"],
+          "cost_per_serving": "$0.50-1",
+          "notes": "Versatile; excellent for hormone balance"
+        },
+        {
+          "name": "flaxseed",
+          "omega3_content": "high",
+          "phytoestrogen_content": "high",
+          "fiber_content": "high",
+          "preparation_methods": ["ground", "in smoothies", "in oatmeal", "in baking"],
+          "cost_per_serving": "$0.50-0.75",
+          "notes": "Essential for hormone balance and seed cycling"
+        },
+        {
+          "name": "chia seeds",
+          "omega3_content": "high",
+          "fiber_content": "high",
+          "preparation_methods": ["in smoothies", "in puddings", "as topping"],
+          "cost_per_serving": "$0.75-1",
+          "notes": "Supports sustained energy and digestive health"
+        },
+        {
+          "name": "tahini (sesame paste)",
+          "calcium_content": "high",
+          "preparation_methods": ["in dressings", "in sauces", "in hummus"],
+          "cost_per_serving": "$0.75-1.50",
+          "notes": "Safe alternative to tree nut butters; excellent umami"
+        },
+        {
+          "name": "sunflower seed butter",
+          "preparation_methods": ["as spread", "in sauces", "in smoothies"],
+          "cost_per_serving": "$1-1.50",
+          "notes": "Safe alternative to tree nut butters"
+        }
+      ]
+    },
+    "fermented_foods": [
+      {
+        "name": "miso",
+        "umami_content": "very high",
+        "probiotic_content": "high",
+        "preparation_methods": ["in soups", "in dressings", "in marinades"],
+        "cost_per_serving": "$0.50-1",
+        "notes": "Favorite; makes miso soup most mornings; supports digestive health"
+      },
+      {
+        "name": "kimchi",
+        "flavor_profile": "spicy, fermented, umami",
+        "probiotic_content": "high",
+        "preparation_methods": ["as side dish", "in rice bowls", "in soups"],
+        "cost_per_serving": "$0.75-1.50",
+        "notes": "Favorite flavor; supports digestive health and hormone balance"
+      },
+      {
+        "name": "pickled vegetables",
+        "preparation_methods": ["as condiment", "in salads", "as side"],
+        "cost_per_serving": "$0.50-1",
+        "notes": "Supports digestive health; avoid raw onion versions"
+      },
+      {
+        "name": "tempeh",
+        "probiotic_content": "moderate",
+        "phytoestrogen_content": "high",
+        "preparation_methods": ["pan-fried", "steamed", "marinated"],
+        "cost_per_serving": "$1.50-2.50",
+        "notes": "Fermented soy; supports hormone balance"
+      },
+      {
+        "name": "sauerkraut",
+        "probiotic_content": "high",
+        "preparation_methods": ["as condiment", "in salads", "as side"],
+        "cost_per_serving": "$0.75-1.50",
+        "notes": "Supports digestive health"
+      }
+    ],
+    "seasonings_and_herbs": {
+      "fresh_herbs": [
+        {
+          "name": "basil",
+          "source": "windowsill garden",
+          "flavor_profile": "sweet, aromatic",
+          "preparation_methods": ["fresh in salads", "in soups", "as garnish"],
+          "notes": "Always available; pairs well with tomatoes and fish"
+        },
+        {
+          "name": "shiso",
+          "source": "windowsill garden",
+          "flavor_profile": "minty, aromatic",
+          "preparation_methods": ["in sushi", "as garnish", "in soups"],
+          "notes": "Always available; Japanese favorite"
+        },
+        {
+          "name": "cilantro",
+          "source": "windowsill garden",
+          "flavor_profile": "bright, citrusy",
+          "preparation_methods": ["in salads", "in salsas", "as garnish"],
+          "notes": "Always available; pairs well with citrus and spicy"
+        },
+        {
+          "name": "mint",
+          "source": "windowsill garden",
+          "flavor_profile": "cool, refreshing",
+          "preparation_methods": ["in salads", "in drinks", "as garnish"],
+          "notes": "Always available; supports digestive health"
+        }
+      ],
+      "dried_herbs_and_spices": [
+        {
+          "name": "dashi",
+          "umami_content": "very high",
+          "preparation_methods": ["as broth base", "in soups"],
+          "notes": "Keeps on hand; essential for miso soup"
+        },
+        {
+          "name": "ginger",
+          "flavor_profile": "spicy, warming",
+          "preparation_methods": ["fresh grated", "in soups", "in teas"],
+          "notes": "Supports digestive health and mental clarity"
+        },
+        {
+          "name": "turmeric",
+          "flavor_profile": "earthy, slightly bitter",
+          "preparation_methods": ["in curries", "in soups", "in teas"],
+          "notes": "Anti-inflammatory; supports hormone balance"
+        },
+        {
+          "name": "cumin",
+          "flavor_profile": "warm, earthy",
+          "preparation_methods": ["in curries", "in soups", "toasted"],
+          "notes": "Supports digestive health"
+        },
+        {
+          "name": "coriander",
+          "flavor_profile": "warm, citrusy",
+          "preparation_methods": ["in curries", "toasted", "ground"],
+          "notes": "Pairs well with citrus"
+        },
+        {
+          "name": "chili flakes",
+          "flavor_profile": "spicy",
+          "preparation_methods": ["as topping", "in oils", "in soups"],
+          "notes": "Mildly spicy preference"
+        },
+        {
+          "name": "black pepper",
+          "flavor_profile": "peppery, warm",
+          "preparation_methods": ["freshly ground", "as seasoning"],
+          "notes": "Essential seasoning"
+        },
+        {
+          "name": "sea salt",
+          "preparation_methods": ["as seasoning", "finishing salt"],
+          "notes": "Quality matters"
+        }
+      ]
+    },
+    "condiments_and_sauces": [
+      {
+        "name": "soy sauce",
+        "umami_content": "very high",
+        "preparation_methods": ["in dressings", "in marinades", "as condiment"],
+        "cost_per_serving": "$0.25-0.50",
+        "notes": "Essential umami ingredient"
+      },
+      {
+        "name": "tamari",
+        "umami_content": "very high",
+        "preparation_methods": ["in dressings", "in marinades", "as condiment"],
+        "cost_per_serving": "$0.50-1",
+        "notes": "Gluten-free alternative to soy sauce"
+      },
+      {
+        "name": "fish sauce",
+        "umami_content": "very high",
+        "preparation_methods": ["in soups", "in dressings", "in curries"],
+        "cost_per_serving": "$0.25-0.50",
+        "notes": "Essential for Southeast Asian flavors"
+      },
+      {
+        "name": "rice vinegar",
+        "flavor_profile": "bright, mild acidity",
+        "preparation_methods": ["in dressings", "in pickles", "in soups"],
+        "cost_per_serving": "$0.25-0.50",
+        "notes": "Pairs well with Asian flavors"
+      },
+      {
+        "name": "balsamic vinegar",
+        "flavor_profile": "deep, sweet, acidic",
+        "preparation_methods": ["in dressings", "drizzled on vegetables"],
+        "cost_per_serving": "$0.50-1",
+        "notes": "Pairs well with roasted vegetables"
+      }
+    ]
+  },
+  "elemental_food_mapping": {
+    "fire_element": {
+      "astrological_placements": ["Rising (Sagittarius)"],
+      "characteristics": "Creative expression, passion, outward enthusiasm, adventure, exploration",
+      "food_associations": [
+        "Spicy foods (chili, ginger, turmeric)",
+        "Bright, citrusy flavors (lemon, lime, orange)",
+        "Red and orange vegetables (carrots, red peppers, tomatoes)",
+        "Warming spices (cumin, coriander, cinnamon)",
+        "Adventurous, global cuisines"
+      ],
+      "recommended_foods": [
+        "Citrus (lemon, lime, orange)",
+        "Carrots",
+        "Bell peppers (especially red)",
+        "Tomatoes",
+        "Ginger",
+        "Turmeric",
+        "Cumin",
+        "Coriander",
+        "Chili flakes",
+        "Mango",
+        "Raspberries",
+        "Arugula",
+        "Radicchio"
+      ],
+      "meal_ideas": [
+        "Citrus-marinated fish with roasted carrots",
+        "Spiced lentil soup with turmeric and ginger",
+        "Mango salsa with seared fish",
+        "Roasted red peppers with tahini dressing",
+        "Curried chickpeas with warming spices"
+      ]
+    },
+    "water_element": {
+      "astrological_placements": ["Sun (Scorpio)", "Moon (Pisces)"],
+      "characteristics": "Deep emotional intelligence, intuition, sensitivity, introspection, nourishment",
+      "food_associations": [
+        "Fish and seafood (primary protein)",
+        "Umami-rich foods (miso, mushrooms, fermented)",
+        "Soothing, nourishing foods",
+        "Dark, deep flavors",
+        "Slow-simmered, meditative cooking"
+      ],
+      "recommended_foods": [
+        "Salmon",
+        "Sardines",
+        "Mackerel",
+        "Mussels",
+        "Clams",
+        "Mushrooms",
+        "Miso",
+        "Kimchi",
+        "Dark leafy greens (spinach, kale)",
+        "Bok choy",
+        "Zucchini",
+        "Eggplant",
+        "Blueberries",
+        "Avocado"
+      ],
+      "meal_ideas": [
+        "Miso soup with dashi and dark greens",
+        "Slow-simmered fish stew with mushrooms",
+        "Pan-seared salmon with sautéed bok choy",
+        "Umami-rich mushroom and miso broth",
+        "Steamed clams in fermented broth"
+      ]
+    },
+    "earth_element": {
+      "astrological_placements": [],
+      "characteristics": "Grounding, stability, nourishment, practicality (not prominent in chart; compensate with grounding foods)",
+      "food_associations": [
+        "Root vegetables",
+        "Whole grains",
+        "Legumes",
+        "Earthy flavors",
+        "Slow-cooked, grounding meals"
+      ],
+      "recommended_foods": [
+        "Beets",
+        "Parsnips",
+        "Brown rice",
+        "Barley",
+        "Lentils",
+        "Chickpeas",
+        "Black beans",
+        "Whole grain bread"
+      ],
+      "meal_ideas": [
+        "Roasted beets with lentils and tahini",
+        "Barley and mushroom soup",
+        "Root vegetable and legume stew",
+        "Brown rice bowl with roasted root vegetables"
+      ]
+    },
+    "air_element": {
+      "astrological_placements": [],
+      "characteristics": "Communication, intellectual clarity, lightness (not prominent in chart; incorporate for balance)",
+      "food_associations": [
+        "Light, fresh preparations",
+        "Bright flavors",
+        "Raw vegetables",
+        "Herbs and aromatics"
+      ],
+      "recommended_foods": [
+        "Fresh herbs (basil, cilantro, mint, shiso)",
+        "Leafy greens (arugula, radicchio)",
+        "Fresh citrus",
+        "Light fish preparations (ceviche, sashimi)",
+        "Raw vegetables"
+      ],
+      "meal_ideas": [
+        "Ceviche with fresh herbs and citrus",
+        "Sashimi with fresh shiso and wasabi",
+        "Arugula salad with citrus dressing",
+        "Fresh herb and fish ceviche"
+      ]
+    }
+  },
+  "budget_and_cost_analysis": {
+    "weekly_budget": {
+      "total": 90,
+      "currency": "USD",
+      "breakdown": {
+        "proteins": {
+          "budget": 30,
+          "percentage": 33.3,
+          "notes": "Fish, eggs, legumes, tofu"
+        },
+        "vegetables_and_fruits": {
+          "budget": 25,
+          "percentage": 27.8,
+          "notes": "Seasonal produce, farmers market preference"
+        },
+        "grains_and_carbs": {
+          "budget": 12,
+          "percentage": 13.3,
+          "notes": "Rice, grains, bread (occasional)"
+        },
+        "pantry_staples": {
+          "budget": 15,
+          "percentage": 16.7,
+          "notes": "Oils, seasonings, condiments, seeds"
+        },
+        "special_occasion": {
+          "budget": 8,
+          "percentage": 8.9,
+          "notes": "Birthday dinner splurge (Day 4)"
+        }
+      }
+    },
+    "per_meal_budget": {
+      "target_range": "$8-12",
+      "breakfast_budget": "$2-3",
+      "lunch_budget": "$4-6",
+      "snack_budget": "$1-2",
+      "dinner_budget": "$5-8"
+    },
+    "cost_per_serving_by_category": {
+      "proteins": {
+        "fish": "$3-7 per serving",
+        "eggs": "$0.50-1 per serving",
+        "legumes": "$0.75-1.50 per serving",
+        "tofu": "$1-2 per serving",
+        "tempeh": "$1.50-2.50 per serving"
+      },
+      "vegetables": "$0.50-2 per serving",
+      "grains": "$0.50-1.50 per serving",
+      "seeds_and_nuts": "$0.50-1.50 per serving"
+    },
+    "budget_optimization_strategies": [
+      "Buy fish at local Asian grocery (better prices than standard grocery)",
+      "Purchase seasonal produce at farmers market (Saturday mornings)",
+      "Buy legumes and grains in bulk",
+      "Use eggs as affordable protein",
+      "Prioritize budget-friendly fish (sardines, mackerel) for omega-3s",
+      "Make miso soup regularly (inexpensive, nourishing)",
+      "Buy seeds in bulk; they last longer",
+      "Limit bread to occasional treat",
+      "Use fermented foods for flavor (less expensive than fresh herbs)"
+    ],
+    "birthday_dinner_budget": {
+      "date": "Day 4 of meal plan",
+      "budget": 25,
+      "notes": "Splurge meal; can include higher-quality fish or special ingredients",
+      "suggestions": [
+        "Premium fish (halibut, sea bass, or special catch)",
+        "Special ingredients (saffron, premium miso, etc.)",
+        "Restaurant-quality presentation"
+      ]
+    }
+  },
+  "meal_frequency_and_timing": {
+    "daily_schedule": {
+      "breakfast": {
+        "time": "08:30",
+        "calories": 350,
+        "size": "light to moderate",
+        "notes": "Needs gentle alarm and motivation; should feel like a treat, not a chore",
+        "macronutrient_targets": {
+          "protein": "20-25g",
+          "carbs": "40-50g",
+          "fat": "10-15g"
+        },
+        "example_meals": [
+          "Soft-boiled eggs with whole grain toast and sautéed greens",
+          "Oatmeal with flaxseed, blueberries, and sesame seeds",
+          "Miso soup with tofu and dark greens",
+          "Scrambled eggs with roasted vegetables and herbs"
+        ]
+      },
+      "lunch": {
+        "time": "13:00",
+        "calories": 650,
+        "size": "moderate and satisfying",
+        "notes": "Main productive meal; prevents 2 PM crash",
+        "macronutrient_targets": {
+          "protein": "35-40g",
+          "carbs": "70-80g",
+          "fat": "15-20g"
+        },
+        "example_meals": [
+          "Seared salmon with brown rice and roasted vegetables",
+          "Lentil and vegetable soup with whole grain bread",
+          "Fish ceviche with quinoa and roasted beets",
+          "Tofu stir-fry with brown rice and dark greens"
+        ]
+      },
+      "snack": {
+        "time": "15:30",
+        "calories": 200,
+        "size": "small",
+        "notes": "Addresses creative energy dip; minimal prep preferred",
+        "macronutrient_targets": {
+          "protein": "10-15g",
+          "carbs": "20-25g",
+          "fat": "5-10g"
+        },
+        "example_meals": [
+          "Roasted pumpkin seeds with dried fruit",
+          "Hard-boiled egg with fruit",
+          "Hummus with raw vegetables",
+          "Edamame with sea salt",
+          "Chia seed pudding"
+        ]
+      },
+      "dinner": {
+        "time": "19:00",
+        "calories": 800,
+        "size": "moderate to hearty",
+        "notes": "Wind-down ritual; enjoys cooking as creative break",
+        "macronutrient_targets": {
+          "protein": "40-45g",
+          "carbs": "80-90g",
+          "fat": "20-25g"
+        },
+        "example_meals": [
+          "Pan-seared fish with roasted vegetables and grain",
+          "Slow-simmered fish stew with dark greens",
+          "Tempeh curry with brown rice and kimchi",
+          "Roasted fish with caramelized vegetables and farro"
+        ]
+      }
+    },
+    "weekly_meal_prep_strategy": {
+      "sunday_prep": {
+        "duration": "30-45 minutes",
+        "tasks": [
+          "Cook brown rice or other grain for the week",
+          "Wash and chop vegetables for storage",
+          "Make one sauce or dressing (tahini, miso-based, citrus)",
+          "Prepare dashi broth for miso soup",
+          "Cook a batch of lentils or legumes"
+        ],
+        "notes": "Light prep for freshness; daily cooking preferred"
+      },
+      "weekday_cooking": {
+        "duration": "20-35 minutes per meal",
+        "approach": "Daily cooking for freshness; use prepped components",
+        "notes": "Gets absorbed in work; quick, efficient cooking essential"
+      },
+      "weekend_cooking": {
+        "duration": "up to 90 minutes",
+        "approach": "Meditative, creative cooking; slow-simmered dishes",
+        "notes": "Enjoys cooking as creative break; can make soups and stews"
+      }
+    }
+  },
+  "health_goal_alignment": {
+    "sustained_energy": {
+      "priority": 1,
+      "goal": "Avoid 2 PM crash that derails afternoon illustration sessions",
+      "nutritional_strategies": [
+        "Balanced macronutrients at each meal (protein + complex carbs + healthy fat)",
+        "Iron-rich foods to prevent anemia-related fatigue",
+        "Stable blood sugar through whole grains and legumes",
+        "Omega-3s for sustained mental energy",
+        "Magnesium for energy production"
+      ],
+      "key_foods": [
+        "Salmon and other omega-3 fish",
+        "Lentils and legumes",
+        "Dark leafy greens",
+        "Whole grains (brown rice, farro, barley)",
+        "Pumpkin seeds",
+        "Eggs"
+      ],
+      "meal_timing": "Balanced lunch at 1:00 PM; small snack at 3:30 PM to prevent crash",
+      "sample_day": {
+        "breakfast": "Oatmeal with flaxseed and blueberries (sustained carbs + omega-3)",
+        "lunch": "Seared salmon with brown rice and roasted greens (protein + iron + omega-3)",
+        "snack": "Roasted pumpkin seeds with fruit (magnesium + sustained energy)",
+        "dinner": "Fish stew with legumes and vegetables (protein + iron + fiber)"
+      }
+    },
+    "mental_clarity": {
+      "priority": 2,
+      "goal": "Sharp focus for detailed illustration work",
+      "nutritional_strategies": [
+        "Omega-3 rich foods (EPA/DHA) for brain health",
+        "B vitamins for neurological function",
+        "Antioxidants for cognitive protection",
+        "Adaptogenic herbs for stress management",
+        "Stable blood sugar for focus"
+      ],
+      "key_foods": [
+        "Salmon, sardines, mackerel (omega-3)",
+        "Eggs (B vitamins, choline)",
+        "Dark leafy greens (B vitamins, antioxidants)",
+        "Blueberries (antioxidants)",
+        "Ginger and turmeric (anti-inflammatory)",
+        "Nutritional yeast (B12)"
+      ],
+      "supplements_to_consider": [
+        "Omega-3 supplement if fish intake is low",
+        "B-complex if energy is still low"
+      ],
+      "sample_day": {
+        "breakfast": "Eggs with whole grain toast and sautéed greens (B vitamins + choline)",
+        "lunch": "Sardine salad with arugula and citrus (omega-3 + antioxidants)",
+        "snack": "Blueberries with sesame seeds (antioxidants + minerals)",
+        "dinner": "Salmon with turmeric-roasted vegetables (omega-3 + anti-inflammatory)"
+      }
+    },
+    "hormone_balance": {
+      "priority": 3,
+      "goal": "Address irregular cycles through seed cycling and phytoestrogen-rich foods",
+      "nutritional_strategies": [
+        "Seed cycling (flax, sesame, pumpkin, sunflower seeds in phases)",
+        "Phytoestrogen-rich foods (flaxseed, edamame, tempeh, legumes)",
+        "Mineral balance (magnesium, zinc, iron)",
+        "Healthy fats for hormone production",
+        "Fiber for estrogen metabolism"
+      ],
+      "seed_cycling_protocol": {
+        "follicular_phase": {
+          "days": "Day 1-14 of cycle",
+          "seeds": ["flaxseed", "pumpkin seeds"],
+          "rationale": "Support estrogen production"
+        },
+        "ovulatory_phase": {
+          "days": "Day 15-21 of cycle",
+          "seeds": ["sesame seeds", "sunflower seeds"],
+          "rationale": "Support progesterone production"
+        },
+        "luteal_phase": {
+          "days": "Day 22-28 of cycle",
+          "seeds": ["pumpkin seeds", "flaxseed"],
+          "rationale": "Support progesterone and reduce estrogen"
+        }
+      },
+      "key_foods": [
+        "Flaxseed (phytoestrogens, omega-3)",
+        "Sesame seeds (minerals, phytoestrogens)",
+        "Pumpkin seeds (magnesium, zinc)",
+        "Sunflower seeds (minerals)",
+        "Edamame (phytoestrogens)",
+        "Tempeh (phytoestrogens, fermented)",
+        "Legumes (fiber, minerals)",
+        "Dark chocolate (magnesium)"
+      ],
+      "sample_day": {
+        "breakfast": "Oatmeal with ground flaxseed and sesame seeds (phytoestrogens + minerals)",
+        "lunch": "Tempeh stir-fry with edamame and brown rice (phytoestrogens + protein)",
+        "snack": "Dark chocolate with pumpkin seeds (magnesium + minerals)",
+        "dinner": "Lentil soup with roasted vegetables (fiber + minerals + phytoestrogens)"
+      }
+    },
+    "digestive_health": {
+      "priority": 4,
+      "goal": "Support sensitive gut; benefit from fermented foods and fiber; avoid raw alliums",
+      "nutritional_strategies": [
+        "Fermented foods for probiotics (miso, kimchi, tempeh, sauerkraut)",
+        "Soluble and insoluble fiber for gut health",
+        "Avoid raw onion (triggers digestive distress)",
+        "Ginger and turmeric for digestive support",
+        "Adequate hydration"
+      ],
+      "key_foods": [
+        "Miso (fermented, umami)",
+        "Kimchi (fermented, probiotic)",
+        "Tempeh (fermented soy)",
+        "Sauerkraut (fermented)",
+        "Legumes (fiber)",
+        "Whole grains (fiber)",
+        "Ginger (digestive support)",
+        "Turmeric (anti-inflammatory)",
+        "Dark leafy greens (fiber, minerals)"
+      ],
+      "foods_to_avoid": [
+        "Raw onion (causes bloating and digestive distress)",
+        "Overly creamy dishes (can be heavy on sensitive gut)",
+        "Processed foods"
+      ],
+      "sample_day": {
+        "breakfast": "Miso soup with tofu and dark greens (fermented + digestive support)",
+        "lunch": "Lentil soup with ginger and turmeric (fiber + digestive support)",
+        "snack": "Kimchi with sesame seeds (fermented + probiotics)",
+        "dinner": "Fish with roasted vegetables and brown rice (easy to digest + fiber)"
+      }
+    }
+  },
+  "astrological_alignment_summary": {
+    "scorpio_sun_food_alignment": {
+      "traits": "Intense, transformative, deep, mysterious, powerful",
+      "food_philosophy": "Umami-rich, fermented, dark/deep flavors; foods that nourish the soul and support transformation",
+      "cooking_approach": "Slow-simmered, intentional, transformative cooking methods; meditative weekend cooking",
+      "key_foods": [
+        "Umami-rich: miso, mushrooms, fish, soy sauce",
+        "Fermented: kimchi, tempeh, miso, sauerkraut",
+        "Dark flavors: dark leafy greens, dark chocolate, deep broths",
+        "Slow-cooked: soups, stews, slow-simmered dishes"
+      ]
+    },
+    "pisces_moon_food_alignment": {
+      "traits": "Intuitive, sensitive, dreamy, compassionate, flowing",
+      "food_philosophy": "Gentle, nourishing, comfort foods; seafood; foods that soothe emotions and support intuition",
+      "cooking_approach": "Meditative, flowing, intuitive cooking; weekend cooking as spiritual practice",
+      "key_foods": [
+        "Seafood: salmon, sardines, fish",
+        "Nourishing: soups, broths, slow-cooked meals",
+        "Soothing: warm foods, comfort meals",
+        "Intuitive: cooking by feel, seasonal ingredients"
+      ]
+    },
+    "sagittarius_rising_food_alignment": {
+      "traits": "Adventurous, optimistic, expansive, curious, exploratory",
+      "food_philosophy": "Diverse cuisines, new ingredients, global flavors, exploration and discovery",
+      "cooking_approach": "Experimental, open to discovery, enjoys the ritual and adventure of cooking",
+      "key_foods": [
+        "Global cuisines: Japanese, Mediterranean, Mexican, Indian, Peruvian",
+        "New ingredients: one new ingredient per week",
+        "Adventurous flavors: spicy, citrusy, umami",
+        "Exploratory: farmers market discoveries, seasonal exploration"
+      ]
+    },
+    "overall_chart_interpretation": {
+      "water_dominance": "Deep intuitive connection to food; sensitive to quality and preparation; benefits from nourishing, soul-satisfying meals",
+      "mutable_modality": "Flexibility and adaptability in meal planning; enjoys variety and exploration; can adjust to seasonal changes",
+      "fire_rising": "Adventurous spirit in culinary exploration; enjoys the creative process of cooking; open to new ingredients and cuisines",
+      "no_earth": "May lack grounding; compensate with root vegetables, whole grains, and legumes; benefit from slow-cooked, grounding meals",
+      "no_air": "Communication may be intuitive rather than intellectual; cooking as intuitive, meditative practice rather than analytical"
+    }
+  },
+  "implementation_notes": {
+    "key_principles": [
+      "Quality over quantity: one excellent piece of salmon rather than mediocre protein",
+      "Seasonal produce preference: shop farmers market Saturday mornings",
+      "Organic when budget allows: prioritize 'dirty dozen' items",
+      "Discovery mindset: one new ingredient per week",
+      "Freshness priority: light Sunday prep + daily cooking",
+      "Intuitive cooking: meditative weekend cooking as creative break",
+      "Astrological alignment: foods that resonate with Scorpio/Pisces/Sagittarius energy"
+    ],
+    "shopping_strategy": {
+      "primary_sources": [
+        "Local Asian grocery (fish, miso, tofu, produce) - best prices and quality",
+        "Farmers market (Saturday mornings) - seasonal, fresh, ritual",
+        "Standard grocery store (staples, pantry items)"
+      ],
+      "budget_allocation": [
+        "30% proteins (fish, eggs, legumes, tofu)",
+        "28% vegetables and fruits (seasonal, farmers market)",
+        "13% grains and carbs",
+        "17% pantry staples (oils, seasonings, seeds)",
+        "12% special occasions and new discoveries"
+      ]
+    },
+    "cooking_equipment_utilization": {
+      "cast_iron_skillet": "Searing fish, roasting vegetables, caramelization",
+      "rice_cooker": "Cooking grains for the week",
+      "immersion_blender": "Making soups, sauces, dressings",
+      "good_chef_knife": "Vegetable prep, fish filleting",
+      "sheet_pans": "Roasting vegetables, fish",
+      "dutch_oven": "Slow-simmered soups and stews"
+    },
+    "lifestyle_integration": {
+      "herb_garden": "Fresh basil, shiso, cilantro, mint always available for cooking",
+      "miso_soup_habit": "Make most mornings when remembered; keep dashi on hand",
+      "coffee_ritual": "Black, good quality; non-negotiable; not a smoothie person",
+      "bread_relationship": "Occasional treat; quality over daily staple",
+      "meal_planning_approach": "Mildly overwhelming but excited about astrological angle",
+      "cooking_as_practice": "Weekend cooking as meditative, creative break from illustration work"
+    }
+  },
+  "validation_and_completeness": {
+    "dietary_restrictions_covered": true,
+    "allergies_addressed": true,
+    "health_goals_integrated": true,
+    "budget_constraints_applied": true,
+    "astrological_alignment_included": true,
+    "meal_timing_specified": true,
+    "cooking_capacity_considered": true,
+    "lifestyle_preferences_honored": true,
+    "validation_status": "complete",
+    "notes": "Framework comprehensively addresses all aspects of Maya's dietary profile, health goals, budget constraints, and astrological alignment. Ready for meal planning implementation."
+  }
+}
