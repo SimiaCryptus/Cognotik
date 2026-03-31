@@ -170,10 +170,6 @@
                         text="📝 Persuasive Essay"
                         description="Craft a compelling persuasive essay on a given topic, incorporating strong arguments and evidence to support your viewpoint">
                 </action>
-                <action class="cognotik.actions.task.ResearchPaperAction"
-                        text="📚 Research Paper"
-                        description="Generate a well-structured research paper complete with citations and references on a specified topic">
-                </action>
                 <action class="cognotik.actions.generate.OCRAction"
                         text="📄 OCR"
                         description="Extract text from image files using Optical Character Recognition (OCR) and save to a new markdown file">

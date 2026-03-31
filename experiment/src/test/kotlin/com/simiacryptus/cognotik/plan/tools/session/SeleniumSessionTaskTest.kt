@@ -3,10 +3,13 @@ package com.simiacryptus.cognotik.plan.tools.session
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask.SeleniumSessionTaskExecutionConfigData
+import com.simiacryptus.cognotik.platform.model.defaultUser
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Timeout
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 object SeleniumSessionTaskTest {
@@ -14,10 +17,10 @@ object SeleniumSessionTaskTest {
   @JvmStatic
   @BeforeAll
   fun setup() {
-    UnifiedHarness.configurePlatform(com.simiacryptus.cognotik.platform.model.defaultUser)
+    UnifiedHarness.Companion.configurePlatform(defaultUser)
   }
 
-  @org.junit.jupiter.api.Tag("Integration")
+  @Tag("Integration")
   //@org.junit.jupiter.api.Test
   @Timeout(10, unit = TimeUnit.MINUTES)
   fun test() {
@@ -36,18 +39,18 @@ object SeleniumSessionTaskTest {
         createTranscript = true
       ),
       timeoutMinutes = 10,
-      user = com.simiacryptus.cognotik.platform.model.defaultUser,
+      user = defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
     ).run()
   }
 
-  @org.junit.jupiter.api.Tag("Integration")
+  @Tag("Integration")
   //@org.junit.jupiter.api.Test
   @Timeout(10, unit = TimeUnit.MINUTES)
   fun testSessionReuse() {
-    val sessionId = "test-session-${java.util.UUID.randomUUID()}"
+    val sessionId = "test-session-${UUID.randomUUID()}"
 
     // First task: Open session
     TaskHarness(
@@ -62,7 +65,7 @@ object SeleniumSessionTaskTest {
         task_description = "Open Wikipedia session",
       ),
       timeoutMinutes = 5,
-      user = com.simiacryptus.cognotik.platform.model.defaultUser,
+      user = defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
@@ -81,7 +84,7 @@ object SeleniumSessionTaskTest {
         task_description = "Get title from existing session",
       ),
       timeoutMinutes = 5,
-      user = com.simiacryptus.cognotik.platform.model.defaultUser,
+      user = defaultUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,

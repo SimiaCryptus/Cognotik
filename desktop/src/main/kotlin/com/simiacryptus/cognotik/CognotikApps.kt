@@ -14,11 +14,11 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.encrypt
+import com.simiacryptus.cognotik.webui.application.AppEntry
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.chat.DocOpsApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
-import com.simiacryptus.cognotik.webui.application.AppEntry
 import jakarta.servlet.DispatcherType
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
 import org.eclipse.jetty.webapp.WebAppContext
@@ -30,7 +30,7 @@ import java.io.IOException
 import java.net.ServerSocket
 import java.net.URI
 import java.net.URLEncoder
-import java.util.EnumSet
+import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -49,15 +49,72 @@ open class CognotikApps(
     private var systemTrayManager: SystemTrayManager? = null
     private var socketServer: ServerSocket? = null
     private var socketThread: Thread? = null
-     private val runningServer = AtomicReference<org.eclipse.jetty.server.Server?>(null)
+    private val runningServer = AtomicReference<org.eclipse.jetty.server.Server?>(null)
 
     companion object {
         private val log = LoggerFactory.getLogger(CognotikApps::class.java.name)
-        private const val MAX_PORT_ATTEMPTS = 10
+        const val MAX_PORT_ATTEMPTS = 10
         val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
+        var server: CognotikApps? = null
 
         @JvmStatic
         fun main(args: Array<String>) {
+            fun handleServer(vararg args: String) {
+                log.info("Parsing server options...")
+                var port = 12891
+                var host = "localhost"
+                var publicName = "apps.simiacrypt.us"
+                var i = 0
+                while (i < args.size) {
+                    when (args[i]) {
+                        "--port" -> {
+                            if (i + 1 < args.size) {
+                                log.debug("Setting port to: ${args[i + 1]}")
+                                port = args[++i].toIntOrNull() ?: Companion.run {
+                                    Companion.log.error("Invalid port number: ${args[i]}")
+                                    exitProcess(1)
+                                    throw IllegalArgumentException("Invalid port number: ${args[i]}")
+                                }
+                            }
+                        }
+
+                        "--host" -> if (i + 1 < args.size) host = args[++i]
+                        "--public-name" -> if (i + 1 < args.size) publicName = args[++i]
+                        else -> {
+                            log.error("Unknown server option: ${args[i]}")
+                            throw IllegalArgumentException("Unknown server option: ${args[i]}")
+                        }
+                    }
+                    i++
+                }
+                log.debug("Server options parsed successfully")
+                val options = ServerOptions(port, host, publicName)
+                log.info("Configuring server with options: port=${options.port}, host=${options.host}, publicName=${options.publicName}")
+
+                var actualPort = options.port
+                try {
+                    ServerSocket(actualPort).use {
+                        log.debug("Port $actualPort is available")
+                    }
+                } catch (e: IOException) {
+                    log.info("Port ${options.port} is in use, finding alternative port")
+                    println("Port ${options.port} is in use, finding alternative port")
+                    actualPort = findAvailablePort(options.port + 1)
+                    log.info("Using alternative port $actualPort")
+                    println("Using alternative port $actualPort")
+                }
+                scheduledExecutorService.scheduleAtFixedRate(
+                    { checkUpdate() },
+                    0, 7 * 24, TimeUnit.HOURS
+                )
+                server = CognotikApps(
+                    localName = options.host,
+                    publicName = options.publicName,
+                    port = actualPort
+                )
+                server?.init(actualPort, args)
+            }
+
             try {
                 if (args.isEmpty()) {
                     log.info("No arguments provided - defaulting to server mode with default options")
@@ -65,7 +122,20 @@ open class CognotikApps(
                 } else {
                     when (args[0].lowercase()) {
                         "server" -> handleServer(*args.sliceArray(1 until args.size))
-                        "help", "-h", "--help" -> printUsage()
+                        "help", "-h", "--help" -> {
+                            println(
+                                """
+                                        Cognotik Server
+                                        Usage:
+                                          cognotik <command> [options]
+                                        Commands:
+                                          server     Start the server
+                                          help      Show this help message
+                                        For server options:
+                                          cognotik server --help
+                                    """.trimIndent()
+                            )
+                        }
                         "daemon" -> handleServer(*args.sliceArray(1 until args.size))
                         else -> handleServer()
                     }
@@ -81,69 +151,8 @@ open class CognotikApps(
             }
         }
 
-        private var server: CognotikApps? = null
 
-
-        private fun handleServer(vararg args: String) {
-            require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
-            CoreProviders.init()
-            CoreTasks.init()
-            ExperimentalStuff().init()
-            ResourceApps("apps/apps.json").init()
-            //ResourceApps("/apps/disabled_apps.json").init()
-            ApplicationServices.pluginManager.apply {
-                getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
-                subscribeToChanges {
-                    log.info("Plugin change detected, reinitializing apps...")
-                     try {
-                         server?.reloadApps()
-                     } catch (e: Exception) {
-                         log.error("Failed to reload apps after plugin change: ${e.message}", e)
-                     }
-                }
-            }
-            initDynamicEnums()
-            log.info("Parsing server options...")
-            val options = parseServerOptions(*args)
-            log.info("Configuring server with options: port=${options.port}, host=${options.host}, publicName=${options.publicName}")
-
-            var actualPort = options.port
-            try {
-                ServerSocket(actualPort).use {
-                    log.debug("Port $actualPort is available")
-                }
-            } catch (e: IOException) {
-                log.info("Port ${options.port} is in use, finding alternative port")
-                println("Port ${options.port} is in use, finding alternative port")
-                actualPort = findAvailablePort(options.port + 1)
-                log.info("Using alternative port $actualPort")
-                println("Using alternative port $actualPort")
-            }
-            scheduledExecutorService.scheduleAtFixedRate(
-                { checkUpdate() },
-                0, 7 * 24, TimeUnit.HOURS
-            )
-            server = CognotikApps(
-                localName = options.host,
-                publicName = options.publicName,
-                port = actualPort
-            )
-            server?.initSystemTray()
-            server?.startSocketServer(actualPort + 1)
-
-            Runtime.getRuntime().addShutdownHook(Thread {
-                log.info("Shutdown hook triggered, stopping server...")
-                server?.stopServer()
-            })
-            // Call _main with NO server options (strip out --port/--host/--public-name and their values)
-            val filteredArgs = args.filterIndexed { i, arg ->
-                arg in listOf("--port", "--host", "--public-name") ||
-                        (i > 0 && args[i - 1] in listOf("--port", "--host", "--public-name"))
-            }.toTypedArray()
-            server?._main(*filteredArgs)
-        }
-
-        private fun findAvailablePort(startPort: Int): Int {
+        fun findAvailablePort(startPort: Int): Int {
             var port = startPort
             var attempts = 0
             while (attempts < MAX_PORT_ATTEMPTS) {
@@ -162,58 +171,45 @@ open class CognotikApps(
             return ServerSocket(0).use { it.localPort }
         }
 
-        private fun printUsage() {
-            println(
-                """
-                Cognotik Server
-                Usage:
-                  cognotik <command> [options]
-                Commands:
-                  server     Start the server
-                  help      Show this help message
-                For server options:
-                  cognotik server --help
-            """.trimIndent()
-            )
-        }
-
         private data class ServerOptions(
             val port: Int = 12891,
             val host: String = "localhost",
             val publicName: String = "apps.simiacrypt.us"
         )
 
-        private fun parseServerOptions(vararg args: String): ServerOptions {
-            var port = 12891
-            var host = "localhost"
-            var publicName = "apps.simiacrypt.us"
-            var i = 0
-            while (i < args.size) {
-                when (args[i]) {
-                    "--port" -> {
-                        if (i + 1 < args.size) {
-                            log.debug("Setting port to: ${args[i + 1]}")
-                            port = args[++i].toIntOrNull() ?: run {
-                                log.error("Invalid port number: ${args[i]}")
-                                exitProcess(1)
-                                throw IllegalArgumentException("Invalid port number: ${args[i]}")
-                            }
-                        }
-                    }
+    }
 
-                    "--host" -> if (i + 1 < args.size) host = args[++i]
-                    "--public-name" -> if (i + 1 < args.size) publicName = args[++i]
-                    else -> {
-                        log.error("Unknown server option: ${args[i]}")
-                        throw IllegalArgumentException("Unknown server option: ${args[i]}")
-                    }
+    open fun init(actualPort: Int, args: Array<out String>) {
+        require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
+        ResourceApps("apps/apps.json").init()
+        //ResourceApps("/apps/disabled_apps.json").init()
+        CoreProviders.init()
+        CoreTasks.init()
+        initSystemTray()
+        startSocketServer(actualPort + 1)
+        ApplicationServices.pluginManager.apply {
+            getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+            subscribeToChanges {
+                log.info("Plugin change detected, reinitializing apps...")
+                try {
+                    server?.reloadApps()
+                } catch (e: Exception) {
+                    log.error("Failed to reload apps after plugin change: ${e.message}", e)
                 }
-                i++
             }
-            log.debug("Server options parsed successfully")
-            return ServerOptions(port, host, publicName)
         }
+        initDynamicEnums()
 
+        Runtime.getRuntime().addShutdownHook(Thread {
+            log.info("Shutdown hook triggered, stopping server...")
+            stopServer()
+        })
+        // Call _main with NO server options (strip out --port/--host/--public-name and their values)
+        val filteredArgs = args.filterIndexed { i, arg ->
+            arg in listOf("--port", "--host", "--public-name") ||
+                (i > 0 && args[i - 1] in listOf("--port", "--host", "--public-name"))
+        }.toTypedArray()
+        _main(*filteredArgs)
     }
 
     private fun initSystemTray() {
@@ -509,7 +505,7 @@ open class CognotikApps(
 }
 
 fun String?.urlEncode(): String {
-    return this?.let {
+    return let {
         URLEncoder.encode(it, Charsets.UTF_8.name())
             .replace("+", "%20")
             .replace("%7E", "~")

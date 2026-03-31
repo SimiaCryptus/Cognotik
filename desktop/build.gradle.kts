@@ -60,7 +60,6 @@ dependencies {
     implementation(project(":providers"))
     implementation(project(":tasklib"))
     implementation(project(":stdtools"))
-    implementation(project(":experiment"))
 
     implementation(libs.batik.transcoder)
     implementation(libs.batik.codec)

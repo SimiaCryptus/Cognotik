@@ -25,7 +25,6 @@ dependencies {
     implementation(project(":webui"))
 
     implementation(libs.pty4j)
-    implementation(libs.webdrivermanager)
     implementation(libs.pdfbox)
     implementation("com.github.jai-imageio:jai-imageio-core:1.4.0")
     implementation("com.github.jai-imageio:jai-imageio-jpeg2000:1.4.0")
@@ -35,6 +34,7 @@ dependencies {
     implementation(libs.jsoup)
     implementation(libs.zxing.core)
     implementation(libs.zxing.javase)
+
     implementation(libs.jetty.server)
     implementation(libs.jetty.servlet)
     implementation(libs.jetty.annotations)
@@ -55,13 +55,9 @@ dependencies {
     implementation(libs.commons.io)
     implementation(libs.commons.codec)
     implementation(libs.slf4j.api)
-    implementation(libs.tinkerpop)
     implementation(libs.hsqldb)
     implementation(libs.httpclient5) {
         exclude(group = "org.slf4j", module = "slf4j-api")
-    }
-    implementation(libs.selenium.java) {
-        exclude(group = "com.intellij.remoterobot", module = "remote-robot")
     }
 
     compileOnly(libs.eclipse.jdt.core) // Needed for Java parsing? If so, keep.

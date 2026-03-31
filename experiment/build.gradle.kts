@@ -33,6 +33,7 @@ dependencies {
     testImplementation(project(":tasklib"))
     testImplementation(project(":providers"))
     testImplementation(project(":stdtools"))
+    testImplementation(project(":desktop"))
 
     implementation(libs.hsqldb)
     implementation("com.github.jai-imageio:jai-imageio-core:1.4.0")
@@ -44,6 +45,11 @@ dependencies {
     implementation(libs.zxing.core)
     implementation(libs.zxing.javase)
 
+    implementation(libs.tinkerpop)
+    implementation(libs.webdrivermanager)
+    implementation(libs.selenium.java) {
+        exclude(group = "com.intellij.remoterobot", module = "remote-robot")
+    }
     implementation(libs.batik.transcoder)
     implementation(libs.batik.codec)
     implementation(libs.commons.text)

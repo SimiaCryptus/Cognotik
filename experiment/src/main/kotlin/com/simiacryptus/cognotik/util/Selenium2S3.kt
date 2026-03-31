@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.platform.ApplicationServices.cloud
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import jakarta.servlet.http.Cookie
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
 import org.apache.hc.client5.http.cookie.BasicCookieStore
@@ -29,7 +30,7 @@ import java.util.concurrent.Semaphore
 
 open class Selenium2S3(
   val pool: ExecutorService = Executors.newCachedThreadPool() as ExecutorService,
-  private val cookies: Array<out jakarta.servlet.http.Cookie>? = null,
+  private val cookies: Array<out Cookie>? = null,
   val driver: RemoteWebDriver = chromeDriver()
 ) : Selenium {
   override fun navigate(url: String) {
@@ -86,8 +87,8 @@ open class Selenium2S3(
     val baseUrl = url.toString().split("#").first()
     links += toAbsolute(baseUrl, *currentPageLinks(driver).map { link ->
       val relative = toRelative(baseUrl, link) ?: return@map link
-      linkReplacements[link] = "${cloud!!.shareBase}/$saveRoot/${toArchivePath(relative)}"
-      linkReplacements[relative] = "${cloud!!.shareBase}/$saveRoot/${toArchivePath(relative)}"
+      linkReplacements[link] = "${ApplicationServices.cloud!!.shareBase}/$saveRoot/${toArchivePath(relative)}"
+      linkReplacements[relative] = "${ApplicationServices.cloud!!.shareBase}/$saveRoot/${toArchivePath(relative)}"
       link
     }.toTypedArray()).toMutableList()
     val completionSemaphores = mutableListOf<Semaphore>()
@@ -188,7 +189,7 @@ open class Selenium2S3(
         htmlPages[relative] = html
         links += toAbsolute(href, *currentPageLinks(html).map { link ->
           val relative = toArchivePath(toRelative(href, link) ?: return@map link)
-          linkReplacements[link] = "${cloud!!.shareBase}/$saveRoot/$relative"
+          linkReplacements[link] = "${ApplicationServices.cloud!!.shareBase}/$saveRoot/$relative"
           link
         }.toTypedArray())
         semaphore.release()
@@ -249,7 +250,7 @@ open class Selenium2S3(
           log.debug("Fetched {}", request)
           val bytes = p0?.body?.bodyBytes ?: return
           if (validate(mimeType, p0.body.contentType.mimeType, bytes))
-            cloud!!.upload(
+            ApplicationServices.cloud!!.upload(
               path = "/$saveRoot/$relative",
               contentType = mimeType,
               bytes = bytes
@@ -306,7 +307,7 @@ open class Selenium2S3(
 
         acc.replace("""(?<![/\w])$href""".toRegex(), relative)
       }
-    cloud!!.upload(
+    ApplicationServices.cloud!!.upload(
       path = "/$saveRoot/$filename",
       contentType = "application/json",
       request = finalJs
@@ -316,7 +317,7 @@ open class Selenium2S3(
   protected open fun saveHTML(html: String, saveRoot: String, filename: String) {
     val finalHtml = linkReplacements.toList().filter { it.first.isNotEmpty() }.fold(html)
     { acc, (href, relative) -> acc.replace("""(?<![/\w#])$href""".toRegex(), relative) }
-    cloud!!.upload(
+    ApplicationServices.cloud!!.upload(
       path = "/$saveRoot/$filename",
       contentType = "text/html",
       request = finalHtml

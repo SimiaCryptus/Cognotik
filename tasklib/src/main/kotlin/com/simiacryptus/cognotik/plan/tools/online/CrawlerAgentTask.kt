@@ -107,8 +107,6 @@ class CrawlerAgentTask(
       return ValidatedObject.validateFields(this)
     }
   }
-
-  var selenium: Selenium2S3? = null
   val urlContentCache = ConcurrentHashMap<String, String>()
   private val robotsTxtParser = RobotsTxtParser()
 
@@ -142,23 +140,6 @@ class CrawlerAgentTask(
           }
         }
       }
-    }
-  }
-
-  fun cleanup() {
-    try {
-      selenium?.let {
-        log.info("Cleaning up Selenium WebDriver instance")
-        try {
-          it.quit()
-        } catch (e: Exception) {
-          log.warn("Failed to quit Selenium WebDriver gracefully: ${e.message}")
-        }
-        selenium = null
-        log.debug("Selenium WebDriver cleanup completed")
-      }
-    } catch (e: Exception) {
-      log.error("Error cleaning up Selenium resources", e)
     }
   }
 
@@ -253,7 +234,7 @@ class CrawlerAgentTask(
           log.error("Failed to close transcript stream", e)
         }
       }
-      cleanup()
+//      cleanup()
     }
   }
 
