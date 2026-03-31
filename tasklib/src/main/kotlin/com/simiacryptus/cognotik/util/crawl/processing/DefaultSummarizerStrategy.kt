@@ -15,6 +15,7 @@ import kotlin.math.min
 open class DefaultSummarizerStrategy : PageProcessingStrategy {
   companion object {
     private val log = LoggerFactory.getLogger(DefaultSummarizerStrategy::class.java)
+    val instance: PageProcessingStrategy by lazy { DefaultSummarizerStrategy() }
   }
 
   override val description: String // Describe both the strategy and its configuration

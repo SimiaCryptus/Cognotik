@@ -16,6 +16,11 @@ import com.simiacryptus.cognotik.plan.tools.office.PdfFormTask
 import com.simiacryptus.cognotik.plan.tools.office.GeneratePresentationTask
 import com.simiacryptus.cognotik.plan.tools.office.OCRTask
 import com.simiacryptus.cognotik.plan.tools.office.ReadDocumentsTask
+import com.simiacryptus.cognotik.util.crawl.processing.DataTableAccumulationStrategy
+import com.simiacryptus.cognotik.util.crawl.processing.JobMatchingStrategy
+import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType
+import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType.Companion.register
+import com.simiacryptus.cognotik.util.crawl.processing.SchemaExtractionStrategy
 
 @Suppress("unused") class ExperimentalStuff : CognotikPlugin {
 
@@ -118,6 +123,12 @@ import com.simiacryptus.cognotik.plan.tools.office.ReadDocumentsTask
         CognitiveModeType.registerCognitiveMode(Coding) { config, session, user -> com.simiacryptus.cognotik.plan.cognitive.CodingMode(config, session, user) }
 
         ResourceApps("apps/experimental_apps.json", ExperimentalStuff::class.java.classLoader).init()
+
+
+        register(ProcessingStrategyType("JobMatching") { JobMatchingStrategy() })
+        register(ProcessingStrategyType("SchemaExtraction") { SchemaExtractionStrategy() })
+        register(ProcessingStrategyType("DataTableAccumulation") { DataTableAccumulationStrategy() })
+
     }
 
     companion object {

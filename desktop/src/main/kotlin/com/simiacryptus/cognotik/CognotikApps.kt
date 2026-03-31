@@ -88,6 +88,7 @@ open class CognotikApps(
             require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
             CoreProviders.init()
             CoreTasks.init()
+            ExperimentalStuff().init()
             ResourceApps("apps/apps.json").init()
             //ResourceApps("/apps/disabled_apps.json").init()
             ApplicationServices.pluginManager.apply {

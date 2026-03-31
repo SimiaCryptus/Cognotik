@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.crawl.RobotsTxtParser
 import com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod
 import com.simiacryptus.cognotik.util.crawl.fetch.FetchStrategy
+import com.simiacryptus.cognotik.util.crawl.processing.DefaultSummarizerStrategy
 import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy
 import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy.PageProcessingResult
 import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy.ProcessingContext
@@ -50,7 +51,7 @@ class CrawlerAgentTask(
   class CrawlerTaskTypeConfig(
     @Description("Method to seed the crawler. One of: GoogleProxy, DirectUrls (optional, default: GoogleProxy)") var seed_method: SeedMethod = SeedMethod.GoogleProxy,
     @Description("Method used to fetch content from URLs. One of: HttpClient, Selenium (optional, default: HttpClient)") var fetch_method: FetchMethod = FetchMethod.HttpClient,
-    @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: ProcessingStrategyType = ProcessingStrategyType.DefaultSummarizer,
+    @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: PageProcessingStrategy = DefaultSummarizerStrategy.instance,
     @Description("Whitespace-separated list of allowed domains or URL prefixes to restrict crawling scope. If set, only URLs matching these domains/prefixes will be crawled (optional)") var allowed_domains: String? = null,
     @Description("Whether to respect robots.txt rules when crawling (default: true)") var respect_robots_txt: Boolean = true,
     @Description("Maximum number of pages to process in a single task. Must be greater than 0 (optional, default: 30)") var max_pages_per_task: Int = 30,
@@ -128,14 +129,14 @@ class CrawlerAgentTask(
       val typeConfig = this@CrawlerAgentTask.typeConfig
       if (null != typeConfig) {
         when (typeConfig.processing_strategy) {
-          ProcessingStrategyType.DefaultSummarizer -> {
+          DefaultSummarizerStrategy.instance -> {
             // No additional notes for DefaultSummarizer
           }
 
           else -> {
             appendLine(
               "** Using processing strategy: ${typeConfig.processing_strategy.name} - ${
-                typeConfig.processing_strategy.createStrategy().description.indent("  ")
+                typeConfig.processing_strategy.description.indent("  ")
               }"
             )
           }
@@ -268,7 +269,7 @@ class CrawlerAgentTask(
       val typeConfig = typeConfig ?: throw RuntimeException("Missing type config")
       // Initialize processing strategy
       val strategyType = typeConfig.processing_strategy
-      val processingStrategy = strategyType.createStrategy()
+      val processingStrategy = strategyType
       log.info("Using processing strategy: ${strategyType.name} - ${processingStrategy.javaClass.simpleName}")
 
       val startTime = System.currentTimeMillis()
