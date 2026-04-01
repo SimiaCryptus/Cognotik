@@ -5,13 +5,11 @@
 // -----------------------------------------------------------------------------
 // Canvas & Display
 // -----------------------------------------------------------------------------
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 600;
-const CANVAS_W = CANVAS_WIDTH;
-const CANVAS_H = CANVAS_HEIGHT;
-const SCALE = 3;
+export const CANVAS_WIDTH = 800;
+export const CANVAS_HEIGHT = 600;
 export const CANVAS_W = CANVAS_WIDTH;
 export const CANVAS_H = CANVAS_HEIGHT;
+export const SCALE = 0.8;
 export const FRAME_RATE = 60;
 export const DELTA_TIME = 1 / FRAME_RATE;
 
@@ -19,7 +17,6 @@ export const DELTA_TIME = 1 / FRAME_RATE;
 // World & Tile Configuration
 // -----------------------------------------------------------------------------
 export const TILE_SIZE = 32;
-export const SCALE = 1;              // render scale factor (1 = no scaling, tiles are TILE_SIZE px)
 export const TILES_PER_ROW = Math.ceil(CANVAS_WIDTH / TILE_SIZE);
 export const TILES_PER_COL = Math.ceil(CANVAS_HEIGHT / TILE_SIZE);
 export const WORLD_GRAVITY = 1800;   // pixels per second squared
@@ -509,65 +506,10 @@ const DEBUG = Object.freeze({
 // -----------------------------------------------------------------------------
 // Aliases & Derived Constants  (used by ES module imports)
 // -----------------------------------------------------------------------------
-const CANVAS_W = CANVAS_WIDTH;
-const CANVAS_H = CANVAS_HEIGHT;
-const SCALE    = 3;
 // Player dimensions (in world pixels = tile pixels × SCALE)
-const PLAYER_W       = PLAYER_SMALL_WIDTH  * SCALE;
-const PLAYER_H_SMALL = PLAYER_SMALL_HEIGHT * SCALE;
-const PLAYER_H_BIG   = PLAYER_BIG_HEIGHT   * SCALE;
-// Movement (per-frame at 60fps, converted from px/s)
-const WALK_SPEED  = PLAYER_WALK_SPEED  / 60;
-const RUN_SPEED   = PLAYER_RUN_SPEED   / 60;
-const ACCEL       = PLAYER_ACCELERATION / 60;
-const DECEL       = PLAYER_DECELERATION / 60;
-// Jump (per-frame)
-const JUMP_FORCE       = Math.abs(PLAYER_JUMP_FORCE)      / 60;
-const JUMP_HOLD_FORCE  = Math.abs(PLAYER_JUMP_HOLD_FORCE) / 60;
-const JUMP_HOLD_FRAMES = Math.round(PLAYER_JUMP_HOLD_TIME * 60);
-// Physics (per-frame)
-const GRAVITY       = WORLD_GRAVITY      / (60 * 60);
-const MAX_FALL_SPEED = TERMINAL_VELOCITY / 60;
-// Timers (in frames at 60fps)
-const INVINCIBLE_TIME = Math.round(PLAYER_INVINCIBLE_DURATION * 60);
-const STAR_TIME       = Math.round(STAR_DURATION * 60);
-const DEATH_DELAY     = Math.round(TRANSITION.DEATH_FALL_TIME * 60);
-// Game state aliases
-const STATE = Object.freeze({
-     TITLE:       GAME_STATE.TITLE,
-     PLAYING:     GAME_STATE.PLAYING,
-     PAUSED:      GAME_STATE.PAUSED,
-     LEVEL_CLEAR: GAME_STATE.LEVEL_CLEAR,
-     GAME_OVER:   GAME_STATE.GAME_OVER,
-     VICTORY:     GAME_STATE.VICTORY,
-});
-// Level timing
-const LEVEL_TIME  = TIME_LIMIT;
-const CLEAR_DELAY = Math.round(TRANSITION.LEVEL_CLEAR_DELAY * 60);
 // Solid tile set (used by Tilemap.isSolid)
-const SOLID_TILES = new Set([
-     TILE.GROUND,
-     TILE.BRICK,
-     TILE.QUESTION,
-     TILE.QUESTION_USED,
-     TILE.PIPE_TOP_LEFT,
-     TILE.PIPE_TOP_RIGHT,
-     TILE.PIPE_LEFT,
-     TILE.PIPE_RIGHT,
-     TILE.SOLID,
-     TILE.COIN_BLOCK,
-     TILE.FLAGPOLE_BASE,
-     TILE.FLAGPOLE_POLE,
-     TILE.CASTLE,
-]);
 // Entity type aliases used by ES modules
 // (re-export ENTITY_TYPE members as ENTITY_TYPE.FLOWER, ENTITY_TYPE.ONEUP, etc.)
-// Extend ENTITY_TYPE with additional aliases needed by powerup.js
-Object.assign(ENTITY_TYPE, {
-     FLOWER:   'fire_flower',
-     ONEUP:    'one_up',
-     COIN_POP: 'coin_popup',
-});
 
 // -----------------------------------------------------------------------------
 // Solid tile set (used by Tilemap.isSolid)
@@ -635,41 +577,3 @@ if (typeof module !== 'undefined' && module.exports) {
         PARTICLE, TRANSITION, DEBUG,
     };
 }
-// ES module named exports
-export {
-     CANVAS_WIDTH, CANVAS_HEIGHT, CANVAS_W, CANVAS_H, SCALE,
-     FRAME_RATE, DELTA_TIME,
-     TILE_SIZE, TILES_PER_ROW, TILES_PER_COL,
-     WORLD_GRAVITY, TERMINAL_VELOCITY,
-     LEVEL_TILE_ROWS, LEVEL_TILE_COLS, LEVEL_WIDTH, LEVEL_HEIGHT,
-     HUD_HEIGHT, GROUND_LEVEL_ROW,
-     CAMERA_LOOKAHEAD, CAMERA_LEFT_BOUND,
-     PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PLAYER_ACCELERATION,
-     PLAYER_DECELERATION, PLAYER_AIR_ACCELERATION,
-     PLAYER_JUMP_FORCE, PLAYER_JUMP_HOLD_FORCE, PLAYER_JUMP_HOLD_TIME,
-     PLAYER_SMALL_WIDTH, PLAYER_SMALL_HEIGHT,
-     PLAYER_BIG_WIDTH, PLAYER_BIG_HEIGHT,
-     PLAYER_INVINCIBLE_DURATION, PLAYER_BLINK_INTERVAL,
-     PLAYER_DEATH_JUMP_FORCE,
-     PLAYER_W, PLAYER_H_SMALL, PLAYER_H_BIG,
-     WALK_SPEED, RUN_SPEED, ACCEL, DECEL,
-     JUMP_FORCE, JUMP_HOLD_FORCE, JUMP_HOLD_FRAMES,
-     GRAVITY, MAX_FALL_SPEED,
-     INVINCIBLE_TIME, STAR_TIME, DEATH_DELAY,
-     STATE, LEVEL_TIME, CLEAR_DELAY,
-     SOLID_TILES,
-     GOOMBA_WALK_SPEED, KOOPA_WALK_SPEED, KOOPA_SHELL_SPEED,
-     ENEMY_GRAVITY_MULTIPLIER, ENEMY_STOMP_BOUNCE,
-     FIREBALL_SPEED_X, FIREBALL_BOUNCE_SPEED_Y, FIREBALL_GRAVITY,
-     FIREBALL_MAX_BOUNCES, FIREBALL_WIDTH, FIREBALL_HEIGHT,
-     BLOCK_BUMP_HEIGHT, BLOCK_BUMP_DURATION,
-     COIN_COLLECT_SCORE, COIN_ANIMATION_FRAMES, COIN_ANIMATION_SPEED,
-     POWERUP_RISE_SPEED, MUSHROOM_WALK_SPEED,
-     STAR_BOUNCE_SPEED_Y, STAR_WALK_SPEED, STAR_DURATION,
-     SCORE, STARTING_LIVES, EXTRA_LIFE_COIN_COUNT, TIME_LIMIT,
-     ANIM, ANIM_SPEED,
-     TILE, ENTITY_TYPE,
-     PLAYER_STATE, POWER_STATE, GAME_STATE,
-     DIR, SIDE, COLOR, LAYER, SFX, MUSIC, KEY,
-     PARTICLE, TRANSITION, DEBUG,
-};

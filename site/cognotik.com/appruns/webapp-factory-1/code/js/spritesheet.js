@@ -5,7 +5,6 @@
 // ============================================================
 
 import { SCALE, TILE_SIZE, TILE } from './constants.js';
-import { TILE } from './constants.js';
 
 const S = SCALE;
 const T = TILE_SIZE * SCALE;  // 48

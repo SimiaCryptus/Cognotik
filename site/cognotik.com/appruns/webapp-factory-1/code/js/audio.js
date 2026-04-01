@@ -3,6 +3,8 @@
   * Procedural chiptune sound effects and music
  * Uses Web Audio API to generate all sounds without external files
  */
+import { SFX, MUSIC } from './constants.js';
+
 export class AudioEngine {
     constructor() {
         this.audioContext = null;
@@ -88,23 +90,22 @@ export class AudioEngine {
         this.resume();
 
         const sounds = {
-            [SOUNDS.JUMP]:          () => this.playJump(),
-            [SOUNDS.COIN]:          () => this.playCoin(),
-            [SOUNDS.POWERUP]:       () => this.playPowerUp(),
-            [SOUNDS.POWERUP_APPEAR]:() => this.playPowerUpAppear(),
-            [SOUNDS.STOMP]:         () => this.playStomp(),
-            [SOUNDS.KICK]:          () => this.playKick(),
-            [SOUNDS.DEATH]:         () => this.playDeath(),
-            [SOUNDS.LEVEL_COMPLETE]:() => this.playLevelComplete(),
-            [SOUNDS.GAME_OVER]:     () => this.playGameOver(),
-            [SOUNDS.BREAK_BLOCK]:   () => this.playBreakBlock(),
-            [SOUNDS.BUMP]:          () => this.playBump(),
-            [SOUNDS.PIPE]:          () => this.playPipe(),
-            [SOUNDS.FLAGPOLE]:      () => this.playFlagpole(),
-            [SOUNDS.EXTRA_LIFE]:    () => this.playExtraLife(),
-            [SOUNDS.FIREBALL]:      () => this.playFireball(),
-            [SOUNDS.EXPLOSION]:     () => this.playExplosion(),
-            [SOUNDS.PAUSE]:         () => this.playPause(),
+             [SFX.JUMP]:          () => this.playJump(),
+             [SFX.COIN]:          () => this.playCoin(),
+             [SFX.POWERUP]:       () => this.playPowerUp(),
+             [SFX.POWERUP_SPAWN]: () => this.playPowerUpAppear(),
+             [SFX.STOMP]:         () => this.playStomp(),
+             [SFX.KICK]:          () => this.playKick(),
+             [SFX.DEATH]:         () => this.playDeath(),
+             [SFX.STAGE_CLEAR]:   () => this.playLevelComplete(),
+             [SFX.GAME_OVER]:     () => this.playGameOver(),
+             [SFX.BREAK_BLOCK]:   () => this.playBreakBlock(),
+             [SFX.BUMP]:          () => this.playBump(),
+             [SFX.PIPE]:          () => this.playPipe(),
+             [SFX.FLAGPOLE]:      () => this.playFlagpole(),
+             [SFX.ONE_UP]:        () => this.playExtraLife(),
+             [SFX.FIREBALL]:      () => this.playFireball(),
+             [SFX.PAUSE]:         () => this.playPause(),
         };
 
         if (sounds[soundName]) {
@@ -150,16 +151,16 @@ export class AudioEngine {
      }
 
      // ── Convenience SFX methods used by game.js / entities ──
-     jump()       { this.play('jump'); }
-     coin()       { this.play('coin'); }
-     stomp()      { this.play('stomp'); }
-     powerUp()    { this.play('powerup'); }
-     oneUp()      { this.play('extra_life'); }
-     death()      { this.play('death'); }
-     gameOver()   { this.play('game_over'); }
-     flagpole()   { this.play('flagpole'); }
-     blockBump()  { this.play('bump'); }
-     brickBreak() { this.play('break_block'); }
+      jump()       { this.play(SFX.JUMP); }
+      coin()       { this.play(SFX.COIN); }
+      stomp()      { this.play(SFX.STOMP); }
+      powerUp()    { this.play(SFX.POWERUP); }
+      oneUp()      { this.play(SFX.ONE_UP); }
+      death()      { this.play(SFX.DEATH); }
+      gameOver()   { this.play(SFX.GAME_OVER); }
+      flagpole()   { this.play(SFX.FLAGPOLE); }
+      blockBump()  { this.play(SFX.BUMP); }
+      brickBreak() { this.play(SFX.BREAK_BLOCK); }
 
      /**
       * Play background music theme
@@ -243,17 +244,7 @@ export class AudioEngine {
         return this.enabled;
     }
      // ── Convenience aliases used by game.js and entity modules ──
-     startMusic() { this.playMusic(MUSIC.OVERWORLD); }
-     jump()       { this.play(SOUNDS.JUMP); }
-     coin()       { this.play(SOUNDS.COIN); }
-     stomp()      { this.play(SOUNDS.STOMP); }
-     powerUp()    { this.play(SOUNDS.POWERUP); }
-     death()      { this.play(SOUNDS.DEATH); }
-     gameOver()   { this.play(SOUNDS.GAME_OVER); }
-     flagpole()   { this.play(SOUNDS.FLAGPOLE); }
-     blockBump()  { this.play(SOUNDS.BUMP); }
-     brickBreak() { this.play(SOUNDS.BREAK_BLOCK); }
-     oneUp()      { this.play(SOUNDS.EXTRA_LIFE); }
+      startMusic() { this.playMusic(MUSIC.OVERWORLD); }
 
     // =========================================================
     //  SOUND EFFECTS

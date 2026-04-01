@@ -3,7 +3,6 @@
 //  Renders the tile grid and provides collision queries.
 // ============================================================
 
-import { TILE_SIZE, SCALE, SOLID_TILES, TILE, CANVAS_WIDTH, CANVAS_HEIGHT } from './constants.js';
 import { TILE_SIZE, SCALE, SOLID_TILES, TILE } from './constants.js';
 import { drawTileSync } from './spritesheet.js';
 

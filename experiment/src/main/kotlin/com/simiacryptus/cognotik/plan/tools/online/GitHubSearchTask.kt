@@ -3,11 +3,8 @@ package com.simiacryptus.cognotik.plan.tools.online
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ServiceProviders.Github
+import com.simiacryptus.cognotik.models.ServiceProviders
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
@@ -18,11 +15,12 @@ import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.net.URI
+import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
 
 class GitHubSearchTask(
   orchestrationConfig: OrchestrationConfig,
@@ -110,7 +108,7 @@ class GitHubSearchTask(
       val searchResults = performGitHubSearch(
         agent.user
           .let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
-          .apis.firstOrNull { it.provider == Github }?.key?.decrypt?.trim()
+          .apis.firstOrNull { it.provider == ServiceProviders.Github }?.key?.decrypt?.trim()
           ?: throw RuntimeException("GitHub API token is required")
       )
       val actorAnswerText = formatSearchResults(searchResults)
@@ -143,11 +141,11 @@ class GitHubSearchTask(
     if (searchQuery.isNullOrBlank()) {
       throw IllegalArgumentException("GitHub search query is required and cannot be empty.")
     }
-    queryParams.add("q=${java.net.URLEncoder.encode(searchQuery, "UTF-8")}")
+    queryParams.add("q=${URLEncoder.encode(searchQuery, "UTF-8")}")
 
     queryParams.add("per_page=${executionConfig?.per_page ?: 30}")
-    executionConfig?.sort?.let { queryParams.add("sort=${java.net.URLEncoder.encode(it, "UTF-8")}") }
-    executionConfig?.order?.let { queryParams.add("order=${java.net.URLEncoder.encode(it, "UTF-8")}") }
+    executionConfig?.sort?.let { queryParams.add("sort=${URLEncoder.encode(it, "UTF-8")}") }
+    executionConfig?.order?.let { queryParams.add("order=${URLEncoder.encode(it, "UTF-8")}") }
     return HttpClient.newHttpClient().send(
       HttpRequest.newBuilder()
         .uri(

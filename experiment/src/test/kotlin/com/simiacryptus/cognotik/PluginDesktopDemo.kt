@@ -5,8 +5,6 @@ import java.awt.Desktop
 
 class PluginDesktopDemo(localName: String, publicName: String, port: Int) : CognotikApps(localName, publicName, port) {
   companion object {
-    val log = LoggerFactory.getLogger(PluginDesktopDemo::class.java)
-
     @JvmStatic
     fun main(args: Array<String>) {
       PluginDesktopDemo(
