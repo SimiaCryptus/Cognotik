@@ -92,7 +92,6 @@ with no local build tools required.
 | App                                   | Description                                                                                                              |
 |---------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
 | 🧮 **Philosophical Calculator**       | Multi-perspective analytical toolkit — dialectical analysis, Socratic dialogue, game theory, persuasive essays, and more |
-| 🏥 **Medical AI Diagnostic Pipeline** | Multi-round health analysis from symptom intake through differential diagnosis to action plans                           |
 | 📚 **Comic Serial Generator**         | Transforms story ideas into an ongoing comic book series with consistent characters and arcs                             |
 | 🧙 **System Wizard**                  | Describe a goal in plain language → generates, runs, and auto-fixes a shell script                                       |
 | 🏗️ **Webapp Builder**                | Turns natural language descriptions into complete, runnable web apps                                                     |
@@ -178,17 +177,6 @@ An IntelliJ-based plugin that integrates Cognotik capabilities into the IDE.
 - Code review and documentation generation
 - Refactoring suggestions
 
-### 8. JOpenAI (jo-penai)
-
-A unified, type-safe model registry and API for working with AI models.
-
-**Key Features:**
-
-- Type-safe referencing of models by name or provider
-- Centralized pricing and quota logic
-- Support for multiple providers (OpenAI, Anthropic, Google, AWS, etc.)
-- Unified API for text, chat, embedding, image, and audio models
-
 ## Architecture
 
 The Cognotik platform follows a modular architecture:
@@ -233,27 +221,6 @@ Communication between components:
 3. Launch the application from your desktop or start menu.
 4. Configure your API keys in Settings → API Configuration.
 
-#### Web Application
-
-1. Clone the repository
-2. Install dependencies:
-
-   ```bash
-   cd webapp
-   npm install
-   ```
-
-3. Configure environment variables:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys
-   ```
-4. Start the development server:
-   ```bash
-   npm start
-   ```
-5. Open your browser and navigate to `http://localhost:3000`
-
 #### IntelliJ Plugin
 
 1. Install from the JetBrains Marketplace:
@@ -288,20 +255,38 @@ Communication between components:
    npm run build
    ```
 
+#### Web Application
+
+1. Clone the repository
+2. Install dependencies:
+
+   ```bash
+   cd webapp
+   npm install
+   ```
+
+3. Configure environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your API keys
+   ```
+4. Start the development server:
+   ```bash
+   npm start
+   ```
+5. Open your browser and navigate to `http://localhost:3000`
+
 ### Project Structure
 
 ```
 cognotik/
 ├── core/               # Core services and utilities
 ├── webui/              # Web UI framework
-├── plan/               # Planning framework
 ├── desktop/            # Desktop application
 ├── webapp/             # Web application (React)
 ├── intellij/           # IntelliJ plugin
-├── jo-penai/           # JOpenAI model registry
 ├── gradle/             # Gradle configuration
-├── docs/               # Documentation
-└── examples/           # Example projects
+└── docs/               # Documentation
 ```
 
 ### Extension Points
@@ -367,12 +352,7 @@ Use the DocOps App Suite to:
 ## Support and Resources
 
 - **📚 Documentation**: [Full documentation](https://github.com/SimiaCryptus/Cognotik/wiki)
-- **💡 Examples**: [Sample projects and use cases](https://github.com/SimiaCryptus/Cognotik/tree/main/examples)
-- **💬 Community
-- **🗺️ Guided Tour**: [DocOps App Suite Tour](docs/demo/TOUR.md)
-  **: [Discord Server](https://discord.gg/cognotik) | [GitHub Discussions](https://github.com/SimiaCryptus/Cognotik/discussions)
 - **🐛 Issue Tracking**: [GitHub Issues](https://github.com/SimiaCryptus/Cognotik/issues)
-- **📧 Contact**: [Email Support](mailto:support@cognotik.ai)
 
 ## Contributing
 
@@ -406,4 +386,3 @@ See our [public roadmap](https://github.com/SimiaCryptus/Cognotik/projects) for 
    Made with ❤️ by the Cognotik Team<br/>
    <em>AI that shows its work.</em>
 </p>
-- Live proxy endpoints for real-time AI session monitoring
