@@ -8,9 +8,17 @@
 
 ## Overview
 
-Cognotik is a comprehensive AI-powered development platform that combines intelligent planning, code generation, and
-interactive interfaces to streamline software development workflows. The platform consists of multiple integrated
-components that work together to provide a complete solution for AI-assisted development.
+**AI that shows its work.**
+
+Cognotik is a comprehensive, **JVM-native** AI-powered development platform that combines intelligent planning, code
+generation, document pipelines, and interactive interfaces to streamline software development workflows. Unlike
+black-box AI tools, every step of every pipeline is visible, auditable, and stored as readable files — making AI
+outputs reproducible, trustworthy, and version-controllable.
+
+Built natively on the JVM in Kotlin, Cognotik runs in your existing Java/Kotlin ecosystem without Python bridges,
+conda environments, or cross-language friction. The platform consists of multiple integrated components that work
+together to provide a complete solution for AI-assisted development — from IDE integration to standalone web
+applications to a full document-operations pipeline.
 
 ## 🚀 Quick Start
 
@@ -25,6 +33,18 @@ cd Cognotik
 ```
 
 For detailed installation instructions, see the [Installation Guide](#installation-options).
+
+## Why Cognotik?
+
+| Feature             | Cognotik                                                                                         | Typical AI Tools                                    |
+|:--------------------|:-------------------------------------------------------------------------------------------------|:----------------------------------------------------|
+| **Architecture**    | ✅ **JVM-native**: Built in Kotlin, runs natively in Java/Kotlin ecosystems                       | 🔶 Python-first with JVM support as an afterthought |
+| **Transparency**    | ✅ **File-based state**: Every input, output, and intermediate step is a readable, auditable file | ❌ Opaque conversation history with no audit trail   |
+| **Model Control**   | ✅ **Bring Your Own Key (BYOK)**: Use any compatible LLM, including local or fine-tuned models    | ❌ Locked into a single provider's models            |
+| **Data Privacy**    | ✅ **Your infrastructure**: Code and data go directly to the provider you choose, or stay local   | ❌ Data passes through intermediary servers          |
+| **Source Code**     | ✅ **Open Source (Apache 2.0)**: Full transparency — inspect, modify, contribute                  | ❌ Closed source black box                           |
+| **Reproducibility** | ✅ **Pipeline artifacts in Git**: Re-run, diff, and trace any output to its source                | ❌ Non-deterministic, non-reproducible outputs       |
+| **Core Focus**      | ✅ **Agentic pipelines**: Multi-step workflows with explicit user control and oversight           | 🔶 Primarily autocomplete or single-turn chat       |
 
 ## Open Source & Bring Your Own Key
 
@@ -61,7 +81,27 @@ Cognotik uses a "Bring Your Own Key" (BYOK) model for all AI service integration
 
 ## Core Components
 
-### 1. Cognotik Core (core)
+### 1. DocOps App Suite (apps)
+
+A collection of AI-powered web applications built on a shared document-operations ("doc ops") platform. Each app
+transforms user input through one or more AI pipeline stages to produce rich, structured outputs — all from the browser
+with no local build tools required.
+
+**Included Applications:**
+
+| App                                   | Description                                                                                                              |
+|---------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| 🧮 **Philosophical Calculator**       | Multi-perspective analytical toolkit — dialectical analysis, Socratic dialogue, game theory, persuasive essays, and more |
+| 🏥 **Medical AI Diagnostic Pipeline** | Multi-round health analysis from symptom intake through differential diagnosis to action plans                           |
+| 📚 **Comic Serial Generator**         | Transforms story ideas into an ongoing comic book series with consistent characters and arcs                             |
+| 🧙 **System Wizard**                  | Describe a goal in plain language → generates, runs, and auto-fixes a shell script                                       |
+| 🏗️ **Webapp Builder**                | Turns natural language descriptions into complete, runnable web apps                                                     |
+| 🔮 **Omega — App Factory**            | Meta-application that designs and produces other DocOps applications from plain language                                 |
+
+See the [DocOps App Suite README](src/main/resources/apps/README.md) for architecture details and the
+[Guided Tour](docs/demo/TOUR.md) for a walkthrough of each application.
+
+### 2. Cognotik Core (core)
 
 The foundation of the platform, providing essential services and utilities for AI interactions.
 
@@ -75,7 +115,7 @@ The foundation of the platform, providing essential services and utilities for A
 - Token counting and cost estimation
 - Rate limiting and retry logic
 
-### 2. Web UI Framework (webui)
+### 3. Web UI Framework (webui)
 
 A framework for building interactive web applications with real-time communication.
 
@@ -89,7 +129,7 @@ A framework for building interactive web applications with real-time communicati
 - File upload and download capabilities
 - Session history and management
 
-### 3. Planning Framework (plan)
+### 4. Planning Framework (plan)
 
 AI-assisted task planning and execution framework.
 
@@ -101,7 +141,7 @@ AI-assisted task planning and execution framework.
 - Multiple cognitive modes (AutoPlanMode, PlanAheadMode, GoalOrientedMode, TaskChatMode, GraphOrderedPlanMode)
 - Self-healing task execution
 
-### 4. Desktop Application (desktop)
+### 5. Desktop Application (desktop)
 
 A standalone desktop application that hosts the Cognotik platform.
 
@@ -113,7 +153,7 @@ A standalone desktop application that hosts the Cognotik platform.
 - Cross-platform support (Windows, macOS, Linux)
 - Auto-update functionality
 
-### 5. Web Application (webapp)
+### 6. Web Application (webapp)
 
 A React-based chat application interface with real-time messaging.
 
@@ -125,7 +165,7 @@ A React-based chat application interface with real-time messaging.
 - Tab system with state persistence
 - Event-driven architecture for real-time updates
 
-### 6. IntelliJ Plugin (intellij)
+### 7. IntelliJ Plugin (intellij)
 
 An IntelliJ-based plugin that integrates Cognotik capabilities into the IDE.
 
@@ -138,7 +178,7 @@ An IntelliJ-based plugin that integrates Cognotik capabilities into the IDE.
 - Code review and documentation generation
 - Refactoring suggestions
 
-### 7. JOpenAI (jo-penai)
+### 8. JOpenAI (jo-penai)
 
 A unified, type-safe model registry and API for working with AI models.
 
@@ -153,11 +193,11 @@ A unified, type-safe model registry and API for working with AI models.
 
 The Cognotik platform follows a modular architecture:
 
-1. **Core Services Layer**: Provided by the Core module, handling AI interactions, session management, and data
+1. **Core Services Layer**: Provided by the Core module, handling AI interactions, session management, and file-based
    persistence.
 
-2. **Application Layer**: Consists of the Web UI Framework and Planning Framework, providing the building blocks for
-   AI-powered applications.
+2. **Application Layer**: Consists of the Web UI Framework, Planning Framework, and DocOps App Suite, providing the
+   building blocks for AI-powered applications and ready-to-use tools.
 
 3. **Client Applications**: Desktop Application, Web Application, and IntelliJ Plugin, offering different interfaces to
    access the platform.
@@ -313,11 +353,23 @@ Leverage AI for:
 - Architecture analysis
 - Dependency management
 
+### 5. Document Operations (DocOps)
+
+Use the DocOps App Suite to:
+
+- Analyze content through multiple philosophical and rhetorical lenses
+- Generate complete web applications from natural language descriptions
+- Create serialized comic book series with consistent characters and arcs
+- Automate system tasks with self-healing shell scripts
+- Design and generate custom AI pipeline applications with Omega
+- Build multi-round diagnostic and analytical workflows
+
 ## Support and Resources
 
 - **📚 Documentation**: [Full documentation](https://github.com/SimiaCryptus/Cognotik/wiki)
 - **💡 Examples**: [Sample projects and use cases](https://github.com/SimiaCryptus/Cognotik/tree/main/examples)
 - **💬 Community
+- **🗺️ Guided Tour**: [DocOps App Suite Tour](docs/demo/TOUR.md)
   **: [Discord Server](https://discord.gg/cognotik) | [GitHub Discussions](https://github.com/SimiaCryptus/Cognotik/discussions)
 - **🐛 Issue Tracking**: [GitHub Issues](https://github.com/SimiaCryptus/Cognotik/issues)
 - **📧 Contact**: [Email Support](mailto:support@cognotik.ai)
@@ -351,5 +403,7 @@ See our [public roadmap](https://github.com/SimiaCryptus/Cognotik/projects) for 
 ---
 
 <p align="center">
-  Made with ❤️ by the Cognotik Team
+   Made with ❤️ by the Cognotik Team<br/>
+   <em>AI that shows its work.</em>
 </p>
+- Live proxy endpoints for real-time AI session monitoring
