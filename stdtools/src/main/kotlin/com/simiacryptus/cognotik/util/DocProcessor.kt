@@ -214,6 +214,29 @@ class DocProcessor(
   }
 
   /**
+   * Mark all tasks currently in RUNNING status as the given status.
+   * Used for cleanup when the overall process times out or is interrupted.
+   */
+  private fun markRunningTasksAs(status: TaskStatus, error: String? = null) {
+    withFileLock {
+      val current = readStatusLocked()
+      val now = nowTimestamp()
+      val updatedTasks = current.tasks.toMutableMap()
+      updatedTasks.forEach { (key, entry) ->
+        if (entry.status == TaskStatus.RUNNING) {
+          updatedTasks[key] = entry.copy(
+            status = status,
+            completedAt = now,
+            error = error
+          )
+        }
+      }
+      writeStatusLocked(DocOpsStatus(lastUpdated = now, tasks = updatedTasks))
+    }
+  }
+
+
+  /**
    * Initialize the status file with all planned tasks set to PENDING.
    */
   private fun initializeStatus(tasks: List<ModificationTask>) {
@@ -1098,13 +1121,71 @@ class DocProcessor(
         }.use { harness ->
           if (cancelFlag.get()) {
             log.info("Cancellation requested, skipping execution of remaining tasks")
+            mods.forEach { mod ->
+              val targetKey = mod.data.main_file?.let { filePath ->
+                try {
+                  filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
+                } catch (_: IllegalArgumentException) {
+                  filePath.canonicalFile.absolutePath
+                }
+              } ?: "unknown"
+              updateTaskStatus(targetKey, TaskStatus.CANCELLED)
+            }
             return@submit
           }
-          mods.map { mod -> run(mod, harness, cancelFlag, onNewSession, sessions) }
+          val remainingMods = mods.toMutableList()
+          try {
+            for (mod in mods) {
+              remainingMods.remove(mod)
+              run(mod, harness, cancelFlag, onNewSession, sessions)
+            }
+          } catch (e: CancellationException) {
+            // Mark any remaining unprocessed tasks as cancelled
+            remainingMods.forEach { mod ->
+              val targetKey = mod.data.main_file?.let { filePath ->
+                try {
+                  filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
+                } catch (_: IllegalArgumentException) {
+                  filePath.canonicalFile.absolutePath
+                }
+              } ?: "unknown"
+              updateTaskStatus(targetKey, TaskStatus.CANCELLED)
+            }
+          } catch (e: Throwable) {
+            // Mark any remaining unprocessed tasks as failed
+            remainingMods.forEach { mod ->
+              val targetKey = mod.data.main_file?.let { filePath ->
+                try {
+                  filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
+                } catch (_: IllegalArgumentException) {
+                  filePath.canonicalFile.absolutePath
+                }
+              } ?: "unknown"
+              updateTaskStatus(
+                targetKey,
+                TaskStatus.FAILED,
+                error = "Queue aborted: ${e.message ?: e.javaClass.simpleName}"
+              )
+            }
+          }
         }
       }
-    }.toTypedArray().let {
-      allOf(*it).get(90, TimeUnit.MINUTES)
+    }.toTypedArray().let { futures ->
+      try {
+        allOf(*futures).get(90, TimeUnit.MINUTES)
+      } catch (e: java.util.concurrent.TimeoutException) {
+        log.error("DocProcessor timed out after 90 minutes, marking remaining RUNNING tasks as FAILED")
+        markRunningTasksAs(TaskStatus.FAILED, "Timed out after 90 minutes")
+        throw e
+      } catch (e: java.util.concurrent.ExecutionException) {
+        log.error("DocProcessor execution failed", e)
+        markRunningTasksAs(TaskStatus.FAILED, "Execution failed: ${e.cause?.message ?: e.message}")
+        throw e
+      } catch (e: InterruptedException) {
+        log.error("DocProcessor interrupted", e)
+        markRunningTasksAs(TaskStatus.CANCELLED, "Interrupted")
+        throw e
+      }
     }
     return sessions.toTypedArray()
   }
@@ -1130,13 +1211,13 @@ class DocProcessor(
       log.warn("Failed to compare root paths: ${effectiveRoot.absolutePath} vs ${this.root.absolutePath}", e)
       false
     }
-    val mod = if (needsRebase) {
+    val rebasedMod = if (needsRebase) {
       log.info("Rebasing task into target folder: ${effectiveRoot.canonicalPath}")
       mod.rebase(this.root, effectiveRoot)
     } else {
       mod
     }
-    val newRoot = mod.data.main_file?.parentFile ?: root
+    val newRoot = rebasedMod.data.main_file?.parentFile ?: root
 
     harness.resetSession()
     if (cancelFlag.get()) {
@@ -1147,10 +1228,10 @@ class DocProcessor(
     updateTaskStatus(targetKey, TaskStatus.RUNNING)
     try {
       harness.runTask(
-        taskType = mod.taskType,
+        taskType = rebasedMod.taskType,
         timeoutMinutes = 30,
-        message = mod.message(),
-        executionConfig = executionConfig(mod, harness),
+        message = rebasedMod.message(),
+        executionConfig = executionConfig(rebasedMod, harness),
         parentSession = parentSession
       ) { session ->
         if (cancelFlag.get()) {
@@ -1164,10 +1245,10 @@ class DocProcessor(
         harness.createSettings(
           session = session,
           autoFix = autoFix,
-          typeConfig = mod.typeConfig,
+          typeConfig = rebasedMod.typeConfig,
           workingDir = newRoot.toString()
         ).apply {
-          processor = mod.patchProcessor ?: processor
+          processor = rebasedMod.patchProcessor ?: processor
         }
       }
       updateTaskStatus(targetKey, TaskStatus.COMPLETED)
