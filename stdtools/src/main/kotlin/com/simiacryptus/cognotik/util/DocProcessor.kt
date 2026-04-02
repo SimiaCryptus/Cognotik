@@ -700,7 +700,11 @@ class DocProcessor(
                   if (resolvedFile.exists()) {
                     var text = resolvedFile.readText().trim()
                     if (relatedFile.name.endsWith(".md") && text.startsWith("---\n")) {
-                      text = text.substring(text.indexOf("\n---\n"))
+                      try {
+                        text = text.substring(text.indexOf("\n---\n"))
+                      } catch (_: Exception) {
+                        // If parsing fails, just use the full content
+                      }
                     }
                     this.appendLine(text)
                   } else {

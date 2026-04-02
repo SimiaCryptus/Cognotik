@@ -51,7 +51,7 @@ class CrawlerAgentTask(
   class CrawlerTaskTypeConfig(
     @Description("Method to seed the crawler. One of: GoogleProxy, DirectUrls (optional, default: GoogleProxy)") var seed_method: SeedMethod = SeedMethod.GoogleProxy,
     @Description("Method used to fetch content from URLs. One of: HttpClient, Selenium (optional, default: HttpClient)") var fetch_method: FetchMethod = FetchMethod.HttpClient,
-    @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: PageProcessingStrategy = DefaultSummarizerStrategy.instance,
+    @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: ProcessingStrategyType = ProcessingStrategyType.DEFAULT,
     @Description("Whitespace-separated list of allowed domains or URL prefixes to restrict crawling scope. If set, only URLs matching these domains/prefixes will be crawled (optional)") var allowed_domains: String? = null,
     @Description("Whether to respect robots.txt rules when crawling (default: true)") var respect_robots_txt: Boolean = true,
     @Description("Maximum number of pages to process in a single task. Must be greater than 0 (optional, default: 30)") var max_pages_per_task: Int = 30,
@@ -134,7 +134,7 @@ class CrawlerAgentTask(
           else -> {
             appendLine(
               "** Using processing strategy: ${typeConfig.processing_strategy.name} - ${
-                typeConfig.processing_strategy.description.indent("  ")
+                typeConfig.processing_strategy.createStrategy().description.indent("  ")
               }"
             )
           }
@@ -435,7 +435,7 @@ class CrawlerAgentTask(
               fetchStrategy = fetchStrategy,
               analysisResultsMap = analysisResultsMap,
               transcriptStream = transcriptStream,
-              processingStrategy = processingStrategy,
+              processingStrategy = processingStrategy.createStrategy(),
               processingContext = processingContext,
               allPageResults = allPageResults
             )
@@ -466,7 +466,7 @@ class CrawlerAgentTask(
           log.info("Crawling progress: processed=${processedCount.get()}/$maxPages, queue=${pageQueue.size}, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
 
           // Check if strategy wants to terminate early
-          val continuationDecision = processingStrategy.shouldContinueCrawling(
+          val continuationDecision = processingStrategy.createStrategy().shouldContinueCrawling(
             allPageResults.values.toList(), processingContext
           )
           if (!continuationDecision.shouldContinue) {
@@ -533,7 +533,7 @@ class CrawlerAgentTask(
         buildString {
           appendLine("# Final Output")
           appendLine(
-            processingStrategy.generateFinalOutput(
+            processingStrategy.createStrategy().generateFinalOutput(
               allPageResults.values.toList(), processingContext
             )
           )

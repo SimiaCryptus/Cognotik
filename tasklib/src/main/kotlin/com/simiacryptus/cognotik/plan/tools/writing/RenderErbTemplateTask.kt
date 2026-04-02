@@ -29,7 +29,7 @@ class RenderErbTemplateTask(
   class RenderErbTemplateTaskExecutionConfig(
     @Description("JSON data object to be used for template rendering. Keys should match template variables.")
     var data: Map<String, Any?>? = null,
-    @Description("Optional: Override the template file path from type config")
+    @Description("Optional: Override the template file path from type config (*.erb)")
     var template_file: String? = null,
     task_description: String? = null,
     task_dependencies: MutableList<String>? = null,
@@ -73,7 +73,7 @@ RenderErbTemplate - Render ERB-style templates with dynamic data
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val transcript = task.newUserFileStream(transcriptFile())
+    val transcript = task.newSystemFileStream(transcriptFile())
     val gson = Gson()
 
     try {

@@ -1,7 +1,13 @@
 package com.simiacryptus.cognotik.util.crawl.processing
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.util.DynamicEnum
+import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
+import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 
+@JsonDeserialize(using = ProcessingStrategyTypeDeserializer::class)
+@JsonSerialize(using = ProcessingStrategyTypeSerializer::class)
 open class ProcessingStrategyType(
    name: String,
    val strategyFactory: () -> PageProcessingStrategy
@@ -11,9 +17,12 @@ open class ProcessingStrategyType(
 
    companion object {
 
+     val DEFAULT = ProcessingStrategyType("DefaultSummarizer") { DefaultSummarizerStrategy.instance }
+     val FACT_CHECK = ProcessingStrategyType("FactChecking") { FactCheckingStrategy() }
+
      init {
-       register(ProcessingStrategyType("DefaultSummarizer") { DefaultSummarizerStrategy.instance })
-       register(ProcessingStrategyType("FactChecking") { FactCheckingStrategy() })
+       register(DEFAULT)
+       register(FACT_CHECK)
      }
 
      fun register(value: ProcessingStrategyType): ProcessingStrategyType {
@@ -28,3 +37,6 @@ open class ProcessingStrategyType(
        valueOf(ProcessingStrategyType::class.java, name)
    }
 }
+class ProcessingStrategyTypeSerializer : DynamicEnumSerializer<ProcessingStrategyType>(ProcessingStrategyType::class.java)
+
+class ProcessingStrategyTypeDeserializer : DynamicEnumDeserializer<ProcessingStrategyType>(ProcessingStrategyType::class.java)
