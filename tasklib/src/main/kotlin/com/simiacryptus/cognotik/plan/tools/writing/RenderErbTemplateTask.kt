@@ -1,21 +1,20 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.google.gson.Gson
+import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.ErbTemplateEngine
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.ValidatedObject
-import com.simiacryptus.cognotik.util.renderMarkdown
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 
 class RenderErbTemplateTask(
   orchestrationConfig: OrchestrationConfig,
@@ -29,6 +28,7 @@ class RenderErbTemplateTask(
   class RenderErbTemplateTaskExecutionConfig(
     @Description("JSON data object to be used for template rendering. Keys should match template variables.")
     var data: Map<String, Any?>? = null,
+    var related_files: List<String>? = null,
     @Description("Optional: Override the template file path from type config (*.erb)")
     var template_file: String? = null,
     task_description: String? = null,
@@ -41,9 +41,6 @@ class RenderErbTemplateTask(
     state = state
   ), ValidatedObject {
     override fun validate(): String? {
-      if (data == null || data!!.isEmpty()) {
-        return "template_data must be provided and non-empty"
-      }
       return ValidatedObject.validateFields(this)
     }
   }
@@ -107,8 +104,31 @@ $templateContent
             """.toByteArray()
       )
 
-      // 3. Prepare data
-      val templateData = executionConfig?.data ?: emptyMap()
+      // 3. Initialize engine early so we can extract schema for data generation guidance
+      val engine = ErbTemplateEngine()
+      engine.strictValidation = typeConfig?.strict_validation ?: false
+
+      // Extract schema upfront — used both for data generation guidance and for logging
+      val schema = engine.extractSchema(templateContent)
+      if (schema != null) {
+        transcript?.write(
+          """
+## Template Schema
+<details>
+<summary>TypeScript Interface</summary>
+
+```typescript
+${schema.toTypeScript()}
+```
+</details>
+
+                """.toByteArray()
+        )
+      }
+
+      // 4. Prepare data
+      val model = defaultFast.getChildClient(task)
+      val templateData = parseData(schema, agent, model)
       val jsonData = gson.toJsonTree(templateData).asJsonObject
 
       transcript?.write(
@@ -127,28 +147,7 @@ ${gson.toJson(jsonData)}
 
       task.add("Rendering template with ${templateData.size} data fields...".renderMarkdown())
 
-      // 4. Initialize engine and render
-      val engine = ErbTemplateEngine()
-      engine.strictValidation = typeConfig?.strict_validation ?: false
-
-      // Extract and log schema if present
-      val schema = engine.extractSchema(templateContent)
-      if (schema != null) {
-        transcript?.write(
-          """
-## Template Schema
-<details>
-<summary>TypeScript Interface</summary>
-
-```typescript
-${schema.toTypeScript()}
-```
-</details>
-
-                """.toByteArray()
-        )
-      }
-
+      // 5. Render template
       val renderedContent = try {
         engine.render(templateContent, jsonData)
       } catch (e: ErbTemplateEngine.TemplateValidationException) {
@@ -172,17 +171,16 @@ $renderedContent
             """.toByteArray()
       )
 
-      // 5. Optionally write to file
-      val outputPath = executionConfig?.let { listOf(it.main_file) }?.first()
-      if (!outputPath.isNullOrBlank()) {
-        val outputFile = agent.root.resolve(outputPath).toFile()
-        outputFile.parentFile?.mkdirs()
-        outputFile.writeText(renderedContent)
-        transcript?.write("\n## Output File\nWritten to: $outputPath\n".toByteArray())
-        task.add("Output written to: `$outputPath`".renderMarkdown())
-      }
+      // 6. Write to file
+      val outputPath = executionConfig?.let { listOf(it.main_file) }?.firstOrNull()?.ifBlank { null }
+        ?: throw RuntimeException("No output file specified in execution config")
+      val outputFile = agent.root.resolve(outputPath).toFile()
+      outputFile.parentFile?.mkdirs()
+      outputFile.writeText(renderedContent)
+      transcript?.write("\n## Output File\nWritten to: $outputPath\n".toByteArray())
+      task.add("Output written to: `$outputPath`".renderMarkdown())
 
-      // 6. Display result
+      // 7. Display result
       val preview = if (renderedContent.length > 2000) {
         renderedContent.take(2000) + "\n\n... (truncated, ${renderedContent.length} total characters)"
       } else {
@@ -201,7 +199,7 @@ ${if (!outputPath.isNullOrBlank()) "\n**Output saved to:** `$outputPath`" else "
             """.renderMarkdown()
       )
 
-      // 7. Return result for downstream tasks
+      // 8. Return result for downstream tasks
       val summary = buildString {
         appendLine("Template rendered successfully.")
         appendLine("- Template: $templatePath")
@@ -222,6 +220,63 @@ ${if (!outputPath.isNullOrBlank()) "\n**Output saved to:** `$outputPath`" else "
     } finally {
       transcript?.flush()
     }
+  }
+
+  private fun parseData(
+    schema: ErbTemplateEngine.TypeSchema?,
+    agent: TaskOrchestrator,
+    model: ChatInterface
+  ): Map<String, Any?> {
+    var templateData = executionConfig?.data ?: emptyMap()
+    if (templateData.isEmpty() && !executionConfig?.related_files.isNullOrEmpty()) {
+      // Build a schema hint to guide the agent toward producing correctly-shaped data
+      val schemaHint = if (schema != null) {
+        """
+The template expects data conforming to the following TypeScript interface:
+```typescript
+${schema.toTypeScript()}
+```
+Ensure the JSON object you generate has keys and value types that match this schema.
+All required (non-optional) fields must be populated with appropriate values extracted from the related files.
+"""
+      } else {
+        "No explicit schema was found in the template. Infer appropriate keys from the template content and related files."
+      }
+
+      templateData = executionConfig?.related_files?.let {
+        if (1 == it.count { it.endsWith(".json") }) {
+          val jsonFile = it.first { it.endsWith(".json") }
+          val content = agent.root.resolve(jsonFile).toFile().readText()
+          try {
+            content.jsonCast<Map<String, Any?>>()
+          } catch (e: Throwable) {
+            log.warn("Failed to parse JSON from $jsonFile, falling back to agent parsing", e)
+            null
+          }
+        } else it.joinToString("\n\n") {
+          val content = agent.root.resolve(it).toFile().readText()
+          "# $it\n\n```\n$content\n```\n"
+        }.let { relatedContent ->
+          val scriptAgent = ParsedAgent(
+            resultClass = Map::class.java,
+            prompt = """
+                      You are a helpful assistant that generates data for ERB templates based on the content of related files.
+                      Given the following content from related files, extract key information and generate a JSON object that can be used as template data.
+                      
+                      $schemaHint
+                      
+                      Use the content to infer any relevant details that could be useful for rendering the template.
+                    """.trimIndent(),
+            model = model,
+            parsingChatter = model,
+            temperature = 0.0,
+            singleStage = true,
+          )
+          scriptAgent.answer(listOf(relatedContent)).obj.jsonCast<Map<String, Any?>?>()
+        }
+      } ?: emptyMap()
+    }
+    return templateData
   }
 
   override fun getOutputFile(extension: String) = null

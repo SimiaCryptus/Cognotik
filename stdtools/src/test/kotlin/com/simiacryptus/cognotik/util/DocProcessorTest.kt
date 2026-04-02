@@ -21,12 +21,9 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
-import kotlin.collections.get
-import kotlin.compareTo
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
-import kotlin.text.get
 
 class DocProcessorTest {
   val user: User = defaultUser
@@ -1235,7 +1232,7 @@ class DocProcessorTest {
       val task = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          files = listOf("src/A.kt").map { File(it) },
+          main_file = listOf("src/A.kt").map { File(it) },
           related_files = emptyList(),
           task_description = "Update A"
         )
@@ -1254,7 +1251,7 @@ class DocProcessorTest {
       val baseTask = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          files = listOf("src/Base.kt").map { File(it) },
+          main_file = listOf("src/Base.kt").map { File(it) },
           related_files = emptyList(),
           task_description = "Update Base"
         )
@@ -1262,7 +1259,7 @@ class DocProcessorTest {
       val derivedTask = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          files = listOf("src/Derived.kt").map { File(it) },
+          main_file = listOf("src/Derived.kt").map { File(it) },
           related_files = listOf("src/Base.kt").map { File(it) },
           task_description = "Update Derived"
         )
@@ -1281,7 +1278,7 @@ class DocProcessorTest {
       val task1 = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          files = listOf("src/A.kt").map { File(it) },
+          main_file = listOf("src/A.kt").map { File(it) },
           related_files = emptyList(),
           task_description = "Update A"
         )
@@ -1289,7 +1286,7 @@ class DocProcessorTest {
       val task2 = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          files = listOf("src/B.kt").map { File(it) },
+          main_file = listOf("src/B.kt").map { File(it) },
           related_files = emptyList(),
           task_description = "Update B"
         )
@@ -1307,7 +1304,7 @@ class DocProcessorTest {
       val taskA = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          files = listOf("src/A.kt").map { File(it) },
+          main_file = listOf("src/A.kt").map { File(it) },
           related_files = listOf("src/B.kt").map { File(it) },
           task_description = "Update A"
         )
@@ -1315,7 +1312,7 @@ class DocProcessorTest {
       val taskB = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          files = listOf("src/B.kt").map { File(it) },
+          main_file = listOf("src/B.kt").map { File(it) },
           related_files = listOf("src/A.kt").map { File(it) },
           task_description = "Update B"
         )
@@ -1333,7 +1330,7 @@ class DocProcessorTest {
       val task = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          files = null,
+          main_file = null,
           related_files = null,
           task_description = "No files"
         )
@@ -1449,7 +1446,7 @@ class DocProcessorTest {
       val task = ModificationTask(
         data = ModificationTaskConfig(
           root = oldRoot,
-          files = listOf("src/Main.kt").map { File(it) },
+          main_file = listOf("src/Main.kt").map { File(it) },
           related_files = listOf("src/Related.kt").map { File(it) },
           task_description = "Update Main"
         ),

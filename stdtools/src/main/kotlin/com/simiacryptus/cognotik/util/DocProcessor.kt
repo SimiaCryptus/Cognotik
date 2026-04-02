@@ -27,9 +27,13 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.nio.channels.FileChannel
+import java.nio.channels.FileLock
+import java.nio.channels.OverlappingFileLockException
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
 import java.nio.file.PathMatcher
+import java.nio.file.StandardOpenOption
 import java.security.MessageDigest
 import java.time.Duration
 import java.time.Instant
@@ -95,11 +99,61 @@ class DocProcessor(
 ) {
   private val statusFile = File(root, "docops.status.json")
   private val statusLock = Any()
+  private val statusLockFile = File(root, "docops.status.json.lock")
+
+  /**
+   * Execute a block while holding both the in-process monitor lock and a file-level lock,
+   * providing safety against both concurrent threads and concurrent processes.
+   * Retries acquiring the file lock up to [maxRetries] times with [retryDelayMs] between attempts.
+   */
+  private fun <T> withFileLock(maxRetries: Int = 20, retryDelayMs: Long = 250, block: () -> T): T {
+    synchronized(statusLock) {
+      statusLockFile.parentFile?.mkdirs()
+      var attempt = 0
+      while (true) {
+        try {
+          val channel = FileChannel.open(
+            statusLockFile.toPath(),
+            StandardOpenOption.CREATE,
+            StandardOpenOption.WRITE
+          )
+          channel.use { ch ->
+            var lock: FileLock? = null
+            try {
+              lock = ch.tryLock()
+              if (lock == null) {
+                if (attempt >= maxRetries) {
+                  log.warn("Could not acquire file lock on ${statusLockFile.absolutePath} after $maxRetries attempts, proceeding without file lock")
+                  return block()
+                }
+                attempt++
+                log.debug("File lock contention on ${statusLockFile.absolutePath}, retry $attempt/$maxRetries")
+                Thread.sleep(retryDelayMs)
+                return@use // retry outer loop
+              }
+              return block()
+            } finally {
+              lock?.release()
+            }
+          }
+        } catch (e: OverlappingFileLockException) {
+          // Same JVM already holds the lock via another channel - this shouldn't happen
+          // because we're inside synchronized(statusLock), but handle defensively
+          log.debug("OverlappingFileLockException (same JVM), proceeding without file lock")
+          return block()
+        } catch (e: Exception) {
+          log.warn("Failed to acquire file lock on ${statusLockFile.absolutePath}", e)
+          return block()
+        }
+      }
+    }
+  }
 
   /**
    * Read the current status from docops.status.json, or return an empty status if the file doesn't exist.
+   * Must be called while holding the file lock (i.e., inside withFileLock).
    */
-  private fun readStatus(): DocOpsStatus {
+  private fun readStatusLocked(): DocOpsStatus {
     return try {
       if (statusFile.exists()) {
         JsonUtil.fromJson(statusFile.readText(), DocOpsStatus::class.java)
@@ -114,8 +168,9 @@ class DocProcessor(
 
   /**
    * Write the status to docops.status.json atomically (write to temp file then rename).
+   * Must be called while holding the file lock (i.e., inside withFileLock).
    */
-  private fun writeStatus(status: DocOpsStatus) {
+  private fun writeStatusLocked(status: DocOpsStatus) {
     try {
       statusFile.parentFile?.mkdirs()
       val tempFile = File(statusFile.parentFile, ".docops.status.json.tmp")
@@ -135,8 +190,8 @@ class DocProcessor(
     sessionId: String? = null,
     error: String? = null
   ) {
-    synchronized(statusLock) {
-      val current = readStatus()
+    withFileLock {
+      val current = readStatusLocked()
       val existingEntry = current.tasks[targetKey]
       val now = nowTimestamp()
       val updatedEntry = TaskStatusEntry(
@@ -154,7 +209,7 @@ class DocProcessor(
       )
       val updatedTasks = current.tasks.toMutableMap()
       updatedTasks[targetKey] = updatedEntry
-      writeStatus(DocOpsStatus(lastUpdated = now, tasks = updatedTasks))
+      writeStatusLocked(DocOpsStatus(lastUpdated = now, tasks = updatedTasks))
     }
   }
 
@@ -162,10 +217,10 @@ class DocProcessor(
    * Initialize the status file with all planned tasks set to PENDING.
    */
   private fun initializeStatus(tasks: List<ModificationTask>) {
-    synchronized(statusLock) {
+    withFileLock {
       val now = nowTimestamp()
       val taskEntries = tasks.associate { task ->
-        val targetKey = task.data.files?.firstOrNull()?.let { filePath ->
+        val targetKey = task.data.main_file?.let { filePath ->
           try {
             filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
           } catch (_: IllegalArgumentException) {
@@ -178,12 +233,12 @@ class DocProcessor(
         )
       }
       // Merge with existing status (preserve completed tasks from previous runs)
-      val existing = readStatus()
+      val existing = readStatusLocked()
       val merged = existing.tasks.toMutableMap()
       taskEntries.forEach { (key, entry) ->
         merged[key] = entry
       }
-      writeStatus(DocOpsStatus(lastUpdated = now, tasks = merged))
+      writeStatusLocked(DocOpsStatus(lastUpdated = now, tasks = merged))
     }
   }
 
@@ -378,19 +433,19 @@ class DocProcessor(
 
   data class ModificationTaskConfig(
     val root: File,
-    val files: List<File>? = null,
+    val main_file: File? = null,
     val related_files: List<File>? = null,
     val task_description: String = "",
     val data: Map<String, Any>? = null,
     val taskConfigOverrides: Map<String, Any>? = null,
   ) {
     val relative_files: List<String>?
-      get() = files?.map { filePath ->
+      get() = main_file?.let { listOf(it) }?.map { main_file ->
         try {
-          filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
+          main_file.canonicalFile.relativeTo(root.canonicalFile).toString()
         } catch (_: IllegalArgumentException) {
           // File is outside root, return absolute path
-          filePath.canonicalFile.absolutePath
+          main_file.canonicalFile.absolutePath
         }
       }
     val relative_related_files: List<String>?
@@ -418,7 +473,8 @@ class DocProcessor(
         return jsonCast ?: taskType.newSettings() ?: TaskTypeConfig(task_type = taskType.name)
       }
 
-    fun rebase(prevRoot: File, newRoot: File) = if (newRoot == prevRoot) this else copy(data = data.copy(root = newRoot,),)
+    fun rebase(prevRoot: File, newRoot: File) =
+      if (newRoot == prevRoot) this else copy(data = data.copy(root = newRoot))
 
     fun message(): String {
       return message(data.root)
@@ -643,7 +699,7 @@ class DocProcessor(
       val targetFile1 = File(targetFile)
       return ModificationTask(
         data = ModificationTaskConfig(
-          files = listOf(targetFileObj.absoluteFile),
+          main_file = targetFileObj.absoluteFile,
           related_files = relatedFiles.map { file ->
             file.canonicalFile.absoluteFile
           }.distinct(),
@@ -1060,7 +1116,7 @@ class DocProcessor(
     onNewSession: (Session) -> Unit,
     sessions: MutableList<Session>
   ) {
-    val targetKey = mod.data.files?.firstOrNull()?.let { filePath ->
+    val targetKey = mod.data.main_file?.let { filePath ->
       try {
         filePath.canonicalFile.relativeTo(root.canonicalFile).toString()
       } catch (_: IllegalArgumentException) {
@@ -1080,7 +1136,7 @@ class DocProcessor(
     } else {
       mod
     }
-    val newRoot = mod.data.files?.firstOrNull()?.parentFile ?: root
+    val newRoot = mod.data.main_file?.parentFile ?: root
 
     harness.resetSession()
     if (cancelFlag.get()) {
@@ -1158,7 +1214,7 @@ class DocProcessor(
         mod.patchProcessor?.apply {
           harness.processor = this
         }
-        val newRoot = data.files?.firstOrNull()?.parentFile ?: root
+        val newRoot = data.main_file?.parentFile ?: root
         val data = data.copy(root = newRoot)
         val orchestrationConfig = harness.createSettings(
           session = Session.newGlobalID(),
@@ -1199,7 +1255,8 @@ class DocProcessor(
     userSettings: UserSettings
   ) = asApiChatModel(
     (userSettings.apis.find { it.provider?.name == provider?.name }?.key
-      ?: throw IllegalStateException("API key for model provider ${provider?.name} not found in user settings")).decrypt!!).instance(
+      ?: throw IllegalStateException("API key for model provider ${provider?.name} not found in user settings")).decrypt!!
+  ).instance(
     user
   )
 
@@ -1216,7 +1273,7 @@ class DocProcessor(
     if (tasks.isEmpty()) return tasks
     // Build a map from target file path to task
     val taskByTarget = tasks.associateBy { task ->
-      task.data.files?.firstOrNull()?.let { normalizePath(it.canonicalPath) } ?: ""
+      task.data.main_file?.let { normalizePath(it.canonicalPath) } ?: ""
     }.filterKeys { it.isNotEmpty() }
     // Build adjacency list: task -> tasks it depends on (tasks that modify files in its related_files)
     val dependencies = tasks.associateWith { task ->
@@ -1293,17 +1350,12 @@ class DocProcessor(
       return null
     }
     val frontmatterText = content.substring(3, endOfFrontmatter).trim()
-    val bodyContent = content.substring(endOfFrontmatter + 3).trim()
     // Parse YAML frontmatter (supports simple key: value and lists)
     val frontmatter = parseFrontmatter(frontmatterText)
     val specifies = parseSpecifies(frontmatter)
     val documents = parseDocuments(frontmatter)
     val transforms = parseTransforms(frontmatter)
     val generates = parseGenerates(frontmatter)
-    val related = parseRelated(frontmatter)
-    val taskType = parseTaskType(frontmatter)
-    val taskConfigJson = parseTaskConfigJson(frontmatter)
-    val perDocUpdateMode = parseUpdateMode(frontmatter)
     val targetFolder = parseFolder(frontmatter)
     // Return null if neither specifies nor transforms are present
     if (specifies.isEmpty() && transforms.isEmpty() && documents.isEmpty() && generates.isEmpty() && targetFolder == null) {
@@ -1315,12 +1367,12 @@ class DocProcessor(
       documents = documents,
       transforms = transforms,
       generates = generates,
-      related = related,
-      content = bodyContent,
+      related = parseRelated(frontmatter),
+      content = content.substring(endOfFrontmatter + 3).trim(),
       frontmatter = frontmatter,
-      taskType = taskType,
-      taskConfigJson = taskConfigJson,
-      updateMode = perDocUpdateMode,
+      taskType = parseTaskType(frontmatter),
+      taskConfigJson = parseTaskConfigJson(frontmatter),
+      updateMode = parseUpdateMode(frontmatter),
       targetFolder = targetFolder
     )
   }

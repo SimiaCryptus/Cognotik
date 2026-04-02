@@ -270,7 +270,7 @@ open class DocProcessorAction(
                   sessionStatusMap[session] = masterTask.add(
                     session.linkToSession(
                     "${mod.taskType.name}: ${
-                    mod.data.files?.map { mod.data.root.resolve(it) }
+                    mod.data.main_file?.map { mod.data.root.resolve(it) }
                       ?.joinToString(", ") { it.absolutePath } ?: "No files specified"
                   }"))
                   sessions += session
@@ -330,7 +330,7 @@ open class DocProcessorAction(
         val config = t.data
         val targetFiles =
           config.relative_files?.map { it.ifBlank { null } }?.filterNotNull()?.joinToString(", ")?.ifBlank { null }
-            ?: config.files?.map { it.name }?.joinToString(", ")?.ifBlank { null }
+            ?: config.main_file?.map { it.name }?.joinToString(", ")?.ifBlank { null }
             ?: "[folder: ${config.root.name}]"
         val relatedFiles = config.relative_related_files?.take(3)?.joinToString(", ") ?: ""
         val description = buildString {

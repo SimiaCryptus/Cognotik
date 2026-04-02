@@ -863,10 +863,15 @@ class ErbTemplateEngine {
     }
     function.script.binding = binding
     val scriptInstance = function.script.run()
-    val result = if (args.isEmpty()) {
-      (scriptInstance as Script).invokeMethod(functionName, null)
-    } else {
-      (scriptInstance as Script).invokeMethod(functionName, args.map { convertToGroovyValue(it) }.toTypedArray())
+    val result = try {
+      if (args.isEmpty()) {
+        (scriptInstance as Script).invokeMethod(functionName, null)
+      } else {
+        (scriptInstance as Script).invokeMethod(functionName, args.map { convertToGroovyValue(it) }.toTypedArray())
+      }
+    } catch (e: Exception) {
+      log.error("Error invoking function '{}': {}", functionName, e.message)
+      ""
     }
     log.debug("Function '{}' returned: {}", functionName, result?.toString()?.take(100))
     return result
