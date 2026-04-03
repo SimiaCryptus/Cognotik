@@ -349,8 +349,12 @@ class DiffInstrumentor(
     if (code.isBlank()) {
       log.warn("Empty code content for new file: {}", filepath)
     }
-    if (shouldAutoApply(filepath) && !fs.exists(filepath)) {
-      log.info("Auto-applying new file: {}", filepath)
+    if (shouldAutoApply(filepath)) {
+      if (fs.exists(filepath)) {
+        log.warn("File already exists at {}! Overwriting existing file...", filepath)
+      } else {
+        log.info("Auto-applying new file: {}", filepath)
+      }
       return try {
         fs.writeText(filepath, code)
         handle(mapOf(filepath to code))
