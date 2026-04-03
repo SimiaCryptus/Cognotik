@@ -143,7 +143,7 @@ class PluginManager(
 
         val classLoader = URLClassLoader(
             "Plugin: "+jarFile.name,
-            arrayOf(jarFile.toURI().toURL()),
+            arrayOf(jarFile.canonicalFile.toPath().toUri().toURL()),
             this.javaClass.classLoader
         )
         loadedJars[canonicalPath] = classLoader
@@ -193,7 +193,7 @@ class PluginManager(
 
         val classLoader = loadedJars.getOrPut(canonicalPath) {
             URLClassLoader(
-                arrayOf(jarFile.toURI().toURL()),
+                arrayOf(jarFile.canonicalFile.toPath().toUri().toURL()),
                 this.javaClass.classLoader
             )
         }

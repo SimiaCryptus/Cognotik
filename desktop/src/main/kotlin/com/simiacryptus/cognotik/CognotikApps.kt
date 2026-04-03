@@ -398,20 +398,13 @@ open class CognotikApps(
         log.info("Received command from DaemonClient: $line")
         if (line != null && line.trim().equals("shutdown", ignoreCase = true)) {
             log.info("Shutdown command received via socket. Stopping server...")
-
             Thread {
                 Thread.sleep(100)
-
                 stopServer()
                 exitProcess(0)
             }.start()
             return "Server shutting down"
         } else {
-            try {
-                Desktop.getDesktop().browse(URI("$domainName/#${line.urlEncode()}"))
-            } catch (e: Throwable) {
-
-            }
             return "OK: $line"
         }
     }
