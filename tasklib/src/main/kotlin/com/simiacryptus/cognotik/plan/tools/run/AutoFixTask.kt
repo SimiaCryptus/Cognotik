@@ -76,14 +76,7 @@ class AutoFixTask(
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  ) {
-    override fun validate(): String? {
-      if (commands.isNullOrEmpty()) {
-        return "commands must not be null or empty"
-      }
-      return ValidatedObject.validateFields(this)
-    }
-  }
+  )
 
   data class CommandWithWorkingDir(
     @Description("The command to be executed as a list of strings. The first element is the executable, followed by arguments.")
