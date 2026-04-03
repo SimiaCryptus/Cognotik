@@ -2,6 +2,9 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.CognotikPlugin
 import com.simiacryptus.cognotik.platform.model.PluginManagerInterface
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URLClassLoader
@@ -19,19 +22,99 @@ import java.util.concurrent.ConcurrentHashMap
  * Alternatively, plugins can be loaded by specifying an explicit entry
  * point class name.
  */
-class PluginManager : PluginManagerInterface {
+class PluginManager(
+   private val root: File = File("plugins")
+) : PluginManagerInterface {
+     /**
+      * Represents a persisted plugin entry for serialization.
+      */
+     private data class PluginEntry(
+         val jarPath: String,
+         val entryPointClass: String? = null
+     )
+     private val manifestFile = File(root, "plugins-manifest.json")
+     private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
+   /** Map from JAR file path to the classloader used to load it */
+     private val loadedJars = ConcurrentHashMap<String, URLClassLoader>()
+     /** Map from JAR file path to the list of initialized plugins */
+     private val loadedPlugins = ConcurrentHashMap<String, List<CognotikPlugin>>()
+      /** Map from JAR file path to the persisted plugin entry metadata */
+      private val loadedPluginEntries = ConcurrentHashMap<String, PluginEntry>()
+     private val changeSubscribers = mutableListOf<() -> Unit>()
+
 
     init {
         log.info("PluginManager initialized", RuntimeException("PluginManager init stack trace"))
+         root.mkdirs()
+         restorePlugins()
     }
 
-  /** Map from JAR file path to the classloader used to load it */
-    private val loadedJars = ConcurrentHashMap<String, URLClassLoader>()
+     /**
+      * Persist the current set of loaded plugin JARs to the manifest file.
+      */
+     private fun saveManifest() {
+         try {
+             val entries = loadedPluginEntries.values.toList()
+             manifestFile.parentFile?.mkdirs()
+             manifestFile.writeText(gson.toJson(entries))
+             log.debug("Saved plugin manifest with {} entries", entries.size)
+         } catch (e: Exception) {
+             log.error("Failed to save plugin manifest to {}", manifestFile.canonicalPath, e)
+         }
+     }
 
-    /** Map from JAR file path to the list of initialized plugins */
-    private val loadedPlugins = ConcurrentHashMap<String, List<CognotikPlugin>>()
+     /**
+      * Load the manifest file and return the list of persisted plugin entries.
+      */
+     private fun loadManifest(): List<PluginEntry> {
+         return try {
+             if (manifestFile.exists()) {
+                 val type = object : TypeToken<List<PluginEntry>>() {}.type
+                 val entries: List<PluginEntry> = gson.fromJson(manifestFile.readText(), type)
+                 log.info("Loaded plugin manifest with {} entries", entries.size)
+                 entries
+             } else {
+                 log.debug("No plugin manifest found at {}", manifestFile.canonicalPath)
+                 emptyList()
+             }
+         } catch (e: Exception) {
+             log.error("Failed to load plugin manifest from {}", manifestFile.canonicalPath, e)
+             emptyList()
+         }
+     }
 
-    private val changeSubscribers = mutableListOf<() -> Unit>()
+     /**
+      * Restore plugins from the persisted manifest on startup.
+      */
+     private fun restorePlugins() {
+         val entries = loadManifest()
+         for (entry in entries) {
+             try {
+                 val jarFile = File(entry.jarPath)
+                 if (!jarFile.exists()) {
+                     log.warn("Persisted plugin JAR no longer exists, skipping: {}", entry.jarPath)
+                     continue
+                 }
+                 if (loadedJars.containsKey(jarFile.canonicalPath)) {
+                     log.debug("Plugin JAR already loaded during restore, skipping: {}", entry.jarPath)
+                     continue
+                 }
+                 if (entry.entryPointClass != null) {
+                     log.info("Restoring plugin JAR: {} with entry point: {}", entry.jarPath, entry.entryPointClass)
+                     loadPlugin(jarFile, entry.entryPointClass)
+                 } else {
+                     log.info("Restoring plugin JAR: {}", entry.jarPath)
+                     loadPlugin(jarFile)
+                 }
+             } catch (e: Exception) {
+                 log.error("Failed to restore plugin from manifest entry: {}", entry.jarPath, e)
+             }
+         }
+     }
+
+
+
+
 
     override fun subscribeToChanges(subscriber: () -> Unit) {
         changeSubscribers.add(subscriber)
@@ -78,7 +161,7 @@ class PluginManager : PluginManagerInterface {
                     log.error("Failed to initialize plugin: {} from {}", plugin.pluginName, canonicalPath, e)
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             log.error("Failed to discover plugins via ServiceLoader in JAR: {}", canonicalPath, e)
         }
 
@@ -86,6 +169,8 @@ class PluginManager : PluginManagerInterface {
             log.warn("No CognotikPlugin implementations found in JAR: {}", canonicalPath)
         } else {
             loadedPlugins[canonicalPath] = plugins
+             loadedPluginEntries[canonicalPath] = PluginEntry(canonicalPath)
+             saveManifest()
             triggerChange()
         }
 
@@ -124,6 +209,8 @@ class PluginManager : PluginManagerInterface {
 
         val existing = loadedPlugins.getOrDefault(canonicalPath, emptyList())
         loadedPlugins[canonicalPath] = existing + plugin
+         loadedPluginEntries[canonicalPath] = PluginEntry(canonicalPath, entryPointClass)
+         saveManifest()
         triggerChange()
 
         log.info("Successfully initialized plugin: {}", plugin.pluginName)
@@ -173,6 +260,7 @@ class PluginManager : PluginManagerInterface {
         if (classLoader != null) {
             log.info("Unloading plugin JAR: {}", canonicalPath)
             val plugins = loadedPlugins.remove(canonicalPath)
+             loadedPluginEntries.remove(canonicalPath)
             plugins?.forEach { plugin ->
                 try {
                     log.info("Unloading plugin: {}", plugin.pluginName)
@@ -187,6 +275,7 @@ class PluginManager : PluginManagerInterface {
             } catch (e: Exception) {
                 log.warn("Error closing classloader for JAR: {}", canonicalPath, e)
             }
+             saveManifest()
             triggerChange()
         } else {
             log.warn("Plugin JAR not loaded, cannot unload: {}", canonicalPath)
