@@ -291,6 +291,36 @@ class PluginManager(
      * Check if a JAR file has been loaded.
      */
     override fun isLoaded(jarFile: File): Boolean = loadedJars.containsKey(jarFile.canonicalPath)
+    /**
+     * Delete a plugin JAR file from disk.
+     * If the plugin is currently loaded, it will be unloaded first.
+     *
+     * @param jarFile the JAR file to delete
+     * @throws IllegalArgumentException if the file does not exist
+     */
+    override fun deletePlugin(jarFile: File) {
+        val canonicalPath = jarFile.canonicalPath
+        require(jarFile.exists()) { "Plugin JAR does not exist: $canonicalPath" }
+        // Unload first if currently loaded
+        if (loadedJars.containsKey(canonicalPath)) {
+            log.info("Plugin JAR is loaded, unloading before delete: {}", canonicalPath)
+            unloadPlugin(jarFile)
+        }
+        log.info("Deleting plugin JAR: {}", canonicalPath)
+        try {
+            if (jarFile.delete()) {
+                log.info("Successfully deleted plugin JAR: {}", canonicalPath)
+            } else {
+                log.error("Failed to delete plugin JAR (delete returned false): {}", canonicalPath)
+                throw RuntimeException("Failed to delete plugin JAR: $canonicalPath")
+            }
+        } catch (e: SecurityException) {
+            log.error("Security exception deleting plugin JAR: {}", canonicalPath, e)
+            throw RuntimeException("Permission denied deleting plugin JAR: $canonicalPath", e)
+        }
+        triggerChange()
+    }
+
 
   companion object {
     private val log = LoggerFactory.getLogger(PluginManager::class.java)

@@ -52,4 +52,12 @@ interface PluginManagerInterface {
    * Check if a JAR file has been loaded.
    */
   fun isLoaded(jarFile: File): Boolean
+  /**
+   * Delete a plugin JAR file from disk.
+   * If the plugin is currently loaded, it will be unloaded first.
+   *
+   * @param jarFile the JAR file to delete
+   * @throws IllegalArgumentException if the file does not exist
+   */
+  fun deletePlugin(jarFile: File)
 }

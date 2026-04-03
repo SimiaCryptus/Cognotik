@@ -166,6 +166,7 @@ class PluginManagerServlet(
       "unload" -> handleUnload(request, response)
       "upload" -> handleUpload(request, response)
       "loadDirectory" -> handleLoadDirectory(request, response)
+      "delete" -> handleDelete(request, response)
       else -> {
         log.warn("Unknown POST action received: '{}'", action)
         response.status = HttpServletResponse.SC_BAD_REQUEST
@@ -403,6 +404,45 @@ class PluginManagerServlet(
       response.writer.write("""{"error":"${e.message?.replace("\"", "\\\"")}"}""")
     }
   }
+  private fun handleDelete(request: HttpServletRequest, response: HttpServletResponse) {
+    val jarPath = request.getParameter("jar")
+    log.info("handleDelete called - jarPath: {}", jarPath)
+    if (jarPath.isNullOrBlank()) {
+      log.warn("handleDelete: Missing 'jar' parameter")
+      response.contentType = "application/json"
+      response.status = HttpServletResponse.SC_BAD_REQUEST
+      response.writer.write("""{"error":"Missing 'jar' parameter"}""")
+      return
+    }
+    val jarFile = File(jarPath).let {
+      if (it.isAbsolute) it else File(pluginDirectory, jarPath)
+    }
+    log.debug("Resolved JAR file path for delete: {}", jarFile.canonicalPath)
+    response.contentType = "application/json"
+    try {
+      log.info("Deleting plugin JAR: {}", jarFile.canonicalPath)
+      ApplicationServices.pluginManager.deletePlugin(jarFile)
+      log.info("Successfully deleted plugin JAR: {}", jarFile.canonicalPath)
+      response.status = HttpServletResponse.SC_OK
+      response.writer.write(
+        JsonUtil.toJson(
+          mapOf(
+            "success" to true,
+            "jar" to jarFile.canonicalPath
+          )
+        )
+      )
+    } catch (e: IllegalArgumentException) {
+      log.warn("Plugin JAR not found for delete: {}", jarPath)
+      response.status = HttpServletResponse.SC_NOT_FOUND
+      response.writer.write("""{"error":"${e.message?.replace("\"", "\\\"")}"}""")
+    } catch (e: Exception) {
+      log.error("Failed to delete plugin JAR: {}", jarPath, e)
+      response.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      response.writer.write("""{"error":"${e.message?.replace("\"", "\\\"")}"}""")
+    }
+  }
+
 
   private fun renderHtml(): String = """
         <!DOCTYPE html>
@@ -524,7 +564,8 @@ class PluginManagerServlet(
                                 html += '<tr>'
                                     + '<td><code>' + escHtml(entry.jar) + '</code></td>'
                                     + '<td>' + (pluginNames || '<em>none</em>') + '</td>'
-                                    + '<td><button class="btn-danger" onclick="unloadPlugin(' + JSON.stringify(entry.jar) + ')">Unload</button></td>'
+                                    + '<td><button class="btn-danger" onclick="unloadPlugin(' + JSON.stringify(entry.jar) + ')">Unload</button>'
+                                    + ' <button class="btn-danger" onclick="deletePlugin(' + JSON.stringify(entry.jar) + ')">Delete</button></td>'
                                     + '</tr>';
                             });
                             html += '</tbody></table>';
@@ -555,11 +596,12 @@ class PluginManagerServlet(
                                     '<button class="btn-primary" onclick="loadPlugin(' + JSON.stringify(entry.name) + ')">Load</button>';
                                 const unloadBtn = entry.loaded ?
                                     '<button class="btn-danger" onclick="unloadPlugin(' + JSON.stringify(entry.path) + ')">Unload</button>' : '';
+                                const deleteBtn = '<button class="btn-danger" onclick="deletePlugin(' + JSON.stringify(entry.path) + ')">Delete</button>';
                                 html += '<tr>'
                                     + '<td><code>' + escHtml(entry.name) + '</code></td>'
                                     + '<td>' + sizeKb + ' KB</td>'
                                     + '<td>' + badge + '</td>'
-                                    + '<td>' + loadBtn + unloadBtn + '</td>'
+                                    + '<td>' + loadBtn + unloadBtn + ' ' + deleteBtn + '</td>'
                                     + '</tr>';
                             });
                             html += '</tbody></table>';
@@ -609,6 +651,25 @@ class PluginManagerServlet(
                         })
                         .catch(e => showMessage('Request failed: ' + e, 'error'));
                 }
+                function deletePlugin(jarPath) {
+                    if (!confirm('Delete plugin JAR: ' + jarPath + '?\nThis will permanently remove the file from disk. If loaded, it will be unloaded first.')) return;
+                    fetch('/pluginManager', {
+                        method: 'POST',
+                        body: new URLSearchParams({ action: 'delete', jar: jarPath })
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                showMessage('Plugin deleted: ' + jarPath, 'success');
+                                refreshLoaded();
+                                scanDirectory();
+                            } else {
+                                showMessage('Error: ' + data.error, 'error');
+                            }
+                        })
+                        .catch(e => showMessage('Request failed: ' + e, 'error'));
+                }
+
 
                 function loadDirectory() {
                     fetch('/pluginManager', {
