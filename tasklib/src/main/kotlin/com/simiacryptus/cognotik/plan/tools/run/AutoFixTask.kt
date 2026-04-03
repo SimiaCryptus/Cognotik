@@ -135,10 +135,10 @@ class AutoFixTask(
               transcript?.write("${index + 1}. `${cmd.command.joinToString(" ")}` in `${cmd.working_dir ?: orchestrationConfig.workingDir ?: agent.root}`\n".toByteArray())
             }
             transcript?.write("\n".toByteArray())
-            CmdPatchApp(
+            val cmdPatchApp = CmdPatchApp(
               root = agent.root,
               settings = PatchApp.Settings(
-                commands = this.executionConfig?.commands?.map { commandWithDir ->
+                commands = executionConfig?.commands?.map { commandWithDir ->
                   val alias = commandWithDir.command.firstOrNull()
                   val toolExecutable = if (alias != null) {
                     val tools =
@@ -161,7 +161,9 @@ class AutoFixTask(
                       else -> null
                     } ?: throw IllegalArgumentException("Command not found: $alias"),
                     arguments = commandWithDir.command.drop(1).joinToString(" "),
-                    workingDirectory = ((commandWithDir.working_dir ?: orchestrationConfig.workingDir)?.let { agent.root.toFile().resolve(it) } ?: agent.root.toFile()).apply { mkdirs() },
+                    workingDirectory = ((commandWithDir.working_dir
+                      ?: orchestrationConfig.workingDir)?.let { agent.root.toFile().resolve(it) }
+                      ?: agent.root.toFile()).apply { mkdirs() },
                     additionalInstructions = ""
                   )
                 } ?: emptyList(),
@@ -171,45 +173,52 @@ class AutoFixTask(
               files = agent.files,
               model = model,
               fastModel = fastModel,
-              processor = orchestrationConfig.processor ?: PatchProcessors.Fuzzy,
-            ).run(
-              task = subTask, model = model
-            ).apply {
-              transcript?.write("\n### Execution Result\n* **Exit Code:** ${this.exitCode}\n".toByteArray())
-              transcript?.write("</div>\n\n".toByteArray())
-              transcript?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
-              when {
-                this.exitCode == 0 -> {
-                  transcript?.write("## Result: Success\n\nAll commands executed successfully with exit code 0.\n".toByteArray())
-                  if (orchestrationConfig.autoFix) {
-                    resultFn("### Success\nAll commands executed successfully with exit code 0.")
-                    semaphore.release()
-                    subTask.complete()
-                  } else {
-                    subTask.add(
-                      subTask.ui.hrefLink("Accept & Continue", "btn btn-primary") {
-                        resultFn("### Success\nUser accepted command execution results.")
-                        semaphore.release()
-                        subTask.complete()
-                      }.renderMarkdown()
-                    )
-                  }
-                }
+              processor = orchestrationConfig.processor,
+            )
 
-                else -> {
-                  log.warn("Command failed with exit code ${this.exitCode}")
-                  transcript?.write("## Result: Failed\n\nCommands failed with exit code ${this.exitCode}.\n".toByteArray())
-                  subTask.add(
-                    subTask.ui.hrefLink("Ignore Error", "href-link cmd-button") {
-                      resultFn("### Warning\nCommands failed with exit code ${this.exitCode}, but error was ignored by user.")
-                      semaphore.release()
-                      subTask.complete()
-                    }.renderMarkdown()
-                  )
-                }
-              }
-              transcript?.write("</div>\n\n".toByteArray())
-            }
+           val sessionController = cmdPatchApp.newSessionController(
+             task = subTask,
+             onComplete = { exitCode ->
+               transcript?.write("\n### Execution Result\n* **Exit Code:** $exitCode\n".toByteArray())
+               transcript?.write("</div>\n\n".toByteArray())
+               transcript?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
+               when {
+                 exitCode == 0 -> {
+                   transcript?.write("## Result: Success\n\nAll commands executed successfully with exit code 0.\n".toByteArray())
+                   transcript?.write("</div>\n\n".toByteArray())
+                   if (orchestrationConfig.autoFix) {
+                     resultFn("### Success\nAll commands executed successfully with exit code 0.")
+                     semaphore.release()
+                     subTask.complete()
+                     transcript?.close()
+                   } else {
+                     subTask.add(
+                       subTask.ui.hrefLink("Accept & Continue", "btn btn-primary") {
+                         resultFn("### Success\nUser accepted command execution results.")
+                         semaphore.release()
+                         subTask.complete()
+                         transcript?.close()
+                       }.renderMarkdown()
+                     )
+                   }
+                 }
+                 else -> {
+                   log.warn("Command failed with exit code $exitCode")
+                   transcript?.write("## Result: Failed\n\nCommands failed with exit code $exitCode.\n".toByteArray())
+                   transcript?.write("</div>\n\n".toByteArray())
+                   subTask.add(
+                     subTask.ui.hrefLink("Ignore Error", "href-link cmd-button") {
+                       resultFn("### Warning\nCommands failed with exit code $exitCode, but error was ignored by user.")
+                       semaphore.release()
+                       subTask.complete()
+                       transcript?.close()
+                     }.renderMarkdown()
+                   )
+                 }
+               }
+             }
+           )
+           sessionController.start()
           } catch (e: Throwable) {
             // Triple Log Rule: UI, SLF4J, and Transcript
             subTask.error(e)
@@ -223,7 +232,6 @@ class AutoFixTask(
             resultFn("### Error\nCritical error during task execution: ${e.message}")
             semaphore.release()
             subTask.complete()
-          } finally {
             transcript?.close()
           }
         }

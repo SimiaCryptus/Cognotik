@@ -1,11 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.apps.PatchApp
+import com.simiacryptus.cognotik.apps.PatchApp.OutputResult
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -111,10 +110,10 @@ class SingleFixTask(
 
             object : PatchApp(
               root = agent.root.toFile(),
-              settings = PatchApp.Settings(
+              settings = Settings(
                 // Dummy command to ensure workingDirectory property works correctly in PatchApp
                 commands = listOf(
-                  PatchApp.CommandSettings(
+                  CommandSettings(
                     executable = File("dummy"), workingDirectory = workingDir
                   )
                 ),
@@ -151,9 +150,12 @@ class SingleFixTask(
                     .filter { it.readText().contains(searchString, ignoreCase = true) }.map { it.toPath() }.toList()
                 }.toSet()
               }
-            }.run(
-              task = subTask, model = model
-            ).apply {
+            }.newSessionController(
+              subTask
+            ).start()
+            // The controller manages the full lifecycle asynchronously.
+            // Return a placeholder result; the controller handles retries internally.
+            OutputResult(exitCode = -1, output = "Session started — see UI for progress.").apply {
               resultFn("### Success\nLog analysis and fix generation completed.")
               semaphore.release()
               subTask.complete()
