@@ -23,6 +23,8 @@ dependencies {
     implementation(project(":core"))
     compileOnly(project(":webui"))
     implementation(project(":webui"))
+    testImplementation(project(":providers"))
+    testImplementation(project(":stdtools"))
 
     implementation(libs.pty4j)
     implementation(libs.pdfbox)

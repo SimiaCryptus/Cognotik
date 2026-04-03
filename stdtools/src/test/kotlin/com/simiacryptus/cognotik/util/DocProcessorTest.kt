@@ -1232,7 +1232,7 @@ class DocProcessorTest {
       val task = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          main_file = listOf("src/A.kt").map { File(it) },
+          main_file = File("src/A.kt"),
           related_files = emptyList(),
           task_description = "Update A"
         )
@@ -1251,7 +1251,7 @@ class DocProcessorTest {
       val baseTask = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          main_file = listOf("src/Base.kt").map { File(it) },
+          main_file = File("src/Base.kt"),
           related_files = emptyList(),
           task_description = "Update Base"
         )
@@ -1259,7 +1259,7 @@ class DocProcessorTest {
       val derivedTask = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          main_file = listOf("src/Derived.kt").map { File(it) },
+          main_file = File("src/Derived.kt"),
           related_files = listOf("src/Base.kt").map { File(it) },
           task_description = "Update Derived"
         )
@@ -1278,7 +1278,7 @@ class DocProcessorTest {
       val task1 = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          main_file = listOf("src/A.kt").map { File(it) },
+          main_file = File("src/A.kt"),
           related_files = emptyList(),
           task_description = "Update A"
         )
@@ -1286,7 +1286,7 @@ class DocProcessorTest {
       val task2 = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          main_file = listOf("src/B.kt").map { File(it) },
+          main_file = File("src/B.kt"),
           related_files = emptyList(),
           task_description = "Update B"
         )
@@ -1304,7 +1304,7 @@ class DocProcessorTest {
       val taskA = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          main_file = listOf("src/A.kt").map { File(it) },
+          main_file = File("src/A.kt"),
           related_files = listOf("src/B.kt").map { File(it) },
           task_description = "Update A"
         )
@@ -1312,7 +1312,7 @@ class DocProcessorTest {
       val taskB = ModificationTask(
         data = ModificationTaskConfig(
           root = tempDir,
-          main_file = listOf("src/B.kt").map { File(it) },
+          main_file = File("src/B.kt"),
           related_files = listOf("src/A.kt").map { File(it) },
           task_description = "Update B"
         )
@@ -1446,7 +1446,7 @@ class DocProcessorTest {
       val task = ModificationTask(
         data = ModificationTaskConfig(
           root = oldRoot,
-          main_file = listOf("src/Main.kt").map { File(it) },
+          main_file = File("src/Main.kt"),
           related_files = listOf("src/Related.kt").map { File(it) },
           task_description = "Update Main"
         ),

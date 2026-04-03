@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskT
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.util.crawl.processing.DefaultSummarizerStrategy
+import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
@@ -27,7 +28,7 @@ object CrawlerAgentTaskTest {
       typeConfig = CrawlerTaskTypeConfig(
         task_type = CrawlerAgentTask.CrawlerAgent.name,
         max_pages_per_task = 2,
-        processing_strategy = DefaultSummarizerStrategy.instance,
+        processing_strategy = ProcessingStrategyType("DefaultSummarizer") { DefaultSummarizerStrategy.instance },
       ),
       executionConfig = CrawlerTaskExecutionConfigData(
         search_query = "Kotlin programming language features",
@@ -51,7 +52,7 @@ object CrawlerAgentTaskTest {
       typeConfig = CrawlerTaskTypeConfig(
         task_type = CrawlerAgentTask.CrawlerAgent.name,
         max_pages_per_task = 1,
-        processing_strategy = DefaultSummarizerStrategy.instance
+        processing_strategy = ProcessingStrategyType("DefaultSummarizer") { DefaultSummarizerStrategy.instance }
       ),
       executionConfig = CrawlerTaskExecutionConfigData(
         direct_urls = listOf("https://kotlinlang.org/"),
