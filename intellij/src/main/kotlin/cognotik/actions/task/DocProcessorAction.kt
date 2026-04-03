@@ -270,8 +270,8 @@ open class DocProcessorAction(
                   sessionStatusMap[session] = masterTask.add(
                     session.linkToSession(
                     "${mod.taskType.name}: ${
-                    mod.data.main_file?.map { mod.data.root.resolve(it) }
-                      ?.joinToString(", ") { it.absolutePath } ?: "No files specified"
+                    mod.data.main_file?.let { mod.data.root.resolve(it) }
+                      ?.absolutePath ?: "No files specified"
                   }"))
                   sessions += session
                   val completed1 = completedTasks.incrementAndGet()
@@ -330,7 +330,7 @@ open class DocProcessorAction(
         val config = t.data
         val targetFiles =
           config.relative_files?.map { it.ifBlank { null } }?.filterNotNull()?.joinToString(", ")?.ifBlank { null }
-            ?: config.main_file?.map { it.name }?.joinToString(", ")?.ifBlank { null }
+            ?: config.main_file?.let { listOf(it.name) }?.joinToString(", ")?.ifBlank { null }
             ?: "[folder: ${config.root.name}]"
         val relatedFiles = config.relative_related_files?.take(3)?.joinToString(", ") ?: ""
         val description = buildString {
