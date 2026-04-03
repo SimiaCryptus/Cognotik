@@ -230,18 +230,6 @@ ${if (!outputPath.isNullOrBlank()) "\n**Output saved to:** `$outputPath`" else "
     var templateData = executionConfig?.data ?: emptyMap()
     if (templateData.isEmpty() && !executionConfig?.related_files.isNullOrEmpty()) {
       // Build a schema hint to guide the agent toward producing correctly-shaped data
-      val schemaHint = if (schema != null) {
-        """
-The template expects data conforming to the following TypeScript interface:
-```typescript
-${schema.toTypeScript()}
-```
-Ensure the JSON object you generate has keys and value types that match this schema.
-All required (non-optional) fields must be populated with appropriate values extracted from the related files.
-"""
-      } else {
-        "No explicit schema was found in the template. Infer appropriate keys from the template content and related files."
-      }
 
       templateData = executionConfig?.related_files?.let {
         if (1 == it.count { it.endsWith(".json") }) {
@@ -257,6 +245,18 @@ All required (non-optional) fields must be populated with appropriate values ext
           val content = agent.root.resolve(it).toFile().readText()
           "# $it\n\n```\n$content\n```\n"
         }.let { relatedContent ->
+          val schemaHint = if (schema != null) {
+            """
+The template expects data conforming to the following TypeScript interface:
+```typescript
+${schema.toTypeScript()}
+```
+Ensure the JSON object you generate has keys and value types that match this schema.
+All required (non-optional) fields must be populated with appropriate values extracted from the related files.
+"""
+          } else {
+            "No explicit schema was found in the template. Infer appropriate keys from the template content and related files."
+          }
           val scriptAgent = ParsedAgent(
             resultClass = Map::class.java,
             prompt = """

@@ -228,6 +228,8 @@ open class UnifiedHarness(
     message: String = "Execute task",
     executionConfig: TaskExecutionConfig,
     parentSession: Session? = null,
+    onComplete: (result: String, task: SessionTask) -> Unit = { _, _ -> },
+    onError: (Throwable) -> Unit = { _ -> },
     initSettings: (Session) -> OrchestrationConfig
   ): Session {
     val completionLatch = CountDownLatch(1)
@@ -252,12 +254,14 @@ open class UnifiedHarness(
         val usageManager = ApplicationServices.fileApplicationServices().usageManager
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
         completionLatch.countDown()
+        onComplete(result, task)
       }
 
       override fun onTaskError(e: Throwable) {
         log.error("Task failed", e)
         error = e
         completionLatch.countDown()
+        onError(e)
       }
 
 

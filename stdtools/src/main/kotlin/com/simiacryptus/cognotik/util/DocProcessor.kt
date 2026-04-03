@@ -98,7 +98,6 @@ class DocProcessor(
   val parentSession: Session? = null,
 ) {
   private val statusFile = File(root, "docops.status.json")
-  private val statusLock = Any()
   private val statusLockFile = File(root, "docops.status.json.lock")
 
   /**
@@ -1232,7 +1231,16 @@ class DocProcessor(
         timeoutMinutes = 30,
         message = rebasedMod.message(),
         executionConfig = executionConfig(rebasedMod, harness),
-        parentSession = parentSession
+        parentSession = parentSession,
+        onComplete = { _: String, task: SessionTask ->
+          val sessionId = task.ui.sessionId.toString()
+          log.info("Task completed for target '$targetKey' in session $sessionId")
+          updateTaskStatus(targetKey, TaskStatus.COMPLETED, sessionId = sessionId)
+        },
+        onError = { error: Throwable ->
+          log.warn("Task failed for target '$targetKey' with error: ${error.message}", error)
+          updateTaskStatus(targetKey, TaskStatus.FAILED, error = error.message ?: error.javaClass.simpleName, sessionId = null)
+        }
       ) { session ->
         if (cancelFlag.get()) {
           log.info("Cancellation requested, skipping execution of remaining tasks")
@@ -1251,7 +1259,6 @@ class DocProcessor(
           processor = rebasedMod.patchProcessor ?: processor
         }
       }
-      updateTaskStatus(targetKey, TaskStatus.COMPLETED)
     } catch (e: CancellationException) {
       updateTaskStatus(targetKey, TaskStatus.CANCELLED, error = e.message)
       throw e
@@ -1334,12 +1341,17 @@ class DocProcessor(
 
   fun ChatModel.asApiChatModel(
     userSettings: UserSettings
-  ) = asApiChatModel(
-    (userSettings.apis.find { it.provider?.name == provider?.name }?.key
-      ?: throw IllegalStateException("API key for model provider ${provider?.name} not found in user settings")).decrypt!!
-  ).instance(
-    user
-  )
+  ): ChatInterface {
+    return (provider?.name
+      ?: throw IllegalStateException("Provider not specified for model ${name}")
+    ).let { providerName ->
+      asApiChatModel(
+        (userSettings.apis.find { it.provider?.name == providerName }?.key
+          ?: throw IllegalStateException("API key for model provider $providerName not found in user settings")
+            ).decrypt!!
+      ).instance(user)
+    }
+  }
 
 
   /**
@@ -1958,5 +1970,7 @@ class DocProcessor(
           user
         ), concurrency
       )
+
+    private val statusLock = Any()
   }
 }

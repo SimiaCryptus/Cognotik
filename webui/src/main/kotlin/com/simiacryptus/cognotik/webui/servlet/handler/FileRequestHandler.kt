@@ -43,7 +43,12 @@ object FileRequestHandler {
         override fun onWritePossible() {
           while (isReady) {
             byteBuffer.clear()
-            val readBytes = channel.read(byteBuffer)
+            val readBytes = try {
+              channel.read(byteBuffer)
+            } catch (e: Exception) {
+              log.debug("Error reading file: ${file.absolutePath}", e)
+              -1
+            }
             if (readBytes == -1) {
               log.debug("Completed writing small file: ${file.absolutePath}")
               async.complete()

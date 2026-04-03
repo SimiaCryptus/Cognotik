@@ -5,8 +5,6 @@ import com.simiacryptus.cognotik.apps.PatchApp
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.safeComplete
-import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -220,10 +218,11 @@ class AutoFixTask(
             transcript?.write("<div id=\"final-output\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">\n\n".toByteArray())
             transcript?.write("## Error\n\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>\n".toByteArray())
             transcript?.write("</div>\n\n".toByteArray())
-            if (orchestrationConfig.autoFix) {
-              semaphore.release()
-              subTask.complete()
-            }
+
+            // FIXED: Call resultFn in all terminal cases
+            resultFn("### Error\nCritical error during task execution: ${e.message}")
+            semaphore.release()
+            subTask.complete()
           } finally {
             transcript?.close()
           }
