@@ -46,6 +46,7 @@ class DocOpsApp(
         val fastModel: ChatModel,
         val temperature: Double = 0.3,
         val budget: Double = 2.0,
+        val overwriteOnRestart: Boolean = true,
     )
 
     override val settingsClass: Class<*> get() = Settings::class.java
@@ -59,6 +60,14 @@ class DocOpsApp(
     override fun newSession(user: User, session: Session): SocketManager {
         val newSession = super.newSession(user, session)!!
         val sessionRoot = newSession.resolveUserFile(".")!!
+        val isExistingSession = sessionRoot.exists() && sessionRoot.list()?.isNotEmpty() == true
+        val currentSettings = getSettings(session, user, Settings::class.java) ?: settings
+        if (isExistingSession && !currentSettings.overwriteOnRestart) {
+            org.slf4j.LoggerFactory.getLogger(DocOpsApp::class.java)
+                .info("Skipping resource extraction for existing session (overwriteOnRestart=false): $session")
+            return newSession
+        }
+
 
         val resourcePath = "apps/$appId/"
         val resourceUrl = classLoader.getResource(resourcePath)
