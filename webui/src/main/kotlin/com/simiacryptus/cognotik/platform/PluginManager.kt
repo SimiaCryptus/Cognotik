@@ -120,7 +120,11 @@ class PluginManager(
         changeSubscribers.add(subscriber)
     }
 
-    fun triggerChange() {
+  override fun triggerChangeNotification() {
+        triggerChange()
+  }
+
+  fun triggerChange() {
         changeSubscribers.forEach { it.invoke() }
     }
 

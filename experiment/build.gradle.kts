@@ -74,7 +74,7 @@ dependencies {
     implementation(libs.logback.classic)
     implementation(libs.logback.core)
 
-    implementation(kotlin("stdlib"))
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:${rootProject.libs.versions.kotlin.get()}")
     implementation(kotlin("scripting-jsr223"))
     implementation(kotlin("scripting-jvm"))
     implementation(kotlin("scripting-jvm-host"))

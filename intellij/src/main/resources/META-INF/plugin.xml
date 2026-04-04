@@ -150,17 +150,9 @@
                         text="🌐 Generate HTML Page"
                         description="Create a complete HTML page with embedded CSS and JavaScript, optionally with AI-generated images">
                 </action>
-                <action class="cognotik.actions.task.GeneratePresentationAction"
-                        text="📊 Generate Presentation"
-                        description="Create a complete Reveal.js presentation with speaker notes and optional AI-generated images">
-                </action>
                 <action class="cognotik.actions.task.IllustrateDocumentAction"
                         text="🖼️ Illustrate Document"
                         description="Generate illustrative images for a document based on its content, enhancing visual appeal and comprehension">
-                </action>
-                <action class="cognotik.actions.task.BusinessProposalAction"
-                        text="📈 Business Proposal"
-                        description="Generate a comprehensive business proposal document tailored to your specific needs and objectives">
                 </action>
                 <action class="cognotik.actions.task.NarrativeGenerationAction"
                         text="📖 Narrative Generation"

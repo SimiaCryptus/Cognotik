@@ -6,6 +6,7 @@ import java.io.File
 interface PluginManagerInterface {
 
   fun subscribeToChanges(subscriber: () -> Unit)
+  fun triggerChangeNotification()
   /**
    * Load a plugin JAR and initialize all [com.simiacryptus.cognotik.platform.CognotikPlugin] implementations
    * discovered via ServiceLoader.
