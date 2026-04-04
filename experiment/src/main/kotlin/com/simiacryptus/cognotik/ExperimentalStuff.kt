@@ -5,10 +5,7 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.images.GenerateQRImageTask
-import com.simiacryptus.cognotik.plan.tools.images.GenerateSpriteSheetTask
 import com.simiacryptus.cognotik.plan.tools.images.ImageDecompositionTask
-import com.simiacryptus.cognotik.plan.tools.images.ImageTableTask
-import com.simiacryptus.cognotik.plan.tools.images.ImageVariationTask
 import com.simiacryptus.cognotik.plan.tools.images.SegmentedImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.images.TiledImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.office.BusinessProposalTask
@@ -83,11 +80,8 @@ import com.simiacryptus.cognotik.util.crawl.processing.SchemaExtractionStrategy
 
         // --- Image & Media Task Types ---
         TaskType.registerTaskType(GenerateQRImageTask.GenerateQRImage)
-        TaskType.registerTaskType(GenerateSpriteSheetTask.GenerateSpriteSheet)
         TaskType.registerTaskType(ImageDecompositionTask.ImageDecomposition)
         TaskType.registerTaskType(TiledImageGenerationTask.TiledImageGeneration)
-        TaskType.registerTaskType(ImageTableTask.ImageTable)
-        TaskType.registerTaskType(ImageVariationTask.ImageVariation)
         TaskType.registerTaskType(SegmentedImageGenerationTask.SegmentedImageGeneration)
 
         // --- Game Design Task Types ---
