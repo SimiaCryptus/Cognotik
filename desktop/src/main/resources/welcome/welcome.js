@@ -1020,9 +1020,13 @@ function pluginManagerRefreshLoaded() {
                          </td>
                          <td style="padding:10px 12px;">${pluginList}</td>
                          <td style="padding:10px 12px; text-align:center;">
-                             <button class="button secondary" style="font-size:0.85em; padding:5px 12px;"
-                                 onclick="pluginManagerUnload(${JSON.stringify(entry.jar)})">
+                             <button class="button secondary" style="font-size:0.85em; padding:5px 12px; margin:2px;"
+                                 data-jar-path="${escapeHtml(entry.jar || '')}" data-action="unload">
                                  Unload
+                             </button>
+                             <button class="button secondary" style="font-size:0.85em; padding:5px 12px; margin:2px; background:#dc3545; color:#fff;"
+                                 data-jar-path="${escapeHtml(entry.jar || '')}" data-action="delete">
+                                 Delete
                              </button>
                          </td>
                      </tr>
@@ -1030,6 +1034,12 @@ function pluginManagerRefreshLoaded() {
              });
              html += '</tbody></table>';
              container.innerHTML = html;
+             container.querySelectorAll('button[data-action="unload"]').forEach(btn => {
+                 btn.addEventListener('click', () => pluginManagerUnload(btn.getAttribute('data-jar-path')));
+             });
+             container.querySelectorAll('button[data-action="delete"]').forEach(btn => {
+                 btn.addEventListener('click', () => pluginManagerDelete(btn.getAttribute('data-jar-path')));
+             });
          })
          .catch(e => {
              container.innerHTML = `<p style="color:#c0392b;">Error loading plugins: ${escapeHtml(e.message)}</p>`;
@@ -1069,23 +1079,34 @@ function pluginManagerScanDirectory() {
                      : '<span style="background:#f8d7da;color:#721c24;padding:2px 8px;border-radius:10px;font-size:0.8em;font-weight:600;">Not Loaded</span>';
                  const loadBtn = !entry.loaded
                      ? `<button class="button" style="font-size:0.85em;padding:5px 12px;"
-                             onclick="pluginManagerLoadJar(${JSON.stringify(entry.name)})">Load</button>`
+                             data-jar-name="${escapeHtml(entry.name || '')}" data-action="load">Load</button>`
                      : '';
                  const unloadBtn = entry.loaded
-                     ? `<button class="button secondary" style="font-size:0.85em;padding:5px 12px;"
-                             onclick="pluginManagerUnload(${JSON.stringify(entry.path)})">Unload</button>`
+                     ? `<button class="button secondary" style="font-size:0.85em;padding:5px 12px;margin:2px;"
+                             data-jar-path="${escapeHtml(entry.path || '')}" data-action="unload">Unload</button>`
                      : '';
+                 const deleteBtn = `<button class="button secondary" style="font-size:0.85em;padding:5px 12px;margin:2px;background:#dc3545;color:#fff;"
+                         data-jar-path="${escapeHtml(entry.path || '')}" data-action="delete">Delete</button>`;
                  html += `
                      <tr style="border-bottom:1px solid #eee;">
                          <td style="padding:10px 12px; font-family:monospace; font-size:0.9em;">${escapeHtml(entry.name || '')}</td>
                          <td style="padding:10px 12px; text-align:right; color:#666;">${sizeKb} KB</td>
                          <td style="padding:10px 12px; text-align:center;">${statusBadge}</td>
-                         <td style="padding:10px 12px; text-align:center;">${loadBtn}${unloadBtn}</td>
+                         <td style="padding:10px 12px; text-align:center;">${loadBtn}${unloadBtn}${deleteBtn}</td>
                      </tr>
                  `;
              });
              html += '</tbody></table>';
              container.innerHTML = html;
+             container.querySelectorAll('button[data-action="load"]').forEach(btn => {
+                 btn.addEventListener('click', () => pluginManagerLoadJar(btn.getAttribute('data-jar-name')));
+             });
+             container.querySelectorAll('button[data-action="unload"]').forEach(btn => {
+                 btn.addEventListener('click', () => pluginManagerUnload(btn.getAttribute('data-jar-path')));
+             });
+             container.querySelectorAll('button[data-action="delete"]').forEach(btn => {
+                 btn.addEventListener('click', () => pluginManagerDelete(btn.getAttribute('data-jar-path')));
+             });
          })
          .catch(e => {
              container.innerHTML = `<p style="color:#c0392b;">Error scanning directory: ${escapeHtml(e.message)}</p>`;
@@ -1137,6 +1158,34 @@ function pluginManagerUnload(jarPath) {
          .then(data => {
              if (data.success) {
                  showPluginMessage(`Plugin unloaded: ${jarName}`, 'success');
+                 pluginManagerRefreshLoaded();
+                 pluginManagerScanDirectory();
+             } else {
+                 showPluginMessage('Error: ' + data.error, 'error');
+             }
+         })
+         .catch(e => showPluginMessage('Request failed: ' + e.message, 'error'));
+}
+function pluginManagerDelete(jarPath) {
+     if (!jarPath) return;
+     const jarName = jarPath.split(/[\\/]/).pop();
+     if (!confirm(`Delete plugin "${jarName}"?\nThis will permanently remove the file from disk. If loaded, it will be unloaded first.`)) return;
+    fetch('/pluginManager/', {
+         method: 'POST',
+          body: new URLSearchParams({ action: 'delete', jar: jarPath }),
+          headers: { 'Accept': 'application/json' }
+     })
+          .then(r => {
+              if (!r.ok) {
+                  return r.text().then(text => {
+                      try { return JSON.parse(text); } catch (e) { throw new Error(`Server returned ${r.status}: ${text.substring(0, 200)}`); }
+                  });
+              }
+              return r.json();
+          })
+         .then(data => {
+             if (data.success) {
+                 showPluginMessage(`Plugin deleted: ${jarName}`, 'success');
                  pluginManagerRefreshLoaded();
                  pluginManagerScanDirectory();
              } else {

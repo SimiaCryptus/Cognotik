@@ -3,7 +3,7 @@
 //  Defines World 1-1 and helper to parse level definitions.
 // ============================================================
 
-import { TILE, ENTITY_TYPE, TILE_SIZE, SCALE } from './constants.js';
+import { TILE, ENTITY_TYPE } from './constants.js';
 
 const _ = TILE.EMPTY;
 const G = TILE.GROUND;
@@ -15,7 +15,6 @@ const PR = TILE.PIPE_TOP_RIGHT;
 const BL = TILE.PIPE_BODY_L;  // 7
 const BR = TILE.PIPE_BODY_R;  // 8
 const C  = TILE.COIN_WORLD;   // 25
-const U = TILE.QUESTION_USED;
 const U = TILE.QUESTION_USED;
 const F = TILE.FLAGPOLE_POLE;
 const FB = TILE.FLAGPOLE_BASE;
@@ -236,5 +235,3 @@ export function buildLevel1_1() {
 export const LEVELS = [
   buildLevel1_1,
 ];
-     21: ENTITY_TYPE.COIN_POPUP,
-     23: ENTITY_TYPE.COIN_POPUP,

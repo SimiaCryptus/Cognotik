@@ -27,9 +27,9 @@ interface FetchMethodFactory {
 
 @Suppress("unused")
 enum class FetchMethod : FetchMethodFactory {
-  Selenium {
-    override fun createStrategy(task: CrawlerAgentTask) = Selenium().createStrategy(task)
-  },
+//  Selenium {
+//    override fun createStrategy(task: CrawlerAgentTask) = FetchMethod.Selenium.createStrategy(task)
+//  },
   HttpClient {
     override fun createStrategy(task: CrawlerAgentTask) = HttpClientFetch().createStrategy(task)
   };

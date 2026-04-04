@@ -1,22 +1,42 @@
 package com.simiacryptus.cognotik.util.crawl.processing
 
-enum class ProcessingStrategyType {
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.simiacryptus.cognotik.util.DynamicEnum
+import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
+import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 
-  DefaultSummarizer {
-    override fun createStrategy(): PageProcessingStrategy = DefaultSummarizerStrategy()
-  },
-  FactChecking {
-    override fun createStrategy(): PageProcessingStrategy = FactCheckingStrategy()
-  },
-  JobMatching {
-    override fun createStrategy(): PageProcessingStrategy = JobMatchingStrategy()
-  },
-  SchemaExtraction {
-    override fun createStrategy(): PageProcessingStrategy = SchemaExtractionStrategy()
-  },
-  DataTableAccumulation {;
-    override fun createStrategy(): PageProcessingStrategy = DataTableAccumulationStrategy()
-  };
+@JsonDeserialize(using = ProcessingStrategyTypeDeserializer::class)
+@JsonSerialize(using = ProcessingStrategyTypeSerializer::class)
+open class ProcessingStrategyType(
+   name: String,
+   val strategyFactory: () -> PageProcessingStrategy
+) : DynamicEnum<ProcessingStrategyType>(name) {
 
-  abstract fun createStrategy(): PageProcessingStrategy
+   fun createStrategy(): PageProcessingStrategy = strategyFactory()
+
+   companion object {
+
+     val DEFAULT = ProcessingStrategyType("DefaultSummarizer") { DefaultSummarizerStrategy.instance }
+     val FACT_CHECK = ProcessingStrategyType("FactChecking") { FactCheckingStrategy() }
+
+     init {
+       register(DEFAULT)
+       register(FACT_CHECK)
+     }
+
+     fun register(value: ProcessingStrategyType): ProcessingStrategyType {
+       register(ProcessingStrategyType::class.java, value)
+       return value
+     }
+
+     fun values(): List<ProcessingStrategyType> =
+       values(ProcessingStrategyType::class.java)
+
+     fun valueOf(name: String): ProcessingStrategyType =
+       valueOf(ProcessingStrategyType::class.java, name)
+   }
 }
+class ProcessingStrategyTypeSerializer : DynamicEnumSerializer<ProcessingStrategyType>(ProcessingStrategyType::class.java)
+
+class ProcessingStrategyTypeDeserializer : DynamicEnumDeserializer<ProcessingStrategyType>(ProcessingStrategyType::class.java)

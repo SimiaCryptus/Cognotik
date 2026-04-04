@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.crawl.RobotsTxtParser
 import com.simiacryptus.cognotik.util.crawl.fetch.FetchMethod
 import com.simiacryptus.cognotik.util.crawl.fetch.FetchStrategy
+import com.simiacryptus.cognotik.util.crawl.processing.DefaultSummarizerStrategy
 import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy
 import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy.PageProcessingResult
 import com.simiacryptus.cognotik.util.crawl.processing.PageProcessingStrategy.ProcessingContext
@@ -50,7 +51,7 @@ class CrawlerAgentTask(
   class CrawlerTaskTypeConfig(
     @Description("Method to seed the crawler. One of: GoogleProxy, DirectUrls (optional, default: GoogleProxy)") var seed_method: SeedMethod = SeedMethod.GoogleProxy,
     @Description("Method used to fetch content from URLs. One of: HttpClient, Selenium (optional, default: HttpClient)") var fetch_method: FetchMethod = FetchMethod.HttpClient,
-    @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: ProcessingStrategyType = ProcessingStrategyType.DefaultSummarizer,
+    @Description("Strategy for processing pages. One of: DefaultSummarizer, FactChecking, JobMatching (optional, default: DefaultSummarizer)") var processing_strategy: ProcessingStrategyType = ProcessingStrategyType.DEFAULT,
     @Description("Whitespace-separated list of allowed domains or URL prefixes to restrict crawling scope. If set, only URLs matching these domains/prefixes will be crawled (optional)") var allowed_domains: String? = null,
     @Description("Whether to respect robots.txt rules when crawling (default: true)") var respect_robots_txt: Boolean = true,
     @Description("Maximum number of pages to process in a single task. Must be greater than 0 (optional, default: 30)") var max_pages_per_task: Int = 30,
@@ -106,8 +107,6 @@ class CrawlerAgentTask(
       return ValidatedObject.validateFields(this)
     }
   }
-
-  var selenium: Selenium2S3? = null
   val urlContentCache = ConcurrentHashMap<String, String>()
   private val robotsTxtParser = RobotsTxtParser()
 
@@ -128,7 +127,7 @@ class CrawlerAgentTask(
       val typeConfig = this@CrawlerAgentTask.typeConfig
       if (null != typeConfig) {
         when (typeConfig.processing_strategy) {
-          ProcessingStrategyType.DefaultSummarizer -> {
+          DefaultSummarizerStrategy.instance -> {
             // No additional notes for DefaultSummarizer
           }
 
@@ -141,23 +140,6 @@ class CrawlerAgentTask(
           }
         }
       }
-    }
-  }
-
-  fun cleanup() {
-    try {
-      selenium?.let {
-        log.info("Cleaning up Selenium WebDriver instance")
-        try {
-          it.quit()
-        } catch (e: Exception) {
-          log.warn("Failed to quit Selenium WebDriver gracefully: ${e.message}")
-        }
-        selenium = null
-        log.debug("Selenium WebDriver cleanup completed")
-      }
-    } catch (e: Exception) {
-      log.error("Error cleaning up Selenium resources", e)
     }
   }
 
@@ -252,7 +234,7 @@ class CrawlerAgentTask(
           log.error("Failed to close transcript stream", e)
         }
       }
-      cleanup()
+//      cleanup()
     }
   }
 
@@ -268,7 +250,7 @@ class CrawlerAgentTask(
       val typeConfig = typeConfig ?: throw RuntimeException("Missing type config")
       // Initialize processing strategy
       val strategyType = typeConfig.processing_strategy
-      val processingStrategy = strategyType.createStrategy()
+      val processingStrategy = strategyType
       log.info("Using processing strategy: ${strategyType.name} - ${processingStrategy.javaClass.simpleName}")
 
       val startTime = System.currentTimeMillis()
@@ -453,7 +435,7 @@ class CrawlerAgentTask(
               fetchStrategy = fetchStrategy,
               analysisResultsMap = analysisResultsMap,
               transcriptStream = transcriptStream,
-              processingStrategy = processingStrategy,
+              processingStrategy = processingStrategy.createStrategy(),
               processingContext = processingContext,
               allPageResults = allPageResults
             )
@@ -484,7 +466,7 @@ class CrawlerAgentTask(
           log.info("Crawling progress: processed=${processedCount.get()}/$maxPages, queue=${pageQueue.size}, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
 
           // Check if strategy wants to terminate early
-          val continuationDecision = processingStrategy.shouldContinueCrawling(
+          val continuationDecision = processingStrategy.createStrategy().shouldContinueCrawling(
             allPageResults.values.toList(), processingContext
           )
           if (!continuationDecision.shouldContinue) {
@@ -551,7 +533,7 @@ class CrawlerAgentTask(
         buildString {
           appendLine("# Final Output")
           appendLine(
-            processingStrategy.generateFinalOutput(
+            processingStrategy.createStrategy().generateFinalOutput(
               allPageResults.values.toList(), processingContext
             )
           )

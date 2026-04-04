@@ -214,7 +214,7 @@ abstract class FileServlet : HttpServlet() {
   private fun serveVirtualFilesJson(file: File, resp: HttpServletResponse) {
     val parentDir = file.parentFile
     if (parentDir != null && parentDir.exists() && parentDir.isDirectory) {
-      log.info("Serving virtual _files.json for directory: ${parentDir.absolutePath}")
+      log.debug("Serving virtual _files.json for directory: ${parentDir.absolutePath}")
       FileRequestHandler.serveFilesJson(parentDir, resp)
     } else {
       log.warn("Parent directory not found for _files.json: ${file.absolutePath}")

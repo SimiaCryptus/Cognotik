@@ -7,8 +7,7 @@ import {
 import {
    CANVAS_WIDTH as CANVAS_W, CANVAS_HEIGHT as CANVAS_H,
    TILE_SIZE, SCALE,
-   STATE, ENTITY_TYPE, TILE,
-   CANVAS_WIDTH, CANVAS_HEIGHT, TILE_SIZE, SCALE,
+   CANVAS_WIDTH, CANVAS_HEIGHT,
    STATE, ENTITY_TYPE, TILE,
    SCORE, LEVEL_TIME, CLEAR_DELAY, COLOR,
    PLAYER_W, PLAYER_H_SMALL,
@@ -24,14 +23,9 @@ import {
   Mushroom, FireFlower, Star, CoinPop, ScorePop, BrickParticle,
 } from './entities/powerup.js';
 import * as Sprites from './spritesheet.js';
-const CANVAS_W = CANVAS_WIDTH;
-const CANVAS_H = CANVAS_HEIGHT;
 
 
 const T = TILE_SIZE * SCALE;
-
-const CANVAS_W = CANVAS_WIDTH;
-const CANVAS_H = CANVAS_HEIGHT;
 
 export class Game {
   constructor(canvas, input, audio) {

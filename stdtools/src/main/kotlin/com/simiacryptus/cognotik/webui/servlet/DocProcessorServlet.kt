@@ -109,12 +109,10 @@ class DocProcessorServlet(
       val tasksToRun = if (!targetPath.isNullOrBlank()) {
         val targetFile = sessionDir.resolve(targetPath).canonicalFile
         allTasks.filter { task ->
-          task.data.files?.any { filePath ->
-            try {
-              filePath.canonicalFile == targetFile
-            } catch (e: Exception) {
-              false
-            }
+          try {
+            task.data.main_file?.canonicalFile == targetFile
+          } catch (e: Exception) {
+            false
           } ?: false
         }
       } else {

@@ -126,12 +126,12 @@ publishing {
             from(components["java"])
 
             groupId = "com.cognotik"
-            artifactId = "webui"
+             artifactId = "stdtools"
             version = project.version.toString()
 
             pom {
-                name.set("Cognotik Webapp")
-                description.set("Core library for Cognotik AI framework")
+                 name.set("Cognotik Standard Tools")
+                 description.set("Standard tools library for Cognotik AI framework")
                 url.set("https://github.com/SimiaCryptus/Cognotik")
 
                 licenses {

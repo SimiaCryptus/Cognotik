@@ -1,5 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermission
 
@@ -8,6 +9,8 @@ plugins {
     alias(libs.plugins.shadow)
     war
     application
+     `maven-publish`
+     signing
 }
 
 
@@ -501,6 +504,73 @@ tasks.register("packageLinux") {
 tasks.named("build") {
     dependsOn(tasks.war)
     dependsOn(tasks.shadowJar)
+}
+java {
+     withJavadocJar()
+     withSourcesJar()
+}
+
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+
+            groupId = "com.cognotik"
+            artifactId = "desktop"
+            version = project.version.toString()
+
+            pom {
+                name.set("Cognotik Desktop Application")
+                description.set("Desktop application module for Cognotik AI framework, providing a GUI and agent management interface")
+                url.set("https://github.com/SimiaCryptus/Cognotik")
+
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+
+                developers {
+                    developer {
+                        id.set("simiacryptus")
+                        name.set("SimiaCryptus")
+                        email.set("simiacryptus@gmail.com")
+                    }
+                }
+
+                scm {
+                    connection.set("scm:git:git://github.com/SimiaCryptus/Cognotik.git")
+                    developerConnection.set("scm:git:ssh://github.com/SimiaCryptus/Cognotik.git")
+                    url.set("https://github.com/SimiaCryptus/Cognotik")
+                }
+            }
+        }
+    }
+}
+
+signing {
+    val signingKey = findProperty("signingInMemoryKey")?.toString() ?: System.getenv("SIGNING_KEY")
+    val signingPassword = findProperty("signingInMemoryKeyPassword")?.toString() ?: System.getenv("SIGNING_PASSWORD")
+
+    if (signingKey != null && signingPassword != null) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign(publishing.publications["maven"])
+    }
+
+}
+
+
+
+tasks.javadoc {
+    if (JavaVersion.current().isJava9Compatible) {
+        (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
+    }
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.compilerOptions {
+    freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
 }
 
 tasks.register("updateVersionFromEnv") {

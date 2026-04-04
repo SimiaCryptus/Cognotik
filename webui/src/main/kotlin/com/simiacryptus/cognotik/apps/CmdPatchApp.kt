@@ -242,4 +242,5 @@ class CmdPatchApp(
     FileSelectionUtils.filteredWalk(settings.workingDirectory!!)
       .filter { it.readText().contains(searchString, ignoreCase = true) }.map { it.toPath() }.toList()
   }.toSet()
+
 }

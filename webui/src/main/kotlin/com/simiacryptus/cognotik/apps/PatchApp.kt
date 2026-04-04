@@ -6,8 +6,6 @@ import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.patch.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
@@ -16,7 +14,6 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.nio.file.FileSystems
@@ -165,9 +162,24 @@ abstract class PatchApp(
     val fixApplied: Boolean = false
   )
 
-  private inner class SessionController(
+fun newSessionController(task: SessionTask, onComplete: (Int) -> Unit = {}) = SessionController(
+    task = task,
+    settings = settings,
+    model = model,
+   executeIteration = { t, m, i -> this.executeIteration(t, m, i) },
+   onComplete = onComplete,
+  )
+
+  open class SessionController(
     private val task: SessionTask,
+    val settings: Settings,
+    val model: ChatInterface,
+    val executeIteration: (SessionTask, ChatInterface, Int) -> OutputResult,
+    var updateStatus: (String) -> Unit = { _ -> },
+   var lastParsedErrors: ParsedErrors? = null,
+   val onComplete: (exitCode: Int) -> Unit = { _ -> },
   ) {
+
     private val retriesRemaining = AtomicInteger(if (settings.autoFix) settings.maxRetries else 0)
     private val autoRetryEnabled = AtomicBoolean(settings.autoFix)
     private val currentIteration = AtomicInteger(0)
@@ -460,6 +472,7 @@ abstract class PatchApp(
             renderControlPanel()
             renderSummary()
             renderIterationArea()
+           onComplete(0)
           } else {
             val remaining = retriesRemaining.get()
             if (remaining > 0 && autoRetryEnabled.get()) {
@@ -476,6 +489,7 @@ abstract class PatchApp(
               renderControlPanel()
               renderSummary()
               renderIterationArea()
+             onComplete(result.exitCode)
             }
           }
         } catch (e: Exception) {
@@ -494,6 +508,7 @@ abstract class PatchApp(
           renderControlPanel()
           renderSummary()
           renderIterationArea()
+         onComplete(-1)
         }
       }.start()
     }
@@ -576,24 +591,6 @@ abstract class PatchApp(
     var workingDirectory: File? = null,
     var additionalInstructions: String = "",
   )
-
-  /**
-   * Top-level entry point: creates the SessionController which manages the full lifecycle.
-   * Called once per user session to set up the control panel and kick off the first iteration.
-   */
-  fun run(
-    task: SessionTask,
-    model: ChatInterface,
-    iteration: Int = 0
-  ): OutputResult {
-    log.info("Starting run with settings: ${JsonUtil.toJson(settings)}")
-    val controller = SessionController(task)
-    controller.start()
-    log.info("Session setup complete")
-    // The controller manages the full lifecycle asynchronously.
-    // Return a placeholder result; the controller handles retries internally.
-    return OutputResult(exitCode = -1, output = "Session started — see UI for progress.")
-  }
 
   /**
    * Executes a single iteration: runs the command, parses errors, and applies fixes.

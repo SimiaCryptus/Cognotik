@@ -8,6 +8,7 @@ import java.io.FileOutputStream
 import java.util.concurrent.atomic.AtomicInteger
 
 interface PageProcessingStrategy {
+  val name: String get() = this::class.simpleName ?: "UnnamedStrategy"
   val description: String
 
   /**
