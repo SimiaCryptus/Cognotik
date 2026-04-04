@@ -54,7 +54,7 @@ dependencies {
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-properties:2.19.0")
 
   compileOnly(libs.asm)
-  implementation(kotlin("stdlib"))
+  implementation("org.jetbrains.kotlin:kotlin-stdlib:${rootProject.libs.versions.kotlin.get()}")
   implementation(libs.kotlinx.coroutines)
 
   testImplementation(libs.kotlin.script.runtime)

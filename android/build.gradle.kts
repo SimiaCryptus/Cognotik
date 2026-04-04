@@ -153,7 +153,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines)
     implementation(libs.commons.io)
     implementation(libs.slf4jandroid)
-    implementation(kotlin("stdlib"))
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:${rootProject.libs.versions.kotlin.get()}")
 
     // Jetty server dependencies - use only core server, not webapp
     implementation(libs.jetty.server)
