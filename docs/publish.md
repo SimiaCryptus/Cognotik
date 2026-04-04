@@ -3,19 +3,15 @@ documents: ../scripts/publish.sh
 specifies: ../scripts/publish.sh
 ---
 
-# Deploy Build
+# Secret Setup
 
-```shell
-./gradlew build publish
-```
-
-# Create the key alias/maven-central if it does not exist
+## Create the key alias/maven-central if it does not exist
 
 ```shell
 aws kms create-alias --alias-name alias/maven-central --target-key-id $(aws kms create-key --query KeyMetadata.KeyId --output text)
 ```
 
-# Read a secret from console in and return the AWS encrypted secret
+## Read a secret from console in and return the AWS encrypted secret
 
 ```shell
 read_secret_aws() {
@@ -25,7 +21,7 @@ read_secret_aws() {
 }
 ```
 
-# Use AWS to decrypt $1 and return it as a string
+## Use AWS to decrypt $1 and return it as a string
 
 ```bash
 decrypt_aws() {
@@ -33,17 +29,47 @@ decrypt_aws() {
 }
 ```
 
-# Example usage to query Sonatype OSSRH staging repositories
+The MVN_CENTRAL_KEY environment variable should be set to the AWS encrypted secret, which can be obtained by running the `read_secret_aws` function:
 
-```bash
-curl -u `decrypt_aws 'AQICAHidpAxjUnec2+y6zMst5ZAtSqAHG3cILsI2tm2DVIIvlAFZUxBH2ZJcW+Bzc/rHoJh/AAAAhzCBhAYJKoZIhvcNAQcGoHcwdQIBADBwBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDHPtV625FyskyHYbqQIBEIBDtT8Ic17uo9CTG0vNOPAsocpEv35T4sDmJMS4aMmfrgEX0l701yjHIpEx4rzzrUsVDtwkS75BvRx9UxMrwJs+33tkoA=='` \
-  'https://ossrh-staging-api.central.sonatype.com/manual/search/repositories?ip=any&profile_id=com.cognotik' | jq
+```
+MVN_CENTRAL_KEY='AQICAHidpAxjUnec2+y6zMst5ZAtSqAHG3cILsI2tm2DVIIvlAFZUxBH2ZJcW+Bzc/rHoJh/AAAAhzCBhAYJKoZIhvcNAQcGoHcwdQIBADBwBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDHPtV625FyskyHYbqQIBEIBDtT8Ic17uo9CTG0vNOPAsocpEv35T4sDmJMS4aMmfrgEX0l701yjHIpEx4rzzrUsVDtwkS75BvRx9UxMrwJs+33tkoA=='
 ```
 
-# Example usage to promote a staging repository in Sonatype OSSRH
+# Publishing to Maven Central
+
+Review existing repos, ensuring a clean slate before each publish. You can use the following shell function to list staging repositories for the com.cognotik profile:
 
 ```bash
-curl -u `decrypt_aws 'AQICAHidpAxjUnec2+y6zMst5ZAtSqAHG3cILsI2tm2DVIIvlAFZUxBH2ZJcW+Bzc/rHoJh/AAAAhzCBhAYJKoZIhvcNAQcGoHcwdQIBADBwBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDHPtV625FyskyHYbqQIBEIBDtT8Ic17uo9CTG0vNOPAsocpEv35T4sDmJMS4aMmfrgEX0l701yjHIpEx4rzzrUsVDtwkS75BvRx9UxMrwJs+33tkoA=='` -X POST \
-  'https://ossrh-staging-api.central.sonatype.com/manual/upload/repository/HyHqQM/any/com.cognotik--e9a15be9-7308-4dea-b87f-fc38f68db1ce' \
-  -H 'Content-Type: application/json' -d '{"data": {"description": "Promote from CI build"}}'
+list_repos() {
+curl -u `decrypt_aws $MVN_CENTRAL_KEY` \
+  'https://ossrh-staging-api.central.sonatype.com/manual/search/repositories?ip=any&profile_id=com.cognotik' | jq
+}
+```
+
+To clean up failed staging repositories, you can use the following shell function that takes in the guid of the staging repository:
+
+```bash
+close_staging_repo() {
+    local repo_guid="$1"
+    curl -u `decrypt_aws $MVN_CENTRAL_KEY` -X DELETE \
+        "https://ossrh-staging-api.central.sonatype.com/manual/drop/repository/HyHqQM/any/com.cognotik--${repo_guid}" \
+        -H 'Content-Type: application/json' -d '{"data": {"description": "Close failed staging repo from CI build"}}'
+}
+```
+
+## Deploy Build
+
+```shell
+./gradlew build publish
+```
+
+Then use the `list_repos` function to find the guid of the staging repository that was just created, and promote it using the `promote_staging_repo` function:
+
+```bash
+promote_staging_repo() {
+  local repo_guid="$1"
+  curl -u `decrypt_aws $MVN_CENTRAL_KEY` -X POST \
+    "https://ossrh-staging-api.central.sonatype.com/manual/upload/repository/HyHqQM/any/com.cognotik--${repo_guid}" \
+    -H 'Content-Type: application/json' -d '{"data": {"description": "Promote from CI build"}}'
+}
 ```
