@@ -296,7 +296,8 @@ open class CognotikApps(
           model = model,
           fastModel = model,
           appId = entry.appId ?: entry.id,
-          classLoader = entry.classLoader
+          classLoader = entry.classLoader,
+          resourcePath = entry.resource_path ?: ("apps/" + (entry.appId ?: entry.id))
         )
       )
     }

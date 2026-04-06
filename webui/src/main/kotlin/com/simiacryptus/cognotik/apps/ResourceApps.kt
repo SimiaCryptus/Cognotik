@@ -23,7 +23,8 @@ open class ResourceApps(
         val type: String,
         val path: String,
         val appId: String? = null,
-        val cardClass: String? = null
+        val cardClass: String? = null,
+        val resource_path: String? = null
     )
 
     override fun init() {
@@ -46,6 +47,7 @@ open class ResourceApps(
                     type = entry.type,
                     path = entry.path,
                     appId = entry.appId,
+                    resource_path = entry.resource_path,
                     cardClass = entry.cardClass,
                     classLoader = classLoader
                   )

@@ -270,9 +270,6 @@ class CrawlerAgentTask(
         log.debug("Created websearch directory: ${webSearchDir.absolutePath}")
       }
       val tabs = TabbedDisplay(task)
-      val crawlTask = task.linkedTask("Crawl Details")
-      val crawlTabs = TabbedDisplay(crawlTask)
-      task.update()
 
       // Write transcript header with tabbed structure
       transcriptStream?.let { stream -> writeTranscriptHeader(stream) }
@@ -312,8 +309,8 @@ class CrawlerAgentTask(
         return "Warning: No seed items found to start crawling"
       }
       // Create seed links tab
-      val seedLinksTask = crawlTask.newTask()
-      crawlTabs["Seed Links"] = seedLinksTask.placeholder
+      val seedLinksTask = task.newTask()
+      tabs["Seed Links"] = seedLinksTask.placeholder
       val seedLinksContent = buildString {
         appendLine("# Seed Links")
         appendLine()
@@ -378,7 +375,7 @@ class CrawlerAgentTask(
         typeConfig = typeConfig,
         orchestrationConfig = orchestrationConfig,
         messages = messages,
-        task = crawlTask,
+        task = task,
         webSearchDir = webSearchDir,
         processedCount = AtomicInteger(0),
         maxPages = maxPages,
@@ -425,7 +422,7 @@ class CrawlerAgentTask(
               activeTasks = activeTasks,
               errorCount = errorCount,
               maxErrors = maxErrors,
-              tabs = crawlTabs,
+              tabs = tabs,
               processedCount = processedCount,
               maxPages = maxPages,
               maxDepth = maxDepthConfig,

@@ -241,5 +241,6 @@ inline fun <reified T : Any> Any.parserCast(
   resultClass = T::class.java,
   model = model,
   parsingChatter = model,
-  describer = describer
+  describer = describer,
+  singleStage = true
 ).getParser().apply(this.toJson())
