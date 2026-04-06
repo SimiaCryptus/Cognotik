@@ -81,7 +81,7 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
     results: List<PageProcessingStrategy.PageProcessingResult>,
     context: PageProcessingStrategy.ProcessingContext
   ): String {
-    val analysisResults = results.joinToString("\n") { it.summary ?: it.content }
+    val analysisResults = results.joinToString("\n") { it.content }
     val maxFinalOutputSize = context.typeConfig.max_final_output_size
 
     if (analysisResults.length < maxFinalOutputSize * 1.2) {
@@ -102,7 +102,7 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
       model = (context.typeConfig.model?.let { it.instance(context.orchestrationConfig.user) }
         ?: context.orchestrationConfig.defaultFast).getChildClient(context.task),
     ).answer(
-      listOf("Here are summaries of each analyzed page:\n${analysisResults}"),
+      listOf("Here are summaries of each analyzed page:\n${analysisResults}\n\n---\n\nNow, create a unified summary that combines the key insights from all pages."),
     )
 
     return summary
