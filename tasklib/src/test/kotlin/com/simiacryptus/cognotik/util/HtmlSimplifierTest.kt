@@ -602,6 +602,36 @@ class HtmlSimplifierTest {
             val html = "<html><body><div><div><div><p>Deep content</p></div></div></div></body></html>"
             val result = HtmlSimplifier.scrubHtml(html, simplifyStructure = true)
             assertTrue(result.contains("Deep content"), "Content should be preserved after simplification")
+            // The redundant wrapper divs should be removed, leaving just the <p> tag
+            assertFalse(result.contains("<div"), "Redundant wrapper divs should be removed")
+        }
+        @Test
+        fun `should simplify nested divs wrapping different child elements`() {
+            val html = """
+                <html><body>
+                <div><div><div><div><div><div><div>
+                    <h1><a href="https://example.com">Title</a></h1>
+                </div></div></div></div></div></div></div>
+                </body></html>
+            """.trimIndent()
+            val result = HtmlSimplifier.scrubHtml(html, simplifyStructure = true)
+            assertTrue(result.contains("Title"), "Content should be preserved")
+            assertTrue(result.contains("<h1>"), "h1 should be preserved")
+            assertFalse(result.contains("<div"), "Unnecessary wrapper divs should be removed")
+        }
+        @Test
+        fun `should not unwrap elements that have attributes`() {
+            val html = """<html><body><div role="main"><p>Content</p></div></body></html>"""
+            val result = HtmlSimplifier.scrubHtml(html, simplifyStructure = true)
+            assertTrue(result.contains("Content"), "Content should be preserved")
+            assertTrue(result.contains("role=\"main\""), "Div with attributes should be preserved")
+        }
+        @Test
+        fun `should not unwrap elements with multiple children`() {
+            val html = """<html><body><div><p>First</p><p>Second</p></div></body></html>"""
+            val result = HtmlSimplifier.scrubHtml(html, simplifyStructure = true)
+            assertTrue(result.contains("First"), "First child content should be preserved")
+            assertTrue(result.contains("Second"), "Second child content should be preserved")
         }
 
         @Test

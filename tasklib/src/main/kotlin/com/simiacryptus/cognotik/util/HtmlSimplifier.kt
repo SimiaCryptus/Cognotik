@@ -73,6 +73,10 @@ object HtmlSimplifier {
     "onclick", "onload", "onsubmit", "oninput", "onchange"
   )
 
+  private val STRUCTURAL_WRAPPER_ELEMENTS = setOf(
+    "div", "span", "section", "article", "aside", "main", "header", "footer", "nav", "figure", "figcaption"
+  )
+
   fun scrubHtml(
     str: String,
     baseUrl: String? = null,
@@ -296,16 +300,27 @@ object HtmlSimplifier {
     }
 
     simplifyDocument(stepName = "SimplifyNestedStructure") {
-      while (simplifyStructure) select("*").filter { element -> (element.attributes().isEmpty && element.children().size == 1) }
-        .filter { element ->
-          val child = element.children().first() ?: return@filter false
-          when {
-            !child.attributes().isEmpty -> false
-            child.tagName() != element.tagName() -> false
-            child.children().size > 1 -> false
-            else -> true
+      if (simplifyStructure) {
+        // Pass 1: Unwrap parent elements that have no attributes and contain a single child element.
+        // This collapses unnecessary wrapper divs like <div><div><p>text</p></div></div>
+        var changed = true
+        while (changed) {
+          changed = false
+          val candidates = select("*").filter { element ->
+            element.tagName() !in setOf("html", "head", "body") &&
+              element.tagName() in STRUCTURAL_WRAPPER_ELEMENTS &&
+            element.attributes().isEmpty &&
+            element.children().size == 1 &&
+            element.textNodes().all { it.text().isBlank() }
           }
-        }.firstOrNull()?.unwrap() ?: break
+          for (element in candidates) {
+            // Safety check: element must still be in the document
+            if (element.parent() == null) continue
+            element.unwrap()
+            changed = true
+          }
+        }
+      }
     }
 
     return document.body().html() ?: ""

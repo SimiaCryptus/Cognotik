@@ -36,6 +36,7 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
         url = url,
         pageType = CrawlerAgentTask.PageType.Error,
         content = "Error analyzing content: ${e.message}",
+        summary = null,
         extractedLinks = null,
         metadata = mapOf("error" to (e.message ?: "Unknown error"))
       )
@@ -45,6 +46,12 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
       url = url,
       pageType = analysis.obj.page_type,
       content = analysis.text,
+      summary = analysis.obj.page_information?.let {
+        when {
+          it is String -> it
+          else -> "```json\n${it.toJson()}\n```"
+        }
+      },
       extractedLinks = analysis.obj.link_data,
       metadata = mapOf(
         "tags" to (analysis.obj.tags ?: emptyList<String>())
@@ -74,12 +81,8 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
     results: List<PageProcessingStrategy.PageProcessingResult>,
     context: PageProcessingStrategy.ProcessingContext
   ): String {
-    val analysisResults = results.joinToString("\n") { it.content }
-    return createFinalSummary(analysisResults, context)
-  }
-
-  private fun createFinalSummary(analysisResults: String, context: PageProcessingStrategy.ProcessingContext): String {
-    val maxFinalOutputSize = context.typeConfig.max_final_output_size ?: 15000
+    val analysisResults = results.joinToString("\n") { it.summary ?: it.content }
+    val maxFinalOutputSize = context.typeConfig.max_final_output_size
 
     if (analysisResults.length < maxFinalOutputSize * 1.2) {
       return analysisResults.substring(0, min(analysisResults.length, maxFinalOutputSize)) +

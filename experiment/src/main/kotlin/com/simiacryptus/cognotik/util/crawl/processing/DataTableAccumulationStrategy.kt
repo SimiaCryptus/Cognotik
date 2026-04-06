@@ -96,6 +96,7 @@ class DataTableAccumulationStrategy : DefaultSummarizerStrategy() {
         url = url,
         pageType = CrawlerAgentTask.PageType.Error,
         content = "Configuration error: ${e.message}",
+        summary = null,
         error = e
       )
     }
@@ -109,6 +110,7 @@ class DataTableAccumulationStrategy : DefaultSummarizerStrategy() {
         url = url,
         pageType = CrawlerAgentTask.PageType.Error,
         content = "Extraction error: ${e.message}",
+        summary = null,
         error = e
       )
     }
@@ -160,6 +162,7 @@ class DataTableAccumulationStrategy : DefaultSummarizerStrategy() {
       url = url,
       pageType = if (processedRows.isNotEmpty()) CrawlerAgentTask.PageType.OK else CrawlerAgentTask.PageType.Irrelevant,
       content = summary,
+      summary = null,
       extractedLinks = standardResult.extractedLinks,
       metadata = mapOf(
         "rows_extracted" to processedRows.size,

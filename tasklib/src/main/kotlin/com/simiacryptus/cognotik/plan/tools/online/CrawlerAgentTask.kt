@@ -248,10 +248,6 @@ class CrawlerAgentTask(
   ): String {
     try {
       val typeConfig = typeConfig ?: throw RuntimeException("Missing type config")
-      // Initialize processing strategy
-      val strategyType = typeConfig.processing_strategy
-      val processingStrategy = strategyType
-      log.info("Using processing strategy: ${strategyType.name} - ${processingStrategy.javaClass.simpleName}")
 
       val startTime = System.currentTimeMillis()
       log.info(
@@ -280,7 +276,8 @@ class CrawlerAgentTask(
       }
       log.info("Using seed method: $seedMethod")
       val seedItems = try {
-        seedMethod.createStrategy(this, agent.user).getSeedItems(executionConfig, orchestrationConfig)
+        val strategy = seedMethod.createStrategy(this, agent.user)
+        strategy.getSeedItems(executionConfig, orchestrationConfig)
       } catch (e: Exception) {
         log.error("Failed to get seed items using method: $seedMethod", e)
         task.error(e)
@@ -396,6 +393,10 @@ class CrawlerAgentTask(
           this@CrawlerAgentTask
         )
 
+      // Initialize processing strategy
+      val strategyType = typeConfig.processing_strategy
+      log.info("Using processing strategy: ${strategyType.name} - ${strategyType.javaClass.simpleName}")
+      val processingStrategy = strategyType.createStrategy()
       try {
         val loopIterations = AtomicInteger(0)
         val maxDepthConfig = typeConfig.max_depth
@@ -432,7 +433,7 @@ class CrawlerAgentTask(
               fetchStrategy = fetchStrategy,
               analysisResultsMap = analysisResultsMap,
               transcriptStream = transcriptStream,
-              processingStrategy = processingStrategy.createStrategy(),
+              processingStrategy = processingStrategy,
               processingContext = processingContext,
               allPageResults = allPageResults
             )
@@ -463,7 +464,7 @@ class CrawlerAgentTask(
           log.info("Crawling progress: processed=${processedCount.get()}/$maxPages, queue=${pageQueue.size}, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
 
           // Check if strategy wants to terminate early
-          val continuationDecision = processingStrategy.createStrategy().shouldContinueCrawling(
+          val continuationDecision = processingStrategy.shouldContinueCrawling(
             allPageResults.values.toList(), processingContext
           )
           if (!continuationDecision.shouldContinue) {
@@ -530,7 +531,7 @@ class CrawlerAgentTask(
         buildString {
           appendLine("# Final Output")
           appendLine(
-            processingStrategy.createStrategy().generateFinalOutput(
+            processingStrategy.generateFinalOutput(
               allPageResults.values.toList(), processingContext
             )
           )
@@ -911,6 +912,7 @@ class CrawlerAgentTask(
                 url = url,
                 pageType = PageType.Irrelevant,
                 content = "*Content too short*",
+                summary = null,
                 extractedLinks = null,
                 metadata = mapOf("content_length" to content.length)
               )
@@ -1060,9 +1062,13 @@ class CrawlerAgentTask(
                 writeToTranscript(
                   stream, buildString {
                     appendLine()
-                    appendLine("### Link Processing Summary for [${title}]($url)")
+                    appendLine("### Summary for [${title}]($url)")
+                    appendLine()
+                    pageResult.summary?.apply { appendLine(this) }
                     appendLine("<details>")
-                    appendLine("<summary>**Links Found:** ${linkData.size}, **Added to Queue:** $addedCount, **Skipped:** ${skippedLinks.size}</summary>")
+                    appendLine("<summary>")
+                    appendLine("**Links Found:** ${linkData.size}, **Added to Queue:** $addedCount, **Skipped:** ${skippedLinks.size}")
+                    appendLine("</summary>")
                     appendLine()
                     linkData.forEach { link ->
                       val wasAdded = seenUrls.contains(link.url)
