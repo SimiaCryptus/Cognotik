@@ -6,11 +6,14 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.servlet.handler.GitOperationHandler
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.JarURLConnection
 import java.net.URI
+import java.net.URL
 import java.net.URLClassLoader
 import java.net.URLDecoder
+import java.util.jar.JarFile
 
 /**
  *
@@ -34,8 +37,9 @@ class DocOpsApp(
     model = model,
     fastModel = fastModel,
   ),
-  val appId: String,
+  appId: String,
   applicationName: String = appId,
+  val resourcePath : String,
   val classLoader: ClassLoader = this.javaClass.classLoader,
 ) : ApplicationServer(
   applicationName = applicationName,
@@ -50,7 +54,7 @@ class DocOpsApp(
     val fastModel: ChatModel,
     val temperature: Double = 0.3,
     val budget: Double = 2.0,
-    val overwriteOnRestart: Boolean = true,
+    val overwriteOnRestart: Boolean = OVERWRITE,
   )
 
   override val settingsClass: Class<*> get() = Settings::class.java
@@ -64,16 +68,16 @@ class DocOpsApp(
   override fun newSession(user: User, session: Session): SocketManager {
     val newSession = super.newSession(user, session)!!
     val sessionRoot = newSession.resolveUserFile(".")!!
-    val isExistingSession = sessionRoot.exists() && sessionRoot.list()?.isNotEmpty() == true
+    val isExistingSession = sessionRoot.exists() && sessionRoot.list()?.isNotEmpty() == true && sessionRoot.listFiles()?.size!! > 2
     val currentSettings = getSettings(session, user, Settings::class.java) ?: settings
     if (isExistingSession && !currentSettings.overwriteOnRestart) {
-      org.slf4j.LoggerFactory.getLogger(DocOpsApp::class.java)
+      LoggerFactory.getLogger(DocOpsApp::class.java)
         .info("Skipping resource extraction for existing session (overwriteOnRestart=false): $session")
       return newSession
     }
 
 
-    val resourcePath = "apps/$appId/"
+
     val extracted = extractResources(resourcePath, sessionRoot)
     if (!extracted) {
       throw IllegalStateException("Resource not found: $resourcePath (classLoader=${classLoader.javaClass.name})")
@@ -92,7 +96,7 @@ class DocOpsApp(
         )
       } catch (e: Exception) {
         // Log but don't fail session creation if git init fails
-        org.slf4j.LoggerFactory.getLogger(DocOpsApp::class.java)
+        LoggerFactory.getLogger(DocOpsApp::class.java)
           .warn("Failed to initialize git repository for session: ${e.message}", e)
       }
     }
@@ -105,7 +109,7 @@ class DocOpsApp(
     return extractFromUrl(resourceUrl, resourcePath, targetDir)
   }
 
-  private fun extractFromUrl(resourceUrl: java.net.URL, resourcePath: String, targetDir: File): Boolean {
+  private fun extractFromUrl(resourceUrl: URL, resourcePath: String, targetDir: File): Boolean {
     val decodedUrl = URLDecoder.decode(resourceUrl.toString(), "UTF-8")
     if (decodedUrl.startsWith("jar:")) {
       val jarConnection = resourceUrl.openConnection() as JarURLConnection
@@ -161,7 +165,7 @@ class DocOpsApp(
           } else {
             File(decodedUrl.removePrefix("file:").removeSuffix("!/")).toPath()
           }
-          val jarFile = java.util.jar.JarFile(jarPath.toFile())
+          val jarFile = JarFile(jarPath.toFile())
           val entries = jarFile.entries()
           while (entries.hasMoreElements()) {
             val entry = entries.nextElement()
@@ -186,7 +190,7 @@ class DocOpsApp(
           }
           jarFile.close()
         } catch (e: Exception) {
-          org.slf4j.LoggerFactory.getLogger(DocOpsApp::class.java)
+          LoggerFactory.getLogger(DocOpsApp::class.java)
             .debug("Failed to scan JAR {}: {}", decodedUrl, e.message)
         }
       } else {
@@ -207,7 +211,7 @@ class DocOpsApp(
             if (found) break
           }
         } catch (e: Exception) {
-          org.slf4j.LoggerFactory.getLogger(DocOpsApp::class.java)
+          LoggerFactory.getLogger(DocOpsApp::class.java)
             .debug("Failed to scan directory {}: {}", decodedUrl, e.message)
         }
       }
@@ -215,8 +219,8 @@ class DocOpsApp(
     return found
   }
 
-  private fun collectClassLoaderUrls(cl: ClassLoader?): List<java.net.URL> {
-    val urls = mutableListOf<java.net.URL>()
+  private fun collectClassLoaderUrls(cl: ClassLoader?): List<URL> {
+    val urls = mutableListOf<URL>()
     var current = cl
     while (current != null) {
       if (current is URLClassLoader) {
@@ -225,5 +229,9 @@ class DocOpsApp(
       current = current.parent
     }
     return urls
+  }
+
+  companion object {
+    var OVERWRITE: Boolean = false
   }
 }

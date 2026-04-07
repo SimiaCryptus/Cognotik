@@ -9,12 +9,8 @@ import com.simiacryptus.cognotik.plan.tools.images.ImageDecompositionTask
 import com.simiacryptus.cognotik.plan.tools.images.SegmentedImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.images.TiledImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.office.BusinessProposalTask
-import com.simiacryptus.cognotik.plan.tools.office.PdfFormTask
-import com.simiacryptus.cognotik.plan.tools.office.GeneratePresentationTask
-import com.simiacryptus.cognotik.plan.tools.office.OCRTask
 import com.simiacryptus.cognotik.plan.tools.office.ReadDocumentsTask
 import com.simiacryptus.cognotik.util.crawl.processing.DataTableAccumulationStrategy
-import com.simiacryptus.cognotik.util.crawl.processing.JobMatchingStrategy
 import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType
 import com.simiacryptus.cognotik.util.crawl.processing.ProcessingStrategyType.Companion.register
 import com.simiacryptus.cognotik.util.crawl.processing.SchemaExtractionStrategy
@@ -36,9 +32,6 @@ import com.simiacryptus.cognotik.util.crawl.processing.SchemaExtractionStrategy
 
         // --- Office & Document Task Types ---
         TaskType.registerTaskType(BusinessProposalTask.BusinessProposal)
-        TaskType.registerTaskType(OCRTask.OCR)
-        TaskType.registerTaskType(PdfFormTask.PdfForm)
-        TaskType.registerTaskType(GeneratePresentationTask.GeneratePresentation)
         TaskType.registerTaskType(ReadDocumentsTask.ReadDocuments)
 
         // --- Reasoning Task Types ---
@@ -119,7 +112,6 @@ import com.simiacryptus.cognotik.util.crawl.processing.SchemaExtractionStrategy
         ResourceApps("apps/experimental_apps.json", ExperimentalStuff::class.java.classLoader).init()
 
 
-        register(ProcessingStrategyType("JobMatching") { JobMatchingStrategy() })
         register(ProcessingStrategyType("SchemaExtraction") { SchemaExtractionStrategy() })
         register(ProcessingStrategyType("DataTableAccumulation") { DataTableAccumulationStrategy() })
 

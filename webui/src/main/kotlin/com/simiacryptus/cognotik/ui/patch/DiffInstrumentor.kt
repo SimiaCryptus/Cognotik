@@ -42,7 +42,7 @@ class DiffInstrumentor(
     val result = StringBuilder()
     for (segment in segments) {
       when (segment) {
-        is ResponseSegment.Markdown -> result.appendLine(segment.removeCodeFences())
+       is ResponseSegment.Markdown -> result.append(segment.removeCodeFences().trimEnd()).append("\n\n")
         is ResponseSegment.NewFileBlock -> {
          val rawFilename = segment.filename ?: ""
          val filename = prefilterFilename(rawFilename) ?: rawFilename
@@ -54,19 +54,19 @@ class DiffInstrumentor(
           )
           if (filename.isBlank()) {
             log.warn("Blank filename after prefiltering for new file block, rendering as code block")
-            result.appendLine("```${segment.language}\n${segment.removeCodeFences()}\n```")
-            result.appendLine(renderer.renderWarning("The new file block could not be associated with a valid filename. Please ensure the filename is included and has an extension."))
+           result.append("```${segment.language}\n${segment.removeCodeFences()}\n```").append("\n\n")
+           result.append(renderer.renderWarning("The new file block could not be associated with a valid filename. Please ensure the filename is included and has an extension.")).append("\n\n")
             continue
           }
           val resolved = resolveNewFilePath(root, filename, resolver)
           if (resolved == null) {
-            result.appendLine("```${segment.language}\n${segment.removeCodeFences()}\n```")
-            result.appendLine(renderer.renderWarning("The new file block's filename '${filename}' could not be resolved to a valid path. Please ensure the filename is correct and has an extension."))
+           result.append("```${segment.language}\n${segment.removeCodeFences()}\n```").append("\n\n")
+           result.append(renderer.renderWarning("The new file block's filename '${filename}' could not be resolved to a valid path. Please ensure the filename is correct and has an extension.")).append("\n\n")
             continue
           }
           val filepath = fs.resolve(root, resolved)
           log.debug("Resolved new file path: {}", filepath)
-          result.appendLine(renderNewFile(filepath, segment.removeCodeFences(), segment.language, handle, shouldAutoApply))
+         result.append(renderNewFile(filepath, segment.removeCodeFences(), segment.language, handle, shouldAutoApply).trimEnd()).append("\n\n")
         }
 
         is ResponseSegment.DiffBlock -> {
@@ -79,8 +79,8 @@ class DiffInstrumentor(
                 "Blank or extensionless filename '{}' with no default file, rendering as diff code block",
                 segment.filename
               )
-              result.appendLine("```diff\n${segment.removeCodeFences()}\n```")
-              result.appendLine(renderer.renderWarning("The diff block could not be associated with a valid filename. Please ensure the filename is included and has an extension, or provide a default file."))
+           result.append("```diff\n${segment.removeCodeFences()}\n```").append("\n\n")
+           result.append(renderer.renderWarning("The diff block could not be associated with a valid filename. Please ensure the filename is included and has an extension, or provide a default file.")).append("\n\n")
               continue
             }
           }
@@ -104,11 +104,11 @@ class DiffInstrumentor(
                  val filepath = fs.resolve(root, newFileResolved)
                  log.debug("Creating new file from diff: {}", filepath)
                  val lang = filepath.name.substringAfterLast('.', "")
-                 result.appendLine(renderNewFile(filepath, applyResult.newCode, lang, handle, shouldAutoApply))
+                result.append(renderNewFile(filepath, applyResult.newCode, lang, handle, shouldAutoApply).trimEnd()).append("\n\n")
                } else {
                  log.warn("Could not resolve new file path for '{}', rendering as diff code block", filename)
-                 result.appendLine(stdDiffContent)
-                 result.appendLine(renderer.renderWarning("The diff appears to be for creating a new file '${filename}', but the filename could not be resolved to a valid path. The content of the diff is included above for reference."))
+                result.append(stdDiffContent).append("\n\n")
+                result.append(renderer.renderWarning("The diff appears to be for creating a new file '${filename}', but the filename could not be resolved to a valid path. The content of the diff is included above for reference.")).append("\n\n")
                }
              } else {
                log.warn(
@@ -117,9 +117,9 @@ class DiffInstrumentor(
                  applyResult?.isValid,
                  applyResult?.errors?.joinToString("; ") { it.message }
                )
-               result.appendLine(stdDiffContent)
-               // Add a note to the output about the failure to apply the diff, which may help the user understand why the file wasn't created
-               result.appendLine(renderer.renderWarning("The diff could not be applied to create the file '${filename}'. This may be because the diff format is invalid or not compatible with creating a new file. The content of the diff is included above for reference."))
+              result.append(stdDiffContent).append("\n\n")
+              // Add a note to the output about the failure to apply the diff, which may help the user understand why the file wasn't created
+              result.append(renderer.renderWarning("The diff could not be applied to create the file '${filename}'. This may be because the diff format is invalid or not compatible with creating a new file. The content of the diff is included above for reference.")).append("\n\n")
             }
              continue
           }
@@ -130,7 +130,7 @@ class DiffInstrumentor(
             log.warn("Could not relativize path {} against root {}: {}", filepath, root, e.message)
             filepath
           }
-          result.appendLine(renderDiffBlock(filepath, relativize, segment.removeCodeFences(), handle, shouldAutoApply))
+         result.append(renderDiffBlock(filepath, relativize, segment.removeCodeFences(), handle, shouldAutoApply).trimEnd()).append("\n\n")
         }
       }
     }

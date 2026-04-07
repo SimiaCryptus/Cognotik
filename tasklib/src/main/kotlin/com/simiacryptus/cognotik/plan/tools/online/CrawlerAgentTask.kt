@@ -63,6 +63,7 @@ class CrawlerAgentTask(
     @Description("Whether to automatically follow links found in analyzed pages (optional)") var follow_links: Boolean = true,
     @Description("Whether to allow crawling the same page multiple times (optional)") var allow_revisit_pages: Boolean = false,
     @Description("Whether to generate a comprehensive summary of all results (optional)") var create_final_summary: Boolean = true,
+     @Description("Path to a JSON file for persisting crawl state (link database) across runs. If not specified, defaults to .websearch/crawl_state.json relative to the task root. The file is loaded at start and saved at end, allowing editable persistence for ongoing crawls.") var crawl_state_file: String? = null,
     task_type: String = "CrawlerAgent",
     model: ApiChatModel? = null,
     name: String? = task_type,
@@ -77,6 +78,31 @@ class CrawlerAgentTask(
       return ValidatedObject.validateFields(this)
     }
   }
+   /**
+    * Persistent crawl state representing the link database.
+    * This is loaded from and saved to a JSON file, allowing ongoing crawls
+    * to be resumed, inspected, and edited between runs.
+    */
+   data class CrawlState(
+     @Description("All links discovered during crawling, keyed by URL") var links: MutableMap<String, CrawlLinkEntry> = mutableMapOf(),
+     @Description("Timestamp of last save") var last_saved: String? = null,
+     @Description("Total number of runs that have contributed to this state") var run_count: Int = 0,
+     @Description("Search queries used across runs") var search_queries: MutableList<String> = mutableListOf()
+   )
+   data class CrawlLinkEntry(
+     @Description("The URL") var url: String,
+     @Description("Title of the page") var title: String? = null,
+     @Description("Tags associated with the link") var tags: List<String>? = null,
+     @Description("Relevance score from 1 to 100") var relevance_score: Double = 50.0,
+     @Description("Crawl depth from seed") var depth: Int = 0,
+     @Description("Status: queued, completed, error, skipped") var status: String = "queued",
+     @Description("Error message if status is error") var error: String? = null,
+     @Description("Processing time in milliseconds") var processing_time_ms: Long = 0,
+     @Description("Timestamp when this entry was first discovered") var discovered_at: String? = null,
+     @Description("Timestamp when this entry was last processed") var processed_at: String? = null,
+     @Description("The run number in which this link was completed") var completed_in_run: Int? = null
+   )
+
 
   class CrawlerTaskExecutionConfigData(
     @Description("The search query to use for Google search. Either this or direct_urls must be provided.") var search_query: String? = null,
@@ -107,13 +133,177 @@ class CrawlerAgentTask(
       return ValidatedObject.validateFields(this)
     }
   }
+
   val urlContentCache = ConcurrentHashMap<String, String>()
   private val robotsTxtParser = RobotsTxtParser()
+   @Volatile
+   private var currentCrawlState: CrawlState = CrawlState()
+   @Volatile
+   private var crawlStateFile: File? = null
+   @Volatile
+   private var currentRunNumber: Int = 1
 
   @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
   private val pageQueueLock = Object()
+  private val transcriptLock = Object()
   private val pageQueue = PriorityQueue<LinkData>(compareByDescending { it.calculatePriority() })
   private val seenUrls = ConcurrentHashMap.newKeySet<String>()
+   private fun resolveCrawlStateFile(root: File): File {
+     val typeConfig = typeConfig
+     val configuredPath = typeConfig?.crawl_state_file
+     return if (!configuredPath.isNullOrBlank()) {
+       val f = File(configuredPath)
+       if (f.isAbsolute) f else File(root, configuredPath)
+     } else {
+       File(File(root, ".websearch"), "crawl_state.json")
+     }
+   }
+   private fun loadCrawlState(stateFile: File): CrawlState {
+     return if (stateFile.exists() && stateFile.length() > 0) {
+       try {
+         val state = JsonUtil.fromJson<CrawlState>(stateFile.readText(), CrawlState::class.java)
+         log.info("Loaded crawl state from ${stateFile.absolutePath}: ${state.links.size} links, run_count=${state.run_count}")
+         state
+       } catch (e: Exception) {
+         log.error("Failed to load crawl state from ${stateFile.absolutePath}, starting fresh", e)
+         CrawlState()
+       }
+     } else {
+       log.info("No existing crawl state at ${stateFile.absolutePath}, starting fresh")
+       CrawlState()
+     }
+   }
+   private fun saveCrawlState(stateFile: File, state: CrawlState) {
+     try {
+       stateFile.parentFile?.let { parent ->
+         if (!parent.exists() && !parent.mkdirs()) {
+           log.error("Failed to create directory for crawl state: ${parent.absolutePath}")
+           return
+         }
+       }
+       state.last_saved = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+       stateFile.writeText(state.toJson())
+       log.info("Saved crawl state to ${stateFile.absolutePath}: ${state.links.size} links")
+     } catch (e: Exception) {
+       log.error("Failed to save crawl state to ${stateFile.absolutePath}", e)
+     }
+   }
+   /**
+    * Synchronize in-memory queue/seenUrls state into the CrawlState object.
+    * Call this before saving.
+    */
+   private fun syncInMemoryStateToCrawlState() {
+     synchronized(pageQueueLock) {
+       // Update entries for items still in the queue
+       for (linkData in pageQueue) {
+         val url = linkData.url ?: continue
+         val entry = currentCrawlState.links.getOrPut(url) {
+           CrawlLinkEntry(
+             url = url,
+             discovered_at = LocalDateTime.now().toString()
+           )
+         }
+         entry.title = linkData.title ?: entry.title
+         entry.tags = linkData.tags ?: entry.tags
+         entry.relevance_score = linkData.relevance_score
+         entry.depth = linkData.depth
+         if (!linkData.completed && !linkData.started) {
+           entry.status = "queued"
+         } else if (linkData.started && !linkData.completed) {
+           entry.status = "in_progress"
+         }
+         if (linkData.completed) {
+           entry.status = if (linkData.error != null) "error" else "completed"
+           entry.error = linkData.error
+           entry.processing_time_ms = linkData.processingTimeMs
+           entry.processed_at = LocalDateTime.now().toString()
+           entry.completed_in_run = currentRunNumber
+         }
+       }
+       // Also update seen URLs that aren't in the queue (already processed)
+       for (url in seenUrls) {
+         currentCrawlState.links.getOrPut(url) {
+           CrawlLinkEntry(
+             url = url,
+             discovered_at = LocalDateTime.now().toString(),
+             status = "seen"
+           )
+         }
+       }
+     }
+   }
+   /**
+    * Load crawl state and populate the in-memory queue with any previously
+    * queued (not yet completed) links. Already-completed links are added
+    * to seenUrls so they won't be re-crawled (unless allow_revisit_pages is true).
+    */
+   private fun restoreFromCrawlState(state: CrawlState, maxDepth: Int, maxQueueSize: Int) {
+     val typeConfig = typeConfig ?: return
+     val allowRevisit = typeConfig.allow_revisit_pages == true
+     var restoredCount = 0
+     var skippedCompleted = 0
+     synchronized(pageQueueLock) {
+       for ((url, entry) in state.links) {
+         when (entry.status) {
+           "completed" -> {
+             if (!allowRevisit) {
+               seenUrls.add(url)
+               skippedCompleted++
+             } else {
+               // Re-queue completed pages if revisit is allowed
+               val linkData = LinkData(
+                 url = url,
+                 title = entry.title,
+                 tags = entry.tags,
+                 relevance_score = entry.relevance_score
+               ).apply { depth = entry.depth }
+               if (addToQueue(linkData, maxDepth, maxQueueSize)) {
+                 restoredCount++
+               }
+             }
+           }
+           "error" -> {
+             // Re-queue errored pages for retry
+             val linkData = LinkData(
+               url = url,
+               title = entry.title,
+               tags = entry.tags,
+               relevance_score = entry.relevance_score
+             ).apply { depth = entry.depth }
+             if (addToQueue(linkData, maxDepth, maxQueueSize)) {
+               restoredCount++
+             }
+           }
+           "queued", "seen", "in_progress" -> {
+             // Re-queue items that were queued or in-progress from a previous run
+             val linkData = LinkData(
+               url = url,
+               title = entry.title,
+               tags = entry.tags,
+               relevance_score = entry.relevance_score
+             ).apply { depth = entry.depth }
+             if (addToQueue(linkData, maxDepth, maxQueueSize)) {
+               restoredCount++
+             }
+           }
+           else -> {
+             // Unknown status, treat as queued
+             val linkData = LinkData(
+               url = url,
+               title = entry.title,
+               tags = entry.tags,
+               relevance_score = entry.relevance_score
+             ).apply { depth = entry.depth }
+             if (addToQueue(linkData, maxDepth, maxQueueSize)) {
+               restoredCount++
+             }
+           }
+         }
+       }
+     }
+     log.info("Restored from crawl state: $restoredCount links re-queued, $skippedCompleted already-completed links marked as seen")
+   }
+
 
   override fun promptSegment(): String {
     return buildString {
@@ -124,10 +314,11 @@ class CrawlerAgentTask(
       appendLine("** Choose a processing strategy: DefaultSummarizer, FactChecking, or JobMatching")
       appendLine("** Results will be saved to .websearch directory for future reference")
       appendLine("** Links found in analysis can be automatically followed for deeper research")
+     appendLine("** Crawl state is persisted to a JSON file for resumable/editable ongoing crawls")
       val typeConfig = this@CrawlerAgentTask.typeConfig
       if (null != typeConfig) {
         when (typeConfig.processing_strategy) {
-          DefaultSummarizerStrategy.instance -> {
+          ProcessingStrategyType.DEFAULT -> {
             // No additional notes for DefaultSummarizer
           }
 
@@ -248,10 +439,6 @@ class CrawlerAgentTask(
   ): String {
     try {
       val typeConfig = typeConfig ?: throw RuntimeException("Missing type config")
-      // Initialize processing strategy
-      val strategyType = typeConfig.processing_strategy
-      val processingStrategy = strategyType
-      log.info("Using processing strategy: ${strategyType.name} - ${processingStrategy.javaClass.simpleName}")
 
       val startTime = System.currentTimeMillis()
       log.info(
@@ -269,10 +456,21 @@ class CrawlerAgentTask(
         }
         log.debug("Created websearch directory: ${webSearchDir.absolutePath}")
       }
+       // Load crawl state
+       crawlStateFile = resolveCrawlStateFile(agent.root.toFile())
+       currentCrawlState = loadCrawlState(crawlStateFile!!)
+       currentRunNumber = currentCrawlState.run_count + 1
+       currentCrawlState.run_count = currentRunNumber
+       executionConfig?.search_query?.let { query ->
+         if (query.isNotBlank() && !currentCrawlState.search_queries.contains(query)) {
+           currentCrawlState.search_queries.add(query)
+         }
+       }
+       // Restore previously queued/errored links from crawl state
+       restoreFromCrawlState(currentCrawlState, typeConfig.max_depth, typeConfig.max_queue_size)
+       log.info("After restoring crawl state: queue_size=${pageQueue.size}, seen_urls=${seenUrls.size}")
+
       val tabs = TabbedDisplay(task)
-      val crawlTask = task.linkedTask("Crawl Details")
-      val crawlTabs = TabbedDisplay(crawlTask)
-      task.update()
 
       // Write transcript header with tabbed structure
       transcriptStream?.let { stream -> writeTranscriptHeader(stream) }
@@ -283,7 +481,8 @@ class CrawlerAgentTask(
       }
       log.info("Using seed method: $seedMethod")
       val seedItems = try {
-        seedMethod.createStrategy(this, agent.user).getSeedItems(executionConfig, orchestrationConfig)
+        val strategy = seedMethod.createStrategy(this, agent.user)
+        strategy.getSeedItems(executionConfig, orchestrationConfig)
       } catch (e: Exception) {
         log.error("Failed to get seed items using method: $seedMethod", e)
         task.error(e)
@@ -312,8 +511,8 @@ class CrawlerAgentTask(
         return "Warning: No seed items found to start crawling"
       }
       // Create seed links tab
-      val seedLinksTask = crawlTask.newTask()
-      crawlTabs["Seed Links"] = seedLinksTask.placeholder
+      val seedLinksTask = task.newTask()
+      tabs["Seed Links"] = seedLinksTask.placeholder
       val seedLinksContent = buildString {
         appendLine("# Seed Links")
         appendLine()
@@ -338,7 +537,7 @@ class CrawlerAgentTask(
       seedLinksTask.complete()
       // Log seed links to transcript
       transcriptStream?.let { stream ->
-        writeToTranscript(stream, "## Seed Links\n\n$seedLinksContent\n\n")
+        writeToTranscriptSafe(stream, "## Seed Links\n\n$seedLinksContent\n\n")
       }
 
 
@@ -372,15 +571,16 @@ class CrawlerAgentTask(
       val maxPages = typeConfig.max_pages_per_task
       val concurrentProcessing = typeConfig.concurrent_page_processing
       log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing")
+      val sharedProcessedCount = AtomicInteger(0)
       // Create processing context
       val processingContext = ProcessingContext(
         executionConfig = executionConfig ?: throw RuntimeException("Missing execution config"),
         typeConfig = typeConfig,
         orchestrationConfig = orchestrationConfig,
         messages = messages,
-        task = crawlTask,
+        task = task,
         webSearchDir = webSearchDir,
-        processedCount = AtomicInteger(0),
+        processedCount = sharedProcessedCount,
         maxPages = maxPages,
         transcriptStream = transcriptStream
       )
@@ -388,9 +588,8 @@ class CrawlerAgentTask(
       val allPageResults = ConcurrentHashMap<Int, PageProcessingResult>()
 
 
-      val completionService: CompletionService<Unit> = ExecutorCompletionService(agent.pool)
       val activeTasks = ConcurrentHashMap.newKeySet<String>()
-      val processedCount = AtomicInteger(0)
+      val processedCount = sharedProcessedCount
       val errorCount = AtomicInteger(0)
       val maxErrors = maxPages / 2 // Stop if too many errors
       log.info("Starting crawling loop with maxErrors threshold: $maxErrors")
@@ -399,13 +598,26 @@ class CrawlerAgentTask(
           this@CrawlerAgentTask
         )
 
+      // Initialize processing strategy
+      val strategyType = typeConfig.processing_strategy
+      log.info("Using processing strategy: ${strategyType.name} - ${strategyType.javaClass.simpleName}")
+      val processingStrategy = strategyType.createStrategy()
       try {
         val loopIterations = AtomicInteger(0)
         val maxDepthConfig = typeConfig.max_depth
         val maxQueueSizeConfig = typeConfig.max_queue_size
         val maxIterations = 1000
         log.debug("Starting crawling loop: maxPages=$maxPages, maxErrors=$maxErrors, maxIterations=$maxIterations")
-        while (shouldContinue(maxPages, errorCount, maxErrors, loopIterations, activeTasks)) {
+        while (shouldContinue(
+            maxPages,
+            errorCount,
+            maxErrors,
+            loopIterations,
+            activeTasks,
+            maxIterations,
+            processedCount
+          )
+        ) {
           if (loopIterations.get() % 10 == 0) {
             synchronized(pageQueueLock) {
               log.info("Loop iteration ${loopIterations.get()}: queue_size=${pageQueue.size}, active=${activeTasks.size}, errors=${errorCount.get()}")
@@ -425,7 +637,7 @@ class CrawlerAgentTask(
               activeTasks = activeTasks,
               errorCount = errorCount,
               maxErrors = maxErrors,
-              tabs = crawlTabs,
+              tabs = tabs,
               processedCount = processedCount,
               maxPages = maxPages,
               maxDepth = maxDepthConfig,
@@ -435,7 +647,7 @@ class CrawlerAgentTask(
               fetchStrategy = fetchStrategy,
               analysisResultsMap = analysisResultsMap,
               transcriptStream = transcriptStream,
-              processingStrategy = processingStrategy.createStrategy(),
+              processingStrategy = processingStrategy,
               processingContext = processingContext,
               allPageResults = allPageResults
             )
@@ -445,14 +657,9 @@ class CrawlerAgentTask(
           // This allows in-progress tasks to add new links to the queue
           if (activeTasks.isNotEmpty()) {
             try {
-              val future = completionService.poll(1, TimeUnit.SECONDS)
-              if (future != null) {
-                future.get() // This will throw if the task failed
-              } else {
-                while (activeTasks.isNotEmpty()) sleep(1000)
-              }
+              sleep(1000)
             } catch (e: Exception) {
-              log.error("Task execution failed", e)
+              log.error("Interrupted while waiting for tasks", e)
             }
           } else {
             // No active tasks, check if there are unstarted pages we missed
@@ -466,7 +673,7 @@ class CrawlerAgentTask(
           log.info("Crawling progress: processed=${processedCount.get()}/$maxPages, queue=${pageQueue.size}, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
 
           // Check if strategy wants to terminate early
-          val continuationDecision = processingStrategy.createStrategy().shouldContinueCrawling(
+          val continuationDecision = processingStrategy.shouldContinueCrawling(
             allPageResults.values.toList(), processingContext
           )
           if (!continuationDecision.shouldContinue) {
@@ -502,6 +709,13 @@ class CrawlerAgentTask(
       } finally {
         log.info("Crawling phase completed, cleaning up resources")
       }
+       // Sync and save crawl state after crawling phase
+       try {
+         syncInMemoryStateToCrawlState()
+         crawlStateFile?.let { saveCrawlState(it, currentCrawlState) }
+       } catch (e: Exception) {
+         log.error("Failed to save crawl state after crawling phase", e)
+       }
       val totalTime = System.currentTimeMillis() - startTime
       log.info("CrawlerAgentTask completed: total_time=${totalTime}ms, pages_processed=${processedCount.get()}, errors=${errorCount.get()}, success_rate=${if (processedCount.get() > 0) ((processedCount.get() - errorCount.get()) * 100 / processedCount.get()) else 0}%")
       // Add page queue details tab
@@ -517,9 +731,9 @@ class CrawlerAgentTask(
         }
       }
 
-      val analysisResults = (1..processedCount.get()).asSequence().mapNotNull {
-        analysisResultsMap[it]
-      }.joinToString("\n")
+      val analysisResults = analysisResultsMap.entries
+        .sortedBy { it.key }
+        .joinToString("\n") { it.value }
       if (analysisResults.isBlank()) {
         val errorMessage = "No content was successfully processed. Check logs for errors."
         log.error(errorMessage)
@@ -533,7 +747,7 @@ class CrawlerAgentTask(
         buildString {
           appendLine("# Final Output")
           appendLine(
-            processingStrategy.createStrategy().generateFinalOutput(
+            processingStrategy.generateFinalOutput(
               allPageResults.values.toList(), processingContext
             )
           )
@@ -613,68 +827,86 @@ class CrawlerAgentTask(
     }
   }
 
+  private fun writeToTranscriptSafe(stream: FileOutputStream, content: String) {
+    synchronized(transcriptLock) {
+      writeToTranscript(stream, content)
+    }
+  }
+
   private fun writeTranscriptHeader(stream: FileOutputStream) {
-    try {
-      val header = buildString {
-        appendLine("# Crawler Agent Transcript")
-        appendLine()
-        appendLine(
-          "**Started:** ${
-            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-          }"
-        )
-        appendLine()
-        appendLine("**Search Query:** ${executionConfig?.search_query ?: "N/A"}")
-        appendLine()
-        appendLine("**Direct URLs:** ${executionConfig?.direct_urls?.joinToString(", ") ?: "N/A"}")
-        appendLine()
-        appendLine("<details><summary>Execution Configuration (click to expand)</summary>")
-        appendLine()
-        appendLine(executionConfig?.content_queries?.toJson()?.let { "\n```json\n${it.indent()}\n```" }
-          ?: "N/A")
-        appendLine()
-        appendLine("</details>")
-        appendLine()
-        appendLine("---")
-        appendLine()
-        appendLine("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">")
-        appendLine()
-        appendLine("## Crawling Work Details")
-        appendLine()
-      }
-      stream.write(header.toByteArray(StandardCharsets.UTF_8))
-      stream.flush()
-    } catch (e: Exception) {
-      if (e !is IOException || e.message?.contains("closed") != true) {
-        log.error("Failed to write transcript header", e)
+    synchronized(transcriptLock) {
+      synchronized(transcriptLock) {
+        try {
+          val header = buildString {
+            appendLine("# Crawler Agent Transcript")
+            appendLine()
+            appendLine(
+              "**Started:** ${
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+              }"
+            )
+            appendLine()
+            appendLine("**Search Query:** ${executionConfig?.search_query ?: "N/A"}")
+            appendLine()
+            appendLine("**Direct URLs:** ${executionConfig?.direct_urls?.joinToString(", ") ?: "N/A"}")
+            appendLine()
+           appendLine("**Crawl State File:** ${crawlStateFile?.absolutePath ?: "N/A"}")
+           appendLine()
+           appendLine("**Run Number:** $currentRunNumber")
+           appendLine()
+           appendLine("**Links from Previous Runs:** ${currentCrawlState.links.size}")
+           appendLine()
+            appendLine("<details><summary>Execution Configuration (click to expand)</summary>")
+            appendLine()
+            appendLine(executionConfig?.content_queries?.toJson()?.let { "\n```json\n${it.indent()}\n```" }
+              ?: "N/A")
+            appendLine()
+            appendLine("</details>")
+            appendLine()
+            appendLine("---")
+            appendLine()
+            appendLine("<div id=\"work-details\" class=\"tab-content\" style=\"display: block;\" markdown=\"1\">")
+            appendLine()
+            appendLine("## Crawling Work Details")
+            appendLine()
+          }
+          stream.write(header.toByteArray(StandardCharsets.UTF_8))
+          stream.flush()
+        } catch (e: Exception) {
+          if (e !is IOException || e.message?.contains("closed") != true) {
+            log.error("Failed to write transcript header", e)
+          }
+        }
       }
     }
   }
 
   private fun writeTranscriptFooter(stream: FileOutputStream, totalTime: Long, processedCount: Int, errorCount: Int) {
-    try {
-      val footer = buildString {
-        appendLine()
-        appendLine("---")
-        appendLine()
-        appendLine("## Crawling Session Summary")
-        appendLine()
-        appendLine(
-          "**Completed:** ${
-            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-          }"
-        )
-        appendLine("**Total Time:** ${totalTime / 1000} seconds")
-        appendLine("**Pages Processed:** $processedCount")
-        appendLine("**Errors:** $errorCount")
-        appendLine("**Success Rate:** ${if (processedCount > 0) ((processedCount - errorCount) * 100 / processedCount) else 0}%")
-        appendLine()
-      }
-      stream.write(footer.toByteArray(StandardCharsets.UTF_8))
-      stream.flush()
-    } catch (e: Exception) {
-      if (e !is IOException || e.message?.contains("closed") != true) {
-        log.error("Failed to write transcript footer", e)
+    synchronized(transcriptLock) {
+      try {
+        val footer = buildString {
+          appendLine()
+          appendLine("---")
+          appendLine()
+          appendLine("## Crawling Session Summary")
+          appendLine()
+          appendLine(
+            "**Completed:** ${
+              LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            }"
+          )
+          appendLine("**Total Time:** ${totalTime / 1000} seconds")
+          appendLine("**Pages Processed:** $processedCount")
+          appendLine("**Errors:** $errorCount")
+          appendLine("**Success Rate:** ${if (processedCount > 0) ((processedCount - errorCount) * 100 / processedCount) else 0}%")
+          appendLine()
+        }
+        stream.write(footer.toByteArray(StandardCharsets.UTF_8))
+        stream.flush()
+      } catch (e: Exception) {
+        if (e !is IOException || e.message?.contains("closed") != true) {
+          log.error("Failed to write transcript footer", e)
+        }
       }
     }
   }
@@ -700,7 +932,7 @@ class CrawlerAgentTask(
       log.debug("Skipping link due to depth limit (depth=${newLink.depth} > maxDepth=$maxDepth): $newUrl")
       return false
     }
-    if (seenUrls.contains(newUrl)) {
+    if (typeConfig.allow_revisit_pages != true && seenUrls.contains(newUrl)) {
       log.debug("Skipping duplicate link already in queue: $newUrl")
       return false
     }
@@ -713,6 +945,18 @@ class CrawlerAgentTask(
       )
     )
     log.debug("Added new link to queue: $newUrl (depth=${newLink.depth}, priority=${newLink.calculatePriority()})")
+     // Record in crawl state
+     currentCrawlState.links.getOrPut(newUrl) {
+       CrawlLinkEntry(
+         url = newUrl,
+         title = newLink.title,
+         tags = newLink.tags,
+         relevance_score = newLink.relevance_score,
+         depth = newLink.depth,
+         status = "queued",
+         discovered_at = LocalDateTime.now().toString()
+       )
+     }
     true
   }
 
@@ -731,9 +975,11 @@ class CrawlerAgentTask(
     errorCount: AtomicInteger,
     maxErrors: Int,
     loopIterations: AtomicInteger,
-    activeTasks: MutableSet<String>
+    activeTasks: MutableSet<String>,
+    maxIterations: Int,
+    processedCount: AtomicInteger
   ): Boolean = synchronized(pageQueueLock) {
-    val completed = seenUrls.size - pageQueue.size - activeTasks.size
+    val completed = processedCount.get()
     val unstarted = pageQueue.size
     val hasActiveTasks = activeTasks.isNotEmpty()
 
@@ -742,7 +988,7 @@ class CrawlerAgentTask(
     // 2. We have unstarted pages in the queue
     // AND we haven't hit our limits
     val shouldContinue =
-      (hasActiveTasks || unstarted > 0) && completed < maxPages && errorCount.get() < maxErrors && loopIterations.getAndIncrement() < 1000
+      (hasActiveTasks || unstarted > 0) && completed < maxPages && errorCount.get() < maxErrors && loopIterations.getAndIncrement() < maxIterations
 
     if (!shouldContinue) {
       log.info("Stopping crawl: completed=$completed/$maxPages, unstarted=$unstarted, active=$hasActiveTasks, errors=${errorCount.get()}/$maxErrors")
@@ -851,10 +1097,21 @@ class CrawlerAgentTask(
   ) {
     val typeConfig = typeConfig ?: throw RuntimeException("Missing type config")
     val pageStartTime = System.currentTimeMillis()
-    log.info("Starting to process page ${processedCount.get() + 1}: url='${link}', title='${page.title}'")
-    val currentIndex = processedCount.incrementAndGet()
-    // Update processing context with current count
-    processingContext.processedCount.set(currentIndex)
+    log.info("Starting to process page: url='${link}', title='${page.title}'")
+    val currentIndex: Int
+    while (true) {
+      val current = processedCount.get()
+      if (current >= maxPages) {
+        log.warn("Max pages limit ($maxPages) reached, stopping processing for page: ${link}")
+        page.completed = true
+        page.processingTimeMs = System.currentTimeMillis() - pageStartTime
+        return
+      }
+      if (processedCount.compareAndSet(current, current + 1)) {
+        currentIndex = current + 1
+        break
+      }
+    }
 
     // Apply crawl delay if robots.txt specifies one
     if (typeConfig.respect_robots_txt == true) {
@@ -864,9 +1121,7 @@ class CrawlerAgentTask(
       }
     }
 
-    if (currentIndex > maxPages) {
-      log.warn("Max pages limit ($maxPages) reached, stopping processing for page: ${link}")
-    } else {
+    run {
       try {
         val url = link
         val title = page.title
@@ -880,11 +1135,11 @@ class CrawlerAgentTask(
             // Log page processing start to transcript
             transcriptStream?.let { stream ->
               try {
-                writeToTranscript(
+                writeToTranscriptSafe(
                   stream,
                   "### Processing Page ${currentIndex}: [$title]($url) (priority=${"%0.3f".format(page.calculatePriority())})\n\n"
                 )
-                writeToTranscript(
+                writeToTranscriptSafe(
                   stream, "**Started:** ${
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
                   }\n\n"
@@ -914,6 +1169,7 @@ class CrawlerAgentTask(
                 url = url,
                 pageType = PageType.Irrelevant,
                 content = "*Content too short*",
+                summary = null,
                 extractedLinks = null,
                 metadata = mapOf("content_length" to content.length)
               )
@@ -1060,12 +1316,16 @@ class CrawlerAgentTask(
                 this.appendLine()
               }
               transcriptStream?.let { stream ->
-                writeToTranscript(
+                writeToTranscriptSafe(
                   stream, buildString {
                     appendLine()
-                    appendLine("### Link Processing Summary for [${title}]($url)")
+                    appendLine("### Summary for [${title}]($url)")
+                    appendLine()
+                    pageResult.summary?.apply { appendLine(this) }
                     appendLine("<details>")
-                    appendLine("<summary>**Links Found:** ${linkData.size}, **Added to Queue:** $addedCount, **Skipped:** ${skippedLinks.size}</summary>")
+                    appendLine("<summary>")
+                    appendLine("**Links Found:** ${linkData.size}, **Added to Queue:** $addedCount, **Skipped:** ${skippedLinks.size}")
+                    appendLine("</summary>")
                     appendLine()
                     linkData.forEach { link ->
                       val wasAdded = seenUrls.contains(link.url)
@@ -1094,7 +1354,7 @@ class CrawlerAgentTask(
             // Log error to transcript
             transcriptStream?.let { stream ->
               try {
-                writeToTranscript(stream, buildString {
+                writeToTranscriptSafe(stream, buildString {
                   appendLine("**Error:** ${e.message}")
                   appendLine()
                   if (verbose) {
@@ -1126,7 +1386,7 @@ class CrawlerAgentTask(
         // Log error to transcript (Triple Log Rule)
         transcriptStream?.let { stream ->
           try {
-            writeToTranscript(stream, buildString {
+            writeToTranscriptSafe(stream, buildString {
               appendLine("### Error Processing Page ${currentIndex}: [${page.title}](${link})")
               appendLine()
               appendLine("<details><summary>Stack Trace</summary>")
@@ -1146,11 +1406,11 @@ class CrawlerAgentTask(
         // Log page completion to transcript
         transcriptStream?.let { stream ->
           try {
-            writeToTranscript(
+            writeToTranscriptSafe(
               stream,
               "**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))}\n"
             )
-            writeToTranscript(
+            writeToTranscriptSafe(
               stream, "**Processing Time:** ${System.currentTimeMillis() - pageStartTime}ms\n\n---\n\n"
             )
           } catch (e: Exception) {
@@ -1161,6 +1421,31 @@ class CrawlerAgentTask(
         page.completed = true
         page.processingTimeMs = System.currentTimeMillis() - pageStartTime
         log.debug("Page processing completed: url='${link}', time=${page.processingTimeMs}ms, error='${page.error ?: "none"}'")
+       // Update crawl state for this page
+       try {
+         val entry = currentCrawlState.links.getOrPut(link) {
+           CrawlLinkEntry(
+             url = link,
+             discovered_at = LocalDateTime.now().toString()
+           )
+         }
+         entry.title = page.title ?: entry.title
+         entry.tags = page.tags ?: entry.tags
+         entry.relevance_score = page.relevance_score
+         entry.depth = page.depth
+         entry.status = if (page.error != null) "error" else "completed"
+         entry.error = page.error
+         entry.processing_time_ms = page.processingTimeMs
+         entry.processed_at = LocalDateTime.now().toString()
+         entry.completed_in_run = currentRunNumber
+         // Periodic save every 5 pages
+         if (processedCount.get() % 5 == 0) {
+           syncInMemoryStateToCrawlState()
+           crawlStateFile?.let { saveCrawlState(it, currentCrawlState) }
+         }
+       } catch (e: Exception) {
+         log.debug("Failed to update crawl state for page: $link", e)
+       }
         task.complete()
       }
     }

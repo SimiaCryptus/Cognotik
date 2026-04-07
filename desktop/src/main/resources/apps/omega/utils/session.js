@@ -1,14 +1,12 @@
 /**
- * Session and URL utilities
- */
-(function() {
-    'use strict';
+  * Session and URL utilities
+  */
 
-    /**
-     * Parse the current URL to extract session information
-     * @returns {Object} Object containing basePath, sessionId, and appId
-     */
-    function parseSessionUrl() {
+/**
+  * Parse the current URL to extract session information
+  * @returns {Object} Object containing basePath, sessionId, and appId
+  */
+export function parseSessionUrl() {
         const pathParts = window.location.pathname.split('/');
         const fileIndexIdx = pathParts.indexOf('fileIndex');
         let basePath = '';
@@ -25,31 +23,29 @@
         }
 
         return { basePath, sessionId, appId };
-    }
+  }
 
-    /**
-     * Get the proxy URL for a given session ID
-     * @param {string} id - Session ID
-     * @returns {string} Proxy URL
-     */
-    function getProxyUrl(id) {
+/**
+  * Get the proxy URL for a given session ID
+  * @param {string} id - Session ID
+  * @returns {string} Proxy URL
+  */
+export function getProxyUrl(id) {
         return '/proxy/#' + id;
-    }
+  }
 
-    /**
-     * Get the app root path (for ZIP/Git endpoints)
-     * @returns {string} App root path
-     */
-    function getAppRoot() {
+/**
+  * Get the app root path (for ZIP/Git endpoints)
+  * @returns {string} App root path
+  */
+export function getAppRoot() {
         const pathParts = window.location.pathname.split('/');
         const fileIndexIdx = pathParts.indexOf('fileIndex');
         return fileIndexIdx >= 0 ? pathParts.slice(0, fileIndexIdx).join('/') : '';
-    }
+  }
 
-    // Export functions
-    window.SessionUtils = {
-        parseSessionUrl,
-        getProxyUrl,
-        getAppRoot
-    };
-})();
+export const SessionUtils = {
+     parseSessionUrl,
+     getProxyUrl,
+     getAppRoot
+};

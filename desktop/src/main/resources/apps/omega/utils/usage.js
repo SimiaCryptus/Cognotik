@@ -1,15 +1,14 @@
 /**
- * Usage tracking utilities
- */
-(function() {
-    'use strict';
+  * Usage tracking utilities
+  */
+import { escapeHtml } from './ui.js';
 
-    /**
-     * Fetch usage data for a session
-     * @param {string} sessionId - Session ID
-     * @returns {Promise<Object|null>} Usage data or null
-     */
-    async function fetchUsageData(sessionId) {
+/**
+  * Fetch usage data for a session
+  * @param {string} sessionId - Session ID
+  * @returns {Promise<Object|null>} Usage data or null
+  */
+export async function fetchUsageData(sessionId) {
         if (!sessionId) return null;
         
         try {
@@ -28,39 +27,39 @@
             console.warn('Failed to fetch usage data:', e);
             return null;
         }
-    }
+  }
 
-    /**
-     * Format token count for display
-     * @param {number} n - Token count
-     * @returns {string} Formatted count
-     */
-    function formatTokenCount(n) {
+/**
+  * Format token count for display
+  * @param {number} n - Token count
+  * @returns {string} Formatted count
+  */
+export function formatTokenCount(n) {
         if (n === null || n === undefined || isNaN(n)) return '—';
         if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
         if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
         return n.toLocaleString();
-    }
+  }
 
-    /**
-     * Format cost for display
-     * @param {number} cost - Cost value
-     * @returns {string} Formatted cost
-     */
-    function formatCost(cost) {
+/**
+  * Format cost for display
+  * @param {number} cost - Cost value
+  * @returns {string} Formatted cost
+  */
+export function formatCost(cost) {
         if (cost === null || cost === undefined || isNaN(cost)) return '—';
         if (cost === 0) return '$0.00';
         if (cost < 0.001) return '< $0.001';
         if (cost < 0.01) return '$' + cost.toFixed(4);
         return '$' + cost.toFixed(4);
-    }
+  }
 
-    /**
-     * Aggregate usage data from multiple sessions
-     * @param {Array<string>} sessionIds - Session IDs to aggregate
-     * @returns {Promise<Object>} Aggregated usage data
-     */
-    async function aggregateUsage(sessionIds) {
+/**
+  * Aggregate usage data from multiple sessions
+  * @param {Array<string>} sessionIds - Session IDs to aggregate
+  * @returns {Promise<Object>} Aggregated usage data
+  */
+export async function aggregateUsage(sessionIds) {
         const allModels = {};
         const sessionUsageMap = {};
         let totalPrompt = 0;
@@ -114,14 +113,14 @@
             },
             sessionUsageMap
         };
-    }
+  }
 
-    /**
-     * Render usage summary
-     * @param {Object} totals - Usage totals
-     * @param {Object} elements - DOM elements for display
-     */
-    function renderUsageSummary(totals, elements) {
+/**
+  * Render usage summary
+  * @param {Object} totals - Usage totals
+  * @param {Object} elements - DOM elements for display
+  */
+export function renderUsageSummary(totals, elements) {
         if (totals) {
             if (elements.prompt) elements.prompt.textContent = formatTokenCount(totals.prompt_tokens || 0);
             if (elements.completion) elements.completion.textContent = formatTokenCount(totals.completion_tokens || 0);
@@ -133,15 +132,15 @@
             if (elements.total) elements.total.textContent = '—';
             if (elements.cost) elements.cost.textContent = '—';
         }
-    }
+  }
 
-    /**
-     * Create usage table HTML
-     * @param {Array} models - Model usage data
-     * @param {Object} totals - Usage totals
-     * @returns {string} HTML table
-     */
-    function createUsageTableHtml(models, totals) {
+/**
+  * Create usage table HTML
+  * @param {Array} models - Model usage data
+  * @param {Object} totals - Usage totals
+  * @returns {string} HTML table
+  */
+export function createUsageTableHtml(models, totals) {
         if (!models || models.length === 0) {
             return '<p class="placeholder">No usage data available yet.</p>';
         }
@@ -162,7 +161,7 @@
         sortedModels.forEach(model => {
             const totalTokens = (model.prompt_tokens || 0) + (model.completion_tokens || 0);
             html += '<tr>';
-            html += `<td class="usage-model-cell">${window.UIUtils.escapeHtml(model.model || 'Unknown')}</td>`;
+             html += `<td class="usage-model-cell">${escapeHtml(model.model || 'Unknown')}</td>`;
             html += `<td class="usage-number-cell">${formatTokenCount(model.prompt_tokens)}</td>`;
             html += `<td class="usage-number-cell">${formatTokenCount(model.completion_tokens)}</td>`;
             html += `<td class="usage-number-cell">${formatTokenCount(totalTokens)}</td>`;
@@ -184,15 +183,13 @@
         
         html += '</tbody></table>';
         return html;
-    }
+  }
 
-    // Export functions
-    window.UsageUtils = {
-        fetchUsageData,
-        formatTokenCount,
-        formatCost,
-        aggregateUsage,
-        renderUsageSummary,
-        createUsageTableHtml
-    };
-})();
+export const UsageUtils = {
+     fetchUsageData,
+     formatTokenCount,
+     formatCost,
+     aggregateUsage,
+     renderUsageSummary,
+     createUsageTableHtml
+};

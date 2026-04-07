@@ -68,6 +68,7 @@ class FactCheckingStrategy : PageProcessingStrategy {
           url = url,
           pageType = CrawlerAgentTask.PageType.Error,
           content = "Missing FactCheckingConfig",
+          summary = null,
           extractedLinks = null,
           metadata = emptyMap(),
           shouldTerminate = true,
@@ -91,6 +92,7 @@ class FactCheckingStrategy : PageProcessingStrategy {
       url = url,
       pageType = CrawlerAgentTask.PageType.OK,
       content = formatFactCheckResults(pageResults),
+      summary = null,
       extractedLinks = extractRelevantLinks(content, config.claims_to_verify),
       metadata = mapOf(
         "fact_check_results" to pageResults,

@@ -80,6 +80,7 @@ class SchemaExtractionStrategy : DefaultSummarizerStrategy() {
         url = url,
         pageType = CrawlerAgentTask.PageType.Error,
         content = "Configuration error: ${e.message}",
+        summary = null,
         error = e
       )
     }
@@ -93,6 +94,7 @@ class SchemaExtractionStrategy : DefaultSummarizerStrategy() {
         url = url,
         pageType = CrawlerAgentTask.PageType.Error,
         content = "Extraction error: ${e.message}",
+        summary = null,
         error = e
       )
     }
@@ -156,6 +158,7 @@ class SchemaExtractionStrategy : DefaultSummarizerStrategy() {
       url = url,
       pageType = if (filteredData != null) CrawlerAgentTask.PageType.OK else CrawlerAgentTask.PageType.Irrelevant,
       content = summary,
+      summary = null,
       extractedLinks = standardResult.extractedLinks,
       metadata = mapOf(
         "extracted_data" to (filteredData ?: emptyMap<String, Any>()),

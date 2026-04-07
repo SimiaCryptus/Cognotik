@@ -75,6 +75,7 @@ interface PageProcessingStrategy {
     val url: String = "",
     val pageType: PageType = PageType.Error,
     val content: String = "",
+    val summary: String? = null,
     val extractedLinks: List<LinkData>? = null,
     val metadata: Map<String, Any> = emptyMap(),
     val shouldTerminate: Boolean = false,

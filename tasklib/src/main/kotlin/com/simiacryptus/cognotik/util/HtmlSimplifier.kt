@@ -61,12 +61,20 @@ object HtmlSimplifier {
     "scope",
     "id",
     "lang",
+    "action",
+    "method",
+    "value",
+    "placeholder",
     "aria-label",
     "aria-describedby",
     "role"
   )
   private val SCRIPT_ATTRIBUTES = setOf(
     "onclick", "onload", "onsubmit", "oninput", "onchange"
+  )
+
+  private val STRUCTURAL_WRAPPER_ELEMENTS = setOf(
+    "div", "span", "section", "article", "aside", "main", "header", "footer", "nav", "figure", "figcaption"
   )
 
   fun scrubHtml(
@@ -193,11 +201,29 @@ object HtmlSimplifier {
 
     simplifyDocument(stepName = "RemoveEmptyElements") {
       val elementsToRemove = mutableListOf<org.jsoup.nodes.Element>()
-      select("*:not(img)").forEach { element ->
+      val excludeSelector = buildList {
+        add("img")
+        add("br")
+        add("hr")
+        add("html")
+        add("head")
+        add("body")
+        if (keepScriptElements) addAll(SCRIPT_ELEMENTS)
+        if (keepMediaElements) addAll(MEDIA_ELEMENTS)
+        if (keepInteractiveElements) addAll(INTERACTIVE_ELEMENTS)
+      }.joinToString(", ") { ":not($it)" }
+      select("*$excludeSelector").forEach { element ->
         if (element.text().isBlank() &&
           element.attributes().isEmpty &&
-          !element.select("img, br, hr, iframe[src], svg, source[src], track[src]")
-            .any()
+          !element.select(
+            buildList {
+              addAll(listOf("img", "br", "hr", "iframe[src]", "svg", "source[src]", "track[src]"))
+              if (keepInteractiveElements) addAll(INTERACTIVE_ELEMENTS)
+              if (keepMediaElements) addAll(MEDIA_ELEMENTS)
+            }.joinToString(", ")
+          ).any() &&
+          !(keepScriptElements && element.tagName() in SCRIPT_ELEMENTS && element.data().isNotBlank())
+          && !(keepInteractiveElements && element.tagName() in INTERACTIVE_ELEMENTS)
 
         ) {
           elementsToRemove.add(element)
@@ -217,7 +243,9 @@ object HtmlSimplifier {
 
     simplifyDocument(stepName = "UnwrapSimpleTextElements") {
       select("*").forEach { element ->
-        if (element.tagName() !in PRESERVED_ELEMENTS && element.childNodes().size == 1
+        if (element.tagName() !in PRESERVED_ELEMENTS
+          && element.tagName() !in setOf("html", "head", "body")
+          && element.childNodes().size == 1
           && element.childNodes().first()?.nodeName() == "#text" && element.attributes().isEmpty()
         ) {
           element.unwrap()
@@ -272,16 +300,27 @@ object HtmlSimplifier {
     }
 
     simplifyDocument(stepName = "SimplifyNestedStructure") {
-      while (simplifyStructure) select("*").filter { element -> (element.attributes().isEmpty && element.children().size == 1) }
-        .filter { element ->
-          val child = element.children().first() ?: return@filter false
-          when {
-            !child.attributes().isEmpty -> false
-            child.tagName() != element.tagName() -> false
-            child.children().size > 1 -> false
-            else -> true
+      if (simplifyStructure) {
+        // Pass 1: Unwrap parent elements that have no attributes and contain a single child element.
+        // This collapses unnecessary wrapper divs like <div><div><p>text</p></div></div>
+        var changed = true
+        while (changed) {
+          changed = false
+          val candidates = select("*").filter { element ->
+            element.tagName() !in setOf("html", "head", "body") &&
+              element.tagName() in STRUCTURAL_WRAPPER_ELEMENTS &&
+            element.attributes().isEmpty &&
+            element.children().size == 1 &&
+            element.textNodes().all { it.text().isBlank() }
           }
-        }.firstOrNull()?.unwrap() ?: break
+          for (element in candidates) {
+            // Safety check: element must still be in the document
+            if (element.parent() == null) continue
+            element.unwrap()
+            changed = true
+          }
+        }
+      }
     }
 
     return document.body().html() ?: ""

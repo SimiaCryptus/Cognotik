@@ -13,6 +13,7 @@ class AppEntry(
     val type: String = "docops",
     val path: String = "/$name",
     val appId: String? = null,
+    val resource_path: String?,
     val cardClass: String? = null,
     val classLoader: ClassLoader = this.javaClass.classLoader,
 ) : DynamicEnum<AppEntry>(name) {
