@@ -2,9 +2,9 @@
 
 ## Overview
 
-A **Cognotik DocOps App** is a single-page web application that orchestrates AI-powered document processing pipelines.
-Apps run inside the Cognotik platform and communicate through REST APIs for file I/O, operation execution, and status
-monitoring.
+A **Cognotik DocOps App** is a single-page web application that orchestrates AI-powered document processing pipelines. Apps run inside the Cognotik platform and communicate through REST APIs for file I/O, operation execution, and status monitoring.
+
+This guide accompanies the [Utility Modules Reference](../utils/README.md), which documents the shared JavaScript modules available for building DocOps apps.
 
 ### Key Concepts
 
@@ -15,6 +15,8 @@ monitoring.
 | **Target**        | Output file/directory a DocOp writes to                              |
 | **Status File**   | `docops.status.json` tracks all running/completed tasks              |
 | **Proxy Session** | Live monitoring view of AI agent processing                          |
+
+---
 
 ## Architecture
 
@@ -30,6 +32,8 @@ Browser (Your App)
     /input  /ops/*.md  /output  docops.status.json
 ```
 
+---
+
 ## Project Structure
 
 ```
@@ -37,28 +41,37 @@ apps/your-app-name/
 ├── app.html          # Entry point
 ├── app.js            # Application logic
 ├── style.css         # Styles
-├── utils/            # Utility modules
-│   ├── docops.js     # DocOps execution
-│   ├── fileIO.js     # File operations
-│   ├── git.js        # Git integration
-│   ├── models.js     # Model management
-│   ├── session.js    # Session/URL parsing
-│   ├── ui.js         # UI helpers
-│   └── usage.js      # Usage tracking
+├── utils/            # Shared utility modules (see utils/README.md)
+│   ├── docops.js     # DocOps execution & polling
+│   ├── fileIO.js     # File read/write/delete/list
+│   ├── git.js        # Git repository operations
+│   ├── models.js     # AI model/provider management
+│   ├── session.js    # Session URL parsing
+│   ├── sessionLinks.js # Live session monitoring links
+│   ├── ui.js         # Markdown, toasts, badges, logging
+│   └── usage.js      # Token usage tracking
 └── ops/              # DocOp definitions
     └── *.md
 ```
+
+---
 
 ## Quick Start
 
 ### 1. Bootstrap Your App
 
-```javascript
-// Parse session from URL
-const { basePath, sessionId, appId } = SessionUtils.parseSessionUrl();
+Import utilities using ES module syntax:
 
-// Load available models
-const availableModels = await ModelUtils.loadApiProviders();
+```javascript
+import { parseSessionUrl, getProxyUrl } from './utils/session.js';
+import { loadApiProviders, populateModelDropdowns, loadModelSelections } from './utils/models.js';
+import { readFile, writeFile, fileExists } from './utils/fileIO.js';
+
+// Parse session from URL
+const { basePath, sessionId, appId } = parseSessionUrl();
+
+// Load available AI models
+const availableModels = await loadApiProviders();
 
 // Initialize UI
 await loadInitialFiles();
@@ -67,59 +80,82 @@ await checkExistingState();
 
 ### 2. File Operations
 
-All file operations use the utilities in `fileIO.js`:
+Use `fileIO.js` for all file I/O:
 
 ```javascript
+import { readFile, writeFile, fileExists, listFiles, deleteFile } from './utils/fileIO.js';
+
 // Read/write files
-const content = await FileIOUtils.readFile(basePath, 'input.md');
-await FileIOUtils.writeFile(basePath, 'output.md', content);
+const content = await readFile(basePath, 'input.md');
+await writeFile(basePath, 'output.md', content);
 
 // Check existence
-if (await FileIOUtils.fileExists(basePath, 'config.json')) {
+if (await fileExists(basePath, 'config.json')) {
     // ...
 }
 
-// List directory
-const files = await FileIOUtils.listFiles(basePath, 'results/');
+// List directory contents
+const files = await listFiles(basePath, 'results/');
+
+// Delete a file
+await deleteFile(basePath, 'temp.txt');
 ```
 
 ### 3. Run DocOps
 
-Use `docops.js` utilities for operation execution:
+Use `docops.js` for operation execution and monitoring:
 
 ```javascript
+import { runDocOp, waitForTask, createStatusPoller } from './utils/docops.js';
+
 // Run operation with model overrides
-const taskId = await DocOpsUtils.runDocOp(
+const taskId = await runDocOp(
     sessionId,
     'ops/analyze.md',
     'analysis.md',
     {
-        smartModel: 'GPT4o',
-        fastModel: 'GPT4oMini'
+        smartModel: 'gpt-4o',
+        fastModel: 'gpt-4o-mini'
     }
 );
 
-// Wait for completion
-await DocOpsUtils.waitForTask(basePath, 'analysis.md');
+// Wait for completion with status updates
+await waitForTask(basePath, 'analysis.md', 600000, (target, task) => {
+    console.log(`${target}: ${task.status}`);
+});
 ```
 
 ### 4. Status Monitoring
 
-Create a status poller for real-time updates:
+Create a status poller for real-time UI updates:
 
 ```javascript
-const poller = DocOpsUtils.createStatusPoller(basePath, (target, taskInfo) => {
-    // Update UI based on task status
-    UIUtils.setBadge(badgeId, taskInfo.status === 'COMPLETED' ? 'done' : 'running');
-    SessionLinkUtils.updateSessionLinks(target, taskInfo, SessionUtils.getProxyUrl);
+import { createStatusPoller } from './utils/docops.js';
+import { setBadge } from './utils/ui.js';
+import { updateSessionLinks } from './utils/sessionLinks.js';
+import { getProxyUrl } from './utils/session.js';
+
+const poller = createStatusPoller(basePath, (target, taskInfo) => {
+    // Update badge based on status
+    const state = taskInfo.status === 'COMPLETED' ? 'done' :
+                  taskInfo.status === 'RUNNING' ? 'running' : 'error';
+    setBadge('step-badge', state);
+
+    // Update session monitoring links
+    updateSessionLinks(target, taskInfo, getProxyUrl);
 });
 
 poller.start();
+// Later: poller.stop();
 ```
+
+---
 
 ## API Reference
 
-### File Operations
+### REST Endpoints
+
+#### File Operations
 
 | Method   | Endpoint                       | Description     |
 |----------|--------------------------------|-----------------|
@@ -129,7 +165,7 @@ poller.start();
 | `HEAD`   | `{basePath}/{filePath}`        | Check existence |
 | `GET`    | `{basePath}/{dir}/_files.json` | List directory  |
 
-### DocOps Execution
+#### DocOps Execution
 
 ```
 POST /docops?sessionId={sid}&doc={opPath}&target={targetPath}&smartModel={model}&fastModel={model}
@@ -137,239 +173,323 @@ POST /docops?sessionId={sid}&doc={opPath}&target={targetPath}&smartModel={model}
 
 **⚠️ Model parameters are required!** The servlet doesn't inherit defaults.
 
-### Git Operations
+#### Git Operations
 
-Use the Git REST API via `git.js`:
-
-```javascript
-// Check status
-const status = await GitUtils.getStatus(basePath);
-
-// Initialize repo
-await GitUtils.initRepository(basePath);
-
-// Commit changes
-await GitUtils.commit(basePath, 'Updated configuration');
-
-// View formatted status
-const statusHtml = GitUtils.formatStatus(status);
+```
+GET/POST {basePath}/.git/api/{endpoint}
 ```
 
-### Usage Tracking
+See `git.js` for available endpoints.
 
-Track token usage and costs:
+---
+
+## Utility Module Usage
+
+For complete API documentation, see [utils/README.md](../utils/README.md).
+
+### Session Management (`session.js`)
 
 ```javascript
-// Get usage for current session
-const usage = await UsageUtils.fetchUsageData(sessionId);
+import { parseSessionUrl, getProxyUrl, getAppRoot } from './utils/session.js';
 
-// Aggregate multiple sessions
-const aggregated = await UsageUtils.aggregateUsage([sessionId1, sessionId2]);
-
-// Display usage table
-const tableHtml = UsageUtils.createUsageTableHtml(aggregated.models, aggregated.totals);
+const { basePath, sessionId, appId } = parseSessionUrl();
+const monitorUrl = getProxyUrl(taskId);
+const appRoot = getAppRoot(); // For ZIP/Git endpoints
 ```
 
-## UI Patterns
-
-### Model Selection
+### Model Selection (`models.js`)
 
 ```javascript
-// Populate dropdowns with available models
-ModelUtils.populateModelDropdowns(
-    availableModels,
-    [smartSelect, fastSelect, imageSelect],
-    savedSelections
+import {
+    loadApiProviders,
+    populateModelDropdowns,
+    saveModelSelections,
+    loadModelSelections
+} from './utils/models.js';
+
+// Load and populate
+const models = await loadApiProviders();
+populateModelDropdowns(
+    models,
+    [smartSelect, fastSelect],
+    loadModelSelections('myapp', ['smartModel', 'fastModel'])
 );
 
-// Save selections
-ModelUtils.saveModelSelections('myapp', {
+// Save on change
+saveModelSelections('myapp', {
     smartModel: smartSelect.value,
     fastModel: fastSelect.value
 });
 ```
 
-### Pipeline Execution
-
-#### Sequential Pipeline
+### Git Integration (`git.js`)
 
 ```javascript
+import { getStatus, initRepository, commit, formatStatus } from './utils/git.js';
+
+// Check repository status
+const status = await getStatus(basePath);
+document.getElementById('git-status').innerHTML = formatStatus(status);
+
+// Initialize and commit
+await initRepository(basePath);
+await commit(basePath, 'Initial commit');
+```
+
+### UI Helpers (`ui.js`)
+
+```javascript
+import {
+    renderMarkdown,
+    setStatus,
+    setBadge,
+    showToast,
+    createBatchLogger,
+    getFileIcon
+} from './utils/ui.js';
+
+// Render markdown content
+document.getElementById('output').innerHTML = renderMarkdown(content);
+
+// Status messages (auto-clear after 5s)
+setStatus('save-status', 'Saved successfully', 'success');
+
+// Badge states: pending, running, done, error
+setBadge('step1-badge', 'running');
+
+// Toast notifications
+showToast('Pipeline complete!', 'success', 4000);
+
+// Batch logging
+const logger = createBatchLogger('batch-log');
+logger.log('Starting...', 'info');
+logger.logHtml('<strong>Done!</strong>', 'success');
+logger.clear();
+
+// File icons
+const icon = getFileIcon('resume.pdf'); // 📕
+```
+
+### Session Links (`sessionLinks.js`)
+
+```javascript
+import { updateSessionLinks, createSessionLinkManager } from './utils/sessionLinks.js';
+import { getProxyUrl } from './utils/session.js';
+
+// Direct update
+updateSessionLinks('analysis.md', taskInfo, getProxyUrl);
+
+// Or use a manager for tracking multiple sessions
+const linkManager = createSessionLinkManager(getProxyUrl);
+linkManager.update('analysis.md', taskInfo);
+const sessionId = linkManager.getSessionId('analysis.md');
+```
+
+### Usage Tracking (`usage.js`)
+
+```javascript
+import {
+    fetchUsageData,
+    aggregateUsage,
+    renderUsageSummary,
+    createUsageTableHtml
+} from './utils/usage.js';
+
+// Single session
+const usage = await fetchUsageData(sessionId);
+
+// Multiple sessions
+const { models, totals } = await aggregateUsage([id1, id2, id3]);
+
+// Render summary
+renderUsageSummary(totals, {
+    prompt: document.getElementById('prompt-tokens'),
+    completion: document.getElementById('completion-tokens'),
+    total: document.getElementById('total-tokens'),
+    cost: document.getElementById('total-cost')
+});
+
+// Full table
+document.getElementById('usage-table').innerHTML = createUsageTableHtml(models, totals);
+```
+
+---
+
+## UI Patterns
+
+### Sequential Pipeline
+
+```javascript
+import { runDocOp, waitForTask } from './utils/docops.js';
+import { setBadge, showToast } from './utils/ui.js';
+
 async function runPipeline() {
     const steps = [
-        {
-            op: 'ops/step1.md',
-            output: 'step1.md',
-            badge: 'badge-step1',
-            label: 'Step 1'
-        },
-        {
-            op: 'ops/step2.md',
-            output: 'step2.md',
-            badge: 'badge-step2',
-            label: 'Step 2'
-        }
+        { op: 'ops/step1.md', output: 'step1.md', badge: 'badge-step1' },
+        { op: 'ops/step2.md', output: 'step2.md', badge: 'badge-step2' }
     ];
 
     for (const step of steps) {
-        UIUtils.setBadge(step.badge, 'running');
+        setBadge(step.badge, 'running');
         try {
-            await DocOpsUtils.runDocOp(sessionId, step.op, step.output);
-            await DocOpsUtils.waitForTask(basePath, step.output);
-            UIUtils.setBadge(step.badge, 'done');
+            await runDocOp(sessionId, step.op, step.output, { smartModel, fastModel });
+            await waitForTask(basePath, step.output);
+            setBadge(step.badge, 'done');
         } catch (e) {
-            UIUtils.setBadge(step.badge, 'error');
+            setBadge(step.badge, 'error');
             throw e;
         }
     }
+
+    showToast('Pipeline complete!', 'success');
 }
 ```
 
-#### Parallel Fan-Out
+### Parallel Fan-Out
 
 ```javascript
 async function processMultiple(items) {
     const promises = items.map(async item => {
         const output = `results/${item.name}.md`;
-        await DocOpsUtils.runDocOp(sessionId, 'ops/process.md', output);
-        return DocOpsUtils.waitForTask(basePath, output);
+        await runDocOp(sessionId, 'ops/process.md', output, { smartModel, fastModel });
+        return waitForTask(basePath, output);
     });
 
     await Promise.all(promises);
 }
 ```
 
-### Status Display
+### Real-Time Monitoring
 
 ```javascript
-// Create batch logger
-const logger = UIUtils.createBatchLogger('batch-log');
+import { createStatusPoller } from './utils/docops.js';
+import { createSessionLinkManager } from './utils/sessionLinks.js';
+import { setBadge, createBatchLogger } from './utils/ui.js';
+import { getProxyUrl } from './utils/session.js';
 
-// Log with monitoring links
-logger.logHtml(`Processing: <a href="${SessionUtils.getProxyUrl(taskId)}">Monitor</a>`);
+const logger = createBatchLogger('batch-log');
+const linkManager = createSessionLinkManager(getProxyUrl);
 
-// Show toast notifications
-UIUtils.showToast('Pipeline complete!', 'success');
+const poller = createStatusPoller(basePath, (target, taskInfo) => {
+    // Update badge
+    const badgeMap = { 'output.md': 'badge-main', 'analysis.md': 'badge-analysis' };
+    if (badgeMap[target]) {
+        setBadge(badgeMap[target], taskInfo.status === 'COMPLETED' ? 'done' : 'running');
+    }
 
-// Update status messages
-UIUtils.setStatus('save-status', 'Saved successfully', 'success');
+    // Update session links
+    linkManager.update(target, taskInfo);
+
+    // Log status changes
+    logger.log(`${target}: ${taskInfo.status}`,
+               taskInfo.status === 'COMPLETED' ? 'success' : 'info');
+});
+
+poller.start();
 ```
+
+---
 
 ## Complete Example
 
 ```javascript
-(function() {
+import { parseSessionUrl, getProxyUrl } from './utils/session.js';
+import { loadApiProviders, populateModelDropdowns, saveModelSelections, loadModelSelections } from './utils/models.js';
+import { readFile, writeFile } from './utils/fileIO.js';
+import { runDocOp, waitForTask, createStatusPoller } from './utils/docops.js';
+import { renderMarkdown, setStatus, setBadge, showToast, createBatchLogger } from './utils/ui.js';
+import { updateSessionLinks } from './utils/sessionLinks.js';
+
+(async function() {
     'use strict';
 
-    // Initialize
-    const { basePath, sessionId } = SessionUtils.parseSessionUrl();
-    let availableModels = {};
+    // Initialize session
+    const { basePath, sessionId } = parseSessionUrl();
     let statusPoller = null;
 
-    async function init() {
-        // Load models
-        availableModels = await ModelUtils.loadApiProviders();
+    // Load models and populate UI
+    const availableModels = await loadApiProviders();
+    const modelSelect = document.getElementById('model-select');
+    populateModelDropdowns(
+        availableModels,
+        [modelSelect],
+        loadModelSelections('myapp', ['smartModel'])
+    );
 
-        // Populate dropdowns
-        ModelUtils.populateModelDropdowns(
-            availableModels,
-            [document.getElementById('model-select')],
-            ModelUtils.loadModelSelections('myapp', ['smartModel'])
-        );
-
-        // Load existing files
-        const input = await FileIOUtils.readFile(basePath, 'input.md');
-        if (input) {
-            document.getElementById('input-editor').value = input;
-        }
-
-        // Start monitoring
-        statusPoller = DocOpsUtils.createStatusPoller(basePath, updateTaskUI);
-        statusPoller.start();
+    // Load existing input
+    const input = await readFile(basePath, 'input.md');
+    if (input) {
+        document.getElementById('input-editor').value = input;
     }
 
-    function updateTaskUI(target, taskInfo) {
-        // Update badges
-        const badgeMap = {
-            'output.md': 'badge-main',
-            'analysis.md': 'badge-analysis'
-        };
-
-        const badgeId = badgeMap[target];
-        if (badgeId) {
-            const state = taskInfo.status === 'COMPLETED' ? 'done' :
-                         taskInfo.status === 'RUNNING' ? 'running' : 'error';
-            UIUtils.setBadge(badgeId, state);
+    // Start status monitoring
+    statusPoller = createStatusPoller(basePath, (target, taskInfo) => {
+        const badgeMap = { 'output.md': 'badge-main', 'analysis.md': 'badge-analysis' };
+        if (badgeMap[target]) {
+            setBadge(badgeMap[target], taskInfo.status === 'COMPLETED' ? 'done' : 'running');
         }
+        updateSessionLinks(target, taskInfo, getProxyUrl);
+    });
+    statusPoller.start();
 
-        // Update session links
-        SessionLinkUtils.updateSessionLinks(target, taskInfo, SessionUtils.getProxyUrl);
-    }
-
-    // Save input
-    document.getElementById('save-input').addEventListener('click', async function() {
+    // Save input handler
+    document.getElementById('save-input').addEventListener('click', async () => {
         try {
-            await FileIOUtils.writeFile(basePath, 'input.md',
-                document.getElementById('input-editor').value);
-            UIUtils.setStatus('input-status', 'Saved', 'success');
+            await writeFile(basePath, 'input.md', document.getElementById('input-editor').value);
+            setStatus('input-status', 'Saved', 'success');
         } catch (e) {
-            UIUtils.setStatus('input-status', e.message, 'error');
+            setStatus('input-status', e.message, 'error');
         }
     });
 
-    // Run pipeline
+    // Run pipeline handler
     document.getElementById('run-pipeline').addEventListener('click', async function() {
-        const logger = UIUtils.createBatchLogger('batch-log');
+        const logger = createBatchLogger('batch-log');
         this.disabled = true;
 
         try {
-            // Get selected model
-            const model = document.getElementById('model-select').value;
+            const model = modelSelect.value;
+            saveModelSelections('myapp', { smartModel: model });
 
-            // Run operation
             logger.log('Starting analysis...');
-            const taskId = await DocOpsUtils.runDocOp(
-                sessionId,
-                'ops/analyze.md',
-                'analysis.md',
-                { smartModel: model, fastModel: model }
-            );
+            const taskId = await runDocOp(sessionId, 'ops/analyze.md', 'analysis.md', {
+                smartModel: model,
+                fastModel: model
+            });
 
-            // Show monitoring link
-            logger.logHtml(`Monitor: <a href="${SessionUtils.getProxyUrl(taskId)}" target="_blank">View Live</a>`);
+            logger.logHtml(`Monitor: <a href="${getProxyUrl(taskId)}" target="_blank">View Live</a>`);
 
-            // Wait for completion
-            await DocOpsUtils.waitForTask(basePath, 'analysis.md');
-
+            await waitForTask(basePath, 'analysis.md');
             logger.log('Analysis complete!', 'success');
-            UIUtils.showToast('Pipeline completed successfully', 'success');
+            showToast('Pipeline completed successfully', 'success');
 
-            // Display results
-            const result = await FileIOUtils.readFile(basePath, 'analysis.md');
-            document.getElementById('results').innerHTML = UIUtils.renderMarkdown(result);
+            const result = await readFile(basePath, 'analysis.md');
+            document.getElementById('results').innerHTML = renderMarkdown(result);
 
         } catch (e) {
             logger.log(`Error: ${e.message}`, 'error');
-            UIUtils.showToast('Pipeline failed', 'error');
+            showToast('Pipeline failed', 'error');
         } finally {
             this.disabled = false;
         }
     });
-
-    // Initialize on load
-    init();
 })();
 ```
 
+---
+
 ## Best Practices
 
-1. **Always poll for completion** - Never assume DocOps complete immediately
-2. **Handle existing state** - Check for files/tasks on page load
-3. **Provide monitoring links** - Show proxy URLs for transparency
-4. **Save before running** - Auto-save inputs before operations
-5. **Validate inputs** - Check JSON/structured data before saving
-6. **Design for resumability** - Users may reload mid-pipeline
-7. **Use data attributes** - Keep HTML declarative with `data-*`
-8. **Handle errors gracefully** - Show clear messages and recovery options
+1. **Always poll for completion** — Never assume DocOps complete immediately
+2. **Handle existing state** — Check for files/tasks on page load
+3. **Provide monitoring links** — Show proxy URLs for transparency
+4. **Save before running** — Auto-save inputs before operations
+5. **Validate inputs** — Check JSON/structured data before saving
+6. **Design for resumability** — Users may reload mid-pipeline
+7. **Use named imports** — Prefer `import { fn }` over namespace imports for tree-shaking
+8. **Handle errors gracefully** — Show clear messages and recovery options
+
+---
 
 ## Troubleshooting
 
@@ -380,9 +500,17 @@ UIUtils.setStatus('save-status', 'Saved successfully', 'success');
 | Empty output after COMPLETED  | Operation produced no output | Check proxy session log                     |
 | Model not found               | Missing API key              | Configure provider API keys first           |
 
-For debugging:
+**Debugging tips:**
 
 - Check browser console for errors
 - View proxy session logs for AI activity
 - Inspect Network tab for API calls
 - Manually fetch `docops.status.json` to verify state
+
+---
+
+## Related Documentation
+
+- [Utility Modules Reference](../utils/README.md) — Complete API documentation for all utility modules
+- DocOps Operation Authoring Guide — How to write `.md` operation files
+- Platform Configuration — API keys and provider setup

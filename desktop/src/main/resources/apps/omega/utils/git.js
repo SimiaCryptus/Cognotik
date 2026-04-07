@@ -1,17 +1,16 @@
 /**
- * Git API utilities
- */
-(function() {
-    'use strict';
+  * Git API utilities
+  */
+import { escapeHtml } from './ui.js';
 
-    /**
-     * Make a Git API call
-     * @param {string} basePath - Base path for the session
-     * @param {string} endpoint - API endpoint
-     * @param {Object} options - Fetch options
-     * @returns {Promise<Object>} API response
-     */
-    async function gitApiCall(basePath, endpoint, options = {}) {
+/**
+  * Make a Git API call
+  * @param {string} basePath - Base path for the session
+  * @param {string} endpoint - API endpoint
+  * @param {Object} options - Fetch options
+  * @returns {Promise<Object>} API response
+  */
+export async function gitApiCall(basePath, endpoint, options = {}) {
         const url = basePath + '/.git/api/' + endpoint;
         const resp = await fetch(url, {
             credentials: 'include',
@@ -29,80 +28,80 @@
         }
         
         return data;
-    }
+  }
 
-    /**
-     * Get Git repository status
-     * @param {string} basePath - Base path for the session
-     * @returns {Promise<Object>} Status data
-     */
-    async function getStatus(basePath) {
+/**
+  * Get Git repository status
+  * @param {string} basePath - Base path for the session
+  * @returns {Promise<Object>} Status data
+  */
+export async function getStatus(basePath) {
         return await gitApiCall(basePath, 'status');
-    }
+  }
 
-    /**
-     * Initialize Git repository
-     * @param {string} basePath - Base path for the session
-     * @returns {Promise<Object>} Init result
-     */
-    async function initRepository(basePath) {
+/**
+  * Initialize Git repository
+  * @param {string} basePath - Base path for the session
+  * @returns {Promise<Object>} Init result
+  */
+export async function initRepository(basePath) {
         return await gitApiCall(basePath, 'init', { method: 'POST' });
-    }
+  }
 
-    /**
-     * Commit changes
-     * @param {string} basePath - Base path for the session
-     * @param {string} message - Commit message
-     * @returns {Promise<Object>} Commit result
-     */
-    async function commit(basePath, message) {
+/**
+  * Commit changes
+  * @param {string} basePath - Base path for the session
+  * @param {string} message - Commit message
+  * @returns {Promise<Object>} Commit result
+  */
+export async function commit(basePath, message) {
         return await gitApiCall(basePath, 'commit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message })
         });
-    }
+  }
 
-    /**
-     * Get branches
-     * @param {string} basePath - Base path for the session
-     * @returns {Promise<Object>} Branches data
-     */
-    async function getBranches(basePath) {
+/**
+  * Get branches
+  * @param {string} basePath - Base path for the session
+  * @returns {Promise<Object>} Branches data
+  */
+export async function getBranches(basePath) {
         return await gitApiCall(basePath, 'branches');
-    }
+  }
 
-    /**
-     * Checkout branch
-     * @param {string} basePath - Base path for the session
-     * @param {string} branch - Branch name
-     * @param {boolean} create - Create new branch
-     * @returns {Promise<Object>} Checkout result
-     */
-    async function checkout(basePath, branch, create = false) {
+/**
+  * Checkout branch
+  * @param {string} basePath - Base path for the session
+  * @param {string} branch - Branch name
+  * @param {boolean} create - Create new branch
+  * @returns {Promise<Object>} Checkout result
+  */
+export async function checkout(basePath, branch, create = false) {
         return await gitApiCall(basePath, 'checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ branch, create })
         });
-    }
+  }
 
-    /**
-     * Get commit log
-     * @param {string} basePath - Base path for the session
-     * @param {number} maxCount - Maximum number of commits
-     * @returns {Promise<Object>} Log data
-     */
-    async function getLog(basePath, maxCount = 20) {
+/**
+  * Get commit log
+  * @param {string} basePath - Base path for the session
+  * @param {number} maxCount - Maximum number of commits
+  * @returns {Promise<Object>} Log data
+  */
+export async function getLog(basePath, maxCount = 20) {
         return await gitApiCall(basePath, `log?maxCount=${maxCount}`);
-    }
+  }
 
-    /**
-     * Format Git status for display
-     * @param {Object} statusData - Git status data
-     * @returns {string} HTML formatted status
-     */
-    function formatStatus(statusData) {
+/**
+  * Format Git status for display
+  * @param {Object} statusData - Git status data
+  * @returns {string} HTML formatted status
+  */
+export function formatStatus(statusData) {
         if (!statusData.initialized) {
             return `
                 <div class="git-status-box">
@@ -110,7 +109,7 @@
                         <span class="git-status-indicator uninit">⚪ Not Initialized</span>
                     </div>
                     <p style="color:var(--color-text-muted); font-size:0.9rem;">
-                        ${window.UIUtils.escapeHtml(statusData.message || 'No Git repository found.')}
+                         ${escapeHtml(statusData.message || 'No Git repository found.')}
                     </p>
                 </div>`;
         }
@@ -124,9 +123,9 @@
                 const badgeClass = getChangeBadgeClass(change.status);
                 const label = getChangeLabel(change.status);
                 return `<li>
-                    <span class="git-change-badge ${badgeClass}">${window.UIUtils.escapeHtml(change.status)}</span>
-                    <span>${window.UIUtils.escapeHtml(change.file)}</span>
-                    <span style="color:var(--color-text-muted);font-size:0.75rem;">${window.UIUtils.escapeHtml(label)}</span>
+                     <span class="git-change-badge ${badgeClass}">${escapeHtml(change.status)}</span>
+                     <span>${escapeHtml(change.file)}</span>
+                     <span style="color:var(--color-text-muted);font-size:0.75rem;">${escapeHtml(label)}</span>
                 </li>`;
             }).join('');
             
@@ -141,13 +140,13 @@
             <div class="git-status-box">
                 <div class="git-status-header">
                     <span class="git-status-indicator ${cleanClass}">${cleanLabel}</span>
-                    <span class="git-branch-badge">🌿 ${window.UIUtils.escapeHtml(statusData.currentBranch || 'unknown')}</span>
+                     <span class="git-branch-badge">🌿 ${escapeHtml(statusData.currentBranch || 'unknown')}</span>
                 </div>
                 ${changesHtml}
             </div>`;
-    }
+  }
 
-    function getChangeBadgeClass(status) {
+function getChangeBadgeClass(status) {
         switch (status) {
             case 'M': return 'modified';
             case 'A': return 'added';
@@ -156,9 +155,9 @@
             case '??': return 'untracked';
             default: return 'modified';
         }
-    }
+  }
 
-    function getChangeLabel(status) {
+function getChangeLabel(status) {
         switch (status) {
             case 'M': return 'Modified';
             case 'A': return 'Added';
@@ -167,17 +166,15 @@
             case '??': return 'Untracked';
             default: return status;
         }
-    }
+  }
 
-    // Export functions
-    window.GitUtils = {
-        gitApiCall,
-        getStatus,
-        initRepository,
-        commit,
-        getBranches,
-        checkout,
-        getLog,
-        formatStatus
-    };
-})();
+export const GitUtils = {
+     gitApiCall,
+     getStatus,
+     initRepository,
+     commit,
+     getBranches,
+     checkout,
+     getLog,
+     formatStatus
+};

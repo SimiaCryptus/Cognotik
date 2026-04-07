@@ -1,14 +1,12 @@
 /**
- * Model management utilities
- */
-(function() {
-    'use strict';
+  * Model management utilities
+  */
 
-    /**
-     * Load available API providers and models
-     * @returns {Promise<Object>} Available models grouped by provider
-     */
-    async function loadApiProviders() {
+/**
+  * Load available API providers and models
+  * @returns {Promise<Object>} Available models grouped by provider
+  */
+export async function loadApiProviders() {
         try {
             const response = await fetch('/apiProviders/?format=json');
             if (response.status >= 400) {
@@ -37,15 +35,15 @@
             console.warn('Failed to load API providers:', e);
             return {};
         }
-    }
+  }
 
-    /**
-     * Populate model dropdowns with available models
-     * @param {Object} availableModels - Models grouped by provider
-     * @param {Array<HTMLSelectElement>} selectElements - Select elements to populate
-     * @param {Object} savedSelections - Previously saved selections
-     */
-    function populateModelDropdowns(availableModels, selectElements, savedSelections = {}) {
+/**
+  * Populate model dropdowns with available models
+  * @param {Object} availableModels - Models grouped by provider
+  * @param {Array<HTMLSelectElement>} selectElements - Select elements to populate
+  * @param {Object} savedSelections - Previously saved selections
+  */
+export function populateModelDropdowns(availableModels, selectElements, savedSelections = {}) {
         // Clear existing options
         selectElements.forEach(sel => {
             sel.innerHTML = '';
@@ -115,14 +113,14 @@
                 }
             }
         });
-    }
+  }
 
-    /**
-     * Save model selections to localStorage
-     * @param {string} prefix - Storage key prefix
-     * @param {Object} selections - Model selections to save
-     */
-    function saveModelSelections(prefix, selections) {
+/**
+  * Save model selections to localStorage
+  * @param {string} prefix - Storage key prefix
+  * @param {Object} selections - Model selections to save
+  */
+export function saveModelSelections(prefix, selections) {
         for (const [key, value] of Object.entries(selections)) {
             if (value) {
                 localStorage.setItem(`${prefix}_${key}`, value);
@@ -130,27 +128,25 @@
                 localStorage.removeItem(`${prefix}_${key}`);
             }
         }
-    }
+  }
 
-    /**
-     * Load model selections from localStorage
-     * @param {string} prefix - Storage key prefix
-     * @param {Array<string>} keys - Selection keys to load
-     * @returns {Object} Loaded selections
-     */
-    function loadModelSelections(prefix, keys) {
+/**
+  * Load model selections from localStorage
+  * @param {string} prefix - Storage key prefix
+  * @param {Array<string>} keys - Selection keys to load
+  * @returns {Object} Loaded selections
+  */
+export function loadModelSelections(prefix, keys) {
         const selections = {};
         keys.forEach(key => {
             selections[key] = localStorage.getItem(`${prefix}_${key}`) || '';
         });
         return selections;
-    }
+  }
 
-    // Export functions
-    window.ModelUtils = {
-        loadApiProviders,
-        populateModelDropdowns,
-        saveModelSelections,
-        loadModelSelections
-    };
-})();
+export const ModelUtils = {
+     loadApiProviders,
+     populateModelDropdowns,
+     saveModelSelections,
+     loadModelSelections
+};
