@@ -57,6 +57,10 @@ open class CognotikApps(
 
     @JvmStatic
     fun main(args: Array<String>) {
+      // Ensure log directory exists before any logging occurs
+      val logDir = File(System.getProperty("user.home"), ".cognotik/logs")
+      if (!logDir.exists()) logDir.mkdirs()
+
       fun handleServer(vararg args: String) {
         log.info("Parsing server options...")
         var port = 12891

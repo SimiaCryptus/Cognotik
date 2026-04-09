@@ -16,7 +16,6 @@ import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.Render
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.asApiChatModel
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -27,13 +26,9 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
-import java.nio.channels.FileChannel
-import java.nio.channels.FileLock
-import java.nio.channels.OverlappingFileLockException
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
 import java.nio.file.PathMatcher
-import java.nio.file.StandardOpenOption
 import java.security.MessageDigest
 import java.time.Duration
 import java.time.Instant
@@ -98,60 +93,7 @@ class DocProcessor(
   val parentSession: Session? = null,
 ) {
   private val statusFile = File(root, "docops.status.json")
-  private val statusLockFile = File(root, "docops.status.json.lock")
 
-  /**
-   * Execute a block while holding both the in-process monitor lock and a file-level lock,
-   * providing safety against both concurrent threads and concurrent processes.
-   * Retries acquiring the file lock up to [maxRetries] times with [retryDelayMs] between attempts.
-   */
-  private fun <T> withFileLock(maxRetries: Int = 20, retryDelayMs: Long = 250, block: () -> T): T {
-    synchronized(statusLock) {
-      statusLockFile.parentFile?.mkdirs()
-      var attempt = 0
-      while (true) {
-        try {
-          val channel = FileChannel.open(
-            statusLockFile.toPath(),
-            StandardOpenOption.CREATE,
-            StandardOpenOption.WRITE
-          )
-          channel.use { ch ->
-            var lock: FileLock? = null
-            try {
-              lock = ch.tryLock()
-              if (lock == null) {
-                if (attempt >= maxRetries) {
-                  log.warn("Could not acquire file lock on ${statusLockFile.absolutePath} after $maxRetries attempts, proceeding without file lock")
-                  return block()
-                }
-                attempt++
-                log.debug("File lock contention on ${statusLockFile.absolutePath}, retry $attempt/$maxRetries")
-                Thread.sleep(retryDelayMs)
-                return@use // retry outer loop
-              }
-              return block()
-            } finally {
-              lock?.release()
-            }
-          }
-        } catch (e: OverlappingFileLockException) {
-          // Same JVM already holds the lock via another channel - this shouldn't happen
-          // because we're inside synchronized(statusLock), but handle defensively
-          log.debug("OverlappingFileLockException (same JVM), proceeding without file lock")
-          return block()
-        } catch (e: Exception) {
-          log.warn("Failed to acquire file lock on ${statusLockFile.absolutePath}", e)
-          return block()
-        }
-      }
-    }
-  }
-
-  /**
-   * Read the current status from docops.status.json, or return an empty status if the file doesn't exist.
-   * Must be called while holding the file lock (i.e., inside withFileLock).
-   */
   private fun readStatusLocked(): DocOpsStatus {
     return try {
       if (statusFile.exists()) {
@@ -166,21 +108,6 @@ class DocProcessor(
   }
 
   /**
-   * Write the status to docops.status.json atomically (write to temp file then rename).
-   * Must be called while holding the file lock (i.e., inside withFileLock).
-   */
-  private fun writeStatusLocked(status: DocOpsStatus) {
-    try {
-      statusFile.parentFile?.mkdirs()
-      val tempFile = File(statusFile.parentFile, ".docops.status.json.tmp")
-      tempFile.writeText(JsonUtil.toJson(status))
-      tempFile.renameTo(statusFile)
-    } catch (e: Exception) {
-      log.error("Failed to write docops.status.json", e)
-    }
-  }
-
-  /**
    * Update the status of a specific target task in a thread-safe manner.
    */
   private fun updateTaskStatus(
@@ -189,26 +116,28 @@ class DocProcessor(
     sessionId: String? = null,
     error: String? = null
   ) {
-    withFileLock {
-      val current = readStatusLocked()
-      val existingEntry = current.tasks[targetKey]
-      val now = nowTimestamp()
-      val updatedEntry = TaskStatusEntry(
+    synchronized(statusLock) {
+      val current1 = readStatusLocked()
+      val existingEntry1 = current1.tasks[targetKey]
+      val now1 = nowTimestamp()
+      val updatedEntry1 = TaskStatusEntry(
         target = targetKey,
         status = status,
-        sessionId = sessionId ?: existingEntry?.sessionId,
-        startedAt = if (status == TaskStatus.RUNNING) now else existingEntry?.startedAt,
+        sessionId = sessionId ?: existingEntry1?.sessionId,
+        startedAt = if (status == TaskStatus.RUNNING) now1 else existingEntry1?.startedAt,
         completedAt = if (status in setOf(
             TaskStatus.COMPLETED,
             TaskStatus.FAILED,
             TaskStatus.CANCELLED
           )
-        ) now else existingEntry?.completedAt,
+        ) now1 else existingEntry1?.completedAt,
         error = error
       )
-      val updatedTasks = current.tasks.toMutableMap()
-      updatedTasks[targetKey] = updatedEntry
-      writeStatusLocked(DocOpsStatus(lastUpdated = now, tasks = updatedTasks))
+      val updatedTasks1 = current1.tasks.toMutableMap()
+      updatedTasks1[targetKey] = updatedEntry1
+      statusFile.writeText(JsonUtil.toJson(DocOpsStatus(lastUpdated = now1, tasks = updatedTasks1)))
+      log.info("Updated status for target '$targetKey' to $status${error?.let { " with error: $it" } ?: ""}")
+      return
     }
   }
 
@@ -217,20 +146,22 @@ class DocProcessor(
    * Used for cleanup when the overall process times out or is interrupted.
    */
   private fun markRunningTasksAs(status: TaskStatus, error: String? = null) {
-    withFileLock {
-      val current = readStatusLocked()
-      val now = nowTimestamp()
-      val updatedTasks = current.tasks.toMutableMap()
-      updatedTasks.forEach { (key, entry) ->
+    synchronized(statusLock) {
+      val current1 = readStatusLocked()
+      val now1 = nowTimestamp()
+      val updatedTasks1 = current1.tasks.toMutableMap()
+      updatedTasks1.forEach { (key, entry) ->
         if (entry.status == TaskStatus.RUNNING) {
-          updatedTasks[key] = entry.copy(
+          updatedTasks1[key] = entry.copy(
             status = status,
-            completedAt = now,
+            completedAt = now1,
             error = error
           )
         }
       }
-      writeStatusLocked(DocOpsStatus(lastUpdated = now, tasks = updatedTasks))
+      statusFile.writeText(JsonUtil.toJson(DocOpsStatus(lastUpdated = now1, tasks = updatedTasks1)))
+      log.info("Marked all RUNNING tasks as $status${error?.let { " with error: $it" } ?: ""}")
+      return
     }
   }
 
@@ -239,7 +170,7 @@ class DocProcessor(
    * Initialize the status file with all planned tasks set to PENDING.
    */
   private fun initializeStatus(tasks: List<ModificationTask>) {
-    withFileLock {
+    synchronized(statusLock) {
       val now = nowTimestamp()
       val taskEntries = tasks.associate { task ->
         val targetKey = task.data.main_file?.let { filePath ->
@@ -260,7 +191,8 @@ class DocProcessor(
       taskEntries.forEach { (key, entry) ->
         merged[key] = entry
       }
-      writeStatusLocked(DocOpsStatus(lastUpdated = now, tasks = merged))
+      log.info("Initialized status for ${taskEntries.size} tasks, preserving ${existing.tasks.count { it.value.status == TaskStatus.COMPLETED }} completed tasks from previous status")
+      statusFile.writeText(JsonUtil.toJson(DocOpsStatus(lastUpdated = now, tasks = merged)))
     }
   }
 
@@ -1275,9 +1207,7 @@ class DocProcessor(
     task: SessionTask? = null,
     model: ChatInterface? = null
   ): TaskExecutionConfig {
-    val model = model ?: (harness.fastModel).asApiChatModel(
-      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
-    ).let {
+    val model = model ?: harness.fastModel.asApiChatModel(user).let {
       if (task != null) it.getChildClient(task) else it
     }
     val data = mod.data.copy()
@@ -1337,20 +1267,6 @@ class DocProcessor(
         taskConfig
       }
     }.jsonCast(mod.taskType.executionConfigClass)
-  }
-
-  fun ChatModel.asApiChatModel(
-    userSettings: UserSettings
-  ): ChatInterface {
-    return (provider?.name
-      ?: throw IllegalStateException("Provider not specified for model ${name}")
-    ).let { providerName ->
-      asApiChatModel(
-        (userSettings.apis.find { it.provider?.name == providerName }?.key
-          ?: throw IllegalStateException("API key for model provider $providerName not found in user settings")
-            ).decrypt!!
-      ).instance(user)
-    }
   }
 
 
@@ -1973,4 +1889,17 @@ class DocProcessor(
 
     private val statusLock = Any()
   }
+}
+
+fun ChatModel.asApiChatModel(
+  user: User
+): ChatInterface {
+  val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user)
+  val name = provider?.name
+  if (name == null) {
+      throw IllegalStateException("Provider not specified for model $name")
+  }
+  val secureString = (userSettings.apis.find { it.provider?.name == name }?.key
+    ?: throw IllegalStateException("API key for model provider $name not found in user settings"))
+  return asApiChatModel((secureString).decrypt!!).instance(user)
 }
