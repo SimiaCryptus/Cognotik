@@ -26,42 +26,47 @@ interface PatchParser {
     }
 
 
-    fun calcFilename(root: Path): Path {
-      val root = root.normalize().removeAllUpperDirectories()
-      var file = filename?.let { root.resolve(it).normalize() }
-        ?: throw IllegalStateException("Cannot calculate filename for segment without filename: $this")
-      // look for repeated segments like "src/utils/src/utils/exampleUtils.js" and reduce to single path if not found
-      val parts = Path.of(filename).normalize().toList().map { it.toString() }
-      // Try to find a repeated prefix subsequence in the path parts
-      for (len in 1..parts.size / 2) {
-        val prefix = parts.subList(0, len)
-        val nextChunk = parts.subList(len, minOf(len * 2, parts.size))
-        val subList = nextChunk.subList(0, minOf(prefix.size, nextChunk.size))
-        if (prefix == subList && prefix.size <= nextChunk.size) {
-          // Found a repeated prefix - reconstruct without the duplication
-          val deduplicated = parts.subList(len, parts.size).joinToString("/")
-          val candidate = root.resolve(deduplicated).normalize()
-          file = candidate
-          break
-        }
-      }
-      // Also check if the filename itself starts with a prefix that matches part of the root path
-      val rootParts = root.normalize().toList().map { it.toString() }
-      val fileParts = Path.of(filename!!).normalize().toList().map { it.toString() }
-      // Check if the file path starts with segments that overlap with the end of the root path
-      for (overlap in minOf(rootParts.size, fileParts.size) downTo 1) {
-        val rootSuffix = rootParts.subList(rootParts.size - overlap, rootParts.size)
-        val filePrefix = fileParts.subList(0, overlap)
-        if (rootSuffix == filePrefix) {
-          val trimmedPath = fileParts.subList(overlap, fileParts.size).joinToString("/")
-          if (trimmedPath.isNotEmpty()) {
-            val candidate = root.resolve(trimmedPath).normalize()
+    fun calcFilename(root: Path): Path? {
+      try {
+        val root = root.normalize().removeAllUpperDirectories()
+        var file = filename?.let { root.resolve(it).normalize() }
+          ?: throw IllegalStateException("Cannot calculate filename for segment without filename: $this")
+        // look for repeated segments like "src/utils/src/utils/exampleUtils.js" and reduce to single path if not found
+        val parts = Path.of(filename).normalize().toList().map { it.toString() }
+        // Try to find a repeated prefix subsequence in the path parts
+        for (len in 1..parts.size / 2) {
+          val prefix = parts.subList(0, len)
+          val nextChunk = parts.subList(len, minOf(len * 2, parts.size))
+          val subList = nextChunk.subList(0, minOf(prefix.size, nextChunk.size))
+          if (prefix == subList && prefix.size <= nextChunk.size) {
+            // Found a repeated prefix - reconstruct without the duplication
+            val deduplicated = parts.subList(len, parts.size).joinToString("/")
+            val candidate = root.resolve(deduplicated).normalize()
             file = candidate
             break
           }
         }
+        // Also check if the filename itself starts with a prefix that matches part of the root path
+        val rootParts = root.normalize().toList().map { it.toString() }
+        val fileParts = Path.of(filename!!).normalize().toList().map { it.toString() }
+        // Check if the file path starts with segments that overlap with the end of the root path
+        for (overlap in minOf(rootParts.size, fileParts.size) downTo 1) {
+          val rootSuffix = rootParts.subList(rootParts.size - overlap, rootParts.size)
+          val filePrefix = fileParts.subList(0, overlap)
+          if (rootSuffix == filePrefix) {
+            val trimmedPath = fileParts.subList(overlap, fileParts.size).joinToString("/")
+            if (trimmedPath.isNotEmpty()) {
+              val candidate = root.resolve(trimmedPath).normalize()
+              file = candidate
+              break
+            }
+          }
+        }
+        return root.relativize(file)
+      } catch (e: Exception) {
+        log.debug("Error calculating filename for segment '{}': {}", filename, e.message)
+        return null
       }
-      return root.relativize(file)
     }
     fun Path.removeAllUpperDirectories(): Path =
       this.pathString.split("/").dropWhile { it == "." || it == ".." }.joinToString("/").let { Path.of(it) }
@@ -563,7 +568,7 @@ ${TRIPLE_TILDE}
     return map { segment ->
       if (segment.filename == null) return@map segment
       try {
-        val resolved = segment.calcFilename(root)
+        val resolved = segment.calcFilename(root) ?: return@map segment
         val relativePath = root.relativize(resolved).toString().replace('\\', '/')
         when (segment) {
           is ResponseSegment.DiffBlock -> ResponseSegment.DiffBlock(

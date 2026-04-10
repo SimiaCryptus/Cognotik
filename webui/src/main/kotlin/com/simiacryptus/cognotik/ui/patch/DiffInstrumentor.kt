@@ -70,7 +70,7 @@ class DiffInstrumentor(
         }
 
         is ResponseSegment.DiffBlock -> {
-          var filename = segment.calcFilename(root).toString()
+          var filename = segment.calcFilename(root)?.toString() ?: defaultFile!!
           log.debug("Processing diff block: filename={}, diff length={}", filename, segment.removeCodeFences().length)
           if (filename.isBlank() || !filename.contains('.')) {
             if (defaultFile != null) filename = defaultFile
