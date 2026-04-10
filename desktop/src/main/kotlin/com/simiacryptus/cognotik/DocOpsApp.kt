@@ -14,6 +14,17 @@ import java.net.URL
 import java.net.URLClassLoader
 import java.net.URLDecoder
 import java.util.jar.JarFile
+private val TEXT_EXTENSIONS = setOf(
+   "txt", "md", "html", "htm", "css", "js", "json", "xml", "yaml", "yml",
+   "csv", "tsv", "svg", "sh", "bat", "cmd", "ps1", "py", "rb", "pl",
+   "java", "kt", "kts", "groovy", "scala", "c", "cpp", "h", "hpp",
+   "ts", "tsx", "jsx", "vue", "scss", "sass", "less", "sql", "graphql",
+   "properties", "cfg", "conf", "ini", "toml", "env", "gitignore",
+   "dockerfile", "makefile", "gradle", "sbt", "rs", "go", "swift",
+   "r", "lua", "php", "asp", "jsp", "erb", "ejs", "hbs", "mustache",
+   "log", "tex", "rst", "adoc", "asciidoc", "mjs", "cjs"
+)
+
 
 /**
  *
@@ -75,9 +86,6 @@ class DocOpsApp(
         .info("Skipping resource extraction for existing session (overwriteOnRestart=false): $session")
       return newSession
     }
-
-
-
     val extracted = extractResources(resourcePath, sessionRoot)
     if (!extracted) {
       throw IllegalStateException("Resource not found: $resourcePath (classLoader=${classLoader.javaClass.name})")
@@ -123,9 +131,7 @@ class DocOpsApp(
           val targetFile = File(targetDir, relativePath)
           targetFile.parentFile?.mkdirs()
           jarFile.getInputStream(entry).use { input ->
-            targetFile.outputStream().use { output ->
-              input.copyTo(output)
-            }
+            copyWithLineEndingNormalization(input, targetFile)
           }
           found = true
         }
@@ -140,7 +146,7 @@ class DocOpsApp(
           val relativePath = file.relativeTo(resourceDir).path
           val targetFile = File(targetDir, relativePath)
           targetFile.parentFile?.mkdirs()
-          file.copyTo(targetFile, overwrite = true)
+          copyFileWithLineEndingNormalization(file, targetFile)
           found = true
         }
       }
@@ -175,9 +181,7 @@ class DocOpsApp(
                 val targetFile = File(targetDir, relativePath)
                 targetFile.parentFile?.mkdirs()
                 jarFile.getInputStream(entry).use { input ->
-                  targetFile.outputStream().use { output ->
-                    input.copyTo(output)
-                  }
+                 copyWithLineEndingNormalization(input, targetFile)
                 }
                 found = true
               }
@@ -204,7 +208,7 @@ class DocOpsApp(
                 val relativePath = file.relativeTo(resourceDir).path
                 val targetFile = File(targetDir, relativePath)
                 targetFile.parentFile?.mkdirs()
-                file.copyTo(targetFile, overwrite = true)
+               copyFileWithLineEndingNormalization(file, targetFile)
                 found = true
               }
             }
@@ -230,6 +234,35 @@ class DocOpsApp(
     }
     return urls
   }
+   private fun isTextFile(fileName: String): Boolean {
+     val ext = fileName.substringAfterLast('.', "").lowercase()
+     val baseName = fileName.substringAfterLast('/').substringAfterLast('\\').lowercase()
+     return ext in TEXT_EXTENSIONS || baseName in setOf(
+       "dockerfile", "makefile", "gemfile", "rakefile", "vagrantfile",
+       "license", "readme", "changelog", "authors", "contributors"
+     )
+   }
+   private fun copyWithLineEndingNormalization(input: java.io.InputStream, targetFile: File) {
+     if (isTextFile(targetFile.name)) {
+       val content = input.readBytes().toString(Charsets.UTF_8)
+       val normalized = content.replace("\r\n", "\n")
+       targetFile.writeText(normalized, Charsets.UTF_8)
+     } else {
+       targetFile.outputStream().use { output ->
+         input.copyTo(output)
+       }
+     }
+   }
+   private fun copyFileWithLineEndingNormalization(source: File, targetFile: File) {
+     if (isTextFile(targetFile.name)) {
+       val content = source.readText(Charsets.UTF_8)
+       val normalized = content.replace("\r\n", "\n")
+       targetFile.writeText(normalized, Charsets.UTF_8)
+     } else {
+       source.copyTo(targetFile, overwrite = true)
+     }
+   }
+
 
   companion object {
     var OVERWRITE: Boolean = false
