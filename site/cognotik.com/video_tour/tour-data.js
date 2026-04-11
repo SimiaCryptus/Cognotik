@@ -13,7 +13,7 @@ const TOUR_CHAPTERS = [
         description: "Get started with Cognotik by installing it on Windows. This walkthrough covers the full setup process from download to first launch.",
         icon: "💻",
         order: 1,
-        transcript: "Install_Windows.md"
+        transcript: "edit/Install_Windows.md"
     },
     {
         id: "plugin-install",
@@ -22,7 +22,7 @@ const TOUR_CHAPTERS = [
         description: "Learn how to extend Cognotik's capabilities by installing plugins from the plugin marketplace.",
         icon: "🔌",
         order: 2,
-        transcript: "Plugin_Install.md"
+        transcript: "edit/Plugin_Install.md"
     },
     {
         id: "sys-wizard",
@@ -31,7 +31,7 @@ const TOUR_CHAPTERS = [
         description: "Walk through the System Wizard to configure Cognotik's core settings and AI model connections.",
         icon: "🧙",
         order: 3,
-        transcript: "Sys_Wizard.md"
+        transcript: "edit/Sys_Wizard.md"
     },
     {
         id: "filesystem",
@@ -40,7 +40,7 @@ const TOUR_CHAPTERS = [
         description: "Explore the powerful filesystem backing every session — download zips, view markdown as HTML or PDF, and use built-in Git version control.",
         icon: "📁",
         order: 4,
-        transcript: "Filesystem.md"
+        transcript: "edit/Filesystem.md"
     },
     {
         id: "comic-generator",
@@ -49,7 +49,7 @@ const TOUR_CHAPTERS = [
         description: "Watch the Comic Serial app generate a full comic book — from script and character references to rendered HTML pages with dialogue.",
         icon: "🎨",
         order: 5,
-        transcript: "Comic_Generator.md"
+        transcript: "edit/Comic_Generator.md"
     },
     {
         id: "philosophical-calculator",
@@ -58,7 +58,7 @@ const TOUR_CHAPTERS = [
         description: "A fun demonstration of AI-powered app generation — a calculator that provides philosophical commentary on your equations.",
         icon: "🧮",
         order: 6,
-        transcript: "Philosophical_Calculator.md"
+        transcript: "edit/Philosophical_Calculator.md"
     },
     {
         id: "webapp-factory",
@@ -67,6 +67,6 @@ const TOUR_CHAPTERS = [
         description: "See how Cognotik can generate complete web applications from natural language descriptions using the WebApp Factory.",
         icon: "🏭",
         order: 7,
-        transcript: "WebApp_Factory.md"
+        transcript: "edit/WebApp_Factory.md"
     }
 ];

@@ -8,6 +8,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG_DIR="${SCRIPT_DIR}/logs"
+REVIEW_DIR="${SCRIPT_DIR}/review"
 mkdir -p "$LOG_DIR"
 
 # Arrays to track results
@@ -25,7 +26,7 @@ while IFS= read -r -d '' script; do
     TASK_LOGFILES+=("$log_file")
 
     echo "=== Running: ${task_name} ==="
-    bash "$script" > "$log_file" 2>&1
+     node "$script" > "$log_file" 2>&1
     exit_code=$?
     TASK_RESULTS+=("$exit_code")
 
@@ -35,7 +36,7 @@ while IFS= read -r -d '' script; do
         echo "=== Completed: ${task_name} ==="
     fi
     echo ""
-done < <(find "$SCRIPT_DIR" -maxdepth 1 -name 'edit_*.sh' -type f -print0 | sort -z)
+done < <(find "$REVIEW_DIR" -maxdepth 1 -name '*.js' -type f -print0 | sort -z)
 
 # --- Step 2: Normalize audio levels across all edited videos ---
 
@@ -46,7 +47,7 @@ TASK_NAMES+=("$task_name")
 TASK_LOGFILES+=("$log_file")
 
 echo "=== Running: ${task_name} ==="
-bash "${SCRIPT_DIR}/scripts/normalize_audio.sh" > "$log_file" 2>&1
+node "${SCRIPT_DIR}/scripts/normalize_audio.js" > "$log_file" 2>&1
 exit_code=$?
 TASK_RESULTS+=("$exit_code")
 

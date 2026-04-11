@@ -1,6 +1,7 @@
 # Video Tour Scripts
 
-A collection of bash scripts for processing, transcribing, and editing video tour files using FFmpeg, AWS Transcribe, and VAD-based audio analysis.
+A collection of bash scripts for processing, transcribing, and editing video tour files using FFmpeg, AWS Transcribe,
+and VAD-based audio analysis.
 
 ## Prerequisites
 
@@ -11,12 +12,14 @@ Run the dependency installer before using any other scripts:
 ```
 
 This installs:
+
 - **ffmpeg** — audio/video extraction and processing
 - **AWS CLI v2** — interaction with AWS Transcribe and S3
 - **jq** — JSON parsing for transcript results
 - **Python VAD dependencies** — Silero VAD and/or WebRTC VAD for silence detection
 
 You will also need valid AWS credentials configured via `aws configure` with the following IAM permissions:
+
 - `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject`
 - `transcribe:StartTranscriptionJob`, `transcribe:GetTranscriptionJob`, `transcribe:DeleteTranscriptionJob`
 
@@ -44,13 +47,15 @@ Installs Python dependencies for VAD-based silence segmentation. Can install for
 
 ### `extract_transcripts.sh`
 
-End-to-end pipeline that extracts audio from video files, uploads to S3, runs AWS Transcribe, and downloads the resulting transcripts.
+End-to-end pipeline that extracts audio from video files, uploads to S3, runs AWS Transcribe, and downloads the
+resulting transcripts.
 
 ```bash
 TRANSCRIBE_S3_BUCKET=my-bucket ./scripts/extract_transcripts.sh [subdir]
 ```
 
 **Arguments:**
+
 - `subdir` — Subdirectory name containing video files (default: `source`)
 
 **Environment Variables:**
@@ -64,6 +69,7 @@ TRANSCRIBE_S3_BUCKET=my-bucket ./scripts/extract_transcripts.sh [subdir]
 | `TRANSCRIBE_CLEANUP_S3` | `true` | Delete S3 audio files after transcription |
 
 **Pipeline Steps:**
+
 1. Extract audio (MP3, 16kHz mono) from each video via ffmpeg
 2. Upload audio files to S3
 3. Start AWS Transcribe jobs
@@ -82,6 +88,7 @@ Performs Voice Activity Detection (VAD) on video files to identify speech, silen
 ```
 
 **Arguments:**
+
 - `subdir` — Subdirectory name containing `.mp4` files (default: `source`)
 
 **Environment Variables:**
@@ -97,19 +104,22 @@ Performs Voice Activity Detection (VAD) on video files to identify speech, silen
 | `SEGMENT_DIR` | `<subdir>/segments` | Override output directory |
 
 **Output per video:**
+
 - `<name>.segments.json` — Machine-readable segment list with statistics
 - `<name>.segments.txt` — Human-readable summary report
 - `<name>.segments.srt` — SRT-style markers for use in video editors
 
 ### `normalize_audio.sh`
 
-Normalizes audio loudness across all `.mp4` files in a directory using two-pass EBU R128 loudness normalization. Videos are edited in-place.
+Normalizes audio loudness across all `.mp4` files in a directory using two-pass EBU R128 loudness normalization. Videos
+are edited in-place.
 
 ```bash
 ./scripts/normalize_audio.sh [subdir]
 ```
 
 **Arguments:**
+
 - `subdir` — Subdirectory name containing `.mp4` files (default: `edit`)
 
 **Environment Variables:**
@@ -122,9 +132,54 @@ Normalizes audio loudness across all `.mp4` files in a directory using two-pass 
 
 Files already within 0.5 LUFS of the target are automatically skipped.
 
+### `denoise_audio.sh`
+
+Reduces background hum, noise, and other unwanted sounds from audio tracks in video files using a multi-stage FFmpeg
+audio filter pipeline. Videos are edited in-place.
+
+```bash
+./scripts/denoise_audio.sh [subdir]
+```
+
+**Arguments:**
+
+- `subdir` — Subdirectory name containing `.mp4` files (default: `edit`)
+  **Filter Pipeline Stages:**
+
+1. **High-pass filter** — Removes low-frequency rumble below cutoff frequency
+2. **Hum removal** — Notch filters targeting 50Hz and/or 60Hz mains hum plus harmonics
+3. **FFT denoiser** (`afftdn`) — Broadband noise reduction using spectral analysis
+4. **Noise gate** — Suppresses low-level noise during non-speech segments
+   **Environment Variables:**
+
+| Variable             | Default    | Description                                               |
+|----------------------|------------|-----------------------------------------------------------|
+| `HIGHPASS_FREQ`      | `80`       | High-pass filter cutoff frequency (Hz)                    |
+| `ENABLE_HIGHPASS`    | `true`     | Enable/disable high-pass filter                           |
+| `AFFTDN_NOISE_FLOOR` | `-40`      | FFT denoiser noise floor (dB)                             |
+| `AFFTDN_NOISE_TYPE`  | `w`        | Noise type: `w`=white, `v`=vinyl, `s`=shellac, `p`=custom |
+| `AFFTDN_REDUCTION`   | `12`       | Noise reduction amount (dB)                               |
+| `ENABLE_AFFTDN`      | `true`     | Enable/disable FFT denoiser                               |
+| `HUM_FILTER`         | `none`     | Hum removal: `50` (EU), `60` (US), `both`, or `none`      |
+| `HUM_HARMONICS`      | `4`        | Number of hum harmonics to remove                         |
+| `GATE_THRESHOLD`     | `-35`      | Noise gate threshold (dB)                                 |
+| `GATE_ATTACK`        | `25`       | Noise gate attack time (ms)                               |
+| `GATE_RELEASE`       | `150`      | Noise gate release time (ms)                              |
+| `GATE_RANGE`         | `20`       | Noise gate range/reduction (dB)                           |
+| `ENABLE_GATE`        | `true`     | Enable/disable noise gate                                 |
+| `EDIT_DIR`           | `<subdir>` | Override input directory                                  |
+
+Each stage can be independently enabled or disabled. For example, to only apply hum removal for 60Hz mains:
+
+```bash
+ENABLE_HIGHPASS=false ENABLE_AFFTDN=false ENABLE_GATE=false HUM_FILTER=60 ./scripts/denoise_audio.sh edit
+```
+
 ### `runall_edits.sh`
 
-Convenience script that runs all `edit_*.sh` scripts found in the project root (sorted alphabetically), then runs `normalize_audio.sh` to level audio across all edited videos.
+Convenience script that runs all `edit_*.sh` scripts found in the project root (sorted alphabetically), then runs
+`denoise_audio.sh` to reduce background noise, and finally runs `normalize_audio.sh` to level audio across all edited
+videos.
 
 ```bash
 ./scripts/runall_edits.sh
@@ -146,6 +201,7 @@ video_tour/
     ├── install_vad_deps.sh    # VAD Python dependency installer
     ├── extract_transcripts.sh # Transcription pipeline
     ├── segment_audio.sh       # VAD silence segmentation
+     ├── denoise_audio.sh       # Audio noise reduction
     ├── normalize_audio.sh     # EBU R128 audio normalization
     └── runall_edits.sh        # Run all edits + normalize
 ```
