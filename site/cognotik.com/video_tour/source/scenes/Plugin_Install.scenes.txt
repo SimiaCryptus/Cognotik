@@ -1,0 +1,32 @@
+Video Scene Segmentation Report: Plugin_Install
+========================================================================
+Duration:         87.8s
+Resolution:       1920x1080
+FPS:              60.00
+Detection Method: content
+
+Summary:
+  Total Scenes:     9
+  Avg Duration:     9.8s
+  Min Duration:     1.3s
+  Max Duration:     22.0s
+  Avg Brightness:   177.4
+  Avg Motion:       2.84
+  Avg Edge Density: 0.0259
+
+Transitions:
+  cut         : 6
+  end         : 1
+  gradual     : 2
+
+   #      Start        End   Duration  Transition     Bright   Motion    Edges   Score
+-------------------------------------------------------------------------------------
+   1     0.000s    15.500s    15.500s  cut            233.6    9.76  0.0251  0.728
+   2    15.500s    37.500s    22.000s  cut            158.6    2.13  0.0170  0.718
+   3    37.500s    58.500s    21.000s  gradual        240.0    1.96  0.0203  0.532
+   4    58.500s    62.000s     3.500s  gradual        232.3    0.24  0.0212  0.530
+   5    62.000s    68.000s     6.000s  cut            157.0    4.87  0.0184  0.726
+   6    68.000s    76.000s     8.000s  cut            234.7    1.88  0.0292  0.890
+   7    76.000s    80.000s     4.000s  cut             50.3    1.40  0.0363  0.891
+   8    80.000s    86.500s     6.500s  cut            233.9    2.80  0.0299  0.881
+   9    86.500s    87.783s     1.283s  end             56.5    0.52  0.0356  0.000

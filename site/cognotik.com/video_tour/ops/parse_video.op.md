@@ -2,6 +2,7 @@
 transforms:
   - ../source/transcripts/([^/\.]+)\.srt -> ../review/$1.json
   - ../source/transcripts/([^/\.]+)\.json -> ../review/$1.json
+  - ../source/scenes/([^/\.]+)\.scenes.txt -> ../review/$1.json
   - ../source/segments/([^/\.]+)\.srt -> ../review/$1.json
 related:
   - scene_data.ts
@@ -17,4 +18,4 @@ related:
 * Edit out sections as appropriate for implicit cuts
 * Edit out mis-spoken dialogue as appropriate
 * Some longer periods of silence represent processing time and should not be cut out - instead, time-compress them and mute the audio
-* Add a into and outro transition with billboard/thanks to make it pretty
+* Add an into and outro transition with billboard/thanks to make it pretty

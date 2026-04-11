@@ -173,9 +173,11 @@ for video_path in "${VIDEO_FILES[@]}"; do
   # Step 2: Run scene detection and annotation via Python + OpenCV
   echo "  [DETECT] Running ${DETECTION_METHOD} scene detection..."
 
-  python3 << 'PYTHON_SCRIPT' - "$video_path" "$json_out" "$txt_out" "$srt_out" "$thumb_dir" "$annotated_out" "$DETECTION_METHOD" "$CONTENT_THRESHOLD" "$DIFF_THRESHOLD" "$MIN_SCENE_SEC" "$MAX_SCENE_SEC" "$ANALYSIS_FPS" "$THUMBNAIL_WIDTH" "$GENERATE_ANNOTATED" "$ANNOTATION_STYLE" "$VIDEO_DURATION"
-#TODO: This has been extracted to segment_video.py for better maintainability. Run that script instead of the inline code here.
-PYTHON_SCRIPT
+   python3 "$(dirname "${BASH_SOURCE[0]}")/segment_video.py" \
+     "$video_path" "$json_out" "$txt_out" "$srt_out" "$thumb_dir" "$annotated_out" \
+     "$DETECTION_METHOD" "$CONTENT_THRESHOLD" "$DIFF_THRESHOLD" \
+     "$MIN_SCENE_SEC" "$MAX_SCENE_SEC" "$ANALYSIS_FPS" "$THUMBNAIL_WIDTH" \
+     "$GENERATE_ANNOTATED" "$ANNOTATION_STYLE" "$VIDEO_DURATION"
 
   if [[ $? -eq 0 ]]; then
     echo "  [DONE] ${video_file} segmented successfully."

@@ -1,0 +1,250 @@
+{
+  "file": "Filesystem",
+  "duration": 167.5,
+  "resolution": "1920x1080",
+  "fps": 60.0,
+  "detection_method": "content",
+  "settings": {
+    "content_threshold": 0.3,
+    "diff_threshold": null,
+    "min_scene_sec": 2.0,
+    "max_scene_sec": 300.0,
+    "analysis_fps": 2.0
+  },
+  "statistics": {
+    "total_scenes": 11,
+    "avg_scene_duration": 15.227,
+    "min_scene_duration": 1.5,
+    "max_scene_duration": 62.5,
+    "transitions": {
+      "cut": 6,
+      "dissolve": 4,
+      "end": 1
+    },
+    "avg_brightness": 192.5,
+    "avg_motion": 4.71,
+    "avg_edge_density": 0.0289
+  },
+  "scenes": [
+    {
+      "start_frame": 0,
+      "end_frame": 1050,
+      "start_time": 0.0,
+      "end_time": 17.5,
+      "transition": "cut",
+      "score": 0.7414,
+      "brightness_mean": 118.6,
+      "brightness_std": 104.6,
+      "color": {
+        "hue_mean": 70.9,
+        "saturation_mean": 63.8,
+        "value_mean": 128.3
+      },
+      "edge_density": 0.0326,
+      "motion_mean": 13.35,
+      "motion_max": 138.34,
+      "duration": 17.5,
+      "thumbnail": "scene_0001.jpg"
+    },
+    {
+      "start_frame": 1050,
+      "end_frame": 1530,
+      "start_time": 17.5,
+      "end_time": 25.5,
+      "transition": "dissolve",
+      "score": 0.6492,
+      "brightness_mean": 195.3,
+      "brightness_std": 80.6,
+      "color": {
+        "hue_mean": 34.0,
+        "saturation_mean": 28.9,
+        "value_mean": 201.5
+      },
+      "edge_density": 0.0331,
+      "motion_mean": 2.31,
+      "motion_max": 55.5,
+      "duration": 8.0,
+      "thumbnail": "scene_0002.jpg"
+    },
+    {
+      "start_frame": 1530,
+      "end_frame": 2490,
+      "start_time": 25.5,
+      "end_time": 41.5,
+      "transition": "cut",
+      "score": 0.8898,
+      "brightness_mean": 235.0,
+      "brightness_std": 31.1,
+      "color": {
+        "hue_mean": 70.6,
+        "saturation_mean": 13.7,
+        "value_mean": 240.2
+      },
+      "edge_density": 0.0234,
+      "motion_mean": 0.85,
+      "motion_max": 27.26,
+      "duration": 16.0,
+      "thumbnail": "scene_0003.jpg"
+    },
+    {
+      "start_frame": 2490,
+      "end_frame": 2820,
+      "start_time": 41.5,
+      "end_time": 47.0,
+      "transition": "cut",
+      "score": 0.8902,
+      "brightness_mean": 228.1,
+      "brightness_std": 46.2,
+      "color": {
+        "hue_mean": 70.2,
+        "saturation_mean": 15.2,
+        "value_mean": 233.8
+      },
+      "edge_density": 0.0231,
+      "motion_mean": 12.4,
+      "motion_max": 676.62,
+      "duration": 5.5,
+      "thumbnail": "scene_0004.jpg"
+    },
+    {
+      "start_frame": 2820,
+      "end_frame": 3630,
+      "start_time": 47.0,
+      "end_time": 60.5,
+      "transition": "dissolve",
+      "score": 0.3164,
+      "brightness_mean": 229.0,
+      "brightness_std": 44.8,
+      "color": {
+        "hue_mean": 71.1,
+        "saturation_mean": 14.7,
+        "value_mean": 234.6
+      },
+      "edge_density": 0.0226,
+      "motion_mean": 10.1,
+      "motion_max": 597.88,
+      "duration": 13.5,
+      "thumbnail": "scene_0005.jpg"
+    },
+    {
+      "start_frame": 3630,
+      "end_frame": 5070,
+      "start_time": 60.5,
+      "end_time": 84.5,
+      "transition": "dissolve",
+      "score": 0.3609,
+      "brightness_mean": 238.9,
+      "brightness_std": 40.7,
+      "color": {
+        "hue_mean": 21.7,
+        "saturation_mean": 13.4,
+        "value_mean": 242.3
+      },
+      "edge_density": 0.0403,
+      "motion_mean": 3.83,
+      "motion_max": 27.04,
+      "duration": 24.0,
+      "thumbnail": "scene_0006.jpg"
+    },
+    {
+      "start_frame": 5070,
+      "end_frame": 5310,
+      "start_time": 84.5,
+      "end_time": 88.5,
+      "transition": "dissolve",
+      "score": 0.3394,
+      "brightness_mean": 226.4,
+      "brightness_std": 37.3,
+      "color": {
+        "hue_mean": 18.5,
+        "saturation_mean": 12.9,
+        "value_mean": 229.8
+      },
+      "edge_density": 0.0372,
+      "motion_mean": 0.19,
+      "motion_max": 7.19,
+      "duration": 4.0,
+      "thumbnail": "scene_0007.jpg"
+    },
+    {
+      "start_frame": 5310,
+      "end_frame": 6060,
+      "start_time": 88.5,
+      "end_time": 101.0,
+      "transition": "cut",
+      "score": 0.726,
+      "brightness_mean": 224.1,
+      "brightness_std": 52.9,
+      "color": {
+        "hue_mean": 74.6,
+        "saturation_mean": 14.6,
+        "value_mean": 229.7
+      },
+      "edge_density": 0.0235,
+      "motion_mean": 4.09,
+      "motion_max": 181.85,
+      "duration": 12.5,
+      "thumbnail": "scene_0008.jpg"
+    },
+    {
+      "start_frame": 6060,
+      "end_frame": 6210,
+      "start_time": 101.0,
+      "end_time": 103.5,
+      "transition": "cut",
+      "score": 0.7277,
+      "brightness_mean": 130.7,
+      "brightness_std": 45.9,
+      "color": {
+        "hue_mean": 56.9,
+        "saturation_mean": 14.9,
+        "value_mean": 134.7
+      },
+      "edge_density": 0.0228,
+      "motion_mean": 0.53,
+      "motion_max": 10.85,
+      "duration": 2.5,
+      "thumbnail": "scene_0009.jpg"
+    },
+    {
+      "start_frame": 6210,
+      "end_frame": 9960,
+      "start_time": 103.5,
+      "end_time": 166.0,
+      "transition": "cut",
+      "score": 0.8855,
+      "brightness_mean": 235.0,
+      "brightness_std": 31.1,
+      "color": {
+        "hue_mean": 69.9,
+        "saturation_mean": 13.9,
+        "value_mean": 240.3
+      },
+      "edge_density": 0.0233,
+      "motion_mean": 3.38,
+      "motion_max": 87.92,
+      "duration": 62.5,
+      "thumbnail": "scene_0010.jpg"
+    },
+    {
+      "start_frame": 9960,
+      "end_frame": 10050,
+      "start_time": 166.0,
+      "end_time": 167.5,
+      "transition": "end",
+      "score": 0.0,
+      "brightness_mean": 56.2,
+      "brightness_std": 61.3,
+      "color": {
+        "hue_mean": 101.4,
+        "saturation_mean": 64.5,
+        "value_mean": 65.3
+      },
+      "edge_density": 0.0365,
+      "motion_mean": 0.82,
+      "motion_max": 15.32,
+      "duration": 1.5,
+      "thumbnail": "scene_0011.jpg"
+    }
+  ]
+}

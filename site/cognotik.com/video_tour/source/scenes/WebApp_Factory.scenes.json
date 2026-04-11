@@ -1,0 +1,230 @@
+{
+  "file": "WebApp_Factory",
+  "duration": 340.75,
+  "resolution": "1920x1080",
+  "fps": 60.0,
+  "detection_method": "content",
+  "settings": {
+    "content_threshold": 0.3,
+    "diff_threshold": null,
+    "min_scene_sec": 2.0,
+    "max_scene_sec": 300.0,
+    "analysis_fps": 2.0
+  },
+  "statistics": {
+    "total_scenes": 10,
+    "avg_scene_duration": 34.075,
+    "min_scene_duration": 0.75,
+    "max_scene_duration": 112.5,
+    "transitions": {
+      "cut": 7,
+      "dissolve": 2,
+      "end": 1
+    },
+    "avg_brightness": 124.5,
+    "avg_motion": 3.35,
+    "avg_edge_density": 0.0279
+  },
+  "scenes": [
+    {
+      "start_frame": 0,
+      "end_frame": 540,
+      "start_time": 0.0,
+      "end_time": 9.0,
+      "transition": "cut",
+      "score": 0.8934,
+      "brightness_mean": 232.1,
+      "brightness_std": 35.7,
+      "color": {
+        "hue_mean": 79.7,
+        "saturation_mean": 15.5,
+        "value_mean": 237.8
+      },
+      "edge_density": 0.0279,
+      "motion_mean": 8.28,
+      "motion_max": 136.08,
+      "duration": 9.0,
+      "thumbnail": "scene_0001.jpg"
+    },
+    {
+      "start_frame": 540,
+      "end_frame": 3480,
+      "start_time": 9.0,
+      "end_time": 58.0,
+      "transition": "cut",
+      "score": 0.8942,
+      "brightness_mean": 50.3,
+      "brightness_std": 64.7,
+      "color": {
+        "hue_mean": 102.5,
+        "saturation_mean": 86.4,
+        "value_mean": 60.8
+      },
+      "edge_density": 0.0276,
+      "motion_mean": 3.4,
+      "motion_max": 38.82,
+      "duration": 49.0,
+      "thumbnail": "scene_0002.jpg"
+    },
+    {
+      "start_frame": 3480,
+      "end_frame": 10230,
+      "start_time": 58.0,
+      "end_time": 170.5,
+      "transition": "cut",
+      "score": 0.8887,
+      "brightness_mean": 240.7,
+      "brightness_std": 33.2,
+      "color": {
+        "hue_mean": 24.9,
+        "saturation_mean": 17.6,
+        "value_mean": 246.6
+      },
+      "edge_density": 0.0287,
+      "motion_mean": 2.39,
+      "motion_max": 35.86,
+      "duration": 112.5,
+      "thumbnail": "scene_0003.jpg"
+    },
+    {
+      "start_frame": 10230,
+      "end_frame": 14730,
+      "start_time": 170.5,
+      "end_time": 245.5,
+      "transition": "cut",
+      "score": 0.906,
+      "brightness_mean": 46.0,
+      "brightness_std": 60.2,
+      "color": {
+        "hue_mean": 106.1,
+        "saturation_mean": 85.8,
+        "value_mean": 55.8
+      },
+      "edge_density": 0.0272,
+      "motion_mean": 4.05,
+      "motion_max": 52.62,
+      "duration": 75.0,
+      "thumbnail": "scene_0004.jpg"
+    },
+    {
+      "start_frame": 14730,
+      "end_frame": 16530,
+      "start_time": 245.5,
+      "end_time": 275.5,
+      "transition": "cut",
+      "score": 0.9041,
+      "brightness_mean": 241.5,
+      "brightness_std": 33.7,
+      "color": {
+        "hue_mean": 13.7,
+        "saturation_mean": 11.5,
+        "value_mean": 245.3
+      },
+      "edge_density": 0.0309,
+      "motion_mean": 3.13,
+      "motion_max": 63.85,
+      "duration": 30.0,
+      "thumbnail": "scene_0005.jpg"
+    },
+    {
+      "start_frame": 16530,
+      "end_frame": 18780,
+      "start_time": 275.5,
+      "end_time": 313.0,
+      "transition": "cut",
+      "score": 0.9017,
+      "brightness_mean": 44.3,
+      "brightness_std": 60.3,
+      "color": {
+        "hue_mean": 106.8,
+        "saturation_mean": 85.3,
+        "value_mean": 53.8
+      },
+      "edge_density": 0.0228,
+      "motion_mean": 3.01,
+      "motion_max": 95.79,
+      "duration": 37.5,
+      "thumbnail": "scene_0006.jpg"
+    },
+    {
+      "start_frame": 18780,
+      "end_frame": 19110,
+      "start_time": 313.0,
+      "end_time": 318.5,
+      "transition": "cut",
+      "score": 0.9074,
+      "brightness_mean": 240.4,
+      "brightness_std": 32.9,
+      "color": {
+        "hue_mean": 27.0,
+        "saturation_mean": 12.2,
+        "value_mean": 244.5
+      },
+      "edge_density": 0.031,
+      "motion_mean": 2.38,
+      "motion_max": 21.18,
+      "duration": 5.5,
+      "thumbnail": "scene_0007.jpg"
+    },
+    {
+      "start_frame": 19110,
+      "end_frame": 19350,
+      "start_time": 318.5,
+      "end_time": 322.5,
+      "transition": "dissolve",
+      "score": 0.5878,
+      "brightness_mean": 45.1,
+      "brightness_std": 59.9,
+      "color": {
+        "hue_mean": 14.4,
+        "saturation_mean": 13.8,
+        "value_mean": 48.8
+      },
+      "edge_density": 0.0193,
+      "motion_mean": 2.0,
+      "motion_max": 40.77,
+      "duration": 4.0,
+      "thumbnail": "scene_0008.jpg"
+    },
+    {
+      "start_frame": 19350,
+      "end_frame": 20400,
+      "start_time": 322.5,
+      "end_time": 340.0,
+      "transition": "dissolve",
+      "score": 0.6366,
+      "brightness_mean": 48.7,
+      "brightness_std": 64.6,
+      "color": {
+        "hue_mean": 105.9,
+        "saturation_mean": 85.0,
+        "value_mean": 58.7
+      },
+      "edge_density": 0.0275,
+      "motion_mean": 4.3,
+      "motion_max": 44.33,
+      "duration": 17.5,
+      "thumbnail": "scene_0009.jpg"
+    },
+    {
+      "start_frame": 20400,
+      "end_frame": 20445,
+      "start_time": 340.0,
+      "end_time": 340.75,
+      "transition": "end",
+      "score": 0.0,
+      "brightness_mean": 55.4,
+      "brightness_std": 60.0,
+      "color": {
+        "hue_mean": 100.6,
+        "saturation_mean": 65.1,
+        "value_mean": 64.8
+      },
+      "edge_density": 0.0361,
+      "motion_mean": 0.55,
+      "motion_max": 17.21,
+      "duration": 0.75,
+      "thumbnail": "scene_0010.jpg"
+    }
+  ]
+}

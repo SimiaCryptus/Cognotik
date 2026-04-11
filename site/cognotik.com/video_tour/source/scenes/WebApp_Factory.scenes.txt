@@ -1,0 +1,33 @@
+Video Scene Segmentation Report: WebApp_Factory
+========================================================================
+Duration:         340.8s
+Resolution:       1920x1080
+FPS:              60.00
+Detection Method: content
+
+Summary:
+  Total Scenes:     10
+  Avg Duration:     34.1s
+  Min Duration:     0.8s
+  Max Duration:     112.5s
+  Avg Brightness:   124.5
+  Avg Motion:       3.35
+  Avg Edge Density: 0.0279
+
+Transitions:
+  cut         : 7
+  dissolve    : 2
+  end         : 1
+
+   #      Start        End   Duration  Transition     Bright   Motion    Edges   Score
+-------------------------------------------------------------------------------------
+   1     0.000s     9.000s     9.000s  cut            232.1    8.28  0.0279  0.893
+   2     9.000s    58.000s    49.000s  cut             50.3    3.40  0.0276  0.894
+   3    58.000s   170.500s   112.500s  cut            240.7    2.39  0.0287  0.889
+   4   170.500s   245.500s    75.000s  cut             46.0    4.05  0.0272  0.906
+   5   245.500s   275.500s    30.000s  cut            241.5    3.13  0.0309  0.904
+   6   275.500s   313.000s    37.500s  cut             44.3    3.01  0.0228  0.902
+   7   313.000s   318.500s     5.500s  cut            240.4    2.38  0.0310  0.907
+   8   318.500s   322.500s     4.000s  dissolve        45.1    2.00  0.0193  0.588
+   9   322.500s   340.000s    17.500s  dissolve        48.7    4.30  0.0275  0.637
+  10   340.000s   340.750s     0.750s  end             55.4    0.55  0.0361  0.000

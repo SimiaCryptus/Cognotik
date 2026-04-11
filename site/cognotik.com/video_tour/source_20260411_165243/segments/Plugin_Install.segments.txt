@@ -1,0 +1,51 @@
+Silence Segmentation Report: Plugin_Install
+============================================================
+Duration:       87.8s
+VAD Backend:    silero
+
+Summary:
+  Speech:      47.8s  ( 54.5%)  [19 segments]
+  Silence:     40.0s  ( 45.5%)  [20 segments]
+  Noise:        0.0s  (  0.0%)  [0 segments]
+
+   #  Type          Start        End   Duration   RMS dB
+-------------------------------------------------------
+   1  silence      0.000s     6.402s     6.402s   -52.9
+   2  speech       6.402s     9.790s     3.388s   -47.0
+   3  silence      9.790s    10.402s     0.612s   -55.2
+   4  speech      10.402s    15.390s     4.988s   -49.3
+   5  silence     15.390s    17.858s     2.468s   -54.3
+   6  speech      17.858s    20.670s     2.812s   -49.0
+   7  silence     20.670s    22.018s     1.348s   -47.2
+   8  speech      22.018s    23.646s     1.628s   -43.0
+   9  silence     23.646s    26.210s     2.564s   -53.0
+  10  speech      26.210s    29.534s     3.324s   -47.1
+  11  silence     29.534s    32.162s     2.628s   -53.7
+  12  speech      32.162s    37.310s     5.148s   -49.1
+  13  silence     37.310s    39.490s     2.180s   -53.0
+  14  speech      39.490s    40.222s     0.732s   -48.1
+  15  silence     40.222s    40.994s     0.772s   -52.7
+  16  speech      40.994s    42.974s     1.980s   -48.1
+  17  silence     42.974s    43.970s     0.996s   -52.4
+  18  speech      43.970s    45.566s     1.596s   -49.7
+  19  silence     45.566s    47.746s     2.180s   -51.9
+  20  speech      47.746s    49.886s     2.140s   -47.9
+  21  silence     49.886s    51.842s     1.956s   -52.1
+  22  speech      51.842s    53.758s     1.916s   -50.1
+  23  silence     53.758s    55.650s     1.892s   -52.9
+  24  speech      55.650s    57.630s     1.980s   -49.9
+  25  silence     57.630s    60.642s     3.012s   -53.0
+  26  speech      60.642s    61.598s     0.956s   -50.8
+  27  silence     61.598s    62.306s     0.708s   -52.8
+  28  speech      62.306s    63.582s     1.276s   -47.5
+  29  silence     63.582s    64.130s     0.548s   -50.1
+  30  speech      64.130s    65.278s     1.148s   -49.6
+  31  silence     65.278s    66.242s     0.964s   -52.1
+  32  speech      66.242s    66.718s     0.476s   -49.7
+  33  silence     66.718s    68.258s     1.540s   -51.8
+  34  speech      68.258s    74.270s     6.012s   -49.0
+  35  silence     74.270s    78.978s     4.708s   -51.1
+  36  speech      78.978s    83.646s     4.668s   -47.6
+  37  silence     83.646s    84.354s     0.708s   -47.4
+  38  speech      84.354s    86.014s     1.660s   -49.2
+  39  silence     86.014s    87.787s     1.773s   -50.3

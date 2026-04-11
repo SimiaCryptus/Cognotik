@@ -1,0 +1,36 @@
+1
+00:00:00,000 --> 00:00:14,000
+[SCENE 1] 14.0s | CUT | Bright:234 Motion:9.5
+
+2
+00:00:14,000 --> 00:00:17,500
+[SCENE 2] 3.5s | CUT | Bright:45 Motion:0.4
+
+3
+00:00:17,500 --> 00:00:35,000
+[SCENE 3] 17.5s | CUT | Bright:234 Motion:0.5
+
+4
+00:00:35,000 --> 00:02:19,000
+[SCENE 4] 104.0s | CUT | Bright:43 Motion:2.7
+
+5
+00:02:19,000 --> 00:02:49,000
+[SCENE 5] 30.0s | CUT | Bright:230 Motion:8.2
+
+6
+00:02:49,000 --> 00:02:55,500
+[SCENE 6] 6.5s | CUT | Bright:44 Motion:1.9
+
+7
+00:02:55,500 --> 00:02:58,000
+[SCENE 7] 2.5s | CUT | Bright:230 Motion:1.0
+
+8
+00:02:58,000 --> 00:03:09,500
+[SCENE 8] 11.5s | DISSOLVE | Bright:50 Motion:7.2
+
+9
+00:03:09,500 --> 00:03:10,199
+[SCENE 9] 0.7s | END | Bright:56 Motion:0.2
+
