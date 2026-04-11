@@ -1,0 +1,11 @@
+To generate a web application, you can use the web app factory. Simply putting in some details of what you want to build here for this demo we will implement a graphing calculator. Save your idea. Make sure that you have some models selected. We're going to be using Gemini 3 Flash preview for this demo. You do have to have an image model selected even if you aren't using it. It doesn't have to be actually an image model. You just have to select something. And then we go to pipeline and build web app. This is the only step in this pipeline, but this step is quite involved. It starts by generating a project plan of tasks and then executes them appropriately, keeping in mind all of their dependencies.
+
+So here it creates the foundational documents for the projects, influences HTML structure, visual style. Now it's implementing the core logic.
+
+And once it is complete, the web app UI will update. The implementation stuff is done and we can see the read me in the project route. At this point we can download the zip if you want. Also notable is that this application has Git support integrated into it. If you know what Git is, it's a version control system. If you don't know what Git is, it is a version control system that essentially allows you to version control files.
+
+Now that the implementation is done, we can also launch the app. And here we see we are plotting sin of x. What happens if we say sin of x plus 10 of x? Here we go. That looks about right. Or what about divide instead of times? What about times? Oh, power, that looks interesting. Anyway, it seems to work, but you know what? It's too bright.
+
+Let's ask for some changes. Update. We can update our web app using the updater, you know, we can say implement a dark theme. Save our notes and run the update. This will update our project with our requested updates. This can also be useful if you see bugs or want a new feature or really any change. The update is done. Let's go look at our graphing calculator, refresh it, and oh. We've got a theme button and it works. So, that's how to use the web app factory to generate your own applications.
+
+We can also click usage and we can see that this entire project demo cost 11 cents so far. I hope you find this useful.

@@ -1,0 +1,60 @@
+1
+00:00:06,309 --> 00:00:11,148
+The cognotic desktop application is extensible. You can install a
+
+2
+00:00:11,148 --> 00:00:18,129
+plug-in by clicking Plugins from the main page, clicking
+
+3
+00:00:18,129 --> 00:00:23,879
+Upload Plugin, Choose File. Selecting the plug-in jar
+
+4
+00:00:26,138 --> 00:00:29,019
+You may want to check auto load and then upload
+
+5
+00:00:29,019 --> 00:00:34,168
+plugin. Upon starting this plugin
+
+6
+00:00:34,380 --> 00:00:37,359
+asks you to accept the license agreement, which is OK
+
+7
+00:00:39,459 --> 00:00:44,459
+and this plugin also requires you to be
+
+8
+00:00:44,459 --> 00:00:50,039
+on Patreon and verify your subscription status
+
+9
+00:00:51,810 --> 00:00:56,889
+This plug-in is for supporters of my
+
+10
+00:00:56,889 --> 00:01:02,728
+Patreon. Once you click allow
+
+11
+00:01:02,728 --> 00:01:08,730
+on that, you can close that and then refresh
+
+12
+00:01:08,730 --> 00:01:11,489
+the home page and you see some extra options that
+
+13
+00:01:11,489 --> 00:01:19,099
+we can go over in other demo videos. As
+
+14
+00:01:19,099 --> 00:01:25,459
+you can see, plug-in installation is simple, and adds working
+
+15
+00:01:25,459 --> 00:01:26,519
+applications.
+
