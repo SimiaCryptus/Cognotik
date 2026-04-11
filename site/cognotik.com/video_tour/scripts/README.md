@@ -45,6 +45,18 @@ Installs Python dependencies for VAD-based silence segmentation. Can install for
 - **webrtc** — Installs webrtcvad (lightweight, fast)
 - **all** — Installs both (default)
 
+### `install_video_deps.sh`
+
+Installs Python dependencies for video-based scene segmentation and annotation using OpenCV.
+
+```bash
+./scripts/install_video_deps.sh [minimal|full|all]
+```
+
+- **minimal** — OpenCV headless + numpy (scene detection only)
+- **full** — OpenCV full + scikit-image + matplotlib + Pillow (with annotation/visualization)
+- **all** — Everything including PySceneDetect (default)
+
 ### `extract_transcripts.sh`
 
 End-to-end pipeline that extracts audio from video files, uploads to S3, runs AWS Transcribe, and downloads the
@@ -109,6 +121,73 @@ Performs Voice Activity Detection (VAD) on video files to identify speech, silen
 - `<name>.segments.txt` — Human-readable summary report
 - `<name>.segments.srt` — SRT-style markers for use in video editors
 
+### `segment_video.sh`
+
+Performs video-based scene segmentation and annotation using FFmpeg and OpenCV. Detects scene boundaries, classifies
+transition types, extracts thumbnails, and computes per-scene visual statistics.
+
+```bash
+./scripts/segment_video.sh [subdir]
+```
+
+**Arguments:**
+
+- `subdir` — Subdirectory name containing `.mp4` files (default: `source`)
+
+**Detection Methods:**
+
+- **content** — Histogram correlation + frame differencing (default, balanced accuracy)
+- **threshold** — Simple mean absolute difference threshold (fast)
+- **adaptive** — Two-pass adaptive threshold using local statistics (best for variable content)
+
+**Environment Variables:**
+| Variable | Default | Description |
+|---|---|---|
+| `DETECTION_METHOD` | `content` | Detection method: `content`, `threshold`, or `adaptive` |
+| `CONTENT_THRESHOLD` | `0.3` | Content detection sensitivity (0.0–1.0) |
+| `DIFF_THRESHOLD` | `30` | Frame difference threshold (0–255) |
+| `MIN_SCENE_SEC` | `2.0` | Minimum scene duration (seconds) |
+| `MAX_SCENE_SEC` | `300` | Maximum scene duration before forced split (seconds) |
+| `ANALYSIS_FPS` | `2` | FPS for analysis (lower = faster) |
+| `THUMBNAIL_WIDTH` | `640` | Thumbnail width in pixels |
+| `GENERATE_ANNOTATED` | `false` | Generate annotated video with scene overlays |
+| `ANNOTATION_STYLE` | `full` | Overlay style: `minimal` or `full` |
+| `EDIT_DIR` | `<subdir>` | Override input directory |
+| `SCENE_DIR` | `<subdir>/scenes` | Override output directory |
+
+**Output per video:**
+
+- `<name>.scenes.json` — Machine-readable scene list with metadata and statistics
+- `<name>.scenes.txt` — Human-readable scene summary report
+- `<name>.scenes.srt` — SRT-style scene markers for use in video editors
+- `<name>.thumbnails/` — Representative thumbnail image for each scene
+- `<name>.annotated.mp4` — (optional) Video with scene boundary overlays
+
+**Per-scene metadata includes:**
+
+- Scene boundaries (start/end time and frame number)
+- Transition type classification (cut, fade_in, fade_out, dissolve, gradual)
+- Brightness mean and standard deviation
+- Color statistics (HSV)
+- Edge density
+- Motion estimation (optical flow)
+
+**Examples:**
+
+```bash
+# Basic scene detection with defaults
+./scripts/segment_video.sh source
+
+# Fast threshold-based detection
+DETECTION_METHOD=threshold DIFF_THRESHOLD=40 ./scripts/segment_video.sh source
+
+# Adaptive detection with annotated output video
+DETECTION_METHOD=adaptive GENERATE_ANNOTATED=true ./scripts/segment_video.sh source
+
+# High-sensitivity content detection with smaller thumbnails
+CONTENT_THRESHOLD=0.15 THUMBNAIL_WIDTH=320 ./scripts/segment_video.sh edit
+```
+
 ### `normalize_audio.sh`
 
 Normalizes audio loudness across all `.mp4` files in a directory using two-pass EBU R128 loudness normalization. Videos
@@ -123,6 +202,7 @@ are edited in-place.
 - `subdir` — Subdirectory name containing `.mp4` files (default: `edit`)
 
 **Environment Variables:**
+
 | Variable | Default | Description |
 |---|---|---|
 | `TARGET_I` | `-16` | Target integrated loudness (LUFS) |
@@ -199,8 +279,10 @@ video_tour/
     ├── README.md              # This file
     ├── install_deps.sh        # Dependency installer
     ├── install_vad_deps.sh    # VAD Python dependency installer
+     ├── install_video_deps.sh  # Video/OpenCV Python dependency installer
     ├── extract_transcripts.sh # Transcription pipeline
     ├── segment_audio.sh       # VAD silence segmentation
+     ├── segment_video.sh       # Video scene segmentation & annotation
      ├── denoise_audio.sh       # Audio noise reduction
     ├── normalize_audio.sh     # EBU R128 audio normalization
     └── runall_edits.sh        # Run all edits + normalize
@@ -215,12 +297,15 @@ video_tour/
 # 2. Configure AWS credentials
 aws configure
 
-# 3. Analyze source videos for speech/silence regions
+# 3. Analyze source videos for speech/silence regions (audio)
 ./scripts/segment_audio.sh source
 
-# 4. Transcribe source videos
+# 4. Analyze source videos for scene boundaries (video)
+./scripts/segment_video.sh source
+
+# 5. Transcribe source videos
 TRANSCRIBE_S3_BUCKET=my-bucket ./scripts/extract_transcripts.sh source
 
-# 5. Create edit scripts based on analysis, then run all edits
+# 6. Create edit scripts based on analysis, then run all edits
 ./scripts/runall_edits.sh
 ```

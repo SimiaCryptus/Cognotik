@@ -45,6 +45,7 @@ veu.runEditPipeline({
     introDuration: 3,
     outroLines: ['Thanks for watching!', 'Visit example.com'],
     outroDuration: 4,
+     transitionDuration: 0.5,
     segments: [
         {id: 'seg01', start: '00:00:05', end: '00:00:30', action: 'keep', label: 'Introduction'},
         {id: 'seg02', start: '00:00:30', end: '00:00:45', action: 'cut', label: 'False start'},
@@ -266,6 +267,8 @@ Segment definition:
     speed:4,              // For compress: alternative speed multiplier
     overlay:'Loading...', // For compress: overlay text
     muteAudio:true,       // For compress: mute audio (default true)
+     fadeIn:0.5,           // Override default transition fade-in (seconds)
+     fadeOut:0.3,          // Override default transition fade-out (seconds)
 }
 ```
 
@@ -335,6 +338,7 @@ Config:
 | `segments`       | *required*  | Array of segment definitions               |
 | `normalizeAudio` | `false`     | Apply loudnorm after concat                |
 | `concatMethod`   | `'demuxer'` | `'demuxer'` or `'mpegts'`                  |
+| `transitionDuration` | `0.5`  | Default fade duration between segments (seconds). Set to 0 to disable. |
 
 ## Best Practices
 

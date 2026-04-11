@@ -10,9 +10,10 @@
  *   const veu = require('./lib/video-edit-utils');
  */
 
-const { execSync } = require("child_process");
+const {execSync} = require("child_process");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 
 // ---------------------------------------------------------------------------
 // Shell / Command Execution
@@ -27,7 +28,7 @@ const path = require("path");
  */
 function run(cmd, opts = {}) {
     console.log(`> ${cmd}`);
-    execSync(cmd, { stdio: "inherit", ...opts });
+    execSync(cmd, {stdio: "inherit", ...opts});
 }
 
 /**
@@ -38,7 +39,7 @@ function run(cmd, opts = {}) {
  */
 function runCapture(cmd) {
     console.log(`> ${cmd}`);
-    return execSync(cmd, { encoding: "utf-8" }).trim();
+    return execSync(cmd, {encoding: "utf-8"}).trim();
 }
 
 // ---------------------------------------------------------------------------
@@ -52,7 +53,7 @@ function runCapture(cmd) {
  */
 function ensureDirs(...dirs) {
     for (const dir of dirs) {
-        fs.mkdirSync(dir, { recursive: true });
+        fs.mkdirSync(dir, {recursive: true});
     }
 }
 
@@ -65,11 +66,25 @@ function cleanupDir(dirPath) {
     console.log(`Cleaning up temporary files in ${dirPath}...`);
     try {
         if (fs.existsSync(dirPath)) {
-            fs.rmSync(dirPath, { recursive: true, force: true });
+            fs.rmSync(dirPath, {recursive: true, force: true});
         }
     } catch (e) {
         console.warn(`Warning: Could not remove temp dir ${dirPath}: ${e.message}`);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Temp Directory
+// ---------------------------------------------------------------------------
+/**
+ * Create a proper temporary directory under the OS temp folder.
+ * Returns the path to the newly created directory.
+ *
+ * @param {string} [prefix='veu-'] - Prefix for the temp directory name
+ * @returns {string} Path to the created temporary directory
+ */
+function createTempDir(prefix = "veu-") {
+    return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
 // ---------------------------------------------------------------------------
@@ -163,7 +178,7 @@ function probeVideo(inputPath) {
 
     const channelLayout = channels === 1 ? "mono" : "stereo";
 
-    return { width, height, fps, fpsExact, sampleRate, channels, channelLayout };
+    return {width, height, fps, fpsExact, sampleRate, channels, channelLayout};
 }
 
 // ---------------------------------------------------------------------------
@@ -294,11 +309,12 @@ function generateBillboard(outputPath, opts) {
         });
     });
 
-    // Build video filter: fade in, text overlays, fade out
+    // Build video filter: text overlays first, then fade in/out on top
+    // Order matters: drawtext first so the text is part of the faded image
     const vfParts = [];
+    vfParts.push(...textFilters);
     if (fadeIn > 0) vfParts.push(`fade=t=in:st=0:d=${fadeIn}`);
     if (fadeOut > 0) vfParts.push(`fade=t=out:st=${(duration - fadeOut).toFixed(3)}:d=${fadeOut}`);
-    vfParts.push(...textFilters);
 
     const vf = vfParts.length > 0 ? `-vf "${vfParts.join(",")}"` : "";
 
@@ -325,8 +341,11 @@ function generateBillboard(outputPath, opts) {
  * @param {string} [subtitle] - Optional subtitle
  * @param {object} videoInfo - From probeVideo()
  * @param {number} [duration=3]
+ * @param {object} [fadeOpts] - Override fade durations
+ * @param {number} [fadeOpts.fadeIn=0.5]
+ * @param {number} [fadeOpts.fadeOut=0.5]
  */
-function generateIntroBillboard(outputPath, title, subtitle, videoInfo, duration = 3) {
+function generateIntroBillboard(outputPath, title, subtitle, videoInfo, duration = 3, fadeOpts = {}) {
     const lines = [
         {
             text: title,
@@ -350,8 +369,8 @@ function generateIntroBillboard(outputPath, title, subtitle, videoInfo, duration
         fps: videoInfo.fps,
         sampleRate: videoInfo.sampleRate,
         channelLayout: videoInfo.channelLayout,
-        fadeIn: 0.5,
-        fadeOut: 0.5,
+        fadeIn: fadeOpts.fadeIn !== undefined ? fadeOpts.fadeIn : 0.5,
+        fadeOut: fadeOpts.fadeOut !== undefined ? fadeOpts.fadeOut : 0.5,
         lines,
     });
 }
@@ -363,8 +382,11 @@ function generateIntroBillboard(outputPath, title, subtitle, videoInfo, duration
  * @param {string[]} textLines - Array of text lines (first is largest)
  * @param {object} videoInfo - From probeVideo()
  * @param {number} [duration=4]
+ * @param {object} [fadeOpts] - Override fade durations
+ * @param {number} [fadeOpts.fadeIn=0.5]
+ * @param {number} [fadeOpts.fadeOut=0.5]
  */
-function generateOutroBillboard(outputPath, textLines, videoInfo, duration = 4) {
+function generateOutroBillboard(outputPath, textLines, videoInfo, duration = 4, fadeOpts = {}) {
     const lineSpacing = Math.round(videoInfo.height / 12);
     const totalHeight = (textLines.length - 1) * lineSpacing;
     const startY = -Math.round(totalHeight / 2);
@@ -383,8 +405,8 @@ function generateOutroBillboard(outputPath, textLines, videoInfo, duration = 4) 
         fps: videoInfo.fps,
         sampleRate: videoInfo.sampleRate,
         channelLayout: videoInfo.channelLayout,
-        fadeIn: 0.5,
-        fadeOut: 0.5,
+        fadeIn: fadeOpts.fadeIn !== undefined ? fadeOpts.fadeIn : 0.5,
+        fadeOut: fadeOpts.fadeOut !== undefined ? fadeOpts.fadeOut : 0.5,
         lines,
     });
 }
@@ -404,6 +426,8 @@ function generateOutroBillboard(outputPath, textLines, videoInfo, duration = 4) 
  * @property {number} [speed] - For 'compress': alternative to targetDuration — speed multiplier
  * @property {string} [overlay] - For 'compress': overlay text to display
  * @property {boolean} [muteAudio] - For 'compress': replace audio with silence (default true)
+ * @property {number} [fadeIn] - Fade-in duration in seconds (overrides default)
+ * @property {number} [fadeOut] - Fade-out duration in seconds (overrides default)
  */
 
 /**
@@ -418,17 +442,29 @@ function generateOutroBillboard(outputPath, textLines, videoInfo, duration = 4) 
  * @param {number} [opts.sampleRate=44100]
  * @param {number} [opts.channels=2]
  * @param {number} [opts.crf=18]
+ * @param {number} [opts.fadeIn=0] - Fade-in duration in seconds (0 = no fade)
+ * @param {number} [opts.fadeOut=0] - Fade-out duration in seconds (0 = no fade)
  */
 function extractSegment(inputPath, outputPath, start, end, opts = {}) {
-    const { fps, sampleRate = 44100, channels = 2, crf = 18 } = opts;
+    const {fps, sampleRate = 44100, channels = 2, crf = 18, fadeIn = 0, fadeOut = 0} = opts;
+
+    const segDuration = tcToSeconds(end) - tcToSeconds(start);
+
     const vfParts = [];
     if (fps) vfParts.push(`fps=${fps}`);
     vfParts.push("format=yuv420p");
+    if (fadeIn > 0) vfParts.push(`fade=t=in:st=0:d=${fadeIn}`);
+    if (fadeOut > 0) vfParts.push(`fade=t=out:st=${(segDuration - fadeOut).toFixed(3)}:d=${fadeOut}`);
     const vf = vfParts.length > 0 ? `-vf "${vfParts.join(",")}"` : "";
+    const afParts = [];
+    if (fadeIn > 0) afParts.push(`afade=t=in:st=0:d=${fadeIn}`);
+    if (fadeOut > 0) afParts.push(`afade=t=out:st=${(segDuration - fadeOut).toFixed(3)}:d=${fadeOut}`);
+    const af = afParts.length > 0 ? `-af "${afParts.join(",")}"` : "";
+
 
     run(
         `ffmpeg -y -i "${inputPath}" -ss ${start} -to ${end} ` +
-        `${vf} ` +
+        `${vf} ${af} ` +
         `-c:v libx264 -preset fast -crf ${crf} -pix_fmt yuv420p ` +
         `-c:a aac -ar ${sampleRate} -ac ${channels} -b:a 128k ` +
         `"${outputPath}"`
@@ -495,6 +531,22 @@ function extractCompressedSegment(inputPath, outputPath, start, end, opts = {}) 
         );
     }
 
+    // Determine fade durations (passed through from processSegments or caller)
+    const fadeIn = opts.fadeIn || 0;
+    const fadeOut = opts.fadeOut || 0;
+
+    if (fadeIn > 0) vfParts.push(`fade=t=in:st=0:d=${fadeIn}`);
+    if (fadeOut > 0) {
+        vfParts.push(`fade=t=out:st=${(targetDuration - fadeOut).toFixed(3)}:d=${fadeOut}`);
+    }
+
+    // Build audio filter for fades on the silent/sped-up audio
+    const afParts = [];
+    if (fadeIn > 0) afParts.push(`afade=t=in:st=0:d=${fadeIn}`);
+    if (fadeOut > 0) {
+        afParts.push(`afade=t=out:st=${(targetDuration - fadeOut).toFixed(3)}:d=${fadeOut}`);
+    }
+
     if (muteAudio) {
         // Replace audio with silence
         run(
@@ -510,10 +562,13 @@ function extractCompressedSegment(inputPath, outputPath, start, end, opts = {}) 
     } else {
         // Keep audio but speed it up
         const atempoChain = buildAtempoChain(speed);
+        const fullAf = afParts.length > 0
+            ? `${atempoChain},${afParts.join(",")}`
+            : atempoChain;
         run(
             `ffmpeg -y -i "${inputPath}" -ss ${start} -to ${end} ` +
             `-vf "${vfParts.join(",")}" ` +
-            `-af "${atempoChain}" ` +
+            `-af "${fullAf}" ` +
             `-c:v libx264 -preset fast -crf ${crf} -pix_fmt yuv420p ` +
             `-c:a aac -ar ${sampleRate} -b:a 128k ` +
             `"${outputPath}"`
@@ -533,11 +588,17 @@ function extractCompressedSegment(inputPath, outputPath, start, end, opts = {}) 
  * @param {number} [opts.sampleRate=44100]
  * @param {number} [opts.channels=2]
  * @param {string} [opts.channelLayout='stereo']
+ * @param {number} [opts.transitionDuration=0] - Default cross-fade duration between segments (seconds)
  * @returns {string[]} Array of output file paths (only for non-cut segments)
  */
 function processSegments(segments, inputPath, tempDir, opts = {}) {
     const outputFiles = [];
     let idx = 0;
+    // Filter to only actionable (non-cut) segments to determine neighbors for transitions
+    const actionable = segments.filter(s => s.action !== "cut");
+    const transitionDur = opts.transitionDuration || 0;
+    let actionableIdx = 0;
+
 
     for (const seg of segments) {
         if (seg.action === "cut") {
@@ -547,6 +608,14 @@ function processSegments(segments, inputPath, tempDir, opts = {}) {
 
         const id = seg.id || `seg_${String(idx).padStart(3, "0")}`;
         const outFile = path.join(tempDir, `${id}.mp4`);
+        // Determine fade durations for this segment
+        // First actionable segment gets fadeIn, last gets fadeOut, middle segments
+        // get both if transitionDuration > 0 (for smoother joins)
+        const isFirst = actionableIdx === 0;
+        const isLast = actionableIdx === actionable.length - 1;
+        const segFadeIn = seg.fadeIn !== undefined ? seg.fadeIn : (isFirst ? 0 : transitionDur);
+        const segFadeOut = seg.fadeOut !== undefined ? seg.fadeOut : (isLast ? 0 : transitionDur);
+
 
         if (seg.action === "keep") {
             console.log(`\n--- KEEP: ${seg.label || id} (${seg.start} - ${seg.end}) ---`);
@@ -554,6 +623,8 @@ function processSegments(segments, inputPath, tempDir, opts = {}) {
                 fps: opts.fps,
                 sampleRate: opts.sampleRate || 44100,
                 channels: opts.channels || 2,
+                fadeIn: segFadeIn,
+                fadeOut: segFadeOut,
             });
         } else if (seg.action === "compress") {
             const target = seg.targetDuration
@@ -568,11 +639,14 @@ function processSegments(segments, inputPath, tempDir, opts = {}) {
                 fps: opts.fps,
                 sampleRate: opts.sampleRate || 44100,
                 channelLayout: opts.channelLayout || "stereo",
+                fadeIn: segFadeIn,
+                fadeOut: segFadeOut,
             });
         }
 
         outputFiles.push(outFile);
         idx++;
+        actionableIdx++;
     }
 
     return outputFiles;
@@ -598,12 +672,12 @@ function buildKeepSegments(start, end, cuts) {
 
     for (const cut of sorted) {
         if (cut.from > cursor) {
-            segments.push({ from: cursor, to: cut.from });
+            segments.push({from: cursor, to: cut.from});
         }
         cursor = Math.max(cursor, cut.to);
     }
     if (cursor < end) {
-        segments.push({ from: cursor, to: end });
+        segments.push({from: cursor, to: end});
     }
     return segments;
 }
@@ -715,7 +789,8 @@ function concatenateViaMpegTs(inputFiles, outputPath, tempDir, opts = {}) {
  * @param {number} [opts.targetLRA=11] - Loudness range target (LU)
  */
 function normalizeAudio(inputPath, outputPath, opts = {}) {
-    const { targetI = -16, targetTP = -1.5, targetLRA = 11 } = opts;
+    const {targetI = -16, targetTP = -1.5, targetLRA = 11} = opts;
+    ensureDirs(path.dirname(outputPath));
     run(
         `ffmpeg -y -i "${inputPath}" ` +
         `-c:v copy ` +
@@ -732,7 +807,7 @@ function normalizeAudio(inputPath, outputPath, opts = {}) {
  * @typedef {Object} EditPipelineOptions
  * @property {string} inputPath - Source video file
  * @property {string} outputPath - Final output file
- * @property {string} tempDir - Temporary working directory
+ * @property {string} [tempDir] - Temporary working directory (default: auto-created in OS temp folder)
  * @property {string} [introTitle] - Intro billboard title
  * @property {string} [introSubtitle] - Intro billboard subtitle
  * @property {number} [introDuration=3] - Intro duration in seconds
@@ -741,6 +816,7 @@ function normalizeAudio(inputPath, outputPath, opts = {}) {
  * @property {Segment[]} segments - Segment definitions
  * @property {boolean} [normalizeAudio=false] - Apply loudnorm after concat
  * @property {'demuxer'|'mpegts'} [concatMethod='demuxer'] - Concatenation method
+ * @property {number} [transitionDuration=0.5] - Default fade duration between segments (seconds)
  */
 
 /**
@@ -752,7 +828,6 @@ function runEditPipeline(config) {
     const {
         inputPath,
         outputPath,
-        tempDir,
         introTitle,
         introSubtitle,
         introDuration = 3,
@@ -761,7 +836,11 @@ function runEditPipeline(config) {
         segments,
         normalizeAudio: doNormalize = false,
         concatMethod = "demuxer",
+        transitionDuration = 0.5,
     } = config;
+    // Use provided tempDir or create a proper OS-level temp directory
+    const tempDir = config.tempDir || createTempDir();
+
 
     const outputDir = path.dirname(outputPath);
     ensureDirs(outputDir, tempDir);
@@ -783,7 +862,10 @@ function runEditPipeline(config) {
     if (introTitle) {
         console.log("\n=== Generating intro billboard ===");
         const introPath = path.join(tempDir, "billboard_intro.mp4");
-        generateIntroBillboard(introPath, introTitle, introSubtitle, videoInfo, introDuration);
+        generateIntroBillboard(introPath, introTitle, introSubtitle, videoInfo, introDuration, {
+            fadeIn: 0.5,
+            fadeOut: Math.max(0.5, transitionDuration),
+        });
         partFiles.push(introPath);
     }
 
@@ -794,6 +876,7 @@ function runEditPipeline(config) {
         sampleRate: videoInfo.sampleRate,
         channels: videoInfo.channels,
         channelLayout: videoInfo.channelLayout,
+        transitionDuration,
     });
     partFiles.push(...segmentFiles);
 
@@ -801,7 +884,10 @@ function runEditPipeline(config) {
     if (outroLines && outroLines.length > 0) {
         console.log("\n=== Generating outro billboard ===");
         const outroPath = path.join(tempDir, "billboard_outro.mp4");
-        generateOutroBillboard(outroPath, outroLines, videoInfo, outroDuration);
+        generateOutroBillboard(outroPath, outroLines, videoInfo, outroDuration, {
+            fadeIn: Math.max(0.5, transitionDuration),
+            fadeOut: 0.5,
+        });
         partFiles.push(outroPath);
     }
 
@@ -829,7 +915,11 @@ function runEditPipeline(config) {
     // Audio normalization
     if (doNormalize) {
         console.log("\n=== Normalizing audio ===");
-        normalizeAudio(concatOutput, outputPath);
+        ensureDirs(path.dirname(outputPath));
+        const normalizedTemp = path.join(tempDir, "normalized_final.mp4");
+        normalizeAudio(concatOutput, normalizedTemp);
+        ensureDirs(path.dirname(outputPath));
+        fs.copyFileSync(normalizedTemp, outputPath);
     }
 
     // Cleanup
@@ -850,6 +940,7 @@ module.exports = {
     // Filesystem
     ensureDirs,
     cleanupDir,
+    createTempDir,
 
     // Timecodes
     tcToSeconds,
