@@ -1,5 +1,5 @@
 ---
-folder: ../tour/
+folder: ../
 related:
   - ../*.md
   - files.txt
