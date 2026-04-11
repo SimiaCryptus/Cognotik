@@ -6,8 +6,8 @@ set -euo pipefail
 # =============================================================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VIDEO_DIR="${SCRIPT_DIR}/source"
-AUDIO_DIR="${SCRIPT_DIR}/audio"
-TRANSCRIPT_DIR="${SCRIPT_DIR}/transcripts"
+AUDIO_DIR="${SCRIPT_DIR}/source/audio"
+TRANSCRIPT_DIR="${SCRIPT_DIR}/source/transcripts"
 
 # AWS Configuration — override via environment variables if needed
 S3_BUCKET="${TRANSCRIBE_S3_BUCKET:-}"

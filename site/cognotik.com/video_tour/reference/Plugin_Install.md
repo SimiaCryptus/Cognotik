@@ -1,6 +1,4 @@
 ---
-specifies:
-  - ../planscripts/Plugin_Install.md
 documents:
   - ../Plugin_Install.md
 ---

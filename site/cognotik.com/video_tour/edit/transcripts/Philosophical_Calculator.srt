@@ -1,0 +1,324 @@
+1
+00:00:00,850 --> 00:00:05,440
+One of my favorite apps is the Philosophical Calculator. Like
+
+2
+00:00:05,440 --> 00:00:07,879
+a normal calculator, the first step is to give it
+
+3
+00:00:07,879 --> 00:00:12,929
+some input. Here we're going to say. Right? And
+
+4
+00:00:12,929 --> 00:00:19,429
+you got. In Act 4. We
+
+5
+00:00:19,429 --> 00:00:24,440
+could also supply files. But in this case we're going
+
+6
+00:00:24,440 --> 00:00:28,309
+to go with a simple prompt. Now the first step
+
+7
+00:00:28,309 --> 00:00:31,548
+in using the philosophical calculator, of course, is to make
+
+8
+00:00:31,548 --> 00:00:34,228
+sure we have some models selected. We're going with haiku
+
+9
+00:00:34,228 --> 00:00:39,029
+and Gemini flash image. And then we start at the
+
+10
+00:00:39,029 --> 00:00:43,029
+pipeline. Since our input is fairly small, we're going to
+
+11
+00:00:43,029 --> 00:00:46,618
+skip the summarize notes part and go straight to draft
+
+12
+00:00:46,618 --> 00:00:51,149
+article. We can run that in the UI and wait
+
+13
+00:00:51,149 --> 00:00:56,158
+for it to complete. We could view this session. To
+
+14
+00:00:56,158 --> 00:00:59,439
+monitor it in real time, but this processing session is
+
+15
+00:00:59,439 --> 00:01:05,707
+a one-stop operation. Its details aren't particularly interesting. For
+
+16
+00:01:05,707 --> 00:01:09,289
+session detail, we will view that in depth when we
+
+17
+00:01:09,418 --> 00:01:14,480
+execute lenses, which is next. But
+
+18
+00:01:14,480 --> 00:01:20,409
+for now, We have the completed draft article. That
+
+19
+00:01:20,409 --> 00:01:24,250
+is shown in a formatted preview. And now that we
+
+20
+00:01:24,250 --> 00:01:27,409
+have the draft article, we can proceed to lenses. Here's
+
+21
+00:01:27,409 --> 00:01:32,689
+where it gets really interesting. The philosophical, philosophical calculator provides
+
+22
+00:01:32,689 --> 00:01:37,129
+a variety of operations that you can perform on your
+
+23
+00:01:37,129 --> 00:01:41,329
+draft article. It performs a variety of different analysis like
+
+24
+00:01:41,329 --> 00:01:46,448
+brainstorming or multi-perspective analysis or even writing a comic book
+
+25
+00:01:46,448 --> 00:01:51,448
+about the article. For demonstration
+
+26
+00:01:51,448 --> 00:01:56,329
+purposes, let's go with perspective analysis. I'm going to click
+
+27
+00:01:56,329 --> 00:01:58,969
+run, and in a second, a session link will pop
+
+28
+00:01:58,969 --> 00:02:04,129
+up. This session link allows us to monitor
+
+29
+00:02:04,709 --> 00:02:09,788
+the. Multi-perspective analysis task in real time
+
+30
+00:02:09,788 --> 00:02:16,710
+as it proceeds through a multi-step reasoning. End
+
+31
+00:02:16,710 --> 00:02:22,069
+user interface for real time. Um, Agents
+
+32
+00:02:23,960 --> 00:02:27,960
+For real-time agents and analysis. This will take a moment
+
+33
+00:02:27,960 --> 00:02:30,610
+because it will be going through a number of different
+
+34
+00:02:30,868 --> 00:02:35,788
+perspectives and then finally it will synthesize the results, basically
+
+35
+00:02:35,788 --> 00:02:41,229
+summarize all of the perspectives. We can also in
+
+36
+00:02:41,229 --> 00:02:45,069
+the main UI go over to usage and we can
+
+37
+00:02:45,069 --> 00:02:50,338
+monitor the usage as it Uses tokens
+
+38
+00:02:50,618 --> 00:02:53,819
+So far we have spent about 4 cents on this
+
+39
+00:02:53,819 --> 00:02:59,338
+process. Oh, the brains, the multi-perspective dialogue is ongoing
+
+40
+00:02:59,500 --> 00:03:07,788
+so it just use another penny. And
+
+41
+00:03:07,788 --> 00:03:12,538
+when it completes, the UI will Update. We're only gonna
+
+42
+00:03:12,538 --> 00:03:17,659
+run this one lens to demonstrate this module, but
+
+43
+00:03:17,659 --> 00:03:20,758
+you could run each of these, um, if you wanted
+
+44
+00:03:20,758 --> 00:03:26,550
+to in parallel. Depending on what you felt was appropriate
+
+45
+00:03:27,129 --> 00:03:29,770
+when these are completed, we can then go back to
+
+46
+00:03:29,770 --> 00:03:35,379
+the pipeline. And we can update the article which will
+
+47
+00:03:35,929 --> 00:03:40,469
+take the output of all of the lens runs and
+
+48
+00:03:40,770 --> 00:03:44,629
+try to fold them back into the article to Pick
+
+49
+00:03:44,629 --> 00:03:49,460
+up insights and new ideas and other things like that
+
+50
+00:03:50,460 --> 00:03:57,449
+Perhaps correcting issues. Looking
+
+51
+00:03:57,449 --> 00:04:02,689
+at lenses, this is almost complete. I saw a synthesis
+
+52
+00:04:02,689 --> 00:04:08,919
+here. Synthesis is. The last step in the synthesis
+
+53
+00:04:08,919 --> 00:04:15,129
+is the last step in the multi-perspective analysis. Yeah
+
+54
+00:04:16,920 --> 00:04:21,459
+And we can see the detailed output for a given
+
+55
+00:04:22,579 --> 00:04:26,579
+Lens run in the UI. Here we see the multi-perspective
+
+56
+00:04:26,579 --> 00:04:31,769
+analysis transcript which will detail. Each
+
+57
+00:04:31,769 --> 00:04:36,910
+perspective in turn. For example, this is the
+
+58
+00:04:36,910 --> 00:04:41,970
+competitive player perspective. It goes through each perspective, so it's
+
+59
+00:04:41,970 --> 00:04:45,629
+quite a long analysis, and at the end, you will
+
+60
+00:04:45,629 --> 00:04:50,778
+find The synthesis and recommendations
+
+61
+00:04:50,778 --> 00:04:56,350
+section. Here we go. So the lenses
+
+62
+00:04:56,350 --> 00:05:01,389
+generally involve a very long Set of analysis
+
+63
+00:05:01,928 --> 00:05:06,639
+and then we'll conclude with a summary. Those summaries and
+
+64
+00:05:06,639 --> 00:05:11,608
+analysises can again be folded back into the original article
+
+65
+00:05:11,879 --> 00:05:16,358
+using the pipeline. However, for brevity's sake, we will skip
+
+66
+00:05:16,358 --> 00:05:20,420
+that and demonstrate one last feature, the illustrate article feature
+
+67
+00:05:20,519 --> 00:05:25,329
+which is, I think, one of the most entertaining. This
+
+68
+00:05:25,329 --> 00:05:30,439
+takes your content in your article and designs a number
+
+69
+00:05:30,439 --> 00:05:34,319
+of illustrations. It can then lead into the article for
+
+70
+00:05:34,829 --> 00:05:40,149
+Um, there's a display issue. The session link is
+
+71
+00:05:40,149 --> 00:05:45,338
+shown. In the draft article section. Hopefully, they'll be
+
+72
+00:05:45,338 --> 00:05:49,829
+fixed and really soon. And again we can monitor this
+
+73
+00:05:49,829 --> 00:05:53,709
+in real time. It comes up with the image ideas
+
+74
+00:05:53,910 --> 00:06:20,970
+and then it generates each image. Here
+
+75
+00:06:20,970 --> 00:06:27,709
+we go. And then after it generates each image. Create
+
+76
+00:06:29,790 --> 00:06:33,798
+it will integrate the images into the original documents by
+
+77
+00:06:33,798 --> 00:06:39,079
+editing and now we see our article. Full of illustrations
+
+78
+00:06:45,259 --> 00:06:49,009
+For 62 cents, we have a fully illustrated guide to
+
+79
+00:06:49,009 --> 00:06:54,350
+connect 4. This of course was merely
+
+80
+00:06:54,350 --> 00:06:57,988
+a demo. I hope you enjoy this tool in exploring
+
+81
+00:06:57,988 --> 00:06:58,970
+your own ideas.
+

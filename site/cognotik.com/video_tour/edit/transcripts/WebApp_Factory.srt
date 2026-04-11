@@ -1,0 +1,204 @@
+1
+00:00:00,790 --> 00:00:04,459
+To generate a web application, you can use the web
+
+2
+00:00:04,459 --> 00:00:09,579
+app factory. Simply putting some details of what you want
+
+3
+00:00:09,579 --> 00:00:15,599
+to build here for this demo, we will implement. Graphing
+
+4
+00:00:19,170 --> 00:00:24,739
+Implements a graphing calculator. Save your idea. Make
+
+5
+00:00:24,739 --> 00:00:27,048
+sure that you have some models selected. We're going to
+
+6
+00:00:27,048 --> 00:00:32,469
+be using Gemini Threat 3 Flash Preview. For this demo
+
+7
+00:00:32,750 --> 00:00:35,270
+you do have to have an image model selected even
+
+8
+00:00:35,270 --> 00:00:37,990
+if you aren't using it. It doesn't have to be
+
+9
+00:00:37,990 --> 00:00:40,429
+actually an image model. You just have to select something
+
+10
+00:00:41,168 --> 00:00:44,810
+And then we go to pipeline and build web app
+
+11
+00:00:45,408 --> 00:00:49,529
+This is the only step in this pipeline, but this
+
+12
+00:00:49,529 --> 00:00:55,609
+step is quite involved. It starts by generating a Project
+
+13
+00:00:55,609 --> 00:01:01,189
+plan of tasks and then executes them. Appropriately
+
+14
+00:01:01,408 --> 00:01:04,569
+keeping in mind all of their dependencies and as you
+
+15
+00:01:04,569 --> 00:01:15,120
+will see in a moment. Here
+
+16
+00:01:15,120 --> 00:01:19,138
+we see the project plan with 5 different tasks. It's
+
+17
+00:01:19,138 --> 00:01:22,709
+currently, of course these nodes are not displaying correctly, but
+
+18
+00:01:22,709 --> 00:01:31,930
+we can view the tasks themselves here. So
+
+19
+00:01:31,930 --> 00:01:35,948
+here it creates the foundational documents for the project, the
+
+20
+00:01:35,948 --> 00:01:41,000
+HTML structure. Visual style. Now it's implementing
+
+21
+00:01:41,000 --> 00:01:46,120
+the core logic. And once it is complete, the web
+
+22
+00:01:46,120 --> 00:01:51,129
+app UI will update. The implementation step
+
+23
+00:01:51,129 --> 00:01:54,049
+is done, and we can see the Read me in
+
+24
+00:01:54,049 --> 00:01:57,659
+the project root. At this point we can download the
+
+25
+00:01:57,659 --> 00:02:03,620
+zip if you want. Also notable is that this
+
+26
+00:02:03,620 --> 00:02:07,269
+application has Git support integrated into it. If you know
+
+27
+00:02:07,269 --> 00:02:09,219
+what Git is, it's a version, if you don't know
+
+28
+00:02:09,219 --> 00:02:12,379
+what Git is, it is a version control system that
+
+29
+00:02:12,389 --> 00:02:18,020
+essentially allows you to Sure
+
+30
+00:02:18,020 --> 00:02:22,750
+what that error was about, but It did save the
+
+31
+00:02:22,750 --> 00:02:28,409
+files to get. Now that the implementation
+
+32
+00:02:28,409 --> 00:02:32,729
+is done, we can also launch the app. And here
+
+33
+00:02:32,729 --> 00:02:36,710
+we see. We are plotting sin of x. What happens
+
+34
+00:02:36,710 --> 00:02:39,639
+if we say sin of x plus 10 of x
+
+35
+00:02:40,319 --> 00:02:44,080
+Here we go. That looks about right. Or what about
+
+36
+00:02:44,300 --> 00:02:50,710
+divide instead of times? What about Times. Oh
+
+37
+00:02:50,868 --> 00:02:55,319
+power, that looks interesting. Anyway, it seems to work, but
+
+38
+00:02:55,319 --> 00:03:00,919
+you know what? It's too bright. Let's
+
+39
+00:03:00,919 --> 00:03:05,808
+ask for some changes. Update. We can update our web
+
+40
+00:03:05,808 --> 00:03:11,379
+app using the updateator, and we can say, Implement
+
+41
+00:03:11,379 --> 00:03:20,899
+a dark theme. And a theme. Save
+
+42
+00:03:20,899 --> 00:03:24,460
+our notes and run the update. This will update our
+
+43
+00:03:24,460 --> 00:03:29,500
+project with our requested updates. This can also be useful
+
+44
+00:03:29,500 --> 00:03:34,028
+if you see bugs or want to. Feature or really
+
+45
+00:03:34,028 --> 00:03:37,879
+any change. The update is done. Let's go look at
+
+46
+00:03:37,879 --> 00:03:42,659
+our caffeine calculator, refresh it, and oh. You've got a
+
+47
+00:03:42,659 --> 00:03:47,860
+theme button and it works. So that's how to use
+
+48
+00:03:47,860 --> 00:03:52,500
+the web app factory to generate your own applications. We
+
+49
+00:03:52,500 --> 00:03:57,210
+can also collect usage. And we can see that this
+
+50
+00:03:57,210 --> 00:04:02,508
+entire project demo cost 11 cents so far. I
+
+51
+00:04:02,508 --> 00:04:03,550
+hope you find this useful.
+

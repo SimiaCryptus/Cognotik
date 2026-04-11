@@ -1,6 +1,4 @@
 ---
-specifies:
-  - ../planscripts/Filesystem.md
 documents: 
   - ../Filesystem.md
 ---

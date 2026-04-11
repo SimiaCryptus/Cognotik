@@ -1,6 +1,4 @@
 ---
-specifies:
-  - ../planscripts/Install_Windows.md
 documents: 
   - ../Install_Windows.md
 ---

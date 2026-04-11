@@ -1,0 +1,152 @@
+1
+00:00:00,540 --> 00:00:04,980
+All sessions have a file system backing them that can
+
+2
+00:00:04,980 --> 00:00:09,099
+be accessed. If you go to the URL that is
+
+3
+00:00:09,220 --> 00:00:11,898
+here's a previous run, for example, that we generated a
+
+4
+00:00:11,898 --> 00:00:15,179
+comic book from. If we open in a new tab
+
+5
+00:00:15,179 --> 00:00:18,908
+that same URL but we remove the webpage part so
+
+6
+00:00:18,908 --> 00:00:22,638
+that we just access the root directory of that session
+
+7
+00:00:23,179 --> 00:00:27,579
+we can access the file system itself for that session
+
+8
+00:00:28,059 --> 00:00:30,670
+Now this comes with a number of interesting features. First
+
+9
+00:00:30,670 --> 00:00:33,270
+of all, we can download the entire directory as a
+
+10
+00:00:33,270 --> 00:00:39,098
+zip file. We can look at any markdown files
+
+11
+00:00:39,959 --> 00:00:43,598
+we can look at any HTML files, uh, and directly
+
+12
+00:00:43,598 --> 00:00:46,939
+view them, of course. And we can also view uh
+
+13
+00:00:46,939 --> 00:00:52,569
+markdown files. As either markdown
+
+14
+00:00:52,700 --> 00:00:56,679
+which this will cause download, or you can view the
+
+15
+00:00:56,770 --> 00:01:01,539
+markdown files as HTML files that does a dynamic rendering
+
+16
+00:01:02,279 --> 00:01:07,109
+You can also view them as text files. If you
+
+17
+00:01:07,269 --> 00:01:09,459
+this is handy if you want to view the markdown
+
+18
+00:01:09,459 --> 00:01:14,299
+source in a way that won't trigger a download for
+
+19
+00:01:14,299 --> 00:01:18,500
+your browser. And you can also view markdown files as
+
+20
+00:01:18,500 --> 00:01:22,620
+PDFs, and that also does a dynamic rendering of the
+
+21
+00:01:22,620 --> 00:01:27,930
+markdown file into PDF format. Additionally
+
+22
+00:01:28,370 --> 00:01:33,510
+the file system has built-in Git support, so you can
+
+23
+00:01:34,829 --> 00:01:39,829
+View the current status you can. Commit the directory
+
+24
+00:01:40,150 --> 00:01:43,650
+If you're not aware, Git is a version control system
+
+25
+00:01:43,650 --> 00:01:46,510
+for file systems, so that it's basically like a time
+
+26
+00:01:46,510 --> 00:01:48,418
+machine so that you can track all of the file
+
+27
+00:01:48,418 --> 00:01:54,680
+changes and if needed rollback. Um, accessing
+
+28
+00:01:54,680 --> 00:01:58,430
+the root file system for any given session via this
+
+29
+00:01:58,430 --> 00:02:03,439
+interface gives you a powerful backdoor
+
+30
+00:02:03,439 --> 00:02:08,778
+into the system functionality. Um, and provides
+
+31
+00:02:08,778 --> 00:02:13,330
+a good level of hackability and transparency for any of
+
+32
+00:02:13,330 --> 00:02:18,409
+the cognotic applications. Finally, I'd like to
+
+33
+00:02:18,409 --> 00:02:23,449
+point out that the physical location of the file system
+
+34
+00:02:23,449 --> 00:02:27,008
+is shown here. Uh, so if you want, you can
+
+35
+00:02:27,008 --> 00:02:31,349
+mount this with a development environment or you can open
+
+36
+00:02:31,349 --> 00:02:35,629
+it in the file system explorer or whatever you want
+
+37
+00:02:35,629 --> 00:02:40,860
+to do. I hope that functionality
+
+38
+00:02:40,919 --> 00:02:41,919
+is useful to you.
+

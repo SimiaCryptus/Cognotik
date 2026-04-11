@@ -1,14 +1,8 @@
 ---
-specifies:
-  - ../planscripts/WebApp_Factory.md
 documents: 
   - ../WebApp_Factory.md
   - ../../../../desktop/src/main/resources/apps/webapp-factory/README.md
 ---
-
-* This file records information specific to this demo.
-* The `planscripts/` files contain the script for the demo, and are used to generate the video.
-
 
 # Web App Factory Demo
 
@@ -23,6 +17,7 @@ The Web App Factory demo showcases the webapp-factory application, which transfo
 
 - **Plan Script**: `../planscripts/WebApp_Factory.md` — Contains the step-by-step script used to produce the demo video.
 - **Application README**: `../../../../desktop/src/main/resources/apps/webapp-factory/README.md` — Documents the webapp-factory application's features, architecture, and usage.
+- **Demo Document**: `../WebApp_Factory.md` — The top-level demo document for the Web App Factory demo.
 
 ## Notes
 

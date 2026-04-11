@@ -1,5 +1,5 @@
 ---
-transforms: ../transcripts/([^/\.]+)\.srt -> ../edit_$1.sh
+transforms: ../source/transcripts/([^/\.]+)\.srt -> ../edit_$1.sh
 related:
   - files.txt
   - README.md

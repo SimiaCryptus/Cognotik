@@ -1,6 +1,4 @@
 ---
-specifies:
-  - ../planscripts/Philosophical_Calculator.md
 documents: 
   - ../Philosophical_Calculator.md
   - ../../../../desktop/src/main/resources/apps/philosophical-calculator/README.md
