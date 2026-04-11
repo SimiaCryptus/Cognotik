@@ -608,13 +608,15 @@ function processSegments(segments, inputPath, tempDir, opts = {}) {
 
         const id = seg.id || `seg_${String(idx).padStart(3, "0")}`;
         const outFile = path.join(tempDir, `${id}.mp4`);
-        // Determine fade durations for this segment
-        // First actionable segment gets fadeIn, last gets fadeOut, middle segments
-        // get both if transitionDuration > 0 (for smoother joins)
+        // Determine fade durations for this segment.
+        // Only the first actionable segment gets a fadeIn (from the intro billboard),
+        // and only the last actionable segment gets a fadeOut (into the outro billboard).
+        // Interior segments should NOT fade to black — that creates visible black gaps
+        // since we use simple concatenation, not crossfade.
         const isFirst = actionableIdx === 0;
         const isLast = actionableIdx === actionable.length - 1;
-        const segFadeIn = seg.fadeIn !== undefined ? seg.fadeIn : (isFirst ? 0 : transitionDur);
-        const segFadeOut = seg.fadeOut !== undefined ? seg.fadeOut : (isLast ? 0 : transitionDur);
+        const segFadeIn = seg.fadeIn !== undefined ? seg.fadeIn : (isFirst ? transitionDur : 0);
+        const segFadeOut = seg.fadeOut !== undefined ? seg.fadeOut : (isLast ? transitionDur : 0);
 
 
         if (seg.action === "keep") {
@@ -920,13 +922,34 @@ function runEditPipeline(config) {
         normalizeAudio(concatOutput, normalizedTemp);
         // Copy from temp to final destination (handles cross-filesystem/WSL mounts)
         console.log(`Copying result to ${outputPath}...`);
+        ensureDirs(path.dirname(outputPath));
         try {
             fs.copyFileSync(normalizedTemp, outputPath);
         } catch (copyErr) {
-            console.warn(`fs.copyFileSync failed (${copyErr.message}), falling back to ffmpeg copy...`);
-            run(
-                `ffmpeg -y -i "${normalizedTemp}" -c copy -movflags +faststart "${outputPath}"`
-            );
+            console.warn(`fs.copyFileSync failed (${copyErr.message}), trying buffer read/write...`);
+            try {
+                const buf = fs.readFileSync(normalizedTemp);
+                fs.writeFileSync(outputPath, buf);
+            } catch (bufErr) {
+                console.warn(`Buffer copy failed (${bufErr.message}), falling back to shell cp...`);
+                try {
+                    run(`cp "${normalizedTemp}" "${outputPath}"`);
+                } catch (cpErr) {
+                    console.warn(`Shell cp failed (${cpErr.message}), falling back to ffmpeg copy...`);
+                    // Write to a local temp file first, then move
+                    const localTemp = path.join(path.dirname(outputPath), '_tmp_final_' + Date.now() + '.mp4');
+                    try {
+                        run(
+                            `ffmpeg -y -i "${normalizedTemp}" -c copy -movflags +faststart "${localTemp}"`
+                        );
+                        fs.renameSync(localTemp, outputPath);
+                    } catch (ffErr) {
+                        // Last resort: pipe via dd or cat
+                        console.warn(`ffmpeg copy failed (${ffErr.message}), trying cat...`);
+                        run(`cat "${normalizedTemp}" > "${outputPath}"`);
+                    }
+                }
+            }
         }
     } else {
         // If concat wrote directly to outputPath on a mount, it may also need copying
