@@ -66,7 +66,12 @@ function cleanupDir(dirPath) {
     console.log(`Cleaning up temporary files in ${dirPath}...`);
     try {
         if (fs.existsSync(dirPath)) {
-            fs.rmSync(dirPath, {recursive: true, force: true});
+             if (typeof fs.rmSync === "function") {
+                 fs.rmSync(dirPath, {recursive: true, force: true});
+             } else {
+                 // Fallback for Node.js < 14.14
+                 fs.rmdirSync(dirPath, {recursive: true});
+             }
         }
     } catch (e) {
         console.warn(`Warning: Could not remove temp dir ${dirPath}: ${e.message}`);
