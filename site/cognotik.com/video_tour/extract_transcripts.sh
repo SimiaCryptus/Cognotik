@@ -5,8 +5,7 @@ set -euo pipefail
 # Configuration
 # =============================================================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FILES_LIST="${SCRIPT_DIR}/files.txt"
-VIDEO_DIR="${SCRIPT_DIR}"
+VIDEO_DIR="${SCRIPT_DIR}/source"
 AUDIO_DIR="${SCRIPT_DIR}/audio"
 TRANSCRIPT_DIR="${SCRIPT_DIR}/transcripts"
 
@@ -40,10 +39,6 @@ for cmd in ffmpeg aws jq; do
   fi
 done
 
-if [[ ! -f "$FILES_LIST" ]]; then
-  echo "ERROR: files.txt not found at $FILES_LIST"
-  exit 1
-fi
 
 # Verify AWS credentials
 if ! aws sts get-caller-identity --region "$AWS_REGION" &>/dev/null; then
@@ -73,20 +68,13 @@ echo "--- Step 1: Extracting audio from videos ---"
 declare -a JOB_NAMES=()
 declare -a BASE_NAMES=()
 
-while IFS= read -r video_file || [[ -n "$video_file" ]]; do
-  # Skip empty lines and comments
-  video_file="$(echo "$video_file" | xargs)"
-  video_file="$(echo "$video_file" | tr -d '\r')"
-  [[ -z "$video_file" || "$video_file" == \#* ]] && continue
 
-  video_path="${VIDEO_DIR}/${video_file}"
-  base_name="${video_file%.*}"
+for video_path in "${VIDEO_DIR}"/*; do
+   [[ -f "$video_path" ]] || continue
+   video_file="$(basename "$video_path")"
+   base_name="${video_file%.*}"
   audio_file="${AUDIO_DIR}/${base_name}.mp3"
 
-  if [[ ! -f "$video_path" ]]; then
-    echo "  [WARN] Video not found, skipping: ${video_path}"
-    continue
-  fi
 
   BASE_NAMES+=("$base_name")
 
@@ -104,7 +92,7 @@ while IFS= read -r video_file || [[ -n "$video_file" ]]; do
       "$audio_file" \
       -loglevel warning -stats
   fi
-done < "$FILES_LIST"
+done
 
 if [[ ${#BASE_NAMES[@]} -eq 0 ]]; then
   echo "ERROR: No video files were found to process."

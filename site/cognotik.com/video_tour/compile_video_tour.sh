@@ -19,7 +19,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-FILES_LIST="files.txt"
+EDIT_DIR="edit"
 OUTPUT_FILE="video_tour.mp4"
 TEMP_DIR=".tour_build"
 TITLE_DURATION=3          # seconds for each section title card
@@ -30,6 +30,22 @@ SUBTITLE_FONT_SIZE=42
 BG_COLOR="black"
 TEXT_COLOR="white"
 ACCENT_COLOR="#4FC3F7"
+# Font configuration — find a usable font on the system
+FONT_FILE=""
+for candidate in \
+     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" \
+     "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf" \
+     "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf" \
+     "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf" \
+     "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf" \
+     "/System/Library/Fonts/Helvetica.ttc" \
+     "C\\:/Windows/Fonts/arial.ttf"; do
+     if [[ -f "$candidate" ]]; then
+         FONT_FILE="$candidate"
+         break
+     fi
+done
+
 
 # Intro/outro durations
 INTRO_DURATION=5
@@ -84,18 +100,15 @@ require_cmd() {
 # ---------------------------------------------------------------------------
 require_cmd ffmpeg
 
-[[ -f "$FILES_LIST" ]] || err "File list '$FILES_LIST' not found."
+[[ -d "$EDIT_DIR" ]] || err "Edit directory '$EDIT_DIR' not found."
 
-# Read video files, skip blanks and comments
+# Discover video files from the edit directory
 VIDEOS=()
-while IFS= read -r line || [[ -n "$line" ]]; do
-    line="${line%%#*}"          # strip inline comments
-    line="$(echo "$line" | xargs)"  # trim whitespace
-    [[ -z "$line" ]] && continue
-    VIDEOS+=("$line")
-done < "$FILES_LIST"
+for f in "$EDIT_DIR"/*.mp4; do
+     [[ -e "$f" ]] && VIDEOS+=("$f")
+done
 
-[[ ${#VIDEOS[@]} -gt 0 ]] || err "No video files found in '$FILES_LIST'."
+[[ ${#VIDEOS[@]} -gt 0 ]] || err "No video files found in '$EDIT_DIR/'."
 
 # Verify all source videos exist
 VALID_VIDEOS=()
@@ -142,9 +155,14 @@ generate_title_card() {
     local sub_text="${4:-}"
 
     local drawtext_filter=""
+     local font_opt=""
+     if [[ -n "$FONT_FILE" ]]; then
+         font_opt=":fontfile='${FONT_FILE}'"
+     fi
 
     # Main title — centered
     drawtext_filter+="drawtext=text='${main_text}'"
+     drawtext_filter+="${font_opt}"
     drawtext_filter+=":fontsize=${FONT_SIZE}"
     drawtext_filter+=":fontcolor=${TEXT_COLOR}"
     drawtext_filter+=":x=(w-text_w)/2"
@@ -159,6 +177,7 @@ generate_title_card() {
     # Subtitle line
     if [[ -n "$sub_text" ]]; then
         drawtext_filter+=",drawtext=text='${sub_text}'"
+         drawtext_filter+="${font_opt}"
         drawtext_filter+=":fontsize=${SUBTITLE_FONT_SIZE}"
         drawtext_filter+=":fontcolor=${ACCENT_COLOR}"
         drawtext_filter+=":x=(w-text_w)/2"
@@ -166,8 +185,11 @@ generate_title_card() {
         drawtext_filter+=":alpha='if(lt(t,0.8),t/0.8,1)'"
     fi
 
-    # Add a subtle horizontal accent line
-    drawtext_filter+=",drawbox=x=(w/4):y=(h/2)-2:w=(w/2):h=2:color=${ACCENT_COLOR}@0.5:t=fill"
+     # Add a subtle horizontal accent line
+     local box_x=$(( TARGET_W / 4 ))
+     local box_y=$(( TARGET_H / 2 - 2 ))
+     local box_w=$(( TARGET_W / 2 ))
+     drawtext_filter+=",drawbox=x=${box_x}:y=${box_y}:w=${box_w}:h=2:color=${ACCENT_COLOR}@0.5:t=fill"
 
     ffmpeg -y -f lavfi \
         -i "color=c=${BG_COLOR}:s=${TARGET_W}x${TARGET_H}:d=${dur}:r=${TARGET_FPS}" \
@@ -175,10 +197,12 @@ generate_title_card() {
         -vf "${drawtext_filter}" \
         -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p \
         -c:a aac -b:a 128k \
-        -t "$dur" -shortest \
-        "$out" 2>/dev/null
+         -t "$dur" -shortest "$out"
 
-    log "Generated title card: $out"
+     if [[ ! -f "$out" ]]; then
+         err "Failed to generate title card: $out"
+     fi
+     log "Generated title card: $(basename "$out")"
 }
 
 # ---------------------------------------------------------------------------
@@ -193,9 +217,12 @@ normalize_video() {
         -vf "scale=${TARGET_W}:${TARGET_H}:force_original_aspect_ratio=decrease,pad=${TARGET_W}:${TARGET_H}:(ow-iw)/2:(oh-ih)/2:color=black,fps=${TARGET_FPS},format=yuv420p" \
         -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p \
         -c:a aac -b:a 128k -ar 44100 -ac 2 \
-        "$output" 2>/dev/null
+         "$output"
 
-    log "Normalized: $(basename "$input") -> $(basename "$output")"
+     if [[ ! -f "$output" ]]; then
+         err "Failed to normalize: $(basename "$input")"
+     fi
+     log "Normalized: $(basename "$input") -> $(basename "$output")"
 }
 
 # ---------------------------------------------------------------------------
@@ -215,17 +242,28 @@ apply_fades() {
 
     # Calculate fade-out start time
     local fout_start
-    fout_start=$(echo "$total_dur - $fout_dur" | bc -l 2>/dev/null || echo "$total_dur")
+     fout_start=$(python3 -c "print(${total_dur} - ${fout_dur})" 2>/dev/null \
+         || echo "$total_dur - $fout_dur" | bc -l 2>/dev/null \
+         || echo "$total_dur")
 
     ffmpeg -y -i "$input" \
         -vf "fade=t=in:st=0:d=${fin_dur},fade=t=out:st=${fout_start}:d=${fout_dur}" \
         -af "afade=t=in:st=0:d=${fin_dur},afade=t=out:st=${fout_start}:d=${fout_dur}" \
         -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p \
         -c:a aac -b:a 128k \
-        "$output" 2>/dev/null
+         "$output"
 
-    log "Applied fades: $(basename "$output")"
+     if [[ ! -f "$output" ]]; then
+         err "Failed to apply fades: $(basename "$input")"
+     fi
+     log "Applied fades: $(basename "$output")"
 }
+# Log font status
+if [[ -n "$FONT_FILE" ]]; then
+     log "Using font: $FONT_FILE"
+else
+     warn "No font file found — drawtext may fail. Install fonts (e.g., fonts-dejavu-core)."
+fi
 
 # ---------------------------------------------------------------------------
 # Build all segments
@@ -234,17 +272,18 @@ SEGMENT_INDEX=0
 CONCAT_LIST="$TEMP_DIR/concat_list.txt"
 > "$CONCAT_LIST"
 
+
 # --- Intro title card ---
 log "Generating intro title card..."
 INTRO_FILE="$TEMP_DIR/000_intro.mp4"
-generate_title_card "$INTRO_FILE" "$INTRO_DURATION" "Cognotic Desktop" "Video Tour"
+generate_title_card "$INTRO_FILE" "$INTRO_DURATION" "Cognotik Desktop" "Video Tour"
 apply_fades "$INTRO_FILE" "$TEMP_DIR/000_intro_faded.mp4" "$FADE_DURATION" "$FADE_DURATION"
 echo "file '000_intro_faded.mp4'" >> "$CONCAT_LIST"
 SEGMENT_INDEX=1
 
 # --- Process each video ---
 for video in "${VALID_VIDEOS[@]}"; do
-    basename_noext="${video%.mp4}"
+     basename_noext="$(basename "${video}" .mp4)"
 
     # Determine section title
     title="${SECTION_TITLES[$basename_noext]:-$basename_noext}"
@@ -287,7 +326,7 @@ ffmpeg -y -f concat -safe 0 \
     -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p \
     -c:a aac -b:a 192k \
     -movflags +faststart \
-    "$OUTPUT_FILE" 2>/dev/null
+     "$OUTPUT_FILE"
 
 if [[ -f "$OUTPUT_FILE" ]]; then
     FINAL_SIZE=$(du -h "$OUTPUT_FILE" | cut -f1)

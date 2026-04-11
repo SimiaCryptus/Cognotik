@@ -7,7 +7,7 @@ AWS Transcribe to generate text transcripts and SRT subtitle files.
 
 The pipeline performs the following steps:
 
-1. **Extract audio** — Uses `ffmpeg` to extract mono 16 kHz MP3 audio from each video listed in `files.txt`.
+1. **Extract audio** — Uses `ffmpeg` to extract mono 16 kHz MP3 audio from each video found in the `source/` directory.
 2. **Upload to S3** — Uploads the extracted audio files to a configured S3 bucket.
 3. **Start transcription** — Kicks off AWS Transcribe jobs for each audio file.
 4. **Poll & download** — Polls for job completion, then downloads the resulting JSON, extracts plain text (`.txt`), and
@@ -23,17 +23,17 @@ The pipeline performs the following steps:
 
 Run the dependency installer to set everything up:
 
-|```
+```
 ./install_deps.sh
-|```
+```
 
 ### AWS Configuration
 
 You must have valid AWS credentials configured:
 
-|```
+```
 aws configure
-|```
+```
 
 #### Required IAM Permissions
 
@@ -47,9 +47,9 @@ The IAM user or role must have the following permissions:
 
 ## Usage
 
-|```
+```
 TRANSCRIBE_S3_BUCKET=my-bucket ./extract_transcripts.sh
-|```
+```
 
 ### Environment Variables
 
@@ -64,37 +64,33 @@ TRANSCRIBE_S3_BUCKET=my-bucket ./extract_transcripts.sh
 
 ## File Structure
 
-|```
+```
 video_tour/
 ├── README.md                  # This file
 ├── install_deps.sh            # Dependency installer (ffmpeg, aws-cli, jq)
 ├── extract_transcripts.sh     # Main transcription pipeline script
-├── files.txt                  # List of video files to process (one per line)
-├── *.mp4                      # Source video files
+├── compile_video_tour.sh      # Compiles edited videos into a single tour
+├── source/                    # Source video files
+│   └── *.mp4
 ├── audio/                     # Extracted audio files (generated)
 │   └── *.mp3
-└── transcripts/               # Transcription output (generated)
-    ├── *.json                 # Raw AWS Transcribe JSON response
-    ├── *.txt                  # Plain text transcript
-    └── *.srt                  # SRT subtitle file
-|```
+├── transcripts/               # Transcription output (generated)
+│   ├── *.json                 # Raw AWS Transcribe JSON response
+│   ├── *.txt                  # Plain text transcript
+│   └── *.srt                  # SRT subtitle file
+├── edit/                      # Edited video files (generated)
+│   └── *.mp4
+├── *.md                       # Formatted markdown transcripts (generated)
+├── tour/                      # Interactive HTML/JS/CSS tour app (generated)
+└── ops/                       # Operation definitions
+    ├── edit_video.op.md       # Edit script generation operation
+    ├── video_composite.op.md  # Video compilation operation
+    └── video_tour.op.md       # Interactive tour generation operation
+```
 
-## `files.txt` Format
+## Source Videos
 
-List one video filename per line. Empty lines and lines starting with `#` are ignored:
-
-|```
-
-# Main demo videos
-
-Comic_Generator.mp4
-Filesystem.mp4
-Install_Windows.mp4
-Philosophical_Calculator.mp4
-Plugin_Install.mp4
-Sys_Wizard.mp4
-WebApp_Factory.mp4
-|```
+Place video files directly in the `source/` directory. The script processes all files found in that directory — no manifest file is needed. All standard video formats supported by `ffmpeg` are accepted.
 
 ## Output
 
@@ -103,6 +99,16 @@ After a successful run, the `transcripts/` directory will contain three files pe
 - **`<name>.json`** — Full AWS Transcribe response with word-level timestamps and confidence scores.
 - **`<name>.txt`** — Plain text transcript.
 - **`<name>.srt`** — SRT subtitle file with timed captions (max 10 words or 5 seconds per segment).
+
+### Post-Processing
+
+Additional operations can generate:
+
+- **`edit_<name>.sh`** — FFmpeg edit scripts derived from SRT files (see `ops/edit_video.op.md`).
+- **`<name>.md`** — Formatted markdown transcripts with titles, sections, and cleaned-up prose.
+- **`edit/<name>.mp4`** — Edited video files with cuts applied.
+- **`video_tour.mp4`** — Compiled video tour with transitions (see `ops/video_composite.op.md`).
+- **`tour/`** — Interactive HTML/JS/CSS tour application (see `ops/video_tour.op.md`).
 
 ## Idempotency
 
@@ -119,8 +125,6 @@ The script is designed to be re-run safely:
 | `ERROR: S3 bucket not set`                  | Export `TRANSCRIBE_S3_BUCKET` before running the script                                                     |
 | `ERROR: 'ffmpeg' is not installed`          | Run `./install_deps.sh`                                                                                     |
 | `ERROR: AWS credentials are not configured` | Run `aws configure` or set `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`                                    |
-| `[WARN] Video not found`                    | Ensure the video files listed in `files.txt` exist in the script directory                                  |
+| `ERROR: No video files were found`          | Ensure video files are present in the `source/` directory                                                   |
 | `[WARN] Could not generate SRT`             | Install `python3` for SRT subtitle generation                                                               |
 | Transcription job `FAILED`                  | Check the failure reason in the output; common causes include unsupported audio formats or S3 access issues |
-
-

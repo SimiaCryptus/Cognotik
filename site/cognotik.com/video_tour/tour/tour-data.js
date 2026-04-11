@@ -8,7 +8,7 @@
 const TOUR_CHAPTERS = [
     {
         id: "install-windows",
-        file: "../Install_Windows.mp4",
+        file: "../edit/Install_Windows.mp4",
         title: "Installing on Windows",
         description: "Get started with Cognotik by installing it on Windows. This walkthrough covers the full setup process from download to first launch.",
         icon: "💻",
@@ -17,7 +17,7 @@ const TOUR_CHAPTERS = [
     },
     {
         id: "plugin-install",
-        file: "../Plugin_Install.mp4",
+        file: "../edit/Plugin_Install.mp4",
         title: "Installing Plugins",
         description: "Learn how to extend Cognotik's capabilities by installing plugins from the plugin marketplace.",
         icon: "🔌",
@@ -26,7 +26,7 @@ const TOUR_CHAPTERS = [
     },
     {
         id: "sys-wizard",
-        file: "../Sys_Wizard.mp4",
+        file: "../edit/Sys_Wizard.mp4",
         title: "System Wizard",
         description: "Walk through the System Wizard to configure Cognotik's core settings and AI model connections.",
         icon: "🧙",
@@ -35,7 +35,7 @@ const TOUR_CHAPTERS = [
     },
     {
         id: "filesystem",
-        file: "../Filesystem.mp4",
+        file: "../edit/Filesystem.mp4",
         title: "Filesystem Access",
         description: "Explore the powerful filesystem backing every session — download zips, view markdown as HTML or PDF, and use built-in Git version control.",
         icon: "📁",
@@ -44,7 +44,7 @@ const TOUR_CHAPTERS = [
     },
     {
         id: "comic-generator",
-        file: "../Comic_Generator.mp4",
+        file: "../edit/Comic_Generator.mp4",
         title: "Comic Book Generator",
         description: "Watch the Comic Serial app generate a full comic book — from script and character references to rendered HTML pages with dialogue.",
         icon: "🎨",
@@ -63,7 +63,7 @@ Here we go. Let's open this in a new tab and preview it. We've got our character
     },
     {
         id: "philosophical-calculator",
-        file: "../Philosophical_Calculator.mp4",
+        file: "../edit/Philosophical_Calculator.mp4",
         title: "Philosophical Calculator",
         description: "A fun demonstration of AI-powered app generation — a calculator that provides philosophical commentary on your equations.",
         icon: "🧮",
@@ -72,7 +72,7 @@ Here we go. Let's open this in a new tab and preview it. We've got our character
     },
     {
         id: "webapp-factory",
-        file: "../WebApp_Factory.mp4",
+        file: "../edit/WebApp_Factory.mp4",
         title: "WebApp Factory",
         description: "See how Cognotik can generate complete web applications from natural language descriptions using the WebApp Factory.",
         icon: "🏭",
