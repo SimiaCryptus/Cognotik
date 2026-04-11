@@ -1,64 +1,83 @@
 #!/usr/bin/env bash
-# Edit script for Install_Windows
+# Edit script for Install_Windows.mp4
 # Generated from transcripts/Install_Windows.srt
 #
 # Edits:
-#   1. Remove false start "Hello. Hello" and repeated intros (00:00:13 - 00:00:28)
-#   2. Keep clean intro starting at 00:00:28.429
-#   3. Remove stuttered "Install it like any install" - keep clean "it like any desktop application"
-#   4. Remove "Cut this part" as speaker explicitly requests removal (00:03:40 - 00:03:46)
-#   5. Remove aside "Don't save that in the password manager" (00:03:51 - 00:03:57)
-#   6. Remove garbled "Weak passwords in my for." (00:02:23.860 - 00:02:27.618)
+#   1. Trim false starts/repeated intros at the beginning (00:00-00:28)
+#   2. Remove stuttered "install it like any install" overlap (~01:09-01:12)
+#   3. Trim long silent pause during installation (~01:15-01:29)
+#   4. Remove garbled "Weak passwords in my for" (~02:23-02:27)
+#   5. Trim long pause after "You say yes" (~03:02-03:16)
+#   6. Remove speaker's explicit "Cut this part" (~03:40-03:46)
+#   7. Remove aside "Don't save that in the password manager" (~03:51-03:57)
 
 set -euo pipefail
 
 INPUT="source/Install_Windows.mp4"
 OUTPUT="edit/Install_Windows.mp4"
+SEGMENTS_DIR="$(mktemp -d)"
+CONCAT_FILE="${SEGMENTS_DIR}/concat.txt"
 
 mkdir -p edit
 
-# Define segments to keep (cutting out false starts, repeated takes, and explicit cut requests)
-#
-# Seg 1: Clean intro + download instructions + save file
-#   From 00:00:28.429 ("to this demo video of how to install Cognotic desktop on Windows...")
-#   To   00:01:09.489 (end of "keep the file before you open it to install")
-#
-# Seg 2: Clean install instruction (skip stuttered "Install it like any install")
-#   From 00:01:15.088 ("it like any desktop application.")
-#   To   00:02:23.860 (before garbled "Weak passwords in my for.")
-#
-# Seg 3: After garbled speech, password warning and registration
-#   From 00:02:27.618 ("about weak passwords, but it will allow them...")
-#   To   00:03:40.069 (before "Cut this part")
-#
-# Seg 4: After "Cut this part", the API key entry
-#   From 00:03:46.270 ("enter an API key, save")
-#   To   00:03:51.889 (before "Don't save that in the password manager")
-#
-# Seg 5: After the aside, test and conclusion
-#   From 00:03:57.270 ("and now we can test with basic chat...")
-#   To   end of file
+# Define the segments to KEEP (start, end)
+# Segment 1: Clean intro starts at ~00:28.4 through download/save
+# Segment 2: Keep file instructions through install start
+# Segment 3: Skip long install pause, pick up at "there we go" briefly then config
+# Segment 4: Configuration and registration flow, skip garbled "weak passwords in my for"
+# Segment 5: After garbled part, continue with weak password explanation
+# Segment 6: Skip long pause after "You say yes", pick up at web UI
+# Segment 7: Settings and API key, skip "Cut this part"
+# Segment 8: After cut part, skip "Don't save that in the password manager"
+# Segment 9: Final test and conclusion
 
-ffmpeg -y -i "$INPUT" -filter_complex "
-[0:v]split=5[v1][v2][v3][v4][v5];
-[0:a]asplit=5[a1][a2][a3][a4][a5];
+SEGMENTS=(
+  # Seg 1: Clean intro - "install Cognotic desktop on Windows" through saving file
+  "00:00:28.429,00:01:09.489"
+  # Seg 2: "Install it like any desktop application" (skip stutter at start)
+  "00:01:11.500,00:01:16.000"
+  # Seg 3: Skip long install wait, resume at "there we go" + config section
+  "00:01:28.500,00:02:23.000"
+  # Seg 4: Skip garbled "Weak passwords in my for", resume at clean explanation
+  "00:02:27.618,00:03:02.520"
+  # Seg 5: Skip long pause, resume at "now we have access to the web UI"
+  "00:03:02.520,00:03:04.000"
+  # Seg 6: "Next we need to go to settings" through API key section, skip "Cut this part"
+  "00:03:16.199,00:03:40.069"
+  # Seg 7: "enter an API key, save settings" - skip "Don't save that in the password manager"
+  "00:03:46.270,00:03:51.889"
+  # Seg 8: Final testing and conclusion
+  "00:03:57.270,00:04:18.889"
+)
 
-[v1]trim=start=28.429:end=69.489,setpts=PTS-STARTPTS[v1t];
-[a1]atrim=start=28.429:end=69.489,asetpts=PTS-STARTPTS[a1t];
+echo "Extracting segments..."
 
-[v2]trim=start=75.088:end=143.860,setpts=PTS-STARTPTS[v2t];
-[a2]atrim=start=75.088:end=143.860,asetpts=PTS-STARTPTS[a2t];
+for i in "${!SEGMENTS[@]}"; do
+  IFS=',' read -r START END <<< "${SEGMENTS[$i]}"
+  SEGMENT_FILE="${SEGMENTS_DIR}/seg_$(printf '%03d' "$i").mp4"
 
-[v3]trim=start=147.618:end=220.069,setpts=PTS-STARTPTS[v3t];
-[a3]atrim=start=147.618:end=220.069,asetpts=PTS-STARTPTS[a3t];
+  ffmpeg -y -hide_banner -loglevel warning \
+    -i "$INPUT" \
+    -ss "$START" -to "$END" \
+    -c:v libx264 -preset fast -crf 18 \
+    -c:a aac -b:a 192k \
+    -avoid_negative_ts make_zero \
+    -movflags +faststart \
+    "$SEGMENT_FILE"
 
-[v4]trim=start=226.270:end=231.889,setpts=PTS-STARTPTS[v4t];
-[a4]atrim=start=226.270:end=231.889,asetpts=PTS-STARTPTS[a4t];
+  echo "file '${SEGMENT_FILE}'" >> "$CONCAT_FILE"
+done
 
-[v5]trim=start=237.270,setpts=PTS-STARTPTS[v5t];
-[a5]atrim=start=237.270,asetpts=PTS-STARTPTS[a5t];
+echo "Concatenating segments..."
 
-[v1t][a1t][v2t][a2t][v3t][a3t][v4t][a4t][v5t][a5t]concat=n=5:v=1:a=1[outv][outa]
-" -map "[outv]" -map "[outa]" -c:v libx264 -crf 18 -preset medium -c:a aac -b:a 192k "$OUTPUT"
+ffmpeg -y -hide_banner -loglevel warning \
+  -f concat -safe 0 \
+  -i "$CONCAT_FILE" \
+  -c copy \
+  -movflags +faststart \
+  "$OUTPUT"
 
-echo "Edit complete: $OUTPUT"
+echo "Cleaning up temporary files..."
+rm -rf "$SEGMENTS_DIR"
+
+echo "Done! Output saved to ${OUTPUT}"

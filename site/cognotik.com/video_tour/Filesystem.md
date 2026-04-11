@@ -1,37 +1,3 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-# Edit script for Filesystem.mp4
-# Trims the beginning dead air (~4 seconds) and ensures clean ending
-# Source: source/Filesystem.mp4
-# Output: edit/Filesystem.mp4
-
-INPUT="source/Filesystem.mp4"
-OUTPUT="edit/Filesystem.mp4"
-MARKDOWN="Filesystem.md"
-
-# Ensure output directory exists
-mkdir -p edit
-
-# Trim the video:
-# - Start at 00:00:03.5 (just before first speech at 00:00:04.030)
-# - End at 00:02:46.5 (just after last speech at 00:02:45.750)
-# Using -ss before -i for fast seek, then -ss after for precise seek
-# Re-encode to ensure clean cuts
-
-ffmpeg -y \
-  -ss 00:00:03.500 \
-  -i "$INPUT" \
-  -to 00:02:43.000 \
-  -c:v libx264 -preset medium -crf 18 \
-  -c:a aac -b:a 192k \
-  -movflags +faststart \
-  "$OUTPUT"
-
-echo "Edit complete: $OUTPUT"
-
-# Write out the edited transcript as markdown
-cat > "$MARKDOWN" << 'MARKDOWN_EOF'
 # Filesystem Access in Cognotic Sessions
 
 All sessions have a file system backing them that can be accessed.
@@ -68,6 +34,3 @@ Accessing the root file system for any given session via this interface gives yo
 ## Physical File Location
 
 The physical location of the file system is shown in the interface. If you want, you can mount this with a development environment, open it in the file system explorer, or do whatever you need.
-MARKDOWN_EOF
-
-echo "Markdown transcript written: $MARKDOWN"

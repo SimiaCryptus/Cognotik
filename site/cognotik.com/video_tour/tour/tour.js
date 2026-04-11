@@ -209,14 +209,47 @@
     // ── Transcript ─────────────────────────────────────────────────────
     function loadTranscript(chapter) {
         if (chapter.transcript) {
-            var paragraphs = chapter.transcript.split("\n\n").filter(function (p) {
-                return p.trim().length > 0;
-            });
-            var html = paragraphs.map(function (p) {
-                return "<p>" + escapeHtml(p.trim()) + "</p>";
-            }).join("");
-            transcriptContent.innerHTML = html;
+            transcriptContent.innerHTML = '<p class="transcript-placeholder">Loading transcript…</p>';
             transcriptPanel.style.display = "";
+            transcriptPanel.removeAttribute("open");
+
+            var transcriptUrl = chapter.transcript;
+            var loadingForIndex = currentIndex;
+
+            fetch(transcriptUrl)
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("HTTP " + response.status);
+                    }
+                    return response.text();
+                })
+                .then(function (mdText) {
+                    // Only update if we're still on the same chapter
+                    if (currentIndex !== loadingForIndex) return;
+
+                    var html;
+                    if (typeof marked !== "undefined") {
+                        // marked v4+ exposes marked.parse; older versions use marked() directly
+                        html = typeof marked.parse === "function"
+                            ? marked.parse(mdText)
+                            : marked(mdText);
+                    } else {
+                        // Fallback: render as plain text paragraphs
+                        var paragraphs = mdText.split("\n\n").filter(function (p) {
+                            return p.trim().length > 0;
+                        });
+                        html = paragraphs.map(function (p) {
+                            return "<p>" + escapeHtml(p.trim()) + "</p>";
+                        }).join("");
+                    }
+
+                    transcriptContent.innerHTML = html;
+                })
+                .catch(function (err) {
+                    if (currentIndex !== loadingForIndex) return;
+                    console.warn("Could not load transcript:", transcriptUrl, err);
+                    transcriptContent.innerHTML = '<p class="transcript-placeholder">Transcript could not be loaded.</p>';
+                });
         } else {
             transcriptContent.innerHTML = '<p class="transcript-placeholder">No transcript available for this video yet.</p>';
             transcriptPanel.style.display = "";
