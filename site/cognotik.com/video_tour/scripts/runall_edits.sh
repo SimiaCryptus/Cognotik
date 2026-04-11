@@ -26,7 +26,7 @@ while IFS= read -r -d '' script; do
     TASK_LOGFILES+=("$log_file")
 
     echo "=== Running: ${task_name} ==="
-     node "$script" > "$log_file" 2>&1
+     node "$script" < /dev/null > "$log_file" 2>&1
     exit_code=$?
     TASK_RESULTS+=("$exit_code")
 

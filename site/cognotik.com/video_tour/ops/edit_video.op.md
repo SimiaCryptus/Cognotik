@@ -1,6 +1,8 @@
 ---
 transforms:
-  - ../review/([^/\.]+)\.md -> ../review/$1.js
+  - ../review/([^/\.]+)\.json -> ../review/$1.js
+related:
+  - ../review/lib/VIDEO_EDIT_UTILS.md
 ---
 
 * Create an edit script for the instructions in the md file
