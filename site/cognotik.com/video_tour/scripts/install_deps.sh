@@ -68,6 +68,16 @@ else
   echo "Please run it manually to install VAD dependencies."
 fi
 
+# Run install_video_deps.sh
+if [[ -f "./scripts/install_video_deps.sh" ]]; then
+  echo ""
+  echo "[*] Installing video segmentation dependencies..."
+  ./scripts/install_video_deps.sh all
+else
+  echo "[WARNING] Video segmentation dependencies installer not found: ./scripts/install_video_deps.sh"
+  echo "Please run it manually to install video segmentation dependencies."
+fi
+
 echo ""
 echo "=== All dependencies installed ==="
 echo ""

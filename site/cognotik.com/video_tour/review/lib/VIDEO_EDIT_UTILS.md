@@ -39,7 +39,7 @@ const veu = require('./lib/video-edit-utils');
 veu.runEditPipeline({
     inputPath: 'source/MyVideo.mp4',
     outputPath: 'edit/MyVideo.mp4',
-    tempDir: 'edit/temp_myvideo',
+    tempDir: path.join(require('os').tmpdir(), 'myvideo_' + Date.now()),
     introTitle: 'My Demo Video',
     introSubtitle: 'A Quick Walkthrough',
     introDuration: 3,
@@ -405,7 +405,7 @@ The `runEditPipeline` function and `cleanupDir` handle cleanup automatically. If
 consider wrapping in try/finally:
 
 ```js
-const TEMP = 'edit/temp';
+const TEMP   = path.join(require('os').tmpdir(), video_name + '_' + Date.now());
 try {
     // ... editing operations ...
 } finally {
@@ -437,7 +437,7 @@ const path = require('path');
 // 1. Define paths
 const INPUT = path.resolve(__dirname, '../source/MyVideo.mp4');
 const OUTPUT = path.resolve(__dirname, '../edit/MyVideo.mp4');
-const TEMP = path.resolve(__dirname, '../edit/temp_myvideo');
+const TEMP   = path.join(require('os').tmpdir(), 'myvideo_' + Date.now());
 
 // 2. Define segments (the "edit decision list")
 const segments = [

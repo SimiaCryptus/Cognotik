@@ -17,7 +17,7 @@ const path = require('path');
 // ---------------------------------------------------------------------------
 const INPUT  = path.resolve(__dirname, '../source/Sys_Wizard.mp4');
 const OUTPUT = path.resolve(__dirname, '../edit/Sys_Wizard.mp4');
-const TEMP   = path.resolve(__dirname, '../edit/temp_sys_wizard');
+const TEMP   = path.join(require('os').tmpdir(), 'sys_wizard_edit_' + Date.now());
 
 // ---------------------------------------------------------------------------
 // Segment Definitions (Edit Decision List)
