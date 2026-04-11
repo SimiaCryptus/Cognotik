@@ -30,6 +30,7 @@ SUBTITLE_FONT_SIZE=42
 BG_COLOR="black"
 TEXT_COLOR="white"
 ACCENT_COLOR="#4FC3F7"
+
 # Font configuration — find a usable font on the system
 FONT_FILE=""
 for candidate in \
@@ -52,28 +53,43 @@ INTRO_DURATION=5
 OUTRO_DURATION=5
 
 # ---------------------------------------------------------------------------
-# Section titles derived from filenames — human-friendly names
+# Ordered section list — controls the sequence of the compiled tour.
+# Derived from the markdown transcripts; progresses from installation
+# through features and applications, ending with the most visual demo.
+# ---------------------------------------------------------------------------
+SECTION_ORDER=(
+     "Install_Windows"
+     "Plugin_Install"
+     "Filesystem"
+     "Sys_Wizard"
+     "WebApp_Factory"
+     "Philosophical_Calculator"
+     "Comic_Generator"
+)
+
+# ---------------------------------------------------------------------------
+# Section titles and subtitles — human-friendly names derived from transcripts
 # ---------------------------------------------------------------------------
 declare -A SECTION_TITLES
 SECTION_TITLES=(
-    ["Comic_Generator"]="Comic Generator"
-    ["Filesystem"]="Filesystem Access"
-    ["Install_Windows"]="Windows Installation"
-    ["Philosophical_Calculator"]="Philosophical Calculator"
-    ["Plugin_Install"]="Plugin Installation"
-    ["Sys_Wizard"]="System Wizard"
-    ["WebApp_Factory"]="Web App Factory"
+     ["Install_Windows"]="Installing Cognotic Desktop"
+     ["Plugin_Install"]="Installing a Plugin"
+     ["Filesystem"]="Filesystem Access"
+     ["Sys_Wizard"]="The System Wizard"
+     ["WebApp_Factory"]="Web App Factory"
+     ["Philosophical_Calculator"]="The Philosophical Calculator"
+     ["Comic_Generator"]="Comic Generator"
 )
 
 declare -A SECTION_SUBTITLES
 SECTION_SUBTITLES=(
-    ["Comic_Generator"]="AI-Powered Comic Book Creation"
-    ["Filesystem"]="Session File System & Git Integration"
-    ["Install_Windows"]="Getting Started on Windows"
-    ["Philosophical_Calculator"]="Multi-Perspective Analysis & Illustration"
-    ["Plugin_Install"]="Extending with Plugins"
-    ["Sys_Wizard"]="Guided System Configuration"
-    ["WebApp_Factory"]="Generate Full Web Applications"
+     ["Install_Windows"]="Getting Started on Windows"
+     ["Plugin_Install"]="Extending Cognotic with Plugins"
+     ["Filesystem"]="Session File System & Git Integration"
+     ["Sys_Wizard"]="AI-Powered Shell Script Generation"
+     ["WebApp_Factory"]="Generate Full Web Applications"
+     ["Philosophical_Calculator"]="Multi-Perspective Analysis & Illustration"
+     ["Comic_Generator"]="AI-Powered Comic Book Creation"
 )
 
 # ---------------------------------------------------------------------------
@@ -102,22 +118,39 @@ require_cmd ffmpeg
 
 [[ -d "$EDIT_DIR" ]] || err "Edit directory '$EDIT_DIR' not found."
 
-# Discover video files from the edit directory
-VIDEOS=()
-for f in "$EDIT_DIR"/*.mp4; do
-     [[ -e "$f" ]] && VIDEOS+=("$f")
+
+
+# Discover video files from the edit directory, respecting SECTION_ORDER
+# Videos listed in SECTION_ORDER are placed first (in that order), followed
+# by any remaining videos found in the edit directory (alphabetically).
+VALID_VIDEOS=()
+SEEN_BASENAMES=()
+
+for section in "${SECTION_ORDER[@]}"; do
+     candidate="$EDIT_DIR/${section}.mp4"
+     if [[ -f "$candidate" ]]; then
+         VALID_VIDEOS+=("$candidate")
+         SEEN_BASENAMES+=("${section}.mp4")
+     else
+         warn "Ordered section video not found: $candidate — skipping"
+     fi
 done
 
-[[ ${#VIDEOS[@]} -gt 0 ]] || err "No video files found in '$EDIT_DIR/'."
-
-# Verify all source videos exist
-VALID_VIDEOS=()
-for v in "${VIDEOS[@]}"; do
-    if [[ -f "$v" ]]; then
-        VALID_VIDEOS+=("$v")
-    else
-        warn "Video not found: $v — skipping"
-    fi
+# Append any videos not already covered by SECTION_ORDER
+for f in "$EDIT_DIR"/*.mp4; do
+     [[ -e "$f" ]] || continue
+     fname="$(basename "$f")"
+     already_seen=false
+     for seen in "${SEEN_BASENAMES[@]}"; do
+         if [[ "$seen" == "$fname" ]]; then
+             already_seen=true
+             break
+         fi
+     done
+     if [[ "$already_seen" == false ]]; then
+         VALID_VIDEOS+=("$f")
+         warn "Video '${fname}' not in SECTION_ORDER — appending at end"
+     fi
 done
 
 [[ ${#VALID_VIDEOS[@]} -gt 0 ]] || err "No valid video files found. Aborting."
@@ -258,6 +291,7 @@ apply_fades() {
      fi
      log "Applied fades: $(basename "$output")"
 }
+
 # Log font status
 if [[ -n "$FONT_FILE" ]]; then
      log "Using font: $FONT_FILE"
@@ -276,7 +310,7 @@ CONCAT_LIST="$TEMP_DIR/concat_list.txt"
 # --- Intro title card ---
 log "Generating intro title card..."
 INTRO_FILE="$TEMP_DIR/000_intro.mp4"
-generate_title_card "$INTRO_FILE" "$INTRO_DURATION" "Cognotik Desktop" "Video Tour"
+generate_title_card "$INTRO_FILE" "$INTRO_DURATION" "Cognotic Desktop" "Video Tour"
 apply_fades "$INTRO_FILE" "$TEMP_DIR/000_intro_faded.mp4" "$FADE_DURATION" "$FADE_DURATION"
 echo "file '000_intro_faded.mp4'" >> "$CONCAT_LIST"
 SEGMENT_INDEX=1
@@ -312,14 +346,14 @@ done
 log "Generating outro title card..."
 padded_idx=$(printf "%03d" "$SEGMENT_INDEX")
 OUTRO_FILE="$TEMP_DIR/${padded_idx}_outro.mp4"
-generate_title_card "$OUTRO_FILE" "$OUTRO_DURATION" "Thank You" "Explore more at cognotic.dev"
+generate_title_card "$OUTRO_FILE" "$OUTRO_DURATION" "Thank You" "Explore more at cognotic.com"
 apply_fades "$OUTRO_FILE" "$TEMP_DIR/${padded_idx}_outro_faded.mp4" "$FADE_DURATION" "$FADE_DURATION"
 echo "file '${padded_idx}_outro_faded.mp4'" >> "$CONCAT_LIST"
 
 # ---------------------------------------------------------------------------
 # Concatenate all segments
 # ---------------------------------------------------------------------------
-log "Concatenating ${SEGMENT_INDEX} sections into $OUTPUT_FILE..."
+log "Concatenating $((SEGMENT_INDEX + 1)) segments (intro + ${#VALID_VIDEOS[@]} sections + outro) into $OUTPUT_FILE..."
 
 ffmpeg -y -f concat -safe 0 \
     -i "$CONCAT_LIST" \
@@ -337,6 +371,7 @@ if [[ -f "$OUTPUT_FILE" ]]; then
     log "  Output:   $OUTPUT_FILE"
     log "  Size:     $FINAL_SIZE"
     log "  Duration: ${FINAL_DUR}s"
+     log "  Sections: ${#VALID_VIDEOS[@]}"
     log "=========================================="
 else
     err "Failed to create $OUTPUT_FILE"

@@ -4,7 +4,7 @@ set -euo pipefail
 # =============================================================================
 # Configuration
 # =============================================================================
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VIDEO_DIR="${SCRIPT_DIR}/source"
 AUDIO_DIR="${SCRIPT_DIR}/audio"
 TRANSCRIPT_DIR="${SCRIPT_DIR}/transcripts"
