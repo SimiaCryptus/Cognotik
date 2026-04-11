@@ -19,7 +19,7 @@ set -euo pipefail
 #   ./scripts/denoise_audio.sh [subdir]
 #
 # Arguments:
-#   subdir  — Subdirectory name containing .mp4 files (default: edit)
+#   subdir  — Subdirectory name containing .mp4 files (default: source)
 #
 # Environment variables:
 #   HIGHPASS_FREQ         - High-pass filter cutoff frequency in Hz (default: 80)
@@ -40,7 +40,7 @@ set -euo pipefail
 #   EDIT_DIR              - Override input directory (default: <subdir>)
 # =============================================================================
 
-SUBDIR_NAME=${1:-"edit"}
+SUBDIR_NAME=${1:-"source"}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EDIT_DIR="${EDIT_DIR:-${SCRIPT_DIR}/${SUBDIR_NAME}}"
 

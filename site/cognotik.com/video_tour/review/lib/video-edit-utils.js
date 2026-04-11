@@ -915,11 +915,22 @@ function runEditPipeline(config) {
     // Audio normalization
     if (doNormalize) {
         console.log("\n=== Normalizing audio ===");
-        ensureDirs(path.dirname(outputPath));
         const normalizedTemp = path.join(tempDir, "normalized_final.mp4");
-        normalizeAudio(concatOutput, normalizedTemp);
         ensureDirs(path.dirname(outputPath));
-        fs.copyFileSync(normalizedTemp, outputPath);
+        normalizeAudio(concatOutput, normalizedTemp);
+        // Copy from temp to final destination (handles cross-filesystem/WSL mounts)
+        console.log(`Copying result to ${outputPath}...`);
+        try {
+            fs.copyFileSync(normalizedTemp, outputPath);
+        } catch (copyErr) {
+            console.warn(`fs.copyFileSync failed (${copyErr.message}), falling back to ffmpeg copy...`);
+            run(
+                `ffmpeg -y -i "${normalizedTemp}" -c copy -movflags +faststart "${outputPath}"`
+            );
+        }
+    } else {
+        // If concat wrote directly to outputPath on a mount, it may also need copying
+        // but concatOutput === outputPath in this branch, so nothing to do
     }
 
     // Cleanup
