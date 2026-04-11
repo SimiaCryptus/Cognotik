@@ -358,26 +358,10 @@ Specifying `targetDuration` is more intuitive and less error-prone than calculat
 
 ```js
 // ✅ Preferred — clear intent
-{
-    action: 'compress', start
-:
-    '00:01:00', end
-:
-    '00:02:30', targetDuration
-:
-    10
-}
+{action: 'compress', start:'00:01:00', end:'00:02:30', targetDuration:10}
 
 // ⚠️ Works but requires mental math
-{
-    action: 'compress', start
-:
-    '00:01:00', end
-:
-    '00:02:30', speed
-:
-    9
-}
+{action: 'compress', start:'00:01:00', end:'00:02:30', speed:9}
 ```
 
 ### 4. Segment ID Naming
@@ -385,14 +369,8 @@ Specifying `targetDuration` is more intuitive and less error-prone than calculat
 Use descriptive IDs for segments — they become filenames in the temp directory, making debugging easier:
 
 ```js
-{
-    id: 'intro_greeting',
-...
-}    // ✅ Easy to find in temp dir
-{
-    id: 'seg_003',
-...
-}           // ⚠️ Less informative
+{id: 'intro_greeting',...}    // ✅ Easy to find in temp dir
+{id: 'seg_003',...}           // ⚠️ Less informative
 ```
 
 ### 5. Prefer Concat Demuxer Over MPEG-TS
@@ -438,15 +416,9 @@ Always add overlay text on time-compressed segments so viewers understand the sp
 ```js
 {
     action: 'compress',
-        targetDuration
-:
-    10,
-        overlay
-:
-    'Generating images...',  // ✅ Viewer knows what's happening
-        muteAudio
-:
-    true,                  // Sped-up audio sounds bad
+    targetDuration:10,
+    overlay:'Generating images...',  // ✅ Viewer knows what's happening
+    muteAudio:true,                  // Sped-up audio sounds bad
 }
 ```
 
@@ -479,17 +451,3 @@ veu.runEditPipeline({
     segments,
 });
 ```
-
-## Migration Guide
-
-To convert an existing script to use this library:
-
-1. Replace `require('child_process')` / `require('fs')` boilerplate with `require('./lib/video-edit-utils')`
-2. Replace manual `mkdirSync` calls with `veu.ensureDirs()`
-3. Replace custom `run()` functions with `veu.run()`
-4. Replace `timestampToSeconds()` / `tcToSeconds()` with `veu.tcToSeconds()`
-5. Replace billboard generation FFmpeg commands with `veu.generateIntroBillboard()` / `veu.generateOutroBillboard()`
-6. Replace segment extraction loops with `veu.processSegments()`
-7. Replace concat logic with `veu.concatenateVideos()`
-8. Replace cleanup with `veu.cleanupDir()`
-9. Or replace everything with a single `veu.runEditPipeline()` call
