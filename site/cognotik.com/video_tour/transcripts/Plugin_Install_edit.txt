@@ -1,7 +1,0 @@
-The cognotic desktop application is extensible. You can install a plug-in by clicking Plugins from the main page, clicking Upload Plugin, Choose File. Selecting the plug-in jar.
-
-You may want to check auto load and then upload plugin. Upon starting this plugin asks you to accept the license agreement, which is OK.
-
-And this plugin also requires you to be on Patreon and verify your subscription status. This plug-in is for supporters of my Patreon. Once you click allow on that, you can close that and then refresh the home page and you see some extra options.
-
-As you can see, plug-in installation is simple, and adds working applications.

@@ -1,7 +1,7 @@
 ---
 specifies: ../compile_video_tour.sh
 related:
-  - ../*.md
+  - ../edit/transcripts/*.srt
   - files.txt
   - README.md
 ---
