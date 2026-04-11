@@ -1,0 +1,520 @@
+{
+  "title": "Cognotik Desktop – Plugin Installation",
+  "overview": "A short demo walkthrough showing how to install a plugin in the Cognotik desktop application, including uploading the JAR file, accepting the license agreement, verifying Patreon subscription status, and seeing the new options appear on the home page.",
+  "source": {
+    "transcript": "Plugin_Install.srt",
+    "totalDuration": "~1:28 (87.8s)",
+    "other": [
+      "Plugin_Install.json (AWS Transcribe)",
+      "Plugin_Install.scenes.txt"
+    ]
+  },
+  "intro": {
+    "trimRange": {
+      "start": "0:00.000",
+      "end": "0:06.000"
+    },
+    "billboard": {
+      "placement": "intro",
+      "title": "Cognotik Desktop",
+      "subtitle": "Plugin Installation",
+      "additionalText": [],
+      "holdDuration": "3s",
+      "transitionIn": "fade-in-from-black",
+      "transitionOut": "crossfade"
+    },
+    "notes": "Dead air from 0:00 to ~6.3s before speech begins. Trim and replace with intro billboard card that crossfades into the first frame of the demo."
+  },
+  "segments": [
+    {
+      "index": 1,
+      "title": "Introduction & Navigate to Plugins",
+      "source": {
+        "start": "0:06.000",
+        "end": "0:15.500"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "0:06.000",
+            "end": "0:06.300"
+          },
+          "action": "trim",
+          "notes": "Trim slight dead air before first word.",
+          "dialogue": ""
+        },
+        {
+          "source": {
+            "start": "0:06.309",
+            "end": "0:15.289"
+          },
+          "action": "keep",
+          "notes": "Opening narration: introduces the extensible desktop app and navigating to the Plugins page.",
+          "dialogue": "The cognotic desktop application is extensible. You can install a plug-in by clicking Plugins from the main page,"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "title": "Upload Plugin & Select File",
+      "source": {
+        "start": "0:15.500",
+        "end": "0:25.500"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "0:15.500",
+            "end": "0:17.700"
+          },
+          "action": "tighten",
+          "notes": "Small gap between navigating to plugins page and clicking Upload Plugin. Tighten the pause slightly.",
+          "compressedDuration": "~1s"
+        },
+        {
+          "source": {
+            "start": "0:17.709",
+            "end": "0:23.879"
+          },
+          "action": "keep",
+          "notes": "Narrator clicks Upload Plugin, Choose File, and selects the plug-in JAR.",
+          "dialogue": "clicking Upload Plugin, Choose File. Selecting the plug-in jar."
+        },
+        {
+          "source": {
+            "start": "0:23.879",
+            "end": "0:25.500"
+          },
+          "action": "tighten",
+          "notes": "Brief pause after selecting the JAR file before next instruction. Tighten to ~0.8s.",
+          "compressedDuration": "~0.8s"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "title": "Check Auto-Load & Upload",
+      "source": {
+        "start": "0:25.500",
+        "end": "0:31.500"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "0:26.139",
+            "end": "0:29.840"
+          },
+          "action": "keep",
+          "notes": "Narrator explains checking auto-load and clicking upload plugin.",
+          "dialogue": "You may want to check auto load and then upload plugin."
+        },
+        {
+          "source": {
+            "start": "0:29.840",
+            "end": "0:31.500"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Pause while plugin uploads/processes. Compress and mute.",
+          "compressedDuration": "~1s",
+          "speedMultiplier": 2,
+          "muteAudio": true,
+          "overlay": "Uploading..."
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "title": "License Agreement & Patreon Verification",
+      "source": {
+        "start": "0:31.500",
+        "end": "0:58.000"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "0:32.099",
+            "end": "0:37.360"
+          },
+          "action": "keep",
+          "notes": "Plugin starts and asks to accept the license agreement.",
+          "dialogue": "Upon starting this plugin asks you to accept the license agreement, which is OK,"
+        },
+        {
+          "source": {
+            "start": "0:37.360",
+            "end": "0:39.459"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Processing pause between accepting license and next dialog. Compress and mute.",
+          "compressedDuration": "~1s",
+          "speedMultiplier": 2,
+          "muteAudio": true
+        },
+        {
+          "source": {
+            "start": "0:39.459",
+            "end": "0:40.860"
+          },
+          "action": "edit",
+          "notes": "Narrator says 'and this' then pauses before 'plugin'. Tighten the hesitation gap between 'this' (39.939) and 'plugin' (40.860).",
+          "dialogue": "and this plugin",
+          "secondaryAction": "tighten",
+          "secondaryRange": {
+            "start": "0:39.939",
+            "end": "0:40.860"
+          }
+        },
+        {
+          "source": {
+            "start": "0:40.860",
+            "end": "0:45.840"
+          },
+          "action": "keep",
+          "notes": "Explains Patreon requirement.",
+          "dialogue": "plugin also requires you to be on Patreon"
+        },
+        {
+          "source": {
+            "start": "0:45.840",
+            "end": "0:47.590"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Pause while interacting with Patreon verification UI. Compress and mute.",
+          "compressedDuration": "~0.8s",
+          "speedMultiplier": 2,
+          "muteAudio": true
+        },
+        {
+          "source": {
+            "start": "0:47.590",
+            "end": "0:50.040"
+          },
+          "action": "keep",
+          "notes": "Completes the Patreon verification explanation.",
+          "dialogue": "and verify your subscription status."
+        },
+        {
+          "source": {
+            "start": "0:50.040",
+            "end": "0:51.810"
+          },
+          "action": "tighten",
+          "notes": "Brief pause before next sentence. Tighten to ~0.5s.",
+          "compressedDuration": "~0.5s"
+        },
+        {
+          "source": {
+            "start": "0:51.810",
+            "end": "0:53.090"
+          },
+          "action": "keep",
+          "notes": "Begins explaining who the plugin is for.",
+          "dialogue": "This plug-in is for"
+        },
+        {
+          "source": {
+            "start": "0:53.090",
+            "end": "0:55.930"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Long pause mid-sentence (processing/thinking time) between 'for' and 'supporters'. Compress and mute to maintain flow.",
+          "compressedDuration": "~1s",
+          "speedMultiplier": 3,
+          "muteAudio": true
+        },
+        {
+          "source": {
+            "start": "0:55.930",
+            "end": "0:57.909"
+          },
+          "action": "keep",
+          "notes": "Completes the Patreon supporters statement.",
+          "dialogue": "supporters of my Patreon."
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "title": "Allow, Close & Refresh Home Page",
+      "source": {
+        "start": "0:58.000",
+        "end": "0:74.790"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "0:57.909",
+            "end": "0:60.610"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Pause/processing between Patreon statement and next action. Compress and mute.",
+          "compressedDuration": "~1s",
+          "speedMultiplier": 3,
+          "muteAudio": true
+        },
+        {
+          "source": {
+            "start": "0:60.610",
+            "end": "0:61.619"
+          },
+          "action": "keep",
+          "notes": "Narrator says 'Once you click'.",
+          "dialogue": "Once you click"
+        },
+        {
+          "source": {
+            "start": "0:61.619",
+            "end": "0:62.409"
+          },
+          "action": "tighten",
+          "notes": "Small hesitation gap between 'click' and 'allow'. Tighten.",
+          "compressedDuration": "~0.3s"
+        },
+        {
+          "source": {
+            "start": "0:62.409",
+            "end": "0:65.349"
+          },
+          "action": "keep",
+          "notes": "Narrator explains clicking allow and closing the dialog.",
+          "dialogue": "allow on that, you can close that"
+        },
+        {
+          "source": {
+            "start": "0:65.349",
+            "end": "0:68.190"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Pause while closing dialog and navigating to refresh. Compress and mute.",
+          "compressedDuration": "~1s",
+          "speedMultiplier": 3,
+          "muteAudio": true
+        },
+        {
+          "source": {
+            "start": "0:68.190",
+            "end": "0:74.790"
+          },
+          "action": "keep",
+          "notes": "Narrator refreshes the home page and shows the new options.",
+          "dialogue": "refresh the home page and you see some extra options that we can go over in other demo videos."
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "title": "Closing Summary",
+      "source": {
+        "start": "0:74.790",
+        "end": "0:86.519"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "0:74.790",
+            "end": "0:78.900"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Long pause and dark scene transition (scene 7 in segmentation) before closing statement. Compress and mute.",
+          "compressedDuration": "~1.5s",
+          "speedMultiplier": 3,
+          "muteAudio": true
+        },
+        {
+          "source": {
+            "start": "0:78.900",
+            "end": "0:86.519"
+          },
+          "action": "keep",
+          "notes": "Closing summary statement.",
+          "dialogue": "As you can see, plug-in installation is simple, and adds working applications."
+        }
+      ]
+    }
+  ],
+  "outro": {
+    "startAfter": "1:26.519",
+    "trimRange": {
+      "start": "1:26.519",
+      "end": "1:27.783"
+    },
+    "billboard": {
+      "placement": "outro",
+      "title": "Thanks for Watching!",
+      "subtitle": "Cognotik Desktop – Plugin Installation",
+      "additionalText": [
+        "Support us on Patreon for exclusive plugins",
+        "More demo videos coming soon"
+      ],
+      "holdDuration": "4s",
+      "transitionIn": "fade-to-black",
+      "transitionOut": "fade-to-black"
+    },
+    "notes": "Trim trailing ~1.3s of dark/silence after last word. Fade to outro billboard."
+  },
+  "editSummary": [
+    {
+      "editType": "trim",
+      "timestamp": "0:00.000 – 0:06.000",
+      "durationSaved": "~6s",
+      "notes": "Dead air before speech begins; replaced with intro billboard."
+    },
+    {
+      "editType": "tighten",
+      "timestamp": "0:15.500 – 0:17.700",
+      "durationSaved": "~1.2s",
+      "notes": "Tighten pause between navigating to plugins and clicking Upload."
+    },
+    {
+      "editType": "tighten",
+      "timestamp": "0:23.879 – 0:25.500",
+      "durationSaved": "~0.8s",
+      "notes": "Tighten pause after selecting JAR file."
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "0:29.840 – 0:31.500",
+      "durationSaved": "~0.7s",
+      "notes": "Compress upload processing pause."
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "0:37.360 – 0:39.459",
+      "durationSaved": "~1.1s",
+      "notes": "Compress pause between license acceptance and next dialog."
+    },
+    {
+      "editType": "edit",
+      "timestamp": "0:39.939 – 0:40.860",
+      "durationSaved": "~0.5s",
+      "notes": "Tighten hesitation gap in 'and this... plugin'."
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "0:45.840 – 0:47.590",
+      "durationSaved": "~0.9s",
+      "notes": "Compress pause during Patreon verification UI interaction."
+    },
+    {
+      "editType": "tighten",
+      "timestamp": "0:50.040 – 0:51.810",
+      "durationSaved": "~1.3s",
+      "notes": "Tighten pause between sentences."
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "0:53.090 – 0:55.930",
+      "durationSaved": "~1.8s",
+      "notes": "Compress long mid-sentence pause ('for... supporters')."
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "0:57.909 – 1:00.610",
+      "durationSaved": "~1.7s",
+      "notes": "Compress pause between Patreon statement and next action."
+    },
+    {
+      "editType": "tighten",
+      "timestamp": "1:01.619 – 1:02.409",
+      "durationSaved": "~0.5s",
+      "notes": "Tighten hesitation between 'click' and 'allow'."
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "1:05.349 – 1:08.190",
+      "durationSaved": "~1.8s",
+      "notes": "Compress pause while navigating to refresh."
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "1:14.790 – 1:18.900",
+      "durationSaved": "~2.6s",
+      "notes": "Compress dark scene transition before closing statement."
+    },
+    {
+      "editType": "trim",
+      "timestamp": "1:26.519 – 1:27.783",
+      "durationSaved": "~1.3s",
+      "notes": "Trim trailing dark/silence after last word."
+    }
+  ],
+  "polish": {
+    "transitions": [
+      {
+        "context": "Intro billboard to first content",
+        "type": "crossfade",
+        "duration": "0.8s",
+        "notes": "Smooth crossfade from intro title card into the desktop application screen."
+      },
+      {
+        "context": "Between time-compressed segments",
+        "type": "speed-ramp",
+        "duration": "0.3s",
+        "notes": "Use subtle speed ramps into and out of time-compressed sections for smooth visual flow."
+      },
+      {
+        "context": "Last content to outro billboard",
+        "type": "fade-to-black",
+        "duration": "1.0s",
+        "notes": "Fade to black after closing statement, then hold on outro card."
+      }
+    ],
+    "audio": {
+      "normalizeLevels": true,
+      "backgroundMusic": true,
+      "musicNotes": "Light, upbeat background music at low volume (~15-20% mix) throughout. Fade music up slightly during time-compressed/muted sections to maintain energy. Fade out during outro.",
+      "noiseReduction": "Apply light noise reduction to narration track to clean up any ambient noise.",
+      "other": [
+        "Ensure smooth audio transitions at edit points to avoid pops or clicks."
+      ]
+    },
+    "captions": true,
+    "lowerThirds": [
+      "\"Cognotik Desktop\" – lower-third at intro",
+      "\"Plugins → Upload Plugin\" – lower-third callout during navigation step",
+      "\"Patreon Supporters Only\" – lower-third during Patreon verification section"
+    ],
+    "other": [
+      "Consider adding subtle zoom/highlight on UI elements being clicked (Plugins button, Upload Plugin button, Choose File, etc.) for clarity.",
+      "Add cursor highlight or spotlight effect to guide viewer attention during screen interactions."
+    ]
+  },
+  "duration": {
+    "original": "~1:28 (87.8s)",
+    "estimated": "~1:05 – 1:10"
+  },
+  "finalStructure": [
+    {
+      "timeRange": "0:00 – 0:03",
+      "description": "Intro billboard: 'Cognotik Desktop – Plugin Installation' with fade-in-from-black."
+    },
+    {
+      "timeRange": "0:03 – 0:12",
+      "description": "Introduction: narrator explains the app is extensible and navigates to the Plugins page."
+    },
+    {
+      "timeRange": "0:12 – 0:20",
+      "description": "Upload Plugin: clicks Upload Plugin, Choose File, selects the JAR file."
+    },
+    {
+      "timeRange": "0:20 – 0:25",
+      "description": "Auto-load & Upload: checks auto-load option and uploads the plugin."
+    },
+    {
+      "timeRange": "0:25 – 0:42",
+      "description": "License & Patreon: accepts license agreement, verifies Patreon subscription. Time-compressed pauses maintain flow."
+    },
+    {
+      "timeRange": "0:42 – 0:55",
+      "description": "Allow & Refresh: clicks allow, closes dialog, refreshes home page to show new options."
+    },
+    {
+      "timeRange": "0:55 – 1:03",
+      "description": "Closing summary: 'plug-in installation is simple, and adds working applications.'"
+    },
+    {
+      "timeRange": "1:03 – 1:07",
+      "description": "Outro billboard: 'Thanks for Watching!' with Patreon CTA, fade-to-black."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 transforms: 
-  - ../edit/transcripts/([^/\.]+)\.srt -> ../planscripts/$1.md
+  - ../review/([^/\.]+)\.json -> ../planscripts/$1.md
   - ../reference/([^/\.]+)\.md -> ../planscripts/$1.md
 ---
 

@@ -554,10 +554,12 @@ function extractCompressedSegment(inputPath, outputPath, start, end, opts = {}) 
 
     if (muteAudio) {
         // Replace audio with silence
+        const afFilter = afParts.length > 0 ? `-af "${afParts.join(",")}"` : "";
         run(
             `ffmpeg -y -i "${inputPath}" -ss ${start} -to ${end} ` +
             `-f lavfi -i anullsrc=r=${sampleRate}:cl=${channelLayout} ` +
             `-vf "${vfParts.join(",")}" ` +
+            `${afFilter} ` +
             `-map 0:v -map 1:a ` +
             `-t ${targetDuration.toFixed(3)} ` +
             `-c:v libx264 -preset fast -crf ${crf} -pix_fmt yuv420p ` +

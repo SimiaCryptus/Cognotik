@@ -5,7 +5,9 @@
 **Action:** Show the System Wizard app open in Cognotic.
 
 **Narration:**
-The System Wizard app is powerful — and potentially dangerous. Sometimes you need to do something with your system: install software, figure out what's using all your disk space, or perform another task you'd normally go to the command line for. With AI and Cognotic, you can have an LLM write the shell script for you.
+The System Wizard app is powerful — and potentially dangerous. Sometimes you need to do something with your system:
+install software, figure out what's using all your disk space, or perform another task you'd normally go to the command
+line for. With AI and Cognotic, you can have an LLM write the shell script for you.
 
 ---
 
@@ -28,7 +30,8 @@ For this demonstration, let's list the running processes. Save the goal.
 **Action:** Show the platform selector — **Windows (PowerShell)** is selected.
 
 **Narration:**
-We are using Windows here, so we'll be using PowerShell. The System Wizard also supports Shell, which covers Linux and macOS using Bash.
+We are using Windows here, so we'll be using PowerShell. The System Wizard also supports Shell, which covers Linux and
+macOS using Bash.
 
 **Action:** Navigate to the **Settings** tab and confirm the model selection.
 
@@ -47,7 +50,8 @@ Now go to the Pipeline tab and generate the shell script.
 **Action:** Wait for the script to appear in the output area.
 
 **Narration:**
-And here we go. You can either copy this script and use it directly in your own shell, or you can click **Run and Fix** to test the script right here.
+And here we go. You can either copy this script and use it directly in your own shell, or you can click **Run and Fix**
+to test the script right here.
 
 ---
 
@@ -56,7 +60,9 @@ And here we go. You can either copy this script and use it directly in your own 
 **Action:** Click the **Run and Fix** button.
 
 **Narration:**
-Click Run and Fix to start an auto-fix session. If an error occurs during execution, the System Wizard will analyze the error and attempt to generate a corrected script. You would then be able to retry the execution from this same interface.
+Click Run and Fix to start an auto-fix session. If an error occurs during execution, the System Wizard will analyze the
+error and attempt to generate a corrected script. You would then be able to retry the execution from this same
+interface.
 
 **Action:** Show the session completing successfully.
 
@@ -70,7 +76,8 @@ In this case, the first execution was successful. The UI shows that the command 
 **Action:** Point out that the main UI does not display command output directly.
 
 **Narration:**
-Note that the UI does not show the output of the command inline. To see the full output, you need to go into the session log.
+Note that the UI does not show the output of the command inline. To see the full output, you need to go into the session
+log.
 
 **Action:** Open the session log and scroll through the list of running processes.
 

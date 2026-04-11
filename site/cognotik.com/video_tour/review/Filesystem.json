@@ -1,0 +1,704 @@
+{
+  "title": "Cognotik Session File System Access",
+  "overview": "A walkthrough demonstrating how to access and use the file system backing each Cognotik session, including directory browsing, file viewing in multiple formats (markdown, HTML, PDF, text), zip download, built-in Git version control, and physical file system path access for development environments.",
+  "source": {
+    "transcript": "Filesystem.srt",
+    "totalDuration": "~2:47 (167.5s)",
+    "other": [
+      "Filesystem.json",
+      "Filesystem.scenes.txt"
+    ]
+  },
+  "intro": {
+    "trimRange": {
+      "start": "0:00.000",
+      "end": "0:04.000"
+    },
+    "billboard": {
+      "placement": "intro",
+      "title": "Session File System Access",
+      "subtitle": "Browsing, Viewing & Version Control for Cognotik Sessions",
+      "additionalText": [],
+      "holdDuration": "4s",
+      "transitionIn": "fade-in-from-black",
+      "transitionOut": "crossfade"
+    },
+    "notes": "Dead air / no speech for the first ~4 seconds. Trim and replace with intro billboard."
+  },
+  "segments": [
+    {
+      "index": 1,
+      "title": "Introduction – Accessing the Session File System",
+      "source": {
+        "start": "0:04.030",
+        "end": "0:31.030"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "0:04.030",
+            "end": "0:09.550"
+          },
+          "action": "keep",
+          "notes": "Opening explanation: all sessions have a file system backing them that can be accessed.",
+          "dialogue": "All sessions have a file system backing them that can be accessed."
+        },
+        {
+          "source": {
+            "start": "0:09.550",
+            "end": "0:09.829"
+          },
+          "action": "tighten",
+          "notes": "Small pause before 'If you go to the URL'. Tighten the gap slightly."
+        },
+        {
+          "source": {
+            "start": "0:09.829",
+            "end": "0:16.430"
+          },
+          "action": "keep",
+          "notes": "Explains navigating to the URL, references a previous comic book generation run.",
+          "dialogue": "If you go to the URL that is, here's a previous run, for example, that we generated a comic book from."
+        },
+        {
+          "source": {
+            "start": "0:16.430",
+            "end": "0:16.790"
+          },
+          "action": "tighten",
+          "notes": "Brief pause before next sentence. Tighten."
+        },
+        {
+          "source": {
+            "start": "0:16.790",
+            "end": "0:25.909"
+          },
+          "action": "keep",
+          "notes": "Demonstrates opening the root directory by modifying the URL.",
+          "dialogue": "If we open in a new tab that same URL but we remove the web page part so that we just access the root directory of that session."
+        },
+        {
+          "source": {
+            "start": "0:25.909",
+            "end": "0:26.579"
+          },
+          "action": "tighten",
+          "notes": "Short pause between sentences. Tighten to ~0.3s."
+        },
+        {
+          "source": {
+            "start": "0:26.579",
+            "end": "0:31.030"
+          },
+          "action": "keep",
+          "notes": "Confirms file system access for the session.",
+          "dialogue": "We can access the file system itself for that session."
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "title": "File System Features – Download, Browse & View Files",
+      "source": {
+        "start": "0:31.030",
+        "end": "0:52.630"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "0:31.030",
+            "end": "0:31.590"
+          },
+          "action": "tighten",
+          "notes": "Brief pause before 'Now this comes with'. Tighten."
+        },
+        {
+          "source": {
+            "start": "0:31.590",
+            "end": "0:37.849"
+          },
+          "action": "keep",
+          "notes": "Introduces features: download entire directory as zip.",
+          "dialogue": "Now this comes with a number of interesting features. First of all, we can download the entire directory as a zip file."
+        },
+        {
+          "source": {
+            "start": "0:37.849",
+            "end": "0:38.709"
+          },
+          "action": "tighten",
+          "notes": "Pause between zip file mention and markdown files. Tighten."
+        },
+        {
+          "source": {
+            "start": "0:38.709",
+            "end": "0:42.610"
+          },
+          "action": "keep",
+          "notes": "Can look at markdown files.",
+          "dialogue": "We can look at any markdown files,"
+        },
+        {
+          "source": {
+            "start": "0:42.610",
+            "end": "0:43.470"
+          },
+          "action": "tighten",
+          "notes": "Pause while navigating UI. Tighten slightly."
+        },
+        {
+          "source": {
+            "start": "0:43.470",
+            "end": "0:48.630"
+          },
+          "action": "keep",
+          "notes": "Can look at HTML files and directly view them.",
+          "dialogue": "we can look at any HTML files and directly view them, of course,"
+        },
+        {
+          "source": {
+            "start": "0:48.630",
+            "end": "0:52.630"
+          },
+          "action": "keep",
+          "notes": "Can also view markdown files.",
+          "dialogue": "and we can also view markdown files."
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "title": "Markdown Viewing Options – HTML, Text & PDF Rendering",
+      "source": {
+        "start": "0:52.630",
+        "end": "1:28.480"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "0:52.630",
+            "end": "0:53.610"
+          },
+          "action": "tighten",
+          "notes": "Pause before 'As either markdown'. Tighten."
+        },
+        {
+          "source": {
+            "start": "0:53.610",
+            "end": "0:58.470"
+          },
+          "action": "keep",
+          "notes": "Explains markdown download option.",
+          "dialogue": "As either markdown, which this will cause download,"
+        },
+        {
+          "source": {
+            "start": "0:58.470",
+            "end": "0:59.049"
+          },
+          "action": "tighten",
+          "notes": "Brief pause. Tighten."
+        },
+        {
+          "source": {
+            "start": "0:59.049",
+            "end": "1:05.069"
+          },
+          "action": "keep",
+          "notes": "View markdown as HTML with dynamic rendering.",
+          "dialogue": "or you can view the markdown files as HTML files that does a dynamic rendering."
+        },
+        {
+          "source": {
+            "start": "1:05.069",
+            "end": "1:09.290"
+          },
+          "action": "keep",
+          "notes": "View as text files.",
+          "dialogue": "You can also view them as text files."
+        },
+        {
+          "source": {
+            "start": "1:09.290",
+            "end": "1:10.319"
+          },
+          "action": "edit",
+          "notes": "Edit out false start 'If you,' – speaker restarts the sentence.",
+          "dialogue": "If you,"
+        },
+        {
+          "source": {
+            "start": "1:10.319",
+            "end": "1:13.800"
+          },
+          "action": "edit",
+          "notes": "Clean up: remove 'um' filler at 1:13.800-1:14.440. Keep the surrounding speech.",
+          "dialogue": "this is handy if you want to view the markdown source,"
+        },
+        {
+          "source": {
+            "start": "1:13.800",
+            "end": "1:14.800"
+          },
+          "action": "cut",
+          "notes": "Cut filler word 'um'.",
+          "dialogue": "um,"
+        },
+        {
+          "source": {
+            "start": "1:14.800",
+            "end": "1:18.660"
+          },
+          "action": "keep",
+          "notes": "Explains text view avoids triggering download.",
+          "dialogue": "in a way that won't trigger a download for your browser."
+        },
+        {
+          "source": {
+            "start": "1:18.660",
+            "end": "1:22.949"
+          },
+          "action": "keep",
+          "notes": "Markdown files as PDFs.",
+          "dialogue": "And you can also view markdown files as PDFs,"
+        },
+        {
+          "source": {
+            "start": "1:22.949",
+            "end": "1:28.480"
+          },
+          "action": "keep",
+          "notes": "Dynamic rendering of markdown to PDF format.",
+          "dialogue": "and that also does a dynamic rendering of the markdown file into PDF format."
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "title": "Built-in Git Version Control",
+      "source": {
+        "start": "1:28.480",
+        "end": "1:54.209"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "1:28.480",
+            "end": "1:29.610"
+          },
+          "action": "tighten",
+          "notes": "Pause before 'Additionally'. Tighten."
+        },
+        {
+          "source": {
+            "start": "1:29.610",
+            "end": "1:35.470"
+          },
+          "action": "keep",
+          "notes": "Introduces built-in Git support.",
+          "dialogue": "Additionally, the file system has built-in Git support, so you can"
+        },
+        {
+          "source": {
+            "start": "1:35.470",
+            "end": "1:37.190"
+          },
+          "action": "tighten",
+          "notes": "Pause while navigating to Git UI. Slight tighten.",
+          "secondaryAction": "time-compress",
+          "secondaryRange": {
+            "start": "1:36.370",
+            "end": "1:37.190"
+          },
+          "compressedDuration": "~0.5s",
+          "speedMultiplier": 2
+        },
+        {
+          "source": {
+            "start": "1:37.190",
+            "end": "1:40.010"
+          },
+          "action": "keep",
+          "notes": "View current status, commit the directory.",
+          "dialogue": "view the current status, you can commit the directory."
+        },
+        {
+          "source": {
+            "start": "1:40.010",
+            "end": "1:41.230"
+          },
+          "action": "tighten",
+          "notes": "Brief pause. Tighten."
+        },
+        {
+          "source": {
+            "start": "1:41.230",
+            "end": "1:43.639"
+          },
+          "action": "keep",
+          "notes": "Begins Git explanation.",
+          "dialogue": "If you're not aware,"
+        },
+        {
+          "source": {
+            "start": "1:43.639",
+            "end": "1:45.190"
+          },
+          "action": "cut",
+          "notes": "Cut filler 'uh' before Git explanation.",
+          "dialogue": "uh,"
+        },
+        {
+          "source": {
+            "start": "1:45.190",
+            "end": "1:54.209"
+          },
+          "action": "keep",
+          "notes": "Git explanation: version control, time machine, track changes, rollback.",
+          "dialogue": "Git is a version control system for file systems so that it's basically like a time machine so that you can track all of the file changes and if needed rollback."
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "title": "Summary – Power & Hackability of the File System Interface",
+      "source": {
+        "start": "1:54.209",
+        "end": "2:19.869"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "1:54.209",
+            "end": "1:55.129"
+          },
+          "action": "cut",
+          "notes": "Cut filler 'Um' at start of summary section.",
+          "dialogue": "Um,"
+        },
+        {
+          "source": {
+            "start": "1:55.129",
+            "end": "1:57.370"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Long pause (~2.2s) while speaker is thinking/processing. Compress and mute rather than cut entirely.",
+          "compressedDuration": "~0.8s",
+          "speedMultiplier": 3,
+          "muteAudio": true
+        },
+        {
+          "source": {
+            "start": "1:57.370",
+            "end": "2:02.910"
+          },
+          "action": "keep",
+          "notes": "Accessing the root file system for any given session via this interface.",
+          "dialogue": "accessing the root file system for any given session via this interface"
+        },
+        {
+          "source": {
+            "start": "2:02.910",
+            "end": "2:05.190"
+          },
+          "action": "keep",
+          "notes": "Gives you a powerful...",
+          "dialogue": "gives you a powerful,"
+        },
+        {
+          "source": {
+            "start": "2:05.190",
+            "end": "2:06.110"
+          },
+          "action": "cut",
+          "notes": "Cut filler 'um'.",
+          "dialogue": "um,"
+        },
+        {
+          "source": {
+            "start": "2:06.110",
+            "end": "2:09.009"
+          },
+          "action": "keep",
+          "notes": "Backdoor into the system functionality.",
+          "dialogue": "backdoor into the system functionality."
+        },
+        {
+          "source": {
+            "start": "2:09.009",
+            "end": "2:10.548"
+          },
+          "action": "cut",
+          "notes": "Cut filler 'Um,' between sentences.",
+          "dialogue": "Um,"
+        },
+        {
+          "source": {
+            "start": "2:10.548",
+            "end": "2:16.449"
+          },
+          "action": "keep",
+          "notes": "Provides hackability and transparency.",
+          "dialogue": "and provides a good level of hackability and transparency for any,"
+        },
+        {
+          "source": {
+            "start": "2:16.449",
+            "end": "2:17.850"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Pause before 'Cognotik' – speaker searching for the word. Compress.",
+          "compressedDuration": "~0.5s",
+          "speedMultiplier": 3,
+          "muteAudio": true
+        },
+        {
+          "source": {
+            "start": "2:17.850",
+            "end": "2:19.869"
+          },
+          "action": "keep",
+          "notes": "Cognotik applications.",
+          "dialogue": "Cognotik applications."
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "title": "Physical File System Location & Closing",
+      "source": {
+        "start": "2:19.869",
+        "end": "2:45.750"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "2:19.869",
+            "end": "2:20.419"
+          },
+          "action": "tighten",
+          "notes": "Brief pause before 'Finally'. Tighten."
+        },
+        {
+          "source": {
+            "start": "2:20.419",
+            "end": "2:28.410"
+          },
+          "action": "keep",
+          "notes": "Points out the physical location of the file system is shown.",
+          "dialogue": "Finally, I'd like to point out that the physical location of the file system is shown here."
+        },
+        {
+          "source": {
+            "start": "2:28.410",
+            "end": "2:28.970"
+          },
+          "action": "cut",
+          "notes": "Cut filler 'Uh,' before next sentence.",
+          "dialogue": "Uh,"
+        },
+        {
+          "source": {
+            "start": "2:28.970",
+            "end": "2:39.830"
+          },
+          "action": "keep",
+          "notes": "Mount with dev environment, open in file system explorer.",
+          "dialogue": "so if you want, you can mount this with a development environment or you can open it in the file system explorer or whatever you want to do."
+        },
+        {
+          "source": {
+            "start": "2:39.830",
+            "end": "2:41.169"
+          },
+          "action": "tighten",
+          "notes": "Pause before closing statement. Tighten to ~0.5s."
+        },
+        {
+          "source": {
+            "start": "2:41.169",
+            "end": "2:45.750"
+          },
+          "action": "keep",
+          "notes": "Closing: hope that functionality is useful.",
+          "dialogue": "I hope that functionality is useful to you."
+        }
+      ]
+    }
+  ],
+  "outro": {
+    "startAfter": "2:45.750",
+    "trimRange": {
+      "start": "2:45.750",
+      "end": "2:47.500"
+    },
+    "billboard": {
+      "placement": "outro",
+      "title": "Thanks for Watching!",
+      "subtitle": "Cognotik – Session File System Access",
+      "additionalText": [
+        "Explore more at cognotic.dev",
+        "Like & Subscribe for more tutorials"
+      ],
+      "holdDuration": "5s",
+      "transitionIn": "fade-to-black",
+      "transitionOut": "fade-to-black"
+    },
+    "notes": "Trim trailing silence/black after final speech ends at ~2:45.750. Insert outro billboard."
+  },
+  "editSummary": [
+    {
+      "editType": "trim",
+      "timestamp": "0:00.000 - 0:04.000",
+      "durationSaved": "~4s",
+      "notes": "Trim dead air at start before speech begins"
+    },
+    {
+      "editType": "tighten",
+      "timestamp": "Various",
+      "durationSaved": "~4-5s",
+      "notes": "Tighten inter-sentence pauses throughout for better pacing"
+    },
+    {
+      "editType": "cut (filler)",
+      "timestamp": "1:13.800 - 1:14.800",
+      "durationSaved": "~1s",
+      "notes": "Remove 'um' filler in markdown source explanation"
+    },
+    {
+      "editType": "cut (false start)",
+      "timestamp": "1:09.290 - 1:10.319",
+      "durationSaved": "~1s",
+      "notes": "Remove false start 'If you,' before 'this is handy'"
+    },
+    {
+      "editType": "cut (filler)",
+      "timestamp": "1:43.639 - 1:45.190",
+      "durationSaved": "~1.5s",
+      "notes": "Remove 'uh' filler before Git explanation"
+    },
+    {
+      "editType": "cut (filler)",
+      "timestamp": "1:54.209 - 1:55.129",
+      "durationSaved": "~1s",
+      "notes": "Remove 'Um' filler at start of summary"
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "1:55.129 - 1:57.370",
+      "durationSaved": "~1.5s",
+      "notes": "Compress thinking pause from ~2.2s to ~0.8s, mute audio"
+    },
+    {
+      "editType": "cut (filler)",
+      "timestamp": "2:05.190 - 2:06.110",
+      "durationSaved": "~1s",
+      "notes": "Remove 'um' filler in 'powerful, um, backdoor'"
+    },
+    {
+      "editType": "cut (filler)",
+      "timestamp": "2:09.009 - 2:10.548",
+      "durationSaved": "~1.5s",
+      "notes": "Remove 'Um,' filler between sentences"
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "2:16.449 - 2:17.850",
+      "durationSaved": "~1s",
+      "notes": "Compress pause before 'Cognotik' from ~1.4s to ~0.5s"
+    },
+    {
+      "editType": "cut (filler)",
+      "timestamp": "2:28.410 - 2:28.970",
+      "durationSaved": "~0.5s",
+      "notes": "Remove 'Uh' filler before file system location explanation"
+    },
+    {
+      "editType": "trim",
+      "timestamp": "2:45.750 - 2:47.500",
+      "durationSaved": "~1.75s",
+      "notes": "Trim trailing silence/black at end"
+    }
+  ],
+  "polish": {
+    "transitions": [
+      {
+        "context": "Intro billboard to first content",
+        "type": "crossfade",
+        "duration": "0.8s",
+        "notes": "Smooth crossfade from intro billboard into the screen recording"
+      },
+      {
+        "context": "Between segments where tightening occurs",
+        "type": "match-cut",
+        "duration": "0.1s",
+        "notes": "Use match cuts at tightened points to maintain visual continuity of the screen recording"
+      },
+      {
+        "context": "Final content to outro billboard",
+        "type": "fade-to-black",
+        "duration": "1.0s",
+        "notes": "Fade to black after closing statement before outro billboard"
+      }
+    ],
+    "audio": {
+      "normalizeLevels": true,
+      "backgroundMusic": true,
+      "musicNotes": "Light ambient/tech background music at low volume (~15-20% level) under narration. Slightly louder during intro/outro billboards.",
+      "noiseReduction": "Apply light noise reduction to clean up any background hiss from screen recording audio",
+      "other": [
+        "Ensure filler word cuts have smooth audio crossfades to avoid pops/clicks",
+        "Verify time-compressed muted sections transition smoothly back to speech audio"
+      ]
+    },
+    "captions": true,
+    "lowerThirds": [
+      "Feature callout: 'Download as ZIP' when zip download is mentioned (~0:35)",
+      "Feature callout: 'View as: Markdown | HTML | Text | PDF' when viewing options are discussed (~0:53-1:28)",
+      "Feature callout: 'Built-in Git Support' when Git is introduced (~1:29)",
+      "Feature callout: 'Physical Path Access' when file system location is shown (~2:20)"
+    ],
+    "other": [
+      "Consider adding subtle zoom/highlight on UI elements as they are being demonstrated",
+      "Ensure screen recording quality is maintained through all edits"
+    ]
+  },
+  "duration": {
+    "original": "~2:47 (167.5s)",
+    "estimated": "~2:15 - 2:25"
+  },
+  "finalStructure": [
+    {
+      "timeRange": "0:00 - 0:04",
+      "description": "Intro billboard: fade in from black, display title card 'Session File System Access'"
+    },
+    {
+      "timeRange": "0:04 - 0:28",
+      "description": "Segment 1: Introduction – navigating to the session file system URL and accessing the root directory"
+    },
+    {
+      "timeRange": "0:28 - 0:48",
+      "description": "Segment 2: File system features overview – zip download, browsing markdown and HTML files"
+    },
+    {
+      "timeRange": "0:48 - 1:18",
+      "description": "Segment 3: Markdown viewing options – download as markdown, view as HTML (dynamic rendering), view as text, view as PDF (dynamic rendering)"
+    },
+    {
+      "timeRange": "1:18 - 1:40",
+      "description": "Segment 4: Built-in Git version control – status, commit, explanation of Git as a time machine for file changes"
+    },
+    {
+      "timeRange": "1:40 - 1:58",
+      "description": "Segment 5: Summary – the file system interface as a powerful backdoor providing hackability and transparency for Cognotik applications"
+    },
+    {
+      "timeRange": "1:58 - 2:18",
+      "description": "Segment 6: Physical file system location, mounting with dev environments, file explorer access, closing remarks"
+    },
+    {
+      "timeRange": "2:18 - 2:23",
+      "description": "Outro billboard: fade to black, display thanks card with links and CTA"
+    }
+  ]
+}

@@ -38,26 +38,6 @@ while IFS= read -r -d '' script; do
     echo ""
 done < <(find "$REVIEW_DIR" -maxdepth 1 -name '*.js' -type f -print0 | sort -z)
 
-# --- Step 2: Normalize audio levels across all edited videos ---
-
-task_name="normalize_audio.sh"
-log_file="${LOG_DIR}/${task_name}.log"
-
-TASK_NAMES+=("$task_name")
-TASK_LOGFILES+=("$log_file")
-
-echo "=== Running: ${task_name} ==="
-node "${SCRIPT_DIR}/scripts/normalize_audio.js" > "$log_file" 2>&1
-exit_code=$?
-TASK_RESULTS+=("$exit_code")
-
-if [ $exit_code -ne 0 ]; then
-    echo "!!! FAILED: ${task_name} exited with code $exit_code (log: $log_file) !!!"
-else
-    echo "=== Completed: ${task_name} ==="
-fi
-echo ""
-
 # --- Summary ---
 
 echo "========================================"

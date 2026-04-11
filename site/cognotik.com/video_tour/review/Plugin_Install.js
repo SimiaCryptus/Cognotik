@@ -1,213 +1,304 @@
 #!/usr/bin/env node
-/**
- * Plugin_Install.js - Video edit script for Plugin Install tutorial
- *
- * Generates and executes ffmpeg commands to edit source/Plugin_Install.mp4
- * according to the editing plan in Plugin_Install.md.
- *
- * Output: edit/Plugin_Install.mp4
- *
- * Requirements: ffmpeg must be installed and available on PATH.
- */
+// Edit script for Plugin_Install
+// Requirements: Node.js 14+, ffmpeg and ffprobe on PATH
+// No npm dependencies required
 
-const {execSync} = require("child_process");
-const fs = require("fs");
-const path = require("path");
+const path = require('path');
+const os = require('os');
+const veu = require('./lib/video-edit-utils');
 
-const SOURCE = path.join(__dirname, "..", "source", "Plugin_Install.mp4");
-const OUTPUT_DIR = path.join(__dirname, "..", "edit");
-const OUTPUT = path.join(OUTPUT_DIR, "Plugin_Install.mp4");
-const TEMP_DIR = path.join(__dirname, "..", "edit", "temp_plugin_install");
+// --- Paths ---
+const INPUT  = path.resolve(__dirname, '../source/Plugin_Install.mp4');
+const OUTPUT = path.resolve(__dirname, '../edit/Plugin_Install.mp4');
+const TEMP   = path.join(os.tmpdir(), 'plugin_install_' + Date.now());
 
-// Ensure output and temp directories exist
-fs.mkdirSync(OUTPUT_DIR, {recursive: true});
-fs.mkdirSync(TEMP_DIR, {recursive: true});
+// --- Segment Definitions (Edit Decision List) ---
+// Derived from Plugin_Install.json edit instructions
+//
+// Timecodes in the JSON use "M:SS.mmm" format; converted to "HH:MM:SS.mmm" below.
+//
+// Actions mapped:
+//   "keep"                    → action: 'keep'
+//   "trim" (dead air)         → action: 'cut'
+//   "tighten"                 → action: 'compress' with compressedDuration
+//   "time-compress-and-mute"  → action: 'compress' with targetDuration, muteAudio, overlay
+//   "edit" + "tighten"        → split into keep + compress sub-segments
 
-function run(cmd) {
-    console.log(`> ${cmd}`);
-    execSync(cmd, {stdio: "inherit"});
-}
-
-function ts(seconds) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    const sInt = Math.floor(s);
-    const ms = Math.round((s - sInt) * 1000);
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sInt).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
-}
-
-// ---------------------------------------------------------------------------
-// Segment definitions
-// Each segment: { start, end, speed, muteAudio }
-//   speed: 1 = normal, >1 = fast (time-compressed)
-//   muteAudio: true = silence audio during this segment
-// ---------------------------------------------------------------------------
 const segments = [
-    // Seg 0: Opening narration (after head trim) — 00:05.5 to 00:18
-    {start: 5.5, end: 18, speed: 1, muteAudio: false},
-    // Seg 1: File selection narration — 00:18 to 00:24
-    {start: 18, end: 24, speed: 1, muteAudio: false},
-    // Seg 2: File picker silence (time-compress 2s gap to ~1s) — 00:24 to 00:26
-    {start: 24, end: 26, speed: 2, muteAudio: true},
-    // Seg 3: Auto load & upload — 00:26 to 00:34
-    {start: 26, end: 34, speed: 1, muteAudio: false},
-    // Seg 4: License agreement — 00:34 to 00:39
-    {start: 34, end: 39, speed: 1, muteAudio: false},
-    // Seg 5: License processing silence (time-compress 5s to ~2s) — 00:39 to 00:44
-    {start: 39, end: 44, speed: 2.5, muteAudio: true},
-    // Seg 6: Patreon narration — 00:44 to 00:51
-    {start: 44, end: 51, speed: 1, muteAudio: false},
-    // Seg 7: Patreon page load silence (time-compress 5s to ~2s) — 00:51 to 00:56
-    {start: 51, end: 56, speed: 2.5, muteAudio: true},
-    // Seg 8: Patreon narration continues — 00:56 to 01:02
-    {start: 56, end: 62, speed: 1, muteAudio: false},
-    // Seg 9: Close & refresh — 01:02 to 01:11
-    {start: 62, end: 71, speed: 1, muteAudio: false},
-    // Seg 10: Closing remark narration — 01:11 to 01:13
-    {start: 71, end: 73, speed: 1, muteAudio: false},
-    // Seg 11: Long pause (time-compress 6s to ~1.5s) — 01:13 to 01:19
-    {start: 73, end: 79, speed: 4, muteAudio: true},
-    // Seg 12: Closing statement — 01:19 to 01:26
-    {start: 79, end: 86, speed: 1, muteAudio: false},
+    // === Intro dead air (trimmed — replaced by intro billboard) ===
+    {
+        id: 'seg_intro_deadair',
+        start: '00:00:00.000',
+        end: '00:00:06.000',
+        action: 'cut',
+        label: 'Dead air before speech begins (replaced by intro billboard)',
+    },
+
+    // === Segment 1: Introduction & Navigate to Plugins ===
+    {
+        id: 'seg01_trim_deadair',
+        start: '00:00:06.000',
+        end: '00:00:06.309',
+        action: 'cut',
+        label: 'Trim slight dead air before first word',
+    },
+    {
+        id: 'seg01_intro_narration',
+        start: '00:00:06.309',
+        end: '00:00:15.289',
+        action: 'keep',
+        label: 'Opening narration: introduces extensible desktop app and Plugins page',
+    },
+
+    // === Segment 2: Upload Plugin & Select File ===
+    {
+        id: 'seg02_tighten_nav',
+        start: '00:00:15.500',
+        end: '00:00:17.700',
+        action: 'compress',
+        targetDuration: 1,
+        muteAudio: true,
+        label: 'Tighten pause between navigating to plugins and clicking Upload',
+    },
+    {
+        id: 'seg02_upload_select',
+        start: '00:00:17.709',
+        end: '00:00:23.879',
+        action: 'keep',
+        label: 'Clicks Upload Plugin, Choose File, selects the JAR',
+    },
+    {
+        id: 'seg02_tighten_post_select',
+        start: '00:00:23.879',
+        end: '00:00:25.500',
+        action: 'compress',
+        targetDuration: 0.8,
+        muteAudio: true,
+        label: 'Tighten pause after selecting JAR file',
+    },
+
+    // === Segment 3: Check Auto-Load & Upload ===
+    {
+        id: 'seg03_autoload',
+        start: '00:00:26.139',
+        end: '00:00:29.840',
+        action: 'keep',
+        label: 'Explains checking auto-load and clicking upload plugin',
+    },
+    {
+        id: 'seg03_compress_upload',
+        start: '00:00:29.840',
+        end: '00:00:31.500',
+        action: 'compress',
+        targetDuration: 1,
+        speed: 2,
+        muteAudio: true,
+        overlay: 'Uploading...',
+        label: 'Compress upload processing pause',
+    },
+
+    // === Segment 4: License Agreement & Patreon Verification ===
+    {
+        id: 'seg04_license_accept',
+        start: '00:00:32.099',
+        end: '00:00:37.360',
+        action: 'keep',
+        label: 'Plugin starts, asks to accept license agreement',
+    },
+    {
+        id: 'seg04_compress_license_pause',
+        start: '00:00:37.360',
+        end: '00:00:39.459',
+        action: 'compress',
+        targetDuration: 1,
+        speed: 2,
+        muteAudio: true,
+        label: 'Compress pause between license acceptance and next dialog',
+    },
+    {
+        id: 'seg04_and_this',
+        start: '00:00:39.459',
+        end: '00:00:39.939',
+        action: 'keep',
+        label: 'Narrator says "and this" (before hesitation)',
+    },
+    {
+        id: 'seg04_tighten_hesitation',
+        start: '00:00:39.939',
+        end: '00:00:40.860',
+        action: 'compress',
+        targetDuration: 0.3,
+        muteAudio: true,
+        label: 'Tighten hesitation gap between "this" and "plugin"',
+    },
+    {
+        id: 'seg04_patreon_req',
+        start: '00:00:40.860',
+        end: '00:00:45.840',
+        action: 'keep',
+        label: 'Explains Patreon requirement',
+    },
+    {
+        id: 'seg04_compress_patreon_ui',
+        start: '00:00:45.840',
+        end: '00:00:47.590',
+        action: 'compress',
+        targetDuration: 0.8,
+        speed: 2,
+        muteAudio: true,
+        label: 'Compress pause during Patreon verification UI interaction',
+    },
+    {
+        id: 'seg04_verify_status',
+        start: '00:00:47.590',
+        end: '00:00:50.040',
+        action: 'keep',
+        label: 'Completes Patreon verification explanation',
+    },
+    {
+        id: 'seg04_tighten_pause',
+        start: '00:00:50.040',
+        end: '00:00:51.810',
+        action: 'compress',
+        targetDuration: 0.5,
+        muteAudio: true,
+        label: 'Tighten pause between sentences',
+    },
+    {
+        id: 'seg04_plugin_for',
+        start: '00:00:51.810',
+        end: '00:00:53.090',
+        action: 'keep',
+        label: 'Begins explaining who the plugin is for',
+    },
+    {
+        id: 'seg04_compress_thinking',
+        start: '00:00:53.090',
+        end: '00:00:55.930',
+        action: 'compress',
+        targetDuration: 1,
+        speed: 3,
+        muteAudio: true,
+        label: 'Compress long mid-sentence pause ("for... supporters")',
+    },
+    {
+        id: 'seg04_supporters',
+        start: '00:00:55.930',
+        end: '00:00:57.909',
+        action: 'keep',
+        label: 'Completes Patreon supporters statement',
+    },
+
+    // === Segment 5: Allow, Close & Refresh Home Page ===
+    {
+        id: 'seg05_compress_transition',
+        start: '00:00:57.909',
+        end: '00:01:00.610',
+        action: 'compress',
+        targetDuration: 1,
+        speed: 3,
+        muteAudio: true,
+        label: 'Compress pause between Patreon statement and next action',
+    },
+    {
+        id: 'seg05_once_you_click',
+        start: '00:01:00.610',
+        end: '00:01:01.619',
+        action: 'keep',
+        label: 'Narrator says "Once you click"',
+    },
+    {
+        id: 'seg05_tighten_click_allow',
+        start: '00:01:01.619',
+        end: '00:01:02.409',
+        action: 'compress',
+        targetDuration: 0.3,
+        muteAudio: true,
+        label: 'Tighten hesitation between "click" and "allow"',
+    },
+    {
+        id: 'seg05_allow_close',
+        start: '00:01:02.409',
+        end: '00:01:05.349',
+        action: 'keep',
+        label: 'Explains clicking allow and closing the dialog',
+    },
+    {
+        id: 'seg05_compress_navigate',
+        start: '00:01:05.349',
+        end: '00:01:08.190',
+        action: 'compress',
+        targetDuration: 1,
+        speed: 3,
+        muteAudio: true,
+        label: 'Compress pause while navigating to refresh',
+    },
+    {
+        id: 'seg05_refresh_home',
+        start: '00:01:08.190',
+        end: '00:01:14.790',
+        action: 'keep',
+        label: 'Refreshes home page and shows new options',
+    },
+
+    // === Segment 6: Closing Summary ===
+    {
+        id: 'seg06_compress_dark_transition',
+        start: '00:01:14.790',
+        end: '00:01:18.900',
+        action: 'compress',
+        targetDuration: 1.5,
+        speed: 3,
+        muteAudio: true,
+        label: 'Compress dark scene transition before closing statement',
+    },
+    {
+        id: 'seg06_closing',
+        start: '00:01:18.900',
+        end: '00:01:26.519',
+        action: 'keep',
+        label: 'Closing summary: plugin installation is simple and adds working applications',
+    },
+
+    // === Trailing silence (trimmed — replaced by outro billboard) ===
+    {
+        id: 'seg_outro_trim',
+        start: '00:01:26.519',
+        end: '00:01:27.783',
+        action: 'cut',
+        label: 'Trim trailing dark/silence after last word',
+    },
 ];
 
-// ---------------------------------------------------------------------------
-// Step 1: Create intro billboard (3 seconds, black background with white text)
-// ---------------------------------------------------------------------------
-const INTRO_FILE = path.join(TEMP_DIR, "intro.mp4");
-run(
-    `ffmpeg -y -f lavfi -i "color=c=black:s=1920x1080:d=3,format=yuv420p" ` +
-    `-f lavfi -i "anullsrc=channel_layout=stereo:sample_rate=48000" ` +
-    `-vf "drawtext=text='Cognotic – Plugin Installation':fontcolor=white:fontsize=56:x=(w-text_w)/2:y=(h-text_h)/2-30,` +
-    `drawtext=text='Extensible Desktop Application':fontcolor=0xCCCCCC:fontsize=28:x=(w-text_w)/2:y=(h-text_h)/2+40" ` +
-    `-t 3 -c:v libx264 -preset fast -crf 18 -c:a aac -b:a 192k -shortest "${INTRO_FILE}"`
-);
+// --- Run Pipeline ---
+veu.runEditPipeline({
+    inputPath: INPUT,
+    outputPath: OUTPUT,
+    tempDir: TEMP,
 
-// ---------------------------------------------------------------------------
-// Step 2: Create outro billboard (4 seconds)
-// ---------------------------------------------------------------------------
-const OUTRO_FILE = path.join(TEMP_DIR, "outro.mp4");
-run(
-    `ffmpeg -y -f lavfi -i "color=c=black:s=1920x1080:d=4,format=yuv420p" ` +
-    `-f lavfi -i "anullsrc=channel_layout=stereo:sample_rate=48000" ` +
-    `-vf "drawtext=text='Thanks for watching!':fontcolor=white:fontsize=56:x=(w-text_w)/2:y=(h-text_h)/2-50,` +
-    `drawtext=text='Visit cognotic.dev | Support on Patreon':fontcolor=0xCCCCCC:fontsize=28:x=(w-text_w)/2:y=(h-text_h)/2+20,` +
-    `drawtext=text='More demo videos coming soon':fontcolor=0x999999:fontsize=24:x=(w-text_w)/2:y=(h-text_h)/2+65" ` +
-    `-t 4 -c:v libx264 -preset fast -crf 18 -c:a aac -b:a 192k -shortest "${OUTRO_FILE}"`
-);
+    // Intro billboard
+    introTitle: 'Cognotik Desktop',
+    introSubtitle: 'Plugin Installation',
+    introDuration: 3,
 
-// ---------------------------------------------------------------------------
-// Step 3: Extract and process each segment from the source video
-// ---------------------------------------------------------------------------
-const segmentFiles = [];
+    // Outro billboard
+    outroLines: [
+        'Thanks for Watching!',
+        'Cognotik Desktop – Plugin Installation',
+        'Support us on Patreon for exclusive plugins',
+        'More demo videos coming soon',
+    ],
+    outroDuration: 4,
 
-segments.forEach((seg, i) => {
-    const outFile = path.join(TEMP_DIR, `seg_${String(i).padStart(2, "0")}.mp4`);
-    segmentFiles.push(outFile);
+    // Transition duration (crossfade between segments)
+    transitionDuration: 0.5,
 
-    const duration = seg.end - seg.start;
+    // Segments
+    segments,
 
-    if (seg.speed === 1 && !seg.muteAudio) {
-        // Normal speed, keep audio
-        run(
-            `ffmpeg -y -ss ${ts(seg.start)} -i "${SOURCE}" -t ${duration.toFixed(3)} ` +
-            `-c:v libx264 -preset fast -crf 18 -c:a aac -b:a 192k "${outFile}"`
-        );
-    } else if (seg.speed !== 1) {
-        // Time-compressed segment with muted audio
-        // Use setpts for video speed and generate silent audio
-        const ptsMultiplier = (1 / seg.speed).toFixed(4);
-        run(
-            `ffmpeg -y -ss ${ts(seg.start)} -i "${SOURCE}" -t ${duration.toFixed(3)} ` +
-            `-f lavfi -i "anullsrc=channel_layout=stereo:sample_rate=48000" ` +
-            `-filter_complex "[0:v]setpts=${ptsMultiplier}*PTS[v]" ` +
-            `-map "[v]" -map 1:a ` +
-            `-c:v libx264 -preset fast -crf 18 -c:a aac -b:a 192k ` +
-            `-shortest "${outFile}"`
-        );
-    } else {
-        // Normal speed but muted audio
-        run(
-            `ffmpeg -y -ss ${ts(seg.start)} -i "${SOURCE}" -t ${duration.toFixed(3)} ` +
-            `-f lavfi -i "anullsrc=channel_layout=stereo:sample_rate=48000" ` +
-            `-map 0:v -map 1:a ` +
-            `-c:v libx264 -preset fast -crf 18 -c:a aac -b:a 192k ` +
-            `-shortest "${outFile}"`
-        );
-    }
+    // Audio normalization as final pass
+    normalizeAudio: true,
+
+    // Use concat demuxer (all segments will have consistent encoding)
+    concatMethod: 'demuxer',
 });
-
-// ---------------------------------------------------------------------------
-// Step 4: Build concat list (intro + segments + outro)
-// ---------------------------------------------------------------------------
-const concatListFile = path.join(TEMP_DIR, "concat_list.txt");
-const allFiles = [INTRO_FILE, ...segmentFiles, OUTRO_FILE];
-const concatContent = allFiles.map((f) => `file '${f}'`).join("\n");
-fs.writeFileSync(concatListFile, concatContent);
-
-// ---------------------------------------------------------------------------
-// Step 5: Concatenate all segments into intermediate file
-// ---------------------------------------------------------------------------
-const CONCAT_FILE = path.join(TEMP_DIR, "concatenated.mp4");
-run(
-    `ffmpeg -y -f concat -safe 0 -i "${concatListFile}" ` +
-    `-c:v libx264 -preset fast -crf 18 -c:a aac -b:a 192k "${CONCAT_FILE}"`
-);
-
-// ---------------------------------------------------------------------------
-// Step 6: Apply crossfade transitions and audio normalization
-//
-// We apply:
-//   - 0.5s fade-in from black at the start (intro→content transition)
-//   - 0.5s fade-out to black at the end (content→outro transition)
-//   - Audio normalization (loudnorm)
-//
-// Note: True crossfade between intro/content and content/outro would require
-// complex xfade filter chains. Instead we use fade-in on the intro card and
-// fade-out on the outro card, plus fade transitions at the boundaries.
-// ---------------------------------------------------------------------------
-run(
-    `ffmpeg -y -i "${CONCAT_FILE}" ` +
-    `-af "loudnorm=I=-16:TP=-1.5:LRA=11" ` +
-    `-vf "fade=t=in:st=0:d=0.5,fade=t=out:st=0:d=0" ` +
-    `-c:v libx264 -preset fast -crf 18 -c:a aac -b:a 192k "${OUTPUT}"`
-);
-
-// We need to know the total duration for the fade-out. Let's redo with a probe.
-// Get duration of concatenated file
-const probeResult = execSync(
-    `ffprobe -v error -show_entries format=duration -of csv=p=0 "${CONCAT_FILE}"`
-)
-    .toString()
-    .trim();
-const totalDuration = parseFloat(probeResult);
-const fadeOutStart = (totalDuration - 0.5).toFixed(3);
-
-// Re-encode with proper fade-out timing
-run(
-    `ffmpeg -y -i "${CONCAT_FILE}" ` +
-    `-af "loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=in:st=0:d=0.5,afade=t=out:st=${fadeOutStart}:d=0.5" ` +
-    `-vf "fade=t=in:st=0:d=0.5,fade=t=out:st=${fadeOutStart}:d=0.5" ` +
-    `-c:v libx264 -preset fast -crf 18 -c:a aac -b:a 192k "${OUTPUT}"`
-);
-
-// ---------------------------------------------------------------------------
-// Step 7: Cleanup temp files
-// ---------------------------------------------------------------------------
-
-
-// --- Cleanup temp files ---
-console.log('Cleaning up temporary files...');
-try {
-    if (fs.existsSync(TEMP_DIR)) {
-        fs.rmdirSync(TEMP_DIR, {recursive: true});
-    }
-} catch (e) {
-    console.warn(`Warning: Could not remove temp dir ${TEMP_DIR}: ${e.message}`);
-}
-
-console.log(`\n✅ Done! Output saved to: ${OUTPUT}`);
-console.log(
-    `   Estimated duration: ~${Math.round(totalDuration)} seconds`
-);

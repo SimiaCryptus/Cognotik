@@ -2,8 +2,7 @@
 specifies: ../compile_video_tour.sh
 related:
   - ../edit/transcripts/*.srt
-  - files.txt
-  - README.md
+  - ../files.txt
 ---
 
 * Using ffmpeg, compile the edited video files into a single video tour experience

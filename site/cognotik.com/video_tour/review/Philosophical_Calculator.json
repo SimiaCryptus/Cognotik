@@ -1,0 +1,924 @@
+{
+  "title": "Philosophical Calculator Demo",
+  "overview": "A walkthrough demonstration of the Philosophical Calculator app, showing how to input a prompt, run a pipeline to draft an article, execute analytical lenses (multi-perspective analysis), review results, and illustrate the article with AI-generated images — all for about 62 cents.",
+  "source": {
+    "transcript": "Philosophical_Calculator.srt",
+    "totalDuration": "~8:43",
+    "other": [
+      "Philosophical_Calculator.json",
+      "Philosophical_Calculator.scenes.txt"
+    ]
+  },
+  "intro": {
+    "trimRange": {
+      "start": "0:00.000",
+      "end": "0:06.000"
+    },
+    "billboard": {
+      "placement": "intro",
+      "title": "The Philosophical Calculator",
+      "subtitle": "AI-Powered Article Generation & Analysis",
+      "additionalText": [
+        "Draft • Analyze • Illustrate"
+      ],
+      "holdDuration": "4s",
+      "transitionIn": "fade-in-from-black",
+      "transitionOut": "crossfade"
+    },
+    "notes": "First 6 seconds are dead air before speech begins. Insert billboard card, then crossfade into the video starting at the first spoken word."
+  },
+  "segments": [
+    {
+      "index": 1,
+      "title": "Introduction & Input",
+      "source": {
+        "start": "0:06.329",
+        "end": "0:31.520"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "0:06.329",
+            "end": "0:15.840"
+          },
+          "action": "keep",
+          "notes": "Introduction to the Philosophical Calculator and explanation of input step.",
+          "dialogue": "One of my favorite apps is the Philosophical calculator. Like a normal calculator, the first step is to give it some input. Here, we're going to say,"
+        },
+        {
+          "source": {
+            "start": "0:15.840",
+            "end": "0:21.700"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Typing/input pause — narrator is typing 'Connect Four' into the prompt field. Compress the dead time while typing.",
+          "dialogue": "Right? AI, Knox.",
+          "compressedDuration": "~3s",
+          "speedMultiplier": 3,
+          "muteAudio": true,
+          "overlay": "Entering prompt..."
+        },
+        {
+          "source": {
+            "start": "0:21.700",
+            "end": "0:24.680"
+          },
+          "action": "cut",
+          "notes": "Dead air gap between finishing typing and next speech. Cut entirely."
+        },
+        {
+          "source": {
+            "start": "0:24.680",
+            "end": "0:31.520"
+          },
+          "action": "keep",
+          "notes": "Explains file upload option and choosing a simple prompt.",
+          "dialogue": "We could also supply files. But in this case, we're going to go with a simple prompt."
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "title": "Model Selection & Pipeline Setup",
+      "source": {
+        "start": "0:31.520",
+        "end": "0:55.319"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "0:31.520",
+            "end": "0:33.110"
+          },
+          "action": "tighten",
+          "notes": "Small pause between prompt section and model selection. Tighten the gap."
+        },
+        {
+          "source": {
+            "start": "0:33.110",
+            "end": "0:41.729"
+          },
+          "action": "keep",
+          "notes": "Selecting models (Haiku and Gemini Flash Image) for the pipeline.",
+          "dialogue": "Now, the first step in using the philosophical calculator, of course, is to make sure we have some models selected. We're going with haiku and Gemini flash image."
+        },
+        {
+          "source": {
+            "start": "0:41.729",
+            "end": "0:43.560"
+          },
+          "action": "tighten",
+          "notes": "Brief pause before pipeline explanation. Tighten."
+        },
+        {
+          "source": {
+            "start": "0:43.560",
+            "end": "0:55.319"
+          },
+          "action": "keep",
+          "notes": "Starting the pipeline, skipping summarize notes, going to draft article, running in UI.",
+          "dialogue": "And then we start at the pipeline. Since our input is fairly small, we're going to skip the summarize notes part and go straight to draft article. We can run that in the UI."
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "title": "Draft Article Processing",
+      "source": {
+        "start": "0:55.319",
+        "end": "1:28.000"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "0:55.319",
+            "end": "0:59.549"
+          },
+          "action": "keep",
+          "notes": "Waiting for completion and mentioning session viewing.",
+          "dialogue": "And wait for it to complete. We could view this session."
+        },
+        {
+          "source": {
+            "start": "0:59.549",
+            "end": "1:01.439"
+          },
+          "action": "tighten",
+          "notes": "Small gap before explaining session monitoring. Tighten."
+        },
+        {
+          "source": {
+            "start": "1:01.439",
+            "end": "1:17.400"
+          },
+          "action": "keep",
+          "notes": "Explains session monitoring, that this is a simple one-stop operation, and that lenses will be more interesting.",
+          "dialogue": "To monitor it in real time, but this processing session is a one stop operation. Its details aren't particularly interesting. For session detail, we will view that in depth when we execute lenses, which is next."
+        },
+        {
+          "source": {
+            "start": "1:17.400",
+            "end": "1:21.949"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Pause while navigating UI to view completed draft article. Compress.",
+          "compressedDuration": "~2s",
+          "speedMultiplier": 3,
+          "muteAudio": true,
+          "overlay": "Processing..."
+        },
+        {
+          "source": {
+            "start": "1:21.949",
+            "end": "1:28.000"
+          },
+          "action": "keep",
+          "notes": "Shows the completed draft article in formatted preview.",
+          "dialogue": "We have the completed draft article. That is shown in a formatted preview."
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "title": "Introduction to Lenses",
+      "source": {
+        "start": "1:28.000",
+        "end": "2:04.859"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "1:29.160",
+            "end": "1:33.879"
+          },
+          "action": "keep",
+          "notes": "Transitioning to lenses section.",
+          "dialogue": "And now that we have the draft article, we can proceed to lenses. Here's where it gets really interesting."
+        },
+        {
+          "source": {
+            "start": "1:34.760",
+            "end": "1:35.459"
+          },
+          "action": "edit",
+          "notes": "Edit out the false start 'The philosophical,' — speaker stutters and restarts.",
+          "dialogue": "The philosophical,"
+        },
+        {
+          "source": {
+            "start": "1:35.970",
+            "end": "1:53.529"
+          },
+          "action": "keep",
+          "notes": "Describes the variety of lens operations available.",
+          "dialogue": "the philosophical calculator provides a variety of operations that you can perform on your draft article. It performs a variety of different analysis like brainstorming or multi-perspective analysis or even writing a comic book about the article."
+        },
+        {
+          "source": {
+            "start": "1:53.529",
+            "end": "1:55.339"
+          },
+          "action": "tighten",
+          "notes": "Brief pause before demonstration choice. Tighten."
+        },
+        {
+          "source": {
+            "start": "1:55.339",
+            "end": "2:04.790"
+          },
+          "action": "keep",
+          "notes": "Choosing perspective analysis and clicking run, session link appears.",
+          "dialogue": "For demonstration purposes, let's go with perspective analysis. I'm going to click run, and in a second, a session link will pop up."
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "title": "Multi-Perspective Analysis Session",
+      "source": {
+        "start": "2:04.790",
+        "end": "3:15.089"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "2:04.790",
+            "end": "2:07.180"
+          },
+          "action": "tighten",
+          "notes": "Brief pause before session link explanation. Tighten."
+        },
+        {
+          "source": {
+            "start": "2:07.180",
+            "end": "2:18.710"
+          },
+          "action": "keep",
+          "notes": "Explains the session link and real-time monitoring of multi-perspective analysis.",
+          "dialogue": "This session link allows us to monitor the multi perspective analysis task in real time as it proceeds through a multistep reasoning"
+        },
+        {
+          "source": {
+            "start": "2:18.710",
+            "end": "2:23.338"
+          },
+          "action": "edit",
+          "notes": "Edit out 'change' (mis-transcription/stumble) and the long pause that follows. The word 'chain' was intended but came out garbled.",
+          "dialogue": "change."
+        },
+        {
+          "source": {
+            "start": "2:23.338",
+            "end": "2:26.850"
+          },
+          "action": "cut",
+          "notes": "Dead air gap between stumble and next coherent speech."
+        },
+        {
+          "source": {
+            "start": "2:26.850",
+            "end": "2:32.410"
+          },
+          "action": "keep",
+          "notes": "Describes the standard UI for real-time viewing.",
+          "dialogue": "The user interface you're seeing here is the standard user interface for real-time."
+        },
+        {
+          "source": {
+            "start": "2:32.410",
+            "end": "2:37.440"
+          },
+          "action": "edit",
+          "notes": "Edit out filler 'Um, Agents. For real-time agents and analysis.' — speaker stumbles, says 'Um', pauses, then restarts. Cut the filler and false start.",
+          "dialogue": "Um, Agents. For real-time agents and analysis."
+        },
+        {
+          "source": {
+            "start": "2:40.369",
+            "end": "2:51.309"
+          },
+          "action": "keep",
+          "notes": "Explains the analysis will take a moment, going through perspectives and synthesizing results.",
+          "dialogue": "This will take a moment because it will be going through a number of different perspectives, and then finally it will synthesize the results, basically summarize all of the perspectives."
+        },
+        {
+          "source": {
+            "start": "2:53.220",
+            "end": "3:15.089"
+          },
+          "action": "keep",
+          "secondaryAction": "edit",
+          "notes": "Navigating to usage monitoring, checking token costs. Edit out 'Oh, the brains, the, uh,' filler at 3:08.",
+          "dialogue": "We can also in the main UI go over to usage and we can monitor the usage as it uses tokens. So far, we have spent about 4 cents on this process. Oh, the brains, the, uh, multi-perspective dialogue is ongoing, so it just use another penny."
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "title": "Waiting for Analysis Completion",
+      "source": {
+        "start": "3:15.089",
+        "end": "4:06.080"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "3:15.089",
+            "end": "3:20.990"
+          },
+          "action": "cut",
+          "notes": "Dead air gap between usage discussion and next speech about completion."
+        },
+        {
+          "source": {
+            "start": "3:20.990",
+            "end": "3:35.450"
+          },
+          "action": "keep",
+          "notes": "Explains UI update on completion, running one lens for demo, option to run in parallel.",
+          "dialogue": "And when it completes, the UI will update. We're only going to run this one lens to demonstrate this module, but you could run each of these, um, if you wanted to in parallel."
+        },
+        {
+          "source": {
+            "start": "3:35.450",
+            "end": "3:37.240"
+          },
+          "action": "tighten",
+          "notes": "Small pause. Tighten."
+        },
+        {
+          "source": {
+            "start": "3:37.240",
+            "end": "3:44.009"
+          },
+          "action": "keep",
+          "notes": "Explains pipeline update step and folding lens results back.",
+          "dialogue": "Depending on what you felt was appropriate. When these are completed, we can then go back to the pipeline."
+        },
+        {
+          "source": {
+            "start": "3:45.289",
+            "end": "4:06.080"
+          },
+          "action": "keep",
+          "notes": "Describes updating the article with lens output, picking up insights, correcting issues.",
+          "dialogue": "And we can update the article, which will take the output of all of the lens runs and try to fold them back into the article to, pick up insights and new ideas. Other things like that. Perhaps correcting issues."
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "title": "Viewing Lens Results",
+      "source": {
+        "start": "4:06.080",
+        "end": "4:54.000"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "4:06.080",
+            "end": "4:10.669"
+          },
+          "action": "cut",
+          "notes": "Dead air gap while navigating back to lenses view."
+        },
+        {
+          "source": {
+            "start": "4:10.669",
+            "end": "4:15.160"
+          },
+          "action": "keep",
+          "notes": "Looking at lenses, noting it's almost complete, seeing synthesis.",
+          "dialogue": "Looking at lenses, this is, kind of almost complete. I saw a synthesis here."
+        },
+        {
+          "source": {
+            "start": "4:15.160",
+            "end": "4:25.279"
+          },
+          "action": "edit",
+          "notes": "Edit out the false start and self-correction: 'Synthesis is, The last step in the multi synthesis is the last step in the multi perspective analysis.' Clean this to just: 'Synthesis is the last step in the multi-perspective analysis.'",
+          "dialogue": "Synthesis is, The last step in the multi synthesis is the last step in the multi perspective analysis."
+        },
+        {
+          "source": {
+            "start": "4:25.279",
+            "end": "4:30.839"
+          },
+          "action": "keep",
+          "notes": "Waiting for completion.",
+          "dialogue": "And when it completes."
+        },
+        {
+          "source": {
+            "start": "4:30.839",
+            "end": "4:53.720"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Long wait (~23s) for the analysis to finish. This is processing time — compress significantly and mute audio.",
+          "compressedDuration": "~5s",
+          "speedMultiplier": 6,
+          "muteAudio": true,
+          "overlay": "Analysis completing..."
+        },
+        {
+          "source": {
+            "start": "4:53.720",
+            "end": "4:54.000"
+          },
+          "action": "keep",
+          "notes": "Completion confirmation.",
+          "dialogue": "There we go."
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "title": "Reviewing Analysis Output",
+      "source": {
+        "start": "4:54.000",
+        "end": "5:43.140"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "4:55.369",
+            "end": "5:02.920"
+          },
+          "action": "keep",
+          "notes": "Viewing detailed output for the lens run in the UI.",
+          "dialogue": "And we can see the detailed output for a given lens run in the UI."
+        },
+        {
+          "source": {
+            "start": "5:03.559",
+            "end": "5:11.690"
+          },
+          "action": "keep",
+          "notes": "Viewing the multi-perspective analysis transcript.",
+          "dialogue": "Here we see the multi perspective analysis transcript, which will detail each perspective in turn."
+        },
+        {
+          "source": {
+            "start": "5:11.690",
+            "end": "5:14.160"
+          },
+          "action": "tighten",
+          "notes": "Brief pause while scrolling. Tighten."
+        },
+        {
+          "source": {
+            "start": "5:14.160",
+            "end": "5:24.559"
+          },
+          "action": "keep",
+          "notes": "Shows competitive player perspective example, explains it's a long analysis.",
+          "dialogue": "For example, this is the competitive player perspective. It goes through each perspective, so it's quite a long analysis, and at the end, you will find,"
+        },
+        {
+          "source": {
+            "start": "5:24.559",
+            "end": "5:27.190"
+          },
+          "action": "tighten",
+          "notes": "Pause while scrolling to synthesis section. Tighten."
+        },
+        {
+          "source": {
+            "start": "5:27.190",
+            "end": "5:43.140"
+          },
+          "action": "keep",
+          "notes": "Shows synthesis and recommendations, summarizes how lenses work.",
+          "dialogue": "The synthesis and recommendations section. Here we go. So, the lenses generally involve a very long set of analysis and then they conclude with a summary."
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "title": "Illustrate Article Feature",
+      "source": {
+        "start": "5:43.140",
+        "end": "6:35.640"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "5:43.880",
+            "end": "6:02.670"
+          },
+          "action": "keep",
+          "notes": "Explains folding results back, skipping for brevity, introducing illustrate article feature.",
+          "dialogue": "Those summaries and analysis can again be folded back into the original article using the pipeline. However, for brevity's sake, uh, we will skip that and demonstrate one last feature, the illustrate article feature, which is, I think, one of the most entertaining."
+        },
+        {
+          "source": {
+            "start": "6:03.500",
+            "end": "6:10.059"
+          },
+          "action": "keep",
+          "notes": "Explains what the illustrate feature does.",
+          "dialogue": "This takes your content in your article and designs a number of illustrations. It can then weave into the article"
+        },
+        {
+          "source": {
+            "start": "6:10.059",
+            "end": "6:21.970"
+          },
+          "action": "edit",
+          "notes": "Edit out the aside about the display issue: 'for, um, there's a display issue. The session link is shown. In the draft article section. Hopefully they'll be fixed and released soon.' This is a tangential bug report that should be removed.",
+          "dialogue": "for, um, there's a display issue. The session link is shown. In the draft article section. Hopefully they'll be fixed and released soon."
+        },
+        {
+          "source": {
+            "start": "6:27.000",
+            "end": "6:35.640"
+          },
+          "action": "keep",
+          "notes": "Monitoring illustration generation in real time.",
+          "dialogue": "And again, we can monitor this in real time. It comes up with the image ideas, and then it generates each image."
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "title": "Image Generation Processing",
+      "source": {
+        "start": "6:35.640",
+        "end": "7:21.130"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "6:35.640",
+            "end": "6:59.260"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Long wait (~24s) while images are being generated. This is processing time — compress and mute.",
+          "compressedDuration": "~5s",
+          "speedMultiplier": 5,
+          "muteAudio": true,
+          "overlay": "Generating illustrations..."
+        },
+        {
+          "source": {
+            "start": "6:59.260",
+            "end": "6:59.859"
+          },
+          "action": "keep",
+          "notes": "Brief confirmation.",
+          "dialogue": "Here we go."
+        },
+        {
+          "source": {
+            "start": "7:01.760",
+            "end": "7:08.980"
+          },
+          "action": "keep",
+          "notes": "Explains what happens after image generation.",
+          "dialogue": "And then after it generates each image. After it generates all of the images, it will."
+        },
+        {
+          "source": {
+            "start": "7:08.980",
+            "end": "7:11.640"
+          },
+          "action": "edit",
+          "notes": "Edit out the false start 'Create,' followed by a long pause. Speaker restarts with 'it will integrate'.",
+          "dialogue": "Create,"
+        },
+        {
+          "source": {
+            "start": "7:14.269",
+            "end": "7:21.130"
+          },
+          "action": "keep",
+          "notes": "Explains image integration into the document.",
+          "dialogue": "it will integrate the images into the original documents by editing the documents and adding in image links."
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "title": "Final Result & Conclusion",
+      "source": {
+        "start": "7:21.130",
+        "end": "8:37.030"
+      },
+      "edits": [
+        {
+          "source": {
+            "start": "7:21.130",
+            "end": "8:08.260"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Very long wait (~47s) while images are being integrated into the document. This is processing time — compress significantly.",
+          "compressedDuration": "~8s",
+          "speedMultiplier": 8,
+          "muteAudio": true,
+          "overlay": "Integrating illustrations into article..."
+        },
+        {
+          "source": {
+            "start": "8:08.260",
+            "end": "8:08.269"
+          },
+          "action": "keep",
+          "notes": "Brief 'OK' acknowledgment.",
+          "dialogue": "OK."
+        },
+        {
+          "source": {
+            "start": "8:08.269",
+            "end": "8:12.260"
+          },
+          "action": "cut",
+          "notes": "Dead air between OK and viewing the article."
+        },
+        {
+          "source": {
+            "start": "8:12.260",
+            "end": "8:17.320"
+          },
+          "action": "keep",
+          "notes": "Reveals the final illustrated article.",
+          "dialogue": "And now we see our article. Full of illustrations."
+        },
+        {
+          "source": {
+            "start": "8:17.320",
+            "end": "8:23.269"
+          },
+          "action": "time-compress-and-mute",
+          "notes": "Pause while scrolling through the illustrated article. Compress to show the visuals at speed.",
+          "compressedDuration": "~3s",
+          "speedMultiplier": 3,
+          "muteAudio": true
+        },
+        {
+          "source": {
+            "start": "8:23.269",
+            "end": "8:27.820"
+          },
+          "action": "keep",
+          "notes": "Cost summary — 62 cents for a fully illustrated guide.",
+          "dialogue": "For 62 cents, we have a fully illustrated guide to Connect Four."
+        },
+        {
+          "source": {
+            "start": "8:27.820",
+            "end": "8:30.690"
+          },
+          "action": "tighten",
+          "notes": "Small pause before closing remarks. Tighten."
+        },
+        {
+          "source": {
+            "start": "8:30.690",
+            "end": "8:37.030"
+          },
+          "action": "keep",
+          "notes": "Closing remarks.",
+          "dialogue": "This of course is merely a demo. I hope you enjoy this tool and exploring your own ideas."
+        }
+      ]
+    }
+  ],
+  "outro": {
+    "startAfter": "8:37.030",
+    "trimRange": {
+      "start": "8:37.030",
+      "end": "8:43.350"
+    },
+    "billboard": {
+      "placement": "outro",
+      "title": "The Philosophical Calculator",
+      "subtitle": "Thanks for watching!",
+      "additionalText": [
+        "Try it with your own ideas",
+        "Like & Subscribe for more AI tool demos"
+      ],
+      "holdDuration": "5s",
+      "transitionIn": "fade-to-black",
+      "transitionOut": "fade-to-black"
+    },
+    "notes": "Trim trailing silence/dead frames after final speech ends at ~8:37. Fade to outro billboard."
+  },
+  "editSummary": [
+    {
+      "editType": "trim",
+      "timestamp": "0:00 - 0:06",
+      "durationSaved": "~6s",
+      "notes": "Dead air at start before speech begins"
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "0:15.8 - 0:21.7",
+      "durationSaved": "~3s",
+      "notes": "Typing input pause compressed"
+    },
+    {
+      "editType": "cut",
+      "timestamp": "0:21.7 - 0:24.7",
+      "durationSaved": "~3s",
+      "notes": "Dead air after typing"
+    },
+    {
+      "editType": "edit",
+      "timestamp": "1:34.7 - 1:35.5",
+      "durationSaved": "~1s",
+      "notes": "Remove false start 'The philosophical,'"
+    },
+    {
+      "editType": "edit",
+      "timestamp": "2:18.7 - 2:26.8",
+      "durationSaved": "~8s",
+      "notes": "Remove stumbled 'change' and dead air"
+    },
+    {
+      "editType": "edit",
+      "timestamp": "2:32.4 - 2:37.4",
+      "durationSaved": "~5s",
+      "notes": "Remove 'Um, Agents. For real-time agents and analysis' filler/false start"
+    },
+    {
+      "editType": "edit",
+      "timestamp": "3:08.2 - 3:09.4",
+      "durationSaved": "~1s",
+      "notes": "Remove 'Oh, the brains, the, uh,' filler"
+    },
+    {
+      "editType": "cut",
+      "timestamp": "3:15.1 - 3:21.0",
+      "durationSaved": "~6s",
+      "notes": "Dead air gap"
+    },
+    {
+      "editType": "edit",
+      "timestamp": "4:15.2 - 4:25.3",
+      "durationSaved": "~5s",
+      "notes": "Clean up repeated false start about synthesis being the last step"
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "4:30.8 - 4:53.7",
+      "durationSaved": "~18s",
+      "notes": "Long processing wait for analysis completion"
+    },
+    {
+      "editType": "edit",
+      "timestamp": "6:10.1 - 6:22.0",
+      "durationSaved": "~12s",
+      "notes": "Remove tangential display bug aside"
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "6:35.6 - 6:59.3",
+      "durationSaved": "~19s",
+      "notes": "Image generation processing wait"
+    },
+    {
+      "editType": "edit",
+      "timestamp": "7:09.0 - 7:14.3",
+      "durationSaved": "~5s",
+      "notes": "Remove false start 'Create,' and pause"
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "7:21.1 - 8:08.3",
+      "durationSaved": "~39s",
+      "notes": "Long processing wait for image integration"
+    },
+    {
+      "editType": "cut",
+      "timestamp": "8:08.3 - 8:12.3",
+      "durationSaved": "~4s",
+      "notes": "Dead air between OK and article reveal"
+    },
+    {
+      "editType": "time-compress-and-mute",
+      "timestamp": "8:17.3 - 8:23.3",
+      "durationSaved": "~4s",
+      "notes": "Scrolling through illustrated article"
+    },
+    {
+      "editType": "trim",
+      "timestamp": "8:37.0 - 8:43.4",
+      "durationSaved": "~6s",
+      "notes": "Trailing dead air after final speech"
+    }
+  ],
+  "polish": {
+    "transitions": [
+      {
+        "context": "Intro billboard to first content",
+        "type": "crossfade",
+        "duration": "1s",
+        "notes": "Smooth transition from title card into the app demo"
+      },
+      {
+        "context": "Between time-compressed processing segments and normal playback",
+        "type": "speed-ramp",
+        "duration": "0.5s",
+        "notes": "Smooth speed ramp in/out of time-compressed sections to avoid jarring transitions"
+      },
+      {
+        "context": "Final content to outro billboard",
+        "type": "fade-to-black",
+        "duration": "1.5s",
+        "notes": "Gentle fade after closing remarks"
+      },
+      {
+        "context": "Between major segments",
+        "type": "dissolve",
+        "duration": "0.3s",
+        "notes": "Subtle dissolves between major topic transitions where cuts were made"
+      }
+    ],
+    "audio": {
+      "normalizeLevels": true,
+      "backgroundMusic": true,
+      "musicNotes": "Light, upbeat lo-fi or ambient tech music at low volume during time-compressed sections and billboards. Fade music under speech segments.",
+      "noiseReduction": "Apply light noise reduction to normalize the narration audio throughout.",
+      "other": [
+        "Ensure smooth audio transitions at edit points — use short crossfades to avoid clicks",
+        "Mute audio completely during all time-compressed processing segments"
+      ]
+    },
+    "captions": true,
+    "lowerThirds": [
+      "Step 1: Input — entering a prompt for the calculator",
+      "Step 2: Pipeline — drafting the article with AI models",
+      "Step 3: Lenses — multi-perspective analysis",
+      "Step 4: Illustrate — AI-generated images for the article",
+      "Result: Fully illustrated article for $0.62"
+    ],
+    "other": [
+      "Add text overlays during time-compressed sections to indicate what is processing",
+      "Consider adding a subtle progress indicator or timer during long compressed waits",
+      "Highlight UI elements being discussed with subtle zoom or spotlight effects where appropriate"
+    ]
+  },
+  "duration": {
+    "original": "~8:43",
+    "estimated": "~4:30 - 5:00"
+  },
+  "finalStructure": [
+    {
+      "timeRange": "0:00 - 0:04",
+      "description": "Intro billboard: 'The Philosophical Calculator' title card with fade-in"
+    },
+    {
+      "timeRange": "0:04 - 0:30",
+      "description": "Introduction & Input: App introduction, entering prompt, choosing simple input"
+    },
+    {
+      "timeRange": "0:30 - 1:05",
+      "description": "Model Selection & Pipeline: Selecting Haiku and Gemini Flash, starting pipeline, running draft article"
+    },
+    {
+      "timeRange": "1:05 - 1:25",
+      "description": "Draft Article Processing: Waiting for completion, viewing completed draft in formatted preview"
+    },
+    {
+      "timeRange": "1:25 - 1:55",
+      "description": "Introduction to Lenses: Explaining lens operations, choosing perspective analysis, clicking run"
+    },
+    {
+      "timeRange": "1:55 - 2:40",
+      "description": "Multi-Perspective Analysis: Real-time session monitoring, UI walkthrough, usage/cost tracking"
+    },
+    {
+      "timeRange": "2:40 - 3:15",
+      "description": "Pipeline & Lens Results: Explaining update workflow, folding insights back, viewing lens completion"
+    },
+    {
+      "timeRange": "3:15 - 3:25",
+      "description": "Time-compressed wait for analysis completion with overlay"
+    },
+    {
+      "timeRange": "3:25 - 3:55",
+      "description": "Reviewing Analysis Output: Detailed transcript view, perspectives, synthesis section"
+    },
+    {
+      "timeRange": "3:55 - 4:15",
+      "description": "Illustrate Article Feature: Introduction and explanation of illustration generation"
+    },
+    {
+      "timeRange": "4:15 - 4:20",
+      "description": "Time-compressed image generation processing with overlay"
+    },
+    {
+      "timeRange": "4:20 - 4:35",
+      "description": "Image integration explanation and time-compressed document integration"
+    },
+    {
+      "timeRange": "4:35 - 4:55",
+      "description": "Final Result: Revealing illustrated article, cost summary (62 cents), closing remarks"
+    },
+    {
+      "timeRange": "4:55 - 5:00",
+      "description": "Outro billboard: Thanks and call to action with fade-to-black"
+    }
+  ]
+}
