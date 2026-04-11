@@ -25,8 +25,11 @@ set -euo pipefail
 #   EDIT_DIR      - Override edit directory path
 # =============================================================================
 
+
+SUBDIR_NAME=${1:-"edit"}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-EDIT_DIR="${EDIT_DIR:-${SCRIPT_DIR}/edit}"
+EDIT_DIR="${EDIT_DIR:-${SCRIPT_DIR}/${SUBDIR_NAME}}"
 
 # EBU R128 target levels — tuned for speech/voice content
 TARGET_I="${TARGET_I:--16}"

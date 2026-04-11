@@ -58,6 +58,16 @@ else
   echo "[OK] jq installed: $(jq --version)"
 fi
 
+# Run install_vad_deps.sh
+if [[ -f "./scripts/install_vad_deps.sh" ]]; then
+  echo ""
+  echo "[*] Installing VAD dependencies..."
+  ./scripts/install_vad_deps.sh all
+else
+  echo "[WARNING] VAD dependencies installer not found: ./scripts/install_vad_deps.sh"
+  echo "Please run it manually to install VAD dependencies."
+fi
+
 echo ""
 echo "=== All dependencies installed ==="
 echo ""

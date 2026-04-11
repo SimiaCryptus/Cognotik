@@ -1,0 +1,578 @@
+{
+  "file": "WebApp_Factory",
+  "duration": 244.16,
+  "vad_backend": "silero",
+  "settings": {
+    "min_silence_ms": 500,
+    "min_speech_ms": 250,
+    "noise_floor_db": -45.0,
+    "speech_threshold": 0.5,
+    "aggressiveness": null
+  },
+  "statistics": {
+    "speech_segments": 40,
+    "silence_segments": 0,
+    "noise_segments": 39,
+    "speech_duration": 177.122,
+    "silence_duration": 0,
+    "noise_duration": 66.554,
+    "speech_pct": 72.5,
+    "silence_pct": 0.0,
+    "noise_pct": 27.3
+  },
+  "segments": [
+    {
+      "type": "noise",
+      "start": 0.0,
+      "end": 0.93,
+      "duration": 0.93,
+      "rms_db": -25.9
+    },
+    {
+      "type": "speech",
+      "start": 0.93,
+      "end": 5.438,
+      "duration": 4.508,
+      "rms_db": -18.9
+    },
+    {
+      "type": "noise",
+      "start": 5.438,
+      "end": 6.498,
+      "duration": 1.06,
+      "rms_db": -23.5
+    },
+    {
+      "type": "speech",
+      "start": 6.498,
+      "end": 13.502,
+      "duration": 7.004,
+      "rms_db": -16.2
+    },
+    {
+      "type": "speech",
+      "start": 13.986,
+      "end": 16.03,
+      "duration": 2.044,
+      "rms_db": -16.9
+    },
+    {
+      "type": "noise",
+      "start": 16.03,
+      "end": 19.298,
+      "duration": 3.268,
+      "rms_db": -17.6
+    },
+    {
+      "type": "speech",
+      "start": 19.298,
+      "end": 21.022,
+      "duration": 1.724,
+      "rms_db": -14.3
+    },
+    {
+      "type": "noise",
+      "start": 21.022,
+      "end": 21.922,
+      "duration": 0.9,
+      "rms_db": -18.4
+    },
+    {
+      "type": "speech",
+      "start": 21.922,
+      "end": 23.134,
+      "duration": 1.212,
+      "rms_db": -16.1
+    },
+    {
+      "type": "noise",
+      "start": 23.134,
+      "end": 24.45,
+      "duration": 1.316,
+      "rms_db": -21.0
+    },
+    {
+      "type": "speech",
+      "start": 24.45,
+      "end": 30.654,
+      "duration": 6.204,
+      "rms_db": -16.4
+    },
+    {
+      "type": "noise",
+      "start": 30.654,
+      "end": 31.234,
+      "duration": 0.58,
+      "rms_db": -21.5
+    },
+    {
+      "type": "speech",
+      "start": 31.234,
+      "end": 54.558,
+      "duration": 23.324,
+      "rms_db": -17.7
+    },
+    {
+      "type": "noise",
+      "start": 54.558,
+      "end": 55.074,
+      "duration": 0.516,
+      "rms_db": -20.0
+    },
+    {
+      "type": "speech",
+      "start": 55.074,
+      "end": 59.23,
+      "duration": 4.156,
+      "rms_db": -17.7
+    },
+    {
+      "type": "noise",
+      "start": 59.23,
+      "end": 60.098,
+      "duration": 0.868,
+      "rms_db": -19.6
+    },
+    {
+      "type": "speech",
+      "start": 60.098,
+      "end": 65.63,
+      "duration": 5.532,
+      "rms_db": -18.0
+    },
+    {
+      "type": "noise",
+      "start": 65.63,
+      "end": 74.914,
+      "duration": 9.284,
+      "rms_db": -19.6
+    },
+    {
+      "type": "speech",
+      "start": 74.914,
+      "end": 86.43,
+      "duration": 11.516,
+      "rms_db": -17.0
+    },
+    {
+      "type": "noise",
+      "start": 86.43,
+      "end": 91.714,
+      "duration": 5.284,
+      "rms_db": -21.9
+    },
+    {
+      "type": "speech",
+      "start": 91.714,
+      "end": 97.662,
+      "duration": 5.948,
+      "rms_db": -20.1
+    },
+    {
+      "type": "noise",
+      "start": 97.662,
+      "end": 98.594,
+      "duration": 0.932,
+      "rms_db": -22.7
+    },
+    {
+      "type": "speech",
+      "start": 98.594,
+      "end": 102.27,
+      "duration": 3.676,
+      "rms_db": -20.1
+    },
+    {
+      "type": "noise",
+      "start": 102.27,
+      "end": 104.354,
+      "duration": 2.084,
+      "rms_db": -23.0
+    },
+    {
+      "type": "speech",
+      "start": 104.354,
+      "end": 106.43,
+      "duration": 2.076,
+      "rms_db": -17.6
+    },
+    {
+      "type": "noise",
+      "start": 106.43,
+      "end": 107.042,
+      "duration": 0.612,
+      "rms_db": -24.7
+    },
+    {
+      "type": "speech",
+      "start": 107.042,
+      "end": 108.222,
+      "duration": 1.18,
+      "rms_db": -17.5
+    },
+    {
+      "type": "noise",
+      "start": 108.222,
+      "end": 108.802,
+      "duration": 0.58,
+      "rms_db": -24.4
+    },
+    {
+      "type": "speech",
+      "start": 108.802,
+      "end": 113.47,
+      "duration": 4.668,
+      "rms_db": -16.2
+    },
+    {
+      "type": "noise",
+      "start": 113.47,
+      "end": 113.986,
+      "duration": 0.516,
+      "rms_db": -22.5
+    },
+    {
+      "type": "speech",
+      "start": 113.986,
+      "end": 118.878,
+      "duration": 4.892,
+      "rms_db": -17.3
+    },
+    {
+      "type": "noise",
+      "start": 118.878,
+      "end": 120.546,
+      "duration": 1.668,
+      "rms_db": -22.4
+    },
+    {
+      "type": "speech",
+      "start": 120.546,
+      "end": 134.43,
+      "duration": 13.884,
+      "rms_db": -16.4
+    },
+    {
+      "type": "noise",
+      "start": 134.43,
+      "end": 137.762,
+      "duration": 3.332,
+      "rms_db": -16.2
+    },
+    {
+      "type": "speech",
+      "start": 137.762,
+      "end": 140.19,
+      "duration": 2.428,
+      "rms_db": -18.6
+    },
+    {
+      "type": "noise",
+      "start": 140.19,
+      "end": 141.698,
+      "duration": 1.508,
+      "rms_db": -22.8
+    },
+    {
+      "type": "speech",
+      "start": 141.698,
+      "end": 143.71,
+      "duration": 2.012,
+      "rms_db": -19.7
+    },
+    {
+      "type": "noise",
+      "start": 143.71,
+      "end": 147.234,
+      "duration": 3.524,
+      "rms_db": -22.2
+    },
+    {
+      "type": "speech",
+      "start": 147.234,
+      "end": 150.526,
+      "duration": 3.292,
+      "rms_db": -15.5
+    },
+    {
+      "type": "noise",
+      "start": 150.526,
+      "end": 151.618,
+      "duration": 1.092,
+      "rms_db": -22.0
+    },
+    {
+      "type": "speech",
+      "start": 151.618,
+      "end": 166.494,
+      "duration": 14.876,
+      "rms_db": -17.2
+    },
+    {
+      "type": "noise",
+      "start": 166.494,
+      "end": 168.322,
+      "duration": 1.828,
+      "rms_db": -20.3
+    },
+    {
+      "type": "speech",
+      "start": 168.322,
+      "end": 169.214,
+      "duration": 0.892,
+      "rms_db": -19.3
+    },
+    {
+      "type": "noise",
+      "start": 169.214,
+      "end": 170.466,
+      "duration": 1.252,
+      "rms_db": -20.8
+    },
+    {
+      "type": "speech",
+      "start": 170.466,
+      "end": 172.382,
+      "duration": 1.916,
+      "rms_db": -14.9
+    },
+    {
+      "type": "noise",
+      "start": 172.382,
+      "end": 173.09,
+      "duration": 0.708,
+      "rms_db": -17.2
+    },
+    {
+      "type": "speech",
+      "start": 173.09,
+      "end": 176.158,
+      "duration": 3.068,
+      "rms_db": -15.1
+    },
+    {
+      "type": "noise",
+      "start": 176.158,
+      "end": 177.57,
+      "duration": 1.412,
+      "rms_db": -20.7
+    },
+    {
+      "type": "speech",
+      "start": 177.57,
+      "end": 178.366,
+      "duration": 0.796,
+      "rms_db": -15.2
+    },
+    {
+      "type": "noise",
+      "start": 178.366,
+      "end": 180.674,
+      "duration": 2.308,
+      "rms_db": -19.4
+    },
+    {
+      "type": "speech",
+      "start": 180.674,
+      "end": 182.494,
+      "duration": 1.82,
+      "rms_db": -17.4
+    },
+    {
+      "type": "noise",
+      "start": 182.494,
+      "end": 183.138,
+      "duration": 0.644,
+      "rms_db": -20.9
+    },
+    {
+      "type": "speech",
+      "start": 183.138,
+      "end": 183.678,
+      "duration": 0.54,
+      "rms_db": -17.5
+    },
+    {
+      "type": "noise",
+      "start": 183.678,
+      "end": 184.866,
+      "duration": 1.188,
+      "rms_db": -20.5
+    },
+    {
+      "type": "speech",
+      "start": 184.866,
+      "end": 189.15,
+      "duration": 4.284,
+      "rms_db": -14.1
+    },
+    {
+      "type": "noise",
+      "start": 189.15,
+      "end": 190.818,
+      "duration": 1.668,
+      "rms_db": -15.4
+    },
+    {
+      "type": "speech",
+      "start": 190.818,
+      "end": 193.214,
+      "duration": 2.396,
+      "rms_db": -14.5
+    },
+    {
+      "type": "noise",
+      "start": 193.214,
+      "end": 193.89,
+      "duration": 0.676,
+      "rms_db": -14.0
+    },
+    {
+      "type": "speech",
+      "start": 193.89,
+      "end": 194.814,
+      "duration": 0.924,
+      "rms_db": -14.4
+    },
+    {
+      "type": "noise",
+      "start": 194.814,
+      "end": 200.738,
+      "duration": 5.924,
+      "rms_db": -17.4
+    },
+    {
+      "type": "speech",
+      "start": 200.738,
+      "end": 207.006,
+      "duration": 6.268,
+      "rms_db": -16.8
+    },
+    {
+      "type": "noise",
+      "start": 207.006,
+      "end": 208.226,
+      "duration": 1.22,
+      "rms_db": -20.9
+    },
+    {
+      "type": "speech",
+      "start": 208.226,
+      "end": 211.838,
+      "duration": 3.612,
+      "rms_db": -17.4
+    },
+    {
+      "type": "noise",
+      "start": 211.838,
+      "end": 213.154,
+      "duration": 1.316,
+      "rms_db": -21.2
+    },
+    {
+      "type": "speech",
+      "start": 213.154,
+      "end": 214.878,
+      "duration": 1.724,
+      "rms_db": -18.4
+    },
+    {
+      "type": "noise",
+      "start": 214.878,
+      "end": 215.714,
+      "duration": 0.836,
+      "rms_db": -21.0
+    },
+    {
+      "type": "speech",
+      "start": 215.714,
+      "end": 219.838,
+      "duration": 4.124,
+      "rms_db": -19.0
+    },
+    {
+      "type": "noise",
+      "start": 219.838,
+      "end": 220.354,
+      "duration": 0.516,
+      "rms_db": -21.9
+    },
+    {
+      "type": "speech",
+      "start": 220.354,
+      "end": 221.662,
+      "duration": 1.308,
+      "rms_db": -18.6
+    },
+    {
+      "type": "noise",
+      "start": 221.662,
+      "end": 222.178,
+      "duration": 0.516,
+      "rms_db": -20.7
+    },
+    {
+      "type": "speech",
+      "start": 222.178,
+      "end": 224.606,
+      "duration": 2.428,
+      "rms_db": -18.9
+    },
+    {
+      "type": "noise",
+      "start": 224.606,
+      "end": 225.986,
+      "duration": 1.38,
+      "rms_db": -21.1
+    },
+    {
+      "type": "speech",
+      "start": 225.986,
+      "end": 231.294,
+      "duration": 5.308,
+      "rms_db": -17.9
+    },
+    {
+      "type": "noise",
+      "start": 231.294,
+      "end": 232.322,
+      "duration": 1.028,
+      "rms_db": -21.1
+    },
+    {
+      "type": "speech",
+      "start": 232.322,
+      "end": 234.526,
+      "duration": 2.204,
+      "rms_db": -17.0
+    },
+    {
+      "type": "noise",
+      "start": 234.526,
+      "end": 235.842,
+      "duration": 1.316,
+      "rms_db": -21.0
+    },
+    {
+      "type": "speech",
+      "start": 235.842,
+      "end": 241.438,
+      "duration": 5.596,
+      "rms_db": -19.0
+    },
+    {
+      "type": "noise",
+      "start": 241.438,
+      "end": 242.402,
+      "duration": 0.964,
+      "rms_db": -21.0
+    },
+    {
+      "type": "speech",
+      "start": 242.402,
+      "end": 244.16,
+      "duration": 1.758,
+      "rms_db": -17.5
+    }
+  ]
+}

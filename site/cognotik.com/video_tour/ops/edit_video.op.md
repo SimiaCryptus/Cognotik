@@ -11,5 +11,3 @@ related:
 * The input video is in the `source/` directory and has the same name as the srt file (but with .mp4 extension)
 * The output video file should be named `edit/<original_name>.mp4`
 * Make sure to use the transcript to trim the start and end of the video to remove any unnecessary content, such as long pauses, irrelevant sections, or off-topic discussions
-* Also write out a `<original_name>.md` file containing the edited transcript formatted as markdown
-  * The markdown file should include a title, sections/timestamps, and cleaned-up prose suitable for reading
