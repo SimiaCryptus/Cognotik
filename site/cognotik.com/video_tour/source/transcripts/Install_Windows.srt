@@ -1,0 +1,180 @@
+1
+00:00:13,339 --> 00:00:19,949
+Hello. Hello
+
+2
+00:00:20,068 --> 00:00:22,949
+and welcome to this demo video of how to install
+
+3
+00:00:22,949 --> 00:00:28,429
+Cognotic on Windows. Hello. Welcome to this demo, welcome
+
+4
+00:00:28,429 --> 00:00:31,699
+to this demo video of how to install Cognotic desktop
+
+5
+00:00:31,699 --> 00:00:37,859
+on Windows. Simply go to cognotic.com. And
+
+6
+00:00:37,859 --> 00:00:42,270
+download the installer file or you can go to GitHubb
+
+7
+00:00:43,649 --> 00:00:48,668
+under releases and see all of the installer artifacts. I'm
+
+8
+00:00:48,668 --> 00:00:53,899
+going to click on download for Windows. Save this file
+
+9
+00:00:59,649 --> 00:01:04,209
+Because it isn't commonly downloaded, you may have to manually
+
+10
+00:01:04,209 --> 00:01:09,489
+keep the file before you open it to install
+
+11
+00:01:09,489 --> 00:01:15,088
+it. Install it like any install
+
+12
+00:01:15,088 --> 00:01:29,168
+it like any desktop application. And
+
+13
+00:01:29,168 --> 00:01:35,879
+there we go. Next
+
+14
+00:01:35,918 --> 00:01:40,278
+we need to configure the application. We go to Cognotic
+
+15
+00:01:40,790 --> 00:01:44,638
+In the start menu, run it. Now, this is a
+
+16
+00:01:44,638 --> 00:01:48,400
+server-based application, so when you run Cognotic from the Start
+
+17
+00:01:48,400 --> 00:01:51,719
+menu, this is starting the server. You have to go
+
+18
+00:01:51,719 --> 00:01:57,040
+to the taskbar, click the server icon for Cognotic, and
+
+19
+00:01:57,040 --> 00:02:00,415
+that will open. Browser page. From there, you need a
+
+20
+00:02:00,415 --> 00:02:04,084
+login. This is a system local login that's used to
+
+21
+00:02:04,084 --> 00:02:09,133
+secure your API credentials. So, if you don't have
+
+22
+00:02:09,133 --> 00:02:12,574
+one already, you can easily register. For this, I'm just
+
+23
+00:02:12,574 --> 00:02:17,500
+going to say Far. And for password I'll say test
+
+24
+00:02:18,689 --> 00:02:23,860
+Weak passwords in my for. It will warn you
+
+25
+00:02:23,860 --> 00:02:27,618
+about weak passwords, but it will allow them, except for
+
+26
+00:02:27,618 --> 00:02:32,949
+space, it won't allow space when you register. It
+
+27
+00:02:32,949 --> 00:02:36,909
+will launch a confirmation dialogue, which unfortunately sometimes doesn't come
+
+28
+00:02:36,909 --> 00:02:40,080
+up. On the top, so you have to find it
+
+29
+00:02:40,080 --> 00:02:43,679
+with Alt tab. This is to prevent people over the
+
+30
+00:02:43,679 --> 00:02:49,000
+internet, uh, for example, potentially creating and using your
+
+31
+00:02:49,000 --> 00:03:02,520
+service. You say yes. And
+
+32
+00:03:02,520 --> 00:03:16,080
+now we have access to the web UI. Next
+
+33
+00:03:16,199 --> 00:03:19,278
+we need to go to settings to add our API
+
+34
+00:03:19,278 --> 00:03:24,449
+key. We add provider. It supports a number
+
+35
+00:03:24,449 --> 00:03:28,330
+of different providers, but I mainly use and therefore mainly
+
+36
+00:03:28,330 --> 00:03:40,069
+recommend anthropic angioma. Cut
+
+37
+00:03:40,069 --> 00:03:46,270
+this part, enter an API key, save
+
+38
+00:03:46,270 --> 00:03:51,889
+settings. Don't save that in the password manager
+
+39
+00:03:52,508 --> 00:03:57,270
+and now we can test with basic chat. Oh, we
+
+40
+00:03:57,270 --> 00:04:00,508
+need to re refresh the page first. Test with basic
+
+41
+00:04:00,508 --> 00:04:04,588
+chat and we see haiku, haikuanthropic. That means the models
+
+42
+00:04:04,588 --> 00:04:07,270
+were discovered. It probably works, but let's do the full
+
+43
+00:04:07,270 --> 00:04:12,409
+test. Hi. All right, now
+
+44
+00:04:12,409 --> 00:04:16,850
+we have Cognotic fully installed, configured and tested, and we
+
+45
+00:04:16,850 --> 00:04:18,889
+are ready to run one of the applications.
+

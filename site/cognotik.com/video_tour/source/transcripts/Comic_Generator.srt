@@ -1,0 +1,168 @@
+1
+00:00:03,640 --> 00:00:07,299
+Probably the most entertaining app is the comic serial app
+
+2
+00:00:07,759 --> 00:00:14,118
+It generates a series of comic books. Based
+
+3
+00:00:14,118 --> 00:00:20,280
+on your prompts here, let's say, Come
+
+4
+00:00:21,100 --> 00:00:28,318
+About Food parakeets. Stop
+
+5
+00:00:30,420 --> 00:00:37,969
+Interrupt. So. We
+
+6
+00:00:37,969 --> 00:00:42,469
+saved this idea. Make sure that we have models selected
+
+7
+00:00:43,209 --> 00:00:49,109
+These are the deep. Must be First
+
+8
+00:00:49,109 --> 00:00:55,408
+on the list for whatever reason. We will select. Flash
+
+9
+00:00:55,408 --> 00:01:00,658
+three, Gemini three flash preview
+
+10
+00:01:00,959 --> 00:01:05,459
+And for the image model, let's use Gemini one flash
+
+11
+00:01:05,459 --> 00:01:11,469
+image preview. Save our model settings. And
+
+12
+00:01:11,469 --> 00:01:14,069
+the reason it's called Comic serial is because you can
+
+13
+00:01:14,069 --> 00:01:18,549
+generate a first comic book series, comic book, which includes
+
+14
+00:01:18,549 --> 00:01:21,028
+many frames. We will, we will do that in a
+
+15
+00:01:21,028 --> 00:01:26,308
+second, but then afterwards you can generate sequels and
+
+16
+00:01:26,308 --> 00:01:31,168
+you can keep generating sequels as desired. The final step
+
+17
+00:01:31,168 --> 00:01:36,129
+is then to render the comic book into an HTML
+
+18
+00:01:36,129 --> 00:01:39,150
+format, which uses the same images. It just gives it
+
+19
+00:01:39,150 --> 00:01:44,180
+a, Nice HTML framing. But
+
+20
+00:01:44,180 --> 00:01:47,579
+first, we will monitor the generation of the comic book
+
+21
+00:01:47,579 --> 00:02:28,860
+itself. We
+
+22
+00:02:28,860 --> 00:02:35,308
+have a Sketch of a script. And
+
+23
+00:02:35,308 --> 00:02:40,469
+then it goes into character generation. The first
+
+24
+00:02:40,469 --> 00:02:43,649
+step that it does when generating comics is to generate
+
+25
+00:02:44,610 --> 00:02:49,649
+Character reference images. These are then used when it's
+
+26
+00:02:49,649 --> 00:02:54,819
+rendering the comics themselves. In order
+
+27
+00:02:54,819 --> 00:03:03,639
+to achieve. Artistic. Consistency
+
+28
+00:03:59,439 --> 00:04:04,729
+And now we're on to the actual page generation. Again
+
+29
+00:04:04,808 --> 00:06:39,139
+you can monitor this in real time. And
+
+30
+00:06:39,139 --> 00:06:43,278
+it ends with even a Nice little fourth wall joke
+
+31
+00:06:44,559 --> 00:06:49,410
+Great. So, now that that generation has completed and my
+
+32
+00:06:49,410 --> 00:06:53,889
+parares agree, It is time to render the comic book
+
+33
+00:06:56,699 --> 00:07:01,850
+This renders the HTML structure that will, How is
+
+34
+00:07:01,850 --> 00:07:07,019
+the comic since the, Basic comic book framing
+
+35
+00:07:07,019 --> 00:07:15,329
+is. Somewhat Basic. This
+
+36
+00:07:15,329 --> 00:07:26,798
+should only take a moment. Here
+
+37
+00:07:26,798 --> 00:07:30,000
+we go. Let's open this in a new tab and
+
+38
+00:07:30,000 --> 00:07:36,269
+preview it. We've got our character reference images and, No
+
+39
+00:07:37,048 --> 00:07:43,079
+A much more attractive presentation with the textual, Dialogue
+
+40
+00:07:43,079 --> 00:07:49,040
+alongside also. And
+
+41
+00:07:49,040 --> 00:07:52,678
+that is the Comic book generator. I hope you enjoy
+
+42
+00:07:52,678 --> 00:07:52,838
+it.
+

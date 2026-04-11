@@ -1,7 +1,9 @@
 ---
 transforms:
-  - ../source/transcripts/([^/\.]+)\.srt -> ../edit_$1.sh
-  - ../source/segments/([^/\.]+)\.srt -> ../edit_$1.sh
+  - ../edit/transcripts/([^/\.]+)\.txt -> ../edit/$1.md
+  - ../reference/([^/\.]+)\.md -> ../edit/$1.md
+related:
+  - ../README.md
 ---
 
 * Create an edit script for the srt file given
