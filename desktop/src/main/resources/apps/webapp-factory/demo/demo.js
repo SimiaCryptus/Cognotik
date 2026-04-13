@@ -20,7 +20,8 @@ const {
     openSessionLinkAndWaitForCompletion,
     say,
     handleLogin,
-    setNarrationPath
+     setNarrationPath,
+     diagnosticSnapshot
 } = require('./util');
 
 // ---------------------------------------------------------------------------
@@ -160,6 +161,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
         // =================================================================
         await say(page, NARRATION['INTRO'], SHORT_PAUSE);
         await page.waitForTimeout(MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '00-intro');
 
         // =================================================================
         // Step 1 — Navigate to App Hub
@@ -173,6 +175,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
         });
 
         await say(page, NARRATION['HUB_OVERVIEW'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '01-hub-overview');
 
         // =================================================================
         // Step 2 — Launch Webapp Builder
@@ -182,6 +185,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
         await page.waitForTimeout(MEDIUM_PAUSE);
 
         await say(page, NARRATION['APP_OPENED'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '02-app-opened');
 
         // =================================================================
         // Step 3 — Idea Tab: Describe the webapp
@@ -209,6 +213,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
         await page.waitForTimeout(MEDIUM_PAUSE);
 
         await say(page, NARRATION['IDEA_SAVED'], SHORT_PAUSE);
+         await diagnosticSnapshot(page, '03-idea-saved');
 
         // =================================================================
         // Step 4 — Model Settings
@@ -223,6 +228,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
         await page.waitForTimeout(SHORT_PAUSE);
 
         await say(page, NARRATION['MODEL_SETTINGS_NOTE'], SHORT_PAUSE);
+         await diagnosticSnapshot(page, '04-model-settings');
 
         // =================================================================
         // Step 5 — Pipeline Tab: Run the build
@@ -245,6 +251,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await say(page, NARRATION['PIPELINE_STARTED'], SHORT_PAUSE);
             await page.click('#run-all');
             await page.waitForTimeout(MEDIUM_PAUSE);
+             await diagnosticSnapshot(page, '05a-pipeline-started');
 
             // Wait for the render step to complete
             await say(page, NARRATION['PIPELINE_RUNNING'], SHORT_PAUSE);
@@ -257,6 +264,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await waitForBadgeDone(page, 'badge-render', 'Render Project', 300000);
 
             await say(page, NARRATION['PIPELINE_DONE'], LONG_PAUSE);
+             await diagnosticSnapshot(page, '05b-pipeline-done');
         } else {
             await say(page, NARRATION['PIPELINE_SKIPPED'], SHORT_PAUSE);
         }
@@ -269,6 +277,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
         await page.waitForTimeout(MEDIUM_PAUSE);
 
         await say(page, NARRATION['RESULTS_TAB'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '06-results-tab');
 
         // --- Live Preview ---
         if (ENABLE_RESULTS_PREVIEW) {
@@ -284,6 +293,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await page.waitForTimeout(MEDIUM_PAUSE);
 
             await say(page, NARRATION['RESULTS_PREVIEW_LOADED'], LONG_PAUSE);
+             await diagnosticSnapshot(page, '06a-results-preview');
 
             // Show the console panel
             await highlight(page, '#console-panel');
@@ -306,6 +316,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await page.waitForTimeout(MEDIUM_PAUSE);
 
             await say(page, NARRATION['RESULTS_FILES_LOADED'], MEDIUM_PAUSE);
+             await diagnosticSnapshot(page, '06b-results-files');
         } else {
             await say(page, NARRATION['RESULTS_FILES_SKIPPED'], SHORT_PAUSE);
         }
@@ -317,6 +328,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await page.waitForTimeout(MEDIUM_PAUSE);
 
             await say(page, NARRATION['RESULTS_README'], MEDIUM_PAUSE);
+             await diagnosticSnapshot(page, '06c-results-readme');
         } else {
             await say(page, NARRATION['RESULTS_README_SKIPPED'], SHORT_PAUSE);
         }
@@ -335,6 +347,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await page.waitForTimeout(SHORT_PAUSE);
 
             await say(page, NARRATION['RESULTS_DOWNLOAD_OPTIONS'], SHORT_PAUSE);
+             await diagnosticSnapshot(page, '06d-results-download');
         } else {
             await say(page, NARRATION['RESULTS_DOWNLOAD_SKIPPED'], SHORT_PAUSE);
         }
@@ -365,6 +378,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await page.waitForTimeout(SHORT_PAUSE);
 
             await say(page, NARRATION['UPDATE_SAVED'], SHORT_PAUSE);
+             await diagnosticSnapshot(page, '07a-update-notes-saved');
 
             // Run the update
             await highlight(page, '#run-update');
@@ -382,6 +396,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await waitForBadgeDone(page, 'badge-update', 'Update Project', 300000);
 
             await say(page, NARRATION['UPDATE_DONE'], LONG_PAUSE);
+             await diagnosticSnapshot(page, '07b-update-done');
 
             // Show the updated preview
             await highlight(page, '[data-section="section-results"]');
@@ -397,6 +412,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await page.waitForTimeout(MEDIUM_PAUSE);
 
             await say(page, NARRATION['UPDATE_PREVIEW'], LONG_PAUSE);
+             await diagnosticSnapshot(page, '07c-update-preview');
         } else {
             await say(page, NARRATION['UPDATE_SKIPPED'], SHORT_PAUSE);
         }
@@ -417,6 +433,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await page.waitForTimeout(MEDIUM_PAUSE);
 
             await say(page, NARRATION['GIT_INIT'], SHORT_PAUSE);
+             await diagnosticSnapshot(page, '08a-git-init');
 
             // Refresh status
             await highlight(page, '#btn-git-status');
@@ -436,6 +453,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await page.waitForTimeout(MEDIUM_PAUSE);
 
             await say(page, NARRATION['GIT_COMMITTED'], SHORT_PAUSE);
+             await diagnosticSnapshot(page, '08b-git-committed');
 
             // Show commit log
             await highlight(page, '#btn-git-log');
@@ -449,6 +467,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await page.waitForTimeout(SHORT_PAUSE);
 
             await say(page, NARRATION['GIT_QUICK_ACTIONS'], SHORT_PAUSE);
+             await diagnosticSnapshot(page, '08c-git-log');
         } else {
             await say(page, NARRATION['GIT_SKIPPED'], SHORT_PAUSE);
         }
@@ -476,6 +495,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
             await page.waitForTimeout(MEDIUM_PAUSE);
 
             await say(page, NARRATION['USAGE_TASKS'], SHORT_PAUSE);
+             await diagnosticSnapshot(page, '09-usage');
         } else {
             await say(page, NARRATION['USAGE_SKIPPED'], SHORT_PAUSE);
         }
@@ -494,6 +514,7 @@ test('Webapp Builder Demo', async ({ browser }) => {
         // Outro
         // =================================================================
         await say(page, NARRATION['OUTRO'], LONG_PAUSE);
+         await diagnosticSnapshot(page, '10-outro');
         await page.waitForTimeout(LONG_PAUSE);
 
         console.log('\n✅ Demo complete.');

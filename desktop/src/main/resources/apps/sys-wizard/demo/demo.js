@@ -16,7 +16,8 @@ const {
     openSessionLinkAndWaitForCompletion,
     say,
     handleLogin,
-    setNarrationPath
+     setNarrationPath,
+     diagnosticSnapshot
 } = require('./util');
 
 // ---------------------------------------------------------------------------
@@ -136,6 +137,7 @@ test('System Wizard Demo', async ({ browser }) => {
 
         await say(page, NARRATION['INTRO'], SHORT_PAUSE);
         await page.waitForTimeout(MEDIUM_PAUSE);
+     await diagnosticSnapshot(page, '00-splash');
 
         // =================================================================
         // Step 1 — Open the App Hub
@@ -149,6 +151,7 @@ test('System Wizard Demo', async ({ browser }) => {
         });
 
         await say(page, NARRATION['HUB_OVERVIEW'], MEDIUM_PAUSE);
+     await diagnosticSnapshot(page, '01-hub-overview');
 
         // =================================================================
         // Step 2 — Launch the System Wizard
@@ -158,6 +161,7 @@ test('System Wizard Demo', async ({ browser }) => {
         await page.waitForTimeout(MEDIUM_PAUSE);
 
         await say(page, NARRATION['APP_OPENED'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '02-app-opened');
 
         // =================================================================
         // Step 3 — Platform Toggle (optional)
@@ -175,6 +179,7 @@ test('System Wizard Demo', async ({ browser }) => {
             await highlight(page, '.platform-btn[data-platform="sh"]');
             await page.click('.platform-btn[data-platform="sh"]');
             await page.waitForTimeout(SHORT_PAUSE);
+             await diagnosticSnapshot(page, '03-platform-toggle');
         }
 
         // =================================================================
@@ -217,6 +222,7 @@ test('System Wizard Demo', async ({ browser }) => {
         await page.click('#save-goal');
         await page.waitForTimeout(SHORT_PAUSE);
         await say(page, NARRATION['GOAL_SAVED'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '04-goal-saved');
 
         // =================================================================
         // Step 5 — Settings Tab: Configure Models (optional)
@@ -264,6 +270,7 @@ test('System Wizard Demo', async ({ browser }) => {
             await page.waitForTimeout(SHORT_PAUSE);
 
             await say(page, NARRATION['SETTINGS_SAVED'], MEDIUM_PAUSE);
+             await diagnosticSnapshot(page, '05-settings-saved');
         } else {
             await say(page, NARRATION['SETTINGS_SKIPPED'], SHORT_PAUSE);
         }
@@ -281,6 +288,7 @@ test('System Wizard Demo', async ({ browser }) => {
         await highlight(page, '.pipeline-diagram');
         await page.waitForTimeout(SHORT_PAUSE);
         await say(page, NARRATION['PIPELINE_OVERVIEW'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '06-pipeline-tab');
 
         // -----------------------------------------------------------------
         // Manual mode showcase (optional)
@@ -325,6 +333,7 @@ test('System Wizard Demo', async ({ browser }) => {
             // View the generated script
             await highlight(page, '#viewer-codegen');
             await page.waitForTimeout(MEDIUM_PAUSE);
+             await diagnosticSnapshot(page, '07-codegen-done');
 
             // === Step 6b: Run & Fix ===
             await say(page, NARRATION['RUN_FIX_INTRO'], SHORT_PAUSE);
@@ -348,6 +357,7 @@ test('System Wizard Demo', async ({ browser }) => {
             await highlight(page, '#btn-view-final-script');
             await page.click('#btn-view-final-script');
             await page.waitForTimeout(MEDIUM_PAUSE);
+             await diagnosticSnapshot(page, '08-run-fix-done');
         } else {
             await say(page, NARRATION['CODEGEN_SKIPPED'], SHORT_PAUSE);
             await say(page, NARRATION['RUN_FIX_SKIPPED'], SHORT_PAUSE);
@@ -382,6 +392,7 @@ test('System Wizard Demo', async ({ browser }) => {
             await page.waitForTimeout(SHORT_PAUSE);
 
             await say(page, NARRATION['FULL_PIPELINE_DONE'], LONG_PAUSE);
+             await diagnosticSnapshot(page, '09-full-pipeline-done');
         } else {
             await say(page, NARRATION['FULL_PIPELINE_SKIPPED'], SHORT_PAUSE);
         }
@@ -406,6 +417,7 @@ test('System Wizard Demo', async ({ browser }) => {
         await highlight(page, '#result-script');
         await page.waitForTimeout(SHORT_PAUSE);
         await say(page, NARRATION['RESULTS_SCRIPT'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '10-results-script');
 
         // Show copy button
         await highlight(page, '#copy-script');
@@ -426,6 +438,7 @@ test('System Wizard Demo', async ({ browser }) => {
         await highlight(page, '#result-log');
         await page.waitForTimeout(SHORT_PAUSE);
         await say(page, NARRATION['RESULTS_LOG'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '11-results-log');
 
         // --- Goal tab ---
         await highlight(page, '.results-tab[data-tab="tab-goal"]');
@@ -442,6 +455,7 @@ test('System Wizard Demo', async ({ browser }) => {
         await highlight(page, '#result-goal');
         await page.waitForTimeout(SHORT_PAUSE);
         await say(page, NARRATION['RESULTS_GOAL'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '12-results-goal');
 
         // =================================================================
         // Step 8 — Usage Tab (optional)
@@ -476,6 +490,7 @@ test('System Wizard Demo', async ({ browser }) => {
                 await highlight(page, '#usage-children-card');
                 await page.waitForTimeout(SHORT_PAUSE);
             }
+             await diagnosticSnapshot(page, '13-usage-tab');
         } else {
             await say(page, NARRATION['USAGE_SKIPPED'], SHORT_PAUSE);
         }
@@ -485,6 +500,7 @@ test('System Wizard Demo', async ({ browser }) => {
         // =================================================================
         await say(page, NARRATION['OUTRO'], LONG_PAUSE);
         await page.waitForTimeout(LONG_PAUSE);
+         await diagnosticSnapshot(page, '14-outro');
 
         console.log('\n✅ System Wizard demo complete.');
     } catch (error) {

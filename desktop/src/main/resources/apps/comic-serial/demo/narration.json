@@ -1,0 +1,110 @@
+{
+  "INTRO": {
+    "text": "Welcome to the Comic Serial Generator demo. This app turns your ideas into an ongoing comic book series, one episode at a time. Let's walk through the full workflow.",
+    "audio": null
+  },
+  "HUB_OVERVIEW": {
+    "text": "This is the Cognotik App Hub, where all available apps are listed. Let's launch the Comic Serial Generator.",
+    "audio": null
+  },
+  "LOGIN_PROMPT": {
+    "text": "First, let's log in to access the platform.",
+    "audio": null
+  },
+  "LOGIN_SUCCESS": {
+    "text": "Logged in successfully. Now let's find our app.",
+    "audio": null
+  },
+  "APP_OPENED": {
+    "text": "Here's the Comic Serial Generator. It has tabs for your Idea, the generation Pipeline, the Series browser, Usage tracking, and Model settings.",
+    "audio": null
+  },
+  "CONFIGURE_MODELS": {
+    "text": "Before we start generating, let's configure the AI models. We need to select a smart model for creative writing, a fast model for parsing, and an image model for artwork.",
+    "audio": null
+  },
+  "MODELS_SAVED": {
+    "text": "Model settings are saved. Now we're ready to start creating our comic series.",
+    "audio": null
+  },
+  "IDEA_TAB": {
+    "text": "Let's start by entering a story idea. This will serve as the foundation for the entire comic series.",
+    "audio": null
+  },
+  "IDEA_TYPED": {
+    "text": "We've written a compelling concept about a lone astronaut discovering an ancient alien library. Now let's save it.",
+    "audio": null
+  },
+  "IDEA_SAVED": {
+    "text": "The idea is saved. Now let's move to the Pipeline tab to start generating comics.",
+    "audio": null
+  },
+  "PIPELINE_TAB": {
+    "text": "The Pipeline tab shows the generation workflow. We can see the stages: Idea, Comic number one, sequels, and finally an HTML book compilation.",
+    "audio": null
+  },
+  "GENERATE_COMIC_1": {
+    "text": "Let's generate the first comic episode. This will establish the characters, setting, art style, and narrative arc based on our idea.",
+    "audio": null
+  },
+  "COMIC_1_DONE": {
+    "text": "The first comic episode has been generated! Let's take a look at it.",
+    "audio": null
+  },
+  "VIEW_COMIC_1": {
+    "text": "Here's our first episode, rendered from Markdown. The AI has created panels, dialogue, and scene descriptions based on our story concept.",
+    "audio": null
+  },
+  "GENERATE_SEQUEL": {
+    "text": "Now let's generate a sequel episode. Each new episode builds on the previous one while staying true to the original idea.",
+    "audio": null
+  },
+  "SEQUEL_DONE": {
+    "text": "Episode two is ready! The story continues with new developments while maintaining consistency with the first episode.",
+    "audio": null
+  },
+  "BATCH_INTRO": {
+    "text": "For faster series creation, we can use batch generation to produce multiple episodes in sequence automatically.",
+    "audio": null
+  },
+  "BATCH_STARTED": {
+    "text": "Batch generation is running. The pipeline will generate each episode one after another, with each building on the last.",
+    "audio": null
+  },
+  "BATCH_DONE": {
+    "text": "Batch generation is complete. We now have a full series of comic episodes.",
+    "audio": null
+  },
+  "HTMLBOOK_INTRO": {
+    "text": "Now let's compile all episodes into a single HTML comicbook for a polished reading experience.",
+    "audio": null
+  },
+  "HTMLBOOK_DONE": {
+    "text": "The HTML comicbook has been compiled. All episodes are combined into one beautiful, self-contained page.",
+    "audio": null
+  },
+  "SERIES_TAB": {
+    "text": "Let's check the Series tab to browse all our generated episodes in the accordion viewer.",
+    "audio": null
+  },
+  "SERIES_OVERVIEW": {
+    "text": "Here we can see all episodes listed as expandable cards. Each one can be opened to read the full comic content.",
+    "audio": null
+  },
+  "SETTINGS_TAB": {
+    "text": "Finally, let's look at the Model settings. Here you can choose which AI models to use for smart reasoning, fast processing, and image generation.",
+    "audio": null
+  },
+  "SETTINGS_OVERVIEW": {
+    "text": "The smart model handles creative writing, the fast model handles parsing, and the image model generates the comic panel artwork.",
+    "audio": null
+  },
+  "USAGE_TAB": {
+    "text": "The Usage tab lets you track token usage and estimated costs for all AI operations in this session.",
+    "audio": null
+  },
+  "OUTRO": {
+    "text": "And that's the complete workflow of the Comic Serial Generator! From a single idea to a full comic book series, all powered by AI. Thank you for watching!",
+    "audio": null
+  }
+}

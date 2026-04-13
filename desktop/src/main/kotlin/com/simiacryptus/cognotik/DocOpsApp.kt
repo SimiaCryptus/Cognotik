@@ -175,7 +175,7 @@ class DocOpsApp(
           val entries = jarFile.entries()
           while (entries.hasMoreElements()) {
             val entry = entries.nextElement()
-            if (entry.name.startsWith(resourcePath) && !entry.isDirectory) {
+           if (entry.name.startsWith(resourcePath) && !entry.isDirectory && !containsDemoFolder(entry.name)) {
               val relativePath = entry.name.substring(resourcePath.length)
               if (relativePath.isNotEmpty()) {
                 val targetFile = File(targetDir, relativePath)
@@ -204,7 +204,7 @@ class DocOpsApp(
           val resourceDir = File(dir, resourcePath)
           if (resourceDir.isDirectory) {
             resourceDir.walkTopDown().forEach { file ->
-              if (file.isFile) {
+             if (file.isFile && !containsDemoFolder(file.relativeTo(resourceDir).path)) {
                 val relativePath = file.relativeTo(resourceDir).path
                 val targetFile = File(targetDir, relativePath)
                 targetFile.parentFile?.mkdirs()
@@ -234,6 +234,13 @@ class DocOpsApp(
     }
     return urls
   }
+  /**
+   * Returns true if the given path contains a folder segment named 'demo'.
+   */
+  private fun containsDemoFolder(path: String): Boolean {
+    return path.replace('\\', '/').split('/').any { it.equals("demo", ignoreCase = false) }
+  }
+
    private fun isTextFile(fileName: String): Boolean {
      val ext = fileName.substringAfterLast('.', "").lowercase()
      val baseName = fileName.substringAfterLast('/').substringAfterLast('\\').lowercase()

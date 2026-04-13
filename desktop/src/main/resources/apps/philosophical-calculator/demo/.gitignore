@@ -4,3 +4,5 @@ node_modules
 *.log
 demo-results
 demo-videos
+demo-diagnostics
+.venv

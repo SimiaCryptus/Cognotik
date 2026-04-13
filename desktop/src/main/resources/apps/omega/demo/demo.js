@@ -179,6 +179,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
 
         await say(page, NARRATION['INTRO'], SHORT_PAUSE);
         await page.waitForTimeout(MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '00-splash');
 
         // =================================================================
         // Step 1 — Open the App Hub
@@ -192,6 +193,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
         });
 
         await say(page, NARRATION['HUB_OVERVIEW'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '01-hub-overview');
 
         // =================================================================
         // Step 2 — Launch Omega
@@ -201,6 +203,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
         await page.waitForTimeout(MEDIUM_PAUSE);
 
         await say(page, NARRATION['APP_OPENED'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '02-app-opened');
 
         // =================================================================
         // Step 3 — Idea Tab: Describe the app idea
@@ -224,6 +227,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
         await page.waitForTimeout(SHORT_PAUSE);
 
         await say(page, NARRATION['IDEA_SAVED'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '03-idea-saved');
 
         // =================================================================
         // Step 4 — Models Tab: Configure AI models
@@ -278,6 +282,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
         await page.waitForTimeout(SHORT_PAUSE);
 
         await say(page, NARRATION['MODELS_CONFIGURED'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '04-models-configured');
 
         // =================================================================
         // Step 5 — Generate Tab: Run the generation pipeline
@@ -302,6 +307,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
             await waitForBadgeDone(page, 'badge-ui', 'UI', 300000);
 
             await say(page, NARRATION['RUN_ALL_DONE'], LONG_PAUSE);
+             await diagnosticSnapshot(page, '05-run-all-done');
 
         } else {
             // ----- Individual step mode -----
@@ -315,6 +321,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
                 await runStepAndWait(page, context, 'button.btn-run[data-badge="badge-requirements"]', 'badge-requirements', 'Requirements', 300000);
 
                 await say(page, NARRATION['REQUIREMENTS_DONE'], MEDIUM_PAUSE);
+                 await diagnosticSnapshot(page, '05a-requirements-done');
 
                 // View the result
                 const reqViewBtn = page.locator('button.btn-view[data-viewer="viewer-requirements"]');
@@ -330,6 +337,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
                 await runStepAndWait(page, context, 'button.btn-run[data-badge="badge-review"]', 'badge-review', 'Review', 300000);
 
                 await say(page, NARRATION['REVIEW_DONE'], MEDIUM_PAUSE);
+                 await diagnosticSnapshot(page, '05b-review-done');
 
                 // View the result
                 const reviewViewBtn = page.locator('button.btn-view[data-viewer="viewer-review"]');
@@ -345,6 +353,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
                 await runStepAndWait(page, context, 'button.btn-run[data-badge="badge-refine"]', 'badge-refine', 'Refine', 300000);
 
                 await say(page, NARRATION['REFINE_DONE'], MEDIUM_PAUSE);
+                 await diagnosticSnapshot(page, '05c-refine-done');
 
                 // View the refined requirements
                 const refineViewBtn = page.locator('button.btn-view[data-viewer="viewer-refine"]');
@@ -360,6 +369,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
                 await runStepAndWait(page, context, 'button.btn-run[data-badge="badge-pipeline"]', 'badge-pipeline', 'Pipeline Ops', 300000);
 
                 await say(page, NARRATION['PIPELINE_DONE'], MEDIUM_PAUSE);
+                 await diagnosticSnapshot(page, '05d-pipeline-done');
 
                 // View the README
                 const pipelineViewBtn = page.locator('button.btn-view[data-viewer="viewer-pipeline"]');
@@ -375,6 +385,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
                 await runStepAndWait(page, context, 'button.btn-run[data-badge="badge-ui"]', 'badge-ui', 'UI Generation', 300000);
 
                 await say(page, NARRATION['UI_DONE'], LONG_PAUSE);
+                 await diagnosticSnapshot(page, '05e-ui-done');
 
                 // View the UI source
                 const uiViewBtn = page.locator('button.btn-view[data-viewer="viewer-ui"]');
@@ -402,6 +413,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
         await page.click('#refresh-readme');
         await page.waitForTimeout(MEDIUM_PAUSE);
         await say(page, NARRATION['RESULTS_README'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '06a-results-readme');
 
         // --- Requirements sub-tab ---
         await highlight(page, '[data-tab="tab-requirements"]');
@@ -411,6 +423,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
         await page.click('#refresh-requirements');
         await page.waitForTimeout(MEDIUM_PAUSE);
         await say(page, NARRATION['RESULTS_REQUIREMENTS'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '06b-results-requirements');
 
         // --- Review sub-tab ---
         await highlight(page, '[data-tab="tab-review"]');
@@ -420,6 +433,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
         await page.click('#refresh-review');
         await page.waitForTimeout(MEDIUM_PAUSE);
         await say(page, NARRATION['RESULTS_REVIEW'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '06c-results-review');
 
         // --- Pipeline Ops sub-tab ---
         await highlight(page, '[data-tab="tab-ops"]');
@@ -429,6 +443,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
         await page.click('#refresh-ops-list');
         await page.waitForTimeout(MEDIUM_PAUSE);
         await say(page, NARRATION['RESULTS_OPS'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '06d-results-ops');
 
         // --- UI Source sub-tab ---
         await highlight(page, '[data-tab="tab-ui-preview"]');
@@ -438,6 +453,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
         await page.click('#refresh-ui-source');
         await page.waitForTimeout(MEDIUM_PAUSE);
         await say(page, NARRATION['RESULTS_UI'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '06e-results-ui');
 
         // --- All Files sub-tab ---
         await highlight(page, '[data-tab="tab-files"]');
@@ -447,6 +463,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
         await page.click('#refresh-all-files');
         await page.waitForTimeout(MEDIUM_PAUSE);
         await say(page, NARRATION['RESULTS_FILES'], MEDIUM_PAUSE);
+         await diagnosticSnapshot(page, '06f-results-files');
 
         // =================================================================
         // Step 7 — Open Generated App (if available)
@@ -461,6 +478,7 @@ test('Omega App Generator Demo', async ({ browser }) => {
                 await page.click('#open-app-results');
                 await page.waitForTimeout(LONG_PAUSE);
                 await say(page, NARRATION['OPEN_APP_DONE'], LONG_PAUSE);
+                 await diagnosticSnapshot(page, '07-open-app');
             }
         }
 
@@ -491,12 +509,14 @@ test('Omega App Generator Demo', async ({ browser }) => {
             await highlight(page, '#save-ui-notes');
             await page.click('#save-ui-notes');
             await page.waitForTimeout(SHORT_PAUSE);
+             await diagnosticSnapshot(page, '08-iterate-notes-saved');
         } else {
             await say(page, NARRATION['ITERATE_PIPELINE_NOTES'], SHORT_PAUSE);
             await page.waitForTimeout(SHORT_PAUSE);
             await say(page, NARRATION['ITERATE_UI_NOTES'], SHORT_PAUSE);
             await page.waitForTimeout(SHORT_PAUSE);
             await say(page, NARRATION['ITERATE_SKIPPED'], MEDIUM_PAUSE);
+             await diagnosticSnapshot(page, '08-iterate-skipped');
         }
 
         // =================================================================
@@ -528,13 +548,16 @@ test('Omega App Generator Demo', async ({ browser }) => {
             await page.waitForTimeout(MEDIUM_PAUSE);
 
             await say(page, NARRATION['GIT_COMMITTED'], MEDIUM_PAUSE);
+             await diagnosticSnapshot(page, '09a-git-committed');
 
             // Show commit log
             await highlight(page, '#git-refresh-log');
             await page.click('#git-refresh-log');
             await page.waitForTimeout(MEDIUM_PAUSE);
+             await diagnosticSnapshot(page, '09b-git-log');
         } else {
             await say(page, NARRATION['GIT_SKIPPED'], MEDIUM_PAUSE);
+             await diagnosticSnapshot(page, '09-git-skipped');
         }
 
         // =================================================================
@@ -548,20 +571,24 @@ test('Omega App Generator Demo', async ({ browser }) => {
             await page.waitForTimeout(MEDIUM_PAUSE);
 
             await say(page, NARRATION['USAGE_OVERVIEW'], LONG_PAUSE);
+             await diagnosticSnapshot(page, '10-usage-overview');
         } else {
             await say(page, NARRATION['USAGE_SKIPPED'], MEDIUM_PAUSE);
+             await diagnosticSnapshot(page, '10-usage-skipped');
         }
 
         // =================================================================
         // Outro
         // =================================================================
         await say(page, NARRATION['OUTRO'], LONG_PAUSE);
+         await diagnosticSnapshot(page, '11-outro');
         await page.waitForTimeout(LONG_PAUSE);
 
         console.log('\n✅ Omega demo complete.');
 
     } catch (error) {
         console.error('❌ Demo failed with error:', error);
+         await diagnosticSnapshot(page, 'error-state').catch(() => {});
         throw error;
     } finally {
         // Stop recording if active
