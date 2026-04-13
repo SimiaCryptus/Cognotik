@@ -11,3 +11,4 @@ related:
 * Implement the demo files:
   * demo.js
   * narration.json
+  * splash.html
